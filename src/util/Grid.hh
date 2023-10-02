@@ -19,10 +19,12 @@
 #ifndef PISM_GRID_H
 #define PISM_GRID_H
 
+#include "io/File.hh"
 #include <cassert>
 #include <memory> // shared_ptr
 #include <string>
 #include <vector>
+#include <map>
 
 #include <mpi.h>                // MPI_Comm
 
@@ -88,7 +90,13 @@ public:
   std::vector<double> y;
   //! z coordinates
   std::vector<double> z;
+
   std::string filename;
+
+  std::string variable_name;
+
+  std::map<std::string, AxisType> dimension_types;
+
 private:
   void reset();
 };

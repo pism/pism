@@ -171,12 +171,14 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
 
     if (found_by_standard_name) {
       log.message(2,
+                  "  FOUND "
                   " %s / standard_name=%-10s\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(), get_string("standard_name").c_str(), spacer.c_str(), min, max,
                   get_string("output_units").c_str());
     } else {
       log.message(2,
+                  "  FOUND "
                   " %s / WARNING! standard_name=%s is missing, found by short_name\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(), get_string("standard_name").c_str(), spacer.c_str(), min, max,
@@ -185,6 +187,7 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
 
   } else {
     log.message(2,
+                "  FOUND "
                 " %s / %-10s\n"
                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                 get_name().c_str(), get_string("long_name").c_str(), spacer.c_str(), min, max,

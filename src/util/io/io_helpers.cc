@@ -133,11 +133,16 @@ static void regrid(const Grid &grid, const std::vector<double> &zlevels_out,
   }
 }
 
-static void compute_start_and_count(const File &file, units::System::Ptr unit_system,
-                                    const std::string &short_name, std::array<int, 4> start_in,
-                                    std::array<int, 4> count_in, std::vector<unsigned int> &start,
-                                    std::vector<unsigned int> &count,
-                                    std::vector<unsigned int> &imap) {
+struct StartCountInfo {
+  std::vector<unsigned int> start;
+  std::vector<unsigned int> count;
+  std::vector<unsigned int> imap;
+};
+
+static StartCountInfo compute_start_and_count(const File &file, units::System::Ptr unit_system,
+                                              const std::string &short_name,
+                                              std::array<int, 4> start_in,
+                                              std::array<int, 4> count_in) {
 
   auto x_start = start_in[LocalInterpCtx::X];
   auto x_count = count_in[LocalInterpCtx::X];
@@ -156,10 +161,12 @@ static void compute_start_and_count(const File &file, units::System::Ptr unit_sy
                                   short_name.c_str());
   }
 
+  StartCountInfo result;
+
   // Resize output vectors:
-  start.resize(ndims);
-  count.resize(ndims);
-  imap.resize(ndims);
+  result.start.resize(ndims);
+  result.count.resize(ndims);
+  result.imap.resize(ndims);
 
   // Assemble start, count and imap:
   for (unsigned int j = 0; j < ndims; j++) {
@@ -169,28 +176,30 @@ static void compute_start_and_count(const File &file, units::System::Ptr unit_sy
 
     switch (dimtype) {
     case T_AXIS:
-      start[j] = start_in[LocalInterpCtx::T];
-      count[j] = count_in[LocalInterpCtx::T];
-      imap[j]  = x_count * y_count * z_count;
+      result.start[j] = start_in[LocalInterpCtx::T];
+      result.count[j] = count_in[LocalInterpCtx::T];
+      result.imap[j]  = x_count * y_count * z_count;
       break;
     case Y_AXIS:
-      start[j] = y_start;
-      count[j] = y_count;
-      imap[j]  = x_count * z_count;
+      result.start[j] = y_start;
+      result.count[j] = y_count;
+      result.imap[j]  = x_count * z_count;
       break;
     case X_AXIS:
-      start[j] = x_start;
-      count[j] = x_count;
-      imap[j]  = z_count;
+      result.start[j] = x_start;
+      result.count[j] = x_count;
+      result.imap[j]  = z_count;
       break;
     default:
     case Z_AXIS:
-      start[j] = z_start;
-      count[j] = z_count;
-      imap[j]  = 1;
+      result.start[j] = z_start;
+      result.count[j] = z_count;
+      result.imap[j]  = 1;
       break;
     }
   }
+
+  return result;
 }
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
@@ -390,18 +399,16 @@ static bool use_transposed_io(const File &file, units::System::Ptr unit_system,
 static void read_distributed_array(const File &file, const Grid &grid, const std::string &var_name,
                                    unsigned int z_count, unsigned int t_start, double *output) {
   try {
-    std::vector<unsigned int> start, count, imap;
     int t_count = 1;
-    compute_start_and_count(file, grid.ctx()->unit_system(), var_name,
-                            {(int)t_start, grid.xs(), grid.ys(), 0},
-                            {t_count, grid.xm(), grid.ym(), (int)z_count},
-                            start, count, imap);
+    auto sc     = compute_start_and_count(file, grid.ctx()->unit_system(), var_name,
+                                          { (int)t_start, grid.xs(), grid.ys(), 0 },
+                                          { t_count, grid.xm(), grid.ym(), (int)z_count });
 
     bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), var_name);
     if (transposed_io) {
-      file.read_variable_transposed(var_name, start, count, imap, output);
+      file.read_variable_transposed(var_name, sc.start, sc.count, sc.imap, output);
     } else {
-      file.read_variable(var_name, start, count, output);
+      file.read_variable(var_name, sc.start, sc.count, output);
     }
 
   } catch (RuntimeError &e) {
@@ -422,7 +429,7 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
  * @param[in] interpolation_type interpolation type
  * @param[out] output resulting interpolated field
  */
-static void regrid_vec(const File &file, const Grid &grid, const std::string &variable_name,
+static void regrid_vec(const File &file, const grid::InputGridInfo &input_grid, const Grid &grid,
                        const std::vector<double> &zlevels_out, unsigned int t_start,
                        bool fill_missing, double default_value,
                        InterpolationType interpolation_type, double *output) {
@@ -432,23 +439,22 @@ static void regrid_vec(const File &file, const Grid &grid, const std::string &va
   try {
     auto unit_system = grid.ctx()->unit_system();
 
-    grid::InputGridInfo input_grid(file, variable_name, unit_system, grid.registration());
+    auto variable_name = input_grid.variable_name;
+
     LocalInterpCtx lic(input_grid, grid, zlevels_out, interpolation_type);
 
     std::vector<double> buffer(lic.buffer_size());
 
-    std::vector<unsigned int> start, count, imap;
-    lic.start[LocalInterpCtx::T] = t_start;
+    lic.start[LocalInterpCtx::T] = (int)t_start;
     lic.count[LocalInterpCtx::T] = 1;
-    compute_start_and_count(file, unit_system, variable_name, lic.start, lic.count, start, count,
-                            imap);
+    auto sc = compute_start_and_count(file, unit_system, variable_name, lic.start, lic.count);
 
     bool transposed_io = use_transposed_io(file, unit_system, variable_name);
     profiling.begin("io.regridding.read");
     if (transposed_io) {
-      file.read_variable_transposed(variable_name, start, count, imap, buffer.data());
+      file.read_variable_transposed(variable_name, sc.start, sc.count, sc.imap, buffer.data());
     } else {
-      file.read_variable(variable_name, start, count, buffer.data());
+      file.read_variable(variable_name, sc.start, sc.count, buffer.data());
     }
     profiling.end("io.regridding.read");
 
@@ -483,7 +489,7 @@ static void regrid_vec(const File &file, const Grid &grid, const std::string &va
     profiling.end("io.regridding.interpolate");
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
-                  variable_name.c_str(), file.filename().c_str());
+                  input_grid.variable_name.c_str(), file.filename().c_str());
     throw;
   }
 }
@@ -830,75 +836,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid
   // Find the variable
   auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-  if (var.exists) { // the variable was found successfully
-
-    {
-      grid::InputGridInfo input_grid(file, var.name, sys, grid.registration());
-
-      check_input_grid(input_grid);
-
-      if (not allow_extrapolation) {
-        check_grid_overlap(input_grid, grid, levels);
-      }
-    }
-
-    bool fill_missing = false;
-    if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
-      fill_missing = true;
-      log.message(
-          2,
-          "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
-          default_value, variable.get_string("units").c_str(), variable.get_name().c_str(),
-          file.filename().c_str());
-    }
-
-    regrid_vec(file, grid, var.name, levels, t_start, fill_missing, default_value,
-               interpolation_type, output);
-
-    // Now we need to get the units string from the file and convert
-    // the units, because check_range and report_range expect data to
-    // be in PISM (MKS) units.
-
-    std::string input_units    = file.read_text_attribute(var.name, "units");
-    std::string internal_units = variable["units"];
-
-    if (input_units.empty() and not internal_units.empty()) {
-      log.message(2,
-                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                  "              Assuming that it is in '%s'.\n",
-                  variable.get_name().c_str(), variable.get_string("long_name").c_str(),
-                  internal_units.c_str());
-      input_units = internal_units;
-    }
-
-    // Convert data:
-    units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
-
-    // Check the range and report it if necessary.
-    {
-      read_valid_range(file, var.name, variable);
-
-      auto range = compute_range(grid.com, output, data_size);
-      auto min = range[0];
-      auto max = range[1];
-
-      if ((not std::isfinite(min)) or (not std::isfinite(max))) {
-        throw RuntimeError::formatted(
-            PISM_ERROR_LOCATION,
-            "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
-            variable.get_name().c_str(), variable.get_string("long_name").c_str());
-      }
-
-      // Check the range and warn the user if needed:
-      variable.check_range(file.filename(), min, max);
-      if (report_range) {
-        // We can report the success, and the range now:
-        log.message(2, "  FOUND ");
-
-        variable.report_range(log, min, max, var.found_using_standard_name);
-      }
-    }
-  } else { // couldn't find the variable
+  if (not var.exists) { // couldn't find the variable
     if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
       // if it's critical, print an error message and stop
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -920,7 +858,71 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid
     for (size_t k = 0; k < data_size; ++k) {
       output[k] = default_value;
     }
-  } // end of if (exists)
+
+    return;
+  }
+
+  // the variable was found successfully
+  grid::InputGridInfo input_grid(file, var.name, sys, grid.registration());
+
+  check_input_grid(input_grid);
+
+  if (not allow_extrapolation) {
+    check_grid_overlap(input_grid, grid, levels);
+  }
+
+  bool fill_missing = false;
+  if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
+    fill_missing = true;
+    log.message(
+        2, "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
+        default_value, variable.get_string("units").c_str(), variable.get_name().c_str(),
+        file.filename().c_str());
+  }
+
+  regrid_vec(file, input_grid, grid, levels, t_start, fill_missing, default_value,
+             interpolation_type, output);
+
+  // Now we need to get the units string from the file and convert
+  // the units, because check_range and report_range expect data to
+  // be in PISM (MKS) units.
+
+  std::string input_units    = file.read_text_attribute(var.name, "units");
+  std::string internal_units = variable["units"];
+
+  if (input_units.empty() and not internal_units.empty()) {
+    log.message(2,
+                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                "              Assuming that it is in '%s'.\n",
+                variable.get_name().c_str(), variable.get_string("long_name").c_str(),
+                internal_units.c_str());
+    input_units = internal_units;
+  }
+
+  // Convert data:
+  units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
+
+  // Check the range and report it if necessary.
+  {
+    read_valid_range(file, var.name, variable);
+
+    auto range = compute_range(grid.com, output, data_size);
+    auto min   = range[0];
+    auto max   = range[1];
+
+    if ((not std::isfinite(min)) or (not std::isfinite(max))) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
+          variable.get_name().c_str(), variable.get_string("long_name").c_str());
+    }
+
+    // Check the range and warn the user if needed:
+    variable.check_range(file.filename(), min, max);
+    if (report_range) {
+      variable.report_range(log, min, max, var.found_using_standard_name);
+    }
+  }
 }
 
 

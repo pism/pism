@@ -1047,6 +1047,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
     reset();
 
     filename = file.filename();
+    variable_name = variable;
 
     // try "variable" as the standard_name first, then as the short name:
     auto var = file.find_variable(variable, variable);
@@ -1062,6 +1063,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
     for (const auto &dimension_name : dimensions) {
 
       AxisType dimtype = file.dimension_type(dimension_name, unit_system);
+      this->dimension_types[dimension_name] = dimtype;
 
       switch (dimtype) {
       case X_AXIS: {
@@ -1095,6 +1097,9 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       case T_AXIS: {
         // ignore the second, third, etc dimension interpreted as "time"
         if (time_was_set) {
+          // override the dimension type: it is not "time" in the sense of "record
+          // dimension"
+          this->dimension_types[dimension_name] = UNKNOWN_AXIS;
           continue;
         }
         time_was_set = true;
