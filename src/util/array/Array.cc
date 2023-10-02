@@ -752,13 +752,7 @@ void Array::read(const std::string &filename, unsigned int time) {
 
 void Array::regrid(const std::string &filename, io::RegriddingFlag flag, double default_value) {
   File file(m_impl->grid->com, filename, io::PISM_GUESS, io::PISM_READONLY);
-
-  try {
-    this->regrid(file, flag, default_value);
-  } catch (RuntimeError &e) {
-    e.add_context("regridding '%s' from '%s'", this->get_name().c_str(), filename.c_str());
-    throw;
-  }
+  this->regrid(file, flag, default_value);
 }
 
 /** Read a field from a file, interpolating onto the current grid.
