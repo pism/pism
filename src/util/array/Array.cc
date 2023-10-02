@@ -398,29 +398,6 @@ void Array::regrid_impl(const File &file, io::RegriddingFlag flag, double defaul
 
   bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
 
-  if (ndof() == 1) {
-    auto var = metadata(0);
-    unsigned int t_length = file.nrecords(var.get_name(), var["standard_name"], var.unit_system());
-    unsigned int t_start  = t_length - 1;
-
-    if (m_impl->ghosted) {
-      petsc::TemporaryGlobalVec tmp(dm());
-      petsc::VecArray tmp_array(tmp);
-
-      io::regrid_spatial_variable(var, *grid(), file, t_start, flag, m_impl->report_range,
-                                  allow_extrapolation, default_value, m_impl->interpolation_type,
-                                  tmp_array.get());
-
-      global_to_local(*dm(), tmp, vec());
-    } else {
-      petsc::VecArray v_array(vec());
-      io::regrid_spatial_variable(var, *grid(), file, t_start, flag, m_impl->report_range,
-                                  allow_extrapolation, default_value, m_impl->interpolation_type,
-                                  v_array.get());
-    }
-    return;
-  }
-
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
   auto da2 = grid()->get_dm(1, 0);

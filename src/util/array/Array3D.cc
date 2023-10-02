@@ -23,11 +23,14 @@
 
 #include "pism/util/array/Array3D.hh"
 
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/array/Array_impl.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 namespace array {
@@ -245,6 +248,31 @@ std::shared_ptr<Array3D> Array3D::duplicate() const {
   result->metadata() = this->metadata();
 
   return result;
+}
+
+void Array3D::regrid_impl(const File &file, io::RegriddingFlag flag, double default_value) {
+
+  bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
+
+  auto var              = metadata(0);
+  unsigned int t_length = file.nrecords(var.get_name(), var["standard_name"], var.unit_system());
+  unsigned int t_start  = t_length - 1;
+
+  if (m_impl->ghosted) {
+    petsc::TemporaryGlobalVec tmp(dm());
+    petsc::VecArray tmp_array(tmp);
+
+    io::regrid_spatial_variable(var, *grid(), file, t_start, flag, m_impl->report_range,
+                                allow_extrapolation, default_value, m_impl->interpolation_type,
+                                tmp_array.get());
+
+    global_to_local(*dm(), tmp, vec());
+  } else {
+    petsc::VecArray v_array(vec());
+    io::regrid_spatial_variable(var, *grid(), file, t_start, flag, m_impl->report_range,
+                                allow_extrapolation, default_value, m_impl->interpolation_type,
+                                v_array.get());
+  }
 }
 
 } // end of namespace array

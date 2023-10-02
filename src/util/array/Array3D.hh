@@ -44,6 +44,8 @@ public:
 
   std::shared_ptr<Array3D> duplicate() const;
 
+  void regrid_impl(const File &file, io::RegriddingFlag flag, double default_value);
+
   void set_column(int i, int j, double c);
   void set_column(int i, int j, const double *input);
   double* get_column(int i, int j);
