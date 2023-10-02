@@ -19,6 +19,7 @@
 #ifndef __lic_hh
 #define __lic_hh
 
+#include <array>
 #include <vector>
 #include <memory>
 
@@ -55,10 +56,12 @@ public:
   LocalInterpCtx(const grid::InputGridInfo &input, const Grid &grid,
                  const std::vector<double> &z_output, InterpolationType type);
 
-  size_t buffer_size() const;
+  int buffer_size() const;
+
+  enum Dim : int {T = 0, X = 1, Y = 2, Z = 3};
 
   // Indices in netCDF file.
-  unsigned int start[4], count[4];
+  std::array<int, 4> start, count;
   // indexes and coefficients for 1D linear interpolation
   std::shared_ptr<Interpolation> x, y, z;
 };

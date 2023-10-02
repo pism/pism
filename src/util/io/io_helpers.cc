@@ -64,7 +64,8 @@ static void regrid(const Grid &grid, const std::vector<double> &zlevels_out,
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
-  const int X = 1, Z = 3; // indices, just for clarity
+  const int X = LocalInterpCtx::X,
+            Z = LocalInterpCtx::Z; // indices, just for clarity
 
   unsigned int nlevels = zlevels_out.size();
 
@@ -133,15 +134,20 @@ static void regrid(const Grid &grid, const std::vector<double> &zlevels_out,
 }
 
 static void compute_start_and_count(const File &file, units::System::Ptr unit_system,
-                                    const std::string &short_name, unsigned int t_start,
-                                    unsigned int t_count, unsigned int x_start,
-                                    unsigned int x_count, unsigned int y_start,
-                                    unsigned int y_count, unsigned int z_start,
-                                    unsigned int z_count, std::vector<unsigned int> &start,
+                                    const std::string &short_name, std::array<int, 4> start_in,
+                                    std::array<int, 4> count_in, std::vector<unsigned int> &start,
                                     std::vector<unsigned int> &count,
                                     std::vector<unsigned int> &imap) {
+
+  auto x_start = start_in[LocalInterpCtx::X];
+  auto x_count = count_in[LocalInterpCtx::X];
+  auto y_start = start_in[LocalInterpCtx::Y];
+  auto y_count = count_in[LocalInterpCtx::Y];
+  auto z_start = start_in[LocalInterpCtx::Z];
+  auto z_count = count_in[LocalInterpCtx::Z];
+
   std::vector<std::string> dims = file.dimensions(short_name);
-  unsigned int ndims            = dims.size();
+  auto ndims                    = dims.size();
 
   assert(ndims > 0);
   if (ndims == 0) {
@@ -163,8 +169,8 @@ static void compute_start_and_count(const File &file, units::System::Ptr unit_sy
 
     switch (dimtype) {
     case T_AXIS:
-      start[j] = t_start;
-      count[j] = t_count;
+      start[j] = start_in[LocalInterpCtx::T];
+      count[j] = count_in[LocalInterpCtx::T];
       imap[j]  = x_count * y_count * z_count;
       break;
     case Y_AXIS:
@@ -385,9 +391,11 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
                                    unsigned int z_count, unsigned int t_start, double *output) {
   try {
     std::vector<unsigned int> start, count, imap;
-    const unsigned int t_count = 1;
-    compute_start_and_count(file, grid.ctx()->unit_system(), var_name, t_start, t_count, grid.xs(),
-                            grid.xm(), grid.ys(), grid.ym(), 0, z_count, start, count, imap);
+    int t_count = 1;
+    compute_start_and_count(file, grid.ctx()->unit_system(), var_name,
+                            {(int)t_start, grid.xs(), grid.ys(), 0},
+                            {t_count, grid.xm(), grid.ym(), (int)z_count},
+                            start, count, imap);
 
     bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), var_name);
     if (transposed_io) {
@@ -418,23 +426,24 @@ static void regrid_vec(const File &file, const Grid &grid, const std::string &va
                        const std::vector<double> &zlevels_out, unsigned int t_start,
                        bool fill_missing, double default_value,
                        InterpolationType interpolation_type, double *output) {
-  const int X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   const Profiling &profiling = grid.ctx()->profiling();
 
   try {
-    grid::InputGridInfo input_grid(file, variable_name, grid.ctx()->unit_system(), grid.registration());
+    auto unit_system = grid.ctx()->unit_system();
+
+    grid::InputGridInfo input_grid(file, variable_name, unit_system, grid.registration());
     LocalInterpCtx lic(input_grid, grid, zlevels_out, interpolation_type);
 
     std::vector<double> buffer(lic.buffer_size());
 
-    const unsigned int t_count = 1;
     std::vector<unsigned int> start, count, imap;
-    compute_start_and_count(file, grid.ctx()->unit_system(), variable_name, t_start, t_count,
-                            lic.start[X], lic.count[X], lic.start[Y], lic.count[Y], lic.start[Z],
-                            lic.count[Z], start, count, imap);
+    lic.start[LocalInterpCtx::T] = t_start;
+    lic.count[LocalInterpCtx::T] = 1;
+    compute_start_and_count(file, unit_system, variable_name, lic.start, lic.count, start, count,
+                            imap);
 
-    bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), variable_name);
+    bool transposed_io = use_transposed_io(file, unit_system, variable_name);
     profiling.begin("io.regridding.read");
     if (transposed_io) {
       file.read_variable_transposed(variable_name, start, count, imap, buffer.data());

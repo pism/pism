@@ -49,12 +49,12 @@ namespace pism {
  */
 static void subset_start_and_count(const std::vector<double> &x,
                                    double subset_x_min, double subset_x_max,
-                                   unsigned int &x_start, unsigned int &x_count) {
-  size_t x_size = x.size();
+                                   int &x_start, int &x_count) {
+  auto x_size = (int)x.size();
 
-  x_start = gsl_interp_bsearch(x.data(), subset_x_min, 0, x_size - 1);
+  x_start = (int)gsl_interp_bsearch(x.data(), subset_x_min, 0, x_size - 1);
 
-  size_t x_end = gsl_interp_bsearch(x.data(), subset_x_max, 0, x_size - 1) + 1;
+  auto x_end = (int)gsl_interp_bsearch(x.data(), subset_x_max, 0, x_size - 1) + 1;
 
   x_end = std::min(x_size - 1, x_end);
 
@@ -82,7 +82,6 @@ static void subset_start_and_count(const std::vector<double> &x,
 LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &grid,
                                const std::vector<double> &z_output,
                                InterpolationType type) {
-  const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   grid.ctx()->log()->message(4, "\nRegridding file grid info:\n");
   input.report(*grid.ctx()->log(), 4, grid.ctx()->unit_system());
@@ -119,9 +118,9 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &gri
   }
 }
 
-size_t LocalInterpCtx::buffer_size() const {
+int LocalInterpCtx::buffer_size() const {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
-  return count[X] * count[Y] * std::max(count[Z], 1U);
+  return count[X] * count[Y] * std::max(count[Z], 1);
 }
 
 
