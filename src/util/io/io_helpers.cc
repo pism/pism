@@ -59,15 +59,15 @@ namespace io {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-static void regrid(const Grid &grid, const std::vector<double> &zlevels_out,
-                   const LocalInterpCtx &lic, double const *input_array, double *output_array) {
+static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *input_array,
+                   double *output_array) {
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
   const int X = LocalInterpCtx::X,
             Z = LocalInterpCtx::Z; // indices, just for clarity
 
-  unsigned int nlevels = zlevels_out.size();
+  unsigned int nlevels = lic.z->n_output();
 
   // array sizes for mapping from logical to "flat" indices
   int x_count = lic.count[X], z_count = lic.count[Z];
@@ -429,23 +429,18 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
  * @param[in] interpolation_type interpolation type
  * @param[out] output resulting interpolated field
  */
-static void regrid_vec(const File &file, const grid::InputGridInfo &input_grid, const Grid &grid,
-                       const std::vector<double> &zlevels_out, unsigned int t_start,
-                       InterpolationType interpolation_type, double *output) {
+static void regrid_vec(const File &file, const grid::InputGridInfo &input_grid,
+                       const Grid &internal_grid, const LocalInterpCtx &lic, double *output) {
 
-  const Profiling &profiling = grid.ctx()->profiling();
+  const Profiling &profiling = internal_grid.ctx()->profiling();
 
   try {
-    auto unit_system = grid.ctx()->unit_system();
+    auto unit_system = internal_grid.ctx()->unit_system();
 
     auto variable_name = input_grid.variable_name;
 
-    LocalInterpCtx lic(input_grid, grid, zlevels_out, interpolation_type);
-
     std::vector<double> buffer(lic.buffer_size());
 
-    lic.start[LocalInterpCtx::T] = (int)t_start;
-    lic.count[LocalInterpCtx::T] = 1;
     auto sc = compute_start_and_count(file, unit_system, variable_name, lic.start, lic.count);
 
     bool transposed_io = use_transposed_io(file, unit_system, variable_name);
@@ -457,15 +452,14 @@ static void regrid_vec(const File &file, const grid::InputGridInfo &input_grid, 
     }
     profiling.end("io.regridding.read");
 
-    // Replace missing values if the _FillValue attribute is present,
-    // and if we have missing values to replace.
+    // Stop with an error message if some values match the _FillValue attribute:
     {
       auto attribute = file.read_double_attribute(variable_name, "_FillValue");
       if (attribute.size() == 1) {
         double fill_value = attribute[0], epsilon = 1e-12;
 
-        for (size_t i = 0; i < buffer.size(); ++i) {
-          if (fabs(buffer[i] - fill_value) < epsilon) {
+        for (const auto &value : buffer) {
+          if (fabs(value - fill_value) < epsilon) {
             throw RuntimeError::formatted(
                 PISM_ERROR_LOCATION, "Some values of '%s' in '%s' match the _FillValue attribute.",
                 variable_name.c_str(), file.filename().c_str());
@@ -476,7 +470,7 @@ static void regrid_vec(const File &file, const grid::InputGridInfo &input_grid, 
 
     // interpolate
     profiling.begin("io.regridding.interpolate");
-    regrid(grid, zlevels_out, lic, buffer.data(), output);
+    regrid(internal_grid, lic, buffer.data(), output);
     profiling.end("io.regridding.interpolate");
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
@@ -810,8 +804,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              InterpolationType interpolation_type, double *output) {
   const Logger &log = *internal_grid.ctx()->log();
 
-  auto sys                          = variable.unit_system();
-  const auto &internal_z_levels     = variable.levels();
+  auto sys                      = variable.unit_system();
+  const auto &internal_z_levels = variable.levels();
   const size_t data_size = internal_grid.xm() * internal_grid.ym() * internal_z_levels.size();
 
   check_input_grid(input_grid);
@@ -820,7 +814,11 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     check_grid_overlap(input_grid, internal_grid, internal_z_levels);
   }
 
-  regrid_vec(file, input_grid, internal_grid, internal_z_levels, t_start, interpolation_type, output);
+  LocalInterpCtx lic(input_grid, internal_grid, internal_z_levels, interpolation_type);
+  lic.start[LocalInterpCtx::T] = (int)t_start;
+  lic.count[LocalInterpCtx::T] = 1;
+
+  regrid_vec(file, input_grid, internal_grid, lic, output);
 
   // Get the units string from the file and convert the units:
   {
