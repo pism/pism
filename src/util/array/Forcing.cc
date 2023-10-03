@@ -332,10 +332,15 @@ void Forcing::init_periodic_data(const File &file) {
 
   // Read all the records and store them. The index offset leaves room for an extra record
   // needed to simplify interpolation
+  auto variable = m_impl->metadata[0];
+  auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
+
+  grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
+
   for (unsigned int j = 0; j < n_records; ++j) {
     {
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(m_impl->metadata[0], *grid(), file, j,
+      io::regrid_spatial_variable(variable, input_grid, *grid(), file, j,
                                   allow_extrapolation,
                                   m_impl->interpolation_type, tmp_array.get());
     }
@@ -531,24 +536,25 @@ void Forcing::update(unsigned int start) {
   const bool allow_extrapolation =
       m_impl->grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
-  for (unsigned int j = 0; j < missing; ++j) {
-    try {
+  auto variable = m_impl->metadata[0];
+
+  try {
+    auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
+    grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
+
+    for (unsigned int j = 0; j < missing; ++j) {
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(m_impl->metadata[0], *m_impl->grid, file, start + j,
-                                  allow_extrapolation,
-                                  m_impl->interpolation_type, tmp_array.get());
-    } catch (RuntimeError &e) {
-      e.add_context("regridding '%s' from '%s'",
-                    this->get_name().c_str(), m_data->filename.c_str());
-      throw;
+      io::regrid_spatial_variable(variable, input_grid, *m_impl->grid, file, start + j,
+                                  allow_extrapolation, m_impl->interpolation_type, tmp_array.get());
+
+      log->message(5, " %s: reading entry #%02d, year %s...\n", m_impl->name.c_str(), start + j,
+                   t->date(m_data->time[start + j]).c_str());
+
+      set_record(kept + j);
     }
-
-    log->message(5, " %s: reading entry #%02d, year %s...\n",
-                 m_impl->name.c_str(),
-                 start + j,
-                 t->date(m_data->time[start + j]).c_str());
-
-    set_record(kept + j);
+  } catch (RuntimeError &e) {
+    e.add_context("regridding '%s' from '%s'", this->get_name().c_str(), m_data->filename.c_str());
+    throw;
   }
 }
 

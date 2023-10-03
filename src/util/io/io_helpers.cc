@@ -804,21 +804,15 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
   - uses the last record in the file
 */
 
-void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &internal_grid,
-                             const File &file, unsigned int t_start,
-                             bool allow_extrapolation, InterpolationType interpolation_type,
-                             double *output) {
+void regrid_spatial_variable(SpatialVariableMetadata &variable,
+                             const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+                             const File &file, unsigned int t_start, bool allow_extrapolation,
+                             InterpolationType interpolation_type, double *output) {
   const Logger &log = *internal_grid.ctx()->log();
 
   auto sys                          = variable.unit_system();
   const auto &internal_z_levels     = variable.levels();
   const size_t data_size = internal_grid.xm() * internal_grid.ym() * internal_z_levels.size();
-
-  // Find the variable
-  auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
-
-  // the variable was found successfully
-  grid::InputGridInfo input_grid(file, var.name, sys, internal_grid.registration());
 
   check_input_grid(input_grid);
 
@@ -832,7 +826,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &inte
   // the units, because check_range and report_range expect data to
   // be in PISM (MKS) units.
 
-  std::string input_units    = file.read_text_attribute(var.name, "units");
+  std::string input_units    = file.read_text_attribute(input_grid.variable_name, "units");
   std::string internal_units = variable["units"];
 
   if (input_units.empty() and not internal_units.empty()) {
@@ -847,7 +841,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &inte
   // Convert data:
   units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
 
-  read_valid_range(file, var.name, variable);
+  read_valid_range(file, input_grid.variable_name, variable);
 }
 
 

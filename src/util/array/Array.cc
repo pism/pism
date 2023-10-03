@@ -458,8 +458,10 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
           file.nrecords(variable.get_name(), variable["standard_name"], variable.unit_system());
       unsigned int t_start = t_length - 1;
 
+      grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
+
       petsc::VecArray tmp_array(tmp);
-      io::regrid_spatial_variable(metadata(j), *grid(), file, t_start,
+      io::regrid_spatial_variable(metadata(j), input_grid, *grid(), file, t_start,
                                   allow_extrapolation,
                                   m_impl->interpolation_type, tmp_array.get());
 

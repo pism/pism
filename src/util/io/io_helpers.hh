@@ -38,6 +38,10 @@ class Logger;
 class Context;
 class Config;
 
+namespace grid {
+class InputGridInfo;
+}
+
 enum InterpolationType : int;
 
 namespace io {
@@ -45,6 +49,7 @@ namespace io {
 enum Type : int;
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
+                             const grid::InputGridInfo &input_grid,
                              const Grid& grid, const File &file,
                              unsigned int t_start,
                              bool allow_extrapolation,
