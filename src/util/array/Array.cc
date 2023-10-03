@@ -460,7 +460,7 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
 
       petsc::VecArray tmp_array(tmp);
       io::regrid_spatial_variable(metadata(j), *grid(), file, t_start,
-                                  m_impl->report_range, allow_extrapolation,
+                                  allow_extrapolation,
                                   m_impl->interpolation_type, tmp_array.get());
 
       // Check the range and report it if necessary.

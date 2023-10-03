@@ -47,7 +47,6 @@ enum Type : int;
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const Grid& grid, const File &file,
                              unsigned int t_start,
-                             bool report_range,
                              bool allow_extrapolation,
                              InterpolationType interpolation_type,
                              double *output);

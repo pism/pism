@@ -804,29 +804,29 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
   - uses the last record in the file
 */
 
-void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid, const File &file,
-                             unsigned int t_start, bool report_range,
+void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &internal_grid,
+                             const File &file, unsigned int t_start,
                              bool allow_extrapolation, InterpolationType interpolation_type,
                              double *output) {
-  const Logger &log = *grid.ctx()->log();
+  const Logger &log = *internal_grid.ctx()->log();
 
-  auto sys               = variable.unit_system();
-  const auto &levels     = variable.levels();
-  const size_t data_size = grid.xm() * grid.ym() * levels.size();
+  auto sys                          = variable.unit_system();
+  const auto &internal_z_levels     = variable.levels();
+  const size_t data_size = internal_grid.xm() * internal_grid.ym() * internal_z_levels.size();
 
   // Find the variable
   auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
   // the variable was found successfully
-  grid::InputGridInfo input_grid(file, var.name, sys, grid.registration());
+  grid::InputGridInfo input_grid(file, var.name, sys, internal_grid.registration());
 
   check_input_grid(input_grid);
 
   if (not allow_extrapolation) {
-    check_grid_overlap(input_grid, grid, levels);
+    check_grid_overlap(input_grid, internal_grid, internal_z_levels);
   }
 
-  regrid_vec(file, input_grid, grid, levels, t_start, interpolation_type, output);
+  regrid_vec(file, input_grid, internal_grid, internal_z_levels, t_start, interpolation_type, output);
 
   // Now we need to get the units string from the file and convert
   // the units, because check_range and report_range expect data to
