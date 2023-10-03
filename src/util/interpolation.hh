@@ -93,6 +93,11 @@ public:
   int right(size_t j) const;
   double alpha(size_t j) const;
 
+  /*!
+   * Number of grid points in the output grid.
+   */
+  int n_output() const;
+
   //! Return interpolated values (on the output grid) given `input_values` on the input grid.
   /** This is used for testing. (Regular code calls left(), right(), and alpha().)
    */

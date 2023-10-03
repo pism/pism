@@ -148,6 +148,10 @@ double Interpolation::alpha(size_t j) const {
   return m_alpha[j];
 }
 
+int Interpolation::n_output() const {
+  return (int)m_alpha.size();
+}
+
 std::vector<double> Interpolation::interpolate(const std::vector<double> &input_values) const {
   std::vector<double> result(m_alpha.size());
 
