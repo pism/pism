@@ -22,14 +22,13 @@
 #include <algorithm>            // std::min
 #include <gsl/gsl_interp.h>
 
-#include "pism/util/io/File.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/Grid.hh"
 
-#include "pism/util/interpolation.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 
@@ -47,9 +46,8 @@ namespace pism {
  * @param[out] x_start starting index
  * @param[out] x_count number of elements required
  */
-static void subset_start_and_count(const std::vector<double> &x,
-                                   double subset_x_min, double subset_x_max,
-                                   int &x_start, int &x_count) {
+static void subset_start_and_count(const std::vector<double> &x, double subset_x_min,
+                                   double subset_x_max, int &x_start, int &x_count) {
   auto x_size = (int)x.size();
 
   x_start = (int)gsl_interp_bsearch(x.data(), subset_x_min, 0, x_size - 1);
@@ -79,47 +77,47 @@ static void subset_start_and_count(const std::vector<double> &x,
   Vecs into which NetCDF information will be interpolated) are owned by each
   processor.
 */
-LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &grid,
-                               const std::vector<double> &z_output,
-                               InterpolationType type) {
+LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+                               const std::vector<double> &z_internal, InterpolationType type) {
 
-  grid.ctx()->log()->message(4, "\nRegridding file grid info:\n");
-  input.report(*grid.ctx()->log(), 4, grid.ctx()->unit_system());
+  auto log = internal_grid.ctx()->log();
+
+  log->message(4, "\nRegridding file grid info:\n");
+  input_grid.report(*log, 4, internal_grid.ctx()->unit_system());
 
   // limits of the processor's part of the target computational domain
   const double
-    x_min_proc = grid.x(grid.xs()),
-    x_max_proc = grid.x(grid.xs() + grid.xm() - 1),
-    y_min_proc = grid.y(grid.ys()),
-    y_max_proc = grid.y(grid.ys() + grid.ym() - 1);
+    x_min_proc = internal_grid.x(internal_grid.xs()),
+    x_max_proc = internal_grid.x(internal_grid.xs() + internal_grid.xm() - 1),
+    y_min_proc = internal_grid.y(internal_grid.ys()),
+    y_max_proc = internal_grid.y(internal_grid.ys() + internal_grid.ym() - 1);
 
   // T
-  start[T] = input.t_len - 1;       // use the latest time.
+  start[T] = (int)input_grid.t_len - 1;       // use the latest time.
   count[T] = 1;                     // read only one record
 
   // X
-  subset_start_and_count(input.x, x_min_proc, x_max_proc, start[X], count[X]);
+  subset_start_and_count(input_grid.x, x_min_proc, x_max_proc, start[X], count[X]);
 
   // Y
-  subset_start_and_count(input.y, y_min_proc, y_max_proc, start[Y], count[Y]);
+  subset_start_and_count(input_grid.y, y_min_proc, y_max_proc, start[Y], count[Y]);
 
   // Z
   start[Z] = 0;                    // always start at the base
-  count[Z] = std::max((int)input.z.size(), 1); // read at least one level
+  count[Z] = std::max((int)input_grid.z.size(), 1); // read at least one level
 
   if (type == LINEAR or type == NEAREST) {
-    x.reset(new Interpolation(type, &input.x[start[X]], count[X], &grid.x()[grid.xs()], grid.xm()));
+    x.reset(new Interpolation(type, &input_grid.x[start[X]], count[X], &internal_grid.x()[internal_grid.xs()], internal_grid.xm()));
 
-    y.reset(new Interpolation(type, &input.y[start[Y]], count[Y], &grid.y()[grid.ys()], grid.ym()));
+    y.reset(new Interpolation(type, &input_grid.y[start[Y]], count[Y], &internal_grid.y()[internal_grid.ys()], internal_grid.ym()));
 
-    z.reset(new Interpolation(type, input.z, z_output));
+    z.reset(new Interpolation(type, input_grid.z, z_internal));
   } else {
     throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
   }
 }
 
 int LocalInterpCtx::buffer_size() const {
-  const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
   return count[X] * count[Y] * std::max(count[Z], 1);
 }
 

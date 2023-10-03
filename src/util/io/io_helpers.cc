@@ -822,24 +822,23 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
   regrid_vec(file, input_grid, internal_grid, internal_z_levels, t_start, interpolation_type, output);
 
-  // Now we need to get the units string from the file and convert
-  // the units, because check_range and report_range expect data to
-  // be in PISM (MKS) units.
+  // Get the units string from the file and convert the units:
+  {
+    std::string input_units    = file.read_text_attribute(input_grid.variable_name, "units");
+    std::string internal_units = variable["units"];
 
-  std::string input_units    = file.read_text_attribute(input_grid.variable_name, "units");
-  std::string internal_units = variable["units"];
+    if (input_units.empty() and not internal_units.empty()) {
+      log.message(2,
+                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                  "              Assuming that it is in '%s'.\n",
+                  variable.get_name().c_str(), variable.get_string("long_name").c_str(),
+                  internal_units.c_str());
+      input_units = internal_units;
+    }
 
-  if (input_units.empty() and not internal_units.empty()) {
-    log.message(2,
-                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                "              Assuming that it is in '%s'.\n",
-                variable.get_name().c_str(), variable.get_string("long_name").c_str(),
-                internal_units.c_str());
-    input_units = internal_units;
+    // Convert data:
+    units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
   }
-
-  // Convert data:
-  units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
 
   read_valid_range(file, input_grid.variable_name, variable);
 }
