@@ -25,6 +25,7 @@
 #include <mpi.h>
 
 #include "IO_Flags.hh"
+#include "LocalInterpCtx.hh"
 #include "pism/util/Units.hh"
 
 namespace pism {
@@ -44,16 +45,18 @@ class InputGridInfo;
 
 enum InterpolationType : int;
 
+class LocalInterpCtx;
+
 namespace io {
 
 enum Type : int;
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const grid::InputGridInfo &input_grid,
-                             const Grid& grid, const File &file,
-                             unsigned int t_start,
+                             const Grid& internal_grid,
+                             const LocalInterpCtx &lic,
+                             const File &file,
                              bool allow_extrapolation,
-                             InterpolationType interpolation_type,
                              double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &variable,

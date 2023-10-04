@@ -800,13 +800,9 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const grid::InputGridInfo &input_grid, const Grid &internal_grid,
-                             const File &file, unsigned int t_start, bool allow_extrapolation,
-                             InterpolationType interpolation_type, double *output) {
-  const Logger &log = *internal_grid.ctx()->log();
-
-  auto sys                      = variable.unit_system();
+                             const LocalInterpCtx &lic, const File &file, bool allow_extrapolation,
+                             double *output) {
   const auto &internal_z_levels = variable.levels();
-  const size_t data_size = internal_grid.xm() * internal_grid.ym() * internal_z_levels.size();
 
   check_input_grid(input_grid);
 
@@ -814,9 +810,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     check_grid_overlap(input_grid, internal_grid, internal_z_levels);
   }
 
-  LocalInterpCtx lic(input_grid, internal_grid, internal_z_levels, interpolation_type);
-  lic.start[T_AXIS] = (int)t_start;
-  lic.count[T_AXIS] = 1;
+  const size_t data_size = internal_grid.xm() * internal_grid.ym() * lic.z->n_output();
 
   regrid_vec(file, input_grid, internal_grid, lic, output);
 
@@ -826,6 +820,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     std::string internal_units = variable["units"];
 
     if (input_units.empty() and not internal_units.empty()) {
+      const Logger &log = *internal_grid.ctx()->log();
       log.message(2,
                   "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                   "              Assuming that it is in '%s'.\n",
@@ -835,7 +830,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     }
 
     // Convert data:
-    units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
+    units::Converter(variable.unit_system(), input_units, internal_units)
+        .convert_doubles(output, data_size);
   }
 
   read_valid_range(file, input_grid.variable_name, variable);

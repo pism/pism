@@ -269,10 +269,13 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
 
     grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
+    LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
+    lic.start[T_AXIS] = (int)t_start;
+    lic.count[T_AXIS] = 1;
+
     petsc::VecArray tmp_array(tmp);
-    io::regrid_spatial_variable(variable, input_grid, *grid(), file, t_start,
-                                allow_extrapolation,
-                                m_impl->interpolation_type, tmp_array.get());
+    io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, allow_extrapolation,
+                                tmp_array.get());
   }
 
   if (m_impl->ghosted) {

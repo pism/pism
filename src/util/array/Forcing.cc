@@ -337,12 +337,16 @@ void Forcing::init_periodic_data(const File &file) {
 
   grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
+  LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
+
   for (unsigned int j = 0; j < n_records; ++j) {
     {
+      lic.start[T_AXIS] = (int)j;
+      lic.count[T_AXIS] = 1;
+
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(variable, input_grid, *grid(), file, j,
-                                  allow_extrapolation,
-                                  m_impl->interpolation_type, tmp_array.get());
+      io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, allow_extrapolation,
+                                  tmp_array.get());
     }
 
     auto time = ctx->time();
@@ -542,10 +546,15 @@ void Forcing::update(unsigned int start) {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
     grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
+    LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
+
     for (unsigned int j = 0; j < missing; ++j) {
+      lic.start[T_AXIS] = (int)(start + j);
+      lic.count[T_AXIS] = 1;
+
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(variable, input_grid, *m_impl->grid, file, start + j,
-                                  allow_extrapolation, m_impl->interpolation_type, tmp_array.get());
+      io::regrid_spatial_variable(variable, input_grid, *m_impl->grid, lic, file,
+                                  allow_extrapolation, tmp_array.get());
 
       log->message(5, " %s: reading entry #%02d, year %s...\n", m_impl->name.c_str(), start + j,
                    t->date(m_data->time[start + j]).c_str());
