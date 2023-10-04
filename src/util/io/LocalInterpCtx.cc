@@ -21,6 +21,8 @@
 #include <cstdlib>
 #include <algorithm>            // std::min
 #include <gsl/gsl_interp.h>
+#include <memory>
+#include <vector>
 
 #include "IO_Flags.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
@@ -79,12 +81,25 @@ static void subset_start_and_count(const std::vector<double> &x, double subset_x
   processor.
 */
 LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
-                               const std::vector<double> &z_internal, InterpolationType type) {
+                               const std::vector<double> &z_internal, InterpolationType type)
+  : LocalInterpCtx(input_grid, internal_grid, type) {
 
-  auto log = internal_grid.ctx()->log();
+  // Z
+  start[Z_AXIS] = 0;                                     // always start at the base
+  count[Z_AXIS] = std::max((int)input_grid.z.size(), 1); // read at least one level
 
-  log->message(4, "\nRegridding file grid info:\n");
-  input_grid.report(*log, 4, internal_grid.ctx()->unit_system());
+  if (type == LINEAR or type == NEAREST) {
+    z.reset(new Interpolation(type, input_grid.z, z_internal));
+  } else {
+    throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
+  }
+}
+
+/*!
+ * The two-dimensional version of the interpolation context.
+ */
+LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+                               InterpolationType type) {
 
   // limits of the processor's part of the target computational domain
   const double x_min_proc = internal_grid.x(internal_grid.xs()),
@@ -103,21 +118,23 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid
   subset_start_and_count(input_grid.y, y_min_proc, y_max_proc, start[Y_AXIS], count[Y_AXIS]);
 
   // Z
-  start[Z_AXIS] = 0;                                     // always start at the base
-  count[Z_AXIS] = std::max((int)input_grid.z.size(), 1); // read at least one level
+  start[Z_AXIS] = 0;
+  count[Z_AXIS] = 1;
 
   if (type == LINEAR or type == NEAREST) {
-    x.reset(new Interpolation(type, &input_grid.x[start[X_AXIS]], count[X_AXIS],
-                              &internal_grid.x()[internal_grid.xs()], internal_grid.xm()));
+    x = std::make_shared<Interpolation>(type, &input_grid.x[start[X_AXIS]], count[X_AXIS],
+                                        &internal_grid.x()[internal_grid.xs()], internal_grid.xm());
 
-    y.reset(new Interpolation(type, &input_grid.y[start[Y_AXIS]], count[Y_AXIS],
-                              &internal_grid.y()[internal_grid.ys()], internal_grid.ym()));
+    y = std::make_shared<Interpolation>(type, &input_grid.y[start[Y_AXIS]], count[Y_AXIS],
+                                        &internal_grid.y()[internal_grid.ys()], internal_grid.ym());
 
-    z.reset(new Interpolation(type, input_grid.z, z_internal));
+    std::vector<double> zz = {0.0};
+    z = std::make_shared<Interpolation>(type, zz, zz);
   } else {
     throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
   }
 }
+
 
 int LocalInterpCtx::buffer_size() const {
   return count[X_AXIS] * count[Y_AXIS] * std::max(count[Z_AXIS], 1);

@@ -54,6 +54,8 @@ class InputGridInfo;
 class LocalInterpCtx {
 public:
   LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+                 InterpolationType type);
+  LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
                  const std::vector<double> &z_internal, InterpolationType type);
 
   int buffer_size() const;
