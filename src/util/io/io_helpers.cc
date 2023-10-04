@@ -64,8 +64,8 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
-  const int X = LocalInterpCtx::X,
-            Z = LocalInterpCtx::Z; // indices, just for clarity
+  const int X = X_AXIS,
+            Z = Z_AXIS; // indices, just for clarity
 
   unsigned int nlevels = lic.z->n_output();
 
@@ -144,12 +144,12 @@ static StartCountInfo compute_start_and_count(const File &file, units::System::P
                                               std::array<int, 4> start_in,
                                               std::array<int, 4> count_in) {
 
-  auto x_start = start_in[LocalInterpCtx::X];
-  auto x_count = count_in[LocalInterpCtx::X];
-  auto y_start = start_in[LocalInterpCtx::Y];
-  auto y_count = count_in[LocalInterpCtx::Y];
-  auto z_start = start_in[LocalInterpCtx::Z];
-  auto z_count = count_in[LocalInterpCtx::Z];
+  auto x_start = start_in[X_AXIS];
+  auto x_count = count_in[X_AXIS];
+  auto y_start = start_in[Y_AXIS];
+  auto y_count = count_in[Y_AXIS];
+  auto z_start = start_in[Z_AXIS];
+  auto z_count = count_in[Z_AXIS];
 
   std::vector<std::string> dims = file.dimensions(short_name);
   auto ndims                    = dims.size();
@@ -176,8 +176,8 @@ static StartCountInfo compute_start_and_count(const File &file, units::System::P
 
     switch (dimtype) {
     case T_AXIS:
-      result.start[j] = start_in[LocalInterpCtx::T];
-      result.count[j] = count_in[LocalInterpCtx::T];
+      result.start[j] = start_in[T_AXIS];
+      result.count[j] = count_in[T_AXIS];
       result.imap[j]  = x_count * y_count * z_count;
       break;
     case Y_AXIS:
@@ -815,8 +815,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
   }
 
   LocalInterpCtx lic(input_grid, internal_grid, internal_z_levels, interpolation_type);
-  lic.start[LocalInterpCtx::T] = (int)t_start;
-  lic.count[LocalInterpCtx::T] = 1;
+  lic.start[T_AXIS] = (int)t_start;
+  lic.count[T_AXIS] = 1;
 
   regrid_vec(file, input_grid, internal_grid, lic, output);
 

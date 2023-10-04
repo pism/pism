@@ -93,6 +93,9 @@ public:
 
   std::string filename;
 
+  /*!
+   * Variable name *found in the file*, which may not match the one expected by PISM.
+   */
   std::string variable_name;
 
   std::map<std::string, AxisType> dimension_types;

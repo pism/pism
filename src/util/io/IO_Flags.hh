@@ -20,7 +20,20 @@
 #ifndef PISM_IO_FLAGS_H
 #define PISM_IO_FLAGS_H
 
+#include <string>
+
 namespace pism {
+
+/*!
+ * Axis corresponding to dimensions (and coordinate variables) in a NetCDF file.
+ *
+ * These values are also used as indexes in `start` and `count` arrays -- this is why they
+ * have consecutive values starting from 0.
+ */
+enum AxisType : int { T_AXIS = 0, X_AXIS = 1, Y_AXIS = 2, Z_AXIS = 3, UNKNOWN_AXIS = 4 };
+
+AxisType axis_type_from_string(const std::string &input);
+
 namespace io {
 
 // I/O Flags used by File and NCFile. They are used in both interfaces,
@@ -72,6 +85,9 @@ enum Dim_Length : int { PISM_UNLIMITED = 0 };
 // "Fill" mode. Gets cast to "int", so it should match values used by NetCDF.
 enum Fill_Mode : int { PISM_FILL = 0, PISM_NOFILL = 0x100 };
 
+/*!
+ * Default value to use when a regridding variable is not found.
+ */
 class Default {
 public:
 

@@ -22,6 +22,7 @@
 #include <algorithm>            // std::min
 #include <gsl/gsl_interp.h>
 
+#include "IO_Flags.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/Grid.hh"
 
@@ -86,30 +87,31 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid
   input_grid.report(*log, 4, internal_grid.ctx()->unit_system());
 
   // limits of the processor's part of the target computational domain
-  const double
-    x_min_proc = internal_grid.x(internal_grid.xs()),
-    x_max_proc = internal_grid.x(internal_grid.xs() + internal_grid.xm() - 1),
-    y_min_proc = internal_grid.y(internal_grid.ys()),
-    y_max_proc = internal_grid.y(internal_grid.ys() + internal_grid.ym() - 1);
+  const double x_min_proc = internal_grid.x(internal_grid.xs()),
+               x_max_proc = internal_grid.x(internal_grid.xs() + internal_grid.xm() - 1),
+               y_min_proc = internal_grid.y(internal_grid.ys()),
+               y_max_proc = internal_grid.y(internal_grid.ys() + internal_grid.ym() - 1);
 
   // T
-  start[T] = (int)input_grid.t_len - 1;       // use the latest time.
-  count[T] = 1;                     // read only one record
+  start[T_AXIS] = (int)input_grid.t_len - 1; // use the latest time.
+  count[T_AXIS] = 1;                         // read only one record
 
   // X
-  subset_start_and_count(input_grid.x, x_min_proc, x_max_proc, start[X], count[X]);
+  subset_start_and_count(input_grid.x, x_min_proc, x_max_proc, start[X_AXIS], count[X_AXIS]);
 
   // Y
-  subset_start_and_count(input_grid.y, y_min_proc, y_max_proc, start[Y], count[Y]);
+  subset_start_and_count(input_grid.y, y_min_proc, y_max_proc, start[Y_AXIS], count[Y_AXIS]);
 
   // Z
-  start[Z] = 0;                    // always start at the base
-  count[Z] = std::max((int)input_grid.z.size(), 1); // read at least one level
+  start[Z_AXIS] = 0;                                     // always start at the base
+  count[Z_AXIS] = std::max((int)input_grid.z.size(), 1); // read at least one level
 
   if (type == LINEAR or type == NEAREST) {
-    x.reset(new Interpolation(type, &input_grid.x[start[X]], count[X], &internal_grid.x()[internal_grid.xs()], internal_grid.xm()));
+    x.reset(new Interpolation(type, &input_grid.x[start[X_AXIS]], count[X_AXIS],
+                              &internal_grid.x()[internal_grid.xs()], internal_grid.xm()));
 
-    y.reset(new Interpolation(type, &input_grid.y[start[Y]], count[Y], &internal_grid.y()[internal_grid.ys()], internal_grid.ym()));
+    y.reset(new Interpolation(type, &input_grid.y[start[Y_AXIS]], count[Y_AXIS],
+                              &internal_grid.y()[internal_grid.ys()], internal_grid.ym()));
 
     z.reset(new Interpolation(type, input_grid.z, z_internal));
   } else {
@@ -118,7 +120,7 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid
 }
 
 int LocalInterpCtx::buffer_size() const {
-  return count[X] * count[Y] * std::max(count[Z], 1);
+  return count[X_AXIS] * count[Y_AXIS] * std::max(count[Z_AXIS], 1);
 }
 
 

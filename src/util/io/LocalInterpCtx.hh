@@ -58,8 +58,6 @@ public:
 
   int buffer_size() const;
 
-  enum Dim : int {T = 0, X = 1, Y = 2, Z = 3};
-
   // Indices in netCDF file.
   std::array<int, 4> start, count;
   // indexes and coefficients for 1D linear interpolation
