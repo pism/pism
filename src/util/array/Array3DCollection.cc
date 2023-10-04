@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <memory>
+#include <vector>
 
 #include "pism/util/array/Array3DCollection.hh"
 
@@ -30,6 +31,8 @@
 #include "pism/util/Context.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 namespace array {
@@ -99,27 +102,49 @@ std::shared_ptr<Array3DCollection> Array3DCollection::duplicate() const {
 
 void Array3DCollection::regrid_impl(const File &file, io::Default default_value) {
 
-  bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
+  auto log = grid()->ctx()->log();
 
-  if (ndof() == 1) {
-    if (m_impl->ghosted) {
-      petsc::TemporaryGlobalVec tmp(dm());
-      petsc::VecArray tmp_array(tmp);
+  auto variable = metadata(0);
 
-      // io::regrid_spatial_variable(metadata(0), *grid(), file, flag,
-      //                             m_impl->report_range, allow_extrapolation,
-      //                             default_value, m_impl->interpolation_type,
-      //                             tmp_array.get());
+  auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-      global_to_local(*dm(), tmp, vec());
-    } else {
-      petsc::VecArray v_array(vec());
-      // io::regrid_spatial_variable(metadata(0), *grid(),  file, flag,
-      //                             m_impl->report_range, allow_extrapolation,
-      //                             default_value, m_impl->interpolation_type,
-      //                             v_array.get());
+  petsc::TemporaryGlobalVec tmp(dm());
+
+  if (not V.exists) {
+    set_default_value_or_stop(file.filename(), variable, default_value, *log, tmp);
+  } else {
+    bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
+
+    grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
+
+    // initialize interpolation in X and Y directions:
+    LocalInterpCtx lic(input_grid, *grid(), m_impl->interpolation_type);
+    // fake the Z axis:
+    std::vector<double> Z;
+    {
+      auto name = variable.z().get_name();
+      auto N = file.dimension_length(name);
+      Z.resize(N);
+      for (int k = 0; k < N; ++k) {
+        Z[k] = k;
+      }
     }
-    return;
+    lic.start[Z_AXIS] = 0;
+    lic.count[Z_AXIS] = Z.size();
+    lic.z = std::make_shared<Interpolation>(NEAREST, Z, Z);
+
+    // Note: this call will read the last time record (the index is set in `lic` based on
+    // info in `input_grid`).
+    petsc::VecArray tmp_array(tmp);
+    io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, allow_extrapolation,
+                                tmp_array.get());
+  }
+
+  if (m_impl->ghosted) {
+    global_to_local(*dm(), tmp, vec());
+  } else {
+    PetscErrorCode ierr = VecCopy(tmp, vec());
+    PISM_CHK(ierr, "VecCopy");
   }
 }
 

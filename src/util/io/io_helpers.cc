@@ -139,8 +139,7 @@ struct StartCountInfo {
   std::vector<unsigned int> imap;
 };
 
-static StartCountInfo compute_start_and_count(const File &file, units::System::Ptr unit_system,
-                                              const std::string &short_name,
+static StartCountInfo compute_start_and_count(std::vector<AxisType> &dim_types,
                                               std::array<int, 4> start_in,
                                               std::array<int, 4> count_in) {
 
@@ -151,17 +150,9 @@ static StartCountInfo compute_start_and_count(const File &file, units::System::P
   auto z_start = start_in[Z_AXIS];
   auto z_count = count_in[Z_AXIS];
 
-  std::vector<std::string> dims = file.dimensions(short_name);
-  auto ndims                    = dims.size();
-
-  assert(ndims > 0);
-  if (ndims == 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Cannot compute start and count: variable '%s' is a scalar.",
-                                  short_name.c_str());
-  }
-
   StartCountInfo result;
+
+  auto ndims = dim_types.size();
 
   // Resize output vectors:
   result.start.resize(ndims);
@@ -170,9 +161,7 @@ static StartCountInfo compute_start_and_count(const File &file, units::System::P
 
   // Assemble start, count and imap:
   for (unsigned int j = 0; j < ndims; j++) {
-    std::string dimname = dims[j];
-
-    AxisType dimtype = file.dimension_type(dimname, unit_system);
+    AxisType dimtype = dim_types[j];
 
     switch (dimtype) {
     case T_AXIS:
@@ -361,19 +350,17 @@ void write_dimensions(const SpatialVariableMetadata &var, const Grid &grid, cons
  * @param var_name name of the variable to check
  * @returns false if storage orders match, true otherwise
  */
-static bool use_transposed_io(const File &file, units::System::Ptr unit_system,
-                              const std::string &var_name) {
-
-  std::vector<std::string> dimnames = file.dimensions(var_name);
+static bool use_transposed_io(std::vector<AxisType> dimension_types) {
 
   std::vector<AxisType> storage, memory = { Y_AXIS, X_AXIS };
 
-  for (unsigned int j = 0; j < dimnames.size(); ++j) {
-    AxisType dimtype = file.dimension_type(dimnames[j], unit_system);
+  bool first = true;
+  for (auto dimtype : dimension_types) {
 
-    if (j == 0 && dimtype == T_AXIS) {
+    if (first && dimtype == T_AXIS) {
       // ignore the time dimension, but only if it is the first
       // dimension in the list
+      first = false;
       continue;
     }
 
@@ -395,17 +382,26 @@ static bool use_transposed_io(const File &file, units::System::Ptr unit_system,
   return storage != memory;
 }
 
+static std::vector<AxisType> dimension_types(const File &file, const std::string &var_name,
+                                             std::shared_ptr<units::System> unit_system) {
+  std::vector<AxisType> result;
+  for (const auto &dimension : file.dimensions(var_name)) {
+    result.push_back(file.dimension_type(dimension, unit_system));
+  }
+  return result;
+}
+
 //! \brief Read an array distributed according to the grid.
 static void read_distributed_array(const File &file, const Grid &grid, const std::string &var_name,
                                    unsigned int z_count, unsigned int t_start, double *output) {
   try {
-    int t_count = 1;
-    auto sc     = compute_start_and_count(file, grid.ctx()->unit_system(), var_name,
-                                          { (int)t_start, grid.xs(), grid.ys(), 0 },
-                                          { t_count, grid.xm(), grid.ym(), (int)z_count });
+    auto dim_types = dimension_types(file, var_name, grid.ctx()->unit_system());
 
-    bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), var_name);
-    if (transposed_io) {
+    auto sc = compute_start_and_count(dim_types,
+                                      { (int)t_start, grid.xs(), grid.ys(), 0 },
+                                      { 1, grid.xm(), grid.ym(), (int)z_count });
+
+    if (use_transposed_io(dim_types)) {
       file.read_variable_transposed(var_name, sc.start, sc.count, sc.imap, output);
     } else {
       file.read_variable(var_name, sc.start, sc.count, output);
@@ -419,38 +415,29 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
 
 /** Regrid `variable_name` from a file, possibly replacing missing values with `default_value`.
  *
- * @param[in] file input file
- * @param grid computational grid; used to initialize interpolation
+ * @param file input file
  * @param variable_name variable to regrid
- * @param zlevels_out vertical levels of the resulting grid
- * @param t_start time index of the record to regrid
- * @param[in] fill_missing set to `true` to replace missing values with `default_value`
- * @param[in] default_value default value to use when `fill_missing == true`
- * @param[in] interpolation_type interpolation type
- * @param[out] output resulting interpolated field
+ * @param internal_grid computational grid; used to initialize interpolation
  */
-static void regrid_vec(const File &file, const grid::InputGridInfo &input_grid,
-                       const Grid &internal_grid, const LocalInterpCtx &lic, double *output) {
-
-  const Profiling &profiling = internal_grid.ctx()->profiling();
+static std::vector<double> read_for_interpolation(const File &file,
+                                                  const std::string &variable_name,
+                                                  const Grid &internal_grid,
+                                                  const LocalInterpCtx &lic, double *output) {
 
   try {
     auto unit_system = internal_grid.ctx()->unit_system();
 
-    auto variable_name = input_grid.variable_name;
-
     std::vector<double> buffer(lic.buffer_size());
 
-    auto sc = compute_start_and_count(file, unit_system, variable_name, lic.start, lic.count);
+    auto dim_types = dimension_types(file, variable_name, internal_grid.ctx()->unit_system());
 
-    bool transposed_io = use_transposed_io(file, unit_system, variable_name);
-    profiling.begin("io.regridding.read");
-    if (transposed_io) {
+    auto sc = compute_start_and_count(dim_types, lic.start, lic.count);
+
+    if (use_transposed_io(dim_types)) {
       file.read_variable_transposed(variable_name, sc.start, sc.count, sc.imap, buffer.data());
     } else {
       file.read_variable(variable_name, sc.start, sc.count, buffer.data());
     }
-    profiling.end("io.regridding.read");
 
     // Stop with an error message if some values match the _FillValue attribute:
     {
@@ -468,13 +455,10 @@ static void regrid_vec(const File &file, const grid::InputGridInfo &input_grid,
       }
     }
 
-    // interpolate
-    profiling.begin("io.regridding.interpolate");
-    regrid(internal_grid, lic, buffer.data(), output);
-    profiling.end("io.regridding.interpolate");
+    return buffer;
   } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
-                  input_grid.variable_name.c_str(), file.filename().c_str());
+    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(),
+                  file.filename().c_str());
     throw;
   }
 }
@@ -802,7 +786,10 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const grid::InputGridInfo &input_grid, const Grid &internal_grid,
                              const LocalInterpCtx &lic, const File &file, bool allow_extrapolation,
                              double *output) {
+  auto variable_name = input_grid.variable_name;
   const auto &internal_z_levels = variable.levels();
+
+  const Profiling &profiling = internal_grid.ctx()->profiling();
 
   check_input_grid(input_grid);
 
@@ -812,11 +799,18 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
   const size_t data_size = internal_grid.xm() * internal_grid.ym() * lic.z->n_output();
 
-  regrid_vec(file, input_grid, internal_grid, lic, output);
+  profiling.begin("io.regridding.read");
+  auto buffer = read_for_interpolation(file, variable_name, internal_grid, lic, output);
+  profiling.end("io.regridding.read");
+
+  // interpolate
+  profiling.begin("io.regridding.interpolate");
+  regrid(internal_grid, lic, buffer.data(), output);
+  profiling.end("io.regridding.interpolate");
 
   // Get the units string from the file and convert the units:
   {
-    std::string input_units    = file.read_text_attribute(input_grid.variable_name, "units");
+    std::string input_units    = file.read_text_attribute(variable_name, "units");
     std::string internal_units = variable["units"];
 
     if (input_units.empty() and not internal_units.empty()) {
@@ -834,7 +828,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
         .convert_doubles(output, data_size);
   }
 
-  read_valid_range(file, input_grid.variable_name, variable);
+  read_valid_range(file, variable_name, variable);
 }
 
 

@@ -454,16 +454,14 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
     if (not V.exists) {
       set_default_value_or_stop(file.filename(), variable, default_value, *log, tmp);
     } else {
-      unsigned int t_length =
-          file.nrecords(variable.get_name(), variable["standard_name"], variable.unit_system());
-      unsigned int t_start = t_length - 1;
-
       grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
-      LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
-      lic.start[T_AXIS] = (int)t_start;
-      lic.count[T_AXIS] = 1;
+      input_grid.report(*log, 4, variable.unit_system());
 
+      LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
+
+      // Note: this call will read the last time record (the index is set in `lic` based on
+      // info in `input_grid`).
       petsc::VecArray tmp_array(tmp);
       io::regrid_spatial_variable(metadata(j), input_grid, *grid(), lic, file,
                                   allow_extrapolation, tmp_array.get());
