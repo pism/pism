@@ -274,7 +274,7 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
     // Note: this call will read the last time record (the index is set in `lic` based on
     // info in `input_grid`).
     petsc::VecArray tmp_array(tmp);
-    io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, tmp_array.get());
+    io::regrid_spatial_variable(variable, *grid(), lic, file, tmp_array.get());
   }
 
   if (m_impl->ghosted) {

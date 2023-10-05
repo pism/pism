@@ -791,11 +791,12 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
 */
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
-                             const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+                             const Grid &internal_grid,
                              const LocalInterpCtx &lic, const File &file,
                              double *output) {
-  auto variable_name = input_grid.variable_name;
-  const auto &internal_z_levels = variable.levels();
+
+  auto var_info = file.find_variable(variable.get_name(), variable["standard_name"]);
+  auto variable_name = var_info.name;
 
   const Profiling &profiling = internal_grid.ctx()->profiling();
 

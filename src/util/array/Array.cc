@@ -467,7 +467,7 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
       // Note: this call will read the last time record (the index is set in `lic` based on
       // info in `input_grid`).
       petsc::VecArray tmp_array(tmp);
-      io::regrid_spatial_variable(metadata(j), input_grid, *grid(), lic, file, tmp_array.get());
+      io::regrid_spatial_variable(metadata(j), *grid(), lic, file, tmp_array.get());
 
       // Check the range and report it if necessary.
       {
