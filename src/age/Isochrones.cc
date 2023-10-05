@@ -34,11 +34,43 @@
 #include "pism/util/array/Scalar.hh"
 
 /*!
+ * Initialization cases:
  *
- * TO DO: merge consecutive layers if the sum of their maximum thicknesses is below a
- * threshold (possibly vertical grid resolution). This should probably be a bootstrapping option.
+ * Parse requested deposition times and discard times outside of the modeled time span.
+ * Store these in `times`.
  *
- */
+ * 1. Restarting.
+ *
+ * - Read deposition times from the input file, append `times`. It's okay if `times` is
+ *   empty.
+ *
+ * - Allocate storage for layer thicknesses for combined deposition times.
+ *
+ * - Read layer thicknesses from the input file, transfer to the allocated storage.
+ *
+ * 2. Restarting with regridding.
+ *
+ * - Same as restarting, but using the regridding file instead of the input file and
+ *   linear interpolation to read in layer thicknesses.
+ *
+ * 3. Bootstrapping.
+ *
+ * - If `isochrones.bootstrapping.n_layers` is zero, create one layer with the thickness
+ *   equal to the ice thickness. The SMB will be applied to this layer until the model
+ *   reaches a deposition time and a new layer is created.
+ *
+ * - If `N = isochrones.bootstrapping.n_layers` is positive, create `N` layers with
+ *   thicknesses equal to the ice thickness divided by `N`. Then add one more layer of
+ *   zero thickness. The SMB will be applied to this layer until the model reaches a
+ *   deposition time and a new layer is created.
+ *
+ * - Set deposition times to `times`. Stop if `times` is empty.
+ *
+ * 4. Bootstrapping with regridding.
+ *
+ * - Same as restarting with regridding.
+ *
+*/
 
 namespace pism {
 
@@ -52,6 +84,21 @@ static const char *times_parameter = "isochrones.deposition_times";
 static const char *N_max_parameter = "isochrones.max_n_layers";
 static const char *N_boot_parameter = "isochrones.bootstrapping.n_layers";
 } // namespace details
+
+//! Discard deposition times before the beginning and after the end of the run.
+static std::vector<double> prune_deposition_times(const Time &time,
+                                                  const std::vector<double> &times) {
+  double T_start = time.start(), T_end = time.end();
+
+  std::vector<double> result;
+  for (auto t : times) {
+    if (t >= T_start and t <= T_end) {
+      result.push_back(t);
+    }
+  }
+
+  return result;
+}
 
 //
 /*!
@@ -80,16 +127,18 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid,
                                     N_max_parameter, N_max);
     }
 
-    const auto &time = grid->ctx()->time();
+    auto time = grid->ctx()->time();
 
     auto requested_times = m_config->get_string(times_parameter);
     try {
-      m_deposition_times = time->parse_times(requested_times);
+      m_deposition_times = prune_deposition_times(*time, time->parse_times(requested_times));
 
       auto N_deposition_times = m_deposition_times.size();
       if (N_deposition_times == 0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot process '%s' = '%s'",
-                                      times_parameter, requested_times.c_str());
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION, "'%s' = '%s' has times within the modeled time span [%s, %s]",
+            times_parameter, requested_times.c_str(), time->date(time->start()).c_str(),
+            time->date(time->end()).c_str());
       }
 
       if ((int)N_deposition_times > N_max) {
@@ -114,28 +163,37 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid,
   }
 }
 
+static std::shared_ptr<array::Array3DCollection>
+allocate_layer_thickness(std::shared_ptr<const Grid> grid, const std::vector<double> &times) {
+  using namespace details;
+
+  const auto &time = grid->ctx()->time();
+
+  auto result = std::make_shared<array::Array3DCollection>(grid, layer_thickness_variable_name,
+                                                           array::WITHOUT_GHOSTS, times);
+
+  result->metadata().long_name("thicknesses of isochronal layers").units("m");
+
+  auto z_description =
+      pism::printf("times for isochrones in '%s'; earliest deposition times for layers in '%s'",
+                   isochrone_depth_variable_name, layer_thickness_variable_name);
+  auto &z = result->metadata(0).z();
+  z.clear()
+      .set_name(deposition_time_variable_name)
+      .long_name(z_description)
+      .units(time->units_string());
+  z["calendar"] = time->calendar();
+
+  return result;
+}
+
 /*!
  * Allocate storage and set metadata for the layer thickness field.
  */
 void Isochrones::allocate(const std::vector<double> &levels) {
   using namespace details;
 
-  const auto &time = m_grid->ctx()->time();
-
-  m_layer_thickness = std::make_shared<array::Array3DCollection>(
-      m_grid, layer_thickness_variable_name, array::WITHOUT_GHOSTS, levels);
-
-  m_layer_thickness->metadata().long_name("thicknesses of isochronal layers").units("m");
-
-  auto z_description =
-      pism::printf("times for isochrones in '%s'; earliest deposition times for layers in '%s'",
-                   isochrone_depth_variable_name, layer_thickness_variable_name);
-  auto &z = m_layer_thickness->metadata(0).z();
-  z.clear()
-      .set_name(deposition_time_variable_name)
-      .long_name(z_description)
-      .units(time->units_string());
-  z["calendar"] = time->calendar();
+  m_layer_thickness = allocate_layer_thickness(m_grid, levels);
 
   m_tmp = std::make_shared<array::Array3DCollection>(m_grid, "temporary storage",
                                                      array::WITH_GHOSTS, levels);
@@ -220,6 +278,39 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
   }
 }
 
+static std::vector<double> read_deposition_times(const File &input_file) {
+  using namespace details;
+
+  auto n_deposition_times = input_file.dimension_length(deposition_time_variable_name);
+
+  std::vector<double> result(n_deposition_times);
+  input_file.read_variable(deposition_time_variable_name, { 0 }, { n_deposition_times },
+                           result.data());
+
+  return result;
+}
+
+/*! Add requested deposition times to "old" ones read from a file:
+ *
+ * This trickery is needed because "-isochrones.deposition_times 1000" will generate
+ * deposition times every 1000 years for the duration of the current run... and when we
+ * are re-starting we need to include times from both the current and the /previous/ run.
+*/
+static std::vector<double> combine_deposition_times(const std::vector<double> &old_times,
+                                                    const std::vector<double> &new_times) {
+  using namespace details;
+
+  double last_time           = old_times.back();
+  std::vector<double> result = old_times;
+  for (auto t : new_times) {
+    if (t > last_time) {
+      result.push_back(t);
+    }
+  }
+
+  return result;
+}
+
 /*!
  * Re-start the model from a PISM output file.
  */
@@ -230,42 +321,18 @@ void Isochrones::restart(const File &input_file, int record) {
     m_log->message(2, "* Initializing the isochrone tracking model from '%s'...\n",
                    input_file.filename().c_str());
 
-
     // get deposition times from the input file
-    std::vector<double> old_deposition_times;
-    {
-      auto n_deposition_times = input_file.dimension_length(deposition_time_variable_name);
+    auto old_deposition_times = read_deposition_times(input_file);
+    // combine with requested times
+    m_deposition_times = combine_deposition_times(old_deposition_times, m_deposition_times);
 
-      // read
-      old_deposition_times.resize(n_deposition_times);
-      input_file.read_variable(deposition_time_variable_name, { 0 }, { n_deposition_times },
-                               old_deposition_times.data());
-    }
-
-    // Add requested deposition times
-    //
-    // This trickery is needed because "-isochrones.deposition_times 1000" will generate
-    // deposition times every 1000 years for the duration of the current run... and when we
-    // are re-starting we need to include times from both the current and the /previous/ run.
-    double last_time                         = old_deposition_times.back();
-    std::vector<double> new_deposition_times = old_deposition_times;
-    for (auto t : m_deposition_times) {
-      if (t > last_time) {
-        new_deposition_times.push_back(t);
-      }
-    }
-
-    // check if we are allowed to allocate storage for this many layers
-    auto N_max = (size_t)m_config->get_number(N_max_parameter);
-
-    if (new_deposition_times.size() > N_max) {
+    auto N_max = (int)m_config->get_number(N_max_parameter);
+    if (m_deposition_times.size() > N_max) {
       throw RuntimeError::formatted(
           PISM_ERROR_LOCATION,
           "the total number of isochronal layers (from the input file '%s' plus requested) exceeds '%s' = %d",
           input_file.filename().c_str(), N_max_parameter, (int)N_max);
     }
-
-    m_deposition_times = new_deposition_times;
 
     // re-allocate storage now that m_deposition_times is set
     allocate(m_deposition_times);
@@ -273,13 +340,7 @@ void Isochrones::restart(const File &input_file, int record) {
     // allocate temporary storage, read in layer thicknesses, move layer thicknesses from
     // temporary storage into m_layer_thickness:
     {
-      auto tmp = std::make_shared<array::Array3D>(m_grid, layer_thickness_variable_name,
-                                                  array::WITHOUT_GHOSTS, old_deposition_times);
-      tmp->metadata().long_name("thicknesses of isochronal layers").units("m");
-      auto &z = tmp->metadata().z();
-      z.clear()
-          .set_name(deposition_time_variable_name)
-          .units(m_layer_thickness->metadata().z()["units"]);
+      auto tmp = allocate_layer_thickness(m_grid, old_deposition_times);
 
       tmp->read(input_file, record);
 
@@ -289,7 +350,7 @@ void Isochrones::restart(const File &input_file, int record) {
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        auto *input  = tmp->get_column(i, j);
+        auto *input  = tmp->column(i, j);
         auto *output = m_layer_thickness->column(i, j);
 
         for (size_t k = 0; k < N; ++k) {

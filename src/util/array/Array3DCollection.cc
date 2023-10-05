@@ -117,9 +117,34 @@ void Array3DCollection::regrid_impl(const File &file, io::Default default_value)
 
     grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
+    // The lengths of third dimensions of a "collection" in the input file and internally
+    // *have to match*.
+    {
+      auto dim_name          = variable.z().get_name();
+      auto n_levels_internal = get_levels().size();
+      auto n_levels_input    = file.dimension_length(dim_name);
+
+      if (n_levels_input != n_levels_internal) {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "the length of the '%s' dimension in '%s' has to match the length of '%s' used internally"
+            " (got %d and %d)",
+            dim_name.c_str(), file.filename().c_str(), dim_name.c_str(), (int)n_levels_input,
+            (int)n_levels_internal);
+      }
+    }
+
+    input_grid.report(*log, 4, variable.unit_system());
+
+    // Note: Array3DCollection is a collection of 2D fields, so we don't need to use the
+    // internal vertical (Z) grid.
+    io::check_input_grid(input_grid, *grid(), {0.0});
+
     // initialize interpolation in X and Y directions:
     LocalInterpCtx lic(input_grid, *grid(), m_impl->interpolation_type);
-    // fake the Z axis:
+
+    // fake the Z axis: the values of the corresponding coordinate variable in the file
+    // may not be unique or increasing.
     std::vector<double> Z;
     {
       auto name = variable.z().get_name();
@@ -136,8 +161,7 @@ void Array3DCollection::regrid_impl(const File &file, io::Default default_value)
     // Note: this call will read the last time record (the index is set in `lic` based on
     // info in `input_grid`).
     petsc::VecArray tmp_array(tmp);
-    io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, allow_extrapolation,
-                                tmp_array.get());
+    io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, tmp_array.get());
   }
 
   if (m_impl->ghosted) {

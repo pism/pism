@@ -345,8 +345,7 @@ void Forcing::init_periodic_data(const File &file) {
       lic.count[T_AXIS] = 1;
 
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, allow_extrapolation,
-                                  tmp_array.get());
+      io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, tmp_array.get());
     }
 
     auto time = ctx->time();
@@ -553,8 +552,7 @@ void Forcing::update(unsigned int start) {
       lic.count[T_AXIS] = 1;
 
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(variable, input_grid, *m_impl->grid, lic, file,
-                                  allow_extrapolation, tmp_array.get());
+      io::regrid_spatial_variable(variable, input_grid, *m_impl->grid, lic, file, tmp_array.get());
 
       log->message(5, " %s: reading entry #%02d, year %s...\n", m_impl->name.c_str(), start + j,
                    t->date(m_data->time[start + j]).c_str());

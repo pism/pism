@@ -458,13 +458,16 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
 
       input_grid.report(*log, 4, variable.unit_system());
 
+      // Note: this implementation is used for 2D fields, so we don't need to use the
+      // internal vertical (Z) grid.
+      io::check_input_grid(input_grid, *grid(), {0.0});
+
       LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
 
       // Note: this call will read the last time record (the index is set in `lic` based on
       // info in `input_grid`).
       petsc::VecArray tmp_array(tmp);
-      io::regrid_spatial_variable(metadata(j), input_grid, *grid(), lic, file,
-                                  allow_extrapolation, tmp_array.get());
+      io::regrid_spatial_variable(metadata(j), input_grid, *grid(), lic, file, tmp_array.get());
 
       // Check the range and report it if necessary.
       {

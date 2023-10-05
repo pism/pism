@@ -51,12 +51,15 @@ namespace io {
 
 enum Type : int;
 
+void check_input_grid(const grid::InputGridInfo &input_grid,
+                      const Grid& internal_grid,
+                      const std::vector<double> &internal_z_levels);
+
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const grid::InputGridInfo &input_grid,
                              const Grid& internal_grid,
                              const LocalInterpCtx &lic,
                              const File &file,
-                             bool allow_extrapolation,
                              double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &variable,

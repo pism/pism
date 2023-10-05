@@ -267,13 +267,14 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
 
     input_grid.report(*log, 4, variable.unit_system());
 
+    io::check_input_grid(input_grid, *grid(), get_levels());
+
     LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
 
     // Note: this call will read the last time record (the index is set in `lic` based on
     // info in `input_grid`).
     petsc::VecArray tmp_array(tmp);
-    io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, allow_extrapolation,
-                                tmp_array.get());
+    io::regrid_spatial_variable(variable, input_grid, *grid(), lic, file, tmp_array.get());
   }
 
   if (m_impl->ghosted) {

@@ -679,24 +679,6 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
   }
 }
 
-/*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
-void check_input_grid(const grid::InputGridInfo &input) {
-  if (not is_increasing(input.x)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "input x coordinate has to be strictly increasing");
-  }
-
-  if (not is_increasing(input.y)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "input y coordinate has to be strictly increasing");
-  }
-
-  if (not is_increasing(input.z)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "input vertical grid has to be strictly increasing");
-  }
-}
-
 /*!
  * Check the overlap of the input grid and the internal grid.
  *
@@ -771,6 +753,32 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
   }
 }
 
+/*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
+void check_input_grid(const grid::InputGridInfo &input_grid,
+                      const Grid& internal_grid,
+                      const std::vector<double> &internal_z_levels) {
+  if (not is_increasing(input_grid.x)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "input x coordinate has to be strictly increasing");
+  }
+
+  if (not is_increasing(input_grid.y)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "input y coordinate has to be strictly increasing");
+  }
+
+  if (not is_increasing(input_grid.z)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "input vertical grid has to be strictly increasing");
+  }
+
+  bool allow_extrapolation = internal_grid.ctx()->config()->get_flag("grid.allow_extrapolation");
+
+  if (not allow_extrapolation) {
+    check_grid_overlap(input_grid, internal_grid, internal_z_levels);
+  }
+}
+
 //! \brief Regrid from a NetCDF file into a distributed array `output`.
 /*!
   - if `flag` is `CRITICAL` or `CRITICAL_FILL_MISSING`, stops if the
@@ -784,20 +792,12 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const grid::InputGridInfo &input_grid, const Grid &internal_grid,
-                             const LocalInterpCtx &lic, const File &file, bool allow_extrapolation,
+                             const LocalInterpCtx &lic, const File &file,
                              double *output) {
   auto variable_name = input_grid.variable_name;
   const auto &internal_z_levels = variable.levels();
 
   const Profiling &profiling = internal_grid.ctx()->profiling();
-
-  check_input_grid(input_grid);
-
-  if (not allow_extrapolation) {
-    check_grid_overlap(input_grid, internal_grid, internal_z_levels);
-  }
-
-  const size_t data_size = internal_grid.xm() * internal_grid.ym() * lic.z->n_output();
 
   profiling.begin("io.regridding.read");
   auto buffer = read_for_interpolation(file, variable_name, internal_grid, lic, output);
@@ -822,6 +822,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                   internal_units.c_str());
       input_units = internal_units;
     }
+
+    const size_t data_size = internal_grid.xm() * internal_grid.ym() * lic.z->n_output();
 
     // Convert data:
     units::Converter(variable.unit_system(), input_units, internal_units)
