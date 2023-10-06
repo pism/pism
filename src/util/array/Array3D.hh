@@ -42,7 +42,7 @@ public:
 
   virtual ~Array3D() = default;
 
-  std::shared_ptr<Array3D> duplicate() const;
+  std::shared_ptr<Array3D> duplicate(Kind ghostedp = WITHOUT_GHOSTS) const;
 
   void regrid_impl(const File &file, io::Default default_value);
 

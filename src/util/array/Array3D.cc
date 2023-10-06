@@ -238,10 +238,10 @@ void Array3D::copy_from(const Array3D &input) {
   inc_state_counter();
 }
 
-std::shared_ptr<Array3D> Array3D::duplicate() const {
+std::shared_ptr<Array3D> Array3D::duplicate(Kind ghostedp) const {
 
   auto result =
-      std::make_shared<Array3D>(this->grid(), this->get_name(), WITHOUT_GHOSTS, this->get_levels());
+      std::make_shared<Array3D>(this->grid(), this->get_name(), ghostedp, this->get_levels());
 
   result->metadata() = this->metadata();
 
