@@ -32,6 +32,8 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/interpolation.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 /*!
  * Initialization cases:
@@ -307,6 +309,38 @@ static std::vector<double> combine_deposition_times(const std::vector<double> &o
       result.push_back(t);
     }
   }
+
+  return result;
+}
+
+static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<const Grid> grid,
+                                                              const File &input_file) {
+  auto times = read_deposition_times(input_file);
+  int N = (int)times.size();
+
+  auto result = allocate_layer_thickness(grid, times);
+
+  auto metadata = result->metadata(0);
+
+  auto variable_info = input_file.find_variable(metadata.get_name(), metadata["standard_name"]);
+
+  grid::InputGridInfo input_grid(input_file, variable_info.name, metadata.unit_system(),
+                                 grid->registration());
+
+  // Set up 2D interpolation
+  LocalInterpCtx lic(input_grid, *grid, LINEAR);
+  lic.start[Z_AXIS] = 0;
+  lic.count[Z_AXIS] = N;
+  // Create an "identity" version
+  std::vector<double> Z(N);
+  for (int k = 0; k < N; ++k) {
+    Z[k] = k;
+  }
+
+  lic.z = std::make_shared<Interpolation>(NEAREST, Z, Z);
+
+  petsc::VecArray tmp(result->vec());
+  io::regrid_spatial_variable(metadata, *grid, lic, input_file, tmp.get());
 
   return result;
 }
