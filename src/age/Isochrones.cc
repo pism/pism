@@ -87,7 +87,9 @@ static const char *N_max_parameter = "isochrones.max_n_layers";
 static const char *N_boot_parameter = "isochrones.bootstrapping.n_layers";
 } // namespace details
 
-//! Discard deposition times before the beginning and after the end of the run.
+/*!
+ * Discard deposition times before the beginning and after the end of the run.
+ */
 static std::vector<double> prune_deposition_times(const Time &time,
                                                   const std::vector<double> &times) {
   double T_start = time.start(), T_end = time.end();
@@ -100,6 +102,153 @@ static std::vector<double> prune_deposition_times(const Time &time,
   }
 
   return result;
+}
+
+/*!
+ * Read deposition times from an `input_file`.
+ */
+static std::vector<double> read_deposition_times(const File &input_file) {
+  using namespace details;
+
+  auto n_deposition_times = input_file.dimension_length(deposition_time_variable_name);
+
+  std::vector<double> result(n_deposition_times);
+  input_file.read_variable(deposition_time_variable_name, { 0 }, { n_deposition_times },
+                           result.data());
+
+  return result;
+}
+
+/*! Add requested deposition times to "old" ones read from a file:
+ *
+ * This trickery is needed because "-isochrones.deposition_times 1000" will generate
+ * deposition times every 1000 years for the duration of the current run... and when we
+ * are re-starting we need to include times from both the current and the /previous/ run.
+*/
+static std::vector<double> combine_deposition_times(const std::vector<double> &old_times,
+                                                    const std::vector<double> &new_times) {
+  using namespace details;
+
+  double last_time           = old_times.back();
+  std::vector<double> result = old_times;
+  for (auto t : new_times) {
+    if (t > last_time) {
+      result.push_back(t);
+    }
+  }
+
+  return result;
+}
+
+static std::shared_ptr<array::Array3D>
+allocate_layer_thickness(std::shared_ptr<const Grid> grid, const std::vector<double> &times) {
+  using namespace details;
+
+  const auto &time = grid->ctx()->time();
+
+  auto result = std::make_shared<array::Array3D>(grid, layer_thickness_variable_name,
+                                                           array::WITHOUT_GHOSTS, times);
+
+  result->metadata().long_name("thicknesses of isochronal layers").units("m");
+
+  auto z_description =
+      pism::printf("times for isochrones in '%s'; earliest deposition times for layers in '%s'",
+                   isochrone_depth_variable_name, layer_thickness_variable_name);
+  auto &z = result->metadata(0).z();
+  z.clear()
+      .set_name(deposition_time_variable_name)
+      .long_name(z_description)
+      .units(time->units_string());
+  z["calendar"] = time->calendar();
+
+  return result;
+}
+
+/*!
+ * Read layer deposition times and layer thicknesses from `input_file`.
+ *
+ * Uses bilinear interpolation in the X and Y directions.
+ */
+static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<const Grid> grid,
+                                                              const File &input_file) {
+  auto times = read_deposition_times(input_file);
+  int N      = (int)times.size();
+
+  auto result = allocate_layer_thickness(grid, times);
+
+  auto metadata = result->metadata(0);
+
+  auto variable_info = input_file.find_variable(metadata.get_name(), metadata["standard_name"]);
+
+  grid::InputGridInfo input_grid(input_file, variable_info.name, metadata.unit_system(),
+                                 grid->registration());
+
+  // Set up 2D interpolation:
+  LocalInterpCtx lic(input_grid, *grid, LINEAR);
+  lic.start[Z_AXIS] = 0;
+  lic.count[Z_AXIS] = N;
+
+  // Create an "identity" version of the interpolation in the vertical direction:
+  std::vector<double> Z(N);
+  for (int k = 0; k < N; ++k) {
+    Z[k] = k;
+  }
+
+  lic.z = std::make_shared<Interpolation>(NEAREST, Z, Z);
+
+  petsc::VecArray tmp(result->vec());
+  io::regrid_spatial_variable(metadata, *grid, lic, input_file, tmp.get());
+
+  return result;
+}
+
+/*!
+ * Read the number of active layers from the `input_file`.
+ */
+static size_t read_n_active_layers(const File &input_file, unsigned int record) {
+  using namespace details;
+
+  double n_active_layers = 0;
+  input_file.read_variable(layer_count_variable_name, { record }, { 1 }, &n_active_layers);
+
+  return static_cast<size_t>(n_active_layers);
+}
+
+/*!
+ * Copy layer thicknesses from temporary storage `input` used when reading from a file
+ * into the "bottom" layers of the `output`.
+ */
+static void copy_layer_thicknesses(const array::Array3D &input, array::Array3D &output) {
+
+  array::AccessScope scope{ &input, &output };
+
+  size_t N = input.get_levels().size();
+  for (Points p(*input.grid()); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const auto *in = input.get_column(i, j);
+    auto *out      = output.get_column(i, j);
+
+    for (size_t k = 0; k < N; ++k) {
+      out[k] = in[k];
+    }
+  }
+}
+
+/*!
+ * Returns `true` if the user asked to regrid layer thicknesses, otherwise `false`.
+ */
+static bool regridp(const Config &config) {
+
+  auto regrid_file = config.get_string("input.regrid.file");
+
+  if (regrid_file.empty()) {
+    return false;
+  }
+
+  auto regrid_vars = set_split(config.get_string("input.regrid.vars"), ',');
+
+  return member(details::layer_thickness_variable_name, regrid_vars);
 }
 
 //
@@ -158,47 +307,27 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid,
     // Note: array::Array delays allocation until the last moment, so we can cheaply
     // re-allocate storage if the number of "levels" used here turns out to be
     // inappropriate.
-    allocate(m_deposition_times);
+    m_layer_thickness = allocate_layer_thickness(m_grid, m_deposition_times);
+    m_tmp = m_layer_thickness->duplicate(array::WITH_GHOSTS);
   } catch (RuntimeError &e) {
     e.add_context("allocating the isochrone tracking model");
     throw;
   }
 }
 
-static std::shared_ptr<array::Array3D>
-allocate_layer_thickness(std::shared_ptr<const Grid> grid, const std::vector<double> &times) {
-  using namespace details;
+void Isochrones::init_by_regridding() {
+  auto regrid_filename = m_config->get_string("input.regrid.file");
 
-  const auto &time = grid->ctx()->time();
+  File regrid_file(m_grid->com, regrid_filename, io::PISM_GUESS, io::PISM_READONLY);
 
-  auto result = std::make_shared<array::Array3D>(grid, layer_thickness_variable_name,
-                                                           array::WITHOUT_GHOSTS, times);
+  // Get layer thicknesses and deposition times from a regridding file (uses the last
+  // record in the file).
+  auto tmp = regrid_layer_thickness(m_grid, regrid_file);
 
-  result->metadata().long_name("thicknesses of isochronal layers").units("m");
+  auto n_time_records =
+      regrid_file.nrecords(details::layer_count_variable_name, "", m_grid->ctx()->unit_system());
 
-  auto z_description =
-      pism::printf("times for isochrones in '%s'; earliest deposition times for layers in '%s'",
-                   isochrone_depth_variable_name, layer_thickness_variable_name);
-  auto &z = result->metadata(0).z();
-  z.clear()
-      .set_name(deposition_time_variable_name)
-      .long_name(z_description)
-      .units(time->units_string());
-  z["calendar"] = time->calendar();
-
-  return result;
-}
-
-/*!
- * Allocate storage and set metadata for the layer thickness field.
- */
-void Isochrones::allocate(const std::vector<double> &levels) {
-  using namespace details;
-
-  m_layer_thickness = allocate_layer_thickness(m_grid, levels);
-
-  m_tmp = std::make_shared<array::Array3D>(m_grid, "temporary storage",
-                                                     array::WITH_GHOSTS, levels);
+  auto n_active_layers = read_n_active_layers(regrid_file, n_time_records - 1);
 }
 
 /*!
@@ -212,6 +341,11 @@ void Isochrones::allocate(const std::vector<double> &levels) {
 void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
   using namespace details;
   try {
+    if (regridp(*m_config)) {
+      init_by_regridding();
+      return;
+    }
+
     m_layer_thickness->set(0.0);
 
     auto N_bootstrap        = static_cast<int>(m_config->get_number(N_boot_parameter));
@@ -251,7 +385,8 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
       }
 
       // re-allocate storage
-      allocate(m_deposition_times);
+      m_layer_thickness = allocate_layer_thickness(m_grid, m_deposition_times);
+      m_tmp = m_layer_thickness->duplicate(array::WITH_GHOSTS);
 
       array::AccessScope scope{ &ice_thickness, m_layer_thickness.get() };
 
@@ -280,76 +415,16 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
   }
 }
 
-static std::vector<double> read_deposition_times(const File &input_file) {
-  using namespace details;
-
-  auto n_deposition_times = input_file.dimension_length(deposition_time_variable_name);
-
-  std::vector<double> result(n_deposition_times);
-  input_file.read_variable(deposition_time_variable_name, { 0 }, { n_deposition_times },
-                           result.data());
-
-  return result;
-}
-
-/*! Add requested deposition times to "old" ones read from a file:
- *
- * This trickery is needed because "-isochrones.deposition_times 1000" will generate
- * deposition times every 1000 years for the duration of the current run... and when we
- * are re-starting we need to include times from both the current and the /previous/ run.
-*/
-static std::vector<double> combine_deposition_times(const std::vector<double> &old_times,
-                                                    const std::vector<double> &new_times) {
-  using namespace details;
-
-  double last_time           = old_times.back();
-  std::vector<double> result = old_times;
-  for (auto t : new_times) {
-    if (t > last_time) {
-      result.push_back(t);
-    }
-  }
-
-  return result;
-}
-
-static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<const Grid> grid,
-                                                              const File &input_file) {
-  auto times = read_deposition_times(input_file);
-  int N = (int)times.size();
-
-  auto result = allocate_layer_thickness(grid, times);
-
-  auto metadata = result->metadata(0);
-
-  auto variable_info = input_file.find_variable(metadata.get_name(), metadata["standard_name"]);
-
-  grid::InputGridInfo input_grid(input_file, variable_info.name, metadata.unit_system(),
-                                 grid->registration());
-
-  // Set up 2D interpolation
-  LocalInterpCtx lic(input_grid, *grid, LINEAR);
-  lic.start[Z_AXIS] = 0;
-  lic.count[Z_AXIS] = N;
-  // Create an "identity" version
-  std::vector<double> Z(N);
-  for (int k = 0; k < N; ++k) {
-    Z[k] = k;
-  }
-
-  lic.z = std::make_shared<Interpolation>(NEAREST, Z, Z);
-
-  petsc::VecArray tmp(result->vec());
-  io::regrid_spatial_variable(metadata, *grid, lic, input_file, tmp.get());
-
-  return result;
-}
 
 /*!
  * Re-start the model from a PISM output file.
  */
 void Isochrones::restart(const File &input_file, int record) {
   try {
+    if (regridp(*m_config)) {
+      init_by_regridding();
+      return;
+    }
     using namespace details;
 
     m_log->message(2, "* Initializing the isochrone tracking model from '%s'...\n",
@@ -369,7 +444,8 @@ void Isochrones::restart(const File &input_file, int record) {
     }
 
     // re-allocate storage now that m_deposition_times is set
-    allocate(m_deposition_times);
+    m_layer_thickness = allocate_layer_thickness(m_grid, m_deposition_times);
+    m_tmp = m_layer_thickness->duplicate(array::WITH_GHOSTS);
 
     // allocate temporary storage, read in layer thicknesses, move layer thicknesses from
     // temporary storage into m_layer_thickness:
@@ -377,30 +453,11 @@ void Isochrones::restart(const File &input_file, int record) {
       auto tmp = allocate_layer_thickness(m_grid, old_deposition_times);
 
       tmp->read(input_file, record);
-
-      array::AccessScope scope{ tmp.get(), m_layer_thickness.get() };
-
-      size_t N = tmp->get_levels().size();
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        auto *input  = tmp->get_column(i, j);
-        auto *output = m_layer_thickness->get_column(i, j);
-
-        for (size_t k = 0; k < N; ++k) {
-          output[k] = input[k];
-        }
-      }
+      copy_layer_thicknesses(*tmp, *m_layer_thickness);
     }
 
     // set m_top_layer_index
-    {
-      double n_active_layers = 0;
-      input_file.read_variable(layer_count_variable_name, { (unsigned int)record }, { 1 },
-                               &n_active_layers);
-
-      m_top_layer_index = static_cast<size_t>(n_active_layers) - 1;
-    }
+    m_top_layer_index = read_n_active_layers(input_file, record) - 1;
 
   } catch (RuntimeError &e) {
     e.add_context("restarting the isochrone tracking model");

@@ -67,7 +67,7 @@ private:
 
   DiagnosticList diagnostics_impl() const;
 
-  void allocate(const std::vector<double> &levels);
+  void init_by_regridding();
 
   //! isochronal layer thicknesses
   std::shared_ptr<array::Array3D> m_layer_thickness;
