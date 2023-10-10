@@ -43,12 +43,16 @@
  *
  * 1. Restarting.
  *
- * - Read deposition times from the input file, append `times`. It's okay if `times` is
- *   empty.
+ * - Read deposition times `input_times` from the input file. Find all the `input_times`
+ *   that are *before the beginning of the modeled time span* and record their indexes in
+ *   `input_times`; save these to `old_times`.
+ *
+ * - Append `times` to `old_times`. It's okay if `times` is empty.
+ *
+ * - Read layer thicknesses corresponding to all `old_times` from the input file using
+ *   recorded indexes.
  *
  * - Allocate storage for layer thicknesses for combined deposition times.
- *
- * - Read layer thicknesses from the input file, transfer to the allocated storage.
  *
  * - Renormalize layer thicknesses to ensure that their sum adds up to the ice thickness.
  *
@@ -74,7 +78,7 @@
  *
  * - Same as restarting with regridding.
  *
-*/
+ */
 
 namespace pism {
 
