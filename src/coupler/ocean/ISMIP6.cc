@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019, 2022 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019, 2022, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -18,26 +18,20 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ISMIP6.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
-
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/Vars.hh"
-
-#include "pism/util/Time.hh"
-#include "pism/geometry/Geometry.hh"
 
 #include "pism/coupler/util/options.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 namespace ocean {
 
 
-ISMIP6::ISMIP6(IceGrid::ConstPtr g)
+ISMIP6::ISMIP6(std::shared_ptr<const Grid> g)
   :  CompleteOceanModel(g) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
@@ -48,7 +42,7 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr g)
   {
     unsigned int buffer_size = static_cast<unsigned int>(m_config->get_number("input.forcing.buffer_size"));
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_shelfbtemp = std::make_shared<array::Forcing>(m_grid,
                                                     file,
@@ -67,12 +61,8 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr g)
                                                   LINEAR);
   }
 
-  m_shelfbtemp->set_attrs("climate_forcing",
-                          "absolute temperature at ice shelf base",
-                          "Kelvin", "Kelvin", "", 0);
-  m_salinity_ocean->set_attrs("climate_forcing",
-                              "ocean salinity",
-                              "g/kg", "g/kg", "", 0);
+  m_shelfbtemp->metadata(0).long_name("absolute temperature at ice shelf base").units("Kelvin");
+  m_salinity_ocean->metadata(0).long_name("ocean salinity").units("g/kg");
 }
 
 void ISMIP6::init_impl(const Geometry &geometry) {

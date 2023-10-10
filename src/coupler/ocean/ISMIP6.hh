@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ namespace ocean {
 //! shelf bottom.
 class ISMIP6 : public CompleteOceanModel {
 public:
-  ISMIP6(IceGrid::ConstPtr g);
+  ISMIP6(std::shared_ptr<const Grid> g);
   virtual ~ISMIP6() = default;
 
 private:

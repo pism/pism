@@ -19,16 +19,13 @@
 
 #include "ISMIP6_NL.hh"
 
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
-
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
-
-#include "pism/util/Time.hh"
-#include "pism/geometry/Geometry.hh"
-
 #include "pism/coupler/util/options.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/pism_utilities.hh"
 
 /*!
  *
@@ -41,7 +38,7 @@
 namespace pism {
 namespace ocean {
 
-ISMIP6nl::ISMIP6nl(IceGrid::ConstPtr g)
+ISMIP6nl::ISMIP6nl(std::shared_ptr<const Grid> g)
   :  CompleteOceanModel(g),
      m_basin_mask(m_grid, "basin_mask"),
      m_thermal_forcing(m_grid, "thermal_forcing") {
@@ -54,7 +51,7 @@ ISMIP6nl::ISMIP6nl(IceGrid::ConstPtr g)
   {
     unsigned int buffer_size = static_cast<unsigned int>(m_config->get_number("input.forcing.buffer_size"));
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_shelfbtemp = std::make_shared<array::Forcing>(m_grid,
                                                     file,
@@ -74,15 +71,9 @@ ISMIP6nl::ISMIP6nl(IceGrid::ConstPtr g)
 
   }
 
-  m_shelfbtemp->set_attrs("climate_forcing",
-                          "absolute temperature at ice shelf base",
-                          "Kelvin", "Kelvin", "", 0);
-  m_salinity_ocean->set_attrs("climate_forcing",
-                              "ocean salinity",
-                              "g/kg", "g/kg", "", 0);
-
-  m_basin_mask.set_attrs("climate_forcing", "mask of drainage basins",
-                         "", "", "", 0);
+  m_shelfbtemp->metadata(0).long_name("absolute temperature at ice shelf base").units("Kelvin");
+  m_salinity_ocean->metadata(0).long_name("ocean salinity").units("g/kg");
+  m_basin_mask.metadata(0).long_name("mask of drainage basins");
   m_n_basins = 0;
 }
 
@@ -96,7 +87,7 @@ void ISMIP6nl::init_impl(const Geometry &geometry) {
   m_shelfbtemp->init(opt.filename, opt.periodic);
   m_salinity_ocean->init(opt.filename, opt.periodic);
 
-  m_basin_mask.regrid(opt.filename, CRITICAL);
+  m_basin_mask.regrid(opt.filename, io::CRITICAL);
   m_n_basins = static_cast<int>(array::max(m_basin_mask)) + 1; // Basins id starts at 0 in the input file
 
   // read time-independent data right away:
