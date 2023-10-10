@@ -50,6 +50,8 @@
  *
  * - Read layer thicknesses from the input file, transfer to the allocated storage.
  *
+ * - Renormalize layer thicknesses to ensure that their sum adds up to the ice thickness.
+ *
  * 2. Restarting with regridding.
  *
  * - Same as restarting, but using the regridding file instead of the input file and
@@ -462,6 +464,41 @@ void Isochrones::restart(const File &input_file, int record) {
   } catch (RuntimeError &e) {
     e.add_context("restarting the isochrone tracking model");
     throw;
+  }
+}
+
+/*!
+ * Re-scale layer thicknesses so that the sum of layer thicknesses is equal to the
+ * ice_thickness.
+ *
+ * @param[in] ice_thickness ice thickness, meters
+ * @param[in,out] layer_thickness isochronal layer thickness
+ */
+static void renormalize(const array::Scalar &ice_thickness,
+                        array::Array3D &layer_thickness) {
+  auto grid = layer_thickness.grid();
+
+  auto N = layer_thickness.get_levels().size();
+
+  array::AccessScope scope{&ice_thickness, &layer_thickness};
+
+  for (auto p = grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double *H = layer_thickness.get_column(i, j);
+
+    double H_total = 0.0;
+    for (int k = 0; k < (int)N; ++k) {
+      H_total += H[k];
+    }
+
+    // re-scale so that the sum of layer thicknesses is equal to the ice_thickness
+    if (H_total > 0.0) {
+      double S = ice_thickness(i, j) / H_total;
+      for (size_t k = 0; k < N; ++k) {
+        H[k] *= S;
+      }
+    }
   }
 }
 
