@@ -67,7 +67,7 @@ private:
 
   DiagnosticList diagnostics_impl() const;
 
-  void init_by_regridding();
+  void initialize(const File &input_file, int record, bool use_interpolation);
 
   //! isochronal layer thicknesses
   std::shared_ptr<array::Array3D> m_layer_thickness;
@@ -77,8 +77,6 @@ private:
 
   //! The index of the topmost isochronal layer.
   size_t m_top_layer_index;
-
-  std::vector<double> m_deposition_times;
 
   std::shared_ptr<const stressbalance::StressBalance> m_stress_balance;
 };
