@@ -82,7 +82,6 @@
 namespace pism {
 
 namespace details {
-static const char *layer_count_variable_name     = "isochronal_layer_count";
 static const char *layer_thickness_variable_name = "isochronal_layer_thickness";
 static const char *deposition_time_variable_name = "deposition_time";
 static const char *isochrone_depth_variable_name = "isochrone_depth";
@@ -97,7 +96,7 @@ static bool non_decreasing(const std::vector<double> &a) {
   size_t N = a.size();
 
   if (N < 2) {
-    return false;
+    return true;
   }
 
   for (size_t k = 0; k < N - 1; k++) {
@@ -119,7 +118,7 @@ static std::shared_ptr<array::Array3D> allocate_layer_thickness(std::shared_ptr<
   using namespace details;
 
   auto N_max = (int)grid->ctx()->config()->get_number(N_max_parameter);
-  if (times.size() > N_max) {
+  if ((int)times.size() > N_max) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "the total number of isochronal layers (%d) exceeds '%s' = %d",
                                   (int)times.size(), N_max_parameter, (int)N_max);
@@ -264,7 +263,7 @@ std::vector<double> deposition_times(const Config &config, const Time &time) {
       throw RuntimeError::formatted(
           PISM_ERROR_LOCATION,
           "the number of times (%d) in '%s' exceeds the amount of storage allocated ('%s' = %d)",
-          (int)N_deposition_times, times_parameter, N_max_parameter, (int)N_max);
+          (int)N_deposition_times, times_parameter, N_max_parameter, N_max);
     }
 
     return deposition_times;
@@ -360,6 +359,41 @@ static bool regridp(const Config &config) {
   return member(details::layer_thickness_variable_name, regrid_vars);
 }
 
+/*!
+ * Re-scale layer thicknesses so that the sum of layer thicknesses is equal to the
+ * ice_thickness.
+ *
+ * @param[in] ice_thickness ice thickness, meters
+ * @param[in,out] layer_thickness isochronal layer thickness
+ */
+static void renormalize(const array::Scalar &ice_thickness,
+                        array::Array3D &layer_thickness) {
+  auto grid = layer_thickness.grid();
+
+  auto N = layer_thickness.get_levels().size();
+
+  array::AccessScope scope{&ice_thickness, &layer_thickness};
+
+  for (auto p = grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double *H = layer_thickness.get_column(i, j);
+
+    double H_total = 0.0;
+    for (int k = 0; k < (int)N; ++k) {
+      H_total += H[k];
+    }
+
+    // re-scale so that the sum of layer thicknesses is equal to the ice_thickness
+    if (H_total > 0.0) {
+      double S = ice_thickness(i, j) / H_total;
+      for (size_t k = 0; k < N; ++k) {
+        H[k] *= S;
+      }
+    }
+  }
+}
+
 } // namespace details
 
 
@@ -395,23 +429,23 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
       File regrid_file(m_grid->com, m_config->get_string("input.regrid.file"), io::PISM_GUESS,
                        io::PISM_READONLY);
 
-      auto last_record = regrid_file.nrecords(details::layer_thickness_variable_name, "",
-                                              m_grid->ctx()->unit_system());
+      auto last_record =
+          regrid_file.nrecords(details::layer_thickness_variable_name, "", m_sys) - 1;
 
       initialize(regrid_file, (int)last_record, true);
+
+      details::renormalize(ice_thickness, *m_layer_thickness);
 
       return;
     }
 
     auto time = m_grid->ctx()->time();
 
-    m_layer_thickness->set(0.0);
-
-    auto times = deposition_times(*m_config, *time);
+    auto requested_times = deposition_times(*m_config, *time);
 
     auto N_bootstrap        = static_cast<int>(m_config->get_number(N_boot_parameter));
     auto N_max              = static_cast<int>(m_config->get_number(N_max_parameter));
-    auto N_deposition_times = times.size();
+    auto N_deposition_times = requested_times.size();
 
     if (N_bootstrap < 0) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s have to be non-negative (got %d)",
@@ -430,23 +464,23 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
           (int)N_bootstrap, times_parameter, (int)N_deposition_times, N_max_parameter, (int)N_max);
     }
 
-    m_top_layer_index = 0;
     if (N_bootstrap > 0) {
       // prepend "bootstrapping" layers to m_deposition_times
       double T_0 = time->start();
 
+      m_top_layer_index = 0;
       std::vector<double> deposition_times;
       for (int k = 0; k < N_bootstrap; ++k) {
         deposition_times.push_back(T_0);
         m_top_layer_index += 1;
       }
-      for (const auto &t : times) {
+      for (const auto &t : requested_times) {
         deposition_times.push_back(t);
       }
 
       // re-allocate storage
       m_layer_thickness = allocate_layer_thickness(m_grid, deposition_times);
-      m_tmp = m_layer_thickness->duplicate(array::WITH_GHOSTS);
+      m_tmp             = m_layer_thickness->duplicate(array::WITH_GHOSTS);
 
       array::AccessScope scope{ &ice_thickness, m_layer_thickness.get() };
 
@@ -461,6 +495,11 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
         }
       }
     } else {
+
+      m_layer_thickness = allocate_layer_thickness(m_grid, requested_times);
+      m_tmp             = m_layer_thickness->duplicate(array::WITH_GHOSTS);
+      m_top_layer_index = 0;
+
       array::AccessScope scope{ &ice_thickness, m_layer_thickness.get() };
 
       for (auto p = m_grid->points(); p; p.next()) {
@@ -474,6 +513,11 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
     throw;
   }
 }
+
+/*!
+ * Initialize from the `input_file` using `record`. Uses regridding if `use_interpolation`
+ * is true.
+ */
 void Isochrones::initialize(const File &input_file, int record, bool use_interpolation) {
   try {
     using namespace details;
@@ -485,6 +529,8 @@ void Isochrones::initialize(const File &input_file, int record, bool use_interpo
       m_log->message(2, "  [using bilinear interpolation to read layer thicknesses]\n");
     }
 
+    const auto &time = m_grid->ctx()->time();
+
     {
       std::shared_ptr<array::Array3D> tmp;
 
@@ -494,17 +540,13 @@ void Isochrones::initialize(const File &input_file, int record, bool use_interpo
         tmp = read_layer_thickness(m_grid, input_file, record);
       }
 
-      const auto &time = m_grid->ctx()->time();
-
-      m_layer_thickness = allocate_layer_thickness(*tmp,
-                                                   time->start(),
-                                                   deposition_times(*m_config, *time));
+      m_layer_thickness =
+          allocate_layer_thickness(*tmp, time->start(), deposition_times(*m_config, *time));
     }
     m_tmp = m_layer_thickness->duplicate(array::WITH_GHOSTS);
 
     // set m_top_layer_index
-    m_top_layer_index =
-        n_active_layers(m_layer_thickness->get_levels(), m_grid->ctx()->time()->current()) - 1;
+    m_top_layer_index = n_active_layers(m_layer_thickness->get_levels(), time->start()) - 1;
 
   } catch (RuntimeError &e) {
     e.add_context("initializing the isochrone tracking model");
@@ -520,47 +562,11 @@ void Isochrones::restart(const File &input_file, int record) {
     File regrid_file(m_grid->com, m_config->get_string("input.regrid.file"), io::PISM_GUESS,
                      io::PISM_READONLY);
 
-    auto last_record = regrid_file.nrecords(details::layer_thickness_variable_name, "",
-                                            m_grid->ctx()->unit_system());
+    auto last_record = regrid_file.nrecords(details::layer_thickness_variable_name, "", m_sys);
 
     initialize(regrid_file, (int)last_record, true);
   } else {
     initialize(input_file, record, false);
-  }
-}
-
-/*!
- * Re-scale layer thicknesses so that the sum of layer thicknesses is equal to the
- * ice_thickness.
- *
- * @param[in] ice_thickness ice thickness, meters
- * @param[in,out] layer_thickness isochronal layer thickness
- */
-static void renormalize(const array::Scalar &ice_thickness,
-                        array::Array3D &layer_thickness) {
-  auto grid = layer_thickness.grid();
-
-  auto N = layer_thickness.get_levels().size();
-
-  array::AccessScope scope{&ice_thickness, &layer_thickness};
-
-  for (auto p = grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    double *H = layer_thickness.get_column(i, j);
-
-    double H_total = 0.0;
-    for (int k = 0; k < (int)N; ++k) {
-      H_total += H[k];
-    }
-
-    // re-scale so that the sum of layer thicknesses is equal to the ice_thickness
-    if (H_total > 0.0) {
-      double S = ice_thickness(i, j) / H_total;
-      for (size_t k = 0; k < N; ++k) {
-        H[k] *= S;
-      }
-    }
   }
 }
 
@@ -713,6 +719,7 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
       }
     }
   }
+
   // add one more layer if we reached the next deposition time
   {
     double T                     = t + dt;
@@ -747,15 +754,15 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
 }
 
 MaxTimestep Isochrones::max_timestep_impl(double t) const {
-  return std::min(max_timestep_deposition_times(t), max_timestep_cfl(t));
+  return std::min(max_timestep_deposition_times(t), max_timestep_cfl());
 }
 
-MaxTimestep Isochrones::max_timestep_cfl(double t) const {
+MaxTimestep Isochrones::max_timestep_cfl() const {
 
   if (m_stress_balance == nullptr) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Isochrone tracking: no stress balance provided. "
-                                  "Cannot compute max. time step.");
+                                  "Cannot compute the maximum time step.");
   }
 
   return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "isochrones");
@@ -797,18 +804,7 @@ MaxTimestep Isochrones::max_timestep_deposition_times(double t) const {
  * We are saving layer thicknesses, deposition times, and the number of active layers.
  */
 void Isochrones::define_model_state_impl(const File &output) const {
-  using namespace details;
-
   m_layer_thickness->define(output, io::PISM_DOUBLE);
-
-  if (not output.find_variable(layer_count_variable_name)) {
-    auto time_name = m_config->get_string("time.dimension_name");
-
-    output.define_variable(layer_count_variable_name, io::PISM_INT, { time_name });
-    output.write_attribute(layer_count_variable_name, "long_name",
-                           pism::printf("number of 'active' isochronal layers in '%s'",
-                                        m_layer_thickness->metadata().get_name().c_str()));
-  }
 }
 
 /*!
@@ -816,12 +812,6 @@ void Isochrones::define_model_state_impl(const File &output) const {
  */
 void Isochrones::write_model_state_impl(const File &output) const {
   m_layer_thickness->write(output);
-
-  double N = static_cast<double>(m_top_layer_index) + 1;
-
-  unsigned int t_last = output.nrecords() - 1;
-
-  output.write_variable(details::layer_count_variable_name, { t_last }, { 1 }, &N);
 }
 
 const array::Array3D &Isochrones::layer_thicknesses() const {

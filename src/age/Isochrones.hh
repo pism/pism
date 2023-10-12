@@ -57,7 +57,7 @@ public:
 private:
   MaxTimestep max_timestep_impl(double t) const;
 
-  MaxTimestep max_timestep_cfl(double t) const;
+  MaxTimestep max_timestep_cfl() const;
   MaxTimestep max_timestep_deposition_times(double t) const;
 
   void define_model_state_impl(const File &output) const;
