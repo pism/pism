@@ -1104,10 +1104,10 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
         }
         break;
       }
+      case UNKNOWN_AXIS:
       default: {
-        throw RuntimeError::formatted(
-            PISM_ERROR_LOCATION, "can't figure out which direction dimension '%s' corresponds to.",
-            dimension_name.c_str());
+        // ignore unknown axes
+        break;
       }
       } // switch
     }   // for loop
