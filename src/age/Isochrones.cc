@@ -157,7 +157,7 @@ allocate_layer_thickness(const array::Array3D &input, double T_start,
 
   auto grid = input.grid();
 
-  const auto &input_times = input.get_levels();
+  const auto &input_times = input.levels();
 
   // the sequence of deposition times has to be monotonically non-decreasing
   // (bootstrapping may create several layers with identical deposition times)
@@ -283,7 +283,7 @@ static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<co
 
   auto result = details::allocate_layer_thickness(grid, deposition_times(input_file));
 
-  auto N = (int)result->get_levels().size();
+  auto N = (int)result->levels().size();
 
   auto metadata = result->metadata(0);
 
@@ -370,7 +370,7 @@ static void renormalize(const array::Scalar &ice_thickness,
                         array::Array3D &layer_thickness) {
   auto grid = layer_thickness.grid();
 
-  auto N = layer_thickness.get_levels().size();
+  auto N = layer_thickness.levels().size();
 
   array::AccessScope scope{&ice_thickness, &layer_thickness};
 
@@ -546,7 +546,7 @@ void Isochrones::initialize(const File &input_file, int record, bool use_interpo
     m_tmp = m_layer_thickness->duplicate(array::WITH_GHOSTS);
 
     // set m_top_layer_index
-    m_top_layer_index = n_active_layers(m_layer_thickness->get_levels(), time->start()) - 1;
+    m_top_layer_index = n_active_layers(m_layer_thickness->levels(), time->start()) - 1;
 
   } catch (RuntimeError &e) {
     e.add_context("initializing the isochrone tracking model");
@@ -723,7 +723,7 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
   // add one more layer if we reached the next deposition time
   {
     double T                     = t + dt;
-    const auto &deposition_times = m_layer_thickness->get_levels();
+    const auto &deposition_times = m_layer_thickness->levels();
     size_t N                     = deposition_times.size();
 
     // Find the index k such that deposition_times[k] <= T < deposition_times[k + 1]
@@ -774,7 +774,7 @@ MaxTimestep Isochrones::max_timestep_cfl() const {
  * We can go up to the next deposition time.
  */
 MaxTimestep Isochrones::max_timestep_deposition_times(double t) const {
-  auto deposition_times = m_layer_thickness->get_levels();
+  auto deposition_times = m_layer_thickness->levels();
 
   double t0 = deposition_times[0];
   if (t < t0) {
@@ -828,7 +828,7 @@ public:
 
     const auto &time = m_grid->ctx()->time();
 
-    m_vars = { { m_sys, isochrone_depth_variable_name, model->layer_thicknesses().get_levels() } };
+    m_vars = { { m_sys, isochrone_depth_variable_name, model->layer_thicknesses().levels() } };
 
     auto description = pism::printf("depth below surface of isochrones for times in '%s'",
                                     deposition_time_variable_name);
@@ -851,7 +851,7 @@ protected:
     auto result         = layer_thicknesses.duplicate();
     result->metadata(0) = m_vars[0];
 
-    size_t N = result->get_levels().size();
+    size_t N = result->levels().size();
 
     array::AccessScope scope{ &layer_thicknesses, result.get() };
 

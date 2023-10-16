@@ -138,18 +138,9 @@ unsigned int Array::ndof() const {
   return m_impl->dof;
 }
 
-const std::vector<double>& Array::get_levels() const {
+const std::vector<double>& Array::levels() const {
   return m_impl->zlevels;
 }
-
-void Array::set_levels(const std::vector<double>& levels) {
-  assert(m_impl->zlevels.size() == levels.size());
-
-  for (size_t k = 0; k < m_impl->zlevels.size(); ++k) {
-    m_impl->zlevels[k] = levels[k];
-  }
-}
-
 
 //! \brief Increment the object state counter.
 /*!
@@ -172,7 +163,7 @@ std::vector<int> Array::shape() const {
   auto grid = m_impl->grid;
 
   if (ndims() == 3) {
-    return {(int)grid->My(), (int)grid->Mx(), (int)get_levels().size()};
+    return {(int)grid->My(), (int)grid->Mx(), (int)levels().size()};
   }
 
   if (ndof() == 1) {
@@ -462,7 +453,7 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
       // internal vertical (Z) grid.
       io::check_input_grid(input_grid, *grid(), {0.0});
 
-      LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
+      LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
 
       // Note: this call will read the last time record (the index is set in `lic` based on
       // info in `input_grid`).
@@ -471,7 +462,7 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
 
       // Check the range and report it if necessary.
       {
-        const size_t data_size = grid()->xm() * grid()->ym() * get_levels().size();
+        const size_t data_size = grid()->xm() * grid()->ym() * levels().size();
         auto range = compute_range(grid()->com, tmp_array.get(), data_size);
         auto min   = range[0];
         auto max   = range[1];

@@ -216,8 +216,7 @@ public:
   unsigned int ndof() const;
   unsigned int stencil_width() const;
 
-  const std::vector<double>& get_levels() const;
-  void set_levels(const std::vector<double>& levels);
+  const std::vector<double>& levels() const;
 
   std::array<double,2> range() const;
   std::vector<double> norm(int n) const;

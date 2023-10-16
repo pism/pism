@@ -337,7 +337,7 @@ void Forcing::init_periodic_data(const File &file) {
 
   grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
-  LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
+  LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
 
   for (unsigned int j = 0; j < n_records; ++j) {
     {
@@ -545,7 +545,7 @@ void Forcing::update(unsigned int start) {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
     grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
-    LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
+    LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
 
     for (unsigned int j = 0; j < missing; ++j) {
       lic.start[T_AXIS] = (int)(start + j);

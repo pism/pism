@@ -44,7 +44,7 @@ void BTU_Verification::initialize_bottom_surface_flux() {
 void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
   (void) bedrock_top_temperature;
 
-  std::vector<double> temperature(m_Mbz), zlevels = m_temp->get_levels();
+  std::vector<double> temperature(m_Mbz), zlevels = m_temp->levels();
 
   double time = this->time().current();
 

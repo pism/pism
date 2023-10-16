@@ -57,10 +57,10 @@ void Array3D::set_column(int i, int j, double c) {
   double ***arr = (double ***)m_array;
 
   if (c == 0.0) {
-    ierr = PetscMemzero(arr[j][i], get_levels().size() * sizeof(double));
+    ierr = PetscMemzero(arr[j][i], levels().size() * sizeof(double));
     PISM_CHK(ierr, "PetscMemzero");
   } else {
-    unsigned int nlevels = get_levels().size();
+    unsigned int nlevels = levels().size();
     for (unsigned int k = 0; k < nlevels; k++) {
       arr[j][i][k] = c;
     }
@@ -87,7 +87,7 @@ static bool legal_level(const std::vector<double> &levels, double z) {
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 double Array3D::interpolate(int i, int j, double z) const {
-  const auto &zs = get_levels();
+  const auto &zs = levels();
   auto N         = zs.size();
 
 #if (Pism_DEBUG == 1)
@@ -209,12 +209,12 @@ void sum_columns(const Array3D &data, double A, double B, Scalar &output) {
 void Array3D::copy_from(const Array3D &input) {
   array::AccessScope list{ this, &input };
 
-  assert(get_levels().size() == input.get_levels().size());
+  assert(levels().size() == input.levels().size());
   assert(ndof() == input.ndof());
 
   // 3D arrays have more than one level and ndof() of 1, collections of fields have one
   // level and ndof() > 1
-  auto N = std::max((size_t)ndof(), get_levels().size());
+  auto N = std::max((size_t)ndof(), levels().size());
 
   ParallelSection loop(m_impl->grid->com);
   try {
@@ -241,7 +241,7 @@ void Array3D::copy_from(const Array3D &input) {
 std::shared_ptr<Array3D> Array3D::duplicate(Kind ghostedp) const {
 
   auto result =
-      std::make_shared<Array3D>(this->grid(), this->get_name(), ghostedp, this->get_levels());
+      std::make_shared<Array3D>(this->grid(), this->get_name(), ghostedp, this->levels());
 
   result->metadata() = this->metadata();
 
@@ -267,9 +267,9 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
 
     input_grid.report(*log, 4, variable.unit_system());
 
-    io::check_input_grid(input_grid, *grid(), get_levels());
+    io::check_input_grid(input_grid, *grid(), levels());
 
-    LocalInterpCtx lic(input_grid, *grid(), get_levels(), m_impl->interpolation_type);
+    LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
 
     // Note: this call will read the last time record (the index is set in `lic` based on
     // info in `input_grid`).

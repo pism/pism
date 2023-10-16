@@ -90,7 +90,7 @@ using namespace pism;
 %extend pism::array::Array3D
 {
   std::vector<double> _get_column(int i, int j) const {
-    size_t n = $self->get_levels().size();
+    size_t n = $self->levels().size();
     std::vector<double> result(n);
     const double *data = $self->get_column(i, j);
     for (size_t k = 0; k < n; ++k) {
@@ -100,7 +100,7 @@ using namespace pism;
   }
 
   void set_column(int i, int j, const std::vector<double> &data) {
-    assert(data.size() >= $self->get_levels().size());
+    assert(data.size() >= $self->levels().size());
     $self->set_column(i, j, data.data());
   }
 

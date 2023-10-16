@@ -390,7 +390,7 @@ class TestXZ(TestCase):
         # run the solver
         model.update(inputs, True)
 
-        u_model_z = model.velocity_u_sigma().get_levels()
+        u_model_z = model.velocity_u_sigma().levels()
 
         u_model = PISM.Array3D(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
         u_model.metadata(0).long_name("modeled velocity").units("m / s").output_units("m / year")
@@ -582,7 +582,7 @@ class TestCFBC(TestCase):
         # run the solver
         model.update(inputs, True)
 
-        u_model_z = model.velocity_u_sigma().get_levels()
+        u_model_z = model.velocity_u_sigma().levels()
 
         u_model = PISM.Array3D(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
         u_model.metadata(0).long_name("modeled velocity").units("m / s").output_units("m / year")
@@ -860,7 +860,7 @@ class TestXZHalfar(TestCase):
     def exact_solution(self, model):
         "Returns an array with the exact solution"
 
-        Z = model.velocity_u_sigma().get_levels()
+        Z = model.velocity_u_sigma().levels()
         grid = model.grid()
 
         exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
@@ -885,7 +885,7 @@ class TestXZHalfar(TestCase):
         u_exact = self.exact_solution(model)
 
         # compute the error
-        Z = model.velocity_u_sigma().get_levels()
+        Z = model.velocity_u_sigma().levels()
         u_error = PISM.Array3D(grid, "error", PISM.WITHOUT_GHOSTS, Z)
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
