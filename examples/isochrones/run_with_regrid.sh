@@ -28,7 +28,7 @@ mpiexec -n ${N} pismr -eisII A \
         -isochrones.bootstrapping.n_layers 0 \
         -output.extra.file ex_regrid_part1.nc \
         -output.file o_regrid_part1.nc \
-        -time.end 10e3 \
+        -time.end 10.5e3 \
         ${common_options}
 
 mpiexec -n ${N} pismr \
