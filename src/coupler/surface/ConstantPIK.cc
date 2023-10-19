@@ -55,7 +55,7 @@ void PIK::init_impl(const Geometry &geometry) {
                  "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
                  opts.filename.c_str());
   if (opts.type == INIT_BOOTSTRAP) {
-    m_mass_flux->regrid(opts.filename, io::CRITICAL); // fails if not found!
+    m_mass_flux->regrid(opts.filename, io::Default::Nil()); // fails if not found!
   } else {
     m_mass_flux->read(opts.filename, opts.record); // fails if not found!
   }

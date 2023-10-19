@@ -179,12 +179,12 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
     m_snow_depth.read(input.filename, input.record);
   } else if (input.type == INIT_BOOTSTRAP) {
 
-    m_snow_depth.regrid(input.filename, io::OPTIONAL, 0.0);
+    m_snow_depth.regrid(input.filename, io::Default(0.0));
 
     if (firn_file.empty()) {
-      m_firn_depth.regrid(input.filename, io::OPTIONAL, 0.0);
+      m_firn_depth.regrid(input.filename, io::Default(0.0));
     } else {
-      m_firn_depth.regrid(firn_file, io::CRITICAL);
+      m_firn_depth.regrid(firn_file, io::Default::Nil());
     }
   } else {
 
@@ -193,7 +193,7 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
     if (firn_file.empty()) {
       m_firn_depth.set(0.0);
     } else {
-      m_firn_depth.regrid(firn_file, io::CRITICAL);
+      m_firn_depth.regrid(firn_file, io::Default::Nil());
     }
   }
 

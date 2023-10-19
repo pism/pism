@@ -28,7 +28,8 @@ namespace energy {
 /*! @brief The enthalpy-based energy balance model. */
 class EnthalpyModel : public EnergyModel {
 public:
-  EnthalpyModel(std::shared_ptr<const Grid> grid, stressbalance::StressBalance *stress_balance);
+  EnthalpyModel(std::shared_ptr<const Grid> grid,
+                std::shared_ptr<const stressbalance::StressBalance> stress_balance);
 
 protected:
   virtual void restart_impl(const File &input_file, int record);
@@ -55,7 +56,8 @@ protected:
 /*! @brief The "dummy" energy balance model. Reads in enthalpy from a file, but does not update it. */
 class DummyEnergyModel : public EnthalpyModel {
 public:
-  DummyEnergyModel(std::shared_ptr<const Grid> grid, stressbalance::StressBalance *stress_balance);
+  DummyEnergyModel(std::shared_ptr<const Grid> grid,
+                   std::shared_ptr<const stressbalance::StressBalance> stress_balance);
 
 protected:
   MaxTimestep max_timestep_impl(double t) const;

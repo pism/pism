@@ -45,6 +45,7 @@ def plot_isochrones(ax, f, index=-1):
                 label=f"isochrones (spacing: {int(spacing)} years)" if k == 0 else None)
 
     ax.plot(x, thk, color='black', label="ice surface")
+    ax.plot(x, thk, '.', color='black')
 
     ax.set_ylim(ymin=-100, ymax=H_max)
     ax.set_xlim(xmin=0, xmax=600)

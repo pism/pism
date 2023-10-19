@@ -378,7 +378,7 @@ void Hydrology::bootstrap_impl(const File &input_file, const array::Scalar &ice_
   (void)ice_thickness;
 
   double tillwat_default = m_config->get_number("bootstrapping.defaults.tillwat");
-  m_Wtill.regrid(input_file, io::OPTIONAL, tillwat_default);
+  m_Wtill.regrid(input_file, io::Default(tillwat_default));
 
   // whether or not we could initialize from file, we could be asked to regrid from file
   regrid("Hydrology", m_Wtill);

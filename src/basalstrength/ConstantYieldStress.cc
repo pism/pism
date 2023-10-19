@@ -41,7 +41,7 @@ void ConstantYieldStress::bootstrap_impl(const File &input_file,
   (void) inputs;
 
   double tauc = m_config->get_number("basal_yield_stress.constant.value");
-  m_basal_yield_stress.regrid(input_file, io::OPTIONAL, tauc);
+  m_basal_yield_stress.regrid(input_file, io::Default(tauc));
 
   regrid(name(), m_basal_yield_stress);
 }

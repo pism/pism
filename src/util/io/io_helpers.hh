@@ -24,6 +24,8 @@
 #include <vector>
 #include <mpi.h>
 
+#include "IO_Flags.hh"
+#include "LocalInterpCtx.hh"
 #include "pism/util/Units.hh"
 
 namespace pism {
@@ -37,28 +39,26 @@ class Logger;
 class Context;
 class Config;
 
+namespace grid {
+class InputGridInfo;
+}
+
 enum InterpolationType : int;
+
+class LocalInterpCtx;
 
 namespace io {
 
 enum Type : int;
-enum RegriddingFlag : int;
 
-void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const Grid& grid, const File &nc,
-                             RegriddingFlag flag, bool do_report_range,
-                             bool allow_extrapolation,
-                             double default_value,
-                             InterpolationType type,
-                             double *output);
+void check_input_grid(const grid::InputGridInfo &input_grid,
+                      const Grid& internal_grid,
+                      const std::vector<double> &internal_z_levels);
 
-void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const Grid& grid, const File &nc,
-                             unsigned int t_start,
-                             RegriddingFlag flag, bool do_report_range,
-                             bool allow_extrapolation,
-                             double default_value,
-                             InterpolationType type,
+void regrid_spatial_variable(SpatialVariableMetadata &variable,
+                             const Grid& internal_grid,
+                             const LocalInterpCtx &lic,
+                             const File &file,
                              double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &variable,

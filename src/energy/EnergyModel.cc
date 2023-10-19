@@ -104,12 +104,13 @@ void EnergyModelStats::sum(MPI_Comm com) {
 
 
 EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
-                         stressbalance::StressBalance *stress_balance)
-  : Component(grid),
-    m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), m_config->get_number("grid.max_stencil_width")),
-    m_work(m_grid, "work_vector", array::WITHOUT_GHOSTS, m_grid->z()),
-    m_basal_melt_rate(m_grid, "basal_melt_rate_grounded"),
-    m_stress_balance(stress_balance) {
+                         std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : Component(grid),
+      m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(),
+                     m_config->get_number("grid.max_stencil_width")),
+      m_work(m_grid, "work_vector", array::WITHOUT_GHOSTS, m_grid->z()),
+      m_basal_melt_rate(m_grid, "basal_melt_rate_grounded"),
+      m_stress_balance(stress_balance) {
 
   // POSSIBLE standard name = land_ice_enthalpy
   m_ice_enthalpy.metadata(0)
@@ -135,7 +136,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
 
   if (input_file.find_variable("enthalpy")) {
     if (do_regrid) {
-      m_ice_enthalpy.regrid(input_file, io::CRITICAL);
+      m_ice_enthalpy.regrid(input_file, io::Default::Nil());
     } else {
       m_ice_enthalpy.read(input_file, record);
     }
@@ -151,7 +152,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
           .standard_name("land_ice_temperature");
 
       if (do_regrid) {
-        temp.regrid(input_file, io::CRITICAL);
+        temp.regrid(input_file, io::Default::Nil());
       } else {
         temp.read(input_file, record);
       }
@@ -167,7 +168,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
       liqfrac.metadata(0).long_name("ice liquid water fraction").units("1");
 
       if (do_regrid) {
-        liqfrac.regrid(input_file, io::CRITICAL);
+        liqfrac.regrid(input_file, io::Default::Nil());
       } else {
         liqfrac.read(input_file, record);
       }

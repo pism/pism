@@ -5,7 +5,7 @@
 N=${N:-8}
 
 # horizontal grid size
-M=${M:-201}
+M=${M:-401}
 
 mpiexec -n ${N} pismr -eisII A \
         -grid.Lz 5000 \

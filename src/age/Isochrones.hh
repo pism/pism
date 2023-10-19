@@ -18,18 +18,27 @@
  */
 
 #include "pism/util/Component.hh"
-#include "pism/util/array/Array3D.hh"
 #include <memory>
 #include <vector>
 
 namespace pism {
+
+namespace array {
+class Array3D;
+class Scalar;
+} // namespace array
+
+namespace stressbalance {
+class StressBalance;
+}
 
 /*!
  * The isochrone tracing scheme of [@ref Born2016] and [@ref Born2021].
  */
 class Isochrones : public Component {
 public:
-  Isochrones(std::shared_ptr<const Grid> grid);
+  Isochrones(std::shared_ptr<const Grid> grid,
+             std::shared_ptr<const stressbalance::StressBalance> stress_balance);
   virtual ~Isochrones() = default;
 
   void bootstrap(const array::Scalar &ice_thickness);
@@ -48,6 +57,9 @@ public:
 private:
   MaxTimestep max_timestep_impl(double t) const;
 
+  MaxTimestep max_timestep_cfl() const;
+  MaxTimestep max_timestep_deposition_times(double t) const;
+
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
@@ -55,7 +67,7 @@ private:
 
   DiagnosticList diagnostics_impl() const;
 
-  void allocate(const std::vector<double> &levels);
+  void initialize(const File &input_file, int record, bool use_interpolation);
 
   //! isochronal layer thicknesses
   std::shared_ptr<array::Array3D> m_layer_thickness;
@@ -66,7 +78,7 @@ private:
   //! The index of the topmost isochronal layer.
   size_t m_top_layer_index;
 
-  std::vector<double> m_deposition_times;
+  std::shared_ptr<const stressbalance::StressBalance> m_stress_balance;
 };
 
 } // end of namespace pism

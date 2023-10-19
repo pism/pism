@@ -146,7 +146,7 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
   auto tauc_to_phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.tauc_to_phi.file");
 
   if (not tauc_to_phi_file.empty()) {
-    m_basal_yield_stress.regrid(tauc_to_phi_file, io::CRITICAL);
+    m_basal_yield_stress.regrid(tauc_to_phi_file, io::Default::Nil());
 
     m_log->message(2,
                    "  Will compute till friction angle (tillphi) as a function"
@@ -174,7 +174,7 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
 
   } else {
     double till_phi_default = m_config->get_number("basal_yield_stress.mohr_coulomb.till_phi_default");
-    m_till_phi.regrid(input_file, io::OPTIONAL, till_phi_default);
+    m_till_phi.regrid(input_file, io::Default(till_phi_default));
   }
 
   finish_initialization(inputs);

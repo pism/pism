@@ -332,26 +332,32 @@ void Forcing::init_periodic_data(const File &file) {
 
   // Read all the records and store them. The index offset leaves room for an extra record
   // needed to simplify interpolation
+  auto variable = m_impl->metadata[0];
+  auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
+
+  grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
+
+  LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
+
   for (unsigned int j = 0; j < n_records; ++j) {
     {
+      lic.start[T_AXIS] = (int)j;
+      lic.count[T_AXIS] = 1;
+
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(m_impl->metadata[0], *grid(), file, j, io::CRITICAL,
-                                  m_impl->report_range, allow_extrapolation,
-                                  0.0, m_impl->interpolation_type, tmp_array.get());
+      io::regrid_spatial_variable(variable, *grid(), lic, file, tmp_array.get());
     }
 
     auto time = ctx->time();
-    auto log = ctx->log();
-    log->message(5, " %s: reading entry #%02d, time %s...\n",
-                 name.c_str(),
-                 j,
+    auto log  = ctx->log();
+    log->message(5, " %s: reading entry #%02d, time %s...\n", name.c_str(), j,
                  time->date(m_data->time[j]).c_str());
 
     set_record(offset + j);
   }
 
   m_data->n_records = buffer_required;
-  m_data->first = 0;
+  m_data->first     = 0;
 
   if (m_data->interp_type == PIECEWISE_CONSTANT) {
     return;
@@ -372,12 +378,12 @@ void Forcing::init_periodic_data(const File &file) {
 
   // indexes used to access the first and the last entry in the buffer
   int first = 1;
-  int last = buffer_required - 2;
+  int last  = buffer_required - 2;
 
-  array::AccessScope list{this};
+  array::AccessScope list{ this };
 
   // compute values at the beginning (and so at the end) of the period
-  double  **a2 = array();
+  double **a2  = array();
   double ***a3 = array3();
   for (auto p = grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -458,19 +464,16 @@ void Forcing::update(double t, double dt) {
     }
   }
 
-  Interpolation I(m_data->interp_type, m_data->time, {t, t + dt});
+  Interpolation I(m_data->interp_type, m_data->time, { t, t + dt });
 
-  unsigned int
-    first = I.left(0),
-    last  = I.right(1),
-    N     = last - first + 1;
+  unsigned int first = I.left(0), last = I.right(1), N = last - first + 1;
 
   // check if all the records necessary to cover this interval fit in the
   // buffer:
   if (N > m_data->buffer_size) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "cannot read %d records of %s (buffer size: %d)",
-                                  N, m_impl->name.c_str(), m_data->buffer_size);
+                                  "cannot read %d records of %s (buffer size: %d)", N,
+                                  m_impl->name.c_str(), m_data->buffer_size);
   }
 
   update(first);
@@ -498,7 +501,7 @@ void Forcing::update(unsigned int start) {
     unsigned int last = m_data->first + (m_data->n_records - 1);
     if ((m_data->n_records > 0) && (start >= (unsigned int)m_data->first) && (start <= last)) {
       int discarded = start - m_data->first;
-      kept = last - start + 1;
+      kept          = last - start + 1;
       discard(discarded);
       missing -= kept;
       start += kept;
@@ -521,11 +524,11 @@ void Forcing::update(unsigned int start) {
   auto log = m_impl->grid->ctx()->log();
   if (this->buffer_size() > 1) {
     log->message(4,
-               "  reading \"%s\" into buffer\n"
-               "          (short_name = %s): %d records, time %s through %s...\n",
-               metadata().get_string("long_name").c_str(), m_impl->name.c_str(), missing,
-               t->date(m_data->time[start]).c_str(),
-               t->date(m_data->time[start + missing - 1]).c_str());
+                 "  reading \"%s\" into buffer\n"
+                 "          (short_name = %s): %d records, time %s through %s...\n",
+                 metadata().get_string("long_name").c_str(), m_impl->name.c_str(), missing,
+                 t->date(m_data->time[start]).c_str(),
+                 t->date(m_data->time[start + missing - 1]).c_str());
     m_impl->report_range = false;
   } else {
     m_impl->report_range = true;
@@ -533,26 +536,32 @@ void Forcing::update(unsigned int start) {
 
   File file(m_impl->grid->com, m_data->filename, io::PISM_GUESS, io::PISM_READONLY);
 
-  const bool allow_extrapolation = m_impl->grid->ctx()->config()->get_flag("grid.allow_extrapolation");
+  const bool allow_extrapolation =
+      m_impl->grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
-  for (unsigned int j = 0; j < missing; ++j) {
-    try {
+  auto variable = m_impl->metadata[0];
+
+  try {
+    auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
+    grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
+
+    LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
+
+    for (unsigned int j = 0; j < missing; ++j) {
+      lic.start[T_AXIS] = (int)(start + j);
+      lic.count[T_AXIS] = 1;
+
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(m_impl->metadata[0], *m_impl->grid, file, start + j, io::CRITICAL,
-                                  m_impl->report_range, allow_extrapolation,
-                                  0.0, m_impl->interpolation_type, tmp_array.get());
-    } catch (RuntimeError &e) {
-      e.add_context("regridding '%s' from '%s'",
-                    this->get_name().c_str(), m_data->filename.c_str());
-      throw;
+      io::regrid_spatial_variable(variable, *m_impl->grid, lic, file, tmp_array.get());
+
+      log->message(5, " %s: reading entry #%02d, year %s...\n", m_impl->name.c_str(), start + j,
+                   t->date(m_data->time[start + j]).c_str());
+
+      set_record(kept + j);
     }
-
-    log->message(5, " %s: reading entry #%02d, year %s...\n",
-                 m_impl->name.c_str(),
-                 start + j,
-                 t->date(m_data->time[start + j]).c_str());
-
-    set_record(kept + j);
+  } catch (RuntimeError &e) {
+    e.add_context("regridding '%s' from '%s'", this->get_name().c_str(), m_data->filename.c_str());
+    throw;
   }
 }
 

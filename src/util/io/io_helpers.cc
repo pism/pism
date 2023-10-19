@@ -17,12 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <memory>
 #include <cassert>
-#include <cmath>                // isfinite
+#include <cmath> // isfinite
+#include <cstddef>
+#include <memory>
+#include <array>
+#include <vector>
 
-#include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
@@ -32,8 +33,10 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/interpolation.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 
@@ -56,18 +59,18 @@ namespace io {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-static void regrid(const Grid &grid, const std::vector<double> &zlevels_out, LocalInterpCtx *lic,
+static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *input_array,
                    double *output_array) {
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
-  const int X = 1, Z = 3; // indices, just for clarity
+  const int X = X_AXIS,
+            Z = Z_AXIS; // indices, just for clarity
 
-  unsigned int nlevels = zlevels_out.size();
-  double *input_array  = (lic->buffer).data();
+  unsigned int nlevels = lic.z->n_output();
 
   // array sizes for mapping from logical to "flat" indices
-  int x_count = lic->count[X], z_count = lic->count[Z];
+  int x_count = lic.count[X], z_count = lic.count[Z];
 
   for (auto p = grid.points(); p; p.next()) {
     const int i_global = p.i(), j_global = p.j();
@@ -75,17 +78,17 @@ static void regrid(const Grid &grid, const std::vector<double> &zlevels_out, Loc
     const int i = i_global - grid.xs(), j = j_global - grid.ys();
 
     // Indices of neighboring points.
-    const int X_m = lic->x->left(i), X_p = lic->x->right(i), Y_m = lic->y->left(j),
-              Y_p = lic->y->right(j);
+    const int X_m = lic.x->left(i), X_p = lic.x->right(i), Y_m = lic.y->left(j),
+              Y_p = lic.y->right(j);
 
     for (unsigned int k = 0; k < nlevels; k++) {
 
       double a_mm = 0.0, a_mp = 0.0, a_pm = 0.0, a_pp = 0.0;
 
       if (nlevels > 1) {
-        const int Z_m = lic->z->left(k), Z_p = lic->z->right(k);
+        const int Z_m = lic.z->left(k), Z_p = lic.z->right(k);
 
-        const double alpha_z = lic->z->alpha(k);
+        const double alpha_z = lic.z->alpha(k);
 
         // We pretend that there are always 8 neighbors (4 in the map plane,
         // 2 vertical levels). And compute the indices into the input_array for
@@ -113,9 +116,9 @@ static void regrid(const Grid &grid, const std::vector<double> &zlevels_out, Loc
       }
 
       // interpolation coefficient in the x direction
-      const double x_alpha = lic->x->alpha(i);
+      const double x_alpha = lic.x->alpha(i);
       // interpolation coefficient in the y direction
-      const double y_alpha = lic->y->alpha(j);
+      const double y_alpha = lic.y->alpha(j);
 
       // interpolate in x direction
       const double a_m = a_mm * (1.0 - x_alpha) + a_mp * x_alpha;
@@ -130,59 +133,62 @@ static void regrid(const Grid &grid, const std::vector<double> &zlevels_out, Loc
   }
 }
 
-static void compute_start_and_count(const File &file, units::System::Ptr unit_system,
-                                    const std::string &short_name, unsigned int t_start,
-                                    unsigned int t_count, unsigned int x_start,
-                                    unsigned int x_count, unsigned int y_start,
-                                    unsigned int y_count, unsigned int z_start,
-                                    unsigned int z_count, std::vector<unsigned int> &start,
-                                    std::vector<unsigned int> &count,
-                                    std::vector<unsigned int> &imap) {
-  std::vector<std::string> dims = file.dimensions(short_name);
-  unsigned int ndims            = dims.size();
+struct StartCountInfo {
+  std::vector<unsigned int> start;
+  std::vector<unsigned int> count;
+  std::vector<unsigned int> imap;
+};
 
-  assert(ndims > 0);
-  if (ndims == 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Cannot compute start and count: variable '%s' is a scalar.",
-                                  short_name.c_str());
-  }
+static StartCountInfo compute_start_and_count(std::vector<AxisType> &dim_types,
+                                              std::array<int, 4> start_in,
+                                              std::array<int, 4> count_in) {
+
+  auto x_start = start_in[X_AXIS];
+  auto x_count = count_in[X_AXIS];
+  auto y_start = start_in[Y_AXIS];
+  auto y_count = count_in[Y_AXIS];
+  auto z_start = start_in[Z_AXIS];
+  auto z_count = count_in[Z_AXIS];
+
+  StartCountInfo result;
+
+  auto ndims = dim_types.size();
 
   // Resize output vectors:
-  start.resize(ndims);
-  count.resize(ndims);
-  imap.resize(ndims);
+  result.start.resize(ndims);
+  result.count.resize(ndims);
+  result.imap.resize(ndims);
 
   // Assemble start, count and imap:
   for (unsigned int j = 0; j < ndims; j++) {
-    std::string dimname = dims[j];
-
-    AxisType dimtype = file.dimension_type(dimname, unit_system);
+    AxisType dimtype = dim_types[j];
 
     switch (dimtype) {
     case T_AXIS:
-      start[j] = t_start;
-      count[j] = t_count;
-      imap[j]  = x_count * y_count * z_count;
+      result.start[j] = start_in[T_AXIS];
+      result.count[j] = count_in[T_AXIS];
+      result.imap[j]  = x_count * y_count * z_count;
       break;
     case Y_AXIS:
-      start[j] = y_start;
-      count[j] = y_count;
-      imap[j]  = x_count * z_count;
+      result.start[j] = y_start;
+      result.count[j] = y_count;
+      result.imap[j]  = x_count * z_count;
       break;
     case X_AXIS:
-      start[j] = x_start;
-      count[j] = x_count;
-      imap[j]  = z_count;
+      result.start[j] = x_start;
+      result.count[j] = x_count;
+      result.imap[j]  = z_count;
       break;
     default:
     case Z_AXIS:
-      start[j] = z_start;
-      count[j] = z_count;
-      imap[j]  = 1;
+      result.start[j] = z_start;
+      result.count[j] = z_count;
+      result.imap[j]  = 1;
       break;
     }
   }
+
+  return result;
 }
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
@@ -344,19 +350,17 @@ void write_dimensions(const SpatialVariableMetadata &var, const Grid &grid, cons
  * @param var_name name of the variable to check
  * @returns false if storage orders match, true otherwise
  */
-static bool use_transposed_io(const File &file, units::System::Ptr unit_system,
-                              const std::string &var_name) {
-
-  std::vector<std::string> dimnames = file.dimensions(var_name);
+static bool use_transposed_io(std::vector<AxisType> dimension_types) {
 
   std::vector<AxisType> storage, memory = { Y_AXIS, X_AXIS };
 
-  for (unsigned int j = 0; j < dimnames.size(); ++j) {
-    AxisType dimtype = file.dimension_type(dimnames[j], unit_system);
+  bool first = true;
+  for (auto dimtype : dimension_types) {
 
-    if (j == 0 && dimtype == T_AXIS) {
+    if (first && dimtype == T_AXIS) {
       // ignore the time dimension, but only if it is the first
       // dimension in the list
+      first = false;
       continue;
     }
 
@@ -378,20 +382,29 @@ static bool use_transposed_io(const File &file, units::System::Ptr unit_system,
   return storage != memory;
 }
 
+static std::vector<AxisType> dimension_types(const File &file, const std::string &var_name,
+                                             std::shared_ptr<units::System> unit_system) {
+  std::vector<AxisType> result;
+  for (const auto &dimension : file.dimensions(var_name)) {
+    result.push_back(file.dimension_type(dimension, unit_system));
+  }
+  return result;
+}
+
 //! \brief Read an array distributed according to the grid.
 static void read_distributed_array(const File &file, const Grid &grid, const std::string &var_name,
                                    unsigned int z_count, unsigned int t_start, double *output) {
   try {
-    std::vector<unsigned int> start, count, imap;
-    const unsigned int t_count = 1;
-    compute_start_and_count(file, grid.ctx()->unit_system(), var_name, t_start, t_count, grid.xs(),
-                            grid.xm(), grid.ys(), grid.ym(), 0, z_count, start, count, imap);
+    auto dim_types = dimension_types(file, var_name, grid.ctx()->unit_system());
 
-    bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), var_name);
-    if (transposed_io) {
-      file.read_variable_transposed(var_name, start, count, imap, output);
+    auto sc = compute_start_and_count(dim_types,
+                                      { (int)t_start, grid.xs(), grid.ys(), 0 },
+                                      { 1, grid.xm(), grid.ym(), (int)z_count });
+
+    if (use_transposed_io(dim_types)) {
+      file.read_variable_transposed(var_name, sc.start, sc.count, sc.imap, output);
     } else {
-      file.read_variable(var_name, start, count, output);
+      file.read_variable(var_name, sc.start, sc.count, output);
     }
 
   } catch (RuntimeError &e) {
@@ -400,96 +413,54 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
   }
 }
 
-static void regrid_vec_generic(const File &file, const Grid &grid, const std::string &variable_name,
-                               const std::vector<double> &zlevels_out, unsigned int t_start,
-                               bool fill_missing, double default_value,
-                               InterpolationType interpolation_type, double *output) {
-  const int X = 1, Y = 2, Z = 3; // indices, just for clarity
-
-  const Profiling &profiling = grid.ctx()->profiling();
+/** Regrid `variable_name` from a file, possibly replacing missing values with `default_value`.
+ *
+ * @param file input file
+ * @param variable_name variable to regrid
+ * @param internal_grid computational grid; used to initialize interpolation
+ */
+static std::vector<double> read_for_interpolation(const File &file,
+                                                  const std::string &variable_name,
+                                                  const Grid &internal_grid,
+                                                  const LocalInterpCtx &lic, double *output) {
 
   try {
-    grid::InputGridInfo gi(file, variable_name, grid.ctx()->unit_system(), grid.registration());
-    LocalInterpCtx lic(gi, grid, zlevels_out, interpolation_type);
+    auto unit_system = internal_grid.ctx()->unit_system();
 
-    std::vector<double> &buffer = lic.buffer;
+    std::vector<double> buffer(lic.buffer_size());
 
-    const unsigned int t_count = 1;
-    std::vector<unsigned int> start, count, imap;
-    compute_start_and_count(file, grid.ctx()->unit_system(), variable_name, t_start, t_count,
-                            lic.start[X], lic.count[X], lic.start[Y], lic.count[Y], lic.start[Z],
-                            lic.count[Z], start, count, imap);
+    auto dim_types = dimension_types(file, variable_name, internal_grid.ctx()->unit_system());
 
-    bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), variable_name);
-    profiling.begin("io.regridding.read");
-    if (transposed_io) {
-      file.read_variable_transposed(variable_name, start, count, imap, buffer.data());
+    auto sc = compute_start_and_count(dim_types, lic.start, lic.count);
+
+    if (use_transposed_io(dim_types)) {
+      file.read_variable_transposed(variable_name, sc.start, sc.count, sc.imap, buffer.data());
     } else {
-      file.read_variable(variable_name, start, count, buffer.data());
+      file.read_variable(variable_name, sc.start, sc.count, buffer.data());
     }
-    profiling.end("io.regridding.read");
 
-    // Replace missing values if the _FillValue attribute is present,
-    // and if we have missing values to replace.
+    // Stop with an error message if some values match the _FillValue attribute:
     {
       auto attribute = file.read_double_attribute(variable_name, "_FillValue");
       if (attribute.size() == 1) {
         double fill_value = attribute[0], epsilon = 1e-12;
-        if (fill_missing) {
-          for (size_t i = 0; i < buffer.size(); ++i) {
-            if (fabs(buffer[i] - fill_value) < epsilon) {
-              buffer[i] = default_value;
-            }
-          }
-        } else {
-          for (size_t i = 0; i < buffer.size(); ++i) {
-            if (fabs(buffer[i] - fill_value) < epsilon) {
-              throw RuntimeError::formatted(
-                  PISM_ERROR_LOCATION,
-                  "Some values of '%s' in '%s' match the _FillValue attribute.",
-                  variable_name.c_str(), file.filename().c_str());
-            }
+
+        for (const auto &value : buffer) {
+          if (fabs(value - fill_value) < epsilon) {
+            throw RuntimeError::formatted(
+                PISM_ERROR_LOCATION, "Some values of '%s' in '%s' match the _FillValue attribute.",
+                variable_name.c_str(), file.filename().c_str());
           }
         }
       }
     }
 
-    // interpolate
-    profiling.begin("io.regridding.interpolate");
-    regrid(grid, zlevels_out, &lic, output);
-    profiling.end("io.regridding.interpolate");
+    return buffer;
   } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
-                  variable_name.c_str(), file.filename().c_str());
+    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(),
+                  file.filename().c_str());
     throw;
   }
-}
-
-//! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
-//! interpolation to put it on the grid defined by "grid" and zlevels_out.
-static void regrid_vec(const File &file, const Grid &grid, const std::string &var_name,
-                       const std::vector<double> &zlevels_out, unsigned int t_start,
-                       InterpolationType interpolation_type, double *output) {
-  regrid_vec_generic(file, grid, var_name, zlevels_out, t_start, false, 0.0, interpolation_type,
-                     output);
-}
-
-/** Regrid `var_name` from a file, replacing missing values with `default_value`.
- *
- * @param[in] file input file
- * @param grid computational grid; used to initialize interpolation
- * @param var_name variable to regrid
- * @param zlevels_out vertical levels of the resulting grid
- * @param t_start time index of the record to regrid
- * @param default_value default value to replace `_FillValue` with
- * @param[out] output resulting interpolated field
- */
-static void regrid_vec_fill_missing(const File &file, const Grid &grid, const std::string &var_name,
-                                    const std::vector<double> &zlevels_out, unsigned int t_start,
-                                    double default_value, InterpolationType interpolation_type,
-                                    double *output) {
-  regrid_vec_generic(file, grid, var_name, zlevels_out, t_start, true, default_value,
-                     interpolation_type, output);
 }
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
@@ -578,7 +549,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
     }
 
     int input_spatial_dim_count = 0; // number of spatial dimensions (input file)
-    size_t matching_dim_count = 0; // number of matching dimensions
+    size_t matching_dim_count   = 0; // number of matching dimensions
 
     auto input_dims = file.dimensions(var.name);
     for (const auto &d : input_dims) {
@@ -596,19 +567,18 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
     if (axes.size() != matching_dim_count) {
 
       // Print the error message and stop:
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "found the %dD variable %s (%s) in '%s' while trying to read\n"
-                                    "'%s' ('%s'), which is %d-dimensional.",
-                                    input_spatial_dim_count, var.name.c_str(), join(input_dims, ",").c_str(),
-                                    file.filename().c_str(), variable.get_name().c_str(),
-                                    variable.get_string("long_name").c_str(),
-                                    static_cast<int>(axes.size()));
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "found the %dD variable %s (%s) in '%s' while trying to read\n"
+          "'%s' ('%s'), which is %d-dimensional.",
+          input_spatial_dim_count, var.name.c_str(), join(input_dims, ",").c_str(),
+          file.filename().c_str(), variable.get_name().c_str(),
+          variable.get_string("long_name").c_str(), static_cast<int>(axes.size()));
     }
   }
 
   // make sure we have at least one level
-  auto zlevels         = variable.levels();
-  unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
+  size_t nlevels = std::max(variable.levels().size(), (size_t)1);
 
   read_distributed_array(file, grid, var.name, nlevels, time, output);
 
@@ -665,8 +635,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
   auto name = var.get_name();
 
   if (not file.find_variable(name)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.",
-                                  name.c_str(),
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
                                   file.filename().c_str());
   }
 
@@ -689,9 +658,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
   // make sure we have at least one level
   unsigned int nlevels = std::max(var.levels().size(), (size_t)1);
 
-  std::string
-    units               = var["units"],
-    output_units = var["output_units"];
+  std::string units = var["units"], output_units = var["output_units"];
 
   if (units != output_units) {
     size_t data_size = grid.xm() * grid.ym() * nlevels;
@@ -709,60 +676,6 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
     file.write_distributed_array(name, grid, nlevels, time_dependent, tmp.data());
   } else {
     file.write_distributed_array(name, grid, nlevels, time_dependent, input);
-  }
-}
-
-//! \brief Regrid from a NetCDF file into a distributed array `output`.
-/*!
-  - if `flag` is `CRITICAL` or `CRITICAL_FILL_MISSING`, stops if the
-  variable was not found in the input file
-  - if `flag` is one of `CRITICAL_FILL_MISSING` and
-  `OPTIONAL_FILL_MISSING`, replace _FillValue with `default_value`.
-  - sets `v` to `default_value` if `flag` is `OPTIONAL` and the
-  variable was not found in the input file
-  - uses the last record in the file
-*/
-void regrid_spatial_variable(SpatialVariableMetadata &var, const Grid &grid, const File &file,
-                             RegriddingFlag flag, bool report_range, bool allow_extrapolation,
-                             double default_value, InterpolationType interpolation_type,
-                             double *output) {
-  unsigned int t_length = file.nrecords(var.get_name(), var["standard_name"], var.unit_system());
-
-  regrid_spatial_variable(var, grid, file, t_length - 1, flag, report_range, allow_extrapolation,
-                          default_value, interpolation_type, output);
-}
-
-static void compute_range(MPI_Comm com, double *data, size_t data_size, double *min, double *max) {
-  double min_result = data[0], max_result = data[0];
-  for (size_t k = 0; k < data_size; ++k) {
-    min_result = std::min(min_result, data[k]);
-    max_result = std::max(max_result, data[k]);
-  }
-
-  if (min != nullptr) {
-    *min = GlobalMin(com, min_result);
-  }
-
-  if (max != nullptr) {
-    *max = GlobalMax(com, max_result);
-  }
-}
-
-/*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
-void check_input_grid(const grid::InputGridInfo &input) {
-  if (not is_increasing(input.x)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "input x coordinate has to be strictly increasing");
-  }
-
-  if (not is_increasing(input.y)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "input y coordinate has to be strictly increasing");
-  }
-
-  if (not is_increasing(input.z)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "input vertical grid has to be strictly increasing");
   }
 }
 
@@ -840,52 +753,69 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
   }
 }
 
-void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid, const File &file,
-                             unsigned int t_start, RegriddingFlag flag, bool report_range,
-                             bool allow_extrapolation, double default_value,
-                             InterpolationType interpolation_type, double *output) {
-  const Logger &log = *grid.ctx()->log();
+/*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
+void check_input_grid(const grid::InputGridInfo &input_grid,
+                      const Grid& internal_grid,
+                      const std::vector<double> &internal_z_levels) {
+  if (not is_increasing(input_grid.x)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "input x coordinate has to be strictly increasing");
+  }
 
-  auto sys               = variable.unit_system();
-  const auto &levels     = variable.levels();
-  const size_t data_size = grid.xm() * grid.ym() * levels.size();
+  if (not is_increasing(input_grid.y)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "input y coordinate has to be strictly increasing");
+  }
 
-  // Find the variable
-  auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
+  if (not is_increasing(input_grid.z)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "input vertical grid has to be strictly increasing");
+  }
 
-  if (var.exists) { // the variable was found successfully
+  bool allow_extrapolation = internal_grid.ctx()->config()->get_flag("grid.allow_extrapolation");
 
-    {
-      grid::InputGridInfo input_grid(file, var.name, sys, grid.registration());
+  if (not allow_extrapolation) {
+    check_grid_overlap(input_grid, internal_grid, internal_z_levels);
+  }
+}
 
-      check_input_grid(input_grid);
+//! \brief Regrid from a NetCDF file into a distributed array `output`.
+/*!
+  - if `flag` is `CRITICAL` or `CRITICAL_FILL_MISSING`, stops if the
+  variable was not found in the input file
+  - if `flag` is one of `CRITICAL_FILL_MISSING` and
+  `OPTIONAL_FILL_MISSING`, replace _FillValue with `default_value`.
+  - sets `v` to `default_value` if `flag` is `OPTIONAL` and the
+  variable was not found in the input file
+  - uses the last record in the file
+*/
 
-      if (not allow_extrapolation) {
-        check_grid_overlap(input_grid, grid, levels);
-      }
-    }
+void regrid_spatial_variable(SpatialVariableMetadata &variable,
+                             const Grid &internal_grid,
+                             const LocalInterpCtx &lic, const File &file,
+                             double *output) {
 
-    if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
-      log.message(
-          2,
-          "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
-          default_value, variable.get_string("units").c_str(), variable.get_name().c_str(),
-          file.filename().c_str());
+  auto var_info = file.find_variable(variable.get_name(), variable["standard_name"]);
+  auto variable_name = var_info.name;
 
-      regrid_vec_fill_missing(file, grid, var.name, levels, t_start, default_value,
-                              interpolation_type, output);
-    } else {
-      regrid_vec(file, grid, var.name, levels, t_start, interpolation_type, output);
-    }
+  const Profiling &profiling = internal_grid.ctx()->profiling();
 
-    // Now we need to get the units string from the file and convert
-    // the units, because check_range and report_range expect data to
-    // be in PISM (MKS) units.
+  profiling.begin("io.regridding.read");
+  auto buffer = read_for_interpolation(file, variable_name, internal_grid, lic, output);
+  profiling.end("io.regridding.read");
 
-    std::string input_units    = file.read_text_attribute(var.name, "units");
+  // interpolate
+  profiling.begin("io.regridding.interpolate");
+  regrid(internal_grid, lic, buffer.data(), output);
+  profiling.end("io.regridding.interpolate");
+
+  // Get the units string from the file and convert the units:
+  {
+    std::string input_units    = file.read_text_attribute(variable_name, "units");
     std::string internal_units = variable["units"];
 
     if (input_units.empty() and not internal_units.empty()) {
+      const Logger &log = *internal_grid.ctx()->log();
       log.message(2,
                   "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                   "              Assuming that it is in '%s'.\n",
@@ -894,55 +824,14 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid
       input_units = internal_units;
     }
 
+    const size_t data_size = internal_grid.xm() * internal_grid.ym() * lic.z->n_output();
+
     // Convert data:
-    units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
+    units::Converter(variable.unit_system(), input_units, internal_units)
+        .convert_doubles(output, data_size);
+  }
 
-    // Check the range and report it if necessary.
-    {
-      double min = 0.0, max = 0.0;
-      read_valid_range(file, var.name, variable);
-
-      compute_range(grid.com, output, data_size, &min, &max);
-
-      if ((not std::isfinite(min)) or (not std::isfinite(max))) {
-        throw RuntimeError::formatted(
-            PISM_ERROR_LOCATION,
-            "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
-            variable.get_name().c_str(), variable.get_string("long_name").c_str());
-      }
-
-      // Check the range and warn the user if needed:
-      variable.check_range(file.filename(), min, max);
-      if (report_range) {
-        // We can report the success, and the range now:
-        log.message(2, "  FOUND ");
-
-        variable.report_range(log, min, max, var.found_using_standard_name);
-      }
-    }
-  } else { // couldn't find the variable
-    if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
-      // if it's critical, print an error message and stop
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Can't find '%s' in the regridding file '%s'.",
-                                    variable.get_name().c_str(), file.filename().c_str());
-    }
-
-    // If it is optional, fill with the provided default value.
-    // units::Converter constructor will make sure that units are compatible.
-    units::Converter c(sys, variable["units"], variable["output_units"]);
-
-    std::string spacer(variable.get_name().size(), ' ');
-    log.message(2,
-                "  absent %s / %-10s\n"
-                "         %s \\ not found; using default constant %7.2f (%s)\n",
-                variable.get_name().c_str(), variable.get_string("long_name").c_str(),
-                spacer.c_str(), c(default_value), variable.get_string("output_units").c_str());
-
-    for (size_t k = 0; k < data_size; ++k) {
-      output[k] = default_value;
-    }
-  } // end of if (exists)
+  read_valid_range(file, variable_name, variable);
 }
 
 

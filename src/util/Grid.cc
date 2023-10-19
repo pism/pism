@@ -1011,7 +1011,6 @@ void InputGridInfo::reset() {
   filename = "";
 
   t_len = 0;
-  time  = 0;
 
   x0    = 0;
   Lx    = 0;
@@ -1037,8 +1036,7 @@ void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr 
   log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(), this->z_min,
               this->z_max);
 
-  log.message(threshold, "  t:  %5d points, last time = %.3f years\n\n", this->t_len,
-              units::convert(s, this->time, "seconds", "years"));
+  log.message(threshold, "  t:  %5d records\n\n", this->t_len);
 }
 
 InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
@@ -1046,7 +1044,8 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
   try {
     reset();
 
-    filename = file.filename();
+    filename      = file.filename();
+    variable_name = variable;
 
     // try "variable" as the standard_name first, then as the short name:
     auto var = file.find_variable(variable, variable);
@@ -1058,9 +1057,12 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
 
     auto dimensions = file.dimensions(var.name);
 
+    bool time_dimension_processed = false;
     for (const auto &dimension_name : dimensions) {
 
       AxisType dimtype = file.dimension_type(dimension_name, unit_system);
+
+      this->dimension_types[dimension_name] = dimtype;
 
       switch (dimtype) {
       case X_AXIS: {
@@ -1092,15 +1094,20 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
         break;
       }
       case T_AXIS: {
-        auto T      = file.read_dimension(dimension_name);
-        this->t_len = T.size();
-        this->time  = vector_max(T);
+        if (time_dimension_processed) {
+          // ignore the second, third, etc dimension interpreted as "time" and override
+          // the dimension type: it is not "time" in the sense of "record dimension"
+          this->dimension_types[dimension_name] = UNKNOWN_AXIS;
+        } else {
+          this->t_len          = file.dimension_length(dimension_name);
+          time_dimension_processed = false;
+        }
         break;
       }
+      case UNKNOWN_AXIS:
       default: {
-        throw RuntimeError::formatted(
-            PISM_ERROR_LOCATION, "can't figure out which direction dimension '%s' corresponds to.",
-            dimension_name.c_str());
+        // ignore unknown axes
+        break;
       }
       } // switch
     }   // for loop

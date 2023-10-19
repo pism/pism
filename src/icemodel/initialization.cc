@@ -67,6 +67,7 @@
 #include "pism/util/ScalarForcing.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/array/Forcing.hh"
+#include <memory>
 
 namespace pism {
 
@@ -385,7 +386,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   // longitude
   {
-    m_geometry.longitude.regrid(input_file, io::OPTIONAL);
+    m_geometry.longitude.regrid(input_file, io::Default(0.0));
 
     auto lon = input_file.find_variable("lon", "longitude");
 
@@ -396,7 +397,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   // latitude
   {
-    m_geometry.latitude.regrid(input_file, io::OPTIONAL);
+    m_geometry.latitude.regrid(input_file, io::Default(0.0));
 
     auto lat = input_file.find_variable("lat", "latitude");
 
@@ -405,8 +406,8 @@ void IceModel::bootstrap_2d(const File &input_file) {
     }
   }
 
-  m_geometry.ice_thickness.regrid(input_file, io::OPTIONAL,
-                                  m_config->get_number("bootstrapping.defaults.ice_thickness"));
+  m_geometry.ice_thickness.regrid(
+      input_file, io::Default(m_config->get_number("bootstrapping.defaults.ice_thickness")));
 
   if (m_config->get_flag("geometry.part_grid.enabled")) {
     // Read the Href field from an input file. This field is
@@ -417,21 +418,21 @@ void IceModel::bootstrap_2d(const File &input_file) {
     //
     // On the other hand, we need to read it in to be able to re-start
     // from a PISM output file using the -bootstrap option.
-    m_geometry.ice_area_specific_volume.regrid(input_file, io::OPTIONAL, 0.0);
+    m_geometry.ice_area_specific_volume.regrid(input_file, io::Default(0.0));
   }
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
-    m_velocity_bc_mask.regrid(input_file, io::OPTIONAL, 0.0);
+    m_velocity_bc_mask.regrid(input_file, io::Default(0.0));
     // In absence of u_bc and v_bc in the file the only B.C. that make sense are the
     // zero Dirichlet B.C.
-    m_velocity_bc_values.regrid(input_file, io::OPTIONAL,  0.0);
+    m_velocity_bc_values.regrid(input_file, io::Default(0.0));
   } else {
     m_velocity_bc_mask.set(0.0);
     m_velocity_bc_values.set(0.0);
   }
 
-  m_ice_thickness_bc_mask.regrid(input_file, io::OPTIONAL, 0.0);
+  m_ice_thickness_bc_mask.regrid(input_file, io::Default(0.0));
 
   // check if Lz is valid
   auto max_thickness = array::max(m_geometry.ice_thickness);
@@ -466,7 +467,7 @@ void IceModel::regrid() {
     File regrid_file(m_grid->com, filename, io::PISM_GUESS, io::PISM_READONLY);
     for (auto *v : m_model_state) {
       if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
-        v->regrid(regrid_file, io::CRITICAL);
+        v->regrid(regrid_file, io::Default::Nil());
       }
     }
 
@@ -548,12 +549,12 @@ void IceModel::allocate_age_model() {
   if (m_config->get_flag("age.enabled")) {
     m_log->message(2, "# Allocating an ice age model...\n");
 
-    if (m_stress_balance == NULL) {
+    if (m_stress_balance == nullptr) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Cannot allocate an age model: m_stress_balance == NULL.");
+                                    "Cannot allocate an age model: m_stress_balance == nullptr.");
     }
 
-    m_age_model.reset(new AgeModel(m_grid, m_stress_balance.get()));
+    m_age_model = std::make_shared<AgeModel>(m_grid, m_stress_balance);
     m_submodels["age model"] = m_age_model.get();
   }
 }
@@ -568,7 +569,13 @@ void IceModel::allocate_isochrones() {
   if (not deposition_times.empty()) {
     m_log->message(2, "# Allocating isochrone tracking...\n");
 
-    m_isochrones = std::make_shared<Isochrones>(m_grid);
+    if (m_stress_balance == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "Cannot allocate the isochrone tracking model: m_stress_balance == nullptr.");
+    }
+
+    m_isochrones = std::make_shared<Isochrones>(m_grid, m_stress_balance);
 
     m_submodels["isochrones"] = m_isochrones.get();
   }
@@ -584,12 +591,12 @@ void IceModel::allocate_energy_model() {
 
   if (m_config->get_flag("energy.enabled")) {
     if (m_config->get_flag("energy.temperature_based")) {
-      m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance.get());
+      m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance);
     } else {
-      m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance.get());
+      m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance);
     }
   } else {
-    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance.get());
+    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
   }
 
   m_submodels["energy balance model"] = m_energy_model.get();

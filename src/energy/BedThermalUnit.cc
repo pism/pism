@@ -125,7 +125,7 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
     m_log->message(2, "  - Reading geothermal flux from '%s' ...\n",
                    input_file.c_str());
 
-    m_bottom_surface_flux.regrid(input_file, io::CRITICAL);
+    m_bottom_surface_flux.regrid(input_file, io::Default::Nil());
   } else {
     m_log->message(2,
                    "  - Parameter %s is not set. Reading geothermal flux from '%s'...\n",
@@ -137,8 +137,8 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
       m_bottom_surface_flux.read(opts.filename, opts.record);
       break;
     case INIT_BOOTSTRAP:
-      m_bottom_surface_flux.regrid(opts.filename, io::OPTIONAL,
-                                   m_config->get_number("bootstrapping.defaults.geothermal_flux"));
+      m_bottom_surface_flux.regrid(opts.filename, io::Default(m_config->get_number(
+                                                      "bootstrapping.defaults.geothermal_flux")));
       break;
     case INIT_OTHER:
     default:

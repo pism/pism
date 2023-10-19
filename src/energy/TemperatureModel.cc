@@ -28,10 +28,11 @@
 namespace pism {
 namespace energy {
 
-TemperatureModel::TemperatureModel(std::shared_ptr<const Grid> grid,
-                                   stressbalance::StressBalance *stress_balance)
-  : EnergyModel(grid, stress_balance),
-    m_ice_temperature(m_grid, "temp", array::WITH_GHOSTS, m_grid->z()) {
+TemperatureModel::TemperatureModel(
+    std::shared_ptr<const Grid> grid,
+    std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : EnergyModel(grid, stress_balance),
+      m_ice_temperature(m_grid, "temp", array::WITH_GHOSTS, m_grid->z()) {
 
   m_ice_temperature.metadata(0)
       .long_name("ice temperature")
@@ -75,8 +76,8 @@ void TemperatureModel::bootstrap_impl(const File &input_file,
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
                  input_file.filename().c_str());
 
-  m_basal_melt_rate.regrid(input_file, io::OPTIONAL,
-                           m_config->get_number("bootstrapping.defaults.bmelt"));
+  m_basal_melt_rate.regrid(input_file,
+                           io::Default(m_config->get_number("bootstrapping.defaults.bmelt")));
   regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
   int temp_revision = m_ice_temperature.state_counter();

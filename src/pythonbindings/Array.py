@@ -2,11 +2,9 @@
 
 def regrid(self, filename, critical=False, default_value=0.0):
     if critical == True:
-        flag = CRITICAL
+        self._regrid(filename, Default.Nil())
     else:
-        flag = OPTIONAL
-    self._regrid(filename, flag, default_value)
-
+        self._regrid(filename, Default(default_value))
 
 def numpy(self):
     "Return a NumPy array (a copy) containing data from this field (on rank 0)."

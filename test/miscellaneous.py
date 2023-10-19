@@ -892,7 +892,7 @@ def vertical_extrapolation_during_regridding_test():
         # Try regridding without extrapolation. This should fail.
         try:
             ctx.ctx.log().disable()
-            v_tall.regrid(file_name, PISM.CRITICAL)
+            v_tall.regrid(file_name, PISM.Default.Nil())
             ctx.ctx.log().enable()
             raise AssertionError("Should not be able to regrid without extrapolation")
         except RuntimeError as e:
@@ -903,7 +903,7 @@ def vertical_extrapolation_during_regridding_test():
 
         # regrid from test.nc
         ctx.ctx.log().disable()
-        v_tall.regrid(file_name, PISM.CRITICAL)
+        v_tall.regrid(file_name, PISM.Default.Nil())
         ctx.ctx.log().enable()
 
         # get a column

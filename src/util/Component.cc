@@ -176,7 +176,7 @@ void Component::regrid(const std::string &module_name, array::Array &variable,
                module_name.c_str(),
                m.get_string("short_name").c_str(), regrid_file.c_str());
 
-    variable.regrid(regrid_file, io::CRITICAL);
+    variable.regrid(regrid_file, io::Default::Nil());
   }
 }
 

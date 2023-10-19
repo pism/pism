@@ -16,21 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cstddef>              // size_t
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>            // std::min
 #include <gsl/gsl_interp.h>
+#include <memory>
+#include <vector>
 
-#include "pism/util/io/File.hh"
-#include "pism/util/pism_utilities.hh"
+#include "IO_Flags.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
-#include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
 
-#include "pism/util/interpolation.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 
@@ -48,14 +49,13 @@ namespace pism {
  * @param[out] x_start starting index
  * @param[out] x_count number of elements required
  */
-static void subset_start_and_count(const std::vector<double> &x,
-                                   double subset_x_min, double subset_x_max,
-                                   unsigned int &x_start, unsigned int &x_count) {
-  unsigned int x_size = x.size();
+static void subset_start_and_count(const std::vector<double> &x, double subset_x_min,
+                                   double subset_x_max, int &x_start, int &x_count) {
+  auto x_size = (int)x.size();
 
-  x_start = gsl_interp_bsearch(&x[0], subset_x_min, 0, x_size - 1);
+  x_start = (int)gsl_interp_bsearch(x.data(), subset_x_min, 0, x_size - 1);
 
-  unsigned int x_end = gsl_interp_bsearch(&x[0], subset_x_max, 0, x_size - 1) + 1;
+  auto x_end = (int)gsl_interp_bsearch(x.data(), subset_x_max, 0, x_size - 1) + 1;
 
   x_end = std::min(x_size - 1, x_end);
 
@@ -80,65 +80,65 @@ static void subset_start_and_count(const std::vector<double> &x,
   Vecs into which NetCDF information will be interpolated) are owned by each
   processor.
 */
-LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &grid,
-                               const std::vector<double> &z_output,
-                               InterpolationType type) {
-  const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
-
-  grid.ctx()->log()->message(4, "\nRegridding file grid info:\n");
-  input.report(*grid.ctx()->log(), 4, grid.ctx()->unit_system());
-
-  // limits of the processor's part of the target computational domain
-  const double
-    x_min_proc = grid.x(grid.xs()),
-    x_max_proc = grid.x(grid.xs() + grid.xm() - 1),
-    y_min_proc = grid.y(grid.ys()),
-    y_max_proc = grid.y(grid.ys() + grid.ym() - 1);
-
-  // T
-  start[T] = input.t_len - 1;       // use the latest time.
-  count[T] = 1;                     // read only one record
-
-  // X
-  subset_start_and_count(input.x, x_min_proc, x_max_proc, start[X], count[X]);
-
-  // Y
-  subset_start_and_count(input.y, y_min_proc, y_max_proc, start[Y], count[Y]);
+LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+                               const std::vector<double> &z_internal, InterpolationType type)
+  : LocalInterpCtx(input_grid, internal_grid, type) {
 
   // Z
-  start[Z] = 0;                    // always start at the base
-  count[Z] = std::max((int)input.z.size(), 1); // read at least one level
-
-  // We need a buffer for the local data, but node 0 needs to have as much
-  // storage as the node with the largest block (which may be anywhere), hence
-  // we perform a reduce so that node 0 has the maximum value.
-  unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1U);
-  unsigned int proc0_buffer_size = buffer_size;
-  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, grid.com);
-
-  ParallelSection allocation(grid.com);
-  try {
-    if (grid.rank() == 0) {
-      buffer.resize(proc0_buffer_size);
-    } else {
-      buffer.resize(buffer_size);
-    }
-  } catch (...) {
-    allocation.failed();
-  }
-  allocation.check();
+  start[Z_AXIS] = 0;                                     // always start at the base
+  count[Z_AXIS] = std::max((int)input_grid.z.size(), 1); // read at least one level
 
   if (type == LINEAR or type == NEAREST) {
-    x.reset(new Interpolation(type, &input.x[start[X]], count[X],
-                              &grid.x()[grid.xs()], grid.xm()));
-
-    y.reset(new Interpolation(type, &input.y[start[Y]], count[Y],
-                                &grid.y()[grid.ys()], grid.ym()));
-
-    z.reset(new Interpolation(type, input.z, z_output));
+    z.reset(new Interpolation(type, input_grid.z, z_internal));
   } else {
     throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
   }
 }
+
+/*!
+ * The two-dimensional version of the interpolation context.
+ */
+LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+                               InterpolationType type) {
+
+  // limits of the processor's part of the target computational domain
+  const double x_min_proc = internal_grid.x(internal_grid.xs()),
+               x_max_proc = internal_grid.x(internal_grid.xs() + internal_grid.xm() - 1),
+               y_min_proc = internal_grid.y(internal_grid.ys()),
+               y_max_proc = internal_grid.y(internal_grid.ys() + internal_grid.ym() - 1);
+
+  // T
+  start[T_AXIS] = (int)input_grid.t_len - 1; // use the latest time.
+  count[T_AXIS] = 1;                         // read only one record
+
+  // X
+  subset_start_and_count(input_grid.x, x_min_proc, x_max_proc, start[X_AXIS], count[X_AXIS]);
+
+  // Y
+  subset_start_and_count(input_grid.y, y_min_proc, y_max_proc, start[Y_AXIS], count[Y_AXIS]);
+
+  // Z
+  start[Z_AXIS] = 0;
+  count[Z_AXIS] = 1;
+
+  if (type == LINEAR or type == NEAREST) {
+    x = std::make_shared<Interpolation>(type, &input_grid.x[start[X_AXIS]], count[X_AXIS],
+                                        &internal_grid.x()[internal_grid.xs()], internal_grid.xm());
+
+    y = std::make_shared<Interpolation>(type, &input_grid.y[start[Y_AXIS]], count[Y_AXIS],
+                                        &internal_grid.y()[internal_grid.ys()], internal_grid.ym());
+
+    std::vector<double> zz = {0.0};
+    z = std::make_shared<Interpolation>(type, zz, zz);
+  } else {
+    throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
+  }
+}
+
+
+int LocalInterpCtx::buffer_size() const {
+  return count[X_AXIS] * count[Y_AXIS] * std::max(count[Z_AXIS], 1);
+}
+
 
 } // end of namespace pism

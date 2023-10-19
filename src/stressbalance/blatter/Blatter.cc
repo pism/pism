@@ -572,7 +572,7 @@ void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
 
   const auto *enthalpy = inputs.enthalpy;
   // PISM's vertical grid:
-  const auto &zlevels = enthalpy->get_levels();
+  const auto &zlevels = enthalpy->levels();
   auto Mz = zlevels.size();
 
   // solver's vertical grid:
@@ -1096,7 +1096,7 @@ void Blatter::copy_solution() {
   Vector2d ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-  int Mz = m_u_sigma->get_levels().size();
+  int Mz = m_u_sigma->levels().size();
 
   array::AccessScope list{m_u_sigma.get(), m_v_sigma.get()};
 
@@ -1136,7 +1136,7 @@ void Blatter::set_initial_guess(const array::Array3D &u_sigma,
   Vector2d ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-  int Mz = m_u_sigma->get_levels().size();
+  int Mz = m_u_sigma->levels().size();
 
   array::AccessScope list{&u_sigma, &v_sigma};
 
@@ -1161,7 +1161,7 @@ void Blatter::compute_averaged_velocity(array::Vector &result) {
   Vector2d ***x = nullptr;
   ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-  int Mz = m_u_sigma->get_levels().size();
+  int Mz = m_u_sigma->levels().size();
 
   array::AccessScope list{&result, &m_parameters};
 

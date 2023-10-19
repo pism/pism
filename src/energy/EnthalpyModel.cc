@@ -30,7 +30,7 @@ namespace pism {
 namespace energy {
 
 EnthalpyModel::EnthalpyModel(std::shared_ptr<const Grid> grid,
-                             stressbalance::StressBalance *stress_balance)
+                             std::shared_ptr<const stressbalance::StressBalance> stress_balance)
   : EnergyModel(grid, stress_balance) {
   // empty
 }
@@ -56,8 +56,8 @@ void EnthalpyModel::bootstrap_impl(const File &input_file,
   m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model from %s...\n",
                  input_file.filename().c_str());
 
-  m_basal_melt_rate.regrid(input_file, io::OPTIONAL,
-                           m_config->get_number("bootstrapping.defaults.bmelt"));
+  m_basal_melt_rate.regrid(input_file,
+                           io::Default(m_config->get_number("bootstrapping.defaults.bmelt")));
 
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 

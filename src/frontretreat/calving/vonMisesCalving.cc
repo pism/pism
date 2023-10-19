@@ -75,7 +75,7 @@ void vonMisesCalving::init() {
                    "  Reading von Mises calving threshold from file '%s'...\n",
                    threshold_file.c_str());
 
-    m_calving_threshold.regrid(threshold_file, io::CRITICAL);
+    m_calving_threshold.regrid(threshold_file, io::Default::Nil());
   } else {
     m_log->message(2,
                    "  von Mises calving threshold: %3.3f Pa.\n", sigma_max);

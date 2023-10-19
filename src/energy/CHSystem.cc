@@ -55,8 +55,8 @@ namespace energy {
 */
 
 CHSystem::CHSystem(std::shared_ptr<const Grid> grid,
-                   stressbalance::StressBalance *stress_balance)
-  : EnergyModel(grid, stress_balance) {
+                   std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : EnergyModel(grid, stress_balance) {
 
   m_ice_enthalpy.set_name("ch_enthalpy");
   m_ice_enthalpy.metadata().set_name("ch_enthalpy");

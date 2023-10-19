@@ -253,7 +253,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 
   const auto &bedrock_temp = my_btu->temperature();
 
-  auto zblevels = bedrock_temp.get_levels();
+  auto zblevels = bedrock_temp.levels();
   auto Mbz = zblevels.size();
   std::vector<double> Tbex(Mbz);
 

@@ -173,28 +173,15 @@ void NCFile::write_darray_impl(const std::string &variable_name,
                                bool time_dependent,
                                unsigned int record,
                                const double *input) {
-  std::vector<std::string> dims;
-  this->inq_vardimid(variable_name, dims);
-
   std::vector<unsigned int> start, count;
 
-  // time
   if (time_dependent) {
-    start.push_back(record);
-    count.push_back(1);
+    start = { record, (unsigned)grid.ys(), (unsigned)grid.xs(), 0 };
+    count = { 1,      (unsigned)grid.ym(), (unsigned)grid.xm(), z_count };
+  } else {
+    start = { (unsigned)grid.ys(), (unsigned)grid.xs(), 0 };
+    count = { (unsigned)grid.ym(), (unsigned)grid.xm(), z_count };
   }
-
-  // y
-  start.push_back(grid.ys());
-  count.push_back(grid.ym());
-
-  // x
-  start.push_back(grid.xs());
-  count.push_back(grid.xm());
-
-  // z (these are not used when writing 2D fields)
-  start.push_back(0);
-  count.push_back(z_count);
 
   this->put_vara_double(variable_name, start, count, input);
 }

@@ -111,7 +111,7 @@ public:
 
   void inq_varnatts(const std::string &variable_name, int &result) const;
 
-  void inq_varid(const std::string &variable_name, bool &exists) const;
+  void inq_varid(const std::string &variable_name, bool &result) const;
 
   void inq_varname(unsigned int j, std::string &result) const;
 

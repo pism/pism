@@ -19,10 +19,12 @@
 #ifndef PISM_GRID_H
 #define PISM_GRID_H
 
+#include "io/File.hh"
 #include <cassert>
 #include <memory> // shared_ptr
 #include <string>
 #include <vector>
+#include <map>
 
 #include <mpi.h>                // MPI_Comm
 
@@ -67,8 +69,6 @@ public:
   void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
   // dimension lengths
   unsigned int t_len;
-  //! current time (seconds)
-  double time;
   //! x-coordinate of the domain center
   double x0;
   //! y-coordinate of the domain center
@@ -88,7 +88,16 @@ public:
   std::vector<double> y;
   //! z coordinates
   std::vector<double> z;
+
   std::string filename;
+
+  /*!
+   * Variable name *found in the file*, which may not match the one expected by PISM.
+   */
+  std::string variable_name;
+
+  std::map<std::string, AxisType> dimension_types;
+
 private:
   void reset();
 };

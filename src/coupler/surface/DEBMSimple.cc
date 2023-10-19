@@ -183,8 +183,8 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
     m_snow_depth.read(input.filename, input.record);
     m_surface_albedo.read(input.filename, input.record);
   } else if (input.type == INIT_BOOTSTRAP) {
-    m_snow_depth.regrid(input.filename, io::OPTIONAL, 0.0);
-    m_surface_albedo.regrid(input.filename, io::OPTIONAL, default_albedo);
+    m_snow_depth.regrid(input.filename, io::Default(0.0));
+    m_surface_albedo.regrid(input.filename, io::Default(default_albedo));
   } else {
     m_snow_depth.set(0.0);
     m_surface_albedo.set(default_albedo);
