@@ -261,8 +261,6 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
   if (not V.exists) {
     set_default_value_or_stop(file.filename(), variable, default_value, *log, tmp);
   } else {
-    bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
-
     grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
     input_grid.report(*log, 4, variable.unit_system());

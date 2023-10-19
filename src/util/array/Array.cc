@@ -426,8 +426,6 @@ static std::array<double, 2> compute_range(MPI_Comm com, const double *data, siz
  */
 void Array::regrid_impl(const File &file, io::Default default_value) {
 
-  bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
-
   auto log = grid()->ctx()->log();
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar

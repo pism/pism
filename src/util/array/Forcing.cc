@@ -326,8 +326,6 @@ void Forcing::init_periodic_data(const File &file) {
                        "the buffer is too small to contain periodic data");
   }
 
-  bool allow_extrapolation = ctx->config()->get_flag("grid.allow_extrapolation");
-
   int offset = m_data->interp_type == LINEAR ? 1 : 0;
 
   // Read all the records and store them. The index offset leaves room for an extra record
@@ -535,9 +533,6 @@ void Forcing::update(unsigned int start) {
   }
 
   File file(m_impl->grid->com, m_data->filename, io::PISM_GUESS, io::PISM_READONLY);
-
-  const bool allow_extrapolation =
-      m_impl->grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   auto variable = m_impl->metadata[0];
 
