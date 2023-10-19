@@ -14,7 +14,7 @@ common_options="
         -output.sizes.medium isochrone_depth,uvel
         -stress_balance.sia.flow_law isothermal_glen
         -stress_balance.sia.surface_gradient_method eta
-        -isochrones.deposition_times 1000
+        -isochrones.deposition_times 0:500:20e3
         -energy.enabled no
 "
 
@@ -27,7 +27,7 @@ mpiexec -n ${N} pismr -eisII A \
         -isochrones.bootstrapping.n_layers 0 \
         -output.extra.file ex_part1.nc \
         -output.file o_part1.nc \
-        -time.end 10e3 \
+        -time.end 10250 \
         ${common_options}
 
 mpiexec -n ${N} pismr \

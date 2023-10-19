@@ -14,7 +14,7 @@ common_options="
         -output.sizes.medium isochrone_depth,uvel
         -stress_balance.sia.flow_law isothermal_glen
         -stress_balance.sia.surface_gradient_method eta
-        -isochrones.deposition_times 1000
+        -isochrones.deposition_times 0:1000:20e3
         -energy.enabled no
         -grid.registration corner
         -Mz 21
