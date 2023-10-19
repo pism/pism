@@ -35,51 +35,6 @@
 #include "pism/util/interpolation.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
-/*!
- * Initialization cases:
- *
- * Parse requested deposition times and discard times outside of the modeled time span.
- * Store these in `times`.
- *
- * 1. Restarting.
- *
- * - Read deposition times `input_times` from the input file. Find all the `input_times`
- *   that are *before the beginning of the modeled time span* and record their indexes in
- *   `input_times`; save these to `old_times`.
- *
- * - Append `times` to `old_times`. It's okay if `times` is empty.
- *
- * - Read layer thicknesses corresponding to all `old_times` from the input file using
- *   recorded indexes.
- *
- * - Allocate storage for layer thicknesses for combined deposition times.
- *
- * - Renormalize layer thicknesses to ensure that their sum adds up to the ice thickness.
- *
- * 2. Restarting with regridding.
- *
- * - Same as restarting, but using the regridding file instead of the input file and
- *   linear interpolation to read in layer thicknesses.
- *
- * 3. Bootstrapping.
- *
- * - If `isochrones.bootstrapping.n_layers` is zero, create one layer with the thickness
- *   equal to the ice thickness. The SMB will be applied to this layer until the model
- *   reaches a deposition time and a new layer is created.
- *
- * - If `N = isochrones.bootstrapping.n_layers` is positive, create `N` layers with
- *   thicknesses equal to the ice thickness divided by `N`. Then add one more layer of
- *   zero thickness. The SMB will be applied to this layer until the model reaches a
- *   deposition time and a new layer is created.
- *
- * - Set deposition times to `times`. Stop if `times` is empty.
- *
- * 4. Bootstrapping with regridding.
- *
- * - Same as restarting with regridding.
- *
- */
-
 namespace pism {
 
 namespace details {
