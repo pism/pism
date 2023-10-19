@@ -67,17 +67,26 @@ an argument in the format identical to :config:`output.extra.times`; see
 .. rubric:: Model state
 
 Layer thicknesses are saved to the variable :var:`isochronal_layer_thickness` in an output
-file. Requested deposition times are saved to :var:`deposition_time`. Since the state of
-the model may be saved before a simulation reached all requested deposition times some
-layers may not have been created. To keep track of the number of "active" layers and
-remember which layer in :var:`isochronal_layer_thickness` is the topmost one we also
-save :var:`isochronal_layer_count`.
+file. A subset of requested deposition times is saved to :var:`deposition_time`. Since the
+state of the model may be saved before a simulation reached all requested deposition times
+some layers may not have been created. We use the :var:`time` variable to identify
+"active" layers: a layer is active if the model reached the corresponding deposition time.
+
+.. note::
+
+   The :var:`time` variable is used to interpret layer thicknesses and deposition times
+   read from an input file, so the current simulation has to be compatible with the one
+   that produced the model state used to initialize it.
+
+   If a simulation `S_1` is initialized using the output of a simulation `S_0`, then
+   `S_1` should start at the end of the time interval modeled by `S_0`; also, `S_0`
+   and `S_1` should use the same calendar and the reference date.
 
 .. rubric:: Bootstrapping
 
 During bootstrapping :var:`deposition_time` is set using :config:`isochrones.deposition_times`.
 
-We implement two ways to initialize :var:`isochronal_layer_thickness`:
+We implement two ways of initializing :var:`isochronal_layer_thickness`:
 
 1. **Default**: interpret current ice thickness as *one* layer; apply surface
    mass balance to this layer until a new layer is added. This is appropriate when
@@ -85,10 +94,17 @@ We implement two ways to initialize :var:`isochronal_layer_thickness`:
 
 2. Divide current ice thickness equally into `N` layers (here `N` is set by
    :config:`isochrones.bootstrapping.n_layers`), then immediately add one more layer and
-   apply SMB to it until a new layer is added. This is appropriate when starting from an
+   apply SMB to it until a new layer is added. This may be appropriate when starting from an
    initial state with a significant ice thickness. In this case sampling ice velocity in
    the middle of the layer (halfway between the base and the surface) is likely give lower
    accuracy compared to sampling at `N` equally-spaced locations in each column of ice.
+
+.. rubric:: Regridding
+
+Set :opt:`-regrid_file foo.nc -regrid_vars isochronal_layer_thickness,...` to read in
+:var:`isochronal_layer_thickness` from a file ``foo.nc`` using bilinear interpolation
+instead of reading from :config:`input.file` (without interpolation). Regridding layer
+thicknesses bypasses bootstrapping heuristics.
 
 .. rubric:: Diagnostics
 
