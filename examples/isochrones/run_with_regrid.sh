@@ -1,6 +1,8 @@
 #!/bin/bash
+
 # Runs a flat-bed isothermal SIA setup using EISMINT-II experiment A surface mass balance,
-# starting from zero ice thickness. Adds new isochrones every 1000 years.
+# starting from zero ice thickness. Adds new isochrones every 1000 years. Uses regridding
+# to double the horizontal grid resolution after 10500 years.
 
 # number of MPI processes to use
 N=${N:-8}
