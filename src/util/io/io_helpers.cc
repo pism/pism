@@ -422,7 +422,7 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
 static std::vector<double> read_for_interpolation(const File &file,
                                                   const std::string &variable_name,
                                                   const Grid &internal_grid,
-                                                  const LocalInterpCtx &lic, double *output) {
+                                                  const LocalInterpCtx &lic) {
 
   try {
     auto unit_system = internal_grid.ctx()->unit_system();
@@ -801,7 +801,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
   const Profiling &profiling = internal_grid.ctx()->profiling();
 
   profiling.begin("io.regridding.read");
-  auto buffer = read_for_interpolation(file, variable_name, internal_grid, lic, output);
+  auto buffer = read_for_interpolation(file, variable_name, internal_grid, lic);
   profiling.end("io.regridding.read");
 
   // interpolate
