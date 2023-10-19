@@ -20,7 +20,6 @@
 #include <cstdlib>
 #include <cassert>
 #include <memory>
-#include <petscsystypes.h>
 #include <petscvec.h>
 
 #include "pism/util/array/Array3D.hh"

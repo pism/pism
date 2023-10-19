@@ -21,7 +21,6 @@
 #include <cmath>
 #include <cstddef>
 #include <petscdraw.h>
-#include <petscsystypes.h>
 #include <string>
 
 #include "pism/util/array/Array.hh"
