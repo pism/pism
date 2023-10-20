@@ -345,7 +345,7 @@ rain" when the air temperature is above
 Alternatively, all precipitation is interpreted as snow if
 :config:`surface.debm_simple.interpret_precip_as_snow` is set.
 
-The melt rate is assumed to be zero if the near-surface air temperature `T` is below the
+The daily melt rate is assumed to be zero if the near-surface air temperature `T` is below the
 threshold temperature `T_{\text{min}}` and is approximated by
 
 .. math::
