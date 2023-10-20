@@ -2302,12 +2302,12 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_snow_units = "1";
 
     pism_config:surface.debm_simple.c1 = 29.0;
-    pism_config:surface.debm_simple.c1_doc = "Tuning parameter controlling temperature-driven melt";
+    pism_config:surface.debm_simple.c1_doc = "Tuning parameter controlling the slope in the temperature-driven melt contribution";
     pism_config:surface.debm_simple.c1_type = "number";
     pism_config:surface.debm_simple.c1_units = "W m-2 K-1";
 
     pism_config:surface.debm_simple.c2 = -93.0;
-    pism_config:surface.debm_simple.c2_doc = "Tuning parameter controlling background melt";
+    pism_config:surface.debm_simple.c2_doc = "Tuning parameter controlling the intercept in the temperature-driven melt contribution";
     pism_config:surface.debm_simple.c2_type = "number";
     pism_config:surface.debm_simple.c2_units = "W m-2";
 
@@ -2341,7 +2341,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.paleo.file_type = "string";
 
     pism_config:surface.debm_simple.paleo.obliquity =  23.44;
-    pism_config:surface.debm_simple.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
+    pism_config:surface.debm_simple.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth";
     pism_config:surface.debm_simple.paleo.obliquity_type = "number";
     pism_config:surface.debm_simple.paleo.obliquity_units = "degree";
 
