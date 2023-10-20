@@ -7,8 +7,8 @@ Atmosphere model components
 
 .. _sec-atmosphere-given:
 
-Reading boundary conditions from a file
-+++++++++++++++++++++++++++++++++++++++
+Boundary conditions read from a file
+++++++++++++++++++++++++++++++++++++
 
 :|options|: ``-atmosphere given``
 :|variables|: :var:`air_temp`, :var:`precipitation` |flux|
