@@ -551,8 +551,8 @@ processes (e.g. changing mean cloud cover in a changing climate) affect `\tau_A`
 
    \tau_A = a + b\cdot z,
 
-where `a` is controlled by :config:`surface.debm_simple.tau_a_intercept` and `b` by
-:config:`surface.debm_simple.tau_a_slope`.
+where `a` is set by :config:`surface.debm_simple.tau_a_intercept`, `b` is set by
+:config:`surface.debm_simple.tau_a_slope`, and `z` is the ice surface altitude in meters.
 
 .. _sec-debm-simple-temperature-driven-melt:
 
@@ -562,7 +562,8 @@ Temperature-driven melt
 .. math::
    :label: eq-debm-temperature-driven-melt
 
-   M_t = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( c_1 T_\text{eff} + c_2 \right),
+   M_t = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}}
+   \left( c_1 T_\text{eff} + c_2 \right),
 
 Here the "effective temperature" `T_{\text{eff}}` (see equation 3 in
 :cite:`Zeitzetal2021`) is the expected value of "positive"
