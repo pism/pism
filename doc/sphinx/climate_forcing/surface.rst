@@ -315,12 +315,16 @@ developed by :cite:`Zeitzetal2021`. It follows :cite:`KrebsKanzow2018` and inclu
 parameterizations of the surface albedo and the atmospheric transmissivity that make it
 possible to run the model in a standalone, prognostic mode.
 
-It is designed to use time-dependent (usually monthly) forcing by near-surface air
-temperature and precipitation provided by one of PISM's atmosphere models.
+It is designed to use time-dependent forcing by near-surface air temperature and
+precipitation provided by one of PISM's atmosphere models. The temperature forcing should
+resolve the annual cycle, i.e. it should use *monthly or more frequent* temperature
+records if forced using :ref:`sec-atmosphere-given`. In cases when only annual temperature
+records are available we recommend using the :ref:`sec-atmosphere-yearly-cycle`
+approximation.
 
 As for other surface models, its outputs are
 
-- top surface ice temperature
+- ice temperature at its top surface
 - climatic mass balance (SMB)
 
 It re-interprets near-surface air temperature to produce the top surface ice temperature.
@@ -349,7 +353,7 @@ threshold temperature `T_{\text{min}}` and is approximated by
 
    M =
    \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A}
-   \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} + c_1 T_\text{eff} + c_2\right)
+   \left( 1 - \alpha_\text{S} \right) \bar S_{\Phi} + c_1 T_\text{eff} + c_2\right)
 
 otherwise.
 
@@ -362,7 +366,7 @@ otherwise.
 
    * - `\Phi`
      - Threshold for the solar elevation angle (:config:`surface.debm_simple.phi`). It is
-       assumed that melt can occur only when the sun is above this angle. `Phi` should be
+       assumed that melt can occur only when the sun is above this angle. `\Phi` should be
        treated as a tuning parameter since its value is not well constrained.
 
    * - `\Delta t_{\Phi} / \Delta t`
@@ -380,16 +384,18 @@ otherwise.
        is above the elevation angle `\Phi`.
 
    * - `T_{\text{eff}}`
-     - "Effective air temperature" computed using provided (usually monthly) air
-       temperature records and taking into account stochastic temperature variations (see
+     - "Effective air temperature" computed using provided air
+       temperature forcing and adding stochastic temperature variations to capture the
+       effect of daily temperature variations not resolved by the forcing (see
        :cite:`Zeitzetal2021` and :cite:`CalovGreve05`)
 
    * - `c_1`
-     - Tuning parameter controlling temperature-driven melt
+     - Tuning parameter that controls the slope in the temperature-driven melt contribution
        (:config:`surface.debm_simple.c1`)
 
    * - `c_2`
-     - Tuning parameter controlling background melt (:config:`surface.debm_simple.c2`)
+     - Tuning parameter that controls the intercept in the temperature-driven melt
+       contribution (:config:`surface.debm_simple.c2`)
 
    * - `\rho_w`
      - Fresh water density (:config:`constants.fresh_water.density`)
@@ -409,16 +415,16 @@ re-freeze. By default only snow melt is allowed to refreeze; set
 
 .. note::
 
-   - Part of the precipitation interpreted as rain is assumed to run off instantaneously
-     and *does not* contribute to reported modeled runoff.
+   - Part of the precipitation that is interpreted as rain is assumed to run off
+     instantaneously and *does not* contribute to reported modeled runoff.
 
    - When used with periodic climate data (air temperature and precipitation) that is read
-     from a file (see section :ref:`sec-atmosphere-given`), use of
+     from a file (see :ref:`sec-atmosphere-given`), use of
      :config:`time_stepping.hit_multiples` is recommended: set it to the length of the
      climate data period in years.
 
 The following sections describe implementations of melt contributions due to insolation
-`\bar S_{\Phi},` effective air temperature `T_{\text{eff}}`, and the background melt parameter `c_2`.
+`\bar S_{\Phi}` and the effective air temperature `T_{\text{eff}}`.
 
 .. _sec-debm-simple-insolation-driven-melt:
 
@@ -484,7 +490,7 @@ The values of these are set using the following configuration parameters (prefix
    :exclude: .+(enabled|file|periodic)$
 
 Alternatively, PISM can read in scalar time series of variables :var:`eccentricity`,
-:var:`obliquity`, and :var:`perihelion_longitude` from the file specified using
+:var:`obliquity`, and :var:`perihelion_longitude` from a file specified using
 :config:`surface.debm_simple.paleo.file`.
 
 .. note::
@@ -548,23 +554,31 @@ processes (e.g. changing mean cloud cover in a changing climate) affect `\tau_A`
 where `a` is controlled by :config:`surface.debm_simple.tau_a_intercept` and `b` by
 :config:`surface.debm_simple.tau_a_slope`.
 
-.. _sec-debm-simple-temperature-and-background-melt:
+.. _sec-debm-simple-temperature-driven-melt:
 
-Temperature-driven and background melt
-======================================
+Temperature-driven melt
+=======================
 
 .. math::
-   :label: eq-debm-temperature-and-background-melt
+   :label: eq-debm-temperature-driven-melt
 
    M_t = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( c_1 T_\text{eff} + c_2 \right),
 
-The method of computing the effective temperature `T_{\text{eff}}` is similar to the one
-described in section :ref:`sec-surface-pdd`, i.e. as the magnitude of the temperature
-excursion above a "positivity" threshold
-(:config:`surface.debm_simple.positive_threshold_temp`, usually `0\!\phantom{|}^\circ
-\text{C}`).
+Here the "effective temperature" `T_{\text{eff}}` (see equation 3 in
+:cite:`Zeitzetal2021`) is the expected value of "positive"
+excursions (i.e. excursions above the positivity threshold
+:config:`surface.debm_simple.positive_threshold_temp`, usually `0\!\phantom{|}^\circ
+\text{C}`) of stochastic temperature variations added to the provided temperature
+forcing (i.e. added to the input of this model).
 
-The daily air temperature variation can be constant (the default; set using
+Similarly to the PDD :ref:`sec-surface-pdd`, these stochastic variations are added to model
+the effect of daily temperature variations *not resolved* by the provided forcing. The
+standard deviation `\sigma` of added daily variations should be treated as a tuning
+parameter. Note, in particular, that `\sigma` could be zero (no additional stochastic
+variations) if daily temperature variations *are* resolved by the temperature forcing
+provided to this model.
+
+The standard deviation `\sigma` can be constant (the default; set using
 :config:`surface.debm_simple.std_dev`), read from a file (specified using
 :config:`surface.debm_simple.std_dev.file`, variable :var:`air_temp_sd` using the units of
 *Kelvin*), or computed using a parameterization. These mechanisms are controlled by
