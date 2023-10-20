@@ -2373,8 +2373,8 @@ netcdf pism_config {
     pism_config:surface.debm_simple.refreeze_ice_melt_doc = "If set to 'yes', refreeze :config:`surface.debm_simple.refreeze` fraction of melted ice, otherwise all of the melted ice runs off.";
     pism_config:surface.debm_simple.refreeze_ice_melt_type = "flag";
 
-    pism_config:surface.debm_simple.solar_constant = 1367.0;
-    pism_config:surface.debm_simple.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area";
+    pism_config:surface.debm_simple.solar_constant = 1361.0;
+    pism_config:surface.debm_simple.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area :cite:`Kopp2011`";
     pism_config:surface.debm_simple.solar_constant_type = "number";
     pism_config:surface.debm_simple.solar_constant_units = "W m-2";
 
