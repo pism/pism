@@ -2281,16 +2281,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_input.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:surface.debm_simple.albedo_input.periodic_type = "flag";
 
-    pism_config:surface.debm_simple.albedo_ocean = 0.1;
-    pism_config:surface.debm_simple.albedo_ocean_doc = "Albedo of ice-free ocean";
-    pism_config:surface.debm_simple.albedo_ocean_type = "number";
-    pism_config:surface.debm_simple.albedo_ocean_units = "";
-
-    pism_config:surface.debm_simple.albedo_slope = -790;
-    pism_config:surface.debm_simple.albedo_slope_doc = "Slope in albedo parametrization (tuning parameter)";
-    pism_config:surface.debm_simple.albedo_slope_type = "number";
-    pism_config:surface.debm_simple.albedo_slope_units = "m2 s kg-1";
-
     pism_config:surface.debm_simple.albedo_max = 0.82;
     pism_config:surface.debm_simple.albedo_max_doc = "Maximum (\"fresh snow\") albedo in albedo parametrization (tuning parameter)";
     pism_config:surface.debm_simple.albedo_max_type = "number";
@@ -2300,6 +2290,16 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_min_doc = "Minimum (\"bare ice\") albedo in albedo parametrization";
     pism_config:surface.debm_simple.albedo_min_type = "number";
     pism_config:surface.debm_simple.albedo_min_units = "1";
+
+    pism_config:surface.debm_simple.albedo_ocean = 0.1;
+    pism_config:surface.debm_simple.albedo_ocean_doc = "Albedo of ice-free ocean";
+    pism_config:surface.debm_simple.albedo_ocean_type = "number";
+    pism_config:surface.debm_simple.albedo_ocean_units = "";
+
+    pism_config:surface.debm_simple.albedo_slope = -790;
+    pism_config:surface.debm_simple.albedo_slope_doc = "Slope in albedo parametrization (tuning parameter)";
+    pism_config:surface.debm_simple.albedo_slope_type = "number";
+    pism_config:surface.debm_simple.albedo_slope_units = "m2 s kg-1";
 
     pism_config:surface.debm_simple.c1 = 29.0;
     pism_config:surface.debm_simple.c1_doc = "Tuning parameter controlling the slope in the temperature-driven melt contribution";
