@@ -290,7 +290,7 @@ DEBMSimplePointwise::Changes::Changes() {
 DEBMSimpleMelt::DEBMSimpleMelt() {
   temperature_melt = 0.0;
   insolation_melt  = 0.0;
-  background_melt  = 0.0;
+  offset_melt  = 0.0;
   total_melt       = 0.0;
 }
 
@@ -301,10 +301,10 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
   m_time = ctx.time();
 
   m_L                              = config.get_number("constants.fresh_water.latent_heat_of_fusion");
-  m_albedo_ice                     = config.get_number("surface.debm_simple.albedo_ice");
+  m_albedo_min                     = config.get_number("surface.debm_simple.albedo_min");
   m_albedo_ocean                   = config.get_number("surface.debm_simple.albedo_ocean");
   m_albedo_slope                   = config.get_number("surface.debm_simple.albedo_slope");
-  m_albedo_snow                    = config.get_number("surface.debm_simple.albedo_snow");
+  m_albedo_max                     = config.get_number("surface.debm_simple.albedo_max");
   m_melt_threshold_temp            = config.get_number("surface.debm_simple.melting_threshold_temp");
   m_melt_c1                        = config.get_number("surface.debm_simple.c1");
   m_melt_c2                        = config.get_number("surface.debm_simple.c2");
@@ -359,8 +359,8 @@ double DEBMSimplePointwise::albedo(double melt_rate, MaskValue cell_type) const 
 
   assert(melt_rate >= 0.0);
 
-  double result = m_albedo_snow + m_albedo_slope * melt_rate * m_ice_density ;
-  return std::max(result, m_albedo_ice);
+  return std::max(m_albedo_max + m_albedo_slope * melt_rate * m_ice_density, //
+                  m_albedo_min);
 }
 
 /*! Atmosphere transmissivity (no units; acts as a scaling factor)
@@ -472,10 +472,10 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
 
   result.insolation_melt  = A * (transmissivity * (1.0 - albedo) * insolation);
   result.temperature_melt = A * m_melt_c1 * Teff;
-  result.background_melt  = A * m_melt_c2;
+  result.offset_melt      = A * m_melt_c2;
 
   double total_melt = (result.insolation_melt + result.temperature_melt +
-                       result.background_melt);
+                       result.offset_melt);
   // this model should not produce negative melt rates
   result.total_melt = std::max(total_melt, 0.0);
 

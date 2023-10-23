@@ -38,7 +38,7 @@ public:
 
   double temperature_melt;
   double insolation_melt;
-  double background_melt;
+  double offset_melt;
   double total_melt;
 };
 
@@ -109,8 +109,8 @@ private:
   double m_ice_density;
   double m_water_density;
 
-  double m_albedo_snow;
-  double m_albedo_ice;
+  double m_albedo_max;
+  double m_albedo_min;
   double m_albedo_ocean;
 
   //! slope used in the linear parameterization of the albedo as a function of melt

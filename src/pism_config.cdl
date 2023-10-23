@@ -2264,19 +2264,14 @@ netcdf pism_config {
     pism_config:surface.cache.update_interval_units = "365days";
 
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
-    pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "Threshold temperature above which all precipitation is rain; must exceed :config:`surface.debm_simple.air_temp_all_precip_as_snow`";
+    pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "Threshold temperature above which all precipitation is interpreted as rain; must exceed :config:`surface.debm_simple.air_temp_all_precip_as_snow`";
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_type = "number";
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_units = "Kelvin";
 
     pism_config:surface.debm_simple.air_temp_all_precip_as_snow = 273.15;
-    pism_config:surface.debm_simple.air_temp_all_precip_as_snow_doc = "Threshold temperature below which all precipitation is snow";
+    pism_config:surface.debm_simple.air_temp_all_precip_as_snow_doc = "Threshold temperature below which all precipitation is interpreted as snow";
     pism_config:surface.debm_simple.air_temp_all_precip_as_snow_type = "number";
     pism_config:surface.debm_simple.air_temp_all_precip_as_snow_units = "Kelvin";
-
-    pism_config:surface.debm_simple.albedo_ice = 0.47;
-    pism_config:surface.debm_simple.albedo_ice_doc = "Albedo value for bare ice (lowest possible value in albedo parametrization)";
-    pism_config:surface.debm_simple.albedo_ice_type = "number";
-    pism_config:surface.debm_simple.albedo_ice_units = "1";
 
     pism_config:surface.debm_simple.albedo_input.file = "";
     pism_config:surface.debm_simple.albedo_input.file_doc = "Name of the file containing the variable :var:`albedo` to use instead of parameterizing it";
@@ -2286,28 +2281,33 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_input.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:surface.debm_simple.albedo_input.periodic_type = "flag";
 
+    pism_config:surface.debm_simple.albedo_max = 0.82;
+    pism_config:surface.debm_simple.albedo_max_doc = "Maximum (\"fresh snow\") albedo in albedo parametrization (tuning parameter)";
+    pism_config:surface.debm_simple.albedo_max_type = "number";
+    pism_config:surface.debm_simple.albedo_max_units = "1";
+
+    pism_config:surface.debm_simple.albedo_min = 0.47;
+    pism_config:surface.debm_simple.albedo_min_doc = "Minimum (\"bare ice\") albedo in albedo parametrization";
+    pism_config:surface.debm_simple.albedo_min_type = "number";
+    pism_config:surface.debm_simple.albedo_min_units = "1";
+
     pism_config:surface.debm_simple.albedo_ocean = 0.1;
     pism_config:surface.debm_simple.albedo_ocean_doc = "Albedo of ice-free ocean";
     pism_config:surface.debm_simple.albedo_ocean_type = "number";
     pism_config:surface.debm_simple.albedo_ocean_units = "";
 
     pism_config:surface.debm_simple.albedo_slope = -790;
-    pism_config:surface.debm_simple.albedo_slope_doc = "Slope in albedo parametrization";
+    pism_config:surface.debm_simple.albedo_slope_doc = "Slope in albedo parametrization (tuning parameter)";
     pism_config:surface.debm_simple.albedo_slope_type = "number";
     pism_config:surface.debm_simple.albedo_slope_units = "m2 s kg-1";
 
-    pism_config:surface.debm_simple.albedo_snow = 0.82;
-    pism_config:surface.debm_simple.albedo_snow_doc = "Albedo value for fresh snow (albedo without melting in albedo parametrization)";
-    pism_config:surface.debm_simple.albedo_snow_type = "number";
-    pism_config:surface.debm_simple.albedo_snow_units = "1";
-
     pism_config:surface.debm_simple.c1 = 29.0;
-    pism_config:surface.debm_simple.c1_doc = "Tuning parameter controlling temperature-driven melt";
+    pism_config:surface.debm_simple.c1_doc = "Tuning parameter controlling the slope in the temperature-driven melt contribution";
     pism_config:surface.debm_simple.c1_type = "number";
     pism_config:surface.debm_simple.c1_units = "W m-2 K-1";
 
     pism_config:surface.debm_simple.c2 = -93.0;
-    pism_config:surface.debm_simple.c2_doc = "Tuning parameter controlling background melt";
+    pism_config:surface.debm_simple.c2_doc = "Tuning parameter controlling the intercept in the temperature-driven melt contribution";
     pism_config:surface.debm_simple.c2_type = "number";
     pism_config:surface.debm_simple.c2_units = "W m-2";
 
@@ -2341,7 +2341,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.paleo.file_type = "string";
 
     pism_config:surface.debm_simple.paleo.obliquity =  23.44;
-    pism_config:surface.debm_simple.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
+    pism_config:surface.debm_simple.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth";
     pism_config:surface.debm_simple.paleo.obliquity_type = "number";
     pism_config:surface.debm_simple.paleo.obliquity_units = "degree";
 
@@ -2373,8 +2373,8 @@ netcdf pism_config {
     pism_config:surface.debm_simple.refreeze_ice_melt_doc = "If set to 'yes', refreeze :config:`surface.debm_simple.refreeze` fraction of melted ice, otherwise all of the melted ice runs off.";
     pism_config:surface.debm_simple.refreeze_ice_melt_type = "flag";
 
-    pism_config:surface.debm_simple.solar_constant = 1367.0;
-    pism_config:surface.debm_simple.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area";
+    pism_config:surface.debm_simple.solar_constant = 1361.0;
+    pism_config:surface.debm_simple.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area :cite:`Kopp2011`";
     pism_config:surface.debm_simple.solar_constant_type = "number";
     pism_config:surface.debm_simple.solar_constant_units = "W m-2";
 
@@ -2389,12 +2389,12 @@ netcdf pism_config {
     pism_config:surface.debm_simple.std_dev.file_type = "string";
 
     pism_config:surface.debm_simple.std_dev.param.a = -0.15;
-    pism_config:surface.debm_simple.std_dev.param.a_doc = "Parameter `a` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev.param.enabled` is set to yes.";
+    pism_config:surface.debm_simple.std_dev.param.a_doc = "Parameter `a` in `\\sigma = \\max(a\\, (T - T_{\\text{melting}}) + b, 0)`. Used only if :config:`surface.debm_simple.std_dev.param.enabled` is set to yes.";
     pism_config:surface.debm_simple.std_dev.param.a_type = "number";
     pism_config:surface.debm_simple.std_dev.param.a_units = "1";
 
     pism_config:surface.debm_simple.std_dev.param.b = 0.66;
-    pism_config:surface.debm_simple.std_dev.param.b_doc = "Parameter `b` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev.param.enabled` is set to yes.";
+    pism_config:surface.debm_simple.std_dev.param.b_doc = "Parameter `b` in `\\sigma = \\max(a\\, (T - T_{\\text{melting}}) + b, 0)`. Used only if :config:`surface.debm_simple.std_dev.param.enabled` is set to yes.";
     pism_config:surface.debm_simple.std_dev.param.b_type = "number";
     pism_config:surface.debm_simple.std_dev.param.b_units = "Kelvin";
 

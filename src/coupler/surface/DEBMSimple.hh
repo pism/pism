@@ -50,10 +50,10 @@ public:
   const array::Scalar &melt_impl() const;
   const array::Scalar &runoff_impl() const;
 
-  // Contributions to melt from insolation, temperature, and the background melt:
+  // Contributions to melt from insolation, temperature, and the offset melt:
   const array::Scalar &insolation_driven_melt() const;
   const array::Scalar &temperature_driven_melt() const;
-  const array::Scalar &background_melt() const;
+  const array::Scalar &offset_melt() const;
 
   // diagnostics
   const array::Scalar &surface_albedo() const;
@@ -109,8 +109,8 @@ private:
   //! total insolation melt during the last time step
   array::Scalar m_insolation_driven_melt;
 
-  //! total background_melt during the last timestep
-  array::Scalar m_background_melt;
+  //! total offset_melt during the last timestep
+  array::Scalar m_offset_melt;
 
   //! albedo field
   array::Scalar m_surface_albedo;
