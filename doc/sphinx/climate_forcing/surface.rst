@@ -360,6 +360,7 @@ otherwise.
 .. list-table:: Notation used in :eq:`eq-debm-melt`
    :header-rows: 1
    :widths: 2,4
+   :name: tab-debm-simple-notation
 
    * - Quantity
      - Description
@@ -390,12 +391,13 @@ otherwise.
        :cite:`Zeitzetal2021` and :cite:`CalovGreve05`)
 
    * - `c_1`
-     - Tuning parameter that controls the slope in the temperature-driven melt contribution
+     - Tuning parameter that controls the slope in the model of the temperature influence
+       on melt
        (:config:`surface.debm_simple.c1`)
 
    * - `c_2`
-     - Tuning parameter that controls the intercept in the temperature-driven melt
-       contribution (:config:`surface.debm_simple.c2`)
+     - Tuning parameter that controls the intercept in the model of the temperature influence
+       on melt (:config:`surface.debm_simple.c2`)
 
    * - `\rho_w`
      - Fresh water density (:config:`constants.fresh_water.density`)
@@ -426,19 +428,19 @@ re-freeze. By default only snow melt is allowed to refreeze; set
 The following sections describe implementations of melt contributions due to insolation
 `\bar S_{\Phi}` and the effective air temperature `T_{\text{eff}}`.
 
-.. _sec-debm-simple-insolation-driven-melt:
+.. _sec-debm-simple-influence-of-insolation:
 
-Insolation-driven melt
-======================
+Influence of insolation
+=======================
 
 .. math::
    :label: eq-debm-insolation-melt
 
-   M_i = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A} \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} \right),
+   M_i = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left(
+   \tau_\text{A} \left( 1 - \alpha_\text{S} \right) \bar S_{\Phi} \right),
 
-This part of the melt is driven by the *mean insolation during the melt period* `\bar
-S_{\Phi}` and includes influences of the atmosphere transmissivity `\tau_{A}` and the
-surface albedo `\alpha_S`.
+This term models the influence of the *mean insolation during the melt period* `\bar
+S_{\Phi}`, the atmosphere transmissivity `\tau_{A}` and the surface albedo `\alpha_S`.
 
 .. _sec-debm-simple-insolation:
 
@@ -456,7 +458,7 @@ The mean top of the atmosphere insolation during the part of the day when the su
 
 where
 
-- `S_0` is the solar constant :config:`surface.debm_simple.solar_constant`,
+- `S_0` is the solar constant :config:`surface.debm_simple.solar_constant` :cite:`Kopp2011`,
 - `\bar d / d` is the ratio of the length of the semimajor axis of the Earth's orbit to
   the Earth-Sun distance,
 - `h_{\Phi}` is the hour angle when the sun has an elevation angle of at least `\Phi`,
@@ -514,6 +516,7 @@ sophisticated surface process model (including the firn layer, for example), dEB
 assumes that the surface albedo is a linear function of the modeled melt rate.
 
 .. math::
+   :label: eq-debm-surface-albedo
 
    \alpha_S = \max\left( \alpha_{\text{max}} + C\cdot M, \alpha_{\text{min}}\right).
 
@@ -554,13 +557,13 @@ processes (e.g. changing mean cloud cover in a changing climate) affect `\tau_A`
 where `a` is set by :config:`surface.debm_simple.tau_a_intercept`, `b` is set by
 :config:`surface.debm_simple.tau_a_slope`, and `z` is the ice surface altitude in meters.
 
-.. _sec-debm-simple-temperature-driven-melt:
+.. _sec-debm-simple-influence-of-temperature:
 
-Temperature-driven melt
-=======================
+Influence of the air temperature
+================================
 
 .. math::
-   :label: eq-debm-temperature-driven-melt
+   :label: eq-debm-temperature
 
    M_t = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}}
    \left( c_1 T_\text{eff} + c_2 \right),
