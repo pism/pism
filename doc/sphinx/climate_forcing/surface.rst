@@ -374,8 +374,8 @@ where `T` is the near-surface air temperature.
        treated as a tuning parameter since its value is not well constrained.
 
    * - `\Delta t_{\Phi} / \Delta t`
-     - Fraction of the day during which the sun is above the elevation angle `\Phi`
-       (:config:`surface.debm_simple.phi`) and melt can occur
+     - Fraction of the day during which the sun is above the elevation angle `\Phi` and
+       melt can occur
 
    * - `\tau_A`
      - Transmissivity of the atmosphere
@@ -389,8 +389,9 @@ where `T` is the near-surface air temperature.
 
    * - `T_{\text{eff}}`
      - "Effective air temperature" computed using provided air temperature forcing and
-       adding stochastic temperature variations to capture the effect of daily temperature
-       variations (see :eq:`eq-debm-t-eff`, :cite:`Zeitzetal2021` and :cite:`CalovGreve05`)
+       additional stochastic variations used to model the effect of daily temperature
+       variations (see :eq:`eq-debm-t-eff`, :cite:`Zeitzetal2021` and
+       :cite:`CalovGreve05`)
 
    * - `c_1`
      - Tuning parameter that controls the slope in the model of the temperature influence
@@ -606,7 +607,7 @@ step length.
 
    The standard deviation `\sigma` of added daily variations should be treated as a tuning
    parameter. The appropriate value may change depending on the application domain (for
-   example Greenland vs Antarctica), the temporal resolution of the air temperature
+   example: Greenland vs Antarctica), the temporal resolution of the air temperature
    forcing and lengths of time steps taken by dEBM-simple; see
    :config:`surface.debm_simple.max_evals_per_year`.
 
@@ -626,17 +627,17 @@ Tuning parameters
 =================
 
 Default values of many parameters come from :cite:`Zeitzetal2021` and are appropriate for
-Greenland. Their values will need to change to use this model in other contexts.
-See :cite:`Garbe2023` for parameter choices more appropriate in an Antarctic setting.
+Greenland; their values will need to change to use this model in other contexts.
+See Table 1 in :cite:`Garbe2023` for parameter choices more appropriate in an Antarctic setting.
 
 .. list-table:: Notable tuning parameters
    :header-rows: 1
-   :widths: 2,1,2
+   :widths: 1,1,3
    :name: tab-debm-simple-tuning-parameters
 
-   * - Tuning parameter
+   * - Parameter
      - Equation
-     - Configuration parameter
+     - Configuration parameter name
 
    * - `T_{\text{min}}`
      - :eq:`eq-debm-melt`
@@ -647,7 +648,7 @@ See :cite:`Garbe2023` for parameter choices more appropriate in an Antarctic set
      - :config:`surface.debm_simple.refreeze`
 
    * - `\Phi`
-     - :eq:`eq-debm-insolation-melt`
+     - :eq:`eq-debm-insolation-melt`, :eq:`eq-debm-toa-insolation`
      - :config:`surface.debm_simple.phi`
 
    * - `\alpha_{\text{min}}`
