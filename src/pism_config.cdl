@@ -2273,10 +2273,10 @@ netcdf pism_config {
     pism_config:surface.debm_simple.air_temp_all_precip_as_snow_type = "number";
     pism_config:surface.debm_simple.air_temp_all_precip_as_snow_units = "Kelvin";
 
-    pism_config:surface.debm_simple.albedo_ice = 0.47;
-    pism_config:surface.debm_simple.albedo_ice_doc = "Albedo value for bare ice (lowest possible value in albedo parametrization)";
-    pism_config:surface.debm_simple.albedo_ice_type = "number";
-    pism_config:surface.debm_simple.albedo_ice_units = "1";
+    pism_config:surface.debm_simple.albedo_min = 0.47;
+    pism_config:surface.debm_simple.albedo_min_doc = "Albedo value for bare ice (lowest possible value in albedo parametrization)";
+    pism_config:surface.debm_simple.albedo_min_type = "number";
+    pism_config:surface.debm_simple.albedo_min_units = "1";
 
     pism_config:surface.debm_simple.albedo_input.file = "";
     pism_config:surface.debm_simple.albedo_input.file_doc = "Name of the file containing the variable :var:`albedo` to use instead of parameterizing it";
@@ -2296,10 +2296,10 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_slope_type = "number";
     pism_config:surface.debm_simple.albedo_slope_units = "m2 s kg-1";
 
-    pism_config:surface.debm_simple.albedo_snow = 0.82;
-    pism_config:surface.debm_simple.albedo_snow_doc = "Albedo value for fresh snow (albedo without melting in albedo parametrization)";
-    pism_config:surface.debm_simple.albedo_snow_type = "number";
-    pism_config:surface.debm_simple.albedo_snow_units = "1";
+    pism_config:surface.debm_simple.albedo_max = 0.82;
+    pism_config:surface.debm_simple.albedo_max_doc = "Albedo value for fresh snow (albedo without melting in albedo parametrization)";
+    pism_config:surface.debm_simple.albedo_max_type = "number";
+    pism_config:surface.debm_simple.albedo_max_units = "1";
 
     pism_config:surface.debm_simple.c1 = 29.0;
     pism_config:surface.debm_simple.c1_doc = "Tuning parameter controlling the slope in the temperature-driven melt contribution";

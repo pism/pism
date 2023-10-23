@@ -178,7 +178,7 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   // initializing the model state
   InputOptions input = process_input_options(m_grid->com, m_config);
 
-  auto default_albedo =  m_config->get_number("surface.debm_simple.albedo_snow");
+  auto default_albedo =  m_config->get_number("surface.debm_simple.albedo_max");
   if (input.type == INIT_RESTART) {
     m_snow_depth.read(input.filename, input.record);
     m_surface_albedo.read(input.filename, input.record);
