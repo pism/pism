@@ -520,12 +520,14 @@ assumes that the surface albedo is a linear function of the modeled melt rate.
 
    \alpha_S = \max\left( \alpha_{\text{max}} + C\cdot M, \alpha_{\text{min}}\right).
 
-Here `M` is the melt rate (meters liquid water equivalent per second) and `C` is the
-tuning parameter (:config:`surface.debm_simple.albedo_slope`).
+Here `M` is the estimated melt rate from the previous time step (meters liquid water
+equivalent per second) and `C` is a *negative* tuning parameter
+(:config:`surface.debm_simple.albedo_slope`).
 
 In this approach, the albedo decreases linearly with increasing melt from the maximum
-value (the fresh-snow albedo :config:`surface.debm_simple.albedo_snow`) for regions with
-no melting to the minimum (the bare-ice albedo :config:`surface.debm_simple.albedo_ice`).
+value (the "fresh-snow" albedo :config:`surface.debm_simple.albedo_max`) for regions with
+no melting to the minimum (the "bare-ice" albedo
+:config:`surface.debm_simple.albedo_min`).
 
 Alternatively, albedo (variable :var:`surface_albedo`; no units) can be read from a file
 specified using :config:`surface.debm_simple.albedo_input.file`.
@@ -545,7 +547,7 @@ Transmissivity of the atmosphere
 ################################
 
 dEBM-simple assumes that the transmissivity of the atmosphere `\tau_A` is a linear
-function of the local surface altitude `z`. Similarly to the albedo parameterization, the
+function of the local surface altitude. Similarly to the albedo parameterization, the
 default values of coefficients `a` and `b` below were obtained using a linear regression
 of MAR v3.11 data. This parameterization also relies on the assumption that no other
 processes (e.g. changing mean cloud cover in a changing climate) affect `\tau_A`.
@@ -575,12 +577,17 @@ excursions (i.e. excursions above the positivity threshold
 \text{C}`) of stochastic temperature variations added to the provided temperature
 forcing (i.e. added to the input of this model).
 
-Similarly to the PDD :ref:`sec-surface-pdd`, these stochastic variations are added to model
-the effect of daily temperature variations *not resolved* by the provided forcing. The
-standard deviation `\sigma` of added daily variations should be treated as a tuning
-parameter. Note, in particular, that `\sigma` could be zero (no additional stochastic
-variations) if daily temperature variations *are* resolved by the temperature forcing
-provided to this model.
+Similarly to the PDD :ref:`sec-surface-pdd`, these stochastic variations are added to
+model the effect of daily temperature variations *not resolved* by this model either
+because of the temporal resolution of the provided forcing or the chosen time step length.
+
+.. note::
+
+   The standard deviation `\sigma` of added daily variations should be treated as a tuning
+   parameter. The appropriate value may change depending on the application domain (for
+   example Greenland vs Antarctica), the temporal resolution of the air temperature
+   forcing and lengths of time steps taken by dEBM-simple; see
+   :config:`surface.debm_simple.max_evals_per_year`.
 
 The standard deviation `\sigma` can be constant (the default; set using
 :config:`surface.debm_simple.std_dev`), read from a file (specified using
