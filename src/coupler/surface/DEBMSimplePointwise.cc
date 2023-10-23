@@ -290,7 +290,7 @@ DEBMSimplePointwise::Changes::Changes() {
 DEBMSimpleMelt::DEBMSimpleMelt() {
   temperature_melt = 0.0;
   insolation_melt  = 0.0;
-  background_melt  = 0.0;
+  offset_melt  = 0.0;
   total_melt       = 0.0;
 }
 
@@ -472,10 +472,10 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
 
   result.insolation_melt  = A * (transmissivity * (1.0 - albedo) * insolation);
   result.temperature_melt = A * m_melt_c1 * Teff;
-  result.background_melt  = A * m_melt_c2;
+  result.offset_melt      = A * m_melt_c2;
 
   double total_melt = (result.insolation_melt + result.temperature_melt +
-                       result.background_melt);
+                       result.offset_melt);
   // this model should not produce negative melt rates
   result.total_melt = std::max(total_melt, 0.0);
 

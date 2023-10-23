@@ -38,7 +38,7 @@ public:
 
   double temperature_melt;
   double insolation_melt;
-  double background_melt;
+  double offset_melt;
   double total_melt;
 };
 
