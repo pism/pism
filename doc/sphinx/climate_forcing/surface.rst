@@ -547,8 +547,8 @@ specified using :config:`surface.debm_simple.albedo_input.file`.
      :config:`surface.debm_simple.albedo_input.file`.
 
    - The fresh snow albedo is also treated as a tuning parameter. Default values of
-     `\alpha_{\text{max}}` and `\alpha_s` were obtained by fitting this approximation to the
-     output of the regional climate model MARv3.11.
+     `\alpha_{\text{max}}` and `\alpha_s` were obtained by fitting this approximation to
+     the output of the regional climate model.
 
 .. _sec-debm-simple-transmissivity:
 
@@ -558,7 +558,7 @@ Atmosphere transmissivity
 dEBM-simple assumes that the transmissivity of the atmosphere `\tau_A` is a linear
 function of the local surface altitude. Similarly to the albedo parameterization, the
 default values of coefficients `a` and `b` below were obtained using a linear regression
-of MAR v3.11 data. This parameterization also relies on the assumption that no other
+of an RCM output. This parameterization also relies on the assumption that no other
 processes (e.g. changing mean cloud cover in a changing climate) affect `\tau_A`.
 
 .. math::
