@@ -375,10 +375,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         } else if (m_sd_use_param and mask.icy(i, j)) {
           // apply standard deviation parameterization over ice if in use
           for (int k = 0; k < N; ++k) {
-            S[k] = m_sd_param_a * (T[k] - melting_point) + m_sd_param_b;
-            if (S[k] < 0.0) {
-              S[k] = 0.0;
-            }
+            S[k] = std::max(m_sd_param_a * (T[k] - melting_point) + m_sd_param_b, 0.0);
           }
           (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
         }
