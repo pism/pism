@@ -359,8 +359,8 @@ double DEBMSimplePointwise::albedo(double melt_rate, MaskValue cell_type) const 
 
   assert(melt_rate >= 0.0);
 
-  double result = m_albedo_snow + m_albedo_slope * melt_rate * m_ice_density ;
-  return std::max(result, m_albedo_ice);
+  return std::max(m_albedo_snow + m_albedo_slope * melt_rate * m_ice_density, //
+                  m_albedo_ice);
 }
 
 /*! Atmosphere transmissivity (no units; acts as a scaling factor)
