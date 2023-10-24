@@ -11,6 +11,9 @@ message: >-
   metadata from this file.
 type: software
 doi: 10.5281/zenodo.1199019
+contact:
+  - email: uaf-pism@alaska.edu
+    name: "PISM developers at UAF"
 authors:
   - given-names: Constantine
     family-names: Khrulev
