@@ -535,8 +535,8 @@ equivalent per second) and `\alpha_s` is a *negative* tuning parameter
 (:config:`surface.debm_simple.albedo_slope`).
 
 In this approach, the albedo decreases linearly with increasing melt from the maximum
-value (the "fresh-snow" albedo :config:`surface.debm_simple.albedo_max`) for regions with
-no melting to the minimum (the "bare-ice" albedo
+value (the "fresh snow" albedo :config:`surface.debm_simple.albedo_max`) for regions with
+no melting to the minimum (the "bare ice" albedo
 :config:`surface.debm_simple.albedo_min`).
 
 Alternatively, albedo (variable :var:`surface_albedo`; no units) can be read from a file
@@ -549,7 +549,7 @@ specified using :config:`surface.debm_simple.albedo_input.file`.
 
    - The fresh snow albedo is also treated as a tuning parameter. Default values of
      `\alpha_{\text{max}}` and `\alpha_s` were obtained by fitting this approximation to
-     the output of the regional climate model.
+     the output of a regional climate model.
 
 .. _sec-debm-simple-transmissivity:
 
@@ -558,7 +558,7 @@ Atmosphere transmissivity
 
 dEBM-simple assumes that the transmissivity of the atmosphere `\tau_A` is a linear
 function of the local surface altitude. Similarly to the albedo parameterization, the
-default values of coefficients `a` and `b` below were obtained using a linear regression
+default values of coefficients `a` and `b` below were obtained using linear regression
 of an RCM output. This parameterization also relies on the assumption that no other
 processes (e.g. changing mean cloud cover in a changing climate) affect `\tau_A`.
 
