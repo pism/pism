@@ -217,7 +217,7 @@ MaxTimestep DEBMSimple::max_timestep_impl(double my_t) const {
 
 double DEBMSimple::compute_next_balance_year_start(double time) {
   // compute the time corresponding to the beginning of the next balance year
-  double balance_year_start_day = m_config->get_number("surface.pdd.balance_year_start_day"),
+  double balance_year_start_day = m_config->get_number("surface.mass_balance_year_start_day"),
          one_day                = units::convert(m_sys, 1.0, "days", "seconds"),
          year_start             = this->time().calendar_year_start(time),
          balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;

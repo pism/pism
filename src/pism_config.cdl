@@ -2514,6 +2514,11 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
     pism_config:surface.ismip6.reference_file_type = "string";
 
+    pism_config:surface.mass_balance_year_start_day = 274;
+    pism_config:surface.mass_balance_year_start_day_doc = "day of year for October 1st, beginning of the balance year in northern latitudes.";
+    pism_config:surface.mass_balance_year_start_day_type = "integer";
+    pism_config:surface.mass_balance_year_start_day_units = "ordinal day number";
+
     pism_config:surface.models = "given";
     pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers";
     pism_config:surface.models_option = "surface";
@@ -2528,11 +2533,6 @@ netcdf pism_config {
     pism_config:surface.pdd.air_temp_all_precip_as_snow_doc = "threshold temperature below which all precipitation is snow";
     pism_config:surface.pdd.air_temp_all_precip_as_snow_type = "number";
     pism_config:surface.pdd.air_temp_all_precip_as_snow_units = "Kelvin";
-
-    pism_config:surface.pdd.balance_year_start_day = 274;
-    pism_config:surface.pdd.balance_year_start_day_doc = "day of year for October 1st, beginning of the balance year in northern latitudes.";
-    pism_config:surface.pdd.balance_year_start_day_type = "integer";
-    pism_config:surface.pdd.balance_year_start_day_units = "ordinal day number";
 
     pism_config:surface.pdd.factor_ice = 0.00879120879120879;
     pism_config:surface.pdd.factor_ice_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`; = (8 mm liquid-water-equivalent) / (pos degree day)";
