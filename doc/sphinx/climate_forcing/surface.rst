@@ -296,7 +296,7 @@ individual components:
 
 .. rubric:: Parameters
 
-Prefix: ``surface.pdd.``.
+Prefix: ``surface.pdd.``
 
 .. pism-parameters::
    :prefix: surface.pdd.
