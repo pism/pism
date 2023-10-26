@@ -2302,12 +2302,12 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_slope_units = "m2 s kg-1";
 
     pism_config:surface.debm_simple.c1 = 29.0;
-    pism_config:surface.debm_simple.c1_doc = "Tuning parameter controlling the slope in the temperature-driven melt contribution";
+    pism_config:surface.debm_simple.c1_doc = "Tuning parameter in the temperature-driven melt contribution";
     pism_config:surface.debm_simple.c1_type = "number";
     pism_config:surface.debm_simple.c1_units = "W m-2 K-1";
 
     pism_config:surface.debm_simple.c2 = -93.0;
-    pism_config:surface.debm_simple.c2_doc = "Tuning parameter controlling the intercept in the temperature-driven melt contribution";
+    pism_config:surface.debm_simple.c2_doc = "Tuning parameter controlling the melt offset";
     pism_config:surface.debm_simple.c2_type = "number";
     pism_config:surface.debm_simple.c2_units = "W m-2";
 
