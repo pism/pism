@@ -2294,7 +2294,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_ocean = 0.1;
     pism_config:surface.debm_simple.albedo_ocean_doc = "Albedo of ice-free ocean";
     pism_config:surface.debm_simple.albedo_ocean_type = "number";
-    pism_config:surface.debm_simple.albedo_ocean_units = "";
+    pism_config:surface.debm_simple.albedo_ocean_units = "1";
 
     pism_config:surface.debm_simple.albedo_slope = -790;
     pism_config:surface.debm_simple.albedo_slope_doc = "Slope in albedo parametrization (tuning parameter)";
