@@ -2369,7 +2369,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.refreeze_type = "number";
     pism_config:surface.debm_simple.refreeze_units = "1";
 
-    pism_config:surface.debm_simple.refreeze_ice_melt = "yes";
+    pism_config:surface.debm_simple.refreeze_ice_melt = "no";
     pism_config:surface.debm_simple.refreeze_ice_melt_doc = "If set to 'yes', refreeze :config:`surface.debm_simple.refreeze` fraction of melted ice, otherwise all of the melted ice runs off.";
     pism_config:surface.debm_simple.refreeze_ice_melt_type = "flag";
 
