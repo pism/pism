@@ -4,7 +4,7 @@
 #
 # git shortlog -sn --no-merges `branch`
 #
-# to list contributors to a `branch`.
+# to list contributors to a `branch` and the number of non-merge commits they made.
 #
 # Output as of 2023-10-25 (branch=dev)
 #
@@ -55,13 +55,21 @@
 #
 # Overall total: 32
 #
-# To validate this, install `cffconvert`
+# To validate this document, install `cffconvert`
 #
 # python3 -m pip install cffconvert --user
 #
 # and run
 #
 # cffconvert --validate
+#
+# Note: the CITATION.cff format does not allow for extra information, so
+# "contribution-areas" below are commented out. These lines *are* needed to generate the
+# list of authors in the manual, though. Each author should have a list of contribution
+# areas *one one line*, indented so that the substitution "s/# contrib/contrib/g" will
+# produce a valid YAML document.
+#
+# See doc/sphinx/Makefile and doc/sphinx/authorship.py for details.
 
 cff-version: 1.2.0
 title: 'Parallel Ice Sheet Model (PISM)'
@@ -89,8 +97,7 @@ authors:
     email: elbueler@alaska.edu
     affiliation: University of Alaska Fairbanks
     orcid: 'https://orcid.org/0000-0001-8232-4145'
-    # contribution-areas: former project leader, verification, earth deformation,
-    # numerics, thermodynamics, documentation
+    # contribution-areas: former project leader, verification, earth deformation, numerics, thermodynamics, documentation
   - given-names: Jed
     family-names: Brown
     affiliation: University of Colorado Boulder
@@ -121,8 +128,7 @@ authors:
     family-names: Martin
     affiliation: Potsdam Institute for Climate Impact Research (PIK)
     orcid: 'https://orcid.org/0000-0002-1443-0891'
-    # contribution-areas: SeaRISE-Antarctica, Antarctic mean annual temperature
-    # parameterization, sub-shelf processes
+    # contribution-areas: SeaRISE-Antarctica, Antarctic mean annual temperature parameterization, sub-shelf processes
   - given-names: Ricarda
     family-names: Winkelmann
     affiliation: Potsdam Institute for Climate Impact Research (PIK)
@@ -195,8 +201,7 @@ authors:
   - given-names: Nathan
     family-names: Shemonski
     affiliation: Zoox, Inc
-    # contribution-areas: documentation, scripts and code related to the pre-v0.1 EISMINT
-    # Greenland setup
+    # contribution-areas: documentation, scripts and code related to the pre-v0.1 EISMINT Greenland setup
   - given-names: Kenneth
     family-names: Mankoff
     affiliation: Goddard Institute for Space Studies
@@ -237,7 +242,7 @@ authors:
   - given-names: Simon
     family-names: Schoell
     affiliation: Potsdam Institute for Climate Impact Research (PIK)
-    # contribution-areas: bug fix calving
+    # contribution-areas: calving bug fix
 
 repository-code: 'https://github.com/pism/pism/'
 url: 'https://www.pism.io'

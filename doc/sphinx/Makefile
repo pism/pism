@@ -1,6 +1,6 @@
 # Run "make all" to update lists of diagnostics and configuration parameters.
 
-all: update_diagnostics installation/code/install_libraries.sh
+all: update_diagnostics update_authorship installation/code/install_libraries.sh
 
 INTERMEDIATE=diag.json diag-2.json dummy.nc pism_config.nc surface_input.nc
 
@@ -66,6 +66,9 @@ diag.json: dummy.nc surface_input.nc
 # matters here)
 update_diagnostics: diag.json diag-2.json
 	python3 ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
+
+update_authorship: ../../CITATION.cff
+	sed "s/# contrib/contrib/g" $^ | python3 authorship.py > authorship.rst
 
 pism_config.nc: ../../src/pism_config.cdl
 	ncgen -o $@ $^
