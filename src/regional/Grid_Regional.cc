@@ -56,27 +56,31 @@ static void validate_range(const std::string &axis,
 static void subset_extent(const std::string& axis,
                           const std::vector<double> &x,
                           double x_min, double x_max,
-                          double &x0, double &Lx, unsigned int &Mx) {
-
-  validate_range(axis, x, x_min, x_max);
+                          double &x0, double &Lx, unsigned int &Mx,
+                          grid::Registration registration) {
 
   size_t x_start = gsl_interp_bsearch(x.data(), x_min, 0, x.size() - 1);
-  // include one more point if we can
-  if (x_start > 0) {
-    x_start -= 1;
-  }
 
   size_t x_end = gsl_interp_bsearch(x.data(), x_max, 0, x.size() - 1);
-  // include one more point if we can
-  x_end = std::min(x.size() - 1, x_end + 1);
 
-  // NOTE: this assumes the CELL_CORNER grid registration
+  int offset = 0;
+    
+  if (registration == pism::grid::CELL_CORNER) {
+    // include one more point if we can
+    if (x_start > 0) {
+      x_start -= 1;      
+    }
+    x_end = std::min(x.size() - 1, x_end + 1);
+
+    offset = 1;
+  }
+
   Lx = (x[x_end] - x[x_start]) / 2.0;
 
   x0 = (x[x_start] + x[x_end]) / 2.0;
 
-  assert(x_end + 1 >= x_start);
-  Mx = x_end + 1 - x_start;
+  assert(x_end + offset  >= x_start);
+  Mx = x_end  + offset - x_start;
 }
 
 //! Create a grid using command-line options and (possibly) an input file.
@@ -113,6 +117,10 @@ std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
     bool grid_info_found = false;
 
     File file(ctx->com(), options.filename, io::PISM_NETCDF3, io::PISM_READONLY);
+
+    auto config = ctx->config();
+    grid::Registration registration = grid::string_to_registration(config->get_string("grid.registration"));
+
     for (const auto& name : names) {
 
       grid_info_found = file.find_variable(name);
@@ -123,20 +131,16 @@ std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
       }
 
       if (grid_info_found) {
-        input_grid = grid::Parameters(*ctx, file, name, grid::CELL_CORNER);
+        input_grid = grid::Parameters(*ctx, file, name, registration);
 
-        auto full_grid = grid::InputGridInfo(file, name, ctx->unit_system(), grid::CELL_CORNER);
+        auto full_grid = grid::InputGridInfo(file, name, ctx->unit_system(), registration);
 
         // x direction
         subset_extent("x", full_grid.x, x_range[0], x_range[1],
-                      input_grid.x0, input_grid.Lx, input_grid.Mx);
+                      input_grid.x0, input_grid.Lx, input_grid.Mx, registration);
         // y direction
         subset_extent("y", full_grid.y, y_range[0], y_range[1],
-                      input_grid.y0, input_grid.Ly, input_grid.My);
-
-        // Set registration to "CELL_CORNER" so that Grid computes
-        // coordinates correctly.
-        input_grid.registration = grid::CELL_CORNER;
+                      input_grid.y0, input_grid.Ly, input_grid.My, registration);
 
         break;
       }
