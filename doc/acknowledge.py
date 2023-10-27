@@ -107,4 +107,5 @@ else:
     print(citing)
     with open("citing-pism.bib") as f:
         for line in f:
-            sys.stdout.write("   {}".format(line))
+            # Note: len(line) is one if line == "\n", i.e. it's an empty line.
+            sys.stdout.write(line if len(line) == 1 else "   " + line)
