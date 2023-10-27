@@ -399,9 +399,9 @@ then the average daily melt rate is approximated by
 
 Here
 
-- `M_I` is the insolation-driven melt contribution representing the net uptake of incoming
-  solar shortwave radiation of the surface during the diurnal melt period,
-- `M_T` is the temperature-driven melt contribution representing the
+- `M_I` is the *insolation-driven melt contribution* representing the net uptake of
+  incoming solar shortwave radiation of the surface during the diurnal melt period,
+- `M_T` is the *temperature-driven melt contribution* representing the
   air-temperature-dependent part of the incoming longwave radiation as well as turbulent
   sensible heat fluxes,
 - `M_O` is the negative *melt offset* representing the outgoing longwave radiation and the
@@ -447,13 +447,12 @@ temperature-driven melt contributions.
        :cite:`CalovGreve05`)
 
    * - `c_1`
-     - Tuning parameter that controls the slope in the model of the temperature influence
-       on melt
+     - Tuning parameter that controls the temperature influence on melt
        (:config:`surface.debm_simple.c1`)
 
    * - `c_2`
-     - Tuning parameter that controls the intercept in the model of the temperature influence
-       on melt (:config:`surface.debm_simple.c2`)
+     - Tuning parameter that controls the (negative) melt offset
+       (:config:`surface.debm_simple.c2`)
 
    * - `\rho_w`
      - Fresh water density (:config:`constants.fresh_water.density`)
@@ -509,7 +508,7 @@ solar declination angle `\delta`. In the "present day" case both `\bar d / d` an
 have the period of one year and are approximated using trigonometric expansions (see
 :cite:`Liou2002`).
 
-.. rubric:: Paleo simulation
+.. rubric:: Paleo simulations
 
 Trigonometric expansions for `\bar d / d` and `\delta` mentioned above are not applicable
 when modeling times far from present; in this case we use more general (and more
@@ -552,7 +551,7 @@ Surface albedo
 
 To capture melt processes driven by changes in albedo without requiring a more
 sophisticated surface process model (including the firn layer, for example), dEBM-simple
-assumes that the surface albedo is a linear function of the modeled melt rate.
+assumes that the surface albedo is a piecewise linear function of the modeled melt rate.
 
 .. math::
    :label: eq-debm-surface-albedo
@@ -617,12 +616,12 @@ where
 
    T_{\text{eff}}(T, \sigma) =
    \frac{1}{\sigma \sqrt{2 \pi}}
-   \int_{T_{\text{melting}}}^{\infty} t\,
-   \exp\left( -\frac{(T - t)^2}{2 \sigma^2}  \right)\, dt.
+   \int_{T_{\text{pos}}}^{\infty} \xi\,
+   \exp\left( -\frac{(\xi - T)^2}{2 \sigma^2}  \right)\, d\xi.
 
 The "effective temperature" `T_{\text{eff}}` is the expected value of "positive"
-excursions (i.e. excursions above the positivity threshold
-:config:`surface.debm_simple.positive_threshold_temp`, usually `0\!\phantom{|}^\circ
+excursions, i.e. excursions above the positivity threshold `T_{\text{pos}}`
+(:config:`surface.debm_simple.positive_threshold_temp`, usually `0\!\phantom{|}^\circ
 \text{C}`) of stochastic temperature variations added to the provided temperature
 forcing.
 
@@ -640,12 +639,16 @@ step length.
    forcing and lengths of time steps taken by dEBM-simple; see
    :config:`surface.debm_simple.max_evals_per_year`.
 
-Here `\sigma` can be constant (the default; set using
-:config:`surface.debm_simple.std_dev`), read from a file (specified using
-:config:`surface.debm_simple.std_dev.file`, variable :var:`air_temp_sd` using the units of
-*Kelvin*), or parameterized as a function of air temperature: `\sigma = \max(a\, (T -
-T_{\text{melting}}) + b, 0)`. These mechanisms are controlled by parameters with the
-prefix ``surface.debm_simple.std_dev.``:
+Here `\sigma` can be
+
+- constant in time and space (the default; set using :config:`surface.debm_simple.std_dev`),
+- read from a file containing the two dimensional variable :var:`air_temp_sd` that can be
+  constant in time or time-dependent (units: *Kelvin*; specify the file name using
+  :config:`surface.debm_simple.std_dev.file`), or
+- parameterized as a function of air temperature `T`: `\sigma = \max(a\, (T -
+  T_{\text{melting}}) + b, 0)` with `T_{\text{melting}} = 273.15` Kelvin.
+
+These mechanisms are controlled by parameters with the prefix ``surface.debm_simple.std_dev.``:
 
 .. pism-parameters::
    :prefix: surface.debm_simple.std_dev.
@@ -661,7 +664,7 @@ Greenland; their values will need to change to use this model in other contexts.
 for the description of a calibration procedure that can be used to obtain some of these
 values.
 
-.. list-table:: Notable tuning parameters
+.. list-table:: Notable tuning parameters in the order of decreasing importance
    :header-rows: 1
    :widths: 1,1,3
    :name: tab-debm-simple-tuning-parameters
@@ -670,21 +673,26 @@ values.
      - Equation
      - Configuration parameters
 
-   * - `\theta`
-     - :eq:`eq-debm-refreeze`
-     - :config:`surface.debm_simple.refreeze`, :config:`surface.debm_simple.refreeze_ice_melt`
+   * - `c_1`
+     - :eq:`eq-debm-temperature`
+     - :config:`surface.debm_simple.c1`
+
+   * - `c_2`
+     - :eq:`eq-debm-melt-components`
+     - :config:`surface.debm_simple.c2`
 
    * - `T_{\text{min}}`
      - :eq:`eq-debm-melt`
      - :config:`surface.debm_simple.melting_threshold_temp`
 
-   * - `\Phi`
-     - :eq:`eq-debm-insolation-melt`, :eq:`eq-debm-toa-insolation`
-     - :config:`surface.debm_simple.phi`
+   * - `\sigma`
+     - :eq:`eq-debm-t-eff`
+     - :config:`surface.debm_simple.std_dev` and others at the end of
+       :ref:`sec-debm-temperature-driven-melt`
 
-   * - `\alpha_{\text{min}}`
-     - :eq:`eq-debm-surface-albedo`
-     - :config:`surface.debm_simple.albedo_min`
+   * - `\theta`
+     - :eq:`eq-debm-refreeze`
+     - :config:`surface.debm_simple.refreeze`, :config:`surface.debm_simple.refreeze_ice_melt`
 
    * - `\alpha_{\text{max}}`
      - :eq:`eq-debm-surface-albedo`
@@ -702,18 +710,9 @@ values.
      - :eq:`eq-debm-transmissivity`
      - :config:`surface.debm_simple.tau_a_slope`
 
-   * - `c_1`
-     - :eq:`eq-debm-temperature`
-     - :config:`surface.debm_simple.c1`
-
-   * - `c_2`
-     - :eq:`eq-debm-melt-components`
-     - :config:`surface.debm_simple.c2`
-
-   * - `\sigma`
-     - :eq:`eq-debm-t-eff`
-     - :config:`surface.debm_simple.std_dev` and others at the end of
-       :ref:`sec-debm-temperature-driven-melt`
+   * - `\Phi`
+     - :eq:`eq-debm-insolation-melt`, :eq:`eq-debm-toa-insolation`
+     - :config:`surface.debm_simple.phi`
 
 .. _sec-surface-pik:
 
