@@ -53,7 +53,7 @@ layer is added to the top of the stack each time the simulation reaches a reques
 deposition time.
 
 Set :config:`isochrones.deposition_times` to enable this mechanism. This parameter takes
-an argument in the format identical to :config:`output.extra.times`; see
+an argument in the format identical to :config:`output.diagnostics.spatial.times`; see
 :ref:`sec-saving-diagnostics`.
 
 .. figure:: figures/isochrones.png
@@ -114,10 +114,10 @@ the surface for isochrones corresponding to all requested deposition times).
 .. note::
 
    It is not recommended to append diagnostics to the same file
-   (:config:`output.extra.append`) when re-starting a simulation. A restarted simulation
-   may not be able to write :var:`isochrone_depth` and :var:`isochronal_layer_thickness`
-   to the same file because of a difference in the number of deposition times handled by
-   the model in the two runs involved.
+   (:config:`output.diagnostics.spatial.append`) when re-starting a simulation. A
+   restarted simulation may not be able to write :var:`isochrone_depth` and
+   :var:`isochronal_layer_thickness` to the same file because of a difference in the
+   number of deposition times handled by the model in the two runs involved.
 
 .. rubric:: Parameters
 
