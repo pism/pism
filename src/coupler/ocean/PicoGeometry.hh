@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2018, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -98,7 +98,6 @@ private:
                         int max_number_of_boxes,
                         array::Scalar &result);
 
-  void label_tmp();
   void relabel_by_size(array::Scalar &mask);
 
   // storage for outputs

@@ -19,7 +19,7 @@
 
 #include <algorithm> // max_element
 #include "pism/coupler/ocean/PicoGeometry.hh"
-#include "pism/util/connected_components.hh"
+#include "pism/util/label_components.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/Vec.hh"
@@ -272,30 +272,6 @@ static void relabel(RelabelingType type,
 }
 
 /*!
- * Run the serial connected-component labeling algorithm on m_tmp.
- */
-void PicoGeometry::label_tmp() {
-  m_tmp.put_on_proc0(*m_tmp_p0);
-
-  ParallelSection rank0(m_grid->com);
-  try {
-    if (m_grid->rank() == 0) {
-      petsc::VecArray mask_p0(*m_tmp_p0);
-      label_connected_components(mask_p0.get(),
-                                 static_cast<int>(m_grid->My()),
-                                 static_cast<int>(m_grid->Mx()),
-                                 false,
-                                 0.0);
-    }
-  } catch (...) {
-    rank0.failed();
-  }
-  rank0.check();
-
-  m_tmp.get_from_proc0(*m_tmp_p0);
-}
-
-/*!
  * Compute the mask identifying "subglacial lakes", i.e. floating ice areas that are not
  * connected to the open ocean.
  *
@@ -308,19 +284,17 @@ void PicoGeometry::label_tmp() {
 void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar &result) {
   array::AccessScope list{ &cell_type, &m_tmp };
 
-  const int
-    Mx = m_grid->Mx(),
-    My = m_grid->My();
+  auto grid = cell_type.grid();
 
   // assume that ocean points (i.e. floating, either icy or ice-free) at the edge of the
   // domain belong to the "open ocean"
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ocean(i, j)) {
       m_tmp(i, j) = 1.0;
 
-      if (grid::domain_edge(*m_grid, i, j)) {
+      if (grid::domain_edge(*grid, i, j)) {
         m_tmp(i, j) = 2.0;
       }
     } else {
@@ -329,22 +303,7 @@ void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar
   }
 
   // identify "floating" areas that are not connected to the open ocean as defined above
-  {
-    m_tmp.put_on_proc0(*m_tmp_p0);
-
-    ParallelSection rank0(m_grid->com);
-    try {
-      if (m_grid->rank() == 0) {
-        petsc::VecArray mask_p0(*m_tmp_p0);
-        label_connected_components(mask_p0.get(), My, Mx, true, 2.0);
-      }
-    } catch (...) {
-      rank0.failed();
-    }
-    rank0.check();
-
-    m_tmp.get_from_proc0(*m_tmp_p0);
-  }
+  label_components(m_tmp, *m_tmp_p0, true, 2);
 
   result.copy_from(m_tmp);
 }
@@ -376,7 +335,7 @@ void PicoGeometry::compute_ice_rises(const array::CellType &cell_type, bool excl
   }
 
   if (exclude_ice_rises) {
-    label_tmp();
+    label_components(m_tmp, *m_tmp_p0, false, 0);
 
     relabel(AREA_THRESHOLD,
             m_config->get_number("ocean.pico.maximum_ice_rise_area", "m2"),
@@ -426,22 +385,7 @@ void PicoGeometry::compute_continental_shelf_mask(const array::Scalar &bed_eleva
 
   // use "iceberg identification" to label parts *not* connected to the continental ice
   // sheet
-  {
-    m_tmp.put_on_proc0(*m_tmp_p0);
-
-    ParallelSection rank0(m_grid->com);
-    try {
-      if (m_grid->rank() == 0) {
-        petsc::VecArray mask_p0(*m_tmp_p0);
-        label_connected_components(mask_p0.get(), m_grid->My(), m_grid->Mx(), true, 2.0);
-      }
-    } catch (...) {
-      rank0.failed();
-    }
-    rank0.check();
-
-    m_tmp.get_from_proc0(*m_tmp_p0);
-  }
+  label_components(m_tmp, *m_tmp_p0, true, 2.0);
 
   // At this point areas with bed > threshold are 1, everything else is zero.
   //
@@ -488,7 +432,7 @@ void PicoGeometry::compute_ice_shelf_mask(const array::Scalar &ice_rise_mask, co
     }
   }
 
-  label_tmp();
+  label_components(m_tmp, *m_tmp_p0, false, 0);
 
   // remove ice rises and lakes
   for (auto p = m_grid->points(); p; p.next()) {
@@ -526,7 +470,7 @@ void PicoGeometry::compute_ocean_mask(const array::CellType &cell_type, array::S
     }
   }
 
-  label_tmp();
+  label_components(m_tmp, *m_tmp_p0, false, 0);
 
   relabel(BY_AREA, 0.0, m_tmp);
 

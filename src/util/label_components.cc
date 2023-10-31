@@ -26,23 +26,18 @@
 
 namespace pism {
 
-/*!
- * Label connected components in a mask stored in an array::Scalar.
- *
- * This function allocates a copy on rank 0 and so should not be used if that is a
- * problem.
- */
-void label_components(array::Scalar &mask, bool identify_icebergs, double mask_grounded) {
-  auto mask_p0 = mask.allocate_proc0_copy();
+void label_components(array::Scalar &mask,
+                      petsc::Vec &mask_p0,
+                      bool identify_icebergs, double mask_grounded) {
 
-  mask.put_on_proc0(*mask_p0);
+  mask.put_on_proc0(mask_p0);
 
   auto grid = mask.grid();
 
   ParallelSection rank0(grid->com);
   try {
     if (grid->rank() == 0) {
-      petsc::VecArray array(*mask_p0);
+      petsc::VecArray array(mask_p0);
       label_connected_components(array.get(),
                                  static_cast<int>(grid->My()),
                                  static_cast<int>(grid->Mx()),
@@ -54,7 +49,12 @@ void label_components(array::Scalar &mask, bool identify_icebergs, double mask_g
   }
   rank0.check();
 
-  mask.get_from_proc0(*mask_p0);
+  mask.get_from_proc0(mask_p0);
+}
+
+void label_components(array::Scalar &mask, bool identify_icebergs, double mask_grounded) {
+  auto mask_p0 = mask.allocate_proc0_copy();
+  label_components(mask, *mask_p0, identify_icebergs, mask_grounded);
 }
 
 } // end of namespace pism
