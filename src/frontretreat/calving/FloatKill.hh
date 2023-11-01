@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2021, 2022 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,10 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PISMFLOATKILL_H_
-#define _PISMFLOATKILL_H_
+#ifndef PISM_FLOAT_KILL_H
+#define PISM_FLOAT_KILL_H
 
 #include "pism/util/Component.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 
@@ -34,14 +35,16 @@ public:
   virtual ~FloatKill() = default;
 
   virtual void init();
-  void update(array::CellType1 &pism_mask, array::Scalar &ice_thickness);
+  void update(array::CellType &pism_mask, array::Scalar &ice_thickness);
 
 protected:
   bool m_margin_only, m_calve_near_grounding_line;
+
+  array::CellType1 m_old_mask;
 };
 
 
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* _PISMFLOATKILL_H_ */
+#endif /* PISM_FLOAT_KILL_H */

@@ -27,7 +27,8 @@ namespace pism {
 namespace calving {
 
 FloatKill::FloatKill(std::shared_ptr<const Grid> g)
-  : Component(g) {
+  : Component(g),
+    m_old_mask(m_grid, "old_mask") {
   m_margin_only = m_config->get_flag("calving.float_kill.margin_only");
   m_calve_near_grounding_line = m_config->get_flag("calving.float_kill.calve_near_grounding_line");
 }
@@ -56,21 +57,24 @@ void FloatKill::init() {
  *
  * @return 0 on success
  */
-void FloatKill::update(array::CellType1 &mask, array::Scalar &ice_thickness) {
+void FloatKill::update(array::CellType &mask, array::Scalar &ice_thickness) {
 
-  array::AccessScope list{&mask, &ice_thickness};
+  // this call fills ghosts of m_old_mask
+  m_old_mask.copy_from(mask);
+
+  array::AccessScope list{&mask, &m_old_mask, &ice_thickness};
 
   const bool dont_calve_near_grounded_ice = not m_calve_near_grounding_line;
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.floating_ice(i, j)) {
-      if (m_margin_only and not mask.next_to_ice_free_ocean(i, j)) {
+    if (m_old_mask.floating_ice(i, j)) {
+      if (m_margin_only and not m_old_mask.next_to_ice_free_ocean(i, j)) {
         continue;
       }
 
-      if (dont_calve_near_grounded_ice and mask.next_to_grounded_ice(i, j)) {
+      if (dont_calve_near_grounded_ice and m_old_mask.next_to_grounded_ice(i, j)) {
         continue;
       }
 
