@@ -531,9 +531,9 @@ void IceModel::allocate_iceberg_remover() {
 
     if ((member(model, {"ssa", "ssa+sia"}) and ssa_method == "fem") or
         model == "blatter") {
-      m_iceberg_remover.reset(new calving::IcebergRemoverFEM(m_grid));
+      m_iceberg_remover = std::make_shared<calving::IcebergRemoverFEM>(m_grid);
     } else {
-      m_iceberg_remover.reset(new calving::IcebergRemover(m_grid));
+      m_iceberg_remover = std::make_shared<calving::IcebergRemover>(m_grid);
     }
 
     m_submodels["iceberg remover"] = m_iceberg_remover.get();
@@ -663,11 +663,11 @@ void IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
-      m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
+      m_basal_yield_stress_model = std::make_shared<ConstantYieldStress>(m_grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid));
+      m_basal_yield_stress_model = std::make_shared<MohrCoulombYieldStress>(m_grid);
     } else if (yield_stress_model == "tillphi_opt") {
-      m_basal_yield_stress_model.reset(new OptTillphiYieldStress(m_grid));
+      m_basal_yield_stress_model = std::make_shared<OptTillphiYieldStress>(m_grid);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
@@ -709,7 +709,7 @@ void IceModel::allocate_submodels() {
   allocate_couplers();
 
   if (m_config->get_flag("fracture_density.enabled")) {
-    m_fracture.reset(new FractureDensity(m_grid, m_stress_balance->shallow()->flow_law()));
+    m_fracture = std::make_shared<FractureDensity>(m_grid, m_stress_balance->shallow()->flow_law());
     m_submodels["fracture_density"] = m_fracture.get();
   }
 }
@@ -724,7 +724,7 @@ void IceModel::allocate_couplers() {
 
     surface::Factory ps(m_grid, atmosphere::Factory(m_grid).create());
 
-    m_surface.reset(new surface::InitializationHelper(m_grid, ps.create()));
+    m_surface = std::make_shared<surface::InitializationHelper>(m_grid, ps.create());
 
     m_submodels["surface process model"] = m_surface.get();
   }
@@ -734,7 +734,7 @@ void IceModel::allocate_couplers() {
 
     using namespace ocean::sea_level;
 
-    m_sea_level.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
+    m_sea_level = std::make_shared<InitializationHelper>(m_grid, Factory(m_grid).create());
 
     m_submodels["sea level forcing"] = m_sea_level.get();
   }
@@ -744,7 +744,7 @@ void IceModel::allocate_couplers() {
 
     using namespace ocean;
 
-    m_ocean.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
+    m_ocean = std::make_shared<InitializationHelper>(m_grid, Factory(m_grid).create());
 
     m_submodels["ocean model"] = m_ocean.get();
   }
@@ -896,7 +896,7 @@ void IceModel::init_frontal_melt() {
     m_submodels["frontal melt"] = m_frontal_melt.get();
 
     if (not m_front_retreat) {
-      m_front_retreat.reset(new FrontRetreat(m_grid));
+      m_front_retreat = std::make_shared<FrontRetreat>(m_grid);
     }
   }
 }
@@ -905,7 +905,7 @@ void IceModel::init_front_retreat() {
   auto front_retreat_file = m_config->get_string("geometry.front_retreat.prescribed.file");
 
   if (not front_retreat_file.empty()) {
-    m_prescribed_retreat.reset(new PrescribedRetreat(m_grid));
+    m_prescribed_retreat = std::make_shared<PrescribedRetreat>(m_grid);
 
     m_prescribed_retreat->init();
 
@@ -922,7 +922,7 @@ void IceModel::init_calving() {
   if (member("thickness_calving", methods)) {
 
     if (not m_thickness_threshold_calving) {
-      m_thickness_threshold_calving.reset(new calving::CalvingAtThickness(m_grid));
+      m_thickness_threshold_calving = std::make_shared<calving::CalvingAtThickness>(m_grid);
     }
 
     m_thickness_threshold_calving->init();
@@ -936,7 +936,7 @@ void IceModel::init_calving() {
     allocate_front_retreat = true;
 
     if (not m_eigen_calving) {
-      m_eigen_calving.reset(new calving::EigenCalving(m_grid));
+      m_eigen_calving = std::make_shared<calving::EigenCalving>(m_grid);
     }
 
     m_eigen_calving->init();
@@ -949,8 +949,8 @@ void IceModel::init_calving() {
     allocate_front_retreat = true;
 
     if (not m_vonmises_calving) {
-      m_vonmises_calving.reset(new calving::vonMisesCalving(m_grid,
-                                                            m_stress_balance->shallow()->flow_law()));
+      m_vonmises_calving = std::make_shared<calving::vonMisesCalving>(
+          m_grid, m_stress_balance->shallow()->flow_law());
     }
 
     m_vonmises_calving->init();
@@ -963,7 +963,7 @@ void IceModel::init_calving() {
     allocate_front_retreat = true;
 
     if (not m_hayhurst_calving) {
-      m_hayhurst_calving.reset(new calving::HayhurstCalving(m_grid));
+      m_hayhurst_calving = std::make_shared<calving::HayhurstCalving>(m_grid);
     }
 
     m_hayhurst_calving->init();
@@ -974,7 +974,7 @@ void IceModel::init_calving() {
 
   if (member("float_kill", methods)) {
     if (not m_float_kill_calving) {
-      m_float_kill_calving.reset(new calving::FloatKill(m_grid));
+      m_float_kill_calving = std::make_shared<calving::FloatKill>(m_grid);
     }
 
     m_float_kill_calving->init();
@@ -991,7 +991,7 @@ void IceModel::init_calving() {
 
   // allocate front retreat code if necessary
   if (not m_front_retreat and allocate_front_retreat) {
-    m_front_retreat.reset(new FrontRetreat(m_grid));
+    m_front_retreat = std::make_shared<FrontRetreat>(m_grid);
   }
 
   {
