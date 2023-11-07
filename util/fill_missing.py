@@ -117,7 +117,7 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
         initial_guess = float(initial_guess)
     except:
         if initial_guess == 'mean':
-            present = array(ones_like(mask) - mask, dtype=bool)
+            present = (mask == False)
             initial_guess = mean(data[present])
         else:
             print("""ERROR: initial_guess of '%s' is not supported (it should be a number or 'mean').
