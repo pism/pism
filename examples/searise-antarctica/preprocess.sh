@@ -31,7 +31,26 @@ echo "  and adjusting metadata ..."
 PISMVERSION=pism_Antarctica_5km.nc
 
 script='
-thk=usrf-lsrf;
+*fill = -9999f;
+
+*Nx = $x1.size;
+*Ny = $y1.size;
+
+// Define the new grid:
+defdim("x", Nx);
+defdim("y", Nx);
+
+*dx = x1(1) - x1(0);
+x = array(x1(0), dx, $x);
+x@units = "meter";
+
+*dy = y1(1) - y1(0);
+y = array(y1(0), dy, $y);
+y@units = "meter";
+
+// Ice thickness:
+thk[$y,$x] = 0.0f;
+thk(0:Ny-1,0:Nx-1)=usrf-lsrf;
 thk@units="meter";
 thk@long_name="ice thickness";
 thk@standard_name="land_ice_thickness";
@@ -40,22 +59,35 @@ thk@standard_name="land_ice_thickness";
 // ice-equivalent snow rate and convert from an ice-equivalent
 // thickness rate ("m year-1") to "kg m-2 year-1" by assuming ice
 // density of 918 kg m-3 (see the reference)
-precipitation[$y1, $x1]=0.0;
-where(accr > -9999) precipitation=accr*918.0;
+*ice_density = 918.0;
+precipitation[$y, $x]=0.0f;
+precipitation(0:Ny-1,0:Nx-1) = accr;
+where(precipitation > fill)
+  precipitation = precipitation * ice_density;
+elsewhere
+  precipitation = 0;
 precipitation@units="kg m-2 year-1";
 precipitation@long_name = "precipitation";
 
-air_temp=temp;
+air_temp[$y, $x] = 0.0f;
+air_temp(0:Ny-1,0:Nx-1) = temp;
 air_temp@units="Celsius";
+air_temp@long_name = temp@long_name;
 
-where(topg == -9999) topg = -5300;
+bed[$y, $x] = fill;
+bed(0:Ny-1,0:Nx-1) = topg;
+bed@units = "meter";
+bed@standard_name = "bedrock_altitude";
+where(bed == fill) bed = -5300;
 
 // Use the Shapiro & Ritzwoller geothermal flux
-bheatflx=ghfsr;
-bheatflx@units="mW m-2";
+bheatflx[$y, $x] = 60f;
+bheatflx(0:Ny-1,0:Nx-1) = ghfsr;
+bheatflx@units = "mW m-2";
+bheatflx@long_name = ghfsr@long_name;
 
-land_ice_area_fraction_retreat[$y1, $x1]=0;
-where(thk > 0 || topg > 0) land_ice_area_fraction_retreat=1;
+land_ice_area_fraction_retreat[$y, $x]=0;
+where(thk > 0 || bed > 0) land_ice_area_fraction_retreat=1;
 land_ice_area_fraction_retreat@long_name="maximum ice extent mask";
 land_ice_area_fraction_retreat@units="1";
 
@@ -65,8 +97,9 @@ global@proj = "EPSG:3031";
 '
 
 ncap2 -O --script "$script" $DATANAME $PISMVERSION
+
 # remove unneeded variables
-ncks -O -v thk,topg,precipitation,air_temp,bheatflx,land_ice_area_fraction_retreat $PISMVERSION $PISMVERSION
+ncks -O -v thk,bed,precipitation,air_temp,bheatflx,land_ice_area_fraction_retreat $PISMVERSION $PISMVERSION
 
 echo "  PISM-readable file $PISMVERSION created; only has fields"
 echo "    used in bootstrapping."
