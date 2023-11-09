@@ -35,7 +35,7 @@ public:
   virtual ~FloatKill() = default;
 
   virtual void init();
-  void update(array::CellType &pism_mask, array::Scalar &ice_thickness);
+  void update(array::Scalar &cell_type, array::Scalar &ice_thickness);
 
 protected:
   bool m_margin_only, m_calve_near_grounding_line;

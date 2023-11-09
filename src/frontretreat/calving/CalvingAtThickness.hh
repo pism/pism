@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ public:
   void init();
   void update(double t,
               double dt,
-              array::CellType &pism_mask,
+              array::Scalar &cell_type,
               array::Scalar &ice_thickness);
 
   const array::Scalar& threshold() const;

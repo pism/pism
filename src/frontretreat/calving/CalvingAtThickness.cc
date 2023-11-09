@@ -100,18 +100,18 @@ void CalvingAtThickness::init() {
  */
 void CalvingAtThickness::update(double t,
                                 double dt,
-                                array::CellType &pism_mask,
+                                array::Scalar &cell_type,
                                 array::Scalar &ice_thickness) {
 
   m_calving_threshold->update(t, dt);
   m_calving_threshold->average(t, dt);
 
   // this call fills ghosts of m_old_mask
-  m_old_mask.copy_from(pism_mask);
+  m_old_mask.copy_from(cell_type);
 
   const auto &threshold = *m_calving_threshold;
 
-  array::AccessScope list{&pism_mask, &ice_thickness, &m_old_mask, &threshold};
+  array::AccessScope list{&cell_type, &ice_thickness, &m_old_mask, &threshold};
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -119,11 +119,11 @@ void CalvingAtThickness::update(double t,
         m_old_mask.next_to_ice_free_ocean(i, j) &&
         ice_thickness(i, j) < threshold(i, j)) {
       ice_thickness(i, j) = 0.0;
-      pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
+      cell_type(i, j)     = MASK_ICE_FREE_OCEAN;
     }
   }
 
-  pism_mask.update_ghosts();
+  cell_type.update_ghosts();
   ice_thickness.update_ghosts();
 }
 

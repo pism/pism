@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef ICEMODELVEC2CELLTYPE_H
-#define ICEMODELVEC2CELLTYPE_H
+#ifndef PISM_ARRAY_CELLTYPE_H
+#define PISM_ARRAY_CELLTYPE_H
 
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/Mask.hh"
@@ -122,4 +122,4 @@ public:
 } // end of namespace array
 } // end of namespace pism
 
-#endif /* ICEMODELVEC2CELLTYPE_H */
+#endif /* PISM_ARRAY_CELLTYPE_H */

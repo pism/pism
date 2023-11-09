@@ -112,9 +112,10 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   {
     // 2d work vectors
     for (int j = 0; j < m_n_work2d; j++) {
-      m_work2d.push_back(std::make_shared<array::Scalar2>(m_grid,
-                                                             pism::printf("work_vector_%d", j)));
+      m_work2d.push_back(
+          std::make_shared<array::Scalar2>(m_grid, pism::printf("work_vector_%d", j)));
     }
+    m_work2d_proc0 = m_work2d[0]->allocate_proc0_copy();
   }
 
   auto surface_input_file = m_config->get_string("hydrology.surface_input.file");
@@ -610,8 +611,7 @@ void IceModel::step(bool do_mass_continuity,
 
     // add removed icebergs to discharge due to calving
     {
-      auto &old_H    = *m_work2d[0];
-      auto &old_Href = *m_work2d[1];
+      auto &old_H = *m_work2d[0], &old_Href = *m_work2d[1];
 
       {
         old_H.copy_from(m_geometry.ice_thickness);

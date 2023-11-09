@@ -35,8 +35,53 @@
 #include "pism/frontretreat/util/remove_narrow_tongues.hh"
 #include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/util/ScalarForcing.hh"
+#include "pism/util/label_components.hh"
 
 namespace pism {
+
+void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scalar &result) {
+
+  auto &tmp_p0 = *m_work2d_proc0;
+
+  array::AccessScope list{ &cell_type, &result };
+
+  auto grid = cell_type.grid();
+
+  // assume that ice-free ocean points at the edge of the domain belong to the "global
+  // ocean"
+  for (auto p = grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.ice_free_ocean(i, j)) {
+      result(i, j) = 1.0;
+
+      if (grid::domain_edge(*grid, i, j)) {
+        result(i, j) = 2.0;
+      }
+    } else {
+      result(i, j) = 0.0;
+    }
+  }
+
+  label_components(result, tmp_p0, true, 2);
+
+  // now `result` contains ones in "ice free ocean" cells that are not connected to the edge
+  // of the domain and zeros elsewhere
+
+  // create a mask that contains ones at "ice free ocean" locations connected to the edge
+  // of the domain and zeros elsewhere:
+  for (auto p = grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.ice_free_ocean(i, j) and result(i, j) < 0.5) {
+      result(i, j) = 1;
+    } else {
+      result(i, j) = 0;
+    }
+  }
+
+  result.update_ghosts();
+}
 
 void IceModel::front_retreat_step() {
   // compute retreat rates due to eigencalving, von Mises calving, Hayhurst calving,
@@ -89,7 +134,7 @@ void IceModel::front_retreat_step() {
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
-    // apply frontal melt rate
+    // apply the frontal melt rate
     m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
                                      m_frontal_melt->retreat_rate(),
                                      m_geometry.ice_area_specific_volume,
@@ -108,9 +153,13 @@ void IceModel::front_retreat_step() {
   if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or
       m_float_kill_calving or m_thickness_threshold_calving) {
 
+    auto &open_ocean_mask = *m_work2d[3];
+    identify_open_ocean(m_geometry.cell_type, open_ocean_mask);
+
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
+    // retreat-rate-based calving parameterizations:
     if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
       assert(m_front_retreat);
 
@@ -134,6 +183,20 @@ void IceModel::front_retreat_step() {
         retreat_rate.scale(m_calving_rate_factor->value(T));
       }
 
+      // modify the retreat rate to avoid calving into "holes" in ice shelves that are not
+      // connected to the open ocean
+      {
+        array::AccessScope list{ &open_ocean_mask, &retreat_rate };
+
+        for (Points p(*m_grid); p; p.next()) {
+          const int i = p.i(), j = p.j();
+
+          if (open_ocean_mask(i, j) < 0.5) {
+            retreat_rate(i, j) = 0.0;
+          }
+        }
+      }
+
       m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
                                        retreat_rate,
                                        m_geometry.ice_area_specific_volume,
@@ -150,14 +213,39 @@ void IceModel::front_retreat_step() {
       }
     }
 
-    if (m_float_kill_calving) {
-      m_float_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
-    }
+    // calving using local geometry (usually calving one grid cell per time step)
+    {
+      auto &modified_cell_type = *m_work2d[2];
 
-    if (m_thickness_threshold_calving) {
-      m_thickness_threshold_calving->update(m_time->current(), m_dt,
-                                            m_geometry.cell_type,
-                                            m_geometry.ice_thickness);
+      // create a modified cell type mask to avoid calving into holes in ice shelves that
+      // are not connected to the open ocean
+      {
+        const auto &cell_type = m_geometry.cell_type;
+
+        array::AccessScope list{ &modified_cell_type, &cell_type, &open_ocean_mask };
+
+        for (Points p(*m_grid); p; p.next()) {
+          const int i = p.i(), j = p.j();
+
+          if (cell_type.ice_free_ocean(i, j) and open_ocean_mask(i, j) < 0.5) {
+            // This modification will ensure that cells next to *these* ice free ocean
+            // cells will not be considered "marginal" and so thickness threshold and
+            // float-kill parameterizations will not apply.
+            modified_cell_type(i, j) = MASK_UNKNOWN;
+          } else {
+            modified_cell_type(i, j) = cell_type(i, j);
+          }
+        }
+      }
+
+      if (m_float_kill_calving) {
+        m_float_kill_calving->update(modified_cell_type, m_geometry.ice_thickness);
+      }
+
+      if (m_thickness_threshold_calving) {
+        m_thickness_threshold_calving->update(m_time->current(), m_dt, modified_cell_type,
+                                              m_geometry.ice_thickness);
+      }
     }
 
     bool add_values = false;

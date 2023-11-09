@@ -57,12 +57,12 @@ void FloatKill::init() {
  *
  * @return 0 on success
  */
-void FloatKill::update(array::CellType &mask, array::Scalar &ice_thickness) {
+void FloatKill::update(array::Scalar &cell_type, array::Scalar &ice_thickness) {
 
   // this call fills ghosts of m_old_mask
-  m_old_mask.copy_from(mask);
+  m_old_mask.copy_from(cell_type);
 
-  array::AccessScope list{&mask, &m_old_mask, &ice_thickness};
+  array::AccessScope list{&cell_type, &m_old_mask, &ice_thickness};
 
   const bool dont_calve_near_grounded_ice = not m_calve_near_grounding_line;
 
@@ -79,11 +79,11 @@ void FloatKill::update(array::CellType &mask, array::Scalar &ice_thickness) {
       }
 
       ice_thickness(i, j) = 0.0;
-      mask(i, j)          = MASK_ICE_FREE_OCEAN;
+      cell_type(i, j)     = MASK_ICE_FREE_OCEAN;
     }
   }
 
-  mask.update_ghosts();
+  cell_type.update_ghosts();
   ice_thickness.update_ghosts();
 }
 

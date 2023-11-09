@@ -52,6 +52,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/YieldStress.hh"
 #include "pism/util/ScalarForcing.hh" // for use with std::unique_ptr
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
@@ -355,6 +356,8 @@ protected:
   enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
   void enforce_consistency_of_geometry(ConsistencyFlag flag);
 
+  void identify_open_ocean(const array::CellType &cell_type, array::Scalar &result);
+
   virtual void front_retreat_step();
 
   void compute_geometry_change(const array::Scalar &thickness,
@@ -386,8 +389,10 @@ protected:
   VariableMetadata run_stats() const;
 
   // working space (a convenience)
-  static const int m_n_work2d = 3;
+  static const int m_n_work2d = 4;
   mutable std::vector<std::shared_ptr<array::Scalar2>> m_work2d;
+
+  std::shared_ptr<petsc::Vec> m_work2d_proc0;
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
