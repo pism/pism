@@ -21,4 +21,4 @@ The script `plot-ismiphom.py` uses Matplotlib and data processed by `convert-ism
 It produces figures used in the Manual.
 
 .. _ISMIP-HOM: https://tc.copernicus.org/articles/2/95/2008/
-.. _ISMIP-HOM-PISM: https://pism.github.io/docs/manual/simplified-geometry/ismip-hom.html
+.. _ISMIP-HOM-PISM: https://www.pism.io/docs/manual/simplified-geometry/ismip-hom.html
