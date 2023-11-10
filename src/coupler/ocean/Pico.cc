@@ -150,7 +150,7 @@ void Pico::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "  -Using %d drainage basins and values: \n"
                     "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
-                 m_n_basins, physics.gamma_T(), physics.overturning_coeff());
+                 m_n_basins - 1, physics.gamma_T(), physics.overturning_coeff());
 
   m_log->message(2, "  -Depth of continental shelf for computation of temperature and salinity input\n"
                     "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
