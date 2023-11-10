@@ -9,6 +9,8 @@ print(""".. DO NOT EDIT. Update CITATION.cff to add more authors and see `author
 
 .. include:: <isonum.txt>
 
+.. _sec-pism-authors:
+
 Authorship
 ==========
 
