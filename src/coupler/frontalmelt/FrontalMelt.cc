@@ -232,27 +232,25 @@ DiagnosticList FrontalMelt::diagnostics_impl() const {
 
   if (m_input_model) {
     return combine(m_input_model->diagnostics(), result);
-  } else {
-    return result;
   }
+  return result;
 }
 
 TSDiagnosticList FrontalMelt::ts_diagnostics_impl() const {
   if (m_input_model) {
     return m_input_model->ts_diagnostics();
-  } else {
-    return {};
   }
+  return {};
 }
 
-bool FrontalMelt::apply(const array::CellType1 &M, int i, int j) {
+bool FrontalMelt::apply(const array::CellType1 &M, int i, int j) const {
   // icy and grounded_ice cells are included for visualization only (values at these
   // locations have no effect)
   if (m_include_floating_ice) {
     return (M.ice_free_ocean(i, j) and M.next_to_ice(i, j)) or M.icy(i, j);
-  } else {
-    return (M.ice_free_ocean(i, j) and M.next_to_grounded_ice(i, j)) or M.grounded_ice(i, j);
   }
+
+  return (M.ice_free_ocean(i, j) and M.next_to_grounded_ice(i, j)) or M.grounded_ice(i, j);
 }
 
 

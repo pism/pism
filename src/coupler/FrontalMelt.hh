@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021, 2022 Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2018, 2019, 2021, 2022, 2023 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -74,10 +74,9 @@ protected:
   void compute_retreat_rate(const Geometry &geometry, const array::Scalar &frontal_melt_rate,
                             array::Scalar &result) const;
 
-protected:
   std::shared_ptr<FrontalMelt> m_input_model;
 
-  bool apply(const array::CellType1 &M, int i, int j);
+  bool apply(const array::CellType1 &M, int i, int j) const;
 
   array::Scalar m_retreat_rate;
   bool m_include_floating_ice;

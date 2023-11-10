@@ -19,7 +19,6 @@
 #include "pism/coupler/frontalmelt/Given.hh"
 
 #include "pism/util/Grid.hh"
-#include "pism/util/Time.hh"
 
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
@@ -92,9 +91,9 @@ MaxTimestep Given::max_timestep_impl(double t) const {
   auto dt = m_frontal_melt_rate->max_timestep(t);
 
   if (dt.finite()) {
-    return MaxTimestep(dt.value(), "frontal_melt given");
+    return {dt.value(), "frontal_melt given"};
   }
-  return MaxTimestep("frontal_melt given");
+  return {"frontal_melt given"};
 }
 
 

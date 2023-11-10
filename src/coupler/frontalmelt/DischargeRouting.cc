@@ -133,7 +133,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
     if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {
 
       auto R = m_frontal_melt_rate.star(i, j);
-      auto M = cell_type.star(i, j);
+      auto M = cell_type.star_int(i, j);
 
       int N        = 0;
       double R_sum = 0.0;
@@ -160,10 +160,10 @@ MaxTimestep DischargeRouting::max_timestep_impl(double t) const {
   auto dt = m_theta_ocean->max_timestep(t);
 
   if (dt.finite()) {
-    return MaxTimestep(dt.value(), "frontal_melt routing");
+    return {dt.value(), "frontal_melt routing"};
   }
 
-  return MaxTimestep("frontal_melt routing");
+  return {"frontal_melt routing"};
 }
 
 } // end of namespace frontalmelt

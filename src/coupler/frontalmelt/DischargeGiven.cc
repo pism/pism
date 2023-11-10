@@ -148,7 +148,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
     if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {
 
       auto R = m_frontal_melt_rate.star(i, j);
-      auto M = cell_type.star(i, j);
+      auto M = cell_type.star_int(i, j);
 
       int N        = 0;
       double R_sum = 0.0;
@@ -175,10 +175,10 @@ MaxTimestep DischargeGiven::max_timestep_impl(double t) const {
   auto dt = std::min(m_theta_ocean->max_timestep(t), m_subglacial_discharge->max_timestep(t));
 
   if (dt.finite()) {
-    return MaxTimestep(dt.value(), "frontal_melt discharge_given");
+    return {dt.value(), "frontal_melt discharge_given"};
   }
 
-  return MaxTimestep("frontal_melt discharge_given");
+  return {"frontal_melt discharge_given"};
 }
 
 } // end of namespace frontalmelt
