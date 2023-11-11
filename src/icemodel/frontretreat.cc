@@ -84,6 +84,19 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
 }
 
 void IceModel::front_retreat_step() {
+
+  bool retreat_rate_based_calving = m_eigen_calving or m_vonmises_calving or m_hayhurst_calving;
+  bool calving_is_active =
+      retreat_rate_based_calving or m_float_kill_calving or m_thickness_threshold_calving;
+  bool frontal_melt_only_open_ocean = m_config->get_flag("frontal_melt.open_ocean_margins_only");
+
+  auto &open_ocean_mask = *m_work2d[3];
+  if (calving_is_active or (m_frontal_melt and frontal_melt_only_open_ocean)) {
+    identify_open_ocean(m_geometry.cell_type, open_ocean_mask);
+  } else {
+    open_ocean_mask.set(1.0);
+  }
+
   // compute retreat rates due to eigencalving, von Mises calving, Hayhurst calving,
   // and frontal melt.
   // We do this first to make sure that all three mechanisms use the same ice geometry.
@@ -134,9 +147,24 @@ void IceModel::front_retreat_step() {
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
+    array::Scalar &retreat_rate = *m_work2d[2];
+    retreat_rate.copy_from(m_frontal_melt->retreat_rate());
+
+    if (frontal_melt_only_open_ocean) {
+      array::AccessScope list{ &retreat_rate, &open_ocean_mask };
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        if (open_ocean_mask(i, j) < 0.5) {
+          retreat_rate(i, j) = 0.0;
+        }
+      }
+    }
+
     // apply the frontal melt rate
     m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
-                                     m_frontal_melt->retreat_rate(),
+                                     retreat_rate,
                                      m_geometry.ice_area_specific_volume,
                                      m_geometry.ice_thickness);
     bool add_values = false;
@@ -150,17 +178,13 @@ void IceModel::front_retreat_step() {
   }
 
   // calving
-  if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or
-      m_float_kill_calving or m_thickness_threshold_calving) {
-
-    auto &open_ocean_mask = *m_work2d[3];
-    identify_open_ocean(m_geometry.cell_type, open_ocean_mask);
+  if (calving_is_active) {
 
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
     // retreat-rate-based calving parameterizations:
-    if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
+    if (retreat_rate_based_calving) {
       assert(m_front_retreat);
 
       array::Scalar &retreat_rate = *m_work2d[2];
@@ -278,7 +302,6 @@ void IceModel::front_retreat_step() {
   } else {
     m_thickness_change.forced_retreat.set(0.0);
   }
-
 
   // Changes above may create icebergs; here we remove them and account for additional
   // mass losses.

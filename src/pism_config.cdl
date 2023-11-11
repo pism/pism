@@ -1079,6 +1079,10 @@ netcdf pism_config {
     pism_config:frontal_melt.models_option = "frontal_melt";
     pism_config:frontal_melt.models_type = "string";
 
+    pism_config:frontal_melt.open_ocean_margins_only = "no";
+    pism_config:frontal_melt.open_ocean_margins_only_doc = "Apply frontal melt parameterizations only at ice fronts bordering ice-free ocean areas that are connected to the open ocean";
+    pism_config:frontal_melt.open_ocean_margins_only_type = "flag";
+
     pism_config:frontal_melt.routing.file = "";
     pism_config:frontal_melt.routing.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:frontal_melt.routing.file_option = "frontal_melt_routing_file";
