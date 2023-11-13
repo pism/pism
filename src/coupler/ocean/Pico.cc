@@ -435,12 +435,15 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
 
       m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, temperature[basin_id], salinity[basin_id]);
     } else {
-      m_log->message(2, "PICO ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
-                        "(no values with ocean_contshelf_mask=2).\n"
-                        "No mean salinity or temperature values are computed, instead using\n"
-                        "the standard values T_dummy =%.3f, S_dummy=%.3f.\n"
-                        "This might bias your basal melt rates, check your input data carefully.\n",
-                     basin_id, physics.T_dummy(), physics.S_dummy());
+      m_log->message(
+          2,
+          "PICO WARNING: basin %d contains no cells with ocean data on continental shelf\n"
+          "              (no values with ocean_contshelf_mask=2).\n"
+          "              Using default temperature (%.3f K) and salinity (%.3f g/kg)\n"
+          "              since mean salinity and temperature cannot be computed.\n"
+          "              This may bias the basal melt rate estimate.\n"
+          "              Please check your input data.\n",
+          basin_id, physics.T_dummy(), physics.S_dummy());
 
       temperature[basin_id] = physics.T_dummy();
       salinity[basin_id]    = physics.S_dummy();
@@ -562,9 +565,11 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
 
   low_temperature_counter = GlobalSum(m_grid->com, low_temperature_counter);
   if (low_temperature_counter > 0) {
-    m_log->message(2, "PICO ocean warning: temperature has been below pressure melting temperature in %d cases,\n"
-                      "setting it to pressure melting temperature\n",
-                   low_temperature_counter);
+    m_log->message(
+        2,
+        "PICO WARNING: temperature has been below pressure melting temperature in %d cases,\n"
+        "              setting it to pressure melting temperature\n",
+        low_temperature_counter);
   }
 }
 
@@ -660,9 +665,10 @@ void Pico::process_box1(const PicoPhysics &physics,
       // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
       // which can only happen for values of Toc_box0 close to the local pressure melting point
       if (Toc_box1.failed) {
-        m_log->message(5, "PICO ocean WARNING: negative square root argument at %d, %d\n"
-                          "probably because of positive T_star=%f \n"
-                          "Not aborting, but setting square root to 0... \n",
+        m_log->message(5,
+                       "PICO WARNING: negative square root argument at %d, %d\n"
+                       "              probably because of positive T_star=%f \n"
+                       "              Not aborting, but setting square root to 0... \n",
                        i, j, T_star(i, j));
 
         n_Toc_failures += 1;
@@ -681,8 +687,9 @@ void Pico::process_box1(const PicoPhysics &physics,
 
   n_Toc_failures = GlobalSum(m_grid->com, n_Toc_failures);
   if (n_Toc_failures > 0) {
-    m_log->message(2, "PICO ocean warning: square-root argument for temperature calculation "
-                      "has been negative in %d cases!\n",
+    m_log->message(2,
+                   "PICO WARNING: square-root argument for temperature calculation\n"
+                   "              has been negative in %d cases.\n",
                    n_Toc_failures);
   }
 }
@@ -763,9 +770,11 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
 
     n_beckmann_goosse_cells = GlobalSum(m_grid->com, n_beckmann_goosse_cells);
     if (n_beckmann_goosse_cells > 0) {
-      m_log->message(2, "PICO ocean WARNING: box %d, no boundary data from previous box in %d case(s)!\n"
-                        "switching to Beckmann Goosse (2003) meltrate calculation\n",
-                     box, n_beckmann_goosse_cells);
+      m_log->message(
+          2,
+          "PICO WARNING: [box %d]: switched to the Beckmann Goosse (2003) model at %d locations\n"
+          "              (no boundary data from the previous box)\n",
+          box, n_beckmann_goosse_cells);
     }
 
   } // loop over boxes
