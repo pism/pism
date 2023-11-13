@@ -64,7 +64,7 @@ private:
                               const array::Scalar &lake_mask,
                               array::Scalar &result);
 
-  std::map<int,std::set<int> > basin_neighbors(const array::CellType1 &cell_type,
+  std::vector<std::set<int> > basin_neighbors(const array::CellType1 &cell_type,
                                                const array::Scalar1 &basin_mask);
 
   void identify_calving_front_connection(const array::CellType1 &cell_type,
@@ -76,7 +76,7 @@ private:
 
   void split_ice_shelves(const array::CellType &cell_type,
                          const array::Scalar &basin_mask,
-                         const std::map<int, std::set<int> > &basin_neighbors,
+                         const std::vector<std::set<int> > &basin_neighbors,
                          const std::vector<int> &most_shelf_cells_in_basin,
                          const std::vector<int> &cfs_in_basins_per_shelf,
                          int n_shelves,
@@ -118,7 +118,7 @@ private:
   std::shared_ptr<petsc::Vec> m_tmp_p0;
 
   int m_n_basins;
-  std::map<int, std::set<int> > m_basin_neighbors;
+  std::vector<std::set<int> > m_basin_neighbors;
 };
 
 } // end of namespace ocean
