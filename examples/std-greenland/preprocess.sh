@@ -17,7 +17,7 @@ echo
 
 # get file; see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 DATAVERSION=1.1
-DATAURL=http://websrv.cs.umt.edu/isis/images/a/a5/
+DATAURL=https://github.com/pism/example-inputs/raw/main/std-greenland/
 DATANAME=Greenland_5km_v$DATAVERSION.nc
 
 echo "fetching master file ... "
