@@ -64,7 +64,7 @@ Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 .. _NASA-MAP: http://map.nasa.gov/
 .. _NASA-Cryosphere: http://ice.nasa.gov/
 .. _NSF-Polar: https://nsf.gov/geo/plr/about.jsp
-.. _Slack-PISM: https://join.slack.com/t/uaf-pism/shared_invite/enQtODc3Njc1ODg0ODM5LThmOTEyNjEwN2I3ZTU4YTc5OGFhNGMzOWQ1ZmUzMWUwZDAyMzRlMzBhZDg1NDY5MmQ1YWFjNDU4MDZiNTk3YmE
+.. _Slack-PISM: https://uaf-pism.slack.com/join/shared_invite/enQtODc3Njc1ODg0ODM5LThmOTEyNjEwN2I3ZTU4YTc5OGFhNGMzOWQ1ZmUzMWUwZDAyMzRlMzBhZDg1NDY5MmQ1YWFjNDU4MDZiNTk3YmE
 .. _uaf-pism: mailto:uaf-pism@alaska.edu
 
 ..

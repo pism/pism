@@ -126,7 +126,7 @@ which corresponds to the vertical resolution of under `5` meters where the ice i
 thickest.
 
 This grid is small enough to perform the diagnostic computation serially, avoiding
-dependence on parallel direct solvers (e.g. MUMPS) that may be needed in parallel.
+dependence on parallel direct solvers (e.g. MUMPS_) that may be needed in parallel.
 
 We use 3 multigrid levels with a *very* aggressive coarsening factor (`7`).
 
