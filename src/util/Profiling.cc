@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <petsclog.h>
 #include <petscviewer.h>
 
 #include "pism/util/Profiling.hh"
@@ -33,7 +34,11 @@ Profiling::Profiling() {
 
 //! Enable PETSc logging.
 void Profiling::start() const {
+#if PETSC_VERSION_LT(3,20,0)
   PetscErrorCode ierr = PetscLogAllBegin(); PISM_CHK(ierr, "PetscLogAllBegin");
+#else
+  PetscErrorCode ierr = PetscLogDefaultBegin(); PISM_CHK(ierr, "PetscLogAllBegin");
+#endif
 }
 
 //! Save detailed profiling data to a Python script.
