@@ -4,7 +4,7 @@ clean:
 	@rm -f *.nc
 
 arolla100.dat:
-	wget -nc "http://homepages.ulb.ac.be/~fpattyn/ismip/arolla100.dat"
+	wget -nc "https://frank.pattyn.web.ulb.be/ismip/arolla100.dat"
 
 arolla100-%.nc: convert.py arolla100.dat
 	python3 $^

@@ -25,7 +25,7 @@
 
 .. |pism-email| replace:: uaf-pism@alaska.edu
 .. |pism-website| replace:: https://www.pism.io
-.. |petsc-download| replace:: https://petsc.org/release/download/
+.. |petsc-download| replace:: https://petsc.org/release/install/download/
 
 .. |efischer-email| replace:: eafischer2@alaska.edu
 
@@ -40,23 +40,23 @@
 
 .. |mismip-url| replace:: https://frank.pattyn.web.ulb.be/mismip/welcome.html
 .. |mismip3d-url| replace:: https://frank.pattyn.web.ulb.be/mismip3d/welcome.html
-.. |eismint-url| replace:: http://homepages.vub.ac.be/~phuybrec/eismint.html
-.. |ismip-url| replace:: http://homepages.vub.ac.be/~phuybrec/ismip.html
+.. |eismint-url| replace:: https://web.archive.org/web/20220120063203/http://homepages.vub.ac.be/~phuybrec/eismint.html
+.. |ismip-url| replace:: https://web.archive.org/web/20220120193645/http://homepages.vub.ac.be/~phuybrec/ismip.html
 
 .. |sphinxcontrib-bibtex-url| replace:: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/
 
 .. external links
 
 .. _Bash: http://www.gnu.org/software/bash/
-.. _CalCalcs: http://cirrus.ucsd.edu/~pierce/calcalcs/calendars.html
-.. _CalCalcs-home: http://cirrus.ucsd.edu/~pierce/calcalcs/index.html
+.. _CalCalcs: https://cirrus.ucsd.edu/~pierce/calcalcs/calendars.html
+.. _CalCalcs-home: https://cirrus.ucsd.edu/~pierce/calcalcs/index.html
 .. _CDO: https://code.mpimet.mpg.de/projects/cdo
 .. _CF-cell-boundaries: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#cell-boundaries
 .. _CF Conventions: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html
 .. _CF-Calendars: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar
-.. _CF-standard-names: http://cfconventions.org/standard-names.html
-.. _cf-names-for-glaciology: http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
-.. _cf-names-proposed: http://cfeditor.ceda.ac.uk/proposals/1
+.. _CF-standard-names: http://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html
+.. _cf-names-for-glaciology: https://web.archive.org/web/20221006124555/http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
+.. _cf-names-proposed: https://cfeditor.ceda.ac.uk/proposals/1
 .. _CMake: https://cmake.org/
 .. _CMake-cross-compiling: https://cmake.org/rdrctcm.php?old_link=CMake_Cross_Compiling
 .. _Enthought: https://www.enthought.com/
@@ -73,8 +73,8 @@
 .. _MacPorts: https://www.macports.org/
 .. _measures-ross: https://nsidc.org/data/NSIDC-0484
 .. _NSIDC: https://nsidc.org
-.. _NCL: http://www.ncl.ucar.edu
-.. _NCO: http://nco.sourceforge.net/
+.. _NCL: https://www.ncl.ucar.edu
+.. _NCO: https://nco.sourceforge.net/
 .. _NetCDF: https://www.unidata.ucar.edu/software/netcdf/
 .. _netcdf-classic-format: https://www.unidata.ucar.edu/software/netcdf/docs/file_structure_and_performance.html#classic_file_parts
 .. _NumPy: https://numpy.org/
@@ -83,7 +83,7 @@
 .. _PETSc-installation: https://petsc.org/release/install/
 .. _PETSc: https://petsc.org/release/
 .. _hypre: https://hypre.readthedocs.io/en/latest/
-.. _MUMPS: http://mumps.enseeiht.fr/
+.. _MUMPS: https://mumps-solver.org/
 .. _PROJ: https://proj.org/
 .. _PnetCDF: https://parallel-netcdf.github.io/
 .. _Python: https://www.python.org
@@ -95,21 +95,20 @@
 .. _XCode: https://developer.apple.com/xcode/
 .. _XQuartz: https://www.xquartz.org/
 .. _doxygen: https://www.doxygen.nl/index.html
-.. _graphviz: http://www.graphviz.org/
+.. _graphviz: https://graphviz.org/
 .. _matplotlib: https://matplotlib.org/
-.. _ncview: http://cirrus.ucsd.edu/ncview/
+.. _ncview: https://cirrus.ucsd.edu/ncview/
 .. _netcdf4-python: https://pypi.org/project/netCDF4
-.. _pyngl: http://www.pyngl.ucar.edu
-.. _SeaRISE-Greenland: http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
-.. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
-.. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
-.. _mismip-code: http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar
+.. _pyngl: https://www.pyngl.ucar.edu
+.. _SeaRISE-Greenland: https://web.archive.org/web/20221220001121/http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
+.. _searise: https://web.archive.org/web/20221220001110/http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
+.. _mismip-code: https://frank.pattyn.web.ulb.be/mismip/MISMIP_distribution.tar
 .. _reStructuredText: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
 .. _Emacs: https://www.gnu.org/software/emacs/
 .. _GDB: https://www.gnu.org/software/gdb/
 .. _LLDB: https://lldb.llvm.org/
 .. _LLD: https://lld.llvm.org/
-.. _Valgrind: https://www.valgrind.org/
+.. _Valgrind: https://valgrind.org/
 .. _ccache: https://ccache.dev/
 
 .. _github-help-fork: https://docs.github.com/en/get-started/quickstart/fork-a-repo
@@ -123,12 +122,12 @@
 
 .. _GitHub: https://github.com/
 .. _CircleCI: https://circleci.com/
-.. _CircleCI CLI: https://circleci.com/docs/2.0/local-cli/
+.. _CircleCI CLI: https://circleci.com/docs/local-cli/
 .. _Docker: https://www.docker.com/
 .. _MPICH: https://www.mpich.org/
 .. _Spack: https://spack.io/
 .. _Spack documentation: https://spack.readthedocs.io/en/latest/
-.. _KDevelop: https://www.kdevelop.org/
+.. _KDevelop: https://kdevelop.org/
 .. _Kaye and Laby: https://web.archive.org/web/20190506031327/http://www.kayelaby.npl.co.uk/
 
 .. _Ismip6-greenland: https://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland
@@ -147,4 +146,4 @@
 .. _pism-email: mailto:uaf-pism@alaska.edu
 .. _pypismtools: https://github.com/pism/pypismtools
 .. _regional-tools: https://github.com/pism/regional-tools
-.. _Slack-PISM: https://join.slack.com/t/uaf-pism/shared_invite/enQtODc3Njc1ODg0ODM5LThmOTEyNjEwN2I3ZTU4YTc5OGFhNGMzOWQ1ZmUzMWUwZDAyMzRlMzBhZDg1NDY5MmQ1YWFjNDU4MDZiNTk3YmE
+.. _Slack-PISM: https://uaf-pism.slack.com/join/shared_invite/enQtODc3Njc1ODg0ODM5LThmOTEyNjEwN2I3ZTU4YTc5OGFhNGMzOWQ1ZmUzMWUwZDAyMzRlMzBhZDg1NDY5MmQ1YWFjNDU4MDZiNTk3YmE
