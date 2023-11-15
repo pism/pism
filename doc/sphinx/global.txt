@@ -55,7 +55,7 @@
 .. _CF Conventions: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html
 .. _CF-Calendars: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar
 .. _CF-standard-names: http://cfconventions.org/standard-names.html
-.. _cf-names-for-glaciology: http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
+.. _cf-names-for-glaciology: https://web.archive.org/web/20221006124555/http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
 .. _cf-names-proposed: http://cfeditor.ceda.ac.uk/proposals/1
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 .. _CMake: https://cmake.org/
@@ -101,9 +101,8 @@
 .. _ncview: http://cirrus.ucsd.edu/ncview/
 .. _netcdf4-python: https://pypi.org/project/netCDF4
 .. _pyngl: http://www.pyngl.ucar.edu
-.. _SeaRISE-Greenland: http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
-.. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
-.. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
+.. _SeaRISE-Greenland: https://web.archive.org/web/20221220001121/http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
+.. _searise: https://web.archive.org/web/20221220001110/http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
 .. _mismip-code: http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar
 .. _reStructuredText: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
 .. _Emacs: https://www.gnu.org/software/emacs/

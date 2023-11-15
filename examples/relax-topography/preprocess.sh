@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014, 2016 Ed Bueler and Andy Aschwanden
+# Copyright (C) 2009-2014, 2016, 2023 Ed Bueler and Andy Aschwanden
 
 # downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts metadata,
 # saves under new name, ready for PISM
@@ -14,9 +14,9 @@ echo "# preprocessing SeaRISE-Greenland data for relaxation experiment"
 echo "# =================================================================================="
 echo
 
-# get file; see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
+# get file; see page http://wiki2.cs.umt.edu/isis/index.php/Present_Day_Greenland
 DATAVERSION=1.1
-DATAURL=http://websrv.cs.umt.edu/isis/images/a/a5/
+DATAURL=https://github.com/pism/example-inputs/raw/main/std-greenland/
 DATANAME=Greenland_5km_v$DATAVERSION.nc
 
 echo "fetching master file ... "
