@@ -123,7 +123,7 @@ void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
   `-sliding_scale_factor_reduces_tauc`  @f$ A @f$  with  @f$ A > 1 @f$) or increase (if  @f$ A <
   1 @f$) the value of the (pseudo-) yield stress `tauc`. The concept
   behind this is described at
-  [the SeaRISE wiki](http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication).
+  [the SeaRISE wiki](https://web.archive.org/web/20120126164914/http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication).
 
   Specifically, the concept behind this mechanism is to suppose
   equality of driving and basal shear stresses,

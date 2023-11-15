@@ -10,7 +10,7 @@
 
 set -e  # exit on error
 
-# get file; see page http://websrv.cs.umt.edu/isis/index.php/1km_Greenland_data_set
+# get file; see page http://wiki2.cs.umt.edu/isis/index.php/1km_Greenland_data_set
 
 DATAURL=https://github.com/pism/example-inputs/raw/main/jako/
 DATANAME=Greenland1km.nc
@@ -54,7 +54,7 @@ echo
 
 
 # get file containing surface mass balance and other data on 5km grid
-# see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
+# see page http://wiki2.cs.umt.edu/isis/index.php/Present_Day_Greenland
 DATAVERSION=1.1
 DATAURL=https://github.com/pism/example-inputs/raw/main/std-greenland/
 DATANAME=Greenland_5km_v$DATAVERSION.nc
