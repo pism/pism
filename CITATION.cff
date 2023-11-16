@@ -1,0 +1,250 @@
+# -*- mode: yaml -*-
+#
+# Run
+#
+# git shortlog -sn --no-merges `branch`
+#
+# to list contributors to a `branch` and the number of non-merge commits they made.
+#
+# Output as of 2023-11-16 (branch=main)
+#
+# 6694  Constantine Khrulev
+# 1857  Ed Bueler
+#  359  Andy Aschwanden
+#  272  David Maxwell
+#  127  Torsten Albrecht
+#   86  Jed Brown
+#   30  Julien Seguinot
+#   23  Elizabeth Fischer
+#   18  Matthias Mengel
+#   13  Maria Martin
+#   13  Nathan Shemonski
+#   10  Anders Damsgaard
+#    4  Sebastian Hinck
+#    2  Enrico Degregori
+#    2  Florian Ziemen
+#    2  Joseph H Kennedy
+#    2  Kyle Blum
+#    2  Ronja Reese
+#    2  Thomas Kleiner
+#    1  DeepSource Bot
+#    1  Johannes Feldmann
+#    1  Ken Mankoff
+#    1  Marijke Habermann
+#    1  Moritz Kreuzer
+#    1  Simon Schöll
+#
+# Total: 24, not counting the bot.
+#
+# Authors who are not listed above but are known to have made a contribution:
+#
+# Anders Levermann
+# Craig Lingle
+# Daniella DellaGiustina
+# Marianne Haseloff
+# Regine Hock
+# Ricarda Winkelmann
+# Ward van Pelt
+#
+# Total: 7
+#
+# Overall total: 31
+#
+# To validate this document, install `cffconvert`
+#
+# python3 -m pip install cffconvert --user
+#
+# and run
+#
+# cffconvert --validate
+#
+# Note: the CITATION.cff format does not allow for extra information, so
+# "contribution-areas" below are commented out. These lines *are* needed to generate the
+# list of authors in the manual, though. Each author should have a list of contribution
+# areas *one one line*, indented so that the substitution "s/# contrib/contrib/g" will
+# produce a valid YAML document.
+#
+# See doc/sphinx/Makefile and doc/sphinx/authorship.py for details.
+
+cff-version: 1.2.0
+title: 'Parallel Ice Sheet Model (PISM)'
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+doi: 10.5281/zenodo.1199019
+contact:
+  - email: uaf-pism@alaska.edu
+    name: "PISM developers at UAF"
+authors:
+  - given-names: Constantine
+    family-names: Khrulev
+    email: ckhroulev@alaska.edu
+    affiliation: University of Alaska Fairbanks
+    orcid: 'https://orcid.org/0000-0003-2170-7454'
+    # contribution-areas: primary source code author, software design, numerics, input/output, higher-order stress balance, mass conservation, verification, documentation, testing, user support, maintenance, ...
+  - given-names: Andy
+    family-names: Aschwanden
+    email: aaschwanden@alaska.edu
+    affiliation: University of Alaska Fairbanks
+    orcid: 'https://orcid.org/0000-0001-8149-2315'
+    # contribution-areas: project leader, thermodynamics, testing, user support, visualization, etc
+  - given-names: Ed
+    family-names: Bueler
+    email: elbueler@alaska.edu
+    affiliation: University of Alaska Fairbanks
+    orcid: 'https://orcid.org/0000-0001-8232-4145'
+    # contribution-areas: former project leader, verification, earth deformation, numerics, thermodynamics, documentation
+  - given-names: Jed
+    family-names: Brown
+    affiliation: University of Colorado Boulder
+    orcid: 'https://orcid.org/0000-0002-9945-0639'
+    # contribution-areas: source code original author, SSA numerics, parallelism using PETSc, etc
+  - given-names: David
+    family-names: Maxwell
+    email: damaxwell@alaska.edu
+    affiliation: University of Alaska Fairbanks
+    # contribution-areas: inverse methods, SSA finite element solver, Python bindings
+  - given-names: Torsten
+    family-names: Albrecht
+    email: albrecht@pik-potsdam.de
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0001-7459-2860'
+    # contribution-areas: ice shelf physics and numerics
+  - given-names: Ronja
+    family-names: Reese
+    affiliation: University of Northumbria at Newcastle
+    orcid: 'https://orcid.org/0000-0001-7625-040X'
+    # contribution-areas: sub-shelf mass balance (PICO), ice shelf numerics, etc
+  - given-names: Matthias
+    family-names: Mengel
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0001-6724-9685'
+    # contribution-areas: ice shelf physics (PICO)
+  - given-names: Maria
+    family-names: Martin
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0002-1443-0891'
+    # contribution-areas: SeaRISE-Antarctica, Antarctic mean annual temperature parameterization, sub-shelf processes
+  - given-names: Ricarda
+    family-names: Winkelmann
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0003-1248-3217'
+    # contribution-areas: sub-shelf mass balance (PICO), Antarctica processes, coupling, modeling, etc
+  - given-names: Anders
+    family-names: Levermann
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0003-4432-4704'
+    # contribution-areas: ice shelf dynamics theory, calving, etc
+  - given-names: Johannes
+    family-names: Feldmann
+    orcid: 'https://orcid.org/0000-0003-4210-0221'
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    # contribution-areas: marine ice sheet processes, grounding line dynamics
+  - given-names: Marianne
+    family-names: Haseloff
+    affiliation: University of Wisconsin-Madison
+    orcid: 'https://orcid.org/0000-0002-6576-5384'
+    # contribution-areas: PISM-PIK development, SSA and SIA theory and numerics
+  - given-names: Julien
+    family-names: Seguinot
+    affiliation: University of Bergen
+    orcid: 'https://orcid.org/0000-0002-5315-0761'
+    # contribution-areas: improvements to the temperature index (PDD) model
+  - given-names: Sebastian
+    family-names: Hinck
+    affiliation: Deutsches Klimarechenzentrum GmbH
+    orcid: 'https://orcid.org/0000-0002-6428-305X'
+    # contribution-areas: improvements to the Lingle-Clark bed deformation model
+  - given-names: Thomas
+    family-names: Kleiner
+    affiliation: Alfred Wegener Institute Helmholtz Centre for Polar and Marine Research
+    orcid: 'https://orcid.org/0000-0001-7825-5765'
+    # contribution-areas: bug fixes in the enthalpy model
+  - given-names: Elizabeth
+    family-names: Fischer
+    affiliation: University of Alaska Fairbanks
+    orcid: 'https://orcid.org/0000-0002-3987-2696'
+    # contribution-areas: bug fixes, coupling to a GCM
+  - given-names: Anders
+    family-names: Damsgaard
+    affiliation: Aarhus University
+    orcid: 'https://orcid.org/0000-0002-9284-1709'
+    # contribution-areas: automatic testing
+  - given-names: Craig
+    family-names: Lingle
+    affiliation: University of Alaska Fairbanks
+    # contribution-areas: original SIA model, earth deformation
+  - given-names: Ward
+    family-names: van Pelt
+    affiliation: Uppsala Universitet
+    orcid: 'https://orcid.org/0000-0003-4839-7900'
+    # contribution-areas: subglacial hydrology analysis and design
+  - given-names: Florian
+    family-names: Ziemen
+    orcid: 'https://orcid.org/0000-0001-7095-5740'
+    affiliation: Deutsches Klimarechenzentrum GmbH
+    # contribution-areas: bug fix in the interpolation code
+  - given-names: Nathan
+    family-names: Shemonski
+    affiliation: Zoox, Inc
+    # contribution-areas: documentation, scripts and code related to the pre-v0.1 EISMINT Greenland setup
+  - given-names: Kenneth
+    family-names: Mankoff
+    affiliation: Goddard Institute for Space Studies
+    orcid: 'https://orcid.org/0000-0001-5453-2019'
+    # contribution-areas: documentation
+  - given-names: Joseph
+    family-names: Kennedy
+    affiliation: University of Alaska Fairbanks
+    orcid: 'https://orcid.org/0000-0002-9348-693X'
+    # contribution-areas: documentation
+  - given-names: Kyle
+    family-names: Blum
+    affiliation: University of Alaska Fairbanks
+    # contribution-areas: bug fix in the SeaRISE-Antarctica setup
+  - given-names: Marijke
+    family-names: Habermann
+    affiliation: University of Alaska Fairbanks
+    # contribution-areas: inverse modeling
+  - given-names: Daniella
+    family-names: DellaGiustina
+    affiliation: University of Arizona
+    orcid: 'https://orcid.org/0000-0002-5643-1956'
+    # contribution-areas: regional modeling
+  - given-names: Regine
+    family-names: Hock
+    affiliation: University of Oslo
+    orcid: 'https://orcid.org/0000-0001-8336-9441'
+    # contribution-areas: surface mass and energy balance
+  - given-names: Moritz
+    family-names: Kreuzer
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0002-8622-6638'
+    # contribution-areas: Python 3.8+ compatibility
+  - given-names: Enrico
+    family-names: Degregori
+    affiliation: Deutsches Klimarechenzentrum GmbH
+    # contribution-areas: PICO optimization
+  - given-names: Simon
+    family-names: Schoell
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    # contribution-areas: calving bug fix
+
+repository-code: 'https://github.com/pism/pism/'
+url: 'https://www.pism.io'
+
+abstract: The Parallel Ice Sheet Model (PISM) is an open-source modelling framework for
+  ice sheets and glaciers. Its features include a hierarchy of available stress balances,
+  marine ice sheet physics with dynamic calving fronts, an enthalpy-based conservation of
+  energy scheme, bed deformation and subglacial hydrology components, extensible coupling
+  to atmospheric and ocean models, and comprehensive user documentation. PISM uses
+  distributed-memory (PETSc- and MPI-based) parallelism for high-resolution simulations.
+
+  PISM is jointly developed at the University of Alaska, Fairbanks (UAF) and the Potsdam
+  Institute for Climate Impact Research (PIK).
+
+keywords:
+  - ice sheet model
+  - open source
+  - geophysics
+  - sea level
+license: GPL-3.0-or-later
