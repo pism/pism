@@ -27,7 +27,7 @@
 #define rhow     1028.0        /* sea water density; kg m-3 */
 #define n        3.0           /* Glen power */
 
-struct TestNConstants exactNConstants() {
+struct TestNConstants exactNConstants(void) {
   double s = 0.0;
   struct TestNConstants result;
 
