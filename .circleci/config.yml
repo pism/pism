@@ -13,9 +13,12 @@ jobs:
 
   build:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.6
+      - image: ckhrulev/pism-ubuntu:0.1.7
 
     parameters:
+      version:                  # this parameter is needed to make a valid config (it is
+                                # not used)
+        type: string
       cc:
         type: string
       cxx:
@@ -97,7 +100,7 @@ jobs:
 
   build-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.6
+      - image: ckhrulev/pism-ubuntu:0.1.7
 
     parameters:
       cc:
@@ -146,7 +149,7 @@ jobs:
 
   manual-html:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.6
+      - image: ckhrulev/pism-ubuntu:0.1.7
 
     steps:
       - checkout
@@ -194,7 +197,7 @@ jobs:
 
   manual-pdf:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.6
+      - image: ckhrulev/pism-ubuntu:0.1.7
 
     steps:
       - checkout
@@ -241,7 +244,7 @@ jobs:
 
   doxygen:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.6
+      - image: ckhrulev/pism-ubuntu:0.1.7
 
     environment:
       CC: mpicc
@@ -301,22 +304,29 @@ workflows:
   build-and-test:
     jobs:
       - build:
-          name: gcc
-          cc: ccache mpicc -cc=gcc
-          cxx: ccache mpicxx -cxx=g++
+          name: gcc-<< matrix.version >>
+          cc: ccache mpicc -cc=gcc-<< matrix.version >>
+          cxx: ccache mpicxx -cxx=g++-<< matrix.version >>
           cmake_prefix: /usr
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
+          matrix:
+            parameters:
+              version: ["9", "10", "11", "12"]
 
       - build:
-          name: clang
-          cc: ccache mpicc -cc=clang
-          cxx: ccache mpicxx -cxx=clang++
+          name: clang-<< matrix.version >>
+          cc: ccache mpicc -cc=clang-<< matrix.version >>
+          cxx: ccache mpicxx -cxx=clang++-<< matrix.version >>
           cmake_prefix: /usr
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
+          matrix:
+            parameters:
+              version: ["11", "12", "13", "14", "15"]
 
       - build:
+          version: default
           name: old-petsc
           cc: ccache mpicc -cc=clang
           cxx: ccache mpicxx -cxx=clang++
@@ -325,6 +335,7 @@ workflows:
           python: "No"
 
       - build:
+          version: default
           name: old-cmake
           cc: ccache mpicc -cc=clang
           cxx: ccache mpicxx -cxx=clang++
@@ -356,9 +367,16 @@ workflows:
 
       - deploy-p:
           requires:
-            - gcc
+            - gcc-9
+            - gcc-10
+            - gcc-11
+            - gcc-12
             - gcc-minimal
-            - clang
+            - clang-11
+            - clang-12
+            - clang-13
+            - clang-14
+            - clang-15
             - clang-minimal
             - old-petsc
             - old-cmake
