@@ -49,7 +49,6 @@ information on additional citations.
      VOLUME = {114},
         DOI = {10.1029/2008JF001179},
        YEAR = {2009},
-        URL = {http://www.agu.org/pubs/crossref/2009/2008JF001179.shtml},
    }
 
    @article {Winkelmannetal2011,
@@ -61,5 +60,5 @@ information on additional citations.
      VOLUME = {5},
        YEAR = {2011},
       PAGES = {715--726},
-        URL = {http://www.the-cryosphere.net/5/715/2011/tc-5-715-2011.pdf},
+        DOI = {10.5194/tc-5-715-2011},
    }
