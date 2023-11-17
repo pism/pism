@@ -80,7 +80,7 @@ else:
 
 # General information about the project.
 project = 'PISM, a Parallel Ice Sheet Model'
-copyright = '2004--2022, the PISM authors'
+copyright = '2004--2023, the PISM authors'
 author = 'the PISM authors'
 
 # The version info for the project you're documenting, acts as replacement for
