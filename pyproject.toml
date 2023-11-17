@@ -1,0 +1,140 @@
+[project]
+name = "pism-ragis"
+version = "0.2.0"
+maintainers = [{name = "Andy Aschwanden", email = "andy.aschwanden@gmail.com"}]
+description = """Home of NASA ROSES project "A Reanalysis of the Greenland Ice Sheet"""
+readme = "README.md"
+requires-python = ">3.8"
+license = {text = "GPL 3.0"}
+classifiers = [
+        "License :: OSI Approved :: Apache Software License",
+        "Natural Language :: English",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3.10",
+        "Topic :: Scientific/Engineering :: Postprocessing",
+        ]
+dynamic = ["dependencies"]
+
+[tool.setuptools.packages.find]
+include = ["pism_ragis"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["pism_ragis"]
+
+[tool.poetry]
+name = "pism-ragis"
+version = "0.2.0"
+description = """Home of NASA ROSES project "A Reanalysis of the Greenland Ice Sheet"""
+authors = ["Andy Aschwanden <andy.aschwanden@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+dask = ">=2023.10.1"
+gdal = ">=3.7.2"
+geopandas = ">=0.14.0"
+joblib = ">=1.3.2"
+matplotlib = ">=3.8.0"
+pandas = ">=1.5.3"
+pydoe = ">=0.3.8"
+salib = ">=1.4.7"
+scipy = ">=1.10.1"
+shapely = ">=2.0.2"
+xarray = "^2022.10.0"
+pyogrio = "^0.7.2"
+pyarrow = "^14.0.0"
+tqdm = "^4.66.1"
+openpyxl = "^3.1.2"
+
+[tool.poetry.urls]
+
+"homepage" = "https://github.com/pism/pism-ragis"
+"repository" = "https://github.com/pism/pism-ragis"
+"bug tracker" = "https://github.com/pism/pism-ragis/issues"
+
+[tool.flake8]
+# https://pep8.readthedocs.io/en/latest/intro.html#error-codes
+ignore = """
+    E203,
+    E501,
+    W503,
+    W605,
+    C901,
+    F841,
+    E722,
+    E402,
+    F722,
+    """
+# Max width of Github code review is 119 characters
+max-line-length = 119
+max-complexity = 18
+exclude = [
+    ".tox",
+    ".git",
+    "*/migrations/*",
+    ".mypy_cache",
+    ".pytest_cache",
+    "*__init__.py",
+    "venv"
+    ]
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = "True"
+force_grid_wrap = 0
+use_parentheses = "True"
+line_length = 88
+
+[tool.pycodestyle]
+max-line-length = 119
+exclude = [
+    ".tox",
+    ".git",
+    "*/migrations/*",
+    ".mypy_cache",
+    ".pytest_cache",
+    "*__init__.py",
+    "venv"
+    ]
+
+[tool.mypy]
+python_version = 3.11
+check_untyped_defs = "True"
+ignore_missing_imports = "True"
+warn_unused_ignores = "True"
+warn_redundant_casts = "True"
+warn_unused_configs = "True"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+      \.eggs
+    | \.git
+    | \.mypy_cache
+    | _build
+    | conda
+    | docs
+ )/
+'''
+
+[tool.pylint.messages_control]
+disable = """
+    too-many-lines,
+    no-else-return,
+    bare-except
+"""
+
+[tool.pylint.format]
+max-line-length = 120
