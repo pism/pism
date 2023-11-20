@@ -110,10 +110,11 @@ def init(testname, L):
 
     # enthalpy values are irrelevant: these tests use an isothermal flow law
     enthalpy = PISM.Array3D(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
-    enthalpy.set_attrs("internal", "enthalpy of ice", "J kg-1", "J kg-1", "", 0)
+
+    enthalpy.metadata(0).long_name("enthalpy of ice").units("J kg-1")
 
     yield_stress = PISM.Scalar(grid, "tauc")
-    yield_stress.set_attrs("internal", "basal yield stress", "Pa", "Pa", "", 0)
+    yield_stress.metadata(0).long_name("basal yield stress").units("Pa")
 
     with PISM.vec.Access([yield_stress, geometry.ice_thickness, geometry.bed_elevation]):
         for (i, j) in grid.points():
