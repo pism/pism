@@ -37,4 +37,3 @@ Changes from 0.4 (June 2011) to 0.5
 -  Removed the pgrn executable; all whole-Greenland examples use pismr
 -  Removed the EISMINT-Ross example and the pross executable
 -  Inverse modeling tools (not part of the release)
-

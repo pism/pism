@@ -20,22 +20,28 @@
 
 import PISM
 
-H0 = 2000.  # //m
-L = 50.e3  # // 50km half-width
+H0 = 2000.0  # //m
+L = 50.0e3  # // 50km half-width
 dhdx = 0.001  # // pure number, slope of surface & bed
-tauc0 = 0.  # // No basal shear stress
+tauc0 = 0.0  # // No basal shear stress
 B0 = 3.7e8  # // Pa s^{1/3}; hardness
 # // given on p. 239 of Schoof; why so big?
-glen_n = 3.
+glen_n = 3.0
 
 
 class test_plug(PISM.ssa.SSAExactTestCase):
-
     def _initGrid(self):
-        self.grid = PISM.Grid.Shallow(PISM.Context().ctx, L, L, 0, 0,
-                                         self.Mx, self.My,
-                                         PISM.CELL_CORNER,
-                                         PISM.NOT_PERIODIC)
+        self.grid = PISM.Grid.Shallow(
+            PISM.Context().ctx,
+            L,
+            L,
+            0,
+            0,
+            self.Mx,
+            self.My,
+            PISM.CELL_CORNER,
+            PISM.NOT_PERIODIC,
+        )
 
     def _initPhysics(self):
         config = self.config
@@ -68,14 +74,16 @@ class test_plug(PISM.ssa.SSAExactTestCase):
 
         grid = self.grid
         with PISM.vec.Access(comm=[vel_bc_mask, vel_bc, bed, surface]):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 x = grid.x(i)
                 y = grid.y(j)
 
                 bed[i, j] = -x * (dhdx)
                 surface[i, j] = bed[i, j] + H0
 
-                edge = ((j == 0) or (j == grid.My() - 1)) or ((i == 0) or (i == grid.Mx() - 1))
+                edge = ((j == 0) or (j == grid.My() - 1)) or (
+                    (i == 0) or (i == grid.Mx() - 1)
+                )
                 if edge:
                     vel_bc_mask[i, j] = 1
                     [u, v] = self.exactSolution(i, j, x, y)
@@ -98,12 +106,12 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         f = ice_rho * earth_grav * H0 * dhdx
         ynd = y / L
 
-        u = 0.5 * (f ** 3) * (L ** 4) / ((B0 * H0) ** 3) * (1 - ynd ** 4)
+        u = 0.5 * (f**3) * (L**4) / ((B0 * H0) ** 3) * (1 - ynd**4)
         return [u, 0]
 
 
 # The main code for a run follows:
-if __name__ == '__main__':
+if __name__ == "__main__":
     context = PISM.Context()
     config = context.config
 

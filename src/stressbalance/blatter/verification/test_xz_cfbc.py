@@ -1,8 +1,7 @@
 import sympy
-from sympy import sin, cos, pi, S
-
-from blatter import x, y, z, B, M, source_term, eta
-from blatter_codegen import define, declare
+from blatter import B, M, eta, source_term, x, y, z
+from blatter_codegen import declare, define
+from sympy import S, cos, pi, sin
 
 sympy.var("rho_i, rho_w, g, L")
 
@@ -12,6 +11,7 @@ N = sympy.Matrix([nx, ny, nz])
 
 # Glen exponent of 1 (constant viscosity)
 n = 1
+
 
 def exact():
     """X-Z verification test for lateral boundary conditions
@@ -25,16 +25,20 @@ def exact():
 
     return u0, v0
 
+
 def surface_bc():
     u0, v0 = exact()
 
-    return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs({nx: 0, ny: 0, nz : 1})
+    return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs({nx: 0, ny: 0, nz: 1})
+
 
 def lateral_bc():
-
     u0, v0 = exact()
 
-    return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs({nx: 1, ny: 0, nz : 0, x : L})
+    return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs(
+        {nx: 1, ny: 0, nz: 0, x: L}
+    )
+
 
 def print_code(header=False):
     args = ["x", "z", "B", "L", "rho_i", "rho_w", "g"]

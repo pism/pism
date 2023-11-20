@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
 
   petsc::Initializer petsc(argc, argv, help);
   com = MPI_COMM_WORLD;
-      
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     std::shared_ptr<Context> ctx = pismv_context(com, "pismv");
@@ -213,4 +213,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-

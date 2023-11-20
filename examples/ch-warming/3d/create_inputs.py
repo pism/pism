@@ -3,15 +3,15 @@
 import netCDF4
 import numpy as np
 
-M = 3                           # grid size
-L = 1e5                         # domain size
-b0 = 0.0                        # bed elevation
-H0 = 200.0                      # ice thickness
-T_mean_annual = 268.15        # mean annual temperature, Kelvin
-T_amplitude = 6             # surface temperature aplitude, Kelvin
-summer_peak_day = 365/2
+M = 3  # grid size
+L = 1e5  # domain size
+b0 = 0.0  # bed elevation
+H0 = 200.0  # ice thickness
+T_mean_annual = 268.15  # mean annual temperature, Kelvin
+T_amplitude = 6  # surface temperature aplitude, Kelvin
+summer_peak_day = 365 / 2
 seconds_per_year = 365 * 86400
-M0 = 0.0                        # mass balance
+M0 = 0.0  # mass balance
 n_records = 53
 
 # use a square grid

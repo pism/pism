@@ -32,4 +32,3 @@ export FULLPHYS="-stress_balance ssa+sia -hydrology null $PARAMS $TILLPHI"
 
 # perhaps use these if KSP "diverged" errors occur
 export STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
-

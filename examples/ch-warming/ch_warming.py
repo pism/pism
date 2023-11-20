@@ -1,7 +1,7 @@
-import PISM
-from PISM.util import convert
 import numpy as np
+import PISM
 import pylab as plt
+from PISM.util import convert
 
 ctx = PISM.Context()
 unit_system = ctx.unit_system
@@ -52,13 +52,20 @@ class EnthalpyColumn(object):
         self.v.set(0.0)
         self.w.set(0.0)
 
-        self.sys = PISM.enthSystemCtx(grid.z(), prefix,
-                                      grid.dx(), grid.dy(), self.dt,
-                                      config,
-                                      self.enthalpy,
-                                      self.u, self.v, self.w,
-                                      self.strain_heating,
-                                      EC)
+        self.sys = PISM.enthSystemCtx(
+            grid.z(),
+            prefix,
+            grid.dx(),
+            grid.dy(),
+            self.dt,
+            config,
+            self.enthalpy,
+            self.u,
+            self.v,
+            self.w,
+            self.strain_heating,
+            EC,
+        )
 
     def init(self):
         ice_thickness = self.Lz
@@ -87,8 +94,7 @@ def T_steady_state(H, z, T_surface, G, ice_k):
 
 
 def E_steady_state(H, z, T_surface, G, ice_k):
-    return enthalpy(T_steady_state(H, z, T_surface, G, ice_k),
-                    0.0, pressure(H - z))
+    return enthalpy(T_steady_state(H, z, T_surface, G, ice_k), 0.0, pressure(H - z))
 
 
 def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
@@ -108,16 +114,27 @@ def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
     z_coarse = np.array(ice.grid.z())
     P_coarse = pressure(H - z_coarse)
 
-    T_mean_annual = 268.15    # mean annual temperature, Kelvin
-    T_amplitude = 6         # surface temperature aplitude, Kelvin
-    summer_peak_day = 365/2
-    G = 0.0       # geothermal flux, W/m^2
+    T_mean_annual = 268.15  # mean annual temperature, Kelvin
+    T_amplitude = 6  # surface temperature aplitude, Kelvin
+    summer_peak_day = 365 / 2
+    G = 0.0  # geothermal flux, W/m^2
 
     E_initial = E_steady_state(H, z_coarse, T_mean_annual, G, k)
 
-    with PISM.vec.Access(nocomm=[ice.enthalpy, ice.strain_heating, ice.u, ice.v, ice.w,
-                                 ch.enthalpy, ch.strain_heating, ch.u, ch.v, ch.w]):
-
+    with PISM.vec.Access(
+        nocomm=[
+            ice.enthalpy,
+            ice.strain_heating,
+            ice.u,
+            ice.v,
+            ice.w,
+            ch.enthalpy,
+            ch.strain_heating,
+            ch.u,
+            ch.v,
+            ch.w,
+        ]
+    ):
         # set initial state for the ice enthalpy
         ice.enthalpy.set_column(1, 1, E_initial)
 
@@ -180,4 +197,11 @@ def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
 
             t += dt
 
-    return z, np.array(times), np.array(T_ice), np.array(W_ice), np.array(T_ch), np.array(W_ch)
+    return (
+        z,
+        np.array(times),
+        np.array(T_ice),
+        np.array(W_ice),
+        np.array(T_ch),
+        np.array(W_ch),
+    )

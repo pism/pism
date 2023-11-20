@@ -262,7 +262,7 @@ Some more comments on this run are appropriate:
   recommended for regional modeling. Read the actual run command by
 
   .. code-block:: none
-  
+
      PISM_DO=echo ./spinup.sh 4 125 86 | less
 
 - We use ``-i jako.nc -bootstrap``, so we get to choose our grid, and (as usual in PISM
@@ -279,7 +279,7 @@ Some more comments on this run are appropriate:
   these boundary conditions into the model strip are the options
 
   .. code-block:: none
-  
+
      -regrid_file g5km_bc.nc -regrid_vars bmelt,tillwat,enthalpy,litho_temp,vel_bc
 
 - Dirichlet boundary conditions ``u_bc,v_bc`` are also regridded from
@@ -292,7 +292,7 @@ Some more comments on this run are appropriate:
 - The calving front of the glacier is handled by the following command-line options:
 
   .. code-block:: none
-  
+
      -front_retreat_file jako.nc -pik
 
   This choice uses the present-day ice extent, defined by SeaRISE data in

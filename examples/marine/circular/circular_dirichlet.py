@@ -4,25 +4,26 @@
 # Ed Bueler, and Constantine Khroulev
 
 import numpy as np
-import PISMNC
 import piktests_utils
+import PISMNC
 
 # command line arguments
-options = piktests_utils.process_options("circular_dirichlet.nc",
-                                         domain_size=1000.0)
+options = piktests_utils.process_options("circular_dirichlet.nc", domain_size=1000.0)
 p = piktests_utils.Parameters()
 
 dx, dy, x, y = piktests_utils.create_grid(options)
 
 xx, yy = np.meshgrid(x, y)
-radius = np.sqrt(xx ** 2 + yy ** 2)
+radius = np.sqrt(xx**2 + yy**2)
 # remove the singularity (does not affect the result):
 radius[radius == 0] = 1e-16
 
 # Ice thickness
 thk = np.zeros((options.My, options.Mx))  # sheet/shelf thickness
 if options.shelf:
-    thk[radius > p.r_gl] = (4.0 * p.C / p.Q0 * (radius[radius > p.r_gl] - p.r_gl) + 1 / p.H0 ** 4) ** (-0.25)
+    thk[radius > p.r_gl] = (
+        4.0 * p.C / p.Q0 * (radius[radius > p.r_gl] - p.r_gl) + 1 / p.H0**4
+    ) ** (-0.25)
     thk[radius >= p.r_cf] = 0.0
     # cap ice thickness
     thk[thk > p.H0] = p.H0
@@ -38,12 +39,12 @@ thk_threshold[:] = 500.0
 thk_threshold[xx < 0.0] = 200.0
 
 # Bed topography
-bed = np.zeros_like(thk)                 # bedrock surface elevation
+bed = np.zeros_like(thk)  # bedrock surface elevation
 bed[radius <= p.r_gl] = -p.H0 * (p.rho_ice / p.rho_ocean) + 1.0
 bed[radius > p.r_gl] = p.topg_min
 
 # Surface mass balance
-accum = np.zeros_like(thk)                 # accumulation/ ablation
+accum = np.zeros_like(thk)  # accumulation/ ablation
 accum[radius > p.r_gl] = p.accumulation_rate * p.rho_ice  # convert to [kg m-2 s-1]
 
 # Surface temperature (irrelevant)
@@ -62,17 +63,19 @@ vbar = np.zeros_like(thk)
 vbar[vel_bc_mask == 1] = p.vel_bc * (yy[radius <= p.r_gl] / radius[radius <= p.r_gl])
 vbar[vel_bc_mask == 0] = 0
 
-ncfile = PISMNC.PISMDataset(options.output_filename, 'w', format='NETCDF3_CLASSIC')
+ncfile = PISMNC.PISMDataset(options.output_filename, "w", format="NETCDF3_CLASSIC")
 piktests_utils.prepare_output_file(ncfile, x, y)
 
-variables = {"thk": thk,
-             "topg": bed,
-             "ice_surface_temp": Ts,
-             "climatic_mass_balance": accum,
-             "vel_bc_mask": vel_bc_mask,
-             "u_bc": ubar,
-             "v_bc": vbar,
-             "thickness_calving_threshold": thk_threshold}
+variables = {
+    "thk": thk,
+    "topg": bed,
+    "ice_surface_temp": Ts,
+    "climatic_mass_balance": accum,
+    "vel_bc_mask": vel_bc_mask,
+    "u_bc": ubar,
+    "v_bc": vbar,
+    "thickness_calving_threshold": thk_threshold,
+}
 
 piktests_utils.write_data(ncfile, variables)
 

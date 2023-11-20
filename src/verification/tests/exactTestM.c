@@ -1,18 +1,18 @@
 /*
    Copyright (C) 2008, 2014, 2016, 2023 Ed Bueler
-  
+
    This file is part of PISM.
-  
+
    PISM is free software; you can redistribute it and/or modify it under the
    terms of the GNU General Public License as published by the Free Software
    Foundation; either version 3 of the License, or (at your option) any later
    version.
-  
+
    PISM is distributed in the hope that it will be useful, but WITHOUT ANY
    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
    FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
    details.
-  
+
    You should have received a copy of the GNU General Public License
    along with PISM; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -43,17 +43,17 @@
 
 
 double F_M(double x, double alpha, double r, double Q) {
-  const double 
+  const double
      aor = alpha / r,
-     DD = x * x + x * aor + pow(aor, 2.0); 
+     DD = x * x + x * aor + pow(aor, 2.0);
   return Q * pow(DD, 1./3.) - 2.0 * r * x - alpha;
 }
 
 
 double dF_M(double x, double alpha, double r, double Q) {
-  const double 
+  const double
      aor = alpha / r,
-     DD = x * x + x * aor + pow(aor, 2.0); 
+     DD = x * x + x * aor + pow(aor, 2.0);
   return (1. / 3.) * Q * pow(DD, - 2./3.) * (2.0 * x + aor) - 2.0 * r;
 }
 
@@ -61,12 +61,12 @@ double dF_M(double x, double alpha, double r, double Q) {
 int funcM_ode_G(double r, const double alpha[], double f[], void* params) {
   (void) params;
   /*   RHS G for differential equation:
-          alpha' = G(alpha,r)      
+          alpha' = G(alpha,r)
      but where we solve this equation to find alpha':
-          F(alpha',alpha,r) = 0 
+          F(alpha',alpha,r) = 0
      heuristic: guess is about 1/7 th of solution to a nearby problem;
      no range checking on r, so use away from zero */
-  
+
   const double Q = (1.0 - rho / rhow) * rho * g * Rc * H0 / (2.0 * barB),
                guess = 0.15 * (pow(Q/r,n) - alpha[0]/r);
   /* in Python (exactM.py):  f[0] = fsolve(F_M,guess,args=(alpha[0],r));
@@ -129,7 +129,7 @@ int exactM_old(double r,
      *Drr = 0.0;
      return GSL_SUCCESS;
    }
-   
+
    /* need to solve ODE to find alpha, so setup for GSL ODE solver  */
    switch (ode_method) {
      case 1:
@@ -153,7 +153,7 @@ int exactM_old(double r,
    e = gsl_odeiv_evolve_alloc((size_t)1);    /* one scalar ode */
 
    /* initial conditions: (r,alf) = (Rg,ug);  r increases */
-   rr = Rg; 
+   rr = Rg;
    myalf = ug;
    /* printf (" r (km)        alpha (m/a)\n");
       printf (" %11.5e   %11.5e\n", rr/1000.0, myalf * SperA); */

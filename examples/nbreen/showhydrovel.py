@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from numpy import *
-from matplotlib.pyplot import *
-
-import sys
 import argparse
+import sys
+
+from matplotlib.pyplot import *
+from numpy import *
 
 try:
     from netCDF4 import Dataset as NC
@@ -13,31 +13,46 @@ except:
     sys.exit(1)
 
 parser = argparse.ArgumentParser(
-    description='show quiver for the subglacial water velocity (or flux) field from a PISM file')
-parser.add_argument('filename',
-                    help='file from which to get  V = bwatvel[2]  (and  W = bwat  for flux)')
-parser.add_argument('-b', type=float, default=-1.0,
-                    help='upper bound on speed; -b 100 shows all speeds above 100 as 100')
-parser.add_argument('-c', type=float, default=-1.0,
-                    help='arrow crop size; -c 0.1 shortens arrows longer than 0.1 * speed.max()')
+    description="show quiver for the subglacial water velocity (or flux) field from a PISM file"
+)
+parser.add_argument(
+    "filename", help="file from which to get  V = bwatvel[2]  (and  W = bwat  for flux)"
+)
+parser.add_argument(
+    "-b",
+    type=float,
+    default=-1.0,
+    help="upper bound on speed; -b 100 shows all speeds above 100 as 100",
+)
+parser.add_argument(
+    "-c",
+    type=float,
+    default=-1.0,
+    help="arrow crop size; -c 0.1 shortens arrows longer than 0.1 * speed.max()",
+)
 # e.g. ./showhydrovel.py -c 0.001 -q extras_nbreen_y0.25_250m_routing.nc -b 20
-parser.add_argument('-d', type=int, default=-1,
-                    help='index of frame (default: last frame which is D=-1)')
-parser.add_argument('-q', action='store_true',
-                    help='show advective flux  q = V W  instead of velocity')
-parser.add_argument('-s', action='store_true',
-                    help='show second figure with pcolor on components of velocity (or flux)')
-parser.add_argument('-t', action='store_true',
-                    help='transpose the x,y axes')
-parser.add_argument('-x', action='store_true',
-                    help='reverse order on x-axis')
-parser.add_argument('-y', action='store_true',
-                    help='reverse order on y-axis')
+parser.add_argument(
+    "-d",
+    type=int,
+    default=-1,
+    help="index of frame (default: last frame which is D=-1)",
+)
+parser.add_argument(
+    "-q", action="store_true", help="show advective flux  q = V W  instead of velocity"
+)
+parser.add_argument(
+    "-s",
+    action="store_true",
+    help="show second figure with pcolor on components of velocity (or flux)",
+)
+parser.add_argument("-t", action="store_true", help="transpose the x,y axes")
+parser.add_argument("-x", action="store_true", help="reverse order on x-axis")
+parser.add_argument("-y", action="store_true", help="reverse order on y-axis")
 
 args = parser.parse_args()
 
 try:
-    nc = NC(args.filename, 'r')
+    nc = NC(args.filename, "r")
 except:
     print("ERROR: can't read from file ...")
     sys.exit(1)
@@ -109,7 +124,9 @@ if args.y:
 
 if args.s:
     figure(2)
-    print("  generating pcolor() image of velocity (or flux) components in figure(2) ...")
+    print(
+        "  generating pcolor() image of velocity (or flux) components in figure(2) ..."
+    )
     for j in [1, 2]:
         if j == 1:
             data = velx
@@ -117,22 +134,32 @@ if args.s:
         else:
             data = vely
             name = "vely"
-        print("  %s stats:\n    min = %9.3f %s,  max = %9.3f %s,  av = %8.3f %s" %
-              (name, data.min(), units, data.max(), units, data.sum() / (x.size * y.size), units))
+        print(
+            "  %s stats:\n    min = %9.3f %s,  max = %9.3f %s,  av = %8.3f %s"
+            % (
+                name,
+                data.min(),
+                units,
+                data.max(),
+                units,
+                data.sum() / (x.size * y.size),
+                units,
+            )
+        )
         subplot(1, 2, j)
         pcolor(x / 1000.0, y / 1000.0, data, vmin=data.min(), vmax=data.max())
         colorbar()
-        gca().set_aspect('equal')
+        gca().set_aspect("equal")
         gca().autoscale(tight=True)
-        xlabel('x  (km)')
-        ylabel('y  (km)')
+        xlabel("x  (km)")
+        ylabel("y  (km)")
 
 speed = sqrt(velx * velx + vely * vely)
 
 plotvelx = velx.copy()
 plotvely = vely.copy()
 if args.c > 0.0:
-    crop = (speed > args.c * speed.max())
+    crop = speed > args.c * speed.max()
     plotvelx[crop] = args.c * speed.max() * velx[crop] / speed[crop]
     plotvely[crop] = args.c * speed.max() * vely[crop] / speed[crop]
 
@@ -142,17 +169,19 @@ if args.b > 0.0:
 figure(1)
 quiver(x / 1000.0, y / 1000.0, plotvelx, plotvely, speed)
 colorbar()
-gca().set_aspect('equal')
+gca().set_aspect("equal")
 gca().autoscale(tight=True)
-xlabel('x  (km)')
-ylabel('y  (km)')
+xlabel("x  (km)")
+ylabel("y  (km)")
 
 if args.q:
     print("  maximum water flux magnitude = %8.3f %s" % (speed.max(), units))
     titlestr = "water flux in %s" % units
 else:
-    print("  maximum water speed = %8.3f %s = %6.3f %s" %
-          (speed.max(), units, speed.max() / 3600.0, 'm s-1'))  # assumes units is m hr-1
+    print(
+        "  maximum water speed = %8.3f %s = %6.3f %s"
+        % (speed.max(), units, speed.max() / 3600.0, "m s-1")
+    )  # assumes units is m hr-1
     titlestr = "water velocity in %s" % units
 title(titlestr)
 

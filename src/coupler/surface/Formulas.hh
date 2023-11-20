@@ -28,7 +28,7 @@ namespace surface {
 /** Base class for surface models that compute climate inputs using
  * formulas.
  *
- * Used by EISMINTII and Verification. 
+ * Used by EISMINTII and Verification.
  */
 class PSFormulas : public SurfaceModel {
 public:

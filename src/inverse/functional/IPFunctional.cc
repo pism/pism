@@ -30,9 +30,9 @@ void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar 
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
-  
+
   f.valueAt(x,&F0);
-  
+
   array::AccessScope list(gradient);
 
   ParallelSection loop(grid.com);
@@ -67,9 +67,9 @@ void gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector 
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
-  
+
   f.valueAt(x,&F0);
-  
+
   array::AccessScope access_gradient(gradient);
 
   ParallelSection loop(grid.com);

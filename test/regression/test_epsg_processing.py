@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 
-from netCDF4 import Dataset
 import os
 import shutil
 import sys
 
+from netCDF4 import Dataset
+
 PISM_PATH = sys.argv[1]
 PISMR = os.path.join(PISM_PATH, "pismr")
+
 
 def run(command):
     print(command)
     return os.system(command)
 
 
-files = ["eisII-output.nc",
-         "pismr-output.nc",
-         "both-consistent.nc",
-         "both-string-missing.nc",
-         "both-string-mismatch.nc",
-         "both-double-missing.nc",
-         "both-double-mismatch.nc"]
+files = [
+    "eisII-output.nc",
+    "pismr-output.nc",
+    "both-consistent.nc",
+    "both-string-missing.nc",
+    "both-string-mismatch.nc",
+    "both-double-missing.nc",
+    "both-double-mismatch.nc",
+]
 
 # create an input file
 run(PISMR + " -eisII A -verbose 1 -Mx 3 -My 3 -Mz 5 -y 10 -o eisII-output.nc")

@@ -60,7 +60,7 @@ void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt)
 const array::Scalar& Constant::frontal_melt_rate_impl() const {
   return *m_frontal_melt_rate;
 }
-  
+
 void Constant::init_impl(const Geometry &geometry) {
   (void) geometry;
 

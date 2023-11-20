@@ -122,4 +122,3 @@ results from grid mode 2, with 1.2 km spacing, are in Figure
 line location and the semi-analytical location has been reduced from 76 km for grid mode 1
 to 16 km for grid mode 2 (a factor of about 5), by using a grid refinement from 12 km to
 1.2 km (a factor of about 10).
-

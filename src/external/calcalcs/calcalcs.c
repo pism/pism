@@ -77,9 +77,9 @@ static void ccs_init_country_database( void );
 /* Some arbitrary number that is unlikely to be encounterd in a string of random digits */
 #define CCS_VALID_SIG	89132412
 
-/* These implement the database that associates a two-letter country code, such as "UK", 
+/* These implement the database that associates a two-letter country code, such as "UK",
  * with the transition date that the country switched from the Julian to Gregorian calendar
- */ 
+ */
 #define CCS_MAX_N_COUNTRY_CODES	5000
 static int ccs_n_country_codes = 0;
 static ccs_country_code *ccs_xition_dates[ CCS_MAX_N_COUNTRY_CODES ];
@@ -168,7 +168,7 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
 			}
 		}
 
-	else if( (strcasecmp( calname, "gregorian" ) == 0) || 
+	else if( (strcasecmp( calname, "gregorian" ) == 0) ||
 		 (strcasecmp( calname, "proleptic_gregorian" ) == 0)) {
 
 		/* This is a "regular" Gregorian calendar, which does not include "year 0".
@@ -200,7 +200,7 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
 		retval->c_dpm       = &c_dpm_gregorian;
 		}
 
-	else if( (strcasecmp( calname, "gregorian_y0" ) == 0) || 
+	else if( (strcasecmp( calname, "gregorian_y0" ) == 0) ||
 		 (strcasecmp( calname, "proleptic_gregorian_y0" ) == 0)) {
 
 		/* This is a Gregorian calendar that includes "year 0".
@@ -330,9 +330,9 @@ calcalcs_cal *ccs_init_calendar( const char *calname )
  * Errors include the passed year being invalid (before 4713 B.C.) or not existing
  * in the specified calendar (i.e., there is no year 0 in either the Gregorian or
  * Julian calendars).
- * 
+ *
  */
-int ccs_isleap( calcalcs_cal *calendar, int year, int *leap ) 
+int ccs_isleap( calcalcs_cal *calendar, int year, int *leap )
 {
 	int	ierr;
 	calcalcs_cal *c2use;
@@ -405,7 +405,7 @@ int ccs_dpm( calcalcs_cal *calendar, int year, int month, int *dpm )
 }
 
 /**********************************************************************************************
- * ccs_jday2date: give a Julian day number, return the corresponding date in the 
+ * ccs_jday2date: give a Julian day number, return the corresponding date in the
  * 	  	selected calendar
  *
  * Returns 0 on success, <0 on error and fills string error_message
@@ -433,7 +433,7 @@ int ccs_jday2date( calcalcs_cal *calendar, int jday, int *year, int *month, int 
  * ccs_date2jday: given a date, return the (true) Julian day number
  *
  * Note that "Julian day number" is not the day number of the year, but rather the
- * day number starting on Jan 1st 4713 BC (in the proleptic Julian calendar) and 
+ * day number starting on Jan 1st 4713 BC (in the proleptic Julian calendar) and
  * counting consecutively.
  *
  * Returns 0 on success, <0 on error and fills string error_message
@@ -453,8 +453,8 @@ int ccs_date2jday( calcalcs_cal *calendar, int year, int month, int day, int *jd
 			c2use = calendar->early_cal;
 		else
 			{
-			sprintf( error_message, "ccs_date2jday: date %04d-%02d-%02d is not a valid date in the %s calendar; it falls between the last date the %s calendar was used (%04d-%02d-%02d) and the first date the %s calendar was used (%04d-%02d-%02d)", 
-				year, month, day, calendar->name, 
+			sprintf( error_message, "ccs_date2jday: date %04d-%02d-%02d is not a valid date in the %s calendar; it falls between the last date the %s calendar was used (%04d-%02d-%02d) and the first date the %s calendar was used (%04d-%02d-%02d)",
+				year, month, day, calendar->name,
 				calendar->early_cal->name,
 				calendar->year_px, calendar->month_px, calendar->day_px,
 				calendar->late_cal->name,
@@ -469,7 +469,7 @@ int ccs_date2jday( calcalcs_cal *calendar, int year, int month, int day, int *jd
 		return( ierr );
 
 	if( (month < 1) || (month > 12) || (day < 1) || (day > dpm)) {
-		sprintf( error_message, "date2jday passed an date that is invalid in the %s calendar: %04d-%02d-%02d", 
+		sprintf( error_message, "date2jday passed an date that is invalid in the %s calendar: %04d-%02d-%02d",
 			c2use->name, year, month, day );
 		return( CALCALCS_ERR_DATE_NOT_IN_CALENDAR );
 		}
@@ -497,12 +497,12 @@ int ccs_date2doy( calcalcs_cal *calendar, int year, int month, int day, int *doy
 	if( calendar->mixed ) {
 
 		/* If we fall in the twilight zone after the old calendar was stopped but before
-		 * the new calendar was used, it's an error 
+		 * the new calendar was used, it's an error
 		 */
 		if( date_gt( year, month, day, calendar->year_px, calendar->month_px, calendar->day_px ) &&
 		    date_lt( year, month, day, calendar->year_x,  calendar->month_x,  calendar->day_x )) {
-			sprintf( error_message, "ccs_date2doy: date %04d-%02d-%02d is not a valid date in the %s calendar; it falls between the last date the %s calendar was used (%04d-%02d-%02d) and the first date the %s calendar was used (%04d-%02d-%02d)", 
-				year, month, day, calendar->name, 
+			sprintf( error_message, "ccs_date2doy: date %04d-%02d-%02d is not a valid date in the %s calendar; it falls between the last date the %s calendar was used (%04d-%02d-%02d) and the first date the %s calendar was used (%04d-%02d-%02d)",
+				year, month, day, calendar->name,
 				calendar->early_cal->name,
 				calendar->year_px, calendar->month_px, calendar->day_px,
 				calendar->late_cal->name,
@@ -518,15 +518,15 @@ int ccs_date2doy( calcalcs_cal *calendar, int year, int month, int day, int *doy
 		else
 			{
 			/* Complicated if we are asking for the day of the year during
-			 * the transition year and after the transition date.  I'm choosing 
-			 * to define the day numbering during a transition year as 
+			 * the transition year and after the transition date.  I'm choosing
+			 * to define the day numbering during a transition year as
 			 * consecutive, which means that the doy for dates
 			 * after the transition date equals the doy of the last
 			 * day of the earlier calendar plus the number of days
 			 * that have elapsed since the transition day.
 			 */
 
-			/* Get the doy of the day BEFORE the transition day 
+			/* Get the doy of the day BEFORE the transition day
 			 * in the earlier calendar
 			*/
 			if( (ierr = ccs_date2doy( calendar->early_cal, calendar->year_px, calendar->month_px, calendar->day_px, &doy_px )) != 0 )
@@ -552,11 +552,11 @@ int ccs_date2doy( calcalcs_cal *calendar, int year, int month, int day, int *doy
 		c2use = calendar;
 
 	/* Get Julian day number of Jan 1st of the specified year */
-	if( (ierr = c2use->c_date2jday( year, 1, 1, &jd0 )) != 0 ) 
+	if( (ierr = c2use->c_date2jday( year, 1, 1, &jd0 )) != 0 )
 		return( ierr );
 
 	/* Get Julian day number of the specified date */
-	if( (ierr = c2use->c_date2jday( year, month, day, &jd1 )) != 0 ) 
+	if( (ierr = c2use->c_date2jday( year, month, day, &jd1 )) != 0 )
 		return( ierr );
 
 	*doy = jd1 - jd0 + 1;	/* Add 1 because numbering starts at 1 */
@@ -566,7 +566,7 @@ int ccs_date2doy( calcalcs_cal *calendar, int year, int month, int day, int *doy
 
 /********************************************************************************************
  *
- * ccs_doy2date: given a year and a day number in that year (with counting starting at 1 for 
+ * ccs_doy2date: given a year and a day number in that year (with counting starting at 1 for
  * 	Jan 1st), this returns the month and day of the month that the doy refers to.
  *
  * Returns 0 on success, and a negative value on error (for example, a day of the year
@@ -589,7 +589,7 @@ int ccs_doy2date( calcalcs_cal *calendar, int year, int doy, int *month, int *da
 			c2use = calendar->late_cal;
 		else
 			{
-			/* Get the doy of the day BEFORE the transition day 
+			/* Get the doy of the day BEFORE the transition day
 			 * in the earlier calendar
 			*/
 			if( (ierr = ccs_date2doy( calendar->early_cal, calendar->year_px, calendar->month_px, calendar->day_px, &doy_px )) != 0 )
@@ -598,12 +598,12 @@ int ccs_doy2date( calcalcs_cal *calendar, int year, int doy, int *month, int *da
 			/* If our requested doy is before the transition doy, we
 			 * can just easily calculate it with the early calendar
 			 */
-			if( doy <= doy_px ) 
+			if( doy <= doy_px )
 				return( ccs_doy2date( calendar->early_cal, year, doy, month, day ));
 
 			/* Finally calculate the Julian day we want, and convert it to a date */
-			jd_want = calendar->jday_x + (doy - doy_px - 1); 
-			if( (ierr = ccs_jday2date( calendar->late_cal, jd_want, &tyear, month, day)) != 0 ) 
+			jd_want = calendar->jday_x + (doy - doy_px - 1);
+			if( (ierr = ccs_jday2date( calendar->late_cal, jd_want, &tyear, month, day)) != 0 )
 				return(ierr);
 
 			/* If the year we got from that Julian day is different from the original
@@ -640,21 +640,21 @@ int ccs_doy2date( calcalcs_cal *calendar, int year, int doy, int *month, int *da
 		}
 
 	/* Get Julian day number of Jan 1st of the specified year */
-	if( (ierr = c2use->c_date2jday( year, 1, 1, &jd0 )) != 0 ) 
+	if( (ierr = c2use->c_date2jday( year, 1, 1, &jd0 )) != 0 )
 		return( ierr );
 
 	/* Calculate new Julian day */
 	jd1 = jd0 + doy - 1;
 
 	/* Get date for new Julian day */
-	if( (ierr = c2use->c_jday2date( jd1, &tyear, month, day )) != 0 ) 
+	if( (ierr = c2use->c_jday2date( jd1, &tyear, month, day )) != 0 )
 		return( ierr );
 
 	return(0);
 }
 
 /********************************************************************************************
- * ccs_dayssince: Given a Y/M/D date in a specified calendar, and the number of days since 
+ * ccs_dayssince: Given a Y/M/D date in a specified calendar, and the number of days since
  *	that date, this returns the new Y/M/D date in a (possibly different) calendar.
  *
  * Note that specifying "zero" days since, and giving different calendars as the original
@@ -677,16 +677,16 @@ int ccs_dayssince( calcalcs_cal *calendar_orig, int year_orig, int month_orig, i
 	/* Figure out which calendar of the ORIGINAL calendar to use if it's a mixed calendar
 	 */
 	if( calendar_orig->mixed ) {
-		if( date_ge( year_orig, month_orig, day_orig, 
+		if( date_ge( year_orig, month_orig, day_orig,
 				calendar_orig->year_x, calendar_orig->month_x, calendar_orig->day_x ))
 			c2use_orig = calendar_orig->late_cal;
-		else if( date_le( year_orig, month_orig, day_orig, 
+		else if( date_le( year_orig, month_orig, day_orig,
 				calendar_orig->year_px, calendar_orig->month_px, calendar_orig->day_px ))
 			c2use_orig = calendar_orig->early_cal;
 		else
 			{
-			sprintf( error_message, "ccs_dayssince: date %04d-%02d-%02d is not a valid date in the %s calendar; it falls between the last date the %s calendar was used (%04d-%02d-%02d) and the first date the %s calendar was used (%04d-%02d-%02d)", 
-				year_orig, month_orig, day_orig, calendar_orig->name, 
+			sprintf( error_message, "ccs_dayssince: date %04d-%02d-%02d is not a valid date in the %s calendar; it falls between the last date the %s calendar was used (%04d-%02d-%02d) and the first date the %s calendar was used (%04d-%02d-%02d)",
+				year_orig, month_orig, day_orig, calendar_orig->name,
 				calendar_orig->early_cal->name,
 				calendar_orig->year_px, calendar_orig->month_px, calendar_orig->day_px,
 				calendar_orig->late_cal->name,
@@ -694,7 +694,7 @@ int ccs_dayssince( calcalcs_cal *calendar_orig, int year_orig, int month_orig, i
 			return( CALCALCS_ERR_DATE_NOT_IN_CALENDAR );
 			}
 		}
-	else	
+	else
 		c2use_orig = calendar_orig;
 
 	/* Get Julian day in the original calendar and date combo */
@@ -718,12 +718,12 @@ int ccs_dayssince( calcalcs_cal *calendar_orig, int year_orig, int month_orig, i
 	/* Convert the new Julian day to a date in the new calendar */
 	if( (ierr = c2use_new->c_jday2date( jd1, year_new, month_new, day_new )) != 0 )
 		return( ierr );
-	
+
 	return(0);
 }
 
 /********************************************************************************************/
-static void ccs_gxd_add_country( char *code, char *longname, int year, int month, int day ) 
+static void ccs_gxd_add_country( char *code, char *longname, int year, int month, int day )
 {
 	if( ccs_n_country_codes >= CCS_MAX_N_COUNTRY_CODES ) {
 		fprintf( stderr, "Error, the calcalcs library is attempting to store more country codes than is possible; max is %d\n",
@@ -818,7 +818,7 @@ int ccs_get_xition_date( const char *country_code, int *year, int *month, int *d
 		*day   = 0;
 		return(0);
 		}
-		
+
 	/* Find the passed country code in our list */
 	for( i=0; i<ccs_n_country_codes; i++ ) {
 		if( strcmp( country_code, ccs_xition_dates[i]->code ) == 0 ) {
@@ -878,7 +878,7 @@ int ccs_set_xition_date( calcalcs_cal *calendar, int year, int month, int day )
 	if( calendar == NULL ) return(CALCALCS_ERR_NULL_CALENDAR);
 	if( calendar->sig != CCS_VALID_SIG ) return(CALCALCS_ERR_INVALID_CALENDAR);
 
-	if( calendar->mixed == 0 ) 
+	if( calendar->mixed == 0 )
 		return( CALCALCS_ERR_NOT_A_MIXED_CALENDAR );
 
 	/* Check to make sure the specified date is a valid date in the
@@ -897,7 +897,7 @@ int ccs_set_xition_date( calcalcs_cal *calendar, int year, int month, int day )
 	calendar->month_x   = month;
 	calendar->day_x     = day;
 
-	if( (ierr = set_xition_extra_info( calendar )) != 0 ) 
+	if( (ierr = set_xition_extra_info( calendar )) != 0 )
 		return( ierr );
 
 	return(0);
@@ -938,7 +938,7 @@ int c_isleap_julian( int year, int *leap )
 	/* Because there is no year 0 in the Julian calendar, years -1, -5, -9, etc
 	 * are leap years.
 	 */
-	if( year < 0 ) 
+	if( year < 0 )
 		tyear = year + 1;
 	else
 		tyear = year;
@@ -968,7 +968,7 @@ int c_isleap_gregorian( int year, int *leap )
 	/* Because there is no year 0 in the gregorian calendar, years -1, -5, -9, etc
 	 * are leap years.
 	 */
-	if( year < 0 ) 
+	if( year < 0 )
 		tyear = year + 1;
 	else
 		tyear = year;
@@ -994,11 +994,11 @@ int c_isleap_gregorian_y0( int year, int *leap )
 }
 
 /*==================================================================================================
- * Given a Y/M/D in the Gregorian calendar, this computes the (true) Julian day number of the 
- * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian 
- * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from 
- * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C. 
- * In that file, the work is declared to be in the public domain.  I modified it by 
+ * Given a Y/M/D in the Gregorian calendar, this computes the (true) Julian day number of the
+ * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian
+ * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from
+ * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C.
+ * In that file, the work is declared to be in the public domain.  I modified it by
  * extending it to negative years (years BC) in addition to positive years, and to use
  * actual Julian Days as the counter.  Otherwise, the spirit of the algorithm is similar.
  *
@@ -1009,7 +1009,7 @@ int c_date2jday_gregorian( int year, int month, int day, int *jday )
 	int	m, leap, *dpm2use, err;
 
 	if( (month < 1) || (month > 12) || (day < 1) || (day > 31)) {
-		sprintf( error_message, "date %04d-%02d-%02d does not exist in the Gregorian calendar", 
+		sprintf( error_message, "date %04d-%02d-%02d does not exist in the Gregorian calendar",
 			year, month, day );
 		return( CALCALCS_ERR_DATE_NOT_IN_CALENDAR );
 		}
@@ -1020,7 +1020,7 @@ int c_date2jday_gregorian( int year, int month, int day, int *jday )
 		}
 
 	/* Limit ourselves to positive Julian Days */
-	if( year < -4714 ) {	
+	if( year < -4714 ) {
 		sprintf( error_message, "year %d is out of range of the Gregorian calendar routines; must have year >= -4714", year );
 		return( CALCALCS_ERR_OUT_OF_RANGE );
 		}
@@ -1028,7 +1028,7 @@ int c_date2jday_gregorian( int year, int month, int day, int *jday )
 	/* Following is necessary because Gregorian calendar skips year 0, so the
 	 * offst for negative years is different than offset for positive years
 	 */
-	if( year < 0 ) 
+	if( year < 0 )
 		year += 4801;
 	else
 		year += 4800;
@@ -1047,20 +1047,20 @@ int c_date2jday_gregorian( int year, int month, int day, int *jday )
 
 	*jday += 365*(year-1) + (year-1)/4 - (year-1)/100 + (year-1)/400;
 
-	/* Ajust to "true" Julian days. This constant is how many days difference there is 
-	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC 
+	/* Ajust to "true" Julian days. This constant is how many days difference there is
+	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC
 	 */
-	*jday -= 31739;		
+	*jday -= 31739;
 
 	return(0);
 }
 
 /*==================================================================================================
- * Given a Y/M/D in the Gregorian calendar, this computes the (true) Julian day number of the 
- * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian 
- * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from 
- * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C. 
- * In that file, the work is declared to be in the public domain.  I modified it by 
+ * Given a Y/M/D in the Gregorian calendar, this computes the (true) Julian day number of the
+ * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian
+ * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from
+ * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C.
+ * In that file, the work is declared to be in the public domain.  I modified it by
  * extending it to negative years (years BC) in addition to positive years, and to use
  * actual Julian Days as the counter.  Otherwise, the spirit of the algorithm is similar.
  *
@@ -1071,13 +1071,13 @@ int c_date2jday_gregorian_y0( int year, int month, int day, int *jday )
 	int	m, leap, *dpm2use, err;
 
 	if( (month < 1) || (month > 12) || (day < 1) || (day > 31)) {
-		sprintf( error_message, "date %04d-%02d-%02d does not exist in the Gregorian calendar", 
+		sprintf( error_message, "date %04d-%02d-%02d does not exist in the Gregorian calendar",
 			year, month, day );
 		return( CALCALCS_ERR_DATE_NOT_IN_CALENDAR );
 		}
 
 	/* Limit ourselves to positive Julian Days */
-	if( year < -4714 ) {	
+	if( year < -4714 ) {
 		sprintf( error_message, "year %d is out of range of the Gregorian calendar routines; must have year >= -4714", year );
 		return( CALCALCS_ERR_OUT_OF_RANGE );
 		}
@@ -1098,16 +1098,16 @@ int c_date2jday_gregorian_y0( int year, int month, int day, int *jday )
 
 	*jday += 365*(year-1) + (year-1)/4 - (year-1)/100 + (year-1)/400;
 
-	/* Ajust to "true" Julian days. This constant is how many days difference there is 
-	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC 
+	/* Ajust to "true" Julian days. This constant is how many days difference there is
+	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC
 	 */
-	*jday -= 31739;		
+	*jday -= 31739;
 
 	return(0);
 }
 
 /*==========================================================================================
- * Given a (true) Julian Day, this converts to a date in the Gregorian calendar.  
+ * Given a (true) Julian Day, this converts to a date in the Gregorian calendar.
  * Technically, in the proleptic Gregorian calendar, since this works for dates
  * back to 4713 BC.  Again based on the same public domain code from Edward Reingold's
  * web site as the date2jday routine, extended by me to apply to negative years (years BC).
@@ -1120,26 +1120,26 @@ int c_jday2date_gregorian( int jday, int *year, int *month, int *day )
 
 	/* Make first estimate for year. We subtract 4714 because Julian Day number
 	 * 0 occurs in year 4714 BC in the Gregorian calendar (recall that it occurs
-	 * in year 4713 BC in the JULIAN calendar 
+	 * in year 4713 BC in the JULIAN calendar
 	 */
 	*year = jday/366 - 4714;
 
 	/* Advance years until we find the right one */
 	yp1 = *year + 1;
 	if( yp1 == 0 ) yp1 = 1;	/* no year 0 in the Gregorian calendar */
-	if( (ierr = c_date2jday_gregorian( yp1, 1, 1, &tjday )) != 0 ) 
+	if( (ierr = c_date2jday_gregorian( yp1, 1, 1, &tjday )) != 0 )
 		return( ierr );
 	while( jday >= tjday ) {
 		(*year)++;
-		if( *year == 0 ) 
+		if( *year == 0 )
 			*year = 1;	/* no year 0 in the Gregorian calendar */
 		yp1 = *year + 1;
 		if( yp1 == 0 ) yp1 = 1;	/* no year 0 in the Gregorian calendar */
-		if( (ierr = c_date2jday_gregorian( yp1, 1, 1, &tjday )) != 0 ) 
+		if( (ierr = c_date2jday_gregorian( yp1, 1, 1, &tjday )) != 0 )
 			return( ierr );
 		}
 
-	if( (ierr = c_isleap_gregorian( *year, &leap )) != 0 ) 
+	if( (ierr = c_isleap_gregorian( *year, &leap )) != 0 )
 		return( ierr );
 	if( leap )
 		dpm2use = dpm_leap_idx1;
@@ -1163,7 +1163,7 @@ int c_jday2date_gregorian( int jday, int *year, int *month, int *day )
 }
 
 /*==========================================================================================
- * Given a (true) Julian Day, this converts to a date in the Gregorian calendar.  
+ * Given a (true) Julian Day, this converts to a date in the Gregorian calendar.
  * Technically, in the proleptic Gregorian calendar, since this works for dates
  * back to 4713 BC.  Again based on the same public domain code from Edward Reingold's
  * web site as the date2jday routine, extended by me to apply to negative years (years BC).
@@ -1176,22 +1176,22 @@ int c_jday2date_gregorian_y0( int jday, int *year, int *month, int *day )
 
 	/* Make first estimate for year. We subtract 4714 because Julian Day number
 	 * 0 occurs in year 4714 BC in the Gregorian calendar (recall that it occurs
-	 * in year 4713 BC in the JULIAN calendar 
+	 * in year 4713 BC in the JULIAN calendar
 	 */
 	*year = jday/366 - 4715;
 
 	/* Advance years until we find the right one */
 	yp1 = *year + 1;
-	if( (ierr = c_date2jday_gregorian_y0( yp1, 1, 1, &tjday )) != 0 ) 
+	if( (ierr = c_date2jday_gregorian_y0( yp1, 1, 1, &tjday )) != 0 )
 		return( ierr );
 	while( jday >= tjday ) {
 		(*year)++;
 		yp1 = *year + 1;
-		if( (ierr = c_date2jday_gregorian_y0( yp1, 1, 1, &tjday )) != 0 ) 
+		if( (ierr = c_date2jday_gregorian_y0( yp1, 1, 1, &tjday )) != 0 )
 			return( ierr );
 		}
 
-	if( (ierr = c_isleap_gregorian_y0( *year, &leap )) != 0 ) 
+	if( (ierr = c_isleap_gregorian_y0( *year, &leap )) != 0 )
 		return( ierr );
 	if( leap )
 		dpm2use = dpm_leap_idx1;
@@ -1215,11 +1215,11 @@ int c_jday2date_gregorian_y0( int jday, int *year, int *month, int *day )
 }
 
 /*==================================================================================================
- * Given a Y/M/D in the Julian calendar, this computes the (true) Julian day number of the 
- * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian 
- * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from 
- * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C. 
- * In that file, the work is declared to be in the public domain.  I modified it by 
+ * Given a Y/M/D in the Julian calendar, this computes the (true) Julian day number of the
+ * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian
+ * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from
+ * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C.
+ * In that file, the work is declared to be in the public domain.  I modified it by
  * extending it to negative years (years BC) in addition to positive years, and to use
  * actual Julian Days as the counter.  Otherwise, the spirit of the algorithm is similar.
  *
@@ -1230,7 +1230,7 @@ int c_date2jday_julian( int year, int month, int day, int *jday )
 	int	m, leap, *dpm2use, err;
 
 	if( (month < 1) || (month > 12) || (day < 1) || (day > 31)) {
-		sprintf( error_message, "date %04d-%02d-%02d does not exist in the Julian calendar", 
+		sprintf( error_message, "date %04d-%02d-%02d does not exist in the Julian calendar",
 			year, month, day );
 		return( CALCALCS_ERR_DATE_NOT_IN_CALENDAR );
 		}
@@ -1241,7 +1241,7 @@ int c_date2jday_julian( int year, int month, int day, int *jday )
 		}
 
 	/* Limit ourselves to positive Julian Days */
-	if( year < -4713 ) {	
+	if( year < -4713 ) {
 		sprintf( error_message, "year %d is out of range of the Julian calendar routines; must have year >= -4713", year );
 		return( CALCALCS_ERR_OUT_OF_RANGE );
 		}
@@ -1249,7 +1249,7 @@ int c_date2jday_julian( int year, int month, int day, int *jday )
 	/* Following is necessary because Julian calendar skips year 0, so the
 	 * offst for negative years is different than offset for positive years
 	 */
-	if( year < 0 ) 
+	if( year < 0 )
 		year += 4801;
 	else
 		year += 4800;
@@ -1268,16 +1268,16 @@ int c_date2jday_julian( int year, int month, int day, int *jday )
 
 	*jday += 365*(year-1) + (year-1)/4;
 
-	/* Ajust to "true" Julian days. This constant is how many days difference there is 
-	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC 
+	/* Ajust to "true" Julian days. This constant is how many days difference there is
+	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC
 	 */
-	*jday -= 31777;		
+	*jday -= 31777;
 
 	return(0);
 }
 
 /*==========================================================================================
- * Given a (true) Julian Day, this converts to a date in the Julian calendar.  
+ * Given a (true) Julian Day, this converts to a date in the Julian calendar.
  * Technically, in the proleptic Julian calendar, since this works for dates
  * back to 4713 BC.  Again based on the same public domain code from Edward Reingold's
  * web site as the date2jday routine, extended by me to apply to negative years (years BC).
@@ -1296,19 +1296,19 @@ int c_jday2date_julian( int jday, int *year, int *month, int *day )
 	/* Advance years until we find the right one */
 	yp1 = *year + 1;
 	if( yp1 == 0 ) yp1 = 1;	/* no year 0 in the Julian calendar */
-	if( (ierr = c_date2jday_julian( yp1, 1, 1, &tjday )) != 0 ) 
+	if( (ierr = c_date2jday_julian( yp1, 1, 1, &tjday )) != 0 )
 		return( ierr );
 	while( jday >= tjday ) {
 		(*year)++;
-		if( *year == 0 ) 
+		if( *year == 0 )
 			*year = 1;	/* no year 0 in the Julian calendar */
 		yp1 = *year + 1;
 		if( yp1 == 0 ) yp1 = 1;	/* no year 0 in the Julian calendar */
-		if( (ierr = c_date2jday_julian( yp1, 1, 1, &tjday )) != 0 ) 
+		if( (ierr = c_date2jday_julian( yp1, 1, 1, &tjday )) != 0 )
 			return( ierr );
 		}
 
-	if( (ierr = c_isleap_julian( *year, &leap )) != 0 ) 
+	if( (ierr = c_isleap_julian( *year, &leap )) != 0 )
 		return( ierr );
 	if( leap )
 		dpm2use = dpm_leap_idx1;
@@ -1358,13 +1358,13 @@ void ccs_free_calendar( calcalcs_cal *cc )
 }
 
 /**********************************************************************************************/
-static int date_gt( int year, int month, int day, int y2, int m2, int d2 ) 
+static int date_gt( int year, int month, int day, int y2, int m2, int d2 )
 {
 	return( ! date_le( year, month, day, y2, m2, d2 ));
 }
 
 /**********************************************************************************************/
-static int date_lt( int year, int month, int day, int y2, int m2, int d2 ) 
+static int date_lt( int year, int month, int day, int y2, int m2, int d2 )
 {
 	return( ! date_ge( year, month, day, y2, m2, d2 ));
 }
@@ -1430,7 +1430,7 @@ int c_date2jday_360_day( int year, int month, int day, int *jday )
 			year, month, day );
 		return( CALCALCS_ERR_DATE_NOT_IN_CALENDAR );
 		}
-		
+
 	spm = (month-1)*30;	/* sum of days in the previous months */
 
 	*jday = year*360 + spm + (day-1);
@@ -1459,7 +1459,7 @@ int c_jday2date_360_day( int jday, int *year, int *month, int *day )
 
 	yr_offset = 0;
 	if( jday < 0 ) {
-		yr_offset = (-jday)/360+1;                   
+		yr_offset = (-jday)/360+1;
 		jday += 360*yr_offset;
 		}
 
@@ -1482,7 +1482,7 @@ int c_jday2date_noleap( int jday, int *year, int *month, int *day )
 
 	yr_offset = 0;
 	if( jday < 0 ) {
-		yr_offset = (-jday)/365+1;                   
+		yr_offset = (-jday)/365+1;
 		jday += 365*yr_offset;
 		}
 
@@ -1514,7 +1514,7 @@ int c_dpm_gregorian( int year, int month, int *dpm )
 	if( (ierr = c_isleap_gregorian( year, &leap )) != 0 )
 		return( ierr );
 
-	if( leap ) 
+	if( leap )
 		*dpm = dpm_leap_idx1[month];
 	else
 		*dpm = dpm_idx1[month];
@@ -1536,7 +1536,7 @@ int c_dpm_gregorian_y0( int year, int month, int *dpm )
 	if( (ierr = c_isleap_gregorian_y0( year, &leap )) != 0 )
 		return( ierr );
 
-	if( leap ) 
+	if( leap )
 		*dpm = dpm_leap_idx1[month];
 	else
 		*dpm = dpm_idx1[month];
@@ -1557,7 +1557,7 @@ int c_dpm_julian( int year, int month, int *dpm )
 	if( (ierr = c_isleap_julian( year, &leap )) != 0 )
 		return( ierr );
 
-	if( leap ) 
+	if( leap )
 		*dpm = dpm_leap_idx1[month];
 	else
 		*dpm = dpm_idx1[month];
@@ -1606,7 +1606,7 @@ static int set_xition_extra_info( calcalcs_cal *cal )
 
 	/* This is the date of the day BEFORE the transition day,
 	 * i.e., the last day that the early calendar was used
-	 */ 
+	 */
 	ierr = ccs_jday2date( cal->early_cal, (cal->jday_x-1), &(cal->year_px), &(cal->month_px), &(cal->day_px));
 	if( ierr != 0 ) {
 		sprintf( error_message, "Failed to turn the day before the mixed calendar transition day into a date! %s\n",
@@ -1616,4 +1616,3 @@ static int set_xition_extra_info( calcalcs_cal *cal )
 
 	return(0);
 }
-

@@ -335,12 +335,12 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
   return std::max(static_cast<size_t>(ceil(dt / m_seconds_per_day)), (size_t)2);
 }
 
-/** 
+/**
  * Computes
  * \f[
  * \text{PDD} = \sum_{i=0}^{N-1} h_{\text{days}} \cdot \text{max}(T_i-T_{\text{threshold}}, 0).
  * \f]
- * 
+ *
  * @param S \f$\sigma\f$ (standard deviation for daily temperature excursions)
  * @param dt_series time-series step, in seconds
  * @param T air temperature

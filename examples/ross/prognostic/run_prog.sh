@@ -47,4 +47,3 @@ echo "running command:"
 echo
 echo "$cmd_prog"
 ${cmd_prog}
-

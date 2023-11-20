@@ -14,7 +14,7 @@ Mx="$2"
 My="$3"
 PREFILE="$4"
 
-if [ $# -lt 4 ] ; then  
+if [ $# -lt 4 ] ; then
   echo "century.sh ERROR: needs four arguments"
   exit
 fi
@@ -32,7 +32,7 @@ fi
 if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
   echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
 else
-  PISM_DO="" 
+  PISM_DO=""
 fi
 
 # prefix to pism (not to executables)
@@ -89,4 +89,3 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -i jakofine_short.nc \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars vel_bc \
   $CLIMATE -ys 0 -ye $LENGTH -skip -skip_max $SKIP -o jakofine.nc"
 $PISM_DO $cmd
-

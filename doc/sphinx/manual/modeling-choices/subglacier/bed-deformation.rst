@@ -132,7 +132,7 @@ which is a time-dependent version of :eq:`eq-bedcorrection`.
 This class uses two input files:
 
 1. Reference topography `b_{\text{ref}}(x,y)` (variable :var:`topg`, in meters).
-2. Time-dependent history of bed elevation changes `\Delta b(t,x,y)` relative to the 
+2. Time-dependent history of bed elevation changes `\Delta b(t,x,y)` relative to the
    reference topography (variable :var:`topg_delta`, in meters).
 
 Use the following configuration parameters (prefix: ``bed_deformation.given.``) to set

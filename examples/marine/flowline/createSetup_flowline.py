@@ -3,10 +3,12 @@
 
 # ./createSetup_flowline.py -a 0.0 -r 10.0
 
-import sys
 import getopt
 import math
+import sys
+
 import numpy as np
+
 try:
     from netCDF4 import Dataset as NC
 except:
@@ -15,7 +17,7 @@ except:
 
 # geometry setup flowline
 
-WRIT_FILE = 'flowline_setup.nc'  # default name
+WRIT_FILE = "flowline_setup.nc"  # default name
 accumrate = 0.5  # accumulation rate in m/a
 
 #### command line arguments ####
@@ -27,46 +29,47 @@ try:
         if opt in ("-r", "--resolution"):  # resolution in km
             boxWidth = arg
 except getopt.GetoptError:
-    print('Incorrect command line arguments')
+    print("Incorrect command line arguments")
     sys.exit(2)
 
 
 # geometry setup
 boxWidth = float(boxWidth)
 accumrate = float(accumrate)
-WRIT_FILE = 'flowline_setup_' + str(int(boxWidth)) + 'km.nc'
+WRIT_FILE = "flowline_setup_" + str(int(boxWidth)) + "km.nc"
 
 ### CONSTANTS ###
-secpera = 31556926.
+secpera = 31556926.0
 yExtent = 2 * boxWidth  # in km
 xExtent = 500  # in km
-standard_gravity = 9.81                 # g
-B0 = 1.9e8                              # ice hardness
+standard_gravity = 9.81  # g
+B0 = 1.9e8  # ice hardness
 rho_ice = 910.0  # in kg/m^3
 rho_ocean = 1028.0  # in kg/m^3
 
 # create config overwrite file as used in T. Albrecht, M. A. Martin, R. Winkelmann, M. Haseloff, A. Levermann; Parameterization for subgrid-scale motion of ice-shelf calving fronts; (2011), The Cryosphere 5, 35-44, DOI:10.5194/tc-5-35-2011.
-'''Generates a config file containing flags and parameters
+"""Generates a config file containing flags and parameters
 for a particular experiment and step.
 
 This takes care of flags and parameters that *cannot* be set using
 command-line options. (We try to use command-line options whenever we can.)
-'''
+"""
 
 filename = "flowline_config.nc"
-nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
-var = nc.createVariable("pism_overrides", 'i')
-attrs = {"geometry.update.use_basal_melt_rate": "no",
-         "stress_balance.ssa.compute_surface_gradient_inward": "no",
-         "flow_law.isothermal_Glen.ice_softness": (B0) ** -3,
-         "constants.ice.density": rho_ice,
-         "constants.sea_water.density": rho_ocean,
-         "bootstrapping.defaults.geothermal_flux": 0.0,
-         "stress_balance.ssa.Glen_exponent": 3.0,
-         "constants.standard_gravity": standard_gravity,
-         "ocean.sub_shelf_heat_flux_into_ice": 0.0,
-         "stress_balance.sia.bed_smoother.range": 0.0,
-         }
+nc = NC(filename, "w", format="NETCDF3_CLASSIC")
+var = nc.createVariable("pism_overrides", "i")
+attrs = {
+    "geometry.update.use_basal_melt_rate": "no",
+    "stress_balance.ssa.compute_surface_gradient_inward": "no",
+    "flow_law.isothermal_Glen.ice_softness": (B0) ** -3,
+    "constants.ice.density": rho_ice,
+    "constants.sea_water.density": rho_ocean,
+    "bootstrapping.defaults.geothermal_flux": 0.0,
+    "stress_balance.ssa.Glen_exponent": 3.0,
+    "constants.standard_gravity": standard_gravity,
+    "ocean.sub_shelf_heat_flux_into_ice": 0.0,
+    "stress_balance.sia.bed_smoother.range": 0.0,
+}
 
 for name, value in attrs.items():
     var.setncattr(name, value)
@@ -122,7 +125,7 @@ vbar = np.zeros((ny, nx))
 
 # "typical constant ice parameter" as defined in the paper and in Van der
 # Veen's "Fundamentals of Glacier Dynamics", 1999
-#C = (rho_ice * standard_gravity * (1.0 - rho_ice/rho_ocean) / (4 * B0))**3
+# C = (rho_ice * standard_gravity * (1.0 - rho_ice/rho_ocean) / (4 * B0))**3
 # H0=thickness
 # Q0=vel_bc*thickness/secpera
 
@@ -140,7 +143,7 @@ for i in range(0, nx):
 for i in range(0, nx):
     for j in range(0, ny):
         if i <= igl:
-            #thk[j,i] = (4.0 * C / Q0 * (i-igl) + 1 / H0**4)**(-0.25)
+            # thk[j,i] = (4.0 * C / Q0 * (i-igl) + 1 / H0**4)**(-0.25)
             thk[j, i] = thickness
 
 # define precipitation field:
@@ -166,67 +169,56 @@ for i in range(0, nx):
 
 
 ##### define dimensions in NetCDF file #####
-ncfile = NC(WRIT_FILE, 'w', format='NETCDF3_CLASSIC')
-xdim = ncfile.createDimension('x', nx)
-ydim = ncfile.createDimension('y', ny)
+ncfile = NC(WRIT_FILE, "w", format="NETCDF3_CLASSIC")
+xdim = ncfile.createDimension("x", nx)
+ydim = ncfile.createDimension("y", ny)
 
 ##### define variables, set attributes, write data #####
 # format: ['units', 'long_name', 'standard_name', '_FillValue', array]
 
-vars = {'y':   	['m',
-                 'y-coordinate in Cartesian system',
-                 'projection_y_coordinate',
-                 None,
-                 y],
-        'x':   	['m',
-                 'x-coordinate in Cartesian system',
-                 'projection_x_coordinate',
-                 None,
-                 x],
-        'thk': 	['m',
-                 'floating ice shelf thickness',
-                 'land_ice_thickness',
-                 1.0,
-                 thk],
-        'topg': ['m',
-                 'bedrock surface elevation',
-                 'bedrock_altitude',
-                 -600.0,
-                 topg],
-        'ice_surface_temp': ['K',
-                             'annual mean air temperature at ice surface',
-                             'surface_temperature',
-                             248.0,
-                             ice_surface_temp],
-        'climatic_mass_balance': ['kg m-2 year-1',
-                                  'mean annual net ice equivalent accumulation rate',
-                                  'land_ice_surface_specific_mass_balance_flux',
-                                  0.2 * 910.0,
-                                  precip],
-        'vel_bc_mask': ['',
-                        'vel_bc_mask',
-                        'vel_bc_mask',
-                        0.0,
-                        vel_bc_mask],
-        'u_bc': ['m s-1',
-                 'X-component of the SSA velocity boundary conditions',
-                 'ubar',
-                 0.0,
-                 ubar],
-        'v_bc': ['m s-1',
-                 'Y-component of the SSA velocity boundary conditions',
-                 'vbar',
-                 0.0,
-                 vbar],
-        }
+vars = {
+    "y": ["m", "y-coordinate in Cartesian system", "projection_y_coordinate", None, y],
+    "x": ["m", "x-coordinate in Cartesian system", "projection_x_coordinate", None, x],
+    "thk": ["m", "floating ice shelf thickness", "land_ice_thickness", 1.0, thk],
+    "topg": ["m", "bedrock surface elevation", "bedrock_altitude", -600.0, topg],
+    "ice_surface_temp": [
+        "K",
+        "annual mean air temperature at ice surface",
+        "surface_temperature",
+        248.0,
+        ice_surface_temp,
+    ],
+    "climatic_mass_balance": [
+        "kg m-2 year-1",
+        "mean annual net ice equivalent accumulation rate",
+        "land_ice_surface_specific_mass_balance_flux",
+        0.2 * 910.0,
+        precip,
+    ],
+    "vel_bc_mask": ["", "vel_bc_mask", "vel_bc_mask", 0.0, vel_bc_mask],
+    "u_bc": [
+        "m s-1",
+        "X-component of the SSA velocity boundary conditions",
+        "ubar",
+        0.0,
+        ubar,
+    ],
+    "v_bc": [
+        "m s-1",
+        "Y-component of the SSA velocity boundary conditions",
+        "vbar",
+        0.0,
+        vbar,
+    ],
+}
 
 for name in list(vars.keys()):
     [_, _, _, fill_value, data] = vars[name]
-    if name in ['x', 'y']:
-        var = ncfile.createVariable(name, 'f4', (name,))
+    if name in ["x", "y"]:
+        var = ncfile.createVariable(name, "f4", (name,))
     else:
-        var = ncfile.createVariable(name, 'f4', ('y', 'x'), fill_value=fill_value)
-    for each in zip(['units', 'long_name', 'standard_name'], vars[name]):
+        var = ncfile.createVariable(name, "f4", ("y", "x"), fill_value=fill_value)
+    for each in zip(["units", "long_name", "standard_name"], vars[name]):
         if each[1]:
             setattr(var, each[0], each[1])
     var[:] = data
@@ -234,4 +226,4 @@ for name in list(vars.keys()):
 # finish up
 ncfile.close()
 print("NetCDF file ", WRIT_FILE, " created")
-print('')
+print("")

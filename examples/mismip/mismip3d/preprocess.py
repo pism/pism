@@ -12,23 +12,24 @@ except:
 
 filename = "MISMIP3D_conf.nc"
 
-print('  creating MISMIP3D_conf.nc for configuration parameters (overrides) ...')
+print("  creating MISMIP3D_conf.nc for configuration parameters (overrides) ...")
 
-nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
+nc = NC(filename, "w", format="NETCDF3_CLASSIC")
 
-var = nc.createVariable("pism_overrides", 'i')
+var = nc.createVariable("pism_overrides", "i")
 
-attrs = {"geometry.update.use_basal_melt_rate": "no",
-         "stress_balance.ssa.compute_surface_gradient_inward": "no",
-         "flow_law.isothermal_Glen.ice_softness": 1.0e-25,
-         "constants.ice.density": 900.,
-         "constants.sea_water.density": 1000.,
-         "bootstrapping.defaults.geothermal_flux": 0.0,
-         "stress_balance.ssa.Glen_exponent": 3.,
-         "constants.standard_gravity": 9.81,
-         "ocean.sub_shelf_heat_flux_into_ice": 0.0,
-         "stress_balance.sia.bed_smoother.range": 0.0,
-         }
+attrs = {
+    "geometry.update.use_basal_melt_rate": "no",
+    "stress_balance.ssa.compute_surface_gradient_inward": "no",
+    "flow_law.isothermal_Glen.ice_softness": 1.0e-25,
+    "constants.ice.density": 900.0,
+    "constants.sea_water.density": 1000.0,
+    "bootstrapping.defaults.geothermal_flux": 0.0,
+    "stress_balance.ssa.Glen_exponent": 3.0,
+    "constants.standard_gravity": 9.81,
+    "ocean.sub_shelf_heat_flux_into_ice": 0.0,
+    "stress_balance.sia.bed_smoother.range": 0.0,
+}
 
 for name, value in attrs.items():
     var.setncattr(name, value)

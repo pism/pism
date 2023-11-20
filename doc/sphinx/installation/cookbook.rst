@@ -20,4 +20,3 @@ cases; please `e-mail us <pism-email_>`_ if you need help.
    pism.rst
 
    common-problems.rst
-

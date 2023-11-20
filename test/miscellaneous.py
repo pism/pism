@@ -10,16 +10,18 @@ Run this to get a coverage report:
 nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM test/miscellaneous.py
 """
 
+import os
+import sys
+from unittest import SkipTest, TestCase
+
+import numpy as np
 import PISM
 import PISM.testing
-import sys
-import os
-import numpy as np
-from unittest import TestCase, SkipTest
 from PISM.testing import filename
 
 ctx = PISM.Context()
 ctx.log.set_threshold(0)
+
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -41,7 +43,7 @@ def context_missing_attribute_test():
     "Test the handling of missing attributes"
     ctx = PISM.Context()
     try:
-        config = ctx.foo        # there is no "foo", this should fail
+        config = ctx.foo  # there is no "foo", this should fail
         return False
     except AttributeError:
         return True
@@ -51,14 +53,16 @@ def create_grid_test():
     "Test the creation of the Grid object"
     grid1 = create_dummy_grid()
 
-    grid2 = PISM.model.initGrid(PISM.Context(), 100e3, 100e3, 4000, 11, 11, 21, PISM.CELL_CORNER)
+    grid2 = PISM.model.initGrid(
+        PISM.Context(), 100e3, 100e3, 4000, 11, 11, 21, PISM.CELL_CORNER
+    )
 
 
 def algorithm_failure_exception_test():
     "Test the AlgorithmFailureException class"
     try:
         raise PISM.AlgorithmFailureException("no good reason")
-        return False            # should not be reached
+        return False  # should not be reached
     except PISM.AlgorithmFailureException as e:
         print("calling e.reason(): ", e.reason())
         print("{}".format(e))
@@ -73,8 +77,9 @@ def printing_test():
 
 def random_vec_test():
     "Test methods creating random fields"
-    grid = PISM.Grid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
-                                PISM.NOT_PERIODIC, PISM.CELL_CENTER)
+    grid = PISM.Grid_Shallow(
+        PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31, PISM.NOT_PERIODIC, PISM.CELL_CENTER
+    )
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
     vec_vector = PISM.vec.randVectorV(grid, 2.0)
@@ -121,15 +126,15 @@ def vec_access_test():
     vec_scalar_ghosted = PISM.vec.randVectorS(grid, 1.0, 2)
 
     with PISM.vec.Access(comm=[vec_scalar_ghosted], nocomm=vec_scalar):
-        for (i, j) in grid.points_with_ghosts():
+        for i, j in grid.points_with_ghosts():
             pass
 
     with PISM.vec.Access(comm=vec_scalar_ghosted, nocomm=[vec_scalar]):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             # do something
             pass
 
-        for (i, j, x, y) in grid.coords():
+        for i, j, x, y in grid.coords():
             # do something with coordinates
             pass
 
@@ -144,6 +149,7 @@ def create_modeldata_test():
     md = PISM.model.ModelData(grid)
 
     md2 = PISM.model.ModelData(grid, config=grid.ctx().config())
+
 
 def grid_from_file_test():
     "Intiialize a grid from a file"
@@ -161,6 +167,7 @@ def grid_from_file_test():
         grid2 = PISM.Grid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
     finally:
         os.remove(file_name)
+
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
@@ -272,7 +279,10 @@ def modelvecs_test():
         pass
 
     # get a field:
-    print("get() method: ice mask: ", vecs.get("ice_mask").metadata().get_string("long_name"))
+    print(
+        "get() method: ice mask: ",
+        vecs.get("ice_mask").metadata().get_string("long_name"),
+    )
 
     print("dot notation: ice mask: ", vecs.ice_mask.metadata().get_string("long_name"))
 
@@ -315,6 +325,7 @@ def modelvecs_test():
         vecs.writeall(output_file)
     finally:
         os.remove(output_file)
+
 
 def sia_test():
     "Test the PISM.sia module"
@@ -367,7 +378,9 @@ def util_test():
 
     output_file = filename("test_pism_util")
     try:
-        pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
+        pio = PISM.File(
+            grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE
+        )
         pio.close()
 
         PISM.util.writeProvenance(output_file)
@@ -412,7 +425,7 @@ def logging_test():
 
         L.logPrattle("prattle message\n")
 
-        c.write()                   # default arguments
+        c.write()  # default arguments
         c.readOldLog()
     finally:
         os.remove(log_filename)
@@ -483,14 +496,15 @@ def column_interpolation_test(plot=False):
 
         if plot:
             plt.figure()
-            plt.plot(z, f, 'o-', label="original coarse-grid data")
-            plt.plot(z_fine, f_fine, 'o-', label="interpolated onto the fine grid")
-            plt.plot(z, f_roundtrip, 'o-', label="interpolated back onto the coarse grid")
-            plt.plot(z, f_roundtrip - f, 'o-', label="difference after the roundtrip")
+            plt.plot(z, f, "o-", label="original coarse-grid data")
+            plt.plot(z_fine, f_fine, "o-", label="interpolated onto the fine grid")
+            plt.plot(
+                z, f_roundtrip, "o-", label="interpolated back onto the coarse grid"
+            )
+            plt.plot(z, f_roundtrip - f, "o-", label="difference after the roundtrip")
             plt.legend(loc="best")
             plt.title(title)
             plt.grid(True)
-
 
         delta = np.linalg.norm(f - f_roundtrip, ord=1)
         delta_numpy = np.linalg.norm(f_fine - f_fine_numpy, ord=1)
@@ -509,19 +523,19 @@ def column_interpolation_test(plot=False):
     if plot:
         plt.show()
 
-    if (linear_delta > 1e-12 or linear_delta_numpy > 1e-12 or quadratic_delta > 1e-3):
+    if linear_delta > 1e-12 or linear_delta_numpy > 1e-12 or quadratic_delta > 1e-3:
         return False
     return True
 
 
 def pism_join_test():
     "Test PISM.join()"
-    assert PISM.join(["one", "two"], ':') == "one:two"
+    assert PISM.join(["one", "two"], ":") == "one:two"
 
 
 def pism_split_test():
     "Test PISM.split()"
-    assert PISM.split("one,two,three", ',') == ("one", "two", "three")
+    assert PISM.split("one,two,three", ",") == ("one", "two", "three")
 
 
 def pism_ends_with_test():
@@ -541,7 +555,9 @@ def linear_interpolation_test(plot=False):
     b = 10.0
     padding = 1.0
     x_input = np.linspace(a, b, M_in)
-    x_output = np.sort(((b + padding) - (a - padding)) * np.random.rand(M_out) + (a - padding))
+    x_output = np.sort(
+        ((b + padding) - (a - padding)) * np.random.rand(M_out) + (a - padding)
+    )
 
     def F(x):
         return x * 2.0 + 5.0
@@ -559,9 +575,11 @@ def linear_interpolation_test(plot=False):
     if plot:
         import pylab as plt
 
-        plt.plot(x_output, F_interpolated, 'o-', color='blue', label="interpolated result")
-        plt.plot(x_output, F_desired, 'x-', color='green', label="desired result")
-        plt.plot(x_input, values, 'o-', color='red', label="input")
+        plt.plot(
+            x_output, F_interpolated, "o-", color="blue", label="interpolated result"
+        )
+        plt.plot(x_output, F_desired, "x-", color="green", label="desired result")
+        plt.plot(x_input, values, "o-", color="red", label="input")
         plt.grid(True)
         plt.legend(loc="best")
         plt.show()
@@ -632,35 +650,132 @@ def check_flow_law(factory, flow_law_name, EC, stored_data):
 
 def flowlaw_test():
     data = {}
-    data["arr"] = [3.91729503e-18, 6.42803396e-17, 1.05746828e-16, 1.05746828e-16,
-                   9.79323757e-17, 1.60700849e-15, 2.64367070e-15, 2.64367070e-15,
-                   3.91729503e-16, 6.42803396e-15, 1.05746828e-14, 1.05746828e-14,
-                   8.81391381e-16, 1.44630764e-14, 2.37930363e-14, 2.37930363e-14]
-    data["arrwarm"] = [1.59798478e-19, 1.04360343e-16, 3.30653997e-16, 3.30653997e-16,
-                       3.99496194e-18, 2.60900856e-15, 8.26634991e-15, 8.26634991e-15,
-                       1.59798478e-17, 1.04360343e-14, 3.30653997e-14, 3.30653997e-14,
-                       3.59546574e-17, 2.34810771e-14, 7.43971492e-14, 7.43971492e-14]
-    data["gk"] = [1.1636334595808724e-16, 6.217445758362754e-15, 2.5309103327753672e-14,
-                  2.5309103327753672e-14, 2.5947947614616463e-16, 2.0065832524499375e-14,
-                  9.158056141786197e-14, 9.158056141786197e-14, 4.493111202368685e-16,
-                  3.469816186746473e-14, 1.6171243121742907e-13, 1.6171243121742907e-13,
-                  7.12096200221403e-16, 4.879162291119208e-14, 2.2895389865988545e-13, 2.2895389865988545e-13]
-    data["gpbld"] = [4.65791754e-18, 1.45114704e-16, 4.54299921e-16, 8.66009225e-16,
-                     1.16447938e-16, 3.62786761e-15, 1.13574980e-14, 2.16502306e-14,
-                     4.65791754e-16, 1.45114704e-14, 4.54299921e-14, 8.66009225e-14,
-                     1.04803145e-15, 3.26508084e-14, 1.02217482e-13, 1.94852076e-13]
-    data["hooke"] = [5.26775897e-18, 2.12325906e-16, 5.32397091e-15, 5.32397091e-15,
-                     1.31693974e-16, 5.30814764e-15, 1.33099273e-13, 1.33099273e-13,
-                     5.26775897e-16, 2.12325906e-14, 5.32397091e-13, 5.32397091e-13,
-                     1.18524577e-15, 4.77733287e-14, 1.19789346e-12, 1.19789346e-12]
-    data["isothermal_glen"] = [3.16890000e-16, 3.16890000e-16, 3.16890000e-16, 3.16890000e-16,
-                               7.92225000e-15, 7.92225000e-15, 7.92225000e-15, 7.92225000e-15,
-                               3.16890000e-14, 3.16890000e-14, 3.16890000e-14, 3.16890000e-14,
-                               7.13002500e-14, 7.13002500e-14, 7.13002500e-14, 7.13002500e-14]
-    data["pb"] = [4.65791754e-18, 1.45114704e-16, 4.54299921e-16, 4.54299921e-16,
-                  1.16447938e-16, 3.62786761e-15, 1.13574980e-14, 1.13574980e-14,
-                  4.65791754e-16, 1.45114704e-14, 4.54299921e-14, 4.54299921e-14,
-                  1.04803145e-15, 3.26508084e-14, 1.02217482e-13, 1.02217482e-13]
+    data["arr"] = [
+        3.91729503e-18,
+        6.42803396e-17,
+        1.05746828e-16,
+        1.05746828e-16,
+        9.79323757e-17,
+        1.60700849e-15,
+        2.64367070e-15,
+        2.64367070e-15,
+        3.91729503e-16,
+        6.42803396e-15,
+        1.05746828e-14,
+        1.05746828e-14,
+        8.81391381e-16,
+        1.44630764e-14,
+        2.37930363e-14,
+        2.37930363e-14,
+    ]
+    data["arrwarm"] = [
+        1.59798478e-19,
+        1.04360343e-16,
+        3.30653997e-16,
+        3.30653997e-16,
+        3.99496194e-18,
+        2.60900856e-15,
+        8.26634991e-15,
+        8.26634991e-15,
+        1.59798478e-17,
+        1.04360343e-14,
+        3.30653997e-14,
+        3.30653997e-14,
+        3.59546574e-17,
+        2.34810771e-14,
+        7.43971492e-14,
+        7.43971492e-14,
+    ]
+    data["gk"] = [
+        1.1636334595808724e-16,
+        6.217445758362754e-15,
+        2.5309103327753672e-14,
+        2.5309103327753672e-14,
+        2.5947947614616463e-16,
+        2.0065832524499375e-14,
+        9.158056141786197e-14,
+        9.158056141786197e-14,
+        4.493111202368685e-16,
+        3.469816186746473e-14,
+        1.6171243121742907e-13,
+        1.6171243121742907e-13,
+        7.12096200221403e-16,
+        4.879162291119208e-14,
+        2.2895389865988545e-13,
+        2.2895389865988545e-13,
+    ]
+    data["gpbld"] = [
+        4.65791754e-18,
+        1.45114704e-16,
+        4.54299921e-16,
+        8.66009225e-16,
+        1.16447938e-16,
+        3.62786761e-15,
+        1.13574980e-14,
+        2.16502306e-14,
+        4.65791754e-16,
+        1.45114704e-14,
+        4.54299921e-14,
+        8.66009225e-14,
+        1.04803145e-15,
+        3.26508084e-14,
+        1.02217482e-13,
+        1.94852076e-13,
+    ]
+    data["hooke"] = [
+        5.26775897e-18,
+        2.12325906e-16,
+        5.32397091e-15,
+        5.32397091e-15,
+        1.31693974e-16,
+        5.30814764e-15,
+        1.33099273e-13,
+        1.33099273e-13,
+        5.26775897e-16,
+        2.12325906e-14,
+        5.32397091e-13,
+        5.32397091e-13,
+        1.18524577e-15,
+        4.77733287e-14,
+        1.19789346e-12,
+        1.19789346e-12,
+    ]
+    data["isothermal_glen"] = [
+        3.16890000e-16,
+        3.16890000e-16,
+        3.16890000e-16,
+        3.16890000e-16,
+        7.92225000e-15,
+        7.92225000e-15,
+        7.92225000e-15,
+        7.92225000e-15,
+        3.16890000e-14,
+        3.16890000e-14,
+        3.16890000e-14,
+        3.16890000e-14,
+        7.13002500e-14,
+        7.13002500e-14,
+        7.13002500e-14,
+        7.13002500e-14,
+    ]
+    data["pb"] = [
+        4.65791754e-18,
+        1.45114704e-16,
+        4.54299921e-16,
+        4.54299921e-16,
+        1.16447938e-16,
+        3.62786761e-15,
+        1.13574980e-14,
+        1.13574980e-14,
+        4.65791754e-16,
+        1.45114704e-14,
+        4.54299921e-14,
+        4.54299921e-14,
+        1.04803145e-15,
+        3.26508084e-14,
+        1.02217482e-13,
+        1.02217482e-13,
+    ]
 
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
     EC = ctx.enthalpy_converter()
@@ -675,16 +790,25 @@ def ssa_trivial_test():
 
     context = PISM.Context()
 
-    L = 50.e3  # // 50km half-width
+    L = 50.0e3  # // 50km half-width
     H0 = 500  # // m
     dhdx = 0.005  # // pure number, slope of surface & bed
     nu0 = PISM.util.convert(30.0, "MPa year", "Pa s")
-    tauc0 = 1.e4  # // 1kPa
+    tauc0 = 1.0e4  # // 1kPa
 
     class TrivialSSARun(PISM.ssa.SSAExactTestCase):
         def _initGrid(self):
-            self.grid = PISM.Grid.Shallow(context.ctx, L, L, 0, 0,
-                                             self.Mx, self.My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+            self.grid = PISM.Grid.Shallow(
+                context.ctx,
+                L,
+                L,
+                0,
+                0,
+                self.Mx,
+                self.My,
+                PISM.CELL_CORNER,
+                PISM.NOT_PERIODIC,
+            )
 
         def _initPhysics(self):
             self.modeldata.setPhysics(context.enthalpy_converter)
@@ -725,16 +849,19 @@ def ssa_trivial_test():
     finally:
         os.remove(output_file)
 
+
 def epsg_test():
     "Test EPSG to CF conversion."
     l = PISM.StringLogger(PISM.PETSc.COMM_WORLD, 2)
     system = PISM.Context().unit_system
 
     # test supported formats
-    for template in ["{epsg}:{code}",
-                     "+init={epsg}:{code}",
-                     "+units=m +init={epsg}:{code}",
-                     "+init={epsg}:{code} +units=m"]:
+    for template in [
+        "{epsg}:{code}",
+        "+init={epsg}:{code}",
+        "+units=m +init={epsg}:{code}",
+        "+init={epsg}:{code} +units=m",
+    ]:
         for epsg in ["EPSG", "epsg"]:
             for code in [3413, 3031, 3057, 5936, 26710]:
                 string = template.format(epsg=epsg, code=code)
@@ -760,6 +887,7 @@ def epsg_test():
     except RuntimeError as e:
         print("invalid codes trigger exceptions: {}".format(e))
 
+
 def regridding_test():
     "Test 2D regridding: same input and target grids."
     import numpy as np
@@ -781,7 +909,7 @@ def regridding_test():
     y_min = np.min(y)
     y_max = np.max(y)
     with PISM.vec.Access(nocomm=[thk1]):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             F_x = (x[i] - x_min) / (x_max - x_min)
             F_y = (y[j] - y_min) / (y_max - y_min)
             thk1[i, j] = (F_x + F_y) / 2.0
@@ -793,14 +921,17 @@ def regridding_test():
         thk2.regrid(file_name, critical=True)
 
         with PISM.vec.Access(nocomm=[thk1, thk2]):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 v1 = thk1[i, j]
                 v2 = thk2[i, j]
                 if np.abs(v1 - v2) > 1e-12:
-                    raise AssertionError("mismatch at {},{}: {} != {}".format(i, j, v1, v2))
+                    raise AssertionError(
+                        "mismatch at {},{}: {} != {}".format(i, j, v1, v2)
+                    )
 
     finally:
         os.remove(file_name)
+
 
 def interpolation_weights_test():
     "Test 2D interpolation weights."
@@ -823,10 +954,9 @@ def interpolation_weights_test():
     Lx = 20
     Ly = 10
 
-    grid = PISM.Grid_Shallow(PISM.Context().ctx,
-                                Lx, Ly, 0, 0, Mx, My,
-                                PISM.CELL_CORNER,
-                                PISM.NOT_PERIODIC)
+    grid = PISM.Grid_Shallow(
+        PISM.Context().ctx, Lx, Ly, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC
+    )
 
     x = grid.x()
     y = grid.y()
@@ -918,37 +1048,45 @@ def vertical_extrapolation_during_regridding_test():
     finally:
         os.remove(file_name)
 
+
 class PrincipalStrainRates(TestCase):
     def u_exact(self, x, y):
         "Velocity field for testing"
-        return (np.cos(y) + np.sin(x),
-                np.sin(y) + np.cos(x))
+        return (np.cos(y) + np.sin(x), np.sin(y) + np.cos(x))
 
     def eps_exact(self, x, y):
         "Principal strain rates corresponding to u_exact."
         u_x = np.cos(x)
-        u_y = - np.sin(y)
+        u_y = -np.sin(y)
 
-        v_x = - np.sin(x)
+        v_x = -np.sin(x)
         v_y = np.cos(y)
 
-        A   = 0.5 * (u_x + v_y)
-        B   = 0.5 * (u_x - v_y)
+        A = 0.5 * (u_x + v_y)
+        B = 0.5 * (u_x - v_y)
         Dxy = 0.5 * (v_x + u_y)
-        q   = np.sqrt(B**2 + Dxy**2);
+        q = np.sqrt(B**2 + Dxy**2)
 
         return (A + q, A - q)
 
     def create_grid(self, Mx):
-        My = Mx + 10            # a non-square grid
-        return PISM.Grid.Shallow(self.ctx.ctx,
-                                    2*np.pi, 2*np.pi,
-                                    0, 0, int(Mx), int(My), PISM.CELL_CENTER, PISM.NOT_PERIODIC)
+        My = Mx + 10  # a non-square grid
+        return PISM.Grid.Shallow(
+            self.ctx.ctx,
+            2 * np.pi,
+            2 * np.pi,
+            0,
+            0,
+            int(Mx),
+            int(My),
+            PISM.CELL_CENTER,
+            PISM.NOT_PERIODIC,
+        )
 
     def create_velocity(self, grid):
         velocity = PISM.Vector1(grid, "bar")
         with PISM.vec.Access(nocomm=velocity):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 u, v = self.u_exact(grid.x(i), grid.y(j))
                 velocity[i, j].u = u
                 velocity[i, j].v = v
@@ -968,14 +1106,15 @@ class PrincipalStrainRates(TestCase):
 
         velocity = self.create_velocity(grid)
         cell_type = self.create_cell_type(grid)
-        strain_rates = PISM.ArrayPrincipalStrainRates(grid, "strain_rates",
-                                                      PISM.WITHOUT_GHOSTS)
+        strain_rates = PISM.ArrayPrincipalStrainRates(
+            grid, "strain_rates", PISM.WITHOUT_GHOSTS
+        )
 
         PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
         rates = strain_rates.numpy()
 
-        e1 = rates[:,:,0]
-        e2 = rates[:,:,1]
+        e1 = rates[:, :, 0]
+        e2 = rates[:, :, 1]
 
         # compute e1, e2 using formulas
         xx, yy = np.meshgrid(grid.x(), grid.y())
@@ -993,15 +1132,16 @@ class PrincipalStrainRates(TestCase):
         "Test principal strain rate computation"
         errors = np.array([self.error(M) for M in [10, 20, 40]])
 
-        Ms = errors[:,0]
-        p_e1 = np.polyfit(np.log(1.0 / Ms), np.log(errors[:,1]), 1)
-        p_e2 = np.polyfit(np.log(1.0 / Ms), np.log(errors[:,2]), 1)
+        Ms = errors[:, 0]
+        p_e1 = np.polyfit(np.log(1.0 / Ms), np.log(errors[:, 1]), 1)
+        p_e2 = np.polyfit(np.log(1.0 / Ms), np.log(errors[:, 2]), 1)
 
         assert p_e1[0] > 1.8
         assert p_e2[0] > 1.8
 
     def tearDown(self):
         pass
+
 
 def test_trapezoid_integral():
     "Linear integration weights"
@@ -1043,7 +1183,9 @@ def test_piece_wise_constant_integral():
 
     np.testing.assert_almost_equal(f(0, 2), 5.25)
     np.testing.assert_almost_equal(f(0.25, 0.35), 0.2)
-    np.testing.assert_almost_equal(f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2), f(0, 2))
+    np.testing.assert_almost_equal(
+        f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2), f(0, 2)
+    )
     np.testing.assert_almost_equal(f(0, 0.5) + f(0.5, 1.5) + f(1.5, 2), f(0, 2))
     np.testing.assert_almost_equal(f(0, 0.25) + f(0.25, 1.75) + f(1.75, 2), f(0, 2))
 
@@ -1053,6 +1195,7 @@ def test_piece_wise_constant_integral():
     np.testing.assert_almost_equal(f(-2, 0.5), 2 * y[0] + 0.5 * 2)
     np.testing.assert_almost_equal(f(2, 5), 3 * y[-1])
     np.testing.assert_almost_equal(f(3, 4), 1 * y[-1])
+
 
 def test_interpolation_other():
     x = [0.0, 10.0]
@@ -1083,6 +1226,7 @@ def test_interpolation_other():
     np.testing.assert_almost_equal(I.right(), [1, 2])
     np.testing.assert_almost_equal(I.alpha(), [0.5, 0.5])
 
+
 def test_nearest_neighbor():
     "Nearest neighbor interpolation"
     x = [-1, 1]
@@ -1094,6 +1238,7 @@ def test_nearest_neighbor():
     zz = PISM.Interpolation(PISM.NEAREST, x, xx).interpolate(y)
 
     np.testing.assert_almost_equal(yy, zz)
+
 
 class AgeModel(TestCase):
     def setUp(self):
@@ -1134,6 +1279,7 @@ class AgeModel(TestCase):
     def tearDown(self):
         os.remove(self.output_file)
 
+
 def checksum_test():
     "Check if a small change in an Array affects checksum() output"
     grid = PISM.testing.shallow_grid(Mx=101, My=201)
@@ -1144,16 +1290,19 @@ def checksum_test():
     old_checksum = v.checksum(serial=False)
 
     with PISM.vec.Access(nocomm=v):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             if i == 0 and j == 0:
                 v[i, j] += 1
 
     assert old_checksum != v.checksum(serial=False)
 
+
 class ForcingOptions(TestCase):
     def setUp(self):
         # store current configuration parameters
-        self.config = PISM.DefaultConfig(ctx.com, "pism_config", "-config", ctx.unit_system)
+        self.config = PISM.DefaultConfig(
+            ctx.com, "pism_config", "-config", ctx.unit_system
+        )
         self.config.init_with_default(ctx.log)
         self.config.import_from(ctx.config)
 
@@ -1192,6 +1341,7 @@ class ForcingOptions(TestCase):
 
         os.remove(self.filename)
 
+
 def test_bq2():
     "2-point boundary quadrature"
     raise SkipTest("not implemented")
@@ -1203,15 +1353,16 @@ def test_bq2():
             psi = [Q.germ(s, q, k).val for k in [0, 1]]
             assert sum(psi) == 1.0, "side = {}, q = {}, psi = {}".format(s, q, psi)
 
+
 class ScalarForcing(TestCase):
     def setUp(self):
         suffix = filename("-scalar-forcing-")
-        self.filename              = "input" + suffix
-        self.filename_decreasing   = "decreasing" + suffix
+        self.filename = "input" + suffix
+        self.filename_decreasing = "decreasing" + suffix
         self.filename_wrong_bounds = "wrong-bounds" + suffix
-        self.filename_2d           = "2d" + suffix
-        self.filename_1            = "one-value" + suffix
-        self.filename_no_bounds    = "no-bounds" + suffix
+        self.filename_2d = "2d" + suffix
+        self.filename_1 = "one-value" + suffix
+        self.filename_no_bounds = "no-bounds" + suffix
 
         def f(x):
             return np.sin(2 * np.pi / 12 * x)
@@ -1225,44 +1376,58 @@ class ScalarForcing(TestCase):
 
         self.ts = np.linspace(0 + dt, 24 - dt, 1001)
 
-        time_bounds = np.vstack((self.times - 0.5 * dt, self.times + 0.5 * dt)).T.flatten()
+        time_bounds = np.vstack(
+            (self.times - 0.5 * dt, self.times + 0.5 * dt)
+        ).T.flatten()
 
         ctx.time.set_start(0)
         ctx.time.set_end(4)
 
         # good input
-        PISM.testing.create_scalar_forcing(self.filename,
-                                           "delta_T", "Kelvin",
-                                           self.values, self.times, time_bounds)
+        PISM.testing.create_scalar_forcing(
+            self.filename, "delta_T", "Kelvin", self.values, self.times, time_bounds
+        )
 
         # non-increasing times
-        PISM.testing.create_scalar_forcing(self.filename_decreasing,
-                                           "delta_T", "Kelvin",
-                                           [0, 1], [1, 0], time_bounds=[1, 2, 0, 1])
+        PISM.testing.create_scalar_forcing(
+            self.filename_decreasing,
+            "delta_T",
+            "Kelvin",
+            [0, 1],
+            [1, 0],
+            time_bounds=[1, 2, 0, 1],
+        )
 
         # wrong time bounds
-        PISM.testing.create_scalar_forcing(self.filename_wrong_bounds,
-                                           "delta_T", "Kelvin",
-                                           [0, 1], [0, 1], time_bounds=[0, 2, 2, 3])
+        PISM.testing.create_scalar_forcing(
+            self.filename_wrong_bounds,
+            "delta_T",
+            "Kelvin",
+            [0, 1],
+            [0, 1],
+            time_bounds=[0, 2, 2, 3],
+        )
         # invalid number of dimensions
         grid = create_dummy_grid()
-        PISM.testing.create_forcing(grid,
-                                    self.filename_2d,
-                                    "delta_T",
-                                    "Kelvin",
-                                    [0, 1],
-                                    "seconds since 1-1-1",
-                                    times=[0, 1])
+        PISM.testing.create_forcing(
+            grid,
+            self.filename_2d,
+            "delta_T",
+            "Kelvin",
+            [0, 1],
+            "seconds since 1-1-1",
+            times=[0, 1],
+        )
 
         # only one value
-        PISM.testing.create_scalar_forcing(self.filename_1,
-                                           "delta_T", "Kelvin",
-                                           [1], [0], time_bounds=[0, 4])
+        PISM.testing.create_scalar_forcing(
+            self.filename_1, "delta_T", "Kelvin", [1], [0], time_bounds=[0, 4]
+        )
 
         # no time bounds
-        PISM.testing.create_scalar_forcing(self.filename_no_bounds,
-                                           "delta_T", "Kelvin",
-                                           [1], [0], time_bounds=None)
+        PISM.testing.create_scalar_forcing(
+            self.filename_no_bounds, "delta_T", "Kelvin", [1], [0], time_bounds=None
+        )
 
     def tearDown(self):
         try:
@@ -1277,19 +1442,13 @@ class ScalarForcing(TestCase):
 
     def create(self, filename=None, periodic=False):
         if filename is not None:
-            return PISM.ScalarForcing(ctx.ctx,
-                                      filename,
-                                      "delta_T",
-                                      "K",
-                                      "K",
-                                      "temperature offsets", periodic)
+            return PISM.ScalarForcing(
+                ctx.ctx, filename, "delta_T", "K", "K", "temperature offsets", periodic
+            )
 
-        return PISM.ScalarForcing(ctx.ctx,
-                                  "surface.delta_T",
-                                  "delta_T",
-                                  "K",
-                                  "K",
-                                  "temperature offsets")
+        return PISM.ScalarForcing(
+            ctx.ctx, "surface.delta_T", "delta_T", "K", "K", "temperature offsets"
+        )
 
     def test_file_not_set(self):
         try:
@@ -1380,8 +1539,9 @@ class ScalarForcing(TestCase):
         def compute_average(times, time_bounds, values, t, dt, periodic=False):
             filename = PISM.testing.filename("forcing-")
             try:
-                PISM.testing.create_scalar_forcing(filename, "delta_T", "Kelvin",
-                                                   values, times, time_bounds)
+                PISM.testing.create_scalar_forcing(
+                    filename, "delta_T", "Kelvin", values, times, time_bounds
+                )
 
                 F = self.create(filename, periodic)
 
@@ -1389,17 +1549,15 @@ class ScalarForcing(TestCase):
             finally:
                 os.remove(filename)
 
-        times       = [0.5, 1.5, 2.5, 3.5]
+        times = [0.5, 1.5, 2.5, 3.5]
         time_bounds = [0, 1, 1, 2, 2, 3, 3, 4]
-        values      = [1, 1, -1, -1]
+        values = [1, 1, -1, -1]
 
         def f(a, b):
-            return compute_average(times, time_bounds, values,
-                                   a, b - a, periodic=True)
+            return compute_average(times, time_bounds, values, a, b - a, periodic=True)
 
         def g(a, b):
-            return compute_average(times, time_bounds, values,
-                                   a, b - a, periodic=False)
+            return compute_average(times, time_bounds, values, a, b - a, periodic=False)
 
         # both points are outside on the left
         np.testing.assert_equal(g(-2, -1), 1.0)
@@ -1429,6 +1587,7 @@ class ScalarForcing(TestCase):
         # part of a period (check if shifting affects results)
         np.testing.assert_equal(f(4, 6), f(0, 2))
 
+
 def thickness_calving_test():
     "Test the time-dependent thickness calving threshold"
 
@@ -1439,7 +1598,7 @@ def thickness_calving_test():
     # set ice thickness
     H = geometry.ice_thickness
     with PISM.vec.Access(H):
-        for i,j in grid.points():
+        for i, j in grid.points():
             if i >= 3 and j >= 3:
                 H[i, j] = 0
             elif i > 2 and j == 2:
@@ -1464,37 +1623,47 @@ def thickness_calving_test():
     values = [100, 150, 200]
     try:
         # create the time-dependent thickness threshold
-        PISM.testing.create_forcing(grid,
-                                    filename,
-                                    "thickness_calving_threshold",
-                                    "m",
-                                    values,
-                                    time_units,
-                                    times=times,
-                                    time_bounds=time_bounds)
+        PISM.testing.create_forcing(
+            grid,
+            filename,
+            "thickness_calving_threshold",
+            "m",
+            values,
+            time_units,
+            times=times,
+            time_bounds=time_bounds,
+        )
 
         config.set_string("calving.thickness_calving.file", filename)
         calving = PISM.CalvingAtThickness(grid)
         calving.init()
 
         # run the calving model
-        calving.update(0*day, 30*day, geometry.cell_type, geometry.ice_thickness)
+        calving.update(0 * day, 30 * day, geometry.cell_type, geometry.ice_thickness)
 
-        ref1 = np.array([[200., 200., 200., 200., 200.],
-                         [200., 150., 150., 150., 150.],
-                         [200., 150., 150.,   0.,   0.],
-                         [200., 150., 150.,   0.,   0.],
-                         [200., 150., 150.,   0.,   0.]])
+        ref1 = np.array(
+            [
+                [200.0, 200.0, 200.0, 200.0, 200.0],
+                [200.0, 150.0, 150.0, 150.0, 150.0],
+                [200.0, 150.0, 150.0, 0.0, 0.0],
+                [200.0, 150.0, 150.0, 0.0, 0.0],
+                [200.0, 150.0, 150.0, 0.0, 0.0],
+            ]
+        )
 
         np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref1)
 
-        calving.update(30*day, 60*day, geometry.cell_type, geometry.ice_thickness)
+        calving.update(30 * day, 60 * day, geometry.cell_type, geometry.ice_thickness)
 
-        ref2 = np.array([[200., 200., 200., 200., 200.],
-                         [200., 150., 150.,   0.,   0.],
-                         [200., 150.,   0.,   0.,   0.],
-                         [200., 150.,   0.,   0.,   0.],
-                         [200., 150.,   0.,   0.,   0.]])
+        ref2 = np.array(
+            [
+                [200.0, 200.0, 200.0, 200.0, 200.0],
+                [200.0, 150.0, 150.0, 0.0, 0.0],
+                [200.0, 150.0, 0.0, 0.0, 0.0],
+                [200.0, 150.0, 0.0, 0.0, 0.0],
+                [200.0, 150.0, 0.0, 0.0, 0.0],
+            ]
+        )
 
         np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref2)
 
@@ -1504,6 +1673,7 @@ def thickness_calving_test():
 
         # restore default values
         config.set_string("calving.thickness_calving.file", "")
+
 
 def grounding_line_flux_test():
     """Test that the grounding line flux approximation
@@ -1523,7 +1693,7 @@ def grounding_line_flux_test():
     geometry = PISM.Geometry(grid)
 
     with PISM.vec.Access([geometry.bed_elevation, geometry.ice_thickness]):
-        for i,j in grid.points():
+        for i, j in grid.points():
             x = grid.x(i)
             y = grid.y(j)
             C = 0.25 * (Lx + Ly)
@@ -1535,7 +1705,7 @@ def grounding_line_flux_test():
             else:
                 geometry.bed_elevation[i, j] = -10.0
 
-            if i == 0 or j == 0 or i == Mx-1 or j == My-1:
+            if i == 0 or j == 0 or i == Mx - 1 or j == My - 1:
                 geometry.ice_thickness[i, j] = 0.0
             elif x + y < C:
                 geometry.ice_thickness[i, j] = 10.0
@@ -1553,7 +1723,7 @@ def grounding_line_flux_test():
     dt = 365 * 86400
     V = 1.0 / dt
     with PISM.vec.Access(velocity):
-        for i,j in grid.points():
+        for i, j in grid.points():
             velocity[i, j].u = V
             velocity[i, j].v = V
 
@@ -1563,11 +1733,13 @@ def grounding_line_flux_test():
 
     gl_flux = PISM.Scalar(grid, "grounding_line_flux")
 
-    PISM.grounding_line_flux(geometry.cell_type,
-                             geometry_evolution.flux_staggered(),
-                             dt,
-                             False, # replace values instead of adding
-                             gl_flux)
+    PISM.grounding_line_flux(
+        geometry.cell_type,
+        geometry_evolution.flux_staggered(),
+        dt,
+        False,  # replace values instead of adding
+        gl_flux,
+    )
 
     NORM_INFINITY = 3
     np.testing.assert_almost_equal(gl_flux.norm(NORM_INFINITY), 0.0)

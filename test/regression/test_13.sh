@@ -39,7 +39,7 @@ for k in [0, 1, 2]:
             if (delta >= tol):
                 print("Y-symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,i,jj,k,delta))
                 exit(1)
-                
+
             delta = abs(v[i,j] - v[ii,jj])
             if (delta >= tol):
                 print("Radial symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,ii,jj,k,delta))
@@ -53,4 +53,3 @@ then
 fi
 
 rm -f $files; exit 0
-

@@ -12,8 +12,8 @@ NRANGE="1 2 3 4 6"
 
 # Create the files:
 for NN in $NRANGE;
-do 
-    $MPIEXEC -n $NN $PISM_PATH/pismv -test G -Mx 30 -My 40 -Mz 20 -y 1 -verbose 1 -o foo$NN-02.nc 
+do
+    $MPIEXEC -n $NN $PISM_PATH/pismv -test G -Mx 30 -My 40 -Mz 20 -y 1 -verbose 1 -o foo$NN-02.nc
 done
 
 set +e
@@ -24,7 +24,7 @@ do
     for j in $NRANGE;
     do
 	if [ $i -le $j ]; then continue; fi
-	
+
 	$PISM_PATH/nccmp.py -x -v rank,timestamp foo$i-02.nc foo$j-02.nc
 	if [ $? != 0 ];
 	then

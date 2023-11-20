@@ -36,13 +36,13 @@ information on additional citations.
 .. code::
 """
 
-import csv
-import time
-import sys
 import argparse
+import csv
+import sys
+import time
 
 parser = argparse.ArgumentParser()
-parser.description = '''Generate a funding acknowledgment string.'''
+parser.description = """Generate a funding acknowledgment string."""
 parser.add_argument("--manual", action="store_true")
 options = parser.parse_args()
 
@@ -80,8 +80,7 @@ def join(strings):
     elif len(strings) == 2:
         return "{} and {}".format(strings[0], strings[1])
     else:
-        return join(["{}, {}".format(strings[0], strings[1]),
-                     join(strings[2:])])
+        return join(["{}, {}".format(strings[0], strings[1]), join(strings[2:])])
 
 
 grants = []
@@ -90,20 +89,28 @@ for k, v in funding.items():
     if len(v) > 1:
         grant = "grants"
 
-    grants.append("{agency} {grant} {number}".format(agency=k,
-                                                     grant=grant,
-                                                     number=join(v)))
+    grants.append(
+        "{agency} {grant} {number}".format(agency=k, grant=grant, number=join(v))
+    )
 
 if options.manual:
     print(header)
-    print("""
-Development of PISM is supported by {grants}.""".format(grants=join(grants)))
+    print(
+        """
+Development of PISM is supported by {grants}.""".format(
+            grants=join(grants)
+        )
+    )
 else:
     print(header)
     print(acknowledgement)
-    print("""
+    print(
+        """
     Development of PISM is supported by {grants}.
-""".format(grants=join(grants)))
+""".format(
+            grants=join(grants)
+        )
+    )
     print(citing)
     with open("citing-pism.bib") as f:
         for line in f:

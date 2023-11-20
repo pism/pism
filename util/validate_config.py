@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import json
-import jsonschema
 import copy
+import json
+
+import jsonschema
 
 # Shortcuts to save some typing:
 integer_t = {"type": "integer"}
@@ -13,13 +14,9 @@ flag_t = {"type": "flag"}
 # A generic entry:
 entry = {
     "type": "object",
-    "properties": {
-        "doc": string_t,
-        "reference": string_t,
-        "comment": string_t
-    },
+    "properties": {"doc": string_t, "reference": string_t, "comment": string_t},
     "required": ["doc", "value", "type"],
-    "additionalProperties": False
+    "additionalProperties": False,
 }
 
 
@@ -29,35 +26,33 @@ def gen_type(keyword):
 
 # numerical configuration parameters
 number = copy.deepcopy(entry)
-number['properties']['value'] = number_t
-number['properties']['units'] = string_t
-number['properties']['type'] = gen_type("number")
-number['required'].append('units')
+number["properties"]["value"] = number_t
+number["properties"]["units"] = string_t
+number["properties"]["type"] = gen_type("number")
+number["required"].append("units")
 
 # integer configuration parameters
 integer = copy.deepcopy(number)
-integer['properties']['value'] = integer_t
-integer['properties']['type'] = gen_type("integer")
+integer["properties"]["value"] = integer_t
+integer["properties"]["type"] = gen_type("integer")
 
 # strings
 string = copy.deepcopy(entry)
-string['properties']['value'] = string_t
-string['properties']['type'] = gen_type("string")
+string["properties"]["value"] = string_t
+string["properties"]["type"] = gen_type("string")
 
 # keywords ("choose one of...")
 keyword = copy.deepcopy(string)
-keyword['properties']['choices'] = {
+keyword["properties"]["choices"] = {
     "type": "array",
     "minItems": 2,
-    "items": {
-        "type": "string"
-    }
+    "items": {"type": "string"},
 }
 
 # configuration flags
 flag = copy.deepcopy(entry)
-flag['properties']['type'] = gen_type("flag")
-flag['properties']['value'] = flag_t
+flag["properties"]["type"] = gen_type("flag")
+flag["properties"]["value"] = flag_t
 
 # assembled schema
 config_schema = {
@@ -85,7 +80,7 @@ config_schema = {
             {"$ref": "#/definitions/keyword"},
             {"$ref": "#/definitions/flag"},
         ]
-    }
+    },
 }
 
 

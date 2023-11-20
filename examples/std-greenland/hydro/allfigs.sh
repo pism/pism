@@ -26,4 +26,3 @@ for name in `cat listpng.txt`; do
   mogrify -trim +repage $name
 done
 rm -rf listpng.txt
-

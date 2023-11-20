@@ -5,17 +5,19 @@
 import numpy
 import PISM
 
-ctx  = PISM.Context().ctx
+ctx = PISM.Context().ctx
+
 
 def exact(ice_thickness_change):
     "Exact deflection corresponding to a given thickness change."
 
     config = PISM.Context().config
 
-    ice_density    = config.get_number("constants.ice.density")
+    ice_density = config.get_number("constants.ice.density")
     mantle_density = config.get_number("bed_deformation.mantle_density")
 
     return -(ice_density / mantle_density) * ice_thickness_change
+
 
 def bed_def_iso(ice_thickness_change):
     "Use the pointwise isostasy model to compute plate deflection."
@@ -38,17 +40,20 @@ def bed_def_iso(ice_thickness_change):
     bed_uplift.set(0.0)
 
     bed_model = PISM.PointwiseIsostasy(grid)
-    bed_model.bootstrap(geometry.bed_elevation,
-                        bed_uplift,
-                        geometry.ice_thickness,
-                        geometry.sea_level_elevation)
+    bed_model.bootstrap(
+        geometry.bed_elevation,
+        bed_uplift,
+        geometry.ice_thickness,
+        geometry.sea_level_elevation,
+    )
 
     geometry.ice_thickness.set(ice_thickness_change)
 
     # time step duration is irrelevant
     bed_model.update(geometry.ice_thickness, geometry.sea_level_elevation, 0, 1)
 
-    return bed_model.bed_elevation().numpy()[0,0]
+    return bed_model.bed_elevation().numpy()[0, 0]
+
 
 def beddef_iso_test():
     "Test the pointwise isostasy model"

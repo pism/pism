@@ -158,13 +158,13 @@ void  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
 void IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
 
   rhs.set(0);
-  
+
   m_stateFunctional.interior_product(m_u_diff,m_tmp_S1Global);
   m_ssaforward.apply_linearization_transpose(m_tmp_S1Global,rhs);
 
   m_designFunctional.interior_product(m_d_diff,m_tmp_D1Global);
   rhs.add(m_alpha,m_tmp_D1Global);
-  
+
   rhs.scale(-1);
 }
 
@@ -182,27 +182,27 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::solve_linearized(
   KSPConvergedReason ksp_reason;
   ierr = KSPGetConvergedReason(m_ksp ,&ksp_reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
-  
+
   m_h.copy_from(m_hGlobal);
 
   return std::shared_ptr<TerminationReason>(new KSPTerminationReason(ksp_reason));
 }
 
 void IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *value) {
-  
+
   m_ssaforward.apply_linearization(h,m_tmp_S1Local);
   m_tmp_S1Local.update_ghosts();
   m_tmp_S1Local.add(1,m_u_diff);
-  
+
   double sValue;
   m_stateFunctional.valueAt(m_tmp_S1Local,&sValue);
-  
+
   m_tmp_D1Local.copy_from(m_d_diff);
   m_tmp_D1Local.add(1,h);
-  
+
   double dValue;
   m_designFunctional.valueAt(m_tmp_D1Local,&dValue);
-  
+
   *value = m_alpha*dValue + sValue;
 }
 
@@ -243,7 +243,7 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::check_convergence
       return GenericTerminationReason::keep_iterating();
     }
   }
-  
+
   if (sumNorm < m_tikhonov_atol) {
     return std::shared_ptr<TerminationReason>(new GenericTerminationReason(1,"TIKHONOV_ATOL"));
   }
@@ -276,11 +276,11 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::evaluate_objectiv
 
   // The following computes the reduced gradient.
   StateVec &adjointRHS = m_tmp_S1Global;
-  m_stateFunctional.gradientAt(m_u_diff,adjointRHS);  
+  m_stateFunctional.gradientAt(m_u_diff,adjointRHS);
   m_ssaforward.apply_linearization_transpose(adjointRHS,m_grad_state);
 
   m_gradient.copy_from(m_grad_design);
-  m_gradient.scale(m_alpha);    
+  m_gradient.scale(m_alpha);
   m_gradient.add(1,m_grad_state);
 
   double valDesign, valState;
@@ -289,7 +289,7 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::evaluate_objectiv
 
   m_val_design = valDesign;
   m_val_state = valState;
-  
+
   m_value = valDesign * m_alpha + valState;
 
   return reason;
@@ -334,7 +334,7 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::linesearch() {
     }
     m_d->copy_from(m_tmp_D1Local);
   }
-  
+
   return GenericTerminationReason::success();
 }
 
@@ -408,11 +408,11 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::compute_dlogalpha
 
   // Compute the right-hand side for computing dh/dalpha.
   m_d_diff_lin.copy_from(m_d_diff);
-  m_d_diff_lin.add(1,m_h);  
+  m_d_diff_lin.add(1,m_h);
   m_designFunctional.interior_product(m_d_diff_lin,m_dalpha_rhs);
   m_dalpha_rhs.scale(-1);
 
-  // Solve linear equation for dh/dalpha. 
+  // Solve linear equation for dh/dalpha.
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN);
   PISM_CHK(ierr, "KSPSetOperators");
 
@@ -438,13 +438,13 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::compute_dlogalpha
   double disc_sq;
   m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S1Local,&disc_sq);
 
-  // There are a number of equivalent ways to compute the derivative of the 
+  // There are a number of equivalent ways to compute the derivative of the
   // linearized discrepancy with respect to alpha, some of which are cheaper
-  // than others to compute.  This equivalency relies, however, on having an 
-  // exact solution in the Gauss-Newton step.  Since we only solve this with 
+  // than others to compute.  This equivalency relies, however, on having an
+  // exact solution in the Gauss-Newton step.  Since we only solve this with
   // a soft tolerance, we lose equivalency.  We attempt a cheap computation,
   // and then do a sanity check (namely that the derivative is positive).
-  // If this fails, we compute by a harder way that inherently yields a 
+  // If this fails, we compute by a harder way that inherently yields a
   // positive number.
 
   double ddisc_sq_dalpha;
@@ -453,12 +453,12 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::compute_dlogalpha
 
   if (ddisc_sq_dalpha <= 0) {
     // Try harder.
-    
+
     m_log->message(3,
                "Adaptive Tikhonov sanity check failed (dh/dalpha= %g <= 0)."
                " Tighten inv_gn_ksp_rtol?\n",
                ddisc_sq_dalpha);
-    
+
     // S2Local contains T(dh/dalpha)
     m_ssaforward.apply_linearization(m_dh_dalpha,m_tmp_S2Local);
     m_tmp_S2Local.update_ghosts();
@@ -488,7 +488,7 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::compute_dlogalpha
     double sgn = *dlogalpha > 0 ? 1 : -1;
     *dlogalpha = stepmax*sgn;
   }
-  
+
   if (*dlogalpha<0) {
     *dlogalpha*=.5;
   }

@@ -2,12 +2,12 @@
 
 "Test the 'Given' bed deformation model."
 
-import PISM
-from PISM.testing import shallow_grid, create_forcing
 import os
-import numpy as np
-
 from unittest import TestCase
+
+import numpy as np
+import PISM
+from PISM.testing import create_forcing, shallow_grid
 
 ctx = PISM.Context()
 ctx.log.set_threshold(1)
@@ -17,23 +17,31 @@ time = ctx.time
 time.set_start(0.5)
 time.set_end(1)
 
+
 class BeddefGiven(TestCase):
     def setUp(self):
-
         self.geometry_filename = "beddef_given_input.nc"
-        self.filename          = "beddef_given.nc"
-        self.ref_filename      = "beddef_given_reference.nc"
+        self.filename = "beddef_given.nc"
+        self.ref_filename = "beddef_given_reference.nc"
 
         self.grid = shallow_grid(Mx=3, My=3)
 
         # Create time-dependent topography changes
-        create_forcing(self.grid, self.filename, "topg_delta", "meters",
-                       values=[2, -4, 3], times=[1, 2, 3],
-                       time_bounds=[0.5, 1.5, 2.5, 3.5])
+        create_forcing(
+            self.grid,
+            self.filename,
+            "topg_delta",
+            "meters",
+            values=[2, -4, 3],
+            times=[1, 2, 3],
+            time_bounds=[0.5, 1.5, 2.5, 3.5],
+        )
 
         # Create the reference topography
         topg_ref = PISM.Scalar(self.grid, "topg")
-        topg_ref.metadata(0).long_name("bed elevation change relative to reference").units("m")
+        topg_ref.metadata(0).long_name(
+            "bed elevation change relative to reference"
+        ).units("m")
         topg_ref.set(-1.0)
 
         topg_ref.dump(self.ref_filename)
@@ -77,15 +85,11 @@ class BeddefGiven(TestCase):
 
         # use dt == 0 to sample topg_delta at a predictable time
         dt = 0.0
-        model.update(geometry.ice_thickness,
-                     geometry.sea_level_elevation,
-                     1, dt)
+        model.update(geometry.ice_thickness, geometry.sea_level_elevation, 1, dt)
 
         topg_0 = model.bed_elevation().numpy()[0, 0]
 
-        model.update(geometry.ice_thickness,
-                     geometry.sea_level_elevation,
-                     2, dt)
+        model.update(geometry.ice_thickness, geometry.sea_level_elevation, 2, dt)
 
         topg_1 = model.bed_elevation().numpy()[0, 0]
 

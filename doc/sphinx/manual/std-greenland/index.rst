@@ -50,4 +50,3 @@ processing. See :cite:`AschwandenAdalgeirsdottirKhroulev`, :cite:`Golledgeetal20
    grid-sequencing.rst
 
    parameter-study.rst
-

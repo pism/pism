@@ -3,12 +3,13 @@
 Tests of PISM's atmosphere models and modifiers.
 """
 
+import os
+from unittest import TestCase
+
+import numpy as np
 import PISM
 from PISM.testing import *
 from PISM.testing import filename as tmp_name
-import os
-import numpy as np
-from unittest import TestCase
 
 # set run duration to 1 second so that all forcing used here spans the duration of the run
 time = PISM.Context().time
@@ -19,7 +20,7 @@ config = PISM.Context().config
 
 # reduce the grid size to speed this up
 config.set_number("grid.Mx", 3)
-config.set_number("grid.My", 5) # non-square grid
+config.set_number("grid.My", 5)  # non-square grid
 config.set_number("grid.Mz", 2)
 
 seconds_per_year = 365 * 86400
@@ -28,6 +29,7 @@ config.set_string("time.calendar", "365_day")
 
 # silence models' initialization messages
 PISM.Context().log.set_threshold(1)
+
 
 def write_state(model):
     "Test writing of the model state"
@@ -56,6 +58,7 @@ def write_state(model):
         os.remove(o_filename)
         os.remove(o_diagnostics)
 
+
 def check_model(model, T, P, ts=None, Ts=None, Ps=None):
     check(model.air_temperature(), T)
     check(model.precipitation(), P)
@@ -73,13 +76,10 @@ def check_model(model, T, P, ts=None, Ts=None, Ps=None):
 
     model.max_timestep(ts[0])
 
+
 def check_modifier(model, modifier, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
-    check_difference(modifier.air_temperature(),
-                     model.air_temperature(),
-                     T)
-    check_difference(modifier.precipitation(),
-                     model.precipitation(),
-                     P)
+    check_difference(modifier.air_temperature(), model.air_temperature(), T)
+    check_difference(modifier.precipitation(), model.precipitation(), P)
 
     model.init_timeseries(ts)
     modifier.init_timeseries(ts)
@@ -104,17 +104,22 @@ def check_modifier(model, modifier, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
 
     modifier.max_timestep(ts[0])
 
+
 def precipitation(grid, value):
     precip = PISM.Scalar(grid, "precipitation")
-    precip.metadata(0).long_name("precipitation").units("kg m-2 s-1").standard_name("precipitation_flux")
+    precip.metadata(0).long_name("precipitation").units("kg m-2 s-1").standard_name(
+        "precipitation_flux"
+    )
     precip.set(value)
     return precip
+
 
 def air_temperature(grid, value):
     temperature = PISM.Scalar(grid, "air_temp")
     temperature.metadata(0).long_name("near-surface air temperature").units("Kelvin")
     temperature.set(value)
     return temperature
+
 
 class PIK(TestCase):
     def setUp(self):
@@ -124,7 +129,7 @@ class PIK(TestCase):
 
         self.geometry.latitude.set(-80.0)
 
-        self.P = 10.0           # this is very high, but that's fine
+        self.P = 10.0  # this is very high, but that's fine
 
         precipitation(self.grid, self.P).dump(self.filename)
 
@@ -133,12 +138,14 @@ class PIK(TestCase):
     def test_atmosphere_pik(self):
         "Model 'pik'"
 
-        parameterizations = {"martin" : (248.13, [248.13], [self.P]),
-                             "huybrechts_dewolde" : (252.59, [237.973373], [self.P]),
-                             "martin_huybrechts_dewolde" : (248.13, [233.51337298], [self.P]),
-                             "era_interim" : (256.27, [243.0939774], [self.P]),
-                             "era_interim_sin" : (255.31577, [241.7975841], [self.P]),
-                             "era_interim_lon" : (248.886139, [233.3678998], [self.P])}
+        parameterizations = {
+            "martin": (248.13, [248.13], [self.P]),
+            "huybrechts_dewolde": (252.59, [237.973373], [self.P]),
+            "martin_huybrechts_dewolde": (248.13, [233.51337298], [self.P]),
+            "era_interim": (256.27, [243.0939774], [self.P]),
+            "era_interim_sin": (255.31577, [241.7975841], [self.P]),
+            "era_interim_lon": (248.886139, [233.3678998], [self.P]),
+        }
 
         for p, (T, Ts, Ps) in parameterizations.items():
             config.set_string("atmosphere.pik.parameterization", p)
@@ -163,6 +170,7 @@ class PIK(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+
 class DeltaT1D(TestCase):
     def setUp(self):
         self.filename = tmp_name("atmosphere_delta_T_input")
@@ -172,8 +180,9 @@ class DeltaT1D(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.dT = -5.0
 
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin",
-                              [self.dT], [0], time_bounds=[0, 1])
+        create_scalar_forcing(
+            self.filename, "delta_T", "Kelvin", [self.dT], [0], time_bounds=[0, 1]
+        )
 
     def tearDown(self):
         os.remove(self.filename)
@@ -189,6 +198,7 @@ class DeltaT1D(TestCase):
         modifier.update(self.geometry, 0, 1)
 
         check_modifier(self.model, modifier, T=self.dT, ts=[0.5], Ts=[self.dT], Ps=[0])
+
 
 class DeltaT2D(TestCase):
     def setUp(self):
@@ -223,8 +233,16 @@ class DeltaT2D(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, T=self.delta_T, P=0.0,
-                       ts=[0.5], Ts=[self.delta_T], Ps=[0])
+        check_modifier(
+            self.model,
+            modifier,
+            T=self.delta_T,
+            P=0.0,
+            ts=[0.5],
+            Ts=[self.delta_T],
+            Ps=[0],
+        )
+
 
 class DeltaP1D(TestCase):
     def setUp(self):
@@ -235,8 +253,9 @@ class DeltaP1D(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.dP = 5.0
 
-        create_scalar_forcing(self.filename, "delta_P", "kg m-2 s-1",
-                              [self.dP], [0], time_bounds=[0, 1])
+        create_scalar_forcing(
+            self.filename, "delta_P", "kg m-2 s-1", [self.dP], [0], time_bounds=[0, 1]
+        )
 
         config.set_string("atmosphere.delta_P.file", self.filename)
 
@@ -253,6 +272,7 @@ class DeltaP1D(TestCase):
 
         check_modifier(self.model, modifier, P=self.dP, ts=[0.5], Ts=[0], Ps=[self.dP])
 
+
 class DeltaP2D(TestCase):
     def setUp(self):
         self.filename = tmp_name("atmosphere_delta_P_input")
@@ -263,7 +283,9 @@ class DeltaP2D(TestCase):
         self.delta_P = 5.0
 
         delta_P = PISM.Scalar(self.grid, "delta_P")
-        delta_P.metadata(0).long_name("precipitation offset").units("kg m-2 s-1").output_units("kg m-2 s-1").standard_name("")
+        delta_P.metadata(0).long_name("precipitation offset").units(
+            "kg m-2 s-1"
+        ).output_units("kg m-2 s-1").standard_name("")
         delta_P.set(self.delta_P)
 
         try:
@@ -286,8 +308,16 @@ class DeltaP2D(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, P=self.delta_P, T=0.0,
-                       ts=[0.5], Ps=[self.delta_P], Ts=[0])
+        check_modifier(
+            self.model,
+            modifier,
+            P=self.delta_P,
+            T=0.0,
+            ts=[0.5],
+            Ps=[self.delta_P],
+            Ts=[0],
+        )
+
 
 class Given(TestCase):
     def setUp(self):
@@ -316,6 +346,7 @@ class Given(TestCase):
         model.update(self.geometry, 0, 1)
 
         check_model(model, T=self.T, P=self.P, ts=[0.5], Ts=[self.T], Ps=[self.P])
+
 
 class SeaRISE(TestCase):
     def setUp(self):
@@ -347,7 +378,10 @@ class SeaRISE(TestCase):
 
         model.update(self.geometry, 0, 1)
 
-        check_model(model, P=self.P, T=251.9085, ts=[0.5], Ts=[238.66192632], Ps=[self.P])
+        check_model(
+            model, P=self.P, T=251.9085, ts=[0.5], Ts=[238.66192632], Ps=[self.P]
+        )
+
 
 class YearlyCycle(TestCase):
     def setUp(self):
@@ -363,12 +397,16 @@ class YearlyCycle(TestCase):
         precipitation(self.grid, self.P).write(output)
 
         T_mean = PISM.Scalar(self.grid, "air_temp_mean_annual")
-        T_mean.metadata(0).long_name("mean annual near-surface air temperature").units("K")
+        T_mean.metadata(0).long_name("mean annual near-surface air temperature").units(
+            "K"
+        )
         T_mean.set(self.T_mean)
         T_mean.write(output)
 
         T_summer = PISM.Scalar(self.grid, "air_temp_mean_summer")
-        T_summer.metadata(0).long_name("mean summer near-surface air temperature").units("K")
+        T_summer.metadata(0).long_name(
+            "mean summer near-surface air temperature"
+        ).units("K")
         T_summer.set(self.T_summer)
         T_summer.write(output)
 
@@ -389,7 +427,9 @@ class YearlyCycle(TestCase):
         one_year = 365 * 86400.0
         model.update(self.geometry, 0, one_year)
 
-        summer_peak = config.get_number("atmosphere.fausto_air_temp.summer_peak_day") / 365.0
+        summer_peak = (
+            config.get_number("atmosphere.fausto_air_temp.summer_peak_day") / 365.0
+        )
 
         ts = np.linspace(0, one_year, 13)
         cycle = np.cos(2.0 * np.pi * (ts / one_year - summer_peak))
@@ -397,6 +437,7 @@ class YearlyCycle(TestCase):
         P = np.zeros_like(T) + self.P
 
         check_model(model, T=self.T_mean, P=self.P, ts=ts, Ts=T, Ps=P)
+
 
 class OneStation(TestCase):
     def setUp(self):
@@ -444,6 +485,7 @@ class OneStation(TestCase):
 
         check_model(model, P=self.P, T=self.T, ts=[0.5], Ts=[self.T], Ps=[self.P])
 
+
 class Uniform(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
@@ -465,6 +507,7 @@ class Uniform(TestCase):
         P = PISM.util.convert(self.P, "kg m-2 year-1", "kg m-2 s-1")
         check_model(model, T=self.T, P=P, ts=[0.5], Ts=[self.T], Ps=[P])
 
+
 class Anomaly(TestCase):
     def setUp(self):
         self.filename = tmp_name("atmosphere_anomaly_input")
@@ -476,11 +519,15 @@ class Anomaly(TestCase):
         self.dP = 20.0
 
         dT = PISM.Scalar(self.grid, "air_temp_anomaly")
-        dT.metadata(0).long_name("air temperature anomaly").units("Kelvin").output_units("Kelvin").standard_name("")
+        dT.metadata(0).long_name("air temperature anomaly").units(
+            "Kelvin"
+        ).output_units("Kelvin").standard_name("")
         dT.set(self.dT)
 
         dP = PISM.Scalar(self.grid, "precipitation_anomaly")
-        dP.metadata(0).long_name("precipitation anomaly").units("kg m-2 s-1").output_units("kg m-2 s-1").standard_name("")
+        dP.metadata(0).long_name("precipitation anomaly").units(
+            "kg m-2 s-1"
+        ).output_units("kg m-2 s-1").standard_name("")
         dP.set(self.dP)
 
         output = PISM.util.prepare_output(self.filename)
@@ -501,8 +548,16 @@ class Anomaly(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, T=self.dT, P=self.dP,
-                       ts=[0.5], Ts=[self.dT], Ps=[self.dP])
+        check_modifier(
+            self.model,
+            modifier,
+            T=self.dT,
+            P=self.dP,
+            ts=[0.5],
+            Ts=[self.dT],
+            Ps=[self.dP],
+        )
+
 
 class PrecipScaling(TestCase):
     def setUp(self):
@@ -513,8 +568,9 @@ class PrecipScaling(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.dT = 5.0
 
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin",
-                              [self.dT], [0], time_bounds=[0, 1])
+        create_scalar_forcing(
+            self.filename, "delta_T", "Kelvin", [self.dT], [0], time_bounds=[0, 1]
+        )
 
         config.set_string("atmosphere.precip_scaling.file", self.filename)
 
@@ -530,8 +586,15 @@ class PrecipScaling(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, P=1.3373514942327523e-05,
-                       ts=[0.5], Ts=[0], Ps=[1.33735149e-05])
+        check_modifier(
+            self.model,
+            modifier,
+            P=1.3373514942327523e-05,
+            ts=[0.5],
+            Ts=[0],
+            Ps=[1.33735149e-05],
+        )
+
 
 class FracP1D(TestCase):
     def setUp(self):
@@ -542,8 +605,9 @@ class FracP1D(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.P_ratio = 5.0
 
-        create_scalar_forcing(self.filename, "frac_P", "1",
-                              [self.P_ratio], [0], time_bounds=[0, 1])
+        create_scalar_forcing(
+            self.filename, "frac_P", "1", [self.P_ratio], [0], time_bounds=[0, 1]
+        )
 
         config.set_string("atmosphere.frac_P.file", self.filename)
 
@@ -559,11 +623,18 @@ class FracP1D(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_ratio(modifier.precipitation(), self.model.precipitation(),
-                    self.P_ratio)
+        check_ratio(modifier.precipitation(), self.model.precipitation(), self.P_ratio)
 
-        check_modifier(self.model, modifier, T=0, P=0.00012675505856327396,
-                       ts=[0.5], Ts=[0], Ps=[0.00012676])
+        check_modifier(
+            self.model,
+            modifier,
+            T=0,
+            P=0.00012675505856327396,
+            ts=[0.5],
+            Ts=[0],
+            Ps=[0.00012676],
+        )
+
 
 class FracP2D(TestCase):
     def setUp(self):
@@ -598,22 +669,30 @@ class FracP2D(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_ratio(modifier.precipitation(), self.model.precipitation(),
-                    self.P_ratio)
+        check_ratio(modifier.precipitation(), self.model.precipitation(), self.P_ratio)
 
-        check_modifier(self.model, modifier, T=0, P=0.00012675505856327396,
-                       ts=[0.5], Ts=[0], Ps=[0.00012676])
+        check_modifier(
+            self.model,
+            modifier,
+            T=0,
+            P=0.00012675505856327396,
+            ts=[0.5],
+            Ts=[0],
+            Ps=[0.00012676],
+        )
 
 
 class ElevationChange(TestCase):
     def setUp(self):
         self.filename = tmp_name("atmosphere_reference_surface")
         self.grid = shallow_grid()
-        self.dTdz = 1.0         # Kelvin per km
-        self.dPdz = 1000.0      # (kg/m^2)/year per km
-        self.dz = 1000.0        # m
+        self.dTdz = 1.0  # Kelvin per km
+        self.dPdz = 1000.0  # (kg/m^2)/year per km
+        self.dz = 1000.0  # m
         self.dT = -self.dTdz * self.dz / 1000.0
-        self.dP = -PISM.util.convert(self.dPdz * self.dz / 1000.0, "kg m-2 year-1", "kg m-2 s-1")
+        self.dP = -PISM.util.convert(
+            self.dPdz * self.dz / 1000.0, "kg m-2 year-1", "kg m-2 s-1"
+        )
         self.precip_dTdz = 2.0  # Kelvin per km
 
         self.geometry = PISM.Geometry(self.grid)
@@ -623,11 +702,18 @@ class ElevationChange(TestCase):
 
         config.set_string("atmosphere.elevation_change.file", self.filename)
 
-        config.set_number("atmosphere.elevation_change.precipitation.lapse_rate", self.dPdz)
+        config.set_number(
+            "atmosphere.elevation_change.precipitation.lapse_rate", self.dPdz
+        )
 
-        config.set_number("atmosphere.elevation_change.precipitation.temp_lapse_rate", self.precip_dTdz)
+        config.set_number(
+            "atmosphere.elevation_change.precipitation.temp_lapse_rate",
+            self.precip_dTdz,
+        )
 
-        config.set_number("atmosphere.elevation_change.temperature_lapse_rate", self.dTdz)
+        config.set_number(
+            "atmosphere.elevation_change.temperature_lapse_rate", self.dTdz
+        )
 
     def tearDown(self):
         os.remove(self.filename)
@@ -647,8 +733,9 @@ class ElevationChange(TestCase):
 
         # check that the temperature changed accordingly
         modifier.update(self.geometry, 0, 1)
-        check_modifier(model, modifier, T=self.dT, P=self.dP,
-                       ts=[0.5], Ts=[self.dT], Ps=[self.dP])
+        check_modifier(
+            model, modifier, T=self.dT, P=self.dP, ts=[0.5], Ts=[self.dT], Ps=[self.dP]
+        )
 
     def test_atmosphere_elevation_change_scale(self):
         "Modifier 'elevation_change': scaling"
@@ -671,5 +758,6 @@ class ElevationChange(TestCase):
         P = sample(model.precipitation())
         dP = np.exp(C * dT) * P - P
 
-        check_modifier(model, modifier, T=self.dT, P=dP,
-                       ts=[0.5], Ts=[self.dT], Ps=[dP])
+        check_modifier(
+            model, modifier, T=self.dT, P=dP, ts=[0.5], Ts=[self.dT], Ps=[dP]
+        )

@@ -22,7 +22,3 @@ derivatives, follow the instructions in subsection :ref:`sec-install-arch`.
    quick-tests.rst
 
    documentation.rst
-
-
-
-   

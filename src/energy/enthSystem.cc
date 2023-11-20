@@ -384,7 +384,7 @@ with time steps \f$\Delta t\f$ and spatial steps \f$\Delta z\f$ we define
 This is used in an implicit method to write each line in the linear system, for
 example [\ref MortonMayers]:
   \f[ -R U_{j-1}^{n+1} + (1+2R) U_j^{n+1} - R U_{j+1}^{n+1} = U_j^n. \f]
-  
+
 In the case of conservation of energy [\ref AschwandenBuelerKhroulevBlatter],
   \f[ u=E \qquad \text{ and } \qquad D = \frac{K}{\rho} \qquad \text{ and } \qquad K = \frac{k}{c}. \f]
 Thus

@@ -18,9 +18,10 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+import os
+
 import PISM
 from petsc4py import PETSc
-import os
 
 context = PISM.Context()
 ctx = context.ctx
@@ -41,9 +42,12 @@ PISM.show_usage_check_req_opts(ctx.log(), "sia_forward.py", ["-i"], usage)
 input_filename = config.get_string("input.file")
 if len(input_filename) == 0:
     import sys
+
     sys.exit(1)
 
-config.set_string("output.file", "sia_" + os.path.basename(input_filename), PISM.CONFIG_DEFAULT)
+config.set_string(
+    "output.file", "sia_" + os.path.basename(input_filename), PISM.CONFIG_DEFAULT
+)
 
 output_file = config.get_string("output.file")
 is_regional = PISM.OptionBool("-regional", "Compute SIA using regional model semantics")
@@ -84,11 +88,11 @@ if is_regional:
     vecs.add(PISM.model.createNoModelMask(grid))
     vecs.no_model_mask.regrid(input_file, critical=True)
 
-    if PISM.util.fileHasVariable(input_file, 'usurfstore'):
+    if PISM.util.fileHasVariable(input_file, "usurfstore"):
         vecs.add(PISM.model.createIceSurfaceStoreVec(grid))
         vecs.usurfstore.regrid(input_file, critical=True)
     else:
-        vecs.add(vecs.surface, 'usurfstore')
+        vecs.add(vecs.surface, "usurfstore")
 
     solver = PISM.SIAFD_Regional
 else:

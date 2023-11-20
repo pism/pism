@@ -99,4 +99,3 @@ Under the hood
 -  Better ``SSAFD`` recovery logic; save model state on failure.
 -  Use non-zero initial guess in the SSAFD KSP solver.
 -  Improved basal yield stress code.
-

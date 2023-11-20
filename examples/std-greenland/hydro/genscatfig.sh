@@ -16,4 +16,3 @@ OUTROOT=$2
 ./showPvsW.py -wmin 0.0 -wmax 0.15 -c thk -cmin 0 -cmax 2000 -s hydrovelbase_mag -smin 30   -smax 60  -o bin30-${OUTROOT}   $FILENAME
 ./showPvsW.py -wmin 0.0 -wmax 0.15 -c thk -cmin 0 -cmax 2000 -s hydrovelbase_mag -smin 10   -smax 20   -o bin10-${OUTROOT}   $FILENAME
 ./showPvsW.py -wmin 0.0 -wmax 0.15 -c thk -cmin 0 -cmax 2000 -s hydrovelbase_mag -smin 3    -smax 6   -o bin1-${OUTROOT}    $FILENAME
-

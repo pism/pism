@@ -3,11 +3,14 @@
 Tests of PISM's frontal melt models.
 """
 
+import os
+import sys
+from unittest import TestCase
+
+import netCDF4
+import numpy
 import PISM
 from PISM.util import convert
-import sys, os, numpy
-from unittest import TestCase
-import netCDF4
 
 config = PISM.Context().config
 
@@ -23,6 +26,7 @@ log.set_threshold(1)
 options = PISM.PETSc.Options()
 
 seconds_per_day = 86400
+
 
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
@@ -40,8 +44,10 @@ def create_geometry(grid):
 
     return geometry
 
+
 def sample(vec):
-    return vec.numpy()[0,0]
+    return vec.numpy()[0, 0]
+
 
 def create_dummy_forcing_file(filename, variable_name, units, value):
     f = netCDF4.Dataset(filename, "w")
@@ -54,12 +60,14 @@ def create_dummy_forcing_file(filename, variable_name, units, value):
     delta_T[0] = value
     f.close()
 
+
 def create_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config)
     params.ownership_ranges_from_options(ctx.size)
     return PISM.Grid(ctx.ctx, params)
+
 
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
@@ -74,12 +82,15 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     M.set(mass_flux)
     M.write(filename)
 
+
 def check(vec, value):
     "Check if values of vec are almost equal to value."
     numpy.testing.assert_almost_equal(sample(vec), value)
 
+
 def check_model(model, melt_rate):
     check(model.frontal_melt_rate(), melt_rate)
+
 
 def constant_test():
     "Model Constant"
@@ -105,8 +116,8 @@ def constant_test():
 
     assert model.max_timestep(0).infinite()
 
-class DischargeRoutingTest(TestCase):
 
+class DischargeRoutingTest(TestCase):
     def frontal_melt(self, h, q_sg, TF):
         """
         h:    water depth, meters
@@ -116,16 +127,16 @@ class DischargeRoutingTest(TestCase):
         Returns the melt rate in m / day
         """
         alpha = config.get_number("frontal_melt.routing.power_alpha")
-        beta  = config.get_number("frontal_melt.routing.power_beta")
-        A     = config.get_number("frontal_melt.routing.parameter_a")
-        B     = config.get_number("frontal_melt.routing.parameter_b")
+        beta = config.get_number("frontal_melt.routing.power_beta")
+        A = config.get_number("frontal_melt.routing.parameter_a")
+        B = config.get_number("frontal_melt.routing.parameter_b")
 
-        return (A * h * q_sg ** alpha + B) * TF ** beta
+        return (A * h * q_sg**alpha + B) * TF**beta
 
     def setUp(self):
-        self.depth = 1000.0              # meters
-        self.potential_temperature = 4.0 # Celsius
-        self.water_flux = 10.0           # m / day
+        self.depth = 1000.0  # meters
+        self.potential_temperature = 4.0  # Celsius
+        self.water_flux = 10.0  # m / day
 
         self.grid = create_grid()
 
@@ -138,13 +149,17 @@ class DischargeRoutingTest(TestCase):
         grid_spacing = 0.5 * (self.grid.dx() + self.grid.dy())
         cross_section_area = self.depth * grid_spacing
 
-        self.Qsg.set(self.water_flux * cross_section_area / (grid_spacing * seconds_per_day))
+        self.Qsg.set(
+            self.water_flux * cross_section_area / (grid_spacing * seconds_per_day)
+        )
 
         self.geometry = create_geometry(self.grid)
         self.geometry.ice_thickness.set(self.depth)
         self.geometry.sea_level_elevation.set(self.depth)
 
-        self.geometry.ensure_consistency(config.get_number("geometry.ice_free_thickness_standard"))
+        self.geometry.ensure_consistency(
+            config.get_number("geometry.ice_free_thickness_standard")
+        )
 
         self.inputs = PISM.FrontalMeltInputs()
         self.inputs.geometry = self.geometry
@@ -159,7 +174,9 @@ class DischargeRoutingTest(TestCase):
 
         model.update(self.inputs, 0, 1)
 
-        melt_rate = self.frontal_melt(self.depth, self.water_flux, self.potential_temperature)
+        melt_rate = self.frontal_melt(
+            self.depth, self.water_flux, self.potential_temperature
+        )
         # convert from m / day to m / s
         melt_rate /= seconds_per_day
 
@@ -169,6 +186,7 @@ class DischargeRoutingTest(TestCase):
 
     def tearDown(self):
         pass
+
 
 class GivenTest(TestCase):
     def create_input(self, filename, melt_rate):
@@ -182,7 +200,6 @@ class GivenTest(TestCase):
         Fmr.write(filename)
 
     def setUp(self):
-
         self.frontal_melt_rate = 100.0
 
         self.grid = create_grid()
@@ -216,8 +233,8 @@ class GivenTest(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     t = DischargeRoutingTest()
 
     t.setUp()

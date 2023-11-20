@@ -4,13 +4,12 @@
 # Ed Bueler, and Constantine Khroulev
 
 import numpy as np
-import scipy.optimize as opt
-import PISMNC
 import piktests_utils
+import PISMNC
+import scipy.optimize as opt
 
 # command line arguments
-options = piktests_utils.process_options("circular_withshelf.nc",
-                                         domain_size=3600)
+options = piktests_utils.process_options("circular_withshelf.nc", domain_size=3600)
 p = piktests_utils.Parameters()
 
 dx, dy, x, y = piktests_utils.create_grid(options)
@@ -18,11 +17,11 @@ dx, dy, x, y = piktests_utils.create_grid(options)
 # Compute the calving front radius
 x_cf = 1000.0 * options.domain_size / 3  # at 1200 km
 y_cf = 1000.0 * options.domain_size / 3  # at 1200 km
-r_cf = np.sqrt(x_cf ** 2 + y_cf ** 2)  # calving front position in m
+r_cf = np.sqrt(x_cf**2 + y_cf**2)  # calving front position in m
 
 # create arrays which will go in the output file
 thk = np.zeros((options.My, options.Mx))  # sheet/shelf thickness
-bed = np.zeros_like(thk)                 # bedrock surface elevation
+bed = np.zeros_like(thk)  # bedrock surface elevation
 Ts = np.zeros_like(thk) + p.air_temperature
 accum = np.zeros_like(thk) + p.accumulation_rate * p.rho_ice
 
@@ -33,16 +32,16 @@ def MISMIP_bed(r):
     m2 = -2184.80 / (750.0) ** 2
     m4 = 1031.72 / (750.0) ** 4
     m6 = -151.72 / (750.0) ** 6
-    return n + m2 * s ** 2 + m4 * s ** 4 + m6 * s ** 6  # in m
+    return n + m2 * s**2 + m4 * s**4 + m6 * s**6  # in m
 
 
 def MISMIP_thk(r):
-    thk_cf = 200.0             # ice thickness at calving front
-    thk_max = 4000.0            # maximal ice thickness in m
+    thk_cf = 200.0  # ice thickness at calving front
+    thk_max = 4000.0  # maximal ice thickness in m
     a = -(thk_cf - thk_max) / (r_cf) ** 4
     b = 2 * (thk_cf - thk_max) / (r_cf) ** 2
     c = thk_max
-    return a * r ** 4 + b * r ** 2 + c
+    return a * r**4 + b * r**2 + c
 
 
 # bedrock and ice thickness
@@ -71,14 +70,16 @@ def f(x):
 r_gl = opt.bisect(f, 0, r_cf)
 print("grounding line radius = %.2f km" % (r_gl / 1000.0))
 
-ncfile = PISMNC.PISMDataset(options.output_filename, 'w', format='NETCDF3_CLASSIC')
+ncfile = PISMNC.PISMDataset(options.output_filename, "w", format="NETCDF3_CLASSIC")
 
 piktests_utils.prepare_output_file(ncfile, x, y, include_vel_bc=False)
 
-variables = {"thk": thk,
-             "topg": bed,
-             "ice_surface_temp": Ts,
-             "climatic_mass_balance": accum}
+variables = {
+    "thk": thk,
+    "topg": bed,
+    "ice_surface_temp": Ts,
+    "climatic_mass_balance": accum,
+}
 
 piktests_utils.write_data(ncfile, variables)
 

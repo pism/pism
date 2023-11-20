@@ -10,10 +10,9 @@ first-order Stokes approximation ice sheet solver built for advanced analysis
 
 from unittest import TestCase
 
+import numpy as np
 import PISM
 import PISM.util
-
-import numpy as np
 
 # Keep petsc4py from suppressing error messages
 PISM.PETSc.Sys.popErrorHandler()
@@ -37,9 +36,11 @@ config_clean = PISM.DefaultConfig(ctx.com, "pism_config", "-config", ctx.unit_sy
 config_clean.init_with_default(ctx.log)
 config_clean.import_from(config)
 
+
 def expt(ns, errors):
     "Compute the convergence rate using a polynomial fit."
     return -np.polyfit(np.log(ns), np.log(errors), 1)[0]
+
 
 class TestXY(TestCase):
     """2D (x-y) verification test using a manufactured solution.
@@ -57,6 +58,7 @@ class TestXY(TestCase):
     is generated) using SymPy.
 
     """
+
     def setUp(self):
         "Set PETSc options"
         opt = PISM.PETSc.Options()
@@ -64,13 +66,16 @@ class TestXY(TestCase):
         self.opt = opt
 
         self.A_old = config.get_number("flow_law.isothermal_Glen.ice_softness")
-        config.set_number("flow_law.isothermal_Glen.ice_softness",
-                          PISM.util.convert(1e-4, "Pa-3 year-1", "Pa-3 s-1"))
+        config.set_number(
+            "flow_law.isothermal_Glen.ice_softness",
+            PISM.util.convert(1e-4, "Pa-3 year-1", "Pa-3 s-1"),
+        )
 
-        self.opts = {"-bp_snes_monitor_ratio": "",
-                     "-bp_ksp_type": "preonly",
-                     "-bp_pc_type": "lu",
-                     }
+        self.opts = {
+            "-bp_snes_monitor_ratio": "",
+            "-bp_ksp_type": "preonly",
+            "-bp_pc_type": "lu",
+        }
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
@@ -123,7 +128,7 @@ class TestXY(TestCase):
         exact = PISM.Vector(grid, "exact")
 
         with PISM.vec.Access(exact):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 x = grid.x(i)
                 y = grid.y(j)
                 exact[i, j] = PISM.blatter_xy_exact(x, y)
@@ -201,27 +206,50 @@ class TestXY(TestCase):
         p_v = np.polyfit(np.log(dxs), np.log(norms_v), 1)
         fit_v = np.exp(np.polyval(p_v, np.log(dxs)))
 
-        from bokeh.plotting import figure, show, output_file
         from bokeh.layouts import gridplot
+        from bokeh.plotting import figure, output_file, show
 
         output_file("test-xy.html")
-        f = figure(title = "Blatter-Pattyn stress balance: verification test XY, x-component",
-                   x_axis_type="log", y_axis_type="log", x_axis_label="dx", y_axis_label="max error")
+        f = figure(
+            title="Blatter-Pattyn stress balance: verification test XY, x-component",
+            x_axis_type="log",
+            y_axis_type="log",
+            x_axis_label="dx",
+            y_axis_label="max error",
+        )
         f.scatter(dxs, norms_u)
         f.line(dxs, norms_u, legend_label="max error", line_width=2)
-        f.line(dxs, fit_u, line_dash="dashed", line_color="red", line_width=2,
-               legend_label="O(dx^{})".format(p_u[0]))
+        f.line(
+            dxs,
+            fit_u,
+            line_dash="dashed",
+            line_color="red",
+            line_width=2,
+            legend_label="O(dx^{})".format(p_u[0]),
+        )
 
-        g = figure(title = "Blatter-Pattyn stress balance: verification test XY, y-component",
-                   x_axis_type="log", y_axis_type="log", x_axis_label="dx", y_axis_label="max error")
+        g = figure(
+            title="Blatter-Pattyn stress balance: verification test XY, y-component",
+            x_axis_type="log",
+            y_axis_type="log",
+            x_axis_label="dx",
+            y_axis_label="max error",
+        )
         g.scatter(dxs, norms_v)
         g.line(dxs, norms_v, legend_label="max error", line_width=2)
-        g.line(dxs, fit_v, line_dash="dashed", line_color="red", line_width=2,
-               legend_label="O(dx^{})".format(p_v[0]))
+        g.line(
+            dxs,
+            fit_v,
+            line_dash="dashed",
+            line_color="red",
+            line_width=2,
+            legend_label="O(dx^{})".format(p_v[0]),
+        )
 
         gp = gridplot([[f, g]])
 
         show(gp)
+
 
 class TestXZ(TestCase):
     """2D (x-z) verification test using a manufactured solution.
@@ -252,16 +280,18 @@ class TestXZ(TestCase):
     allows us to check its correctness (at least when beta is a constant).
 
     """
+
     def setUp(self):
         "Set PETSc options"
 
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-bp_snes_monitor_ratio": "",
-                     "-bp_pc_type": "mg",
-                     "-bp_pc_mg_levels": "1", # added here to make tearDown clean it up
-                     "-bp_snes_ksp_ew": "",
-                     }
+        self.opts = {
+            "-bp_snes_monitor_ratio": "",
+            "-bp_pc_type": "mg",
+            "-bp_pc_mg_levels": "1",  # added here to make tearDown clean it up
+            "-bp_snes_ksp_ew": "",
+        }
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
@@ -273,19 +303,23 @@ class TestXZ(TestCase):
         # Set sliding law parameters to make "tauc" equivalent to "beta"
         config.set_flag("basal_resistance.pseudo_plastic.enabled", True)
         config.set_number("basal_resistance.pseudo_plastic.q", 1.0)
-        config.set_number("basal_resistance.pseudo_plastic.u_threshold",
-                          PISM.util.convert(1.0, "m / s", "m / year"))
+        config.set_number(
+            "basal_resistance.pseudo_plastic.u_threshold",
+            PISM.util.convert(1.0, "m / s", "m / year"),
+        )
 
         # set ice softness
-        config.set_number("flow_law.isothermal_Glen.ice_softness",
-                          PISM.util.convert(1e-16, "Pa-3 year-1", "Pa-3 s-1"))
+        config.set_number(
+            "flow_law.isothermal_Glen.ice_softness",
+            PISM.util.convert(1e-16, "Pa-3 year-1", "Pa-3 s-1"),
+        )
 
         self.A = config.get_number("flow_law.isothermal_Glen.ice_softness")
 
-        self.s0    = 2000.0     # m
-        self.alpha = 4e-8       # 1/m
-        self.H     = 1000.0     # m
-        self.beta  = PISM.util.convert(1.0, "kPa year m-1", "Pa s m-1")
+        self.s0 = 2000.0  # m
+        self.alpha = 4e-8  # 1/m
+        self.H = 1000.0  # m
+        self.beta = PISM.util.convert(1.0, "kPa year m-1", "Pa s m-1")
 
     def tearDown(self):
         "Clear PETSc options and configuration parameters"
@@ -331,7 +365,7 @@ class TestXZ(TestCase):
         yield_stress.set(self.beta)
 
         with PISM.vec.Access(geometry.bed_elevation):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 x = grid.x(i)
                 geometry.bed_elevation[i, j] = self.s0 - self.H - self.alpha * x**2
 
@@ -348,19 +382,22 @@ class TestXZ(TestCase):
     def exact_solution(self, grid, bed, Z):
         "Returns an array with the exact solution"
         exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
-        exact.metadata(0).long_name("x-component of the exact solution").units("m / s").output_units("m / year")
+        exact.metadata(0).long_name("x-component of the exact solution").units(
+            "m / s"
+        ).output_units("m / year")
 
         rho = config.get_number("constants.ice.density")
         g = config.get_number("constants.standard_gravity")
 
         u = np.zeros_like(Z)
         with PISM.vec.Access([bed, exact]):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 x = grid.x(i)
                 for k, z_sigma in enumerate(Z):
                     z = bed[i, j] + self.H * z_sigma
-                    u[k] = PISM.blatter_xz_exact(x, z, self.A, rho, g,
-                                                 self.s0, self.alpha, self.H, self.beta).u
+                    u[k] = PISM.blatter_xz_exact(
+                        x, z, self.A, rho, g, self.s0, self.alpha, self.H, self.beta
+                    ).u
                 exact.set_column(i, j, u)
 
         return exact
@@ -393,7 +430,9 @@ class TestXZ(TestCase):
         u_model_z = model.velocity_u_sigma().levels()
 
         u_model = PISM.Array3D(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
-        u_model.metadata(0).long_name("modeled velocity").units("m / s").output_units("m / year")
+        u_model.metadata(0).long_name("modeled velocity").units("m / s").output_units(
+            "m / year"
+        )
         u_model.copy_from(model.velocity_u_sigma())
 
         u_exact = self.exact_solution(grid, geometry.bed_elevation, u_model_z)
@@ -440,19 +479,29 @@ class TestXZ(TestCase):
         p = np.polyfit(np.log(dxs), np.log(norms), 1)
         fit = np.exp(np.polyval(p, np.log(dxs)))
 
-        from bokeh.plotting import figure, show, output_file
+        from bokeh.plotting import figure, output_file, show
 
         output_file("test-xz.html")
-        f = figure(title = "Blatter-Pattyn stress balance: verification test XZ",
-                   x_axis_type="log", y_axis_type="log",
-                   x_axis_label="dx", y_axis_label="max error")
+        f = figure(
+            title="Blatter-Pattyn stress balance: verification test XZ",
+            x_axis_type="log",
+            y_axis_type="log",
+            x_axis_label="dx",
+            y_axis_label="max error",
+        )
         f.scatter(dxs, norms)
         f.line(dxs, norms, legend_label="max error", line_width=2)
-        f.line(dxs, fit, line_dash="dashed", line_color="red", line_width=2,
-               legend_label="O(dx^{})".format(p[0]))
-
+        f.line(
+            dxs,
+            fit,
+            line_dash="dashed",
+            line_color="red",
+            line_width=2,
+            legend_label="O(dx^{})".format(p[0]),
+        )
 
         show(f)
+
 
 class TestCFBC(TestCase):
     """Constant viscosity 2D (x-z) verification test checking the implementation of CFBC.
@@ -462,6 +511,7 @@ class TestCFBC(TestCase):
     Dirichet BC at x = 0, periodic in the Y direction, lateral BC at x = 1. No basal drag.
 
     """
+
     def setUp(self):
         "Set PETSc options"
 
@@ -470,8 +520,7 @@ class TestCFBC(TestCase):
 
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-bp_snes_monitor_ratio": "",
-                     "-bp_snes_ksp_ew": ""}
+        self.opts = {"-bp_snes_monitor_ratio": "", "-bp_snes_ksp_ew": ""}
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
@@ -480,10 +529,12 @@ class TestCFBC(TestCase):
         n = 1.0
         config.set_number("stress_balance.blatter.Glen_exponent", n)
 
-        config.set_number("flow_law.isothermal_Glen.ice_softness",
-                          PISM.util.convert(1e-3, "Pa-3 year-1", "Pa-3 s-1"))
+        config.set_number(
+            "flow_law.isothermal_Glen.ice_softness",
+            PISM.util.convert(1e-3, "Pa-3 year-1", "Pa-3 s-1"),
+        )
         A = config.get_number("flow_law.isothermal_Glen.ice_softness")
-        self.B = 1.0 / A              # note that n = 1
+        self.B = 1.0 / A  # note that n = 1
 
     def tearDown(self):
         "Clear PETSc options and configuration parameters"
@@ -543,19 +594,23 @@ class TestCFBC(TestCase):
     def exact_solution(self, grid, bed, Z):
         "Returns an array with the exact solution"
         exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
-        exact.metadata(0).long_name("x-component of the exact solution").units("m / s").output_units("m / year")
+        exact.metadata(0).long_name("x-component of the exact solution").units(
+            "m / s"
+        ).output_units("m / year")
 
         rho_i = config.get_number("constants.ice.density")
         rho_w = config.get_number("constants.sea_water.density")
-        g     = config.get_number("constants.standard_gravity")
+        g = config.get_number("constants.standard_gravity")
 
         u = np.zeros_like(Z)
         with PISM.vec.Access([bed, exact]):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 x = grid.x(i)
                 for k, z_sigma in enumerate(Z):
                     z = bed[i, j] + self.H * z_sigma
-                    u[k] = PISM.blatter_xz_cfbc_exact(x, z, self.B, self.L, rho_i, rho_w, g).u
+                    u[k] = PISM.blatter_xz_cfbc_exact(
+                        x, z, self.B, self.L, rho_i, rho_w, g
+                    ).u
                 exact.set_column(i, j, u)
 
         return exact
@@ -585,7 +640,9 @@ class TestCFBC(TestCase):
         u_model_z = model.velocity_u_sigma().levels()
 
         u_model = PISM.Array3D(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
-        u_model.metadata(0).long_name("modeled velocity").units("m / s").output_units("m / year")
+        u_model.metadata(0).long_name("modeled velocity").units("m / s").output_units(
+            "m / year"
+        )
         u_model.copy_from(model.velocity_u_sigma())
 
         u_exact = self.exact_solution(grid, geometry.bed_elevation, u_model_z)
@@ -628,27 +685,39 @@ class TestCFBC(TestCase):
         p = np.polyfit(np.log(dxs), np.log(norms), 1)
         fit = np.exp(np.polyval(p, np.log(dxs)))
 
-        from bokeh.plotting import figure, show, output_file
+        from bokeh.plotting import figure, output_file, show
 
         output_file("test-xz-cfbc.html")
-        f = figure(title = "Blatter-Pattyn stress balance: verification test XZ-CFBC",
-                   x_axis_type="log", y_axis_type="log", x_axis_label="dx",
-                   y_axis_label="max error")
+        f = figure(
+            title="Blatter-Pattyn stress balance: verification test XZ-CFBC",
+            x_axis_type="log",
+            y_axis_type="log",
+            x_axis_label="dx",
+            y_axis_label="max error",
+        )
         f.scatter(dxs, norms)
         f.line(dxs, norms, legend_label="max error", line_width=2)
-        f.line(dxs, fit, line_dash="dashed", line_color="red", line_width=2,
-               legend_label="O(dx^{})".format(p[0]))
-
+        f.line(
+            dxs,
+            fit,
+            line_dash="dashed",
+            line_color="red",
+            line_width=2,
+            legend_label="O(dx^{})".format(p[0]),
+        )
 
         show(f)
+
 
 class TestXZvanderVeen(TestCase):
     def setUp(self):
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-bp_snes_monitor_ratio": "",
-                     "-bp_ksp_type": "preonly",
-                     "-bp_pc_type": "lu"}
+        self.opts = {
+            "-bp_snes_monitor_ratio": "",
+            "-bp_ksp_type": "preonly",
+            "-bp_pc_type": "lu",
+        }
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
@@ -656,8 +725,10 @@ class TestXZvanderVeen(TestCase):
         # Set sliding law parameters to make "tauc" equivalent to "beta"
         config.set_flag("basal_resistance.pseudo_plastic.enabled", True)
         config.set_number("basal_resistance.pseudo_plastic.q", 1.0)
-        config.set_number("basal_resistance.pseudo_plastic.u_threshold",
-                          PISM.util.convert(1.0, "m / s", "m / year"))
+        config.set_number(
+            "basal_resistance.pseudo_plastic.u_threshold",
+            PISM.util.convert(1.0, "m / s", "m / year"),
+        )
 
     def tearDown(self):
         for k in self.opts.keys():
@@ -705,7 +776,7 @@ class TestXZvanderVeen(TestCase):
         sea_level = -100.0
 
         with PISM.vec.Access([geometry.ice_thickness, geometry.bed_elevation, tauc]):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 X = grid.x(i)
                 geometry.ice_thickness[i, j] = model.H_exact(X)
                 geometry.bed_elevation[i, j] = model.b_exact(X)
@@ -741,7 +812,7 @@ class TestXZvanderVeen(TestCase):
         m = 2
         N = 7
 
-        Mxs    = [C * 2**k + 1 for k in range(m, N)]
+        Mxs = [C * 2**k + 1 for k in range(m, N)]
         errors = [self.error_norm(Mx) for Mx in Mxs]
 
         assert expt(Mxs, errors) >= 2.0
@@ -761,14 +832,20 @@ class TestXZvanderVeen(TestCase):
         p = np.polyfit(np.log(Mxs), np.log(errors), 1)
         fit = np.exp(np.polyval(p, np.log(Mxs)))
 
-        from bokeh.plotting import figure, show, output_file
+        from bokeh.plotting import figure, output_file, show
+
         output_file("test-xz-van-der-Veen.html")
-        f = figure(title="BP stress balance: verification test XZ (van der Veen profile)",
-                   x_axis_type="log", y_axis_type="log",
-                   x_axis_label="Mx", y_axis_label="max error")
+        f = figure(
+            title="BP stress balance: verification test XZ (van der Veen profile)",
+            x_axis_type="log",
+            y_axis_type="log",
+            x_axis_label="Mx",
+            y_axis_label="max error",
+        )
         f.scatter(Mxs, errors)
         f.line(Mxs, fit, legend_label=f"O(dx^{-p[0]:1.2f})")
         show(f)
+
 
 class TestXZHalfar(TestCase):
     def setUp(self):
@@ -777,11 +854,13 @@ class TestXZHalfar(TestCase):
 
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-bp_snes_monitor_ratio": "",
-                     "-bp_ksp_type": "cg",
-                     "-bp_pc_type": "mg",
-                     "-bp_pc_mg_levels": "1",
-                     "-bp_snes_ksp_ew": ""}
+        self.opts = {
+            "-bp_snes_monitor_ratio": "",
+            "-bp_ksp_type": "cg",
+            "-bp_pc_type": "mg",
+            "-bp_pc_mg_levels": "1",
+            "-bp_snes_ksp_ew": "",
+        }
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
@@ -805,7 +884,6 @@ class TestXZHalfar(TestCase):
         return self.grid(Mx, Lx, x0)
 
     def grid(self, Mx, Lx, x0):
-
         dx = (2 * Lx) / (Mx - 1)
 
         P = PISM.GridParameters(config)
@@ -839,7 +917,7 @@ class TestXZHalfar(TestCase):
         geometry = PISM.Geometry(grid)
 
         with PISM.vec.Access(geometry.ice_thickness):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 geometry.ice_thickness[i, j] = model.H_exact(grid.x(i))
 
         geometry.bed_elevation.set(0.0)
@@ -864,11 +942,13 @@ class TestXZHalfar(TestCase):
         grid = model.grid()
 
         exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
-        exact.metadata(0).long_name("x-component of the exact solution").units("m / s").output_units("m / year")
+        exact.metadata(0).long_name("x-component of the exact solution").units(
+            "m / s"
+        ).output_units("m / year")
 
         u = np.zeros_like(Z)
         with PISM.vec.Access(exact):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 x = grid.x(i)
                 H = model.H_exact(x)
                 for k, z_sigma in enumerate(Z):
@@ -898,7 +978,7 @@ class TestXZHalfar(TestCase):
         F = 2
         Mx = 51
         mg_levels = [5, 6]
-        Mzs = [F**(m-1) + 1 for m in mg_levels]
+        Mzs = [F ** (m - 1) + 1 for m in mg_levels]
 
         grid = self.grid_center(Mx)
         errors = [self.error_norm(grid, int(Mz), N, F) for Mz, N in zip(Mzs, mg_levels)]
@@ -914,25 +994,30 @@ class TestXZHalfar(TestCase):
         Mxs = [101, 201, 401]
         mg_levels = 3
         F = 8
-        Mz = int(F**(mg_levels - 1)) + 1
+        Mz = int(F ** (mg_levels - 1)) + 1
 
         try:
             self.setUp()
-            errors = [self.error_norm(self.grid_whole(Mx), Mz, mg_levels, F)
-                      for Mx in Mxs]
+            errors = [
+                self.error_norm(self.grid_whole(Mx), Mz, mg_levels, F) for Mx in Mxs
+            ]
         finally:
             self.tearDown()
 
         p = np.polyfit(np.log(Mxs), np.log(errors), 1)
         fit = np.exp(np.polyval(p, np.log(Mxs)))
 
-        from bokeh.plotting import figure, show, output_file
         from bokeh.layouts import gridplot
+        from bokeh.plotting import figure, output_file, show
 
         output_file("test-xz-Halfar-Mx.html")
-        f = figure(title="BP stress balance: verification test XZ (Halfar dome)",
-                   x_axis_type="log", y_axis_type="log",
-                   x_axis_label="Mx", y_axis_label="max error")
+        f = figure(
+            title="BP stress balance: verification test XZ (Halfar dome)",
+            x_axis_type="log",
+            y_axis_type="log",
+            x_axis_label="Mx",
+            y_axis_label="max error",
+        )
         f.scatter(Mxs, errors)
         f.line(Mxs, fit, legend_label=f"O(Mx^{p[0]:1.2f})")
 
@@ -943,33 +1028,33 @@ class TestXZHalfar(TestCase):
         F = 2
         Mx = 51
         mg_levels = [5, 6, 7]
-        Mzs = [int(F**(m-1)) + 1 for m in mg_levels]
+        Mzs = [int(F ** (m - 1)) + 1 for m in mg_levels]
 
         try:
             self.setUp()
             grid = self.grid_center(Mx)
-            errors = [self.error_norm(grid, Mz, N, F)
-                      for Mz, N in zip(Mzs, mg_levels)]
+            errors = [self.error_norm(grid, Mz, N, F) for Mz, N in zip(Mzs, mg_levels)]
         finally:
             self.tearDown()
 
         p = np.polyfit(np.log(Mzs), np.log(errors), 1)
         fit = np.exp(np.polyval(p, np.log(Mzs)))
 
-        from bokeh.plotting import figure, show, output_file
+        from bokeh.plotting import figure, output_file, show
+
         output_file("test-xz-Halfar-Mz.html")
-        f = figure(title="BP stress balance: verification test XZ (Halfar dome)",
-                   x_axis_type="log", y_axis_type="log",
-                   x_axis_label="Mz", y_axis_label="max error")
+        f = figure(
+            title="BP stress balance: verification test XZ (Halfar dome)",
+            x_axis_type="log",
+            y_axis_type="log",
+            x_axis_label="Mz",
+            y_axis_label="max error",
+        )
         f.scatter(Mzs, errors)
         f.line(Mzs, fit, legend_label=f"O(Mz^{p[0]:1.2f})")
         show(f)
 
-if __name__ == "__main__":
 
-    for test in [TestXY(),
-                 TestXZ(),
-                 TestCFBC(),
-                 TestXZvanderVeen(),
-                 TestXZHalfar()]:
+if __name__ == "__main__":
+    for test in [TestXY(), TestXZ(), TestCFBC(), TestXZvanderVeen(), TestXZHalfar()]:
         test.plot()

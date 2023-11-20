@@ -14,7 +14,7 @@ rm -f $files
 GRID="-Mx 31 -My 31 -Mz 31 -y 5000 -ys 1000"
 OPTS="-test B -max_dt 25 -o_size small"
 TS_OPTS="-ts_file ice_volume-12.nc -ts_vars ice_volume -ts_times 1000:25:1e4"
-# run test B 
+# run test B
 
 set -x
 
@@ -50,4 +50,3 @@ then
 fi
 
 rm -f $files; exit 0
-

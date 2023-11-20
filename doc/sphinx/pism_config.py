@@ -1,10 +1,11 @@
-from docutils.parsers.rst import Directive, directives
+import os
+import re
+
+import netCDF4
 from docutils import nodes
 from docutils.core import publish_doctree
+from docutils.parsers.rst import Directive, directives
 from sphinx.errors import SphinxError
-import os
-import netCDF4
-import re
 
 # We store this using a global variable because this much data seems
 # to break Sphinx if we store it in an env attribute. (For small
@@ -12,8 +13,10 @@ import re
 # inliner.document.settings.env, for larger numbers it cannot.)
 pism_data = {}
 
+
 def make_id(parameter):
     return "config-" + parameter
+
 
 class config(nodes.literal):
     parameter = None
@@ -23,21 +26,27 @@ class config(nodes.literal):
 
         nodes.literal.__init__(self, parameter, **kwargs)
 
+
 # this node makes it possible to add soft hyphens to wrap long parameter names
 class softhyphen(nodes.Element):
     pass
 
+
 def visit_softhyphen_html(self, node):
-    self.body.append('&shy;')
+    self.body.append("&shy;")
+
 
 def depart_softhyphen_html(self, node):
     pass
 
+
 def visit_softhyphen_latex(self, node):
     self.body.append(r"\-")
 
+
 def depart_softhyphen_latex(self, node):
     pass
+
 
 def config_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     """Parse :config:`parameter` roles and create `config` nodes resolved
@@ -45,8 +54,9 @@ def config_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 
     # Warn about misspelled parameters names.
     if text not in pism_data:
-        msg = inliner.reporter.error('{}: invalid parameter name'.format(rawtext),
-                                     line=lineno)
+        msg = inliner.reporter.error(
+            "{}: invalid parameter name".format(rawtext), line=lineno
+        )
         prb = inliner.problematic(rawtext, rawtext, msg)
         return [prb], [msg]
 
@@ -54,18 +64,18 @@ def config_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 
     return [config(name, text=text)], []
 
+
 class ParameterList(Directive):
     has_content = False
     required_arguments = 0
 
-    option_spec = {"prefix": directives.unchanged,
-                   "exclude": directives.unchanged}
+    option_spec = {"prefix": directives.unchanged, "exclude": directives.unchanged}
 
     def format_value(self, value, T):
         if T == "string" and len(value) == 0:
             return nodes.emphasis("", "empty")
 
-        if T in ["string", "keyword" ]:
+        if T in ["string", "keyword"]:
             return nodes.literal(value, value.replace(",", ", "))
 
         if T in ["number", "integer"]:
@@ -78,15 +88,17 @@ class ParameterList(Directive):
         "Build an entry for the list of parameters."
 
         p1 = nodes.paragraph()
-        p1 += nodes.target('', '', ids=[make_id(name)])
+        p1 += nodes.target("", "", ids=[make_id(name)])
         p1 += nodes.literal("", name)
 
         fl = nodes.field_list()
 
         if True:
             f = nodes.field()
-            f += [nodes.field_name("", "Type"),
-                  nodes.field_body("", nodes.Text(" " + data["type"]))]
+            f += [
+                nodes.field_name("", "Type"),
+                nodes.field_body("", nodes.Text(" " + data["type"])),
+            ]
             fl += f
 
             f = nodes.field()
@@ -94,22 +106,25 @@ class ParameterList(Directive):
             value += self.format_value(data["value"], data["type"])
             if "units" in data:
                 value += nodes.emphasis("", " ({})".format(data["units"]))
-            f += [nodes.field_name("", "Default value"),
-                  nodes.field_body("", value)]
+            f += [nodes.field_name("", "Default value"), nodes.field_body("", value)]
             fl += f
 
         if "choices" in data:
             choices = self.format_value(data["choices"], "keyword")
             f = nodes.field()
-            f += [nodes.field_name("", "Choices"),
-                  nodes.field_body("", nodes.paragraph("", "", choices))]
+            f += [
+                nodes.field_name("", "Choices"),
+                nodes.field_body("", nodes.paragraph("", "", choices)),
+            ]
             fl += f
 
         if "option" in data:
             option = self.format_value("-" + data["option"], "keyword")
             f = nodes.field()
-            f += [nodes.field_name("", "Option"),
-                  nodes.field_body("", nodes.paragraph("", "", option))]
+            f += [
+                nodes.field_name("", "Option"),
+                nodes.field_body("", nodes.paragraph("", "", option)),
+            ]
             fl += f
 
         p2 = nodes.paragraph()
@@ -166,7 +181,6 @@ class ParameterList(Directive):
 
         parameters_found = False
         for name in sorted(pism_data.keys()):
-
             pattern = "^" + prefix
             # skip parameters that don't have the desired prefix
             if not re.match(pattern, name):
@@ -183,21 +197,24 @@ class ParameterList(Directive):
                 # only the full parameter list items become targets
                 item += self.list_entry(name, pism_data[name])
             else:
-                item += self.compact_list_entry(name,
-                                                re.sub(pattern, "", name),
-                                                pism_data[name])
+                item += self.compact_list_entry(
+                    name, re.sub(pattern, "", name), pism_data[name]
+                )
             parameter_list += item
 
         if not parameters_found:
-            msg = 'Error in a "{}" directive: no parameters with prefix "{}".'.format(self.name, prefix)
+            msg = 'Error in a "{}" directive: no parameters with prefix "{}".'.format(
+                self.name, prefix
+            )
             text_error = nodes.error()
             text_error += nodes.Text(msg)
 
             reporter = self.state_machine.reporter
-            system_error = reporter.error(msg, nodes.literal('', ''), line=self.lineno)
+            system_error = reporter.error(msg, nodes.literal("", ""), line=self.lineno)
             return [text_error, system_error]
 
         return [parameter_list]
+
 
 def resolve_config_links(app, doctree, fromdocname):
     """Replace config nodes with references to items in the list of
@@ -206,11 +223,12 @@ def resolve_config_links(app, doctree, fromdocname):
     docname = app.builder.env.pism_parameters["docname"]
 
     for node in doctree.traverse(config):
-        reference = nodes.reference('', '')
-        reference['internal'] = True
-        reference['refdocname'] = docname
-        reference['refuri'] = "{}#{}".format(app.builder.get_relative_uri(fromdocname, docname),
-                                             make_id(node.parameter))
+        reference = nodes.reference("", "")
+        reference["internal"] = True
+        reference["refdocname"] = docname
+        reference["refuri"] = "{}#{}".format(
+            app.builder.get_relative_uri(fromdocname, docname), make_id(node.parameter)
+        )
 
         # Allow wrapping long parameter names
         words = node.astext().split(".")
@@ -219,6 +237,7 @@ def resolve_config_links(app, doctree, fromdocname):
             reference += [softhyphen(), nodes.literal("", "." + w)]
 
         node.replace_self(reference)
+
 
 def init_pism_parameters(app):
     """Read and pre-process the list of PISM's configuration parameters."""
@@ -230,11 +249,11 @@ def init_pism_parameters(app):
     if not hasattr(env, "pism_parameters"):
         # the path to the configuration file (used to tell Sphinx to
         # re-build if it changes)
-        env.pism_parameters = {"filename" : filename}
+        env.pism_parameters = {"filename": filename}
 
     f = netCDF4.Dataset(filename)
     variable = f.variables["pism_config"]
-    data = {k : getattr(variable, k) for k in variable.ncattrs()}
+    data = {k: getattr(variable, k) for k in variable.ncattrs()}
 
     suffixes = ["choices", "doc", "option", "type", "units"]
 
@@ -249,7 +268,7 @@ def init_pism_parameters(app):
         if special(key):
             continue
 
-        pism_data[key] = {"value" : value}
+        pism_data[key] = {"value": value}
 
         for s in suffixes:
             try:
@@ -257,33 +276,40 @@ def init_pism_parameters(app):
             except:
                 pass
 
+
 def check_consistency(app, env):
     """Check if we have a full parameter list with link targets"""
     if not "docname" in env.pism_parameters:
-        raise SphinxError("make sure that this document contains a pism-parameters directive")
+        raise SphinxError(
+            "make sure that this document contains a pism-parameters directive"
+        )
+
 
 def env_purge_doc(app, env, docname):
     """Update the environment if the file containing the full list changed"""
     if "docname" in env.pism_parameters and docname == env.pism_parameters["docname"]:
         del env.pism_parameters["docname"]
 
+
 def setup(app):
-    app.add_config_value('pism_config_file', "pism_config.json", 'env')
+    app.add_config_value("pism_config_file", "pism_config.json", "env")
 
     app.add_node(config)
-    app.add_node(softhyphen,
-                 html=(visit_softhyphen_html, depart_softhyphen_html),
-                 latex=(visit_softhyphen_latex, depart_softhyphen_latex))
-    app.add_role('config', config_role)
-    app.add_directive('pism-parameters', ParameterList)
+    app.add_node(
+        softhyphen,
+        html=(visit_softhyphen_html, depart_softhyphen_html),
+        latex=(visit_softhyphen_latex, depart_softhyphen_latex),
+    )
+    app.add_role("config", config_role)
+    app.add_directive("pism-parameters", ParameterList)
 
     app.connect("builder-inited", init_pism_parameters)
     app.connect("env-purge-doc", env_purge_doc)
     app.connect("env-check-consistency", check_consistency)
-    app.connect('doctree-resolved', resolve_config_links)
+    app.connect("doctree-resolved", resolve_config_links)
 
     return {
-        'version': '0.1',
-        'parallel_read_safe': False,
-        'parallel_write_safe': True,
+        "version": "0.1",
+        "parallel_read_safe": False,
+        "parallel_write_safe": True,
     }

@@ -1,5 +1,5 @@
-import PISM
 import numpy as np
+import PISM
 import pylab as plt
 
 # This script tests compute_node_types() using a small 11*11 grid.
@@ -9,6 +9,7 @@ import pylab as plt
 np.set_printoptions(precision=5, suppress=True, linewidth=100)
 
 ctx = PISM.Context()
+
 
 def allocate_grid(ctx):
     params = PISM.GridParameters(ctx.config)
@@ -23,6 +24,7 @@ def allocate_grid(ctx):
     params.ownership_ranges_from_options(ctx.size)
     return PISM.Grid(ctx.ctx, params)
 
+
 def allocate_storage(grid):
     ice_thickness = PISM.model.createIceThicknessVec(grid)
 
@@ -31,19 +33,20 @@ def allocate_storage(grid):
 
     return ice_thickness, mask
 
+
 def spy_vec(vec, value):
     plt.title(vec.get_name())
     plt.imshow(vec.numpy(), interpolation="nearest")
 
-def init(H, vec):
 
+def init(H, vec):
     grid = vec.grid()
 
     K = 5
     R = 2
 
     with PISM.vec.Access(nocomm=[vec]):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             if abs(i - K) < R or abs(j - K) < R:
                 vec[i, j] = H
             else:
@@ -60,8 +63,8 @@ def init(H, vec):
 
     vec.update_ghosts()
 
-def node_type_test():
 
+def node_type_test():
     # allocation
     grid = allocate_grid(ctx)
 
@@ -83,6 +86,7 @@ def node_type_test():
     plt.figure()
     spy_vec(mask, 1.0)
     plt.show()
+
 
 if __name__ == "__main__":
     node_type_test()

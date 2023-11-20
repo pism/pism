@@ -21,17 +21,16 @@
 import PISM
 from PISM.util import convert
 
-class testj(PISM.ssa.SSAExactTestCase):
 
+class testj(PISM.ssa.SSAExactTestCase):
     def _initGrid(self):
         halfWidth = 300.0e3
         Lx = halfWidth
         Ly = halfWidth
         ctx = PISM.Context().ctx
-        self.grid = PISM.Grid.Shallow(ctx, Lx, Ly, 0, 0,
-                                         self.Mx, self.My,
-                                         PISM.CELL_CENTER,
-                                         PISM.XY_PERIODIC)
+        self.grid = PISM.Grid.Shallow(
+            ctx, Lx, Ly, 0, 0, self.Mx, self.My, PISM.CELL_CENTER, PISM.XY_PERIODIC
+        )
 
     def _initPhysics(self):
         config = self.modeldata.config
@@ -66,15 +65,21 @@ class testj(PISM.ssa.SSAExactTestCase):
         # variable in 'vars', and that endAccess is called for each one on exiting
         # the 'with' block.
 
-        with PISM.vec.Access(comm=[vecs.land_ice_thickness,
-                                   vecs.surface_altitude,
-                                   vecs.vel_bc_mask,
-                                   vecs.vel_bc]):
+        with PISM.vec.Access(
+            comm=[
+                vecs.land_ice_thickness,
+                vecs.surface_altitude,
+                vecs.vel_bc_mask,
+                vecs.vel_bc,
+            ]
+        ):
             grid = self.grid
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 p = PISM.exactJ(grid.x(i), grid.y(j))
                 vecs.land_ice_thickness[i, j] = p.H
-                vecs.surface_altitude[i, j] = (1.0 - ice_rho / ocean_rho) * p.H  # // FIXME task #7297
+                vecs.surface_altitude[i, j] = (
+                    1.0 - ice_rho / ocean_rho
+                ) * p.H  # // FIXME task #7297
 
                 # special case at center point (Dirichlet BC)
                 if (i == grid.Mx() // 2) and (j == grid.My() // 2):
@@ -87,11 +92,11 @@ class testj(PISM.ssa.SSAExactTestCase):
         # thickness larger than the given ice thickness. (max = 770m).
 
         nu0 = convert(30.0, "MPa year", "Pa s")
-        H0 = 500.0              # 500 m typical thickness
+        H0 = 500.0  # 500 m typical thickness
 
         ssa = self.ssa
         ssa.strength_extension.set_notional_strength(nu0 * H0)
-        ssa.strength_extension.set_min_thickness(800.)
+        ssa.strength_extension.set_min_thickness(800.0)
 
     def exactSolution(self, i, j, x, y):
         p = PISM.exactJ(x, y)
@@ -99,7 +104,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 
 
 # The main code for a run follows:
-if __name__ == '__main__':
+if __name__ == "__main__":
     context = PISM.Context()
     config = context.config
 

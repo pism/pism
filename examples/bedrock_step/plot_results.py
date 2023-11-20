@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
-import numpy as np
+import bedrock_step as exact
 import matplotlib.pyplot as plt
 import netCDF4 as NC
+import numpy as np
 from scipy.integrate import quadrature
 
-import bedrock_step as exact
 
 def V_exact():
     "Exact volume"
+
     def H(x):
         return exact.surface(x) - exact.bed_elevation(x)
 
@@ -19,8 +20,8 @@ def V_exact():
 
     return V1 + V2, err1 + err1
 
-def plot(filename, output):
 
+def plot(filename, output):
     with NC.Dataset(filename, "r") as f:
         x = f.variables["x"][:]
         # dimensions: time, y, x
@@ -43,17 +44,25 @@ def plot(filename, output):
     print(f"Modeled volume: {V_model} m^2")
     print(f"Relative volume error: {(V_model - V_e) / V_e * 100} %")
 
-    ax.plot(x/1000, bed_exact, label="bed", color="black")
-    ax.plot(x/1000, s_exact, "--", color="gray", label="exact steady state surface elevation")
-    ax.plot(x/1000, s_model, label="modeled surface elevation")
-    ax.set_xlabel('x [km]')
-    ax.set_ylabel('z [m]')
+    ax.plot(x / 1000, bed_exact, label="bed", color="black")
+    ax.plot(
+        x / 1000,
+        s_exact,
+        "--",
+        color="gray",
+        label="exact steady state surface elevation",
+    )
+    ax.plot(x / 1000, s_model, label="modeled surface elevation")
+    ax.set_xlabel("x [km]")
+    ax.set_ylabel("z [m]")
     ax.set_title("Modeled ice geometry at 50000 years")
     ax.legend()
 
     fig.set_size_inches(8, 4)
     fig.savefig(output)
 
+
 if __name__ == "__main__":
     import sys
+
     plot(sys.argv[1], sys.argv[2])

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import json
 import argparse
+import json
 
 # file header
 header = """.. -*- mode: rst -*-
@@ -38,8 +38,8 @@ std_name = """{padding}:Standard name: ``{standard_name}``"""
 # comment line
 comment = """{padding}:Comment: {comment}"""
 
-def print_diagnostics(title, label, diagnostics):
 
+def print_diagnostics(title, label, diagnostics):
     print(section.format(label=label, title=title, underline="-" * len(title)))
 
     for name in sorted(diagnostics.keys()):
@@ -57,9 +57,7 @@ def print_diagnostics(title, label, diagnostics):
             if len(units) == 0:
                 units = "---"
 
-            print(template.format(var_name=var_name,
-                                  units=units,
-                                  long_name=long_name))
+            print(template.format(var_name=var_name, units=units, long_name=long_name))
 
             if len(standard_name) > 0:
                 print(std_name.format(padding=padding, standard_name=standard_name))
@@ -67,10 +65,10 @@ def print_diagnostics(title, label, diagnostics):
             if len(comment_string) > 0:
                 print(comment.format(padding=padding, comment=comment_string))
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.description = '''Generate an RST list documenting PISM's diagnostics.'''
+    parser.description = """Generate an RST list documenting PISM's diagnostics."""
     parser.add_argument("FILE", nargs="*")
     options = parser.parse_args()
 
@@ -85,4 +83,4 @@ if __name__ == "__main__":
     print(header)
 
     print_diagnostics("Spatially-variable fields", "sec-extra_vars", spatial)
-    print_diagnostics("Scalar time-series",  "sec-ts_vars", scalar)
+    print_diagnostics("Scalar time-series", "sec-ts_vars", scalar)

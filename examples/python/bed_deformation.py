@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+from math import cos, pi
+
 import PISM
 from PISM.util import convert
-from math import cos, pi
 
 # Simple testing program for Lingle & Clark bed deformation model.
 # Runs go for 150,000 years on 63.5km grid with 100a time steps and Z=2 in L&C model.
@@ -33,7 +34,7 @@ def initialize_uplift(uplift):
     grid = uplift.grid()
     peak_uplift = convert(10, "mm/year", "m/second")
     with PISM.vec.Access(nocomm=[uplift]):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             r = PISM.radius(grid, i, j)
             if r < 1.5 * R0:
                 uplift[i, j] = peak_uplift * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0
@@ -44,7 +45,7 @@ def initialize_uplift(uplift):
 def initialize_thickness(thickness, H0):
     grid = thickness.grid()
     with PISM.vec.Access(nocomm=[thickness]):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             r = PISM.radius(grid, i, j)
             if r < R0:
                 thickness[i, j] = H0
@@ -74,7 +75,6 @@ def create_grid():
 
 
 def run(scenario, plot, pause, save):
-
     # set grid defaults
     config.set_number("grid.Mx", 193)
     config.set_number("grid.My", 129)
@@ -85,14 +85,19 @@ def run(scenario, plot, pause, save):
     config.set_number("grid.Mz", 2)
     config.set_number("grid.Lz", 1000)
 
-    scenarios = {"1": (False, False, 1000.0),
-                 "2": (True,  False, 1000.0),
-                 "3": (False, True,  0.0),
-                 "4": (True,  True,  1000.0)}
+    scenarios = {
+        "1": (False, False, 1000.0),
+        "2": (True, False, 1000.0),
+        "3": (False, True, 0.0),
+        "4": (True, True, 1000.0),
+    }
 
     elastic, use_uplift, H0 = scenarios[scenario]
 
-    print("Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m" % (scenario, elastic, use_uplift, H0))
+    print(
+        "Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m"
+        % (scenario, elastic, use_uplift, H0)
+    )
 
     config.set_flag("bed_deformation.lc.elastic_model", elastic)
 
@@ -131,7 +136,10 @@ def run(scenario, plot, pause, save):
             model.bed_elevation().view(400)
             model.uplift().view(400)
 
-        print("t = %s years, dt = %s years" % (time.date(), time.convert_time_interval(dt_current, "years")))
+        print(
+            "t = %s years, dt = %s years"
+            % (time.date(), time.convert_time_interval(dt_current, "years"))
+        )
         time.step(dt_current)
 
     print("Reached t = %s years" % time.date())
@@ -146,10 +154,16 @@ def run(scenario, plot, pause, save):
 
 
 if __name__ == "__main__":
-    scenario = PISM.OptionKeyword("-scenario", "choose one of 4 scenarios", "1,2,3,4", "1")
+    scenario = PISM.OptionKeyword(
+        "-scenario", "choose one of 4 scenarios", "1,2,3,4", "1"
+    )
     plot = PISM.OptionBool("-plot", "Plot bed elevation and uplift.")
-    save = PISM.OptionBool("-save", "Save final states of the bed elevation and uplift.")
-    pause = PISM.OptionBool("-pause", "Pause for 5 seconds to look at runtime 2D plots.")
+    save = PISM.OptionBool(
+        "-save", "Save final states of the bed elevation and uplift."
+    )
+    pause = PISM.OptionBool(
+        "-pause", "Pause for 5 seconds to look at runtime 2D plots."
+    )
 
     run(scenario.value(), plot, pause, save)
 

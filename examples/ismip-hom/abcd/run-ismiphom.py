@@ -32,58 +32,55 @@ seconds_per_year = convert(1.0, "year", "second")
 ctx = PISM.Context()
 config = ctx.config
 
-tests = {"A" : PISM.HOM_A,
-         "B" : PISM.HOM_B,
-         "C" : PISM.HOM_C,
-         "D" : PISM.HOM_D}
+tests = {"A": PISM.HOM_A, "B": PISM.HOM_B, "C": PISM.HOM_C, "D": PISM.HOM_D}
+
 
 def surface_AB(x, y, L):
-    alpha = 0.5 * (np.pi / 180.0) # 0.5 degrees
+    alpha = 0.5 * (np.pi / 180.0)  # 0.5 degrees
     return -x * np.tan(alpha)
 
+
 def surface_C(x, y, L):
-    alpha = 0.1 * (np.pi / 180.0) # 0.1 degrees
+    alpha = 0.1 * (np.pi / 180.0)  # 0.1 degrees
     return -x * np.tan(alpha)
+
 
 def bed_A(x, y, L):
     omega = 2 * np.pi / L
     return surface_AB(x, y, L) - 1000.0 + 500.0 * np.sin(omega * x) * np.sin(omega * y)
 
+
 def bed_B(x, y, L):
     omega = 2 * np.pi / L
     return surface_AB(x, y, L) - 1000.0 + 500.0 * np.sin(omega * x)
 
+
 def bed_C(x, y, L):
     return surface_C(x, y, L) - 1000.0
 
+
 def tauc_AB(x, y, L):
-    return 1e16             # approximates infinity
+    return 1e16  # approximates infinity
+
 
 def tauc_C(x, y, L):
     omega = 2.0 * np.pi / L
     return 1000.0 + 1000 * np.sin(omega * x) * np.sin(omega * y)
 
+
 def tauc_D(x, y, L):
     omega = 2.0 * np.pi / L
     return 1000.0 + 1000 * np.sin(omega * x)
 
-s =  {"A" : surface_AB,
-      "B" : surface_AB,
-      "C" : surface_C,
-      "D" : surface_C}
 
-b =  {"A" : bed_A,
-      "B" : bed_B,
-      "C" : bed_C,
-      "D" : bed_C}
+s = {"A": surface_AB, "B": surface_AB, "C": surface_C, "D": surface_C}
 
-tauc = {"A" : tauc_AB,
-        "B" : tauc_AB,
-        "C" : tauc_C,
-        "D" : tauc_D}
+b = {"A": bed_A, "B": bed_B, "C": bed_C, "D": bed_C}
+
+tauc = {"A": tauc_AB, "B": tauc_AB, "C": tauc_C, "D": tauc_D}
+
 
 def init(testname, L):
-
     # the domain is a square [0, L]*[0, L]
     P = PISM.GridParameters(config)
     P.Lx = L / 2.0
@@ -115,8 +112,10 @@ def init(testname, L):
     yield_stress = PISM.Scalar(grid, "tauc")
     yield_stress.set_attrs("internal", "basal yield stress", "Pa", "Pa", "", 0)
 
-    with PISM.vec.Access([yield_stress, geometry.ice_thickness, geometry.bed_elevation]):
-        for (i, j) in grid.points():
+    with PISM.vec.Access(
+        [yield_stress, geometry.ice_thickness, geometry.bed_elevation]
+    ):
+        for i, j in grid.points():
             x = grid.x(i)
             y = grid.y(j)
             # Convert from "Pa year / m" to "Pa s / m"
@@ -134,19 +133,22 @@ def init(testname, L):
 
     return grid, geometry, enthalpy, yield_stress
 
-def set_constants(config):
 
+def set_constants(config):
     # Set up the sliding law so that tauc == beta**2:
     config.set_flag("basal_resistance.pseudo_plastic.enabled", True)
     config.set_number("basal_resistance.pseudo_plastic.q", 1.0)
-    config.set_number("basal_resistance.pseudo_plastic.u_threshold",
-                      convert(1.0, "m / s", "m / year"))
+    config.set_number(
+        "basal_resistance.pseudo_plastic.u_threshold", convert(1.0, "m / s", "m / year")
+    )
 
     # Set flow law parameters
     config.set_string("stress_balance.blatter.flow_law", "isothermal_glen")
     config.set_number("stress_balance.blatter.Glen_exponent", 3.0)
-    config.set_number("flow_law.isothermal_Glen.ice_softness",
-                      convert(1e-16, "Pa-3 year-1", "Pa-3 s-1"))
+    config.set_number(
+        "flow_law.isothermal_Glen.ice_softness",
+        convert(1e-16, "Pa-3 year-1", "Pa-3 s-1"),
+    )
 
     # Set constants:
     config.set_number("constants.ice.density", 910.0)
@@ -155,6 +157,7 @@ def set_constants(config):
     # Support compression
     config.set_string("output.format", "netcdf4_serial")
 
+
 def run_test(test_name, L, output_file):
     """Run an ISMIP-HOM test on a [0,L]*[0,L] domain and save results to an output_file."""
 
@@ -162,7 +165,9 @@ def run_test(test_name, L, output_file):
 
     Mz = int(config.get_number("stress_balance.blatter.Mz"))
 
-    coarsening_factor = int(config.get_number("stress_balance.blatter.coarsening_factor"))
+    coarsening_factor = int(
+        config.get_number("stress_balance.blatter.coarsening_factor")
+    )
 
     model = PISM.BlatterISMIPHOM(grid, Mz, coarsening_factor, tests[test_name])
 
@@ -192,6 +197,7 @@ def run_test(test_name, L, output_file):
         yield_stress.write(output)
     finally:
         output.close()
+
 
 if __name__ == "__main__":
     set_constants(config)

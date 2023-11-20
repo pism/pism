@@ -7,7 +7,8 @@ log = PISM.StringLogger(com, 1)
 pism_config = PISM.config_from_options(com, log, sys)
 
 config = PISM.ConfigJSON(sys)
-config.init_from_string("""
+config.init_from_string(
+    """
 {
  "constants" : {"ice" : {}, "fresh_water" : {},  "sea_water" : {}},
  "bootstrapping" : {"defaults" : {}},
@@ -41,7 +42,8 @@ config.init_from_string("""
  "regional" : {},
  "basal_yield_stress" : {"constant" : {}, "mohr_coulomb" : {"topg_to_phi" : {}}},
  "basal_resistance" : {"plastic" : {}, "pseudo_plastic" : {}}
-}""")
+}"""
+)
 config.import_from(pism_config)
 
 print(config.dump())

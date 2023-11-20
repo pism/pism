@@ -1,18 +1,18 @@
 /*
    Copyright (C) 2010, 2014, 2016, 2023 Ed Bueler
-  
+
    This file is part of PISM.
-  
+
    PISM is free software; you can redistribute it and/or modify it under the
    terms of the GNU General Public License as published by the Free Software
    Foundation; either version 3 of the License, or (at your option) any later
    version.
-  
+
    PISM is distributed in the hope that it will be useful, but WITHOUT ANY
    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
    FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
    details.
-  
+
    You should have received a copy of the GNU General Public License
    along with PISM; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -78,9 +78,9 @@ struct TestNParameters exactN(double x) {
   result.H = c.H0 * (1.0 - (x / c.L0) * (x / c.L0));  /* eqn (23) in Bodvardsson */
 
   result.h_x = hxx * x;
-  
+
   result.u = - (result.h_x) / c.k; /* eqn (10) in Bodvardson, once SIA is dropped */
-  
+
   result.M = c.a * ((result.H) - c.H_ela); /* page 6 in Bodvardsson, just before eqn (23) */
 
   result.B = c.T_xc / (2.0 * (result.H) * pow(fabs(ux),q) * ux); /* Bueler interpretation */
@@ -89,5 +89,3 @@ struct TestNParameters exactN(double x) {
 
   return result;
 }
-
-

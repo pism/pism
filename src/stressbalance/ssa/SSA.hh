@@ -50,7 +50,7 @@ namespace stressbalance {
 
   The quantity \f$\nu H\f$ is the nonlinear coefficient, and conceptually it is a
   membrane strength.  This class extends \f$\nu H\f$ to have a minimum value
-  at all points.  It is a class, and not just a configuration constant, because 
+  at all points.  It is a class, and not just a configuration constant, because
   setting both the thickness \f$H\f$ and the value \f$\nu H\f$ are allowed, and
   setting each of these does not affect the value of the other.
 */
@@ -68,8 +68,8 @@ private:
 
 //! Callback for constructing a new SSA subclass.  The caller is
 //! responsible for deleting the newly constructed SSA.
-/*! The factory idiom gives a way to implement runtime polymorphism for the 
-  choice of SSA algorithm.  The factory is a function pointer that takes 
+/*! The factory idiom gives a way to implement runtime polymorphism for the
+  choice of SSA algorithm.  The factory is a function pointer that takes
   all the arguments of an SSA constructor and returns a newly constructed instance.
   Subclasses of SSA should provide an associated function pointer matching the
   SSAFactory typedef */
@@ -97,7 +97,7 @@ typedef SSA * (*SSAFactory)(std::shared_ptr<const Grid>);
   - \tau_{(b)1}  &= - \rho g H h_x, \\
   - \left[\nu H \left(u_y + v_x\right)\right]_x
   - 2 \left[\nu H \left(u_x + 2 v_y\right)\right]_y
-  - \tau_{(b)2}  &= - \rho g H h_y, 
+  - \tau_{(b)2}  &= - \rho g H h_y,
   \f}
   where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the
   \f$y\f$-component of the velocity [\ref MacAyeal, \ref Morland, \ref WeisGreveHutter].

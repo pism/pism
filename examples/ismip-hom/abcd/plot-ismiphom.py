@@ -1,26 +1,46 @@
 import matplotlib
 import matplotlib.pylab as plt
-
+import netCDF4
 import numpy as np
 from scipy.interpolate import interp2d
-import netCDF4
 
-FS = ['aas1','aas2','cma1','fpa2','ghg1','jvj1','mmr1','oga1','rhi1','rhi3','spr1','ssu1','yko1']
-BP = ['ahu1', 'ahu2', 'bds1', 'cma2', 'fpa1', 'fsa1', 'mbr1', 'rhi2', 'tpa1']
-models = {"FS" : FS, "BP" : BP}
+FS = [
+    "aas1",
+    "aas2",
+    "cma1",
+    "fpa2",
+    "ghg1",
+    "jvj1",
+    "mmr1",
+    "oga1",
+    "rhi1",
+    "rhi3",
+    "spr1",
+    "ssu1",
+    "yko1",
+]
+BP = ["ahu1", "ahu2", "bds1", "cma2", "fpa1", "fsa1", "mbr1", "rhi2", "tpa1"]
+models = {"FS": FS, "BP": BP}
 
 # Set to "True" to remove models that appear to be obviously wrong or produce poor-quality
 # results (oscillations).
 remove_outliers = True
 
-outliers = {"a" : [],
-            "b" : [],
-            "c" : ["mbr1"],
-            "d" : ["rhi1", "rhi2", "rhi3"]}
+outliers = {"a": [], "b": [], "c": ["mbr1"], "d": ["rhi1", "rhi2", "rhi3"]}
 
-def plot_experiment(ax, experiment, length_scale, model_type, N_samples=501, color="blue", plot_models=True):
 
-    filename = "ismip-hom-{exp}-{length}.npz".format(exp=experiment, length=length_scale)
+def plot_experiment(
+    ax,
+    experiment,
+    length_scale,
+    model_type,
+    N_samples=501,
+    color="blue",
+    plot_models=True,
+):
+    filename = "ismip-hom-{exp}-{length}.npz".format(
+        exp=experiment, length=length_scale
+    )
 
     raw_data = np.load(filename)
 
@@ -43,22 +63,23 @@ def plot_experiment(ax, experiment, length_scale, model_type, N_samples=501, col
     vx_mean = np.mean(data, axis=0)
     vx_std = np.std(data, axis=0)
 
-    ax.plot(xs, vx_mean,
-            label="{} mean".format(model_type),
-            lw=2,
-            color=color)
+    ax.plot(xs, vx_mean, label="{} mean".format(model_type), lw=2, color=color)
+
 
 def plot(experiment, length_scales, axs):
     for length_scale, ax in zip(length_scales, axs):
-
         ax.set_title("{} km".format(int(length_scale)))
 
-        ax.set_xlabel('x (normalized)')
-        ax.set_ylabel('vx (m / year)')
+        ax.set_xlabel("x (normalized)")
+        ax.set_ylabel("vx (m / year)")
 
         models = True
-        plot_experiment(ax, experiment, length_scale, "BP", color="green", plot_models=models)
-        plot_experiment(ax, experiment, length_scale, "FS", color="orange", plot_models=models)
+        plot_experiment(
+            ax, experiment, length_scale, "BP", color="green", plot_models=models
+        )
+        plot_experiment(
+            ax, experiment, length_scale, "FS", color="orange", plot_models=models
+        )
 
         plot_pism(ax, experiment, length_scale)
 
@@ -67,7 +88,9 @@ def plot(experiment, length_scales, axs):
 
 def plot_pism(ax, experiment, length_scale):
     "Plot PISM's ISMIP-HOM results"
-    filename = pism_prefix + "pism-hom-{}-{}.nc".format(experiment.upper(), length_scale)
+    filename = pism_prefix + "pism-hom-{}-{}.nc".format(
+        experiment.upper(), length_scale
+    )
 
     L = 1e3 * int(length_scale)
 
@@ -86,8 +109,8 @@ def plot_pism(ax, experiment, length_scale):
     finally:
         f.close()
 
-def grid_plot(experiment_name):
 
+def grid_plot(experiment_name):
     fig, axs = plt.subplots(2, 3)
     fig.dpi = 100
     fig.set_size_inches(12, 8)
@@ -99,6 +122,7 @@ def grid_plot(experiment_name):
     row2 = plot(experiment_name, ["040", "080", "160"], axs[1])
 
     fig.savefig("ismiphom-{}.png".format(experiment_name))
+
 
 if __name__ == "__main__":
     pism_prefix = "./"

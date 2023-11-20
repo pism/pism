@@ -3,13 +3,13 @@
 from unittest import TestCase
 
 import numpy as np
+import PISM
 import scipy.integrate
 import scipy.signal
 
-import PISM
-
 # silence models' initialization messages
 PISM.Context().log.set_threshold(1)
+
 
 class LingleClarkElastic(TestCase):
     @staticmethod
@@ -19,17 +19,22 @@ class LingleClarkElastic(TestCase):
         ge = PISM.greens_elastic()
 
         def ge_integrand(eta, xi, dx, dy, p, q):
-            xi_shift  = p * dx - xi
+            xi_shift = p * dx - xi
             eta_shift = q * dy - eta
-            r         = np.sqrt(xi_shift * xi_shift + eta_shift * eta_shift)
+            r = np.sqrt(xi_shift * xi_shift + eta_shift * eta_shift)
 
             return ge(r)
 
         def f(dx, dy, p, q):
-            return scipy.integrate.dblquad(ge_integrand,
-                                           -dx/2.0, dx/2.0,
-                                           lambda x: -dy / 2.0, lambda x: dy / 2.0,
-                                           (dx, dy, p, q), epsrel=1e-8)[0]
+            return scipy.integrate.dblquad(
+                ge_integrand,
+                -dx / 2.0,
+                dx / 2.0,
+                lambda x: -dy / 2.0,
+                lambda x: dy / 2.0,
+                (dx, dy, p, q),
+                epsrel=1e-8,
+            )[0]
 
         Mx2 = int(Mx) // 2
         My2 = int(My) // 2
@@ -67,20 +72,24 @@ class LingleClarkElastic(TestCase):
         # start with a flat bed, no ice, and no uplift
         geometry.bed_elevation.set(0.0)
         geometry.ice_thickness.set(0.0)
-        geometry.sea_level_elevation.set(-1000.0) # everything is grounded
+        geometry.sea_level_elevation.set(-1000.0)  # everything is grounded
         geometry.ensure_consistency(0.0)
 
         bed_uplift.set(0.0)
 
-        bed_model.bootstrap(geometry.bed_elevation, bed_uplift, geometry.ice_thickness,
-                            geometry.sea_level_elevation)
+        bed_model.bootstrap(
+            geometry.bed_elevation,
+            bed_uplift,
+            geometry.ice_thickness,
+            geometry.sea_level_elevation,
+        )
 
         Mx2 = int(grid.Mx()) // 2
         My2 = int(grid.My()) // 2
 
         # add the load
         with PISM.vec.Access(nocomm=geometry.ice_thickness):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 # if i == Mx2 and j == My2:
                 if abs(i - Mx2) < 2 and abs(j - My2) < 2:
                     geometry.ice_thickness[i, j] = 1000.0
@@ -89,9 +98,11 @@ class LingleClarkElastic(TestCase):
         # response
         bed_model.step(geometry.ice_thickness, geometry.sea_level_elevation, 0)
 
-        return (geometry.ice_thickness.numpy(),
-                bed_model.total_displacement().numpy(),
-                bed_model.elastic_load_response_matrix().numpy())
+        return (
+            geometry.ice_thickness.numpy(),
+            bed_model.total_displacement().numpy(),
+            bed_model.elastic_load_response_matrix().numpy(),
+        )
 
     def setUp(self):
         self.ctx = PISM.Context()
@@ -99,15 +110,18 @@ class LingleClarkElastic(TestCase):
         self.elastic = self.ctx.config.get_flag("bed_deformation.lc.elastic_model")
         self.ctx.config.set_flag("bed_deformation.lc.elastic_model", True)
 
-        self.size_factor = self.ctx.config.get_number("bed_deformation.lc.grid_size_factor")
+        self.size_factor = self.ctx.config.get_number(
+            "bed_deformation.lc.grid_size_factor"
+        )
         self.ctx.config.set_number("bed_deformation.lc.grid_size_factor", 2)
 
         Lx = 2000e3
         Mx = 11
-        My = 2 * Mx             # non-square grid
+        My = 2 * Mx  # non-square grid
 
-        self.grid = PISM.Grid.Shallow(self.ctx.ctx, Lx, Lx,
-                                         0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+        self.grid = PISM.Grid.Shallow(
+            self.ctx.ctx, Lx, Lx, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC
+        )
 
         self.H, self.db_pism, self.lrm_pism = self.run_model(self.grid)
 
@@ -134,4 +148,6 @@ class LingleClarkElastic(TestCase):
     def tearDown(self):
         # reset configuration parameters
         self.ctx.config.set_flag("bed_deformation.lc.elastic_model", self.elastic)
-        self.ctx.config.set_number("bed_deformation.lc.grid_size_factor", self.size_factor)
+        self.ctx.config.set_number(
+            "bed_deformation.lc.grid_size_factor", self.size_factor
+        )

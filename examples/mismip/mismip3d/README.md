@@ -87,4 +87,3 @@ Post-processing
 ---------------
 
 Converting PISM output files to ASCII files following MISMIP specifications is left as an exercise.  See the additional variables saved in the extra file for each run.
-

@@ -47,7 +47,7 @@ public:
 
 protected:
   DiagnosticList diagnostics_impl() const;
-  
+
   array::Scalar m_calving_threshold;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;

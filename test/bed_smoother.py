@@ -7,8 +7,9 @@ src/base/bedroughplay. Also used in PISM software (regression) test.
 """
 
 
+from math import pi, sin
+
 import PISM
-from math import sin, pi
 
 ctx = PISM.Context()
 config = ctx.config
@@ -29,16 +30,24 @@ def grid():
 def allocate_storage(grid):
     "Allocate the bed, the smoothed bed, the surface elevation, and theta."
     topg = PISM.Scalar1(grid, "topg")
-    topg.metadata(0).long_name("original topography").units("m").standard_name("bedrock_altitude")
+    topg.metadata(0).long_name("original topography").units("m").standard_name(
+        "bedrock_altitude"
+    )
 
     topg_smoothed = PISM.Scalar(grid, "topg_smoothed")
-    topg_smoothed.metadata(0).long_name("smoothed topography").units("m").standard_name("bedrock_altitude")
+    topg_smoothed.metadata(0).long_name("smoothed topography").units("m").standard_name(
+        "bedrock_altitude"
+    )
 
     usurf = PISM.Scalar1(grid, "usurf")
-    usurf.metadata(0).long_name("ice surface elevation").units("m").standard_name("surface_altitude")
+    usurf.metadata(0).long_name("ice surface elevation").units("m").standard_name(
+        "surface_altitude"
+    )
 
     theta = PISM.Scalar1(grid, "theta")
-    theta.metadata(0).long_name("coefficient theta in Schoof (2003) bed roughness parameterization")
+    theta.metadata(0).long_name(
+        "coefficient theta in Schoof (2003) bed roughness parameterization"
+    )
 
     return (topg, topg_smoothed, usurf, theta)
 
@@ -48,11 +57,12 @@ def set_topg(topg):
     grid = topg.grid()
 
     with PISM.vec.Access(comm=[topg]):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             x = grid.x(i)
             y = grid.y(j)
-            topg[i, j] = (400.0 * sin(2.0 * pi * x / 600.0e3) +
-                          100.0 * sin(2.0 * pi * (x + 1.5 * y) / 40.0e3))
+            topg[i, j] = 400.0 * sin(2.0 * pi * x / 600.0e3) + 100.0 * sin(
+                2.0 * pi * (x + 1.5 * y) / 40.0e3
+            )
 
 
 def set_usurf(usurf):

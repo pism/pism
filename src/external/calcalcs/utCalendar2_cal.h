@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-int utCalendar2_cal( double val, ut_unit *dataunits, int *year, int *month, int *day, int *hour, 
+int utCalendar2_cal( double val, ut_unit *dataunits, int *year, int *month, int *day, int *hour,
 	int *minute, double *second, const char *calendar_name );
 int utInvCalendar2_cal( int year, int month, int day, int hour, int minute, double second,
         ut_unit *user_unit, double *value, const char *calendar_name );
@@ -35,4 +35,3 @@ int utInvCalendar2_cal( int year, int month, int day, int hour, int minute, doub
 #ifdef __cplusplus
 }
 #endif
-

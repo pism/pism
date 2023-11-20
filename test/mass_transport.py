@@ -1,5 +1,5 @@
-import PISM
 import numpy as np
+import PISM
 
 """ Test mass transport code using a circularly-symmetric setup in which
 a disc expands uniformly in all directions. Given mass conservation,
@@ -27,10 +27,10 @@ def disc(thickness, x0, y0, H0, R_inner, R_outer):
     C = H0 * R_inner
 
     with PISM.vec.Access(nocomm=thickness):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             x = grid.x(i)
             y = grid.y(j)
-            d2 = (x - x0)**2 + (y - y0)**2
+            d2 = (x - x0) ** 2 + (y - y0) ** 2
             if d2 <= R_inner_2:
                 thickness[i, j] = H0
             elif d2 <= R_outer_2:
@@ -49,7 +49,7 @@ def set_velocity(scalar_velocity, v):
     grid = v.grid()
 
     with PISM.vec.Access(nocomm=v):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             x = grid.x(i)
             y = grid.y(j)
 
@@ -70,7 +70,9 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     config.set_flag("geometry.part_grid.enabled", part_grid)
 
-    grid = PISM.Grid_Shallow(ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.Grid_Shallow(
+        ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC
+    )
 
     assert t_final <= 1.0
 
@@ -81,8 +83,8 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     geometry = PISM.Geometry(grid)
 
-    v         = PISM.Vector(grid, "velocity")
-    Q         = PISM.Staggered(grid, "Q")
+    v = PISM.Vector(grid, "velocity")
+    Q = PISM.Staggered(grid, "Q")
     H_bc_mask = PISM.Scalar(grid, "H_bc_mask")
 
     ge = PISM.GeometryEvolution(grid)
@@ -109,9 +111,9 @@ def run(Mx, My, t_final, part_grid, C=1.0):
     j = 0
     profiling.stage_begin("ge")
     while t < t_final:
-        cfl_data = PISM.max_timestep_cfl_2d(geometry.ice_thickness,
-                                            geometry.cell_type,
-                                            v)
+        cfl_data = PISM.max_timestep_cfl_2d(
+            geometry.ice_thickness, geometry.cell_type, v
+        )
 
         dt = cfl_data.dt_max.value() * C
 
@@ -121,10 +123,7 @@ def run(Mx, My, t_final, part_grid, C=1.0):
         log.message(2, "{}, {}\n".format(t, dt))
 
         profiling.begin("step")
-        ge.flow_step(geometry, dt,
-                     v,
-                     Q,
-                     H_bc_mask)
+        ge.flow_step(geometry, dt, v, Q, H_bc_mask)
         profiling.end("step")
 
         profiling.begin("modify")
@@ -166,14 +165,15 @@ def average_error(N):
     exact.add(-1.0, geometry.ice_thickness, diff)
 
     # return the average error
-    return diff.norm(PISM.PETSc.NormType.N1)[0] / (N*N)
+    return diff.norm(PISM.PETSc.NormType.N1)[0] / (N * N)
 
 
 def part_grid_convergence_test():
     "Test that the error does go down as O(1/N)"
 
-    np.testing.assert_almost_equal([average_error(N) for N in [51, 101]],
-                                   [0.0338388,  0.0158498])
+    np.testing.assert_almost_equal(
+        [average_error(N) for N in [51, 101]], [0.0338388, 0.0158498]
+    )
 
 
 def part_grid_symmetry_test():

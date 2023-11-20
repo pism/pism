@@ -27,10 +27,10 @@ except:
     print("netCDF4 is not installed!")
     sys.exit(1)
 
-import numpy as np
-
 from sys import argv, exit
 from time import asctime
+
+import numpy as np
 
 
 def get_slice(dimensions, x=None, y=None):
@@ -38,26 +38,26 @@ def get_slice(dimensions, x=None, y=None):
     All = slice(None)
 
     if not dimensions:
-        return All   # so that it does not break processing "mapping"
+        return All  # so that it does not break processing "mapping"
 
     index_list = [All] * len(dimensions)
 
     if x != None:
         try:
-            index_list[dimensions.index('x')] = x
+            index_list[dimensions.index("x")] = x
         except:
             pass
 
     if y != None:
         try:
-            index_list[dimensions.index('y')] = y
+            index_list[dimensions.index("y")] = y
         except:
             pass
 
     return index_list
 
 
-def permute(variable, output_order=('t', 'z', 'zb', 'y', 'x')):
+def permute(variable, output_order=("t", "z", "zb", "y", "x")):
     """Permute dimensions of a NetCDF variable to match the output storage order."""
     input_dimensions = variable.dimensions
 
@@ -70,12 +70,12 @@ def permute(variable, output_order=('t', 'z', 'zb', 'y', 'x')):
     if mapping:
         return np.transpose(variable[:], mapping)
     else:
-        return variable[:]              # so that it does not break processing "mapping"
+        return variable[:]  # so that it does not break processing "mapping"
 
 
 def copy_dim(nc1, nc2, name, direction):
     """Copy a dimension from nc1 to nc2."""
-    if (name == direction):
+    if name == direction:
         return
     dim1 = nc1.dimensions[name]
     dim2 = nc2.createDimension(name, len(dim1))
@@ -98,7 +98,7 @@ def process(input, output, direction, collapse):
         exit(1)
 
     try:
-        out = CDF(output, 'w', format="NETCDF3_CLASSIC")
+        out = CDF(output, "w", format="NETCDF3_CLASSIC")
     except:
         print("ERROR: Can't open %s" % output)
         exit(1)
@@ -117,15 +117,15 @@ def process(input, output, direction, collapse):
     else:
         out.createDimension(direction, 3)
 
-        if direction == 'x':
-            dim = 'y'
+        if direction == "x":
+            dim = "y"
         else:
-            dim = 'x'
+            dim = "x"
 
         var1 = nc.variables[dim]
         delta = np.diff(var1[:])[0]
 
-        var2 = out.createVariable(direction, 'f8', (direction,))
+        var2 = out.createVariable(direction, "f8", (direction,))
         var2.axis = "%s" % direction.upper()
         var2.long_name = "%s-coordinate in Cartesian system" % direction.upper()
         var2.standard_name = "projection_%s_coordinate" % direction
@@ -135,8 +135,8 @@ def process(input, output, direction, collapse):
         for name in list(nc.variables.keys()):
             expand_var(nc, out, name, direction)
 
-    message = asctime() + ': ' + ' '.join(argv) + '\n'
-    if 'history' in out.ncattrs():
+    message = asctime() + ": " + " ".join(argv) + "\n"
+    if "history" in out.ncattrs():
         out.history = message + out.history  # prepend to history string
     else:
         out.history = message
@@ -151,22 +151,22 @@ def collapse_var(nc, out, name, direction):
 
     print("Processing %s..." % name)
     dims = var1.dimensions
-    if len(dims) > 1:                   # only collapse spatial fields
+    if len(dims) > 1:  # only collapse spatial fields
         dims = [x for x in dims if x != direction]
 
     try:
         fill_value = var1._FillValue
-        var2 = out.createVariable(name, var1.dtype,
-                                  dimensions=dims, fill_value=fill_value)
+        var2 = out.createVariable(
+            name, var1.dtype, dimensions=dims, fill_value=fill_value
+        )
     except:
-        var2 = out.createVariable(name, var1.dtype,
-                                  dimensions=dims)
+        var2 = out.createVariable(name, var1.dtype, dimensions=dims)
 
     copy_attributes(var1, var2)
 
-    if direction == 'x':
+    if direction == "x":
         var2[:] = var1[get_slice(var1.dimensions, x=N)]
-    elif direction == 'y':
+    elif direction == "y":
         var2[:] = var1[get_slice(var1.dimensions, y=N)]
 
 
@@ -181,7 +181,7 @@ def expand_var(nc, out, name, direction):
     print("Processing %s..." % name)
 
     # Copy coordinate variables and stop:
-    if name in ['t', 'z', 'y', 'x', 'zb']:
+    if name in ["t", "z", "y", "x", "zb"]:
         var2 = out.createVariable(name, var1.dtype, (name,))
         var2[:] = var1[:]
         copy_attributes(var1, var2)
@@ -189,22 +189,22 @@ def expand_var(nc, out, name, direction):
 
     dims = var1.dimensions
     if len(dims) == 1:
-        dims = ('y', 'x')
+        dims = ("y", "x")
     elif len(dims) == 2:
-        dims = ('t', 'y', 'x')
+        dims = ("t", "y", "x")
     elif len(dims) == 3:
-        if name == "litho_temp":        # litho_temp is the only variable depending on 'zb'.
-            dims = ('t', 'zb', 'y', 'x')
+        if name == "litho_temp":  # litho_temp is the only variable depending on 'zb'.
+            dims = ("t", "zb", "y", "x")
         else:
-            dims = ('t', 'z', 'y', 'x')
+            dims = ("t", "z", "y", "x")
 
     var2 = out.createVariable(name, var1.dtype, dims)
     copy_attributes(var1, var2)
 
     for j in range(3):
-        if direction == 'x':
+        if direction == "x":
             var2[get_slice(var2.dimensions, x=j)] = permute(var1)
-        elif direction == 'y':
+        elif direction == "y":
             var2[get_slice(var2.dimensions, y=j)] = permute(var1)
 
 
@@ -212,14 +212,12 @@ parser = OptionParser()
 parser.usage = "usage: %prog -o foo.nc -d {x,y} {--collapse,--expand} file.nc"
 parser.description = "Collapses or expands a NetCDF file in a specified direction."
 
-parser.add_option("-d", "--direction", dest="direction",
-                  help="direction: one of x,y")
-parser.add_option("-o", "--output", dest="output_filename",
-                  help="output file")
-parser.add_option("-e", "--expand", dest="expand", action="store_true",
-                  help="expand")
-parser.add_option("-c", "--collapse", dest="collapse", action="store_true",
-                  help="collapse")
+parser.add_option("-d", "--direction", dest="direction", help="direction: one of x,y")
+parser.add_option("-o", "--output", dest="output_filename", help="output file")
+parser.add_option("-e", "--expand", dest="expand", action="store_true", help="expand")
+parser.add_option(
+    "-c", "--collapse", dest="collapse", action="store_true", help="collapse"
+)
 
 (opts, args) = parser.parse_args()
 
@@ -234,26 +232,34 @@ if (opts.expand and opts.collapse) or ((not opts.expand) and (not opts.collapse)
 
 if not opts.direction:
     if opts.collapse or (not opts.expand):
-        opts.direction = 'y'
+        opts.direction = "y"
     else:
         nc = CDF(args[0])
         try:
-            x = nc.variables['x']
-            opts.direction = 'y'
+            x = nc.variables["x"]
+            opts.direction = "y"
         except:
-            opts.direction = 'x'
+            opts.direction = "x"
         nc.close()
-elif opts.direction not in ['x', 'y']:
+elif opts.direction not in ["x", "y"]:
     print("ERROR: Please specify direction using the -d option. (Choose one of x,y.)")
     exit(1)
 
-if (not opts.output_filename):
+if not opts.output_filename:
     print("ERROR: Please specify the output file name using the -o option.")
     exit(1)
 
 if opts.collapse:
-    print("Collapsing %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename))
+    print(
+        "Collapsing %s in the %s direction, writing to %s..."
+        % (args[0], opts.direction, opts.output_filename)
+    )
 else:
-    print("Expanding %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename))
+    print(
+        "Expanding %s in the %s direction, writing to %s..."
+        % (args[0], opts.direction, opts.output_filename)
+    )
 
-process(args[0], opts.output_filename, opts.direction, opts.collapse or (not opts.expand))
+process(
+    args[0], opts.output_filename, opts.direction, opts.collapse or (not opts.expand)
+)

@@ -26,7 +26,7 @@ namespace inverse {
 
 //! Pseduo total variation functional
 /*! \f[
-  J(u) = c\int_\Omega (\epsilon^2+|\nabla u|^2)^{q/2} 
+  J(u) = c\int_\Omega (\epsilon^2+|\nabla u|^2)^{q/2}
   \f]
   The parameters \f$c\f$, \f$q\f$ and \f$\epsilon\f$ are provided at construction.  Taking \f$q\f$=1 would
   yield a total variation functional, save for the regularizing parameter \f$\epsilon\f$.

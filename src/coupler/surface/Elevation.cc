@@ -166,7 +166,7 @@ void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
   dummy_runoff(*m_mass_flux, *m_runoff);
-  
+
 }
 
 const array::Scalar &Elevation::mass_flux_impl() const {
@@ -188,7 +188,7 @@ const array::Scalar &Elevation::melt_impl() const {
 const array::Scalar &Elevation::runoff_impl() const {
   return *m_runoff;
 }
-  
+
 void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &result) const {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);

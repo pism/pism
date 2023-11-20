@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-from unittest import TestCase
-import numpy as np
 import os
+from unittest import TestCase
 
+import numpy as np
 import PISM
+
 ctx = PISM.Context()
 ctx.log.set_threshold(1)
+
 
 class SteadyHydrology(TestCase):
     def setUp(self):
@@ -13,24 +15,25 @@ class SteadyHydrology(TestCase):
         C = 1000.0
         x0 = 0.0
         y0 = 0.0
-        Lx = C*0.5
-        Ly = C*0.5
+        Lx = C * 0.5
+        Ly = C * 0.5
         # grid size
         Mx = 101
         My = 101
 
-        grid = PISM.Grid.Shallow(ctx.ctx, Lx, Ly, x0, y0, Mx, My,
-                                    PISM.CELL_CENTER, PISM.NOT_PERIODIC)
+        grid = PISM.Grid.Shallow(
+            ctx.ctx, Lx, Ly, x0, y0, Mx, My, PISM.CELL_CENTER, PISM.NOT_PERIODIC
+        )
         self.grid = grid
 
         geometry = PISM.Geometry(grid)
         self.geometry = geometry
 
         with PISM.vec.Access(nocomm=[geometry.bed_elevation, geometry.ice_thickness]):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 x = grid.x(i)
                 y = grid.y(j)
-                geometry.bed_elevation[i, j] = (x / C)**2 + y / C + 0.25
+                geometry.bed_elevation[i, j] = (x / C) ** 2 + y / C + 0.25
 
                 if geometry.bed_elevation[i, j] >= 0:
                     geometry.ice_thickness[i, j] = 1000.0
@@ -50,7 +53,7 @@ class SteadyHydrology(TestCase):
         # size of the patch
         R = 0.125 * C
         with PISM.vec.Access(nocomm=surface_input_rate):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 x = grid.x(i)
                 y = grid.y(j)
                 if abs(x - cx) < R and abs(y - cy) < R:
@@ -93,7 +96,9 @@ class SteadyHydrology(TestCase):
 
         # Compute the total input. This approximates a double integral, hence
         # the "dx dy" factor.
-        total_input = PISM.sum(self.model.surface_input_rate()) * (grid.dx() * grid.dy())
+        total_input = PISM.sum(self.model.surface_input_rate()) * (
+            grid.dx() * grid.dy()
+        )
 
         # Compute the total flux through the grounding line. This is not
         # exactly what we want, but it's close. It would be better to use the
@@ -103,9 +108,11 @@ class SteadyHydrology(TestCase):
         total_flux = 0.0
         cell_type = self.geometry.cell_type
         with PISM.vec.Access(nocomm=[cell_type, flux_magnitude]):
-            for (i, j) in grid.points():
-                if cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j):
-                   total_flux += flux_magnitude[i, j] * grid.dx()
+            for i, j in grid.points():
+                if cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(
+                    i, j
+                ):
+                    total_flux += flux_magnitude[i, j] * grid.dx()
 
         total_flux = PISM.GlobalSum(ctx.com, total_flux)
 
@@ -138,8 +145,8 @@ class SteadyHydrology(TestCase):
 
         f.close()
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     t = SteadyHydrology()
     t.setUp()
     t.divergence_theorem_test()

@@ -8,7 +8,7 @@ NN="$1"
 Mx="$2"
 My="$3"
 
-if [ $# -lt 3 ] ; then  
+if [ $# -lt 3 ] ; then
   echo "spinup.sh ERROR: needs three arguments"
   exit
 fi
@@ -26,7 +26,7 @@ fi
 if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
   echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
 else
-  PISM_DO="" 
+  PISM_DO=""
 fi
 
 # prefix to pism (not to executables)
@@ -79,5 +79,4 @@ $PISM_DO $cmd
 # NOTES:
 # useful diagnostic:  -ssa_view_nuh
 # good postprocess:
-#ncap -O -s "dtau=taud_mag-tauc" spunjako_0.nc spunjako_0.nc 
-
+#ncap -O -s "dtau=taud_mag-tauc" spunjako_0.nc spunjako_0.nc

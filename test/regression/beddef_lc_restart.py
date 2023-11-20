@@ -13,10 +13,11 @@ Compares results of
 Used as a regression test for PISM.LingleClark.
 """
 
+import os
+
+import numpy as np
 import PISM
 from PISM.util import convert
-import numpy as np
-import os
 
 ctx = PISM.Context()
 
@@ -25,7 +26,7 @@ ctx.log.set_threshold(1)
 
 # disc load parameters
 disc_radius = convert(1000, "km", "m")
-disc_thickness = 1000.0         # meters
+disc_thickness = 1000.0  # meters
 # domain size
 Lx = 2 * disc_radius
 Ly = Lx
@@ -35,12 +36,13 @@ ctx.config.set_number("bed_deformation.lc.grid_size_factor", 2)
 
 dt = convert(1000.0, "years", "seconds")
 
+
 def add_disc_load(ice_thickness, radius, thickness):
     "Add a disc load with a given radius and thickness."
     grid = ice_thickness.grid()
 
     with PISM.vec.Access(nocomm=ice_thickness):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             r = PISM.radius(grid, i, j)
             if r <= disc_radius:
                 ice_thickness[i, j] = disc_thickness
@@ -49,8 +51,9 @@ def add_disc_load(ice_thickness, radius, thickness):
 def run(dt, restart=False):
     "Run the model for 1 time step, stop, save model state, restart, do 1 more step."
 
-    grid = PISM.Grid.Shallow(ctx.ctx, Lx, Ly, 0, 0, N, N,
-                                PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.Grid.Shallow(
+        ctx.ctx, Lx, Ly, 0, 0, N, N, PISM.CELL_CORNER, PISM.NOT_PERIODIC
+    )
 
     model = PISM.LingleClark(grid)
 
@@ -67,7 +70,12 @@ def run(dt, restart=False):
     bed_uplift.set(0.0)
 
     # initialize the model
-    model.bootstrap(geometry.bed_elevation, bed_uplift, geometry.ice_thickness, geometry.sea_level_elevation)
+    model.bootstrap(
+        geometry.bed_elevation,
+        bed_uplift,
+        geometry.ice_thickness,
+        geometry.sea_level_elevation,
+    )
 
     # add the disc load
     add_disc_load(geometry.ice_thickness, disc_radius, disc_thickness)
@@ -100,10 +108,12 @@ def run(dt, restart=False):
 
     return model
 
+
 def compare_vec(v1, v2):
     "Compare two vecs."
     print("Comparing {}".format(v1.get_name()))
     np.testing.assert_equal(v1.numpy(), v2.numpy())
+
 
 def compare(model1, model2):
     "Compare two models"
@@ -116,5 +126,4 @@ def compare(model1, model2):
 
 def lingle_clark_restart_test():
     "Compare straight and re-started runs."
-    compare(run(dt),
-            run(dt, restart=True))
+    compare(run(dt), run(dt, restart=True))

@@ -1,8 +1,9 @@
 # run this using "python -m nose icemodelvec2t.py -m test_name" to run only one of the
 # tests
-import unittest
-import numpy
 import os
+import unittest
+
+import numpy
 import PISM
 from PISM.testing import filename
 
@@ -20,30 +21,33 @@ time.set_end(1)
 # suppress all output
 ctx.log.set_threshold(1)
 
+
 def seconds(t):
     """Convert from '30 days' to 'seconds'"""
     return t * 86400.0 * 30.0
+
 
 def compare(v, value):
     with PISM.vec.Access(nocomm=v):
         numpy.testing.assert_almost_equal(v[0, 0], value)
 
-class ForcingInput(unittest.TestCase):
 
+class ForcingInput(unittest.TestCase):
     def setUp(self):
         "Prepare an input file with an interesting time-dependent field."
-        suffix          = filename("")
-        self.filename   = "input_" + suffix
-        self.empty      = "empty_" + suffix
+        suffix = filename("")
+        self.filename = "input_" + suffix
+        self.empty = "empty_" + suffix
         self.one_record = "one_record_" + suffix
-        self.no_time    = "no_time_" + suffix
-        self.no_bounds  = "no_time_bounds_" + suffix
+        self.no_time = "no_time_" + suffix
+        self.no_bounds = "no_time_bounds_" + suffix
         self.time_order = "time_order_" + suffix
         self.interp_linear = "interp_linear_" + suffix
 
         M = 3
-        self.grid = PISM.Grid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
-                                         PISM.NOT_PERIODIC)
+        self.grid = PISM.Grid.Shallow(
+            ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC
+        )
 
         v = PISM.Scalar(self.grid, "v")
 
@@ -73,7 +77,9 @@ class ForcingInput(unittest.TestCase):
                 PISM.append_time(output, "time", self.t[k])
 
                 if use_bounds:
-                    PISM.write_time_bounds(output, bounds, k, (self.tb[k], self.tb[k + 1]))
+                    PISM.write_time_bounds(
+                        output, bounds, k, (self.tb[k], self.tb[k + 1])
+                    )
 
                 v.set(float(self.f[k]))
                 v.write(output)
@@ -103,25 +109,44 @@ class ForcingInput(unittest.TestCase):
         self.times_linear = [1, 2, 3]
         self.values_linear = [2, -4, 3]
         self.bounds_linear = [0.5, 1.5, 2.5, 3.5]
-        PISM.testing.create_forcing(self.grid, self.interp_linear, "v", "",
-                                    values=self.values_linear,
-                                    times=self.times_linear,
-                                    time_bounds=self.bounds_linear)
+        PISM.testing.create_forcing(
+            self.grid,
+            self.interp_linear,
+            "v",
+            "",
+            values=self.values_linear,
+            times=self.times_linear,
+            time_bounds=self.bounds_linear,
+        )
 
     def tearDown(self):
         "Remove files created by setUp()"
-        files = [self.filename, self.empty, self.one_record,
-                 self.no_time, self.no_bounds, self.time_order, self.interp_linear]
+        files = [
+            self.filename,
+            self.empty,
+            self.one_record,
+            self.no_time,
+            self.no_bounds,
+            self.time_order,
+            self.interp_linear,
+        ]
         for f in files:
             os.remove(f)
 
-    def forcing(self, filename, buffer_size=12, periodic=False,
-                interpolation_type=PISM.PIECEWISE_CONSTANT):
+    def forcing(
+        self,
+        filename,
+        buffer_size=12,
+        periodic=False,
+        interpolation_type=PISM.PIECEWISE_CONSTANT,
+    ):
         "Allocate and initialize forcing"
-        input_file = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-        forcing = PISM.Forcing(self.grid, input_file, "v", "",
-                               buffer_size, periodic,
-                               interpolation_type)
+        input_file = PISM.File(
+            ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY
+        )
+        forcing = PISM.Forcing(
+            self.grid, input_file, "v", "", buffer_size, periodic, interpolation_type
+        )
         input_file.close()
 
         forcing.metadata().set_string("long_name", "test field")
@@ -131,9 +156,9 @@ class ForcingInput(unittest.TestCase):
         return forcing
 
     def test_interp_linear_periodic(self):
-        F = self.forcing(self.interp_linear,
-                         periodic=True,
-                         interpolation_type=PISM.LINEAR)
+        F = self.forcing(
+            self.interp_linear, periodic=True, interpolation_type=PISM.LINEAR
+        )
         F.update(0, 4)
 
         # See self.times_linear, self.values_linear, and self.bounds_linear above.
@@ -233,7 +258,7 @@ class ForcingInput(unittest.TestCase):
         "Interpolation using init_interpolation(ts) and interp(i, j)"
         forcing = self.forcing(self.filename)
         N = 12
-        dt = 30.0                 # days (floating point)
+        dt = 30.0  # days (floating point)
         ts = (numpy.arange(N) + 0.5) * dt
         ts = [PISM.util.convert(T, "days", "seconds") for T in ts]
 
@@ -271,7 +296,7 @@ class ForcingInput(unittest.TestCase):
         "Test update() calls with an update interval past the last available time"
         forcing = self.forcing(self.filename)
 
-        forcing.update(1e12, 1e12+1)
+        forcing.update(1e12, 1e12 + 1)
         forcing.init_interpolation([1e12])
 
         with PISM.vec.Access(nocomm=forcing):
@@ -332,7 +357,7 @@ class ForcingInput(unittest.TestCase):
 
         def check(month):
             t = seconds(self.tb[month]) + 1
-            dt = seconds(2)     # long-ish time step (2 months)
+            dt = seconds(2)  # long-ish time step (2 months)
             forcing.update(t, dt)
             forcing.interp(t)
 
@@ -350,10 +375,12 @@ class ForcingInput(unittest.TestCase):
         # time bounds in seconds
         tb = seconds(self.tb)
 
-        numpy.testing.assert_almost_equal(forcing.max_timestep(0).value(),
-                                          tb[1] - tb[0])
-        numpy.testing.assert_almost_equal(forcing.max_timestep(tb[1] - 0.5).value(),
-                                          0.5)
+        numpy.testing.assert_almost_equal(
+            forcing.max_timestep(0).value(), tb[1] - tb[0]
+        )
+        numpy.testing.assert_almost_equal(
+            forcing.max_timestep(tb[1] - 0.5).value(), 0.5
+        )
 
         assert forcing.max_timestep(tb[-1]).infinite()
         assert forcing.max_timestep(tb[-1] - 0.5).infinite()
@@ -361,11 +388,13 @@ class ForcingInput(unittest.TestCase):
         forcing = self.forcing(self.filename, periodic=True)
         assert forcing.max_timestep(tb[0]).infinite()
 
-        forcing = self.forcing(self.filename, buffer_size=3,
-                               interpolation_type=PISM.LINEAR)
-        numpy.testing.assert_almost_equal(forcing.max_timestep(seconds(self.t[0])).value(),
-                                          seconds(self.t[2] - self.t[0]))
-
+        forcing = self.forcing(
+            self.filename, buffer_size=3, interpolation_type=PISM.LINEAR
+        )
+        numpy.testing.assert_almost_equal(
+            forcing.max_timestep(seconds(self.t[0])).value(),
+            seconds(self.t[2] - self.t[0]),
+        )
 
     def test_periodic(self):
         "Using periodic data"
@@ -380,7 +409,7 @@ class ForcingInput(unittest.TestCase):
 
         with PISM.vec.Access(nocomm=forcing):
             a = numpy.array(forcing.interp(0, 0))
-        b = numpy.r_[self.f, self.f[0:(6 + 1)]]
+        b = numpy.r_[self.f, self.f[0 : (6 + 1)]]
 
         numpy.testing.assert_almost_equal(a, b)
 
@@ -396,14 +425,14 @@ class ForcingInput(unittest.TestCase):
         forcing.average(t, dt)
         # the forcing consists of 6 zeros and 6 ones, equally spaced in time. The average
         # should be zero
-        numpy.testing.assert_almost_equal(forcing.numpy()[0,0], 0.0)
+        numpy.testing.assert_almost_equal(forcing.numpy()[0, 0], 0.0)
 
         # the average over three periods should be zero as well
-        forcing.average(t, 3*dt)
-        numpy.testing.assert_almost_equal(forcing.numpy()[0,0], 0.0)
+        forcing.average(t, 3 * dt)
+        numpy.testing.assert_almost_equal(forcing.numpy()[0, 0], 0.0)
 
         # averaging over a part of the period (also zero in this case)
         t = seconds(self.t[0])
         dt = seconds(self.t[-1]) - t
         forcing.average(t, dt)
-        numpy.testing.assert_almost_equal(forcing.numpy()[0,0], 0.0)
+        numpy.testing.assert_almost_equal(forcing.numpy()[0, 0], 0.0)

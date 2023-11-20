@@ -1,18 +1,18 @@
 /*
    Copyright (C) 2010, 2014, 2016, 2023 Ed Bueler
-  
+
    This file is part of PISM.
-  
+
    PISM is free software; you can redistribute it and/or modify it under the
    terms of the GNU General Public License as published by the Free Software
    Foundation; either version 3 of the License, or (at your option) any later
    version.
-  
+
    PISM is distributed in the hope that it will be useful, but WITHOUT ANY
    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
    FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
    details.
-  
+
    You should have received a copy of the GNU General Public License
    along with PISM; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,7 +28,7 @@ extern "C"
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! exactTestN is a C implementation of the parabolic solution in 
+! exactTestN is a C implementation of the parabolic solution in
 ! Bodvardsson (1955), treated here as a manufactured exact solution to
 ! a steady-state SSA flow problem, including the mass continuity equation.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -61,7 +61,7 @@ struct TestNParameters exactN(double x);
    /* input    : x                   (m; 0.0 <= x <= L0)
 
       Assumes n = 3.
-      
+
       In Bueler interpretation, M(x) and A(x) are constructed so that the
       solution in Bodvardsson (1955) can be thought of as solving mass continuity
       and SSA stress balance simultaneously:
@@ -69,26 +69,26 @@ struct TestNParameters exactN(double x);
          M(x) - (u H)_x = 0
 
          (2 H B(x) |u_x|^((1/n)-1) u_x)_x - beta(x) u = rho g H h_x
-         
+
       Here H = H(x) is ice thickness and u = u(x) is ice velocity.  Also
       h(x) = H(x), up to a constant the user may choose, because the bed is flat.
       Following Bodvardsson, here is the equilibrium line altitude, surface
       mass balance, and the sliding coefficient:
-         
+
          Hela = H0 / 1.5
          M(x) = a (h(x) - Hela)
          beta(x) = k rho g H(x)
-      
+
       The boundary conditions are
-      
+
          H(0) = H0
 
       and
-      
+
          T(xc) = 0.5 (1 - rho/rhow) rho g H(xc)^2
 
       where T(x) is the vertically-integrated viscous stress,
-      
+
          T(x) = 2 H(x) B(x) |u_x|^((1/n)-1) u_x.
 
       But B(x) is chosen so that this quantity is constant:  T(x) = T0.
@@ -100,7 +100,7 @@ struct TestNParameters exactN(double x);
          0 if successful
          1 if x < 0
          2 if x > L0
-      
+
    */
 
 #ifdef __cplusplus
@@ -108,4 +108,3 @@ struct TestNParameters exactN(double x);
 #endif
 
 #endif  /* __exactTestN_h */
-

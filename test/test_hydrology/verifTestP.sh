@@ -16,4 +16,3 @@ do
   echo "results for Mx=My=${MM}:"
   cat runP$MM.txt |grep -A 1 "NUMERICAL ERRORS"
 done
-

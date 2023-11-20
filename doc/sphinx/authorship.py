@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-import yaml
 import sys
 
-print(""".. DO NOT EDIT. Update CITATION.cff to add more authors and see `authorship.py`.
+import yaml
+
+print(
+    """.. DO NOT EDIT. Update CITATION.cff to add more authors and see `authorship.py`.
 
 .. include:: global.txt
 
@@ -35,7 +37,8 @@ Research (PIK), and several additional developers listed here.
    :widths: 1,1
 
    * - Name and affiliation
-     - Areas of contribution""")
+     - Areas of contribution"""
+)
 
 for author in yaml.safe_load(sys.stdin)["authors"]:
     name = f"{author['given-names']} {author['family-names']}"
@@ -43,6 +46,8 @@ for author in yaml.safe_load(sys.stdin)["authors"]:
         name = f"`{name} <{author['orcid']}>`_"
     except KeyError:
         pass
-    print(f"""
+    print(
+        f"""
    * - {name} ({author['affiliation']})
-     - {author['contribution-areas']}""")
+     - {author['contribution-areas']}"""
+    )

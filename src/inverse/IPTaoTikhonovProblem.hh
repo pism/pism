@@ -78,7 +78,7 @@ public:
 /*! Suppose \f$F\f$ is a map from a space \f$D\f$ of design variables to a space \f$S\f$ of
   state variables and we wish to solve a possibly ill-posed problem of the form
   \f[ F(d) = u \f]
-  where \f$u\f$ is know and \f$d\f$ is unknown.  Approximate solutions can be obtained by 
+  where \f$u\f$ is know and \f$d\f$ is unknown.  Approximate solutions can be obtained by
   finding minimizers of an associated Tikhonov functional
   \f[
   J(d) = J_{S}(F(d)-u) + \frac{1}{\eta}J_{D}(d-d_0)
@@ -88,8 +88,8 @@ public:
   The IPTaoTikhonovProblem class encapuslates all of the data required to formulate the minimization
   problem as a Problem tha can be solved using a TaoBasicSolver. It is templated on the
   the class ForwardProblem which defines the class of the forward map \f$F\f$ as well as the
-  spaces \f$D\f$ and \f$S\f$. An instance of ForwardProblem, along with 
-  specific functionals \f$J_D\f$ and \f$J_S\f$, the parameter \f$\eta\f$, and the data 
+  spaces \f$D\f$ and \f$S\f$. An instance of ForwardProblem, along with
+  specific functionals \f$J_D\f$ and \f$J_S\f$, the parameter \f$\eta\f$, and the data
   \f$y\f$ and \f$x_0\f$ are provided on constructing a IPTaoTikhonovProblem.
 
   For example, if the SSATaucForwardProblem class defines the map taking yield stresses \f$\tau_c\f$
@@ -123,7 +123,7 @@ public:
 
   <ol>
   <li> Contains typedefs for DesignVec and StateVec that effectively
-  define the function spaces \f$D\f$ and \f$S\f$.  E.g. 
+  define the function spaces \f$D\f$ and \f$S\f$.  E.g.
 
   \code
   typedef array::Scalar DesignVec;
@@ -135,7 +135,7 @@ public:
   \code
   TerminationReason::Ptr linearize_at(DesignVec &d);
   \endcode
-  that instructs the class to compute the value of F and 
+  that instructs the class to compute the value of F and
   anything needed to compute its linearization at \a d.   This is the first method
   called when working with a new iterate of \a d.
 
@@ -143,7 +143,7 @@ public:
   \code
   StateVec &solution()
   \endcode
-  that returns the most recently computed value of \f$F(d)\f$ 
+  that returns the most recently computed value of \f$F(d)\f$
   as computed by a call to linearize_at.
 
   <li> A method
@@ -180,11 +180,11 @@ public:
   typedef std::shared_ptr<typename ForwardProblem::StateVec1> StateVec1Ptr;
 
   /*! Constructs a Tikhonov problem:
-  
+
     Minimize \f$J(d) = J_S(F(d)-u_obs) + \frac{1}{\eta} J_D(d-d0)  \f$
 
     that can be solved with a TaoBasicSolver.
-      
+
     @param forward Class defining the map F.  See class-level documentation for requirements of F.
     @param      d0 Best a-priori guess for the design parameter.
     @param   u_obs State parameter to match (i.e. approximately solve F(d)=u_obs)
@@ -340,7 +340,7 @@ IPTaoTikhonovProblem<ForwardProblem>::~IPTaoTikhonovProblem() {
 template<class ForwardProblem>
 void IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
   typedef taoutil::TaoObjGradCallback<IPTaoTikhonovProblem<ForwardProblem>,
-                             &IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback; 
+                             &IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback;
 
   ObjGradCallback::connect(tao,*this);
 
@@ -383,14 +383,14 @@ template<class ForwardProblem> void IPTaoTikhonovProblem<ForwardProblem>::conver
   double dWeight, sWeight;
   dWeight = 1/m_eta;
   sWeight = 1;
-  
+
   designNorm = m_grad_design->norm(NORM_2)[0];
   stateNorm  = m_grad_state->norm(NORM_2)[0];
   sumNorm    = m_grad->norm(NORM_2)[0];
 
-  designNorm *= dWeight;    
+  designNorm *= dWeight;
   stateNorm  *= sWeight;
-  
+
   if (sumNorm < m_tikhonov_atol) {
     TaoSetConvergedReason(tao, TAO_CONVERGED_GATOL);
   } else if (sumNorm < m_tikhonov_rtol*std::max(designNorm,stateNorm)) {

@@ -850,4 +850,3 @@ TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
 
 } // end of namespace surface
 } // end of namespace pism
-

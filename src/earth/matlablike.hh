@@ -33,4 +33,3 @@ double dblquad_cubature(integrand f, double ax, double bx, double ay, double by,
 
 
 #endif // ifndef __matlablike_hh
-

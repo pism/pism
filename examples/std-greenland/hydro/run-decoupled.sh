@@ -48,4 +48,3 @@ NAME=distributed-decoupled.nc
 cmd="$MPIDO pismr -i $INNAME -no_mass -energy none -stress_balance none $CLIMATE -extra_file ex_$NAME -extra_times 0:monthly:$DURATION -extra_vars $EXVARDIST -ts_file ts_$NAME -ts_times 0:daily:$DURATION -hydrology distributed -hydrology_bmelt_file $INNAME -hydrology_velbase_mag_file $INNAME -ys 0 -y $DURATION -max_dt 0.03 -o $NAME"
 $PISM_DO $cmd
 echo
-

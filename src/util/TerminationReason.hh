@@ -40,7 +40,7 @@ public:
 
   virtual ~TerminationReason() {
   }
-  
+
   virtual int reason() {
     return m_reason;
   }
@@ -77,19 +77,19 @@ public:
   void set_root_cause(std::shared_ptr<TerminationReason> cause) {
     m_root_cause = cause;
   }
-  
+
   bool succeeded() {
     return (this->reason())>0;
   }
-  
+
   bool failed() {
     return (this->reason())<0;
   }
-  
+
   bool done() {
     return (this->reason())!= 0;
   }
-  
+
 protected:
   int m_reason;
   std::shared_ptr<TerminationReason> m_root_cause;
@@ -125,7 +125,7 @@ public:
   virtual ~GenericTerminationReason() {
     // empty
   }
-  
+
   static std::shared_ptr<TerminationReason> keep_iterating() {
     static std::shared_ptr<TerminationReason> sm_keep_iterating(new GenericTerminationReason(0,"Keep iterating."));
     return sm_keep_iterating;
@@ -146,7 +146,7 @@ public:
     return sm_failure;
   }
 
-  virtual void get_description(std::ostream &desc, int indent_level=0); 
+  virtual void get_description(std::ostream &desc, int indent_level=0);
 protected:
   std::string m_description;
 };

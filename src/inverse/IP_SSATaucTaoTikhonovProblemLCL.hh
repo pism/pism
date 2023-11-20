@@ -49,10 +49,10 @@ public:
 
   typedef array::Scalar DesignVec;
   typedef array::Vector StateVec;
-  
+
   IP_SSATaucTaoTikhonovProblemLCLListener() {}
   virtual ~IP_SSATaucTaoTikhonovProblemLCLListener() {}
-  
+
   //! Callback called after each iteration.
   //
   // @param problem,  The class calling the callback.
@@ -92,7 +92,7 @@ public:
   typedef array::Vector1 StateVec1;
 
   typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
-  
+
   IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta,
                                   IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
 
@@ -112,14 +112,14 @@ public:
   void monitorTao(Tao tao);
 
   virtual void evaluateObjectiveAndGradient(Tao tao, Vec x, double *value, Vec gradient);
-  
+
   virtual std::shared_ptr<TerminationReason> formInitialGuess(Vec *x);
 
   virtual void evaluateConstraints(Tao tao, Vec x, Vec r);
 
   virtual void evaluateConstraintsJacobianState(Tao tao, Vec x, Mat Jstate, Mat Jpc, Mat Jinv,
                                                 MatStructure *s);
-  
+
   virtual void evaluateConstraintsJacobianDesign(Tao tao, Vec x, Mat Jdesign);
 
   virtual void applyConstraintsJacobianDesign(Vec x, Vec y);

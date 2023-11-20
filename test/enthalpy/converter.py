@@ -1,11 +1,13 @@
-import PISM
 import numpy as np
+import PISM
 
 config = PISM.Context().config
 
 # list of converters
-converters = {"Default": PISM.EnthalpyConverter(config),
-              "verification (cold)": PISM.ColdEnthalpyConverter(config)}
+converters = {
+    "Default": PISM.EnthalpyConverter(config),
+    "verification (cold)": PISM.ColdEnthalpyConverter(config),
+}
 
 
 def try_all_converters(test):
@@ -127,6 +129,7 @@ def enthalpy_of_water_test():
 
 def invalid_inputs_test():
     "Test that invalid inputs trigger errors."
+
     def run(name, EC):
         depth = 1000
         pressure = EC.pressure(depth)
@@ -192,10 +195,11 @@ def invalid_inputs_test():
 
         try:
             E = EC.enthalpy(T_melting - 1.0, 0.1, pressure)
-            raise AssertionError("failed to catch T < T_melting and omega > 0 in enthalpy()")
+            raise AssertionError(
+                "failed to catch T < T_melting and omega > 0 in enthalpy()"
+            )
         except RuntimeError:
             pass
-
 
     try_all_converters(run)
 
@@ -203,7 +207,7 @@ def invalid_inputs_test():
 def plot_converter(name, EC):
     """Test an enthalpy converter passed as the argument."""
 
-    H = 5000.0                  # ice thickness
+    H = 5000.0  # ice thickness
 
     Z = np.linspace(0, H, int(H / 10))  # vertical levels
 
@@ -233,34 +237,34 @@ def plot_converter(name, EC):
     plt.title("%s enthalpy converter" % name)
     plt.plot(Z, E, label="constant enthalpy", lw=2)
     plt.plot(Z, E_cts, label="enthalpy corresponding to CTS", lw=2)
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     plt.ylabel("J/kg")
     plt.grid()
 
     plt.subplot(2, 2, 2)
     plt.title("%s enthalpy converter" % name)
     plt.plot(Z, omega, label="water fraction for E = E_cts + C", lw=2)
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     plt.ylabel("percent")
     plt.grid()
 
     plt.subplot(2, 2, 3)
     plt.plot(Z, T_melting, label="melting temperature", lw=2)
     plt.plot(Z, T, label="temperature corresponding to constant E", lw=2)
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     plt.ylabel("Kelvin")
     plt.grid()
     plt.xlabel("height above the base of the ice, m")
 
     plt.subplot(2, 2, 4)
     plt.plot(Z, E_wet, label="temperate ice enthalpy with high omega", lw=2)
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     plt.xlabel("height above the base of the ice, m")
     plt.ylabel("J/kg")
     plt.grid()
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     import pylab as plt
 
     for name, converter in list(converters.items()):

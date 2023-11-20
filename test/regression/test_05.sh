@@ -14,13 +14,13 @@ set -e -x
 $PISM_PATH/pismr -eisII I -Mx 121 -My 61 -Mz 21 -y 0 -o foo-05.nc
 
 # Bootstrap from this file and run for 0 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o bar-05.nc 
+$MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o bar-05.nc
 
 # Change the variable order in foo-05.nc to z,y,x:
 ncpdq -O -a z,y,x foo-05.nc foo-05.nc
 
 # Bootstrap from this file and run for 0 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o baz-05.nc 
+$MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o baz-05.nc
 
 set +e
 

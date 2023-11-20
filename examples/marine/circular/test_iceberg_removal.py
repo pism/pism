@@ -4,18 +4,17 @@
 # Ed Bueler, and Constantine Khroulev
 
 import numpy as np
-import PISMNC
 import piktests_utils
+import PISMNC
 
 # command line arguments
-options = piktests_utils.process_options("test_iceberg_removal.nc",
-                                         domain_size=1000.0)
+options = piktests_utils.process_options("test_iceberg_removal.nc", domain_size=1000.0)
 p = piktests_utils.Parameters()
 
 # create arrays which will go in output
 thk = np.zeros((options.My, options.Mx))  # sheet/shelf thickness
-bed = np.zeros_like(thk)                 # bedrock surface elevation
-accum = np.zeros_like(thk)                 # accumulation/ ablation
+bed = np.zeros_like(thk)  # bedrock surface elevation
+accum = np.zeros_like(thk)  # accumulation/ ablation
 Ts = np.zeros_like(thk) + p.air_temperature
 
 vel_bc_mask = np.zeros_like(thk)
@@ -30,7 +29,7 @@ def R(x, y):
 
 
 def C(x, y):
-    return np.sqrt(x ** 2 + y ** 2)
+    return np.sqrt(x**2 + y**2)
 
 
 if options.square:
@@ -50,7 +49,9 @@ for j in range(options.My):
 
         # ice shelf
         if radius <= p.r_cf and radius > p.r_gl and options.shelf == True:
-            thk[j, i] = (4.0 * p.C / p.Q0 * (radius - p.r_gl) + 1 / p.H0 ** 4) ** (-0.25)
+            thk[j, i] = (4.0 * p.C / p.Q0 * (radius - p.r_gl) + 1 / p.H0**4) ** (
+                -0.25
+            )
 
         # ocean (shelf and elsewhere)
         if radius >= p.r_gl or x[i] >= 0:
@@ -75,16 +76,18 @@ for j in range(options.My):
         else:
             vel_bc_mask[j, i] = 0.0
 
-ncfile = PISMNC.PISMDataset(options.output_filename, 'w', format='NETCDF3_CLASSIC')
+ncfile = PISMNC.PISMDataset(options.output_filename, "w", format="NETCDF3_CLASSIC")
 piktests_utils.prepare_output_file(ncfile, x, y)
 
-variables = {"thk": thk,
-             "topg": bed,
-             "ice_surface_temp": Ts,
-             "climatic_mass_balance": accum,
-             "vel_bc_mask": vel_bc_mask,
-             "u_bc": ubar,
-             "v_bc": vbar}
+variables = {
+    "thk": thk,
+    "topg": bed,
+    "ice_surface_temp": Ts,
+    "climatic_mass_balance": accum,
+    "vel_bc_mask": vel_bc_mask,
+    "u_bc": ubar,
+    "v_bc": vbar,
+}
 
 piktests_utils.write_data(ncfile, variables)
 ncfile.close()

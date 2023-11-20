@@ -38,11 +38,11 @@ namespace energy {
   ks = ...
   foo.setIndicesThisColumn(i,j,ks);
   [COMPUTE OTHER PARAMS]
-  foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);  
+  foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);
   foo.setSurfaceBoundaryValuesThisColumn(Ts);
   foo.setBasalBoundaryValuesThisColumn(Ghf,Tshelfbase,Rb);
   foo.solveThisColumn(x);
-  }  
+  }
   }
   \endcode
 */
@@ -99,4 +99,3 @@ private:
 } // end of namespace pism
 
 #endif  /* __tempSystem_hh */
-

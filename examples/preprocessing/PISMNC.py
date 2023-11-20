@@ -8,10 +8,9 @@ except:
 
 
 class PISMDataset(netCDF.Dataset):
-
     def create_time(self, use_bounds=False, length=None, units=None):
-        self.createDimension('time', size=length)
-        t_var = self.createVariable('time', 'f8', ('time',))
+        self.createDimension("time", size=length)
+        t_var = self.createVariable("time", "f8", ("time",))
 
         t_var.axis = "T"
         t_var.long_name = "time"
@@ -21,8 +20,8 @@ class PISMDataset(netCDF.Dataset):
             t_var.units = units
 
         if use_bounds:
-            self.createDimension('n_bounds', 2)
-            self.createVariable("time_bounds", 'f8', ('time', 'n_bounds'))
+            self.createDimension("n_bounds", 2)
+            self.createVariable("time_bounds", "f8", ("time", "n_bounds"))
             t_var.bounds = "time_bounds"
 
     def create_dimensions(self, x, y, time_dependent=False, use_time_bounds=False):
@@ -30,16 +29,16 @@ class PISMDataset(netCDF.Dataset):
         Create PISM-compatible dimensions in a NetCDF file.
         """
 
-        if time_dependent and not 'time' in list(self.variables.keys()):
+        if time_dependent and not "time" in list(self.variables.keys()):
             self.create_time(use_time_bounds)
 
-        self.createDimension('x', x.size)
-        self.createDimension('y', y.size)
+        self.createDimension("x", x.size)
+        self.createDimension("y", y.size)
 
-        x_var = self.createVariable('x', 'f8', ('x',))
+        x_var = self.createVariable("x", "f8", ("x",))
         x_var[:] = x
 
-        y_var = self.createVariable('y', 'f8', ('y',))
+        y_var = self.createVariable("y", "f8", ("y",))
         y_var[:] = y
 
         x_var.axis = "X"
@@ -55,25 +54,27 @@ class PISMDataset(netCDF.Dataset):
         self.sync()
 
     def append_time(self, value, bounds=None):
-        if 'time' in list(self.dimensions.keys()):
-            time = self.variables['time']
+        if "time" in list(self.dimensions.keys()):
+            time = self.variables["time"]
             N = time.size
             time[N] = value
 
             if bounds:
-                self.variables['time_bounds'][N, :] = bounds
+                self.variables["time_bounds"][N, :] = bounds
 
     def set_attrs(self, var_name, attrs):
         """attrs should be a list of (name, value) tuples."""
         if not attrs:
             return
 
-        for (name, value) in attrs.items():
+        for name, value in attrs.items():
             if name == "_FillValue":
                 continue
             setattr(self.variables[var_name], name, value)
 
-    def define_2d_field(self, var_name, time_dependent=False, dims=None, nc_type='f8', attrs=None):
+    def define_2d_field(
+        self, var_name, time_dependent=False, dims=None, nc_type="f8", attrs=None
+    ):
         """
         time_dependent: boolean
 
@@ -84,16 +85,17 @@ class PISMDataset(netCDF.Dataset):
         """
         if not dims:
             if time_dependent:
-                dims = ('time', 'y', 'x')
+                dims = ("time", "y", "x")
             else:
-                dims = ('y', 'x')
+                dims = ("y", "x")
 
         try:
             var = self.variables[var_name]
         except:
-            if attrs is not None and '_FillValue' in list(attrs.keys()):
-                var = self.createVariable(var_name, nc_type, dims,
-                                          fill_value=attrs['_FillValue'])
+            if attrs is not None and "_FillValue" in list(attrs.keys()):
+                var = self.createVariable(
+                    var_name, nc_type, dims, fill_value=attrs["_FillValue"]
+                )
             else:
                 var = self.createVariable(var_name, nc_type, dims)
 
@@ -103,11 +105,12 @@ class PISMDataset(netCDF.Dataset):
 
     def define_timeseries(self, var_name, attrs=None):
         try:
-            if attrs is not None and '_FillValue' in list(attrs.keys()):
-                var = self.createVariable(var_name, 'f8', ('time',),
-                                          fill_value=attrs['_FillValue'])
+            if attrs is not None and "_FillValue" in list(attrs.keys()):
+                var = self.createVariable(
+                    var_name, "f8", ("time",), fill_value=attrs["_FillValue"]
+                )
             else:
-                var = self.createVariable(var_name, 'f8', ('time',))
+                var = self.createVariable(var_name, "f8", ("time",))
         except:
             var = self.variables[var_name]
 
@@ -135,7 +138,7 @@ class PISMDataset(netCDF.Dataset):
         var = self.define_2d_field(var_name, time_dependent, attrs=attrs)
 
         if time_dependent:
-            last_record = self.variables['time'].size - 1
+            last_record = self.variables["time"].size - 1
             var[last_record, :, :] = data
         else:
             var[:] = data
@@ -155,7 +158,7 @@ if __name__ == "__main__":
     # produce a NetCDF file for testing
     from numpy import linspace, meshgrid
 
-    nc = PISMDataset("foo.nc", 'w')
+    nc = PISMDataset("foo.nc", "w")
 
     x = linspace(-100, 100, 101)
     y = linspace(-100, 100, 201)
@@ -164,10 +167,15 @@ if __name__ == "__main__":
 
     nc.create_dimensions(x, y, time_dependent=True, use_time_bounds=True)
 
-    nc.define_2d_field("xx", time_dependent=True,
-                       attrs={"long_name": "xx",
-                              "comment": "test variable",
-                              "valid_range": (-200.0, 200.0)})
+    nc.define_2d_field(
+        "xx",
+        time_dependent=True,
+        attrs={
+            "long_name": "xx",
+            "comment": "test variable",
+            "valid_range": (-200.0, 200.0),
+        },
+    )
 
     for t in [0, 1, 2, 3]:
         nc.append_time(t, (t - 1, t))

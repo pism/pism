@@ -30,7 +30,7 @@ namespace surface {
 //! @brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
 //! precipitation and air temperature.
-/*! 
+/*!
   Temperature-index schemes are far from perfect as a way of modeling surface mass
   balance on ice sheets which experience surface melt, but they are known to have
   reasonable data requirements and to do a good job when tuned appropriately
@@ -59,7 +59,7 @@ protected:
 
   virtual const array::Scalar& mass_flux_impl() const;
   virtual const array::Scalar& temperature_impl() const;
-  
+
   virtual const array::Scalar& accumulation_impl() const;
   virtual const array::Scalar& melt_impl() const;
   virtual const array::Scalar& runoff_impl() const;

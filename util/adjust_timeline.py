@@ -15,12 +15,13 @@
 # time_1991-2000.nc \endverbatim
 
 import os
+import time
 from argparse import ArgumentParser
+from datetime import datetime
+
+import numpy as np
 from dateutil import rrule
 from dateutil.parser import parse
-from datetime import datetime
-import time
-import numpy as np
 
 try:
     import netCDF4 as netCDF
@@ -121,11 +122,15 @@ refdate = datetime(int(r[0]), int(r[1]), int(r[2]))
 bnds_datelist = list(rrule.rrule(prule, dtstart=start_date, count=nt + 1))
 
 # calculate the days since refdate, including refdate, with time being the
-bnds_interval_since_refdate = cftime.date2num(bnds_datelist, time_units, calendar=calendar)
+bnds_interval_since_refdate = cftime.date2num(
+    bnds_datelist, time_units, calendar=calendar
+)
 if interval_type == "mid":
     # mid-point value:
     # time[n] = (bnds[n] + bnds[n+1]) / 2
-    time_interval_since_refdate = bnds_interval_since_refdate[0:-1] + np.diff(bnds_interval_since_refdate) / 2
+    time_interval_since_refdate = (
+        bnds_interval_since_refdate[0:-1] + np.diff(bnds_interval_since_refdate) / 2
+    )
 elif interval_type == "start":
     time_interval_since_refdate = bnds_interval_since_refdate[:-1]
 else:
@@ -159,14 +164,18 @@ time_var.axis = "T"
 
 # create time bounds variable
 if bnds_var_name not in nc.variables:
-    time_bnds_var = nc.createVariable(bnds_var_name, "d", dimensions=(time_dim, bnds_dim))
+    time_bnds_var = nc.createVariable(
+        bnds_var_name, "d", dimensions=(time_dim, bnds_dim)
+    )
 else:
     time_bnds_var = nc.variables[bnds_var_name]
 time_bnds_var[:, 0] = bnds_interval_since_refdate[0:-1]
 time_bnds_var[:, 1] = bnds_interval_since_refdate[1::]
 
 # writing global attributes
-script_command = " ".join([time.ctime(), ":", __file__.split("/")[-1], " ".join([str(x) for x in args])])
+script_command = " ".join(
+    [time.ctime(), ":", __file__.split("/")[-1], " ".join([str(x) for x in args])]
+)
 nc.history = script_command
 nc.Conventions = "CF 1.5"
 nc.close()

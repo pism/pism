@@ -25,47 +25,47 @@ namespace pism {
 namespace inverse {
 
 //! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a scalar valued function.
-/*! The functional is, in continuous terms 
+/*! The functional is, in continuous terms
   \f[
   J(f) = \int_{\Omega} f^2 \; dA
   \f]
-  where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
+  where \f$\Omega\f$ is the square domain. Numerically it is implemented using
   Q1 finite elements.
 */
 class IP_L2NormFunctional2S : public IPInnerProductFunctional<array::Scalar> {
 public:
   IP_L2NormFunctional2S(std::shared_ptr<const Grid> grid) : IPInnerProductFunctional<array::Scalar>(grid) {};
   virtual ~IP_L2NormFunctional2S() {};
-  
+
   virtual void valueAt(array::Scalar &x, double *OUTPUT);
   virtual void dot(array::Scalar &a, array::Scalar &b, double *v);
   virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
 
 private:
   IP_L2NormFunctional2S(IP_L2NormFunctional2S const &);
-  IP_L2NormFunctional2S & operator=(IP_L2NormFunctional2S const &);  
+  IP_L2NormFunctional2S & operator=(IP_L2NormFunctional2S const &);
 };
 
 //! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a vector valued function.
-/*! The functional is, in continuous terms 
+/*! The functional is, in continuous terms
   \f[
   J(f) = \int_{\Omega} f^2 \; dA
   \f]
-  where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
+  where \f$\Omega\f$ is the square domain. Numerically it is implemented using
   Q1 finite elements.
 */
 class IP_L2NormFunctional2V : public IPInnerProductFunctional<array::Vector> {
 public:
   IP_L2NormFunctional2V(std::shared_ptr<const Grid> grid) : IPInnerProductFunctional<array::Vector>(grid) {};
   virtual ~IP_L2NormFunctional2V() {};
-  
+
   virtual void valueAt(array::Vector &x, double *v);
   virtual void dot(array::Vector &a, array::Vector &b, double *v);
   virtual void gradientAt(array::Vector &x, array::Vector &gradient);
 
 private:
   IP_L2NormFunctional2V(IP_L2NormFunctional2V const &);
-  IP_L2NormFunctional2V & operator=(IP_L2NormFunctional2V const &);  
+  IP_L2NormFunctional2V & operator=(IP_L2NormFunctional2V const &);
 };
 
 } // end of namespace inverse

@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
-import netCDF4
-import numpy
+import argparse
 import json
 import sys
-import argparse
+
+import netCDF4
+import numpy
 
 suffixes = ["choices", "doc", "option", "type", "units"]
+
 
 def special(name):
     "Return true if 'name' is a 'special' parameter, false otherwise."
@@ -14,6 +16,7 @@ def special(name):
         if name.endswith("_" + suffix) or name == "long_name":
             return True
     return False
+
 
 def nested_dict(config):
     """Create a nested Python dictionary corresponding to parameters stored in a "flat"
@@ -54,6 +57,7 @@ def nested_dict(config):
 
     return result
 
+
 def flat_dict(config, path=None):
     """Convert a nested Python dictionary 'config' describing PISM's configuration parameters
     into a flat one.
@@ -72,9 +76,11 @@ def flat_dict(config, path=None):
                 raise ValueError("unknown leaf: {}".format(key))
     return result
 
+
 def netcdf_to_flat_dict(variable):
     "Create a flat dictionary containing all attributes of a NetCDF variable."
-    return {k : getattr(variable, k) for k in variable.ncattrs()}
+    return {k: getattr(variable, k) for k in variable.ncattrs()}
+
 
 def cdl(config):
     """Return the NetCDF CDL description of a PISM configuration database stored in a flat
@@ -98,13 +104,15 @@ def cdl(config):
             if config[key + "_type"] in ["string", "keyword", "flag"]:
                 result += '    pism_config:{} = "{}";\n'.format(key, config[key])
             else:
-                result += '    pism_config:{} = {};\n'.format(key, config[key])
+                result += "    pism_config:{} = {};\n".format(key, config[key])
             for s in suffixes:
                 try:
                     value = config[key + "_" + s]
                     if s in ["doc", "units"]:
-                        value = value.replace("\\", "\\\\") # escape backslashes in formulas
-                        value = value.replace('"', '\\"')   # escape double quotes
+                        value = value.replace(
+                            "\\", "\\\\"
+                        )  # escape backslashes in formulas
+                        value = value.replace('"', '\\"')  # escape double quotes
                     result += '    pism_config:{}_{} = "{}";\n'.format(key, s, value)
                 except:
                     pass
@@ -114,15 +122,18 @@ def cdl(config):
 
     return result
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("FILE", nargs=1)
-    parser.add_argument("--json", dest="json", action="store_true",
-                        help="output JSON", default=False)
+    parser.add_argument(
+        "--json", dest="json", action="store_true", help="output JSON", default=False
+    )
     options = parser.parse_args()
 
-    config = netcdf_to_flat_dict(netCDF4.Dataset(options.FILE[0]).variables["pism_config"])
+    config = netcdf_to_flat_dict(
+        netCDF4.Dataset(options.FILE[0]).variables["pism_config"]
+    )
 
     if options.json:
         print(json.dumps(nested_dict(config), indent=4, sort_keys=True))

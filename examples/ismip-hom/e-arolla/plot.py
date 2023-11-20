@@ -1,8 +1,10 @@
+import sys
+
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
 import netCDF4
-import sys
+import numpy as np
+
 # Plots PISM results for the ISMIP-HOM Experiment E.
 
 sliding = sys.argv[1]
@@ -24,7 +26,7 @@ fig.set_size_inches(8, 4)
 ax.plot(x, uvelsurf_no_slip, label="no slip")
 ax.plot(x, uvelsurf_sliding, label="sliding")
 
-ax.set(xlabel='x (meters)', ylabel='surface velocity (m/year) ')
+ax.set(xlabel="x (meters)", ylabel="surface velocity (m/year) ")
 ax.grid()
 ax.legend()
 fig.savefig("uvelsurf.png")
@@ -34,6 +36,7 @@ year = 365.2524 * 86400
 
 topg = f_sliding.variables["topg"][:]
 thk = f_sliding.variables["thk"][:]
+
 
 def plot_uvel(data, thk, topg, title, filename):
     Mz, Mx = data.shape
@@ -48,7 +51,7 @@ def plot_uvel(data, thk, topg, title, filename):
     fig, ax = plt.subplots()
 
     # note: ignore the title (for now)
-    ax.set(xlabel='x (m)', ylabel='elevation (m)')
+    ax.set(xlabel="x (m)", ylabel="elevation (m)")
 
     m = ax.pcolormesh(xx, zz, data, shading="nearest")
     fig.colorbar(m, pad=0.15, orientation="horizontal", aspect=40)
@@ -62,18 +65,27 @@ def plot_uvel(data, thk, topg, title, filename):
     fig.dpi = 100
     fig.savefig(filename)
 
+
 # Sliding case
-uvel_sliding = f_sliding.variables["uvel_sigma"][:,:]
+uvel_sliding = f_sliding.variables["uvel_sigma"][:, :]
 uvel_sliding *= year
 
-plot_uvel(uvel_sliding, thk, topg,
-          'ISMIP-HOM Exp E (sliding) ice velocity, m/year',
-          "uvel_sliding.png")
+plot_uvel(
+    uvel_sliding,
+    thk,
+    topg,
+    "ISMIP-HOM Exp E (sliding) ice velocity, m/year",
+    "uvel_sliding.png",
+)
 
 # No-slip case
-uvel_no_slip = f_no_slip.variables["uvel_sigma"][:,:]
+uvel_no_slip = f_no_slip.variables["uvel_sigma"][:, :]
 uvel_no_slip *= year
 
-plot_uvel(uvel_no_slip, thk, topg,
-          'ISMIP-HOM Exp E (no slip) ice velocity, m/year',
-          "uvel_no_slip.png")
+plot_uvel(
+    uvel_no_slip,
+    thk,
+    topg,
+    "ISMIP-HOM Exp E (no slip) ice velocity, m/year",
+    "uvel_no_slip.png",
+)

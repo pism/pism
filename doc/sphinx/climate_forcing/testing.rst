@@ -61,7 +61,7 @@ Assuming that ``g20km_10ka.nc`` was created :ref:`as described in the User's Man
           -ys 0 -ye 1 -extra_times 0:1week:1 \
           -extra_file foo.nc \
           -extra_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot,precipitation
-    
+
 produces ``foo.nc``. Viewing in with ``ncview`` shows an annual cycle in the variable
 :var:`air_temp` and a noticeable decrease in the surface mass balance during summer months
 (see variable :var:`climatic_mass_balance`). Note that :var:`ice_surface_temp` is constant
@@ -153,7 +153,7 @@ We can also test the surface temperature forcing code with the following command
           -extra_vars ice_surface_temp \
           -extra_file dT_movie.nc -o_order zyx \
           -test_climate_models -no_mass
-    
+
 The output ``dT_movie.nc`` and ``pism_dT.nc`` were used to create
 :numref:`fig-artm-timeseries`.
 
@@ -165,4 +165,3 @@ temperature offsets are used correctly.
    :name: fig-artm-timeseries
 
    Time series of the surface temperature compared to GRIP temperature offsets
-

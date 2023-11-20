@@ -2,18 +2,20 @@
 
 # Converts tab-delimited inputs into a form that can be used by PISM.
 
+import sys
+
 import netCDF4
 import numpy as np
-import sys
 
 data = np.loadtxt(sys.argv[1])
 
-x       = data[:,0]
-bed     = data[:, 1]
+x = data[:, 0]
+bed = data[:, 1]
 surface = data[:, 2]
 sliding = data[:, 3]
 
 dx = x[1] - x[0]
+
 
 def convert(output_filename, no_slip):
     try:
@@ -34,7 +36,7 @@ def convert(output_filename, no_slip):
             topography[k, :] = bed
 
         thickness = f.createVariable("thk", "f8", ("y", "x"))
-        thickness.units="m"
+        thickness.units = "m"
         for k in range(3):
             thickness[k, :] = np.maximum(surface - bed, 0.0)
 
@@ -49,6 +51,7 @@ def convert(output_filename, no_slip):
 
     finally:
         f.close()
+
 
 convert("arolla100-sliding.nc", no_slip=False)
 convert("arolla100-no-slip.nc", no_slip=True)

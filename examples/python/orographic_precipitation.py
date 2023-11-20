@@ -7,18 +7,18 @@ Run it with "-i filename.nc" to use the bed topography in filename.nc instead.
 """
 
 import numpy as np
+import PISM
 import pylab as plt
 
-import PISM
 
 def gaussian_bump_grid():
     "Allocate the grid for the synthetic geometry test."
-    x_min   = -100e3
-    x_max   = 200e3
-    y_min   = -150e3
-    y_max   = 150e3
-    dx      = 750
-    dy      = 750
+    x_min = -100e3
+    x_max = 200e3
+    y_min = -150e3
+    y_max = 150e3
+    dx = 750
+    dy = 750
 
     x0 = (x_max + x_min) / 2.0
     y0 = (y_max + y_min) / 2.0
@@ -28,19 +28,19 @@ def gaussian_bump_grid():
     Mx = int((x_max - x_min) / dx)
     My = int((y_max - y_min) / dy)
 
-    return PISM.Grid_Shallow(PISM.Context().ctx,
-                                Lx, Ly,
-                                x0, y0,
-                                Mx, My,
-                                PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    return PISM.Grid_Shallow(
+        PISM.Context().ctx, Lx, Ly, x0, y0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC
+    )
 
-def gaussian_bump(x, y, h_max=500.0,
-                  x0=0.0, y0=0.0, sigma_x=15e3, sigma_y=15e3):
+
+def gaussian_bump(x, y, h_max=500.0, x0=0.0, y0=0.0, sigma_x=15e3, sigma_y=15e3):
     "Create the setup needed to reproduce Fig 4c in SB2004"
     X, Y = np.meshgrid(x, y)
-    surface = h_max * np.exp(-(((X - x0)**2 / (2 * sigma_x**2)) +
-                              ((Y - y0)**2 / (2 * sigma_y**2))))
+    surface = h_max * np.exp(
+        -(((X - x0) ** 2 / (2 * sigma_x**2)) + ((Y - y0) ** 2 / (2 * sigma_y**2)))
+    )
     return surface
+
 
 def synthetic_geometry(grid, orography):
     config = PISM.Context().config
@@ -51,18 +51,22 @@ def synthetic_geometry(grid, orography):
 
     config.set_number("atmosphere.orographic_precipitation.conversion_time", 1000.0)
     config.set_number("atmosphere.orographic_precipitation.fallout_time", 1000.0)
-    config.set_number("atmosphere.orographic_precipitation.water_vapor_scale_height", 2500.0)
-    config.set_number("atmosphere.orographic_precipitation.moist_stability_frequency", 0.005)
+    config.set_number(
+        "atmosphere.orographic_precipitation.water_vapor_scale_height", 2500.0
+    )
+    config.set_number(
+        "atmosphere.orographic_precipitation.moist_stability_frequency", 0.005
+    )
     config.set_number("atmosphere.orographic_precipitation.reference_density", 7.4e-3)
 
     # eliminate the effect of the Coriolis force
     config.set_number("atmosphere.orographic_precipitation.coriolis_latitude", 0.0)
 
-    model    = PISM.AtmosphereOrographicPrecipitation(grid, PISM.AtmosphereUniform(grid))
+    model = PISM.AtmosphereOrographicPrecipitation(grid, PISM.AtmosphereUniform(grid))
     geometry = PISM.Geometry(grid)
 
     with PISM.vec.Access(nocomm=geometry.ice_thickness):
-        for i,j in grid.points():
+        for i, j in grid.points():
             geometry.ice_thickness[i, j] = orography[j, i]
 
     geometry.bed_elevation.set(0.0)
@@ -78,8 +82,8 @@ def synthetic_geometry(grid, orography):
     # convert from mm/s to mm/hour
     return model.precipitation().numpy() * 3600
 
-def input_file(filename):
 
+def input_file(filename):
     ctx = PISM.Context()
 
     grid = PISM.Grid.FromFile(ctx.ctx, filename, ["topg"], PISM.CELL_CENTER)
@@ -96,6 +100,7 @@ def input_file(filename):
     model.update(geometry, 0, 1)
 
     model.precipitation().dump(config.get_string("output.file"))
+
 
 if __name__ == "__main__":
     ctx = PISM.Context()
@@ -120,5 +125,7 @@ if __name__ == "__main__":
         plt.grid()
         plt.xlabel("Distance (m)")
         plt.ylabel("Distance (m)")
-        plt.title("Figure 4c from Smith and Barstad,\nA linear theory of orographic precipitation, 2004")
+        plt.title(
+            "Figure 4c from Smith and Barstad,\nA linear theory of orographic precipitation, 2004"
+        )
         plt.show()

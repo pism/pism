@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from numpy import *
-from matplotlib.pyplot import *
 from sys import exit
+
+from matplotlib.pyplot import *
+from numpy import *
 
 try:
     from netCDF4 import Dataset as NC
@@ -17,7 +18,7 @@ for dx in ("100", "50", "25", "15", "10", "5"):
     filename = basename + ".nc"
     print("%s: looking for file ..." % filename)
     try:
-        nc = NC(filename, 'r')
+        nc = NC(filename, "r")
     except:
         print("  can't read from file ...")
         continue
@@ -27,7 +28,7 @@ for dx in ("100", "50", "25", "15", "10", "5"):
     x = asarray(squeeze(xvar[:]))
     y = asarray(squeeze(yvar[:]))
 
-    for varname in ("bwat", "bwp", "psi"):   # psi must go after bwat, bwp
+    for varname in ("bwat", "bwp", "psi"):  # psi must go after bwat, bwp
         print("  %s:  generating pcolor() image ..." % varname)
         try:
             if varname == "psi":
@@ -60,18 +61,20 @@ for dx in ("100", "50", "25", "15", "10", "5"):
             barmax = 360.0
             scale = 1.0e5
 
-        print("       [stats:  max = %9.3f %s, av = %8.3f %s]" %
-              (data.max() / scale, units, data.sum() / (scale * x.size * y.size), units))
+        print(
+            "       [stats:  max = %9.3f %s, av = %8.3f %s]"
+            % (data.max() / scale, units, data.sum() / (scale * x.size * y.size), units)
+        )
         pcolor(x / 1000.0, y / 1000.0, data / scale, vmin=barmin, vmax=barmax)
         colorbar()
-        gca().set_aspect('equal')
+        gca().set_aspect("equal")
         gca().autoscale(tight=True)
-        xlabel('x  (km)')
-        ylabel('y  (km)')
+        xlabel("x  (km)")
+        ylabel("y  (km)")
         dxpad = "%03d" % int(dx)
         pngfilename = varname + "_" + dxpad + "km" + ".png"
         print("    saving figure in %s ..." % pngfilename)
-        savefig(pngfilename, dpi=300, bbox_inches='tight')
+        savefig(pngfilename, dpi=300, bbox_inches="tight")
         close()
 
     nc.close()

@@ -46,8 +46,8 @@ GivenTH::Constants::Constants(const Config &config) {
   // to use the spatially-variable top-of-the-ice temperature.
   shelf_top_surface_temperature    = -20.0; // degrees Celsius
 
-  gamma_T                          = config.get_number("ocean.th.gamma_T");  
-  gamma_S                          = config.get_number("ocean.th.gamma_S");  
+  gamma_T                          = config.get_number("ocean.th.gamma_T");
+  gamma_S                          = config.get_number("ocean.th.gamma_S");
   water_latent_heat_fusion         = config.get_number("constants.fresh_water.latent_heat_of_fusion");
   sea_water_density                = config.get_number("constants.sea_water.density");
   sea_water_specific_heat_capacity = config.get_number("constants.sea_water.specific_heat_capacity");

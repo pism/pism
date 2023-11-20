@@ -18,11 +18,12 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import PISM
 import time
 
+import PISM
+
 # The main code for a run follows:
-if __name__ == '__main__':
+if __name__ == "__main__":
     context = PISM.Context()
     config = context.config
     com = context.com
@@ -30,8 +31,7 @@ if __name__ == '__main__':
     PISM.set_abort_on_sigint(True)
 
     PISM.verbPrintf(2, PISM.Context().com, "SSA forward model.\n")
-    usage = \
-        """  ssa_forward.py -i IN.nc -Mx number -My number [-o file.nc]
+    usage = """  ssa_forward.py -i IN.nc -Mx number -My number [-o file.nc]
   or (at python prompt)
     run ssa_forward -i IN.nc -Mx number -My number [-o file.nc]
   where:
@@ -47,6 +47,7 @@ if __name__ == '__main__':
     input_file = config.get_string("input.file")
     if len(input_file) == 0:
         import sys
+
         sys.exit(1)
 
     config.set_string("output.file", "ssa_forward.nc")

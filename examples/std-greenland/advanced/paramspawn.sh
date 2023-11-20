@@ -106,4 +106,3 @@ done
 echo
 echo "($SPAWNSCRIPT)  use paramsubmit.sh to submit the scripts"
 echo
-

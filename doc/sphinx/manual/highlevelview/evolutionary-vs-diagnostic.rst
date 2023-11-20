@@ -31,4 +31,3 @@ Sections :ref:`sec-start` and :ref:`sec-ross` give examples illustrating evoluti
 diagnostic modes of PISM, respectively. The first describes time-stepping evolution models
 for the Greenland ice sheet, while the second describes a diagnostic SSA model for the
 Ross ice shelf.
-

@@ -46,7 +46,7 @@ axis equal, xlabel('x (km)'), ylabel('y (km)')
 
 % make polygonal grounding line M times as fine before interpolating;
 %   xpf = "x polygonal fine", so to speak
-M = 10;  
+M = 10;
 finelength = (length(xpoly)-1) * M + 1;
 xpf = zeros(1,finelength);
 ypf = zeros(1,finelength);
@@ -95,4 +95,3 @@ for k=1:4
   text(xpf(i),ypf(i),['s = ' num2str(k/5) 'L'])
 end
 hold off
-

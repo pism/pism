@@ -29,4 +29,3 @@ A derived class might be appropriate to a 2D (map-plane) advection problem
 like that in Albrecht & Levermann (2012).  Here the map-plane 2D velocity field,
 i.e. the vertical average of the 3D velocity field, is not incompressible;
 generally div (bar u,bar v) is not zero.
-

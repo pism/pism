@@ -135,9 +135,9 @@ EISMINT II experiments.
 
    * - :opt:`-Tmin`
      - 238.15 [ACDEIJKL],
-       
+
        243.15 [B],
-       
+
        223.15 [F]
      - K
      - max of surface temperature

@@ -69,7 +69,7 @@ which is 301 grid points in PISM's (doubled) domain.  The domain is doubled beca
 PISM is easiest configure as a whole ice sheet model with ice free ocean at the
 edge of the computation domain.  (Compare the example in `examples/jako/`, however.)
 
-To run a higher resolution 3 km grid, with somewhat-improved grounding line 
+To run a higher resolution 3 km grid, with somewhat-improved grounding line
 performance, ask the `run.py` script to put option `-Mx 1201` into the bash
 script:
 

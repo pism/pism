@@ -20,5 +20,3 @@ do
   echo "case [-Mbz 41 AND] -dt ${DD}:"
   btutest -ys 10.0 -ye 110.0 -dt $DD -Mbz 41 -Lbz 1000 -verbose 1
 done
-
-

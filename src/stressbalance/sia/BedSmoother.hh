@@ -49,7 +49,7 @@ namespace stressbalance {
 
   The user of this class hands BedSmoother an "original" topography, and it
   is preprocessed to fill the smoothed topography `topgsmooth`, and the
-  coefficients in an approximation to \f$\theta\f$.  This is done by a call to 
+  coefficients in an approximation to \f$\theta\f$.  This is done by a call to
   `preprocess_bed()`.  The call requires the half-width of the smoothing square
   (a distance in m), or the number of grid points in each direction in the
   smoothing rectangle, and the Glen exponent.
@@ -131,4 +131,3 @@ protected:
 } // end of namespace pism
 
 #endif  // __BedSmoother_hh
-

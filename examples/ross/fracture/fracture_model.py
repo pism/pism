@@ -10,6 +10,7 @@ and save its outputs to a file.
 """
 
 import PISM
+
 ctx = PISM.Context()
 
 filename = ctx.config.get_string("input.file")
@@ -25,7 +26,9 @@ geometry.sea_level_elevation.set(0.0)
 geometry.ensure_consistency(0)
 
 # allocate the fracture density model
-flow_law = PISM.FlowLawFactory("stress_balance.ssa.", ctx.config, ctx.enthalpy_converter).create()
+flow_law = PISM.FlowLawFactory(
+    "stress_balance.ssa.", ctx.config, ctx.enthalpy_converter
+).create()
 fracture = PISM.FractureDensity(grid, flow_law)
 
 # initialize it using zero fracture age and density
@@ -53,7 +56,7 @@ E = ctx.enthalpy_converter.enthalpy(T + 273.15, 0.0, P)
 hardness.set(flow_law.hardness(E, P))
 
 # take a few steps
-N = 100                         # arbitrary
+N = 100  # arbitrary
 for k in range(N):
     fracture.update(dt, geometry, velocity, hardness, vel_bc_mask)
 

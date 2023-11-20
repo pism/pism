@@ -23,7 +23,7 @@
 
 namespace pism {
 namespace frontalmelt {
-  
+
 class DischargeRouting : public FrontalMelt
 {
 public:

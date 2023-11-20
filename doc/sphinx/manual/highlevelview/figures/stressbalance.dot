@@ -64,4 +64,3 @@ subgraph cluster_stokes {
     foo -> bar -> baz [style=invis];
 }
 }
-

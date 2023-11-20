@@ -207,7 +207,7 @@ static unsigned ls0(unsigned n)
  *  A Gray-code ordering is used to minimize the number of coordinate updates
  *  in p.
  */
-static double evalR_Rfs(integrand f, void *fdata, unsigned dim, double *p, const double *c, const 
+static double evalR_Rfs(integrand f, void *fdata, unsigned dim, double *p, const double *c, const
 double *r)
 {
      double sum = 0;
@@ -236,7 +236,7 @@ double *r)
      return sum;
 }
 
-static double evalRR0_0fs(integrand f, void *fdata, unsigned dim, double *p, const double *c, 
+static double evalRR0_0fs(integrand f, void *fdata, unsigned dim, double *p, const double *c,
 const double *r)
 {
      unsigned i, j;
@@ -261,9 +261,9 @@ const double *r)
      return sum;
 }
 
-/* static double evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c, 
+/* static double evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c,
 double *sum0_, const double *r1, double *sum1_, const double *r2, double *sum2_) */
-static unsigned evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c, 
+static unsigned evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c,
 double *sum0_, const double *r1, double *sum1_, const double *r2, double *sum2_)
 {
      double maxdiff = 0;
@@ -343,7 +343,7 @@ static void destroy_rule75genzmalik(rule *r_)
      free(r->p);
 }
 
-static unsigned rule75genzmalik_evalError(rule *r_, integrand f, void *fdata, const hypercube *h, 
+static unsigned rule75genzmalik_evalError(rule *r_, integrand f, void *fdata, const hypercube *h,
 esterr *ee)
 {
      /* lambda2 = sqrt(9/70), lambda4 = sqrt(9/10), lambda5 = sqrt(9/19) */
@@ -371,7 +371,7 @@ esterr *ee)
 
      /* Evaluate function in the center, in f(lambda2,0,...,0) and
         f(lambda3=lambda4, 0,...,0).  Estimate dimension with largest error */
-     dimDiffMax = evalR0_0fs4d(f, fdata, dim, r->p, center, &sum1, r->widthLambda2, &sum2, 
+     dimDiffMax = evalR0_0fs4d(f, fdata, dim, r->p, center, &sum1, r->widthLambda2, &sum2,
 r->widthLambda, &sum3);
 
      /* Calculate sum4 for f(lambda4, lambda4, 0, ...,0) */
@@ -384,9 +384,9 @@ r->widthLambda, &sum3);
 
      /* Calculate fifth and seventh order results */
 
-     result = h->vol * (r->weight1 * sum1 + weight2 * sum2 + r->weight3 * sum3 + weight4 * sum4 + 
+     result = h->vol * (r->weight1 * sum1 + weight2 * sum2 + r->weight3 * sum3 + weight4 * sum4 +
 r->weight5 * sum5);
-     res5th = h->vol * (r->weightE1 * sum1 + weightE2 * sum2 + r->weightE3 * sum3 + weightE4 * 
+     res5th = h->vol * (r->weightE1 * sum1 + weightE2 * sum2 + r->weightE3 * sum3 + weightE4 *
 sum4);
 
      ee->val = result;
@@ -639,7 +639,7 @@ static heap_item heap_pop(heap *h)
 
 /* adaptive integration, analogous to adaptintegrator.cpp in HIntLib */
 
-static int ruleadapt_integrate(rule *r, integrand f, void *fdata, const hypercube *h, unsigned 
+static int ruleadapt_integrate(rule *r, integrand f, void *fdata, const hypercube *h, unsigned
 maxEval, double reqAbsError, double reqRelError, esterr *ee)
 {
      unsigned initialRegions;   /* number of initial regions (non-adaptive) */
@@ -726,4 +726,3 @@ int adapt_integrate(integrand f, void *fdata,
      destroy_rule(r);
      return status;
 }
-

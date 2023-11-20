@@ -84,4 +84,3 @@ netcdf.close(ncid);
 disp('  PISM-bootable NetCDF file "bar.nc" written')
 disp('  for example, run:')
 disp('    $ pismr -i bar.nc -bootstrap -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')
-

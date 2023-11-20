@@ -5,9 +5,9 @@ PISM's "bedrock thermal unit".
 
 """
 
+import numpy as np
 import PISM
 from PISM.util import convert
-import numpy as np
 
 log10 = np.log10
 
@@ -23,9 +23,10 @@ alpha2 = k / (c * rho)
 # set to True to plot solutions (for debugging)
 plot_solutions = False
 
+
 def convergence_rate_time(error_func, plot):
     "Compute the convergence rate with refinement in time."
-    dts = 2.0**np.arange(4, 10)
+    dts = 2.0 ** np.arange(4, 10)
 
     max_errors = np.zeros_like(dts)
     avg_errors = np.zeros_like(dts)
@@ -38,11 +39,11 @@ def convergence_rate_time(error_func, plot):
     if plot:
         plt.figure()
         plt.title("Heat equation in the bedrock column\nconvergence as dt -> 0")
-        log_plot(dts, max_errors, 'o', "max errors")
-        log_plot(dts, avg_errors, 'o', "avg errors")
+        log_plot(dts, max_errors, "o", "max errors")
+        log_plot(dts, avg_errors, "o", "avg errors")
         log_fit_plot(dts, p_max, "max: dt^{:.3}".format(p_max[0]))
         log_fit_plot(dts, p_avg, "avg: dt^{:.3}".format(p_avg[0]))
-        plt.axis('tight')
+        plt.axis("tight")
         plt.grid(True)
         plt.legend(loc="best")
 
@@ -51,7 +52,7 @@ def convergence_rate_time(error_func, plot):
 
 def convergence_rate_space(error_func, plot):
     "Compute the convergence rate with refinement in space."
-    Mz = np.array(2.0**np.arange(2, 7), dtype=int)
+    Mz = np.array(2.0 ** np.arange(2, 7), dtype=int)
     dzs = 1000.0 / Mz
 
     max_errors = np.zeros_like(dzs)
@@ -61,10 +62,9 @@ def convergence_rate_space(error_func, plot):
         # time step has to be short enough so that errors due to the time discretization
         # are smaller than errors due to the spatial discretization
         dt = 0.001 * T
-        max_errors[k], avg_errors[k] = error_func(plot_solutions,
-                                                  T_final_years=T,
-                                                  dt_years=dt,
-                                                  Mz=M)
+        max_errors[k], avg_errors[k] = error_func(
+            plot_solutions, T_final_years=T, dt_years=dt, Mz=M
+        )
 
     p_max = np.polyfit(log10(dzs), log10(max_errors), 1)
     p_avg = np.polyfit(log10(dzs), log10(avg_errors), 1)
@@ -72,15 +72,16 @@ def convergence_rate_space(error_func, plot):
     if plot:
         plt.figure()
         plt.title("Heat equation in the bedrock column\nconvergence as dz -> 0")
-        log_plot(dzs, max_errors, 'o', "max errors")
-        log_plot(dzs, avg_errors, 'o', "avg errors")
+        log_plot(dzs, max_errors, "o", "max errors")
+        log_plot(dzs, avg_errors, "o", "avg errors")
         log_fit_plot(dzs, p_max, "max: dz^{:.3}".format(p_max[0]))
         log_fit_plot(dzs, p_avg, "avg: dz^{:.3}".format(p_avg[0]))
-        plt.axis('tight')
+        plt.axis("tight")
         plt.grid(True)
         plt.legend(loc="best")
 
     return p_max[0], p_avg[0]
+
 
 def exact(L, Q_bottom, U_top):
     """Exact solution (and an initial state) for the 'Neumann at the base,
@@ -90,9 +91,11 @@ def exact(L, Q_bottom, U_top):
     a = L * 25.0
 
     def f(z, t):
-        v = a * np.exp(-lambda_n**2 * alpha2 * t) * np.sin(lambda_n * z)
+        v = a * np.exp(-(lambda_n**2) * alpha2 * t) * np.sin(lambda_n * z)
         return v + (U_top + Q_bottom * z)
+
     return f
+
 
 def errors(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     """Test the bedrock temperature solver with Neumann B.C. at the base and
@@ -108,12 +111,12 @@ def errors(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 
     z = np.linspace(-Lz, 0, Mz)
 
-    T_base = 240.0              # Kelvin
-    T_surface = 260.0           # Kelvin
+    T_base = 240.0  # Kelvin
+    T_surface = 260.0  # Kelvin
     dT_base = (T_surface - T_base) / Lz
 
     T_steady = T_base + dT_base * (z - (-Lz))
-    Q_base = - K * dT_base
+    Q_base = -K * dT_base
 
     T_exact = exact(Lz, dT_base, T_surface)
 
@@ -148,9 +151,11 @@ def errors(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 
     return max_error, avg_error
 
+
 def test(plot=False):
     assert convergence_rate_time(errors, plot)[1] > 0.94
     assert convergence_rate_space(errors, plot)[1] > 1.89
+
 
 if __name__ == "__main__":
     import pylab as plt

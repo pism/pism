@@ -23,7 +23,7 @@
 
 namespace pism {
 namespace frontalmelt {
-  
+
 class DischargeGiven : public FrontalMelt
 {
 public:

@@ -20,4 +20,3 @@ figure(3), plot(t,a1sum-L*t,t,a2sum-L*t), grid on
 legend('first method','second method (conserving)')
 title('conservation errors')
 xlabel t
-

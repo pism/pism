@@ -43,7 +43,7 @@ public:
 //! \brief An interface for solving an optimization problem with TAO where the
 //! problem itself is defined by a separate Problem class.
 /*!  The primary interface to a TAO optimization problem is mediated by a PETSc-style
-  `TaoSolver` object. The PISM TaoBasicSolver C++ class wraps a `TaoSolver` and some of 
+  `TaoSolver` object. The PISM TaoBasicSolver C++ class wraps a `TaoSolver` and some of
   its initialization boilierplate, and allows a separate class to define the function to be minimized.
 
   To use a TaoBasicSolver you create a `Problem` class that defines the objective function and initial
@@ -53,19 +53,19 @@ public:
   void Problem::connect(TaoSolver solver);
   \endcode
 
-  method which gives the `Problem` an opportunity to register its methods as callbacks to the solver, 
+  method which gives the `Problem` an opportunity to register its methods as callbacks to the solver,
   perhaps taking advantage of the various `TaoFooCallback` classes provided in TaoUtil.hh to facilitate this.
   For example, a problem class MyProblem that did nothing more than register a combined objective/gradient
   callback could define
 
   \code
   void MyProblem::connect(TaoSolver tao) {
-  typedef TaoObjGradCallback<Problem,&MyProblem::evaluateObjectiveAndGradient> ObjGradCallback; 
+  typedef TaoObjGradCallback<Problem,&MyProblem::evaluateObjectiveAndGradient> ObjGradCallback;
   ObjGradCallback::connect(tao,*this);
   }
   \endcode
 
-  In addition to the `connect` method, a `Problem` must define 
+  In addition to the `connect` method, a `Problem` must define
   \code
   TerminationReason::Ptr MyProblem::formInitialGuess(Vec *v)
   \endcode
@@ -91,7 +91,7 @@ public:
 template<class Problem>
 class TaoBasicSolver {
 public:
-    
+
   //! Construct a solver to solve `prob` using TAO algorithm `tao_type`.
   TaoBasicSolver(MPI_Comm comm, const std::string & tao_type, Problem &prob)
     : m_comm(comm), m_problem(prob) {
@@ -108,7 +108,7 @@ public:
     ierr = TaoSetFromOptions(m_tao);
     PISM_CHK(ierr, "TaoSetFromOptions");
   }
-  
+
   virtual ~TaoBasicSolver() {
     // empty
   }
@@ -117,7 +117,7 @@ public:
   virtual std::shared_ptr<TerminationReason> solve() {
     PetscErrorCode ierr;
 
-    /* Solve the application */ 
+    /* Solve the application */
     Vec x0;
     auto reason = m_problem.formInitialGuess(&x0);
     if (reason->failed()) {
@@ -148,7 +148,7 @@ public:
     PetscErrorCode ierr = TaoSetMaximumIterations(m_tao, max_it);
     PISM_CHK(ierr, "TaoSetMaximumIterations");
   }
-  
+
   virtual Problem &problem() {
     return m_problem;
   }
@@ -163,12 +163,12 @@ protected:
 //! \brief Adaptor to connect a TAO objective function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
   This class makes it convenient to associate a TAO Objective callback
-  with a C++ object method. To assign 
+  with a C++ object method. To assign
   \code
   void MyObject::evaluateObjective(TaoSolver tao,Vec x, double *value);
   \endcode
 
-  as the objective function to a `TaoSolver` `tao`, 
+  as the objective function to a `TaoSolver` `tao`,
 
   \code
   MyObject obj;
@@ -176,7 +176,7 @@ protected:
   \endcode
 
   The method name `evaluateObjective` for the callback is hard-coded.
-  See TaoObjGradCallback for a technique to allow 
+  See TaoObjGradCallback for a technique to allow
   the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
@@ -210,12 +210,12 @@ protected:
 //! \brief Adaptor to connect a TAO monitoring callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
   This class makes it convenient to associate a TAO Monitor callback
-  with a C++ object method. To assign 
+  with a C++ object method. To assign
   \code
   void MyObject::monitorTao(Tao tao)
   \endcode
 
-  as the objective function to a `Tao` `tao`, 
+  as the objective function to a `Tao` `tao`,
 
   \code
   MyObject obj;
@@ -223,7 +223,7 @@ protected:
   \endcode
 
   The method name `monitorTao` for the callback is hard-coded.
-  See TaoObjGradCallback for a technique to allow 
+  See TaoObjGradCallback for a technique to allow
   the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
@@ -253,12 +253,12 @@ protected:
 //! \brief Adaptor to connect a TAO objective function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
   This class makes it convenient to associate a TAO VariableBounds callback
-  with a C++ object method. To assign 
+  with a C++ object method. To assign
   \code
   void MyObject::getVariableBounds(Tao tao,Vec lo, Vec hi);
   \endcode
 
-  as the objective function to a `Tao` `tao`, 
+  as the objective function to a `Tao` `tao`,
 
   \code
   MyObject obj;
@@ -266,7 +266,7 @@ protected:
   \endcode
 
   The method name `getVariableBounds` for the callback is hard-coded.
-  See TaoObjGradCallback for a technique to allow 
+  See TaoObjGradCallback for a technique to allow
   the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
@@ -298,12 +298,12 @@ protected:
 //! \brief Adaptor to connect a TAO objective gradient callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
   This class makes it convenient to associate a TAO Objective Gradient callback
-  with a C++ object method. To assign 
+  with a C++ object method. To assign
   \code
   void MyObject::evaluateGradient(Tao tao,Vec x, Vec gradient);
   \endcode
 
-  as the objective function to a `Tao` `tao`, 
+  as the objective function to a `Tao` `tao`,
 
   \code
   MyObject obj;
@@ -311,7 +311,7 @@ protected:
   \endcode
 
   The method name `evaluateGradient` for the callback is hard-coded.
-  See TaoObjGradCallback for a technique to allow 
+  See TaoObjGradCallback for a technique to allow
   the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
@@ -343,12 +343,12 @@ protected:
 //! \brief Adaptor to connect a TAO objective function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
   This class makes it convenient to associate a TAO convergence monitoring callback
-  with a C++ object method. To assign 
+  with a C++ object method. To assign
   \code
   void MyObject::convergenceTest(Tao tao);
   \endcode
 
-  as the convergence test function to a `Tao` `tao`, 
+  as the convergence test function to a `Tao` `tao`,
 
   \code
   MyObject obj;
@@ -356,7 +356,7 @@ protected:
   \endcode
 
   The method name `convergenceTest` for the callback is hard-coded.
-  See TaoObjGradCallback for a technique to allow 
+  See TaoObjGradCallback for a technique to allow
   the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
@@ -387,13 +387,13 @@ protected:
 
 //! \brief Adaptor to connect a TAO objective and gradient function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
-  This class makes it convenient to associate a TAO combined objective value and gradient 
-  callback with a C++ object method. To assign 
+  This class makes it convenient to associate a TAO combined objective value and gradient
+  callback with a C++ object method. To assign
   \code
   void MyObject::someObjectiveFunction(Tao tao,Vec x, double *value, Vec gradient);
   \endcode
 
-  as the convergence test function to a `Tao` `tao`, 
+  as the convergence test function to a `Tao` `tao`,
 
   \code
   MyObject obj;
@@ -438,7 +438,7 @@ protected:
 //! \brief Adaptor to connect a TAO objective function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
   This class makes it convenient to associate a TAO Linearly Constrained Augmented Lagrangian (LCL)
-  callbacks with C++ object methods. To assign 
+  callbacks with C++ object methods. To assign
   \code
   void MyObject::evaluateConstraints(Tao tao,Vec x,Vec c);
   void MyObject::evaluateConstraintsJacobianState(Tao tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure);

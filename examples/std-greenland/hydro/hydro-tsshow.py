@@ -7,9 +7,11 @@ Creates graph of three modeled hydrology-related time series from a single file.
 # example from grid-sequencing example:
 #   $ ./hydro-tsshow.py foo.png ts_routing-decoupled.nc
 
-from numpy import *
-import pylab as plt
 import sys
+
+import pylab as plt
+from numpy import *
+
 try:
     import netCDF4 as netCDF
 except:
@@ -26,9 +28,9 @@ tsfile = sys.argv[2]
 
 secpera = 31556926.0
 scale = 10.0e3
-scalestr = '$10^3$'
+scalestr = "$10^3$"
 yaxismin = 1.0e-4  # in scale*kg/s
-legloc = 'lower right'
+legloc = "lower right"
 
 labels = []
 plt.figure(figsize=(9, 4))
@@ -43,10 +45,10 @@ print("  reading 'time' variable ...")
 t = ncfile.variables["time"][:] / secpera
 
 n = 3
-style = ['b-',  'g-',  'r-']
-labels = ['ocean_loss', 'ice_free_land_loss', 'negative_thickness_gain']
+style = ["b-", "g-", "r-"]
+labels = ["ocean_loss", "ice_free_land_loss", "negative_thickness_gain"]
 for k in range(n):
-    varname = 'hydro_' + labels[k]
+    varname = "hydro_" + labels[k]
     print("  reading '%s' variable ..." % varname)
     var = ncfile.variables[varname][:]
     plt.semilogy(t, var / scale, style[k], linewidth=2.5)
@@ -55,8 +57,8 @@ for k in range(n):
 ncfile.close()
 
 plt.hold(False)
-yy = plt.getp(plt.gca(), 'ylim')
-plt.setp(plt.gca(), 'ylim', (yaxismin, yy[1]))
+yy = plt.getp(plt.gca(), "ylim")
+plt.setp(plt.gca(), "ylim", (yaxismin, yy[1]))
 plt.legend(labels, loc=legloc)
 plt.xlabel("t (years)", size=16)
 plt.ylabel("flux  (%s kg/s)" % scalestr, size=16)
@@ -64,4 +66,4 @@ plt.grid(True)
 
 print("saving image to file '%s' ..." % outimage)
 # plt.show()
-plt.savefig(outimage, bbox_inches='tight')
+plt.savefig(outimage, bbox_inches="tight")

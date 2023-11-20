@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
+from getopt import GetoptError, getopt
 from sys import argv, exit
-from getopt import getopt, GetoptError
 
 # @package nccmp
 # Compares NetCDF files by absolute max norms of difference of variables
@@ -28,7 +28,7 @@ from getopt import getopt, GetoptError
 ##
 # Run with --help to get a "usage" message.
 
-tol = 0.0   # default tolerance is perfection
+tol = 0.0  # default tolerance is perfection
 
 
 def success(relative):
@@ -60,8 +60,8 @@ def usagefailure(message):
 
 
 def compare_vars(nc1, nc2, name, tol, relative=False):
-    from numpy import squeeze, isnan, ma, finfo, fabs
     import numpy
+    from numpy import fabs, finfo, isnan, ma, squeeze
 
     try:
         var1 = ma.array(squeeze(nc1.variables[name][:]))
@@ -78,7 +78,7 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
         usagefailure("ERROR: VARIABLE '%s' OF INCOMPATIBLE SHAPES (?) IN FILES" % name)
 
     if mask.all():
-        print('Variable %10s: no values to compare.' % name)
+        print("Variable %10s: no values to compare." % name)
         return
 
     var1 = ma.array(var1, mask=mask)
@@ -121,18 +121,18 @@ def compare(file1, file2, variables, exclude, tol, relative):
 
     print("Comparing %s and %s" % (file1, file2))
 
-    from numpy import unique, r_
+    from numpy import r_, unique
 
     try:
-        nc1 = NC(file1, 'r')
+        nc1 = NC(file1, "r")
     except:
         usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % file1)
     try:
-        nc2 = NC(file2, 'r')
+        nc2 = NC(file2, "r")
     except:
         usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % file2)
 
-    if (exclude == False):
+    if exclude == False:
         if len(variables) == 0:
             vars1 = list(nc1.variables.keys())
             vars2 = list(nc2.variables.keys())
@@ -146,23 +146,24 @@ def compare(file1, file2, variables, exclude, tol, relative):
         vars = unique(r_[vars1, vars2])
 
         for each in vars:
-            if (each in variables):
+            if each in variables:
                 continue
             compare_vars(nc1, nc2, each, tol, relative)
 
 
 if __name__ == "__main__":
     from numpy import double
+
     try:
         opts, args = getopt(argv[1:], "t:v:xr", ["help", "usage"])
     except GetoptError:
-        usagefailure('ERROR: INCORRECT COMMAND LINE ARGUMENTS FOR nccmp.py')
+        usagefailure("ERROR: INCORRECT COMMAND LINE ARGUMENTS FOR nccmp.py")
     file1 = ""
     file2 = ""
     variables = []
     exclude = False
     relative = False
-    for (opt, arg) in opts:
+    for opt, arg in opts:
         if opt == "-t":
             tol = double(arg)
         if opt == "-x":
@@ -176,7 +177,7 @@ if __name__ == "__main__":
             exit(0)
 
     if len(args) != 2:
-        usagefailure('ERROR: WRONG NUMBER OF ARGUMENTS FOR nccmp.py')
+        usagefailure("ERROR: WRONG NUMBER OF ARGUMENTS FOR nccmp.py")
 
     compare(args[0], args[1], variables, exclude, tol, relative)
 

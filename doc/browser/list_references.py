@@ -1,13 +1,16 @@
-from pybtex.database import parse_file, BibliographyData
 import io
-import sys
 import re
+import sys
 
 import pybtex.backends.markdown
+from pybtex.database import BibliographyData, parse_file
+
 backend = pybtex.backends.markdown.Backend()
 
 import pybtex.style.formatting.plain
+
 style = pybtex.style.formatting.plain.Style()
+
 
 def format_list(bib_data):
     formatted = style.format_bibliography(bib_data)
@@ -29,6 +32,7 @@ def format_list(bib_data):
         result.write("\n")
 
     return result.getvalue()
+
 
 header = """References {#references}
 ==========

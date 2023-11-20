@@ -84,4 +84,3 @@ More processors (NN) are recommended for a 1.0 mm grid:
 
 To experiment with different configuration constants, edit and rerun
 `preprocess.py`.
-

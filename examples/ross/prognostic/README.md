@@ -42,4 +42,3 @@ To generate figures comparing the final-time modeled velocity to present-day
 observed velocity do
 
     $ ../plot.py prog_Mx211_yr100.nc
-

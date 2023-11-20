@@ -582,4 +582,3 @@ Code organization and cleanup
    ```coding_style.md`` <https://github.com/pism/pism/blob/dev/doc/browser/coding_style.md>`__).
 -  ``autopep8`` the Python code, ``pylint`` support.
 -  Clean up FEM code.
-

@@ -7,6 +7,7 @@ ctx = PISM.Context()
 
 ctx.log.set_threshold(1)
 
+
 def create_dummy_grid():
     "Create a dummy grid"
     params = PISM.GridParameters(ctx.config)
@@ -76,7 +77,9 @@ def setup():
     inputs.v3 = v
     inputs.w3 = w
 
+
 dt = convert(1, "years", "seconds")
+
 
 def use_model(model):
     print("* Performing a time step...")
@@ -95,17 +98,18 @@ def use_model(model):
 
 
 def initialize(model):
-    model.initialize(basal_melt_rate,
-                     ice_thickness,
-                     surface_temp,
-                     climatic_mass_balance,
-                     basal_heat_flux)
+    model.initialize(
+        basal_melt_rate,
+        ice_thickness,
+        surface_temp,
+        climatic_mass_balance,
+        basal_heat_flux,
+    )
 
 
 def test_interface():
     "Use the EnergyModel interface to make sure the code runs."
     for M in [PISM.EnthalpyModel, PISM.DummyEnergyModel, PISM.TemperatureModel]:
-
         model = M(grid, None)
 
         print("Testing %s..." % M)
@@ -129,11 +133,9 @@ def test_interface():
         model.restart(pio, 0)
 
         print("* Bootstrapping from a saved model state...")
-        model.bootstrap(pio,
-                        ice_thickness,
-                        surface_temp,
-                        climatic_mass_balance,
-                        basal_heat_flux)
+        model.bootstrap(
+            pio, ice_thickness, surface_temp, climatic_mass_balance, basal_heat_flux
+        )
 
         pio.close()
 

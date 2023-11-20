@@ -25,7 +25,7 @@ namespace pism {
 namespace surface {
 
 //! \brief A class implementing a primitive surface model.
-/*! 
+/*!
   This is an "invisible" surface processes model which "passes through"
   information from the atmosphere above directly to the ice below the surface
   layers.  It implements two modeling choices:

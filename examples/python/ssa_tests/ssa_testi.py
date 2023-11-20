@@ -19,30 +19,39 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-import PISM
 import math
 
-m_schoof = 10        # (pure number)
-L_schoof = 40e3      # meters
+import PISM
+
+m_schoof = 10  # (pure number)
+L_schoof = 40e3  # meters
 aspect_schoof = 0.05  # (pure)
 H0_schoof = aspect_schoof * L_schoof
 # = 2000 m THICKNESS
-B_schoof = 3.7e8     # Pa s^{1/3}; hardness
+B_schoof = 3.7e8  # Pa s^{1/3}; hardness
 # given on p. 239 of Schoof; why so big?
-p_schoof = 4.0 / 3.0   # = 1 + 1/n
+p_schoof = 4.0 / 3.0  # = 1 + 1/n
 
 
 class testi(PISM.ssa.SSAExactTestCase):
-
     def _initGrid(self):
         Mx = self.Mx
         My = self.My
-        Ly = 3 * L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-        Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)))
-        self.grid = PISM.Grid.Shallow(PISM.Context().ctx, Lx, Ly, 0, 0,
-                                         Mx, My,
-                                         PISM.CELL_CORNER,
-                                         PISM.NOT_PERIODIC)
+        Ly = (
+            3 * L_schoof
+        )  # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
+        Lx = max(60.0e3, ((Mx - 1) / 2.0) * (2.0 * Ly / (My - 1)))
+        self.grid = PISM.Grid.Shallow(
+            PISM.Context().ctx,
+            Lx,
+            Ly,
+            0,
+            0,
+            Mx,
+            My,
+            PISM.CELL_CORNER,
+            PISM.NOT_PERIODIC,
+        )
 
     def _initPhysics(self):
         config = self.config
@@ -52,8 +61,10 @@ class testi(PISM.ssa.SSAExactTestCase):
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
-        config.set_number("flow_law.isothermal_Glen.ice_softness", pow(
-            B_schoof, -config.get_number("stress_balance.ssa.Glen_exponent")))
+        config.set_number(
+            "flow_law.isothermal_Glen.ice_softness",
+            pow(B_schoof, -config.get_number("stress_balance.ssa.Glen_exponent")),
+        )
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -69,7 +80,9 @@ class testi(PISM.ssa.SSAExactTestCase):
         # The finite difference code uses the following flag to treat
         # the non-periodic grid correctly.
         self.config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", True)
-        self.config.set_number("stress_balance.ssa.epsilon", 0.0)  # don't use this lower bound
+        self.config.set_number(
+            "stress_balance.ssa.epsilon", 0.0
+        )  # don't use this lower bound
 
         standard_gravity = self.config.get_number("constants.standard_gravity")
         ice_rho = self.config.get_number("constants.ice.density")
@@ -77,7 +90,7 @@ class testi(PISM.ssa.SSAExactTestCase):
         f = ice_rho * standard_gravity * H0_schoof * math.tan(theta)
         grid = self.grid
         with PISM.vec.Access(comm=[vecs.tauc]):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 y = grid.y(j)
                 vecs.tauc[i, j] = f * (abs(y / L_schoof) ** m_schoof)
 
@@ -87,12 +100,14 @@ class testi(PISM.ssa.SSAExactTestCase):
         bed = vecs.bedrock_altitude
         grid = self.grid
         with PISM.vec.Access(comm=[surface, bed, vel_bc, vel_bc_mask]):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 p = PISM.exactI(m_schoof, grid.x(i), grid.y(j))
                 bed[i, j] = p.bed
                 surface[i, j] = p.bed + H0_schoof
 
-                edge = ((j == 0) or (j == grid.My() - 1)) or ((i == 0) or (i == grid.Mx() - 1))
+                edge = ((j == 0) or (j == grid.My() - 1)) or (
+                    (i == 0) or (i == grid.Mx() - 1)
+                )
                 if edge:
                     vel_bc_mask[i, j] = 1
                     vel_bc[i, j].u = p.u
@@ -104,7 +119,7 @@ class testi(PISM.ssa.SSAExactTestCase):
 
 
 # The main code for a run follows:
-if __name__ == '__main__':
+if __name__ == "__main__":
     context = PISM.Context()
     config = context.config
 
@@ -113,6 +128,5 @@ if __name__ == '__main__':
     config.set_number("grid.Mx", 11, PISM.CONFIG_DEFAULT)
     config.set_number("grid.My", 61, PISM.CONFIG_DEFAULT)
 
-    tc = testi(int(config.get_number("grid.Mx")),
-               int(config.get_number("grid.My")))
+    tc = testi(int(config.get_number("grid.Mx")), int(config.get_number("grid.My")))
     tc.run(config.get_string("output.file"))

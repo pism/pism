@@ -1,10 +1,12 @@
 # code extending the Array class
 
+
 def regrid(self, filename, critical=False, default_value=0.0):
     if critical == True:
         self._regrid(filename, Default.Nil())
     else:
         self._regrid(filename, Default(default_value))
+
 
 def numpy(self):
     "Return a NumPy array (a copy) containing data from this field (on rank 0)."
@@ -16,6 +18,7 @@ def numpy(self):
         return numpy.array(tmp.get()).reshape(self.shape())
     else:
         return None
+
 
 def local_part(self):
     """NumPy array containing the local (sub-domain) part, ghosts and all.

@@ -256,7 +256,7 @@ public:
   \endcode
 
   For finite difference (and some other) computations we often need to know
-  values at map-plane neighbors of a grid point. 
+  values at map-plane neighbors of a grid point.
 
   We say that a patch owned by a processor is surrounded by a strip of "ghost"
   grid points belonging to patches next to the one in question. This lets us to

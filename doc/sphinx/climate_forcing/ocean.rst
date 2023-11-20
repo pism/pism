@@ -171,9 +171,9 @@ grounding line. The basin mask defines regions of similar, large-scale ocean con
 each region is marked with a distinct positive integer. In PICO, ocean input temperature
 and salinity are averaged on the continental shelf within each basins. For each ice shelf,
 the input values of the overturning circulation are calculated as an area-weighted average
-over all basins that intersect the ice shelf. Only those basins are considered in the average, 
-in which the ice shelf has in fact a connection to the ocean. Large ice shelves, that cover 
-across two basins, that do not share an ocean boundary, are considered as two separate ice 
+over all basins that intersect the ice shelf. Only those basins are considered in the average,
+in which the ice shelf has in fact a connection to the ocean. Large ice shelves, that cover
+across two basins, that do not share an ocean boundary, are considered as two separate ice
 shelves with individual ocean inputs. If ocean input parameters cannot be
 identified, standard values are used (**Warning:** this could strongly influence melt
 rates computed by PICO). In regions where the PICO geometry cannot be identified,

@@ -75,7 +75,7 @@ fractures="-fractures \
 
 
 # run commands #############################################################################
-#This first initialization is required as direct bootstrap may lead to KSP solve failure 
+#This first initialization is required as direct bootstrap may lead to KSP solve failure
 cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -regional -i ../Ross_combined.nc -bootstrap -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given ${ssa} -kill_icebergs \
   -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx -fractures -fracture_parameters 0,0,0,0 -write_fd_fields "

@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 
-from PISMNC import PISMDataset as NC
-import numpy as np
-
 import argparse
+
+import numpy as np
+from PISMNC import PISMDataset as NC
 
 parser = argparse.ArgumentParser()
 parser.description = "Generates an input file for the 'flood' experiment."
 
-parser.add_argument("-M", dest="M", type=int,
-                    help="grid size", default=301)
-parser.add_argument("-L", dest="L", type=float,
-                    help="domain size, meters", default=1e6)
-parser.add_argument("-o", dest="output", help="output file name",
-                    default="flood.nc")
+parser.add_argument("-M", dest="M", type=int, help="grid size", default=301)
+parser.add_argument("-L", dest="L", type=float, help="domain size, meters", default=1e6)
+parser.add_argument("-o", dest="output", help="output file name", default="flood.nc")
 options = parser.parse_args()
 L = options.L
 M = options.M
@@ -32,20 +29,20 @@ for phi in np.linspace(0, 2 * np.pi, 4):
     center_x = R * np.cos(phi)
     center_y = R * np.sin(phi)
     T = phi / (2.0 * np.pi) * 1500.0
-    thk += (T / r) * np.sqrt(np.maximum(r ** 2 - (xx - center_x) ** 2 - (yy - center_y) ** 2, 0))
+    thk += (T / r) * np.sqrt(
+        np.maximum(r**2 - (xx - center_x) ** 2 - (yy - center_y) ** 2, 0)
+    )
 
 try:
-    nc = NC(options.output, 'w')
+    nc = NC(options.output, "w")
 except:
-    nc = NC(options.output, 'a')
+    nc = NC(options.output, "a")
 
 try:
     nc.create_dimensions(x, y, time_dependent=False)
 
-    nc.define_2d_field("topg", attrs={"units": "m",
-                                      "long_name": "bedrock topography"})
-    nc.define_2d_field("thk", attrs={"units": "m",
-                                     "long_name": "ice thickness"})
+    nc.define_2d_field("topg", attrs={"units": "m", "long_name": "bedrock topography"})
+    nc.define_2d_field("thk", attrs={"units": "m", "long_name": "ice thickness"})
 
     nc.define_2d_field("climatic_mass_balance", attrs={"units": "kg m-2 year-1"})
     nc.define_2d_field("ice_surface_temp", attrs={"units": "Kelvin"})

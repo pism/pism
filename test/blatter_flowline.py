@@ -10,6 +10,7 @@ config = ctx.config
 
 config.set_string("stress_balance.blatter.flow_law", "isothermal_glen")
 
+
 def H_Halfar(H_max, R_max, r):
     SperA = 31556926.0
     n = 3.0
@@ -24,17 +25,22 @@ def H_Halfar(H_max, R_max, r):
     # t0 = (beta/Gamma) * pow((2n+1)/(n+1),n)*(pow(R0,n+1)/pow(H0,2n+1))
     t0 = 422.45 * SperA
 
-    Rmargin = R0 * pow(t / t0, beta);
+    Rmargin = R0 * pow(t / t0, beta)
 
-    if (r < Rmargin):
-        H = H0 * pow(t / t0, -alpha) * pow(1.0 - pow(pow(t / t0, -beta) * (r / R0), (n + 1) / n),
-                                           n / (2*n + 1))
+    if r < Rmargin:
+        H = (
+            H0
+            * pow(t / t0, -alpha)
+            * pow(
+                1.0 - pow(pow(t / t0, -beta) * (r / R0), (n + 1) / n), n / (2 * n + 1)
+            )
+        )
         return H
     else:
         return 0.0
 
-class BlatterFlowline(object):
 
+class BlatterFlowline(object):
     def __init__(self, Mx, Mz, Lx, Lz, mg_levels, coarsening_factor):
         P = PISM.GridParameters(config)
 
@@ -76,17 +82,14 @@ class BlatterFlowline(object):
         self.coarsening_factor = coarsening_factor
 
     def initialize(self, ice_thickness, bed_elevation, yield_stress):
-
         geometry = self.geometry
         tauc = self.yield_stress
-        with PISM.vec.Access([geometry.bed_elevation,
-                              geometry.ice_thickness,
-                              tauc]):
-            for (i, j) in self.grid.points():
+        with PISM.vec.Access([geometry.bed_elevation, geometry.ice_thickness, tauc]):
+            for i, j in self.grid.points():
                 x = self.grid.x(i)
                 geometry.bed_elevation[i, j] = bed_elevation(x)
                 geometry.ice_thickness[i, j] = ice_thickness(x)
-                tauc[i, j]                   = yield_stress(x)
+                tauc[i, j] = yield_stress(x)
 
         geometry.sea_level_elevation.set(0.0)
 
@@ -100,9 +103,9 @@ class BlatterFlowline(object):
 
         inputs = PISM.StressBalanceInputs()
 
-        inputs.geometry           = self.geometry
+        inputs.geometry = self.geometry
         inputs.basal_yield_stress = self.yield_stress
-        inputs.enthalpy           = self.enthalpy
+        inputs.enthalpy = self.enthalpy
 
         self.model.update(inputs, True)
 

@@ -29,7 +29,7 @@ IsothermalGlen::IsothermalGlen(const std::string &prefix,
                                const Config &config, EnthalpyConverter::Ptr ec)
   : PatersonBudd(prefix, config, ec) {
   m_name = "isothermal Glen";
-  
+
   m_softness_A = config.get_number("flow_law.isothermal_Glen.ice_softness");
   m_hardness_B = pow(m_softness_A, m_hardness_power);
 }

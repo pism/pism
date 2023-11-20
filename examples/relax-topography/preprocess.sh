@@ -49,4 +49,3 @@ ncap2 -O -s "thk=thk*0.; climatic_mass_balance[\$time,\$y1,\$x1]=-500.f*910.0" $
 ncatted -a units,climatic_mass_balance,o,c,"kg m-2 year-1" target_$PISMVERSION
 echo "done."
 echo
-

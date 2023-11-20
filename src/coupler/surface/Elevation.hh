@@ -34,7 +34,7 @@ protected:
   virtual const array::Scalar& accumulation_impl() const;
   virtual const array::Scalar& melt_impl() const;
   virtual const array::Scalar& runoff_impl() const;
-  
+
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);

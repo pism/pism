@@ -24,10 +24,13 @@ h, magvb, Wcrit, W, P = p.h, p.magvb, p.Wcrit, p.W, p.P
 
 j = 0
 print("Results from Test P:")
-print("    h = %.4f (m)  Po = %.7f (bar)  |vb| = %.5f (m/year)"
-      % (h[j], 910.0 * 9.81 * h[j] / 1.0e5, magvb[j] * secpera))
-print("    W_c = %.8f (m)  W = %.8f (m)  P = %.7f (bar)"
-      % (Wcrit[j], W[j], P[j] / 1.0e5))
+print(
+    "    h = %.4f (m)  Po = %.7f (bar)  |vb| = %.5f (m/year)"
+    % (h[j], 910.0 * 9.81 * h[j] / 1.0e5, magvb[j] * secpera)
+)
+print(
+    "    W_c = %.8f (m)  W = %.8f (m)  P = %.7f (bar)" % (Wcrit[j], W[j], P[j] / 1.0e5)
+)
 
 print("")
 print("compare to SAVED simpleP.c result:")

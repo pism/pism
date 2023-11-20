@@ -23,4 +23,3 @@ observations, and generate figures like those in the User's Manual, do
 
 Note `run_diag.sh` accepts three arguments: `run_diag.sh N Mx E` does a run with
 `N` MPI processes, a `Mx`x`Mx` grid, and option `-ssa_e E`.
-

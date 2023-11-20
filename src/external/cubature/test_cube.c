@@ -1,5 +1,5 @@
 
-/* 
+/*
    Usage: ./test_cube <dim> <tol> <integrand> <maxeval>
 
    where <dim> = # dimensions, <tol> = relative tolerance,
@@ -125,4 +125,3 @@ int main(int argc, char **argv)
 
      return 0;
 }
-

@@ -46,6 +46,7 @@ def rho_jacobi(dimensions):
     (J, L) = dimensions
     return (cos(pi / J) + cos(pi / L)) / 2
 
+
 # This makes the stencil wrap around the grid. It is unclear if this should be
 #  done, but it allows using a 4-point stencil for all points, even if they
 #  are on the edge of the grid (otherwise we need to use three points on the
@@ -56,13 +57,13 @@ def rho_jacobi(dimensions):
 
 
 def fix_indices(Is, Js, dimensions):
-
     (M, N) = dimensions
     Is[Is == M] = 0
     Is[Is == -1] = M - 1
     Js[Js == N] = 0
     Js[Js == -1] = N - 1
     return (Is, Js)
+
 
 # \brief laplace solves the Laplace equation
 # \details laplace solves the Laplace equation using the SOR method with Chebyshev
@@ -96,8 +97,7 @@ def fix_indices(Is, Js, dimensions):
 #    max_iter is the maximum number of iterations allowed. The default is 10000.
 
 
-def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
-
+def laplace(data, mask, eps1, eps2, initial_guess="mean", max_iter=10000):
     dimensions = data.shape
     rjac = rho_jacobi(dimensions)
     i, j = indices(dimensions)
@@ -116,12 +116,15 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
     try:
         initial_guess = float(initial_guess)
     except:
-        if initial_guess == 'mean':
-            present = (mask == False)
+        if initial_guess == "mean":
+            present = mask == False
             initial_guess = mean(data[present])
         else:
-            print("""ERROR: initial_guess of '%s' is not supported (it should be a number or 'mean').
-    Note: your data was not modified.""" % initial_guess)
+            print(
+                """ERROR: initial_guess of '%s' is not supported (it should be a number or 'mean').
+    Note: your data was not modified."""
+                % initial_guess
+            )
             return
 
     data[mask] = initial_guess
@@ -135,7 +138,9 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
             xi = sum(data[Is, Js]) - 4 * data[i, j]
             initial_norm += abs(xi)
     print("Initial norm of residual =", initial_norm)
-    print("Criterion is (change < %f) OR (res norm < %f (initial norm))." % (eps2, eps1))
+    print(
+        "Criterion is (change < %f) OR (res norm < %f (initial norm))." % (eps2, eps1)
+    )
 
     omega = 1.0
     # The main loop:
@@ -156,13 +161,15 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
                     change = abs(delta)
                 # Chebyshev acceleration (see formula 19.5.30):
                 if n == 1 and m == 1:
-                    omega = 1.0 / (1.0 - 0.5 * rjac ** 2)
+                    omega = 1.0 / (1.0 - 0.5 * rjac**2)
                 else:
-                    omega = 1.0 / (1.0 - 0.25 * rjac ** 2 * omega)
+                    omega = 1.0 / (1.0 - 0.25 * rjac**2 * omega)
         print("max change = %10f, residual norm = %10f" % (change, anorm))
         if (anorm < eps1 * initial_norm) or (change < eps2):
-            print("Exiting with change=%f, anorm=%f after %d iteration(s)." % (change,
-                                                                               anorm, n + 1))
+            print(
+                "Exiting with change=%f, anorm=%f after %d iteration(s)."
+                % (change, anorm, n + 1)
+            )
             return
     print("Exceeded the maximum number of iterations.")
     return
@@ -170,11 +177,12 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    from sys import argv, exit
-    from shutil import copy, move
-    from tempfile import mkstemp
     from os import close
-    from time import time, asctime
+    from shutil import copy, move
+    from sys import argv, exit
+    from tempfile import mkstemp
+    from time import asctime, time
+
     try:
         from netCDF4 import Dataset as NC
     except:
@@ -184,37 +192,51 @@ if __name__ == "__main__":
     parser = OptionParser()
 
     parser.usage = "%prog [options]"
-    parser.description = "Fills missing values in variables selected using -v in the file given by -f."
-    parser.add_option("-f", "--file", dest="input_filename",
-                      help="input file")
-    parser.add_option("-v", "--vars", dest="variables",
-                      help="comma-separated list of variables to process")
-    parser.add_option("-o", "--out_file", dest="output_filename",
-                      help="output file")
-    parser.add_option("-e", "--eps", dest="eps",
-                      help="convergence tolerance",
-                      default="1.0")
-    parser.add_option("-i", "--initial_guess", dest="initial_guess",
-                      help="initial guess to use; applies to all selected variables",
-                      default="mean")
+    parser.description = (
+        "Fills missing values in variables selected using -v in the file given by -f."
+    )
+    parser.add_option("-f", "--file", dest="input_filename", help="input file")
+    parser.add_option(
+        "-v",
+        "--vars",
+        dest="variables",
+        help="comma-separated list of variables to process",
+    )
+    parser.add_option("-o", "--out_file", dest="output_filename", help="output file")
+    parser.add_option(
+        "-e", "--eps", dest="eps", help="convergence tolerance", default="1.0"
+    )
+    parser.add_option(
+        "-i",
+        "--initial_guess",
+        dest="initial_guess",
+        help="initial guess to use; applies to all selected variables",
+        default="mean",
+    )
 
     (options, args) = parser.parse_args()
 
     if options.input_filename == "":
-        print("""Please specify the input file name
-(using the -f or --file command line option).""")
+        print(
+            """Please specify the input file name
+(using the -f or --file command line option)."""
+        )
         exit(-1)
     input_filename = options.input_filename
 
     if options.variables == "":
-        print("""Please specify the list of variables to process
-(using the -v or --variables command line option).""")
+        print(
+            """Please specify the list of variables to process
+(using the -v or --variables command line option)."""
+        )
         exit(-1)
-    variables = (options.variables).split(',')
+    variables = (options.variables).split(",")
 
     if options.output_filename == "":
-        print("""Please specify the output file name
-(using the -o or --out_file command line option).""")
+        print(
+            """Please specify the output file name
+(using the -o or --out_file command line option)."""
+        )
         exit(-1)
     output_filename = options.output_filename
 
@@ -231,16 +253,16 @@ if __name__ == "__main__":
         print("ERROR: Can't create %s, Exiting..." % tmp_filename)
 
     try:
-        nc = NC(tmp_filename, 'a')
+        nc = NC(tmp_filename, "a")
     except Exception as message:
         print(message)
         print("Note: %s was not modified." % output_filename)
         exit(-1)
 
     # add history global attribute (after checking if present)
-    historysep = ' '
-    historystr = asctime() + ': ' + historysep.join(argv) + '\n'
-    if 'history' in nc.ncattrs():
+    historysep = " "
+    historystr = asctime() + ": " + historysep.join(argv) + "\n"
+    if "history" in nc.ncattrs():
         nc.history = historystr + nc.history  # prepend to history string
     else:
         nc.history = historystr
@@ -251,19 +273,24 @@ if __name__ == "__main__":
         try:
             var = nc.variables[name]
 
-            attributes = ["valid_range", "valid_min", "valid_max",
-                          "_FillValue", "missing_value"]
+            attributes = [
+                "valid_range",
+                "valid_min",
+                "valid_max",
+                "_FillValue",
+                "missing_value",
+            ]
             adict = {}
             print("Reading attributes...")
             for attribute in attributes:
-                print("* %15s -- " % attribute, end=' ')
+                print("* %15s -- " % attribute, end=" ")
                 if attribute in var.ncattrs():
                     adict[attribute] = getattr(var, attribute)
                     print("found")
                 else:
                     print("not found")
 
-            if (var.ndim == 3):
+            if var.ndim == 3:
                 nt = var.shape[0]
                 for t in range(0, nt):
                     print("\nInterpolating time step %i of %i\n" % (t, nt))
@@ -272,25 +299,34 @@ if __name__ == "__main__":
 
                     if "valid_range" in adict:
                         range = adict["valid_range"]
-                        mask = ((data >= range[0]) & (data <= range[1]))
+                        mask = (data >= range[0]) & (data <= range[1])
                         print("Using the valid_range attribute; range = ", range)
 
                     elif "valid_min" in adict and "valid_max" in adict:
                         valid_min = adict["valid_min"]
                         valid_max = adict["valid_max"]
-                        mask = ((data < valid_min) | (data > valid_max))
-                        print("""Using valid_min and valid_max attributes.
-        valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max))
+                        mask = (data < valid_min) | (data > valid_max)
+                        print(
+                            """Using valid_min and valid_max attributes.
+        valid_min = %10f, valid_max = %10f."""
+                            % (valid_min, valid_max)
+                        )
 
                     elif "valid_min" in adict:
                         valid_min = adict["valid_min"]
                         mask = data < valid_min
-                        print("Using the valid_min attribute; valid_min = %10f" % valid_min)
+                        print(
+                            "Using the valid_min attribute; valid_min = %10f"
+                            % valid_min
+                        )
 
                     elif "valid_max" in adict:
                         valid_max = adict["valid_max"]
                         mask = data > valid_max
-                        print("Using the valid_max attribute; valid_max = %10f" % valid_max)
+                        print(
+                            "Using the valid_max attribute; valid_max = %10f"
+                            % valid_max
+                        )
 
                     elif "_FillValue" in adict:
                         fill_value = adict["_FillValue"]
@@ -298,13 +334,19 @@ if __name__ == "__main__":
                             mask = data <= fill_value + 2 * finfo(float).eps
                         else:
                             mask = data >= fill_value - 2 * finfo(float).eps
-                        print("Using the _FillValue attribute; _FillValue = %10f" % fill_value)
+                        print(
+                            "Using the _FillValue attribute; _FillValue = %10f"
+                            % fill_value
+                        )
 
                     elif "missing_value" in adict:
                         missing = adict["missing_value"]
                         mask = abs(data - missing) < 2 * finfo(float).eps
-                        print("""Using the missing_value attribute; missing_value = %10f
-        Warning: this attribute is deprecated by the NUG.""" % missing)
+                        print(
+                            """Using the missing_value attribute; missing_value = %10f
+        Warning: this attribute is deprecated by the NUG."""
+                            % missing
+                        )
 
                     else:
                         print("No missing values found. Skipping this variable...")
@@ -321,30 +363,32 @@ if __name__ == "__main__":
 
                     # now REMOVE missing_value and _FillValue attributes
                     try:
-                        delattr(var, '_FillValue')
+                        delattr(var, "_FillValue")
                     except:
                         pass
                     try:
-                        delattr(var, 'missing_value')
+                        delattr(var, "missing_value")
                     except:
                         pass
                     print("This took %5f seconds." % (time() - t0))
 
-            elif (var.ndim == 2):
-
+            elif var.ndim == 2:
                 data = asarray(squeeze(var[:]))
 
                 if "valid_range" in adict:
                     range = adict["valid_range"]
-                    mask = ((data >= range[0]) & (data <= range[1]))
+                    mask = (data >= range[0]) & (data <= range[1])
                     print("Using the valid_range attribute; range = ", range)
 
                 elif "valid_min" in adict and "valid_max" in adict:
                     valid_min = adict["valid_min"]
                     valid_max = adict["valid_max"]
-                    mask = ((data < valid_min) | (data > valid_max))
-                    print("""Using valid_min and valid_max attributes.
-    valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max))
+                    mask = (data < valid_min) | (data > valid_max)
+                    print(
+                        """Using valid_min and valid_max attributes.
+    valid_min = %10f, valid_max = %10f."""
+                        % (valid_min, valid_max)
+                    )
 
                 elif "valid_min" in adict:
                     valid_min = adict["valid_min"]
@@ -362,13 +406,18 @@ if __name__ == "__main__":
                         mask = data <= fill_value + 2 * finfo(float).eps
                     else:
                         mask = data >= fill_value - 2 * finfo(float).eps
-                    print("Using the _FillValue attribute; _FillValue = %10f" % fill_value)
+                    print(
+                        "Using the _FillValue attribute; _FillValue = %10f" % fill_value
+                    )
 
                 elif "missing_value" in adict:
                     missing = adict["missing_value"]
                     mask = abs(data - missing) < 2 * finfo(float).eps
-                    print("""Using the missing_value attribute; missing_value = %10f
-    Warning: this attribute is deprecated by the NUG.""" % missing)
+                    print(
+                        """Using the missing_value attribute; missing_value = %10f
+    Warning: this attribute is deprecated by the NUG."""
+                        % missing
+                    )
 
                 else:
                     print("No missing values found. Skipping this variable...")
@@ -385,16 +434,16 @@ if __name__ == "__main__":
 
                 # now REMOVE missing_value and _FillValue attributes
                 try:
-                    delattr(var, '_FillValue')
+                    delattr(var, "_FillValue")
                 except:
                     pass
                 try:
-                    delattr(var, 'missing_value')
+                    delattr(var, "missing_value")
                 except:
                     pass
                 print("This took %5f seconds." % (time() - t0))
             else:
-                print('wrong shape')
+                print("wrong shape")
 
         except Exception as message:
             print("ERROR:", message)
@@ -406,6 +455,5 @@ if __name__ == "__main__":
     try:
         move(tmp_filename, output_filename)
     except:
-        print("Error moving %s to %s. Exiting..." % (tmp_filename,
-                                                     output_filename))
+        print("Error moving %s to %s. Exiting..." % (tmp_filename, output_filename))
         exit(-1)

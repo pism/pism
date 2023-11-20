@@ -60,12 +60,12 @@ public:
 protected:
   void scatter_begin_end(VecScatter s, Vec a, Vec b, ScatterMode m);
   petsc::Vec m_ab;
-  
+
   PetscInt m_na_local, m_na_global, m_nb_local, m_nb_global;
-  
+
   petsc::IS m_a_in_ab;
   petsc::IS m_b_in_ab;
-  
+
   petsc::VecScatter m_scatter_a;
   petsc::VecScatter m_scatter_b;
 };

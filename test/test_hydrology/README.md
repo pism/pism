@@ -22,4 +22,3 @@ To generate a PISM input file and run test P itself, try
 Run `runTestP.py --help` for a summary of its command-line options.
 
 The NetCDF file `inputforP_regression.nc` is used by `test/regression/test_29.py`.
-

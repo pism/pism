@@ -169,7 +169,7 @@ have different values, namely `q`\=0.2, `u_{\text{threshold}}`\=40-80 m/year`:
 
    -regularized_coulomb \
    -pseudo_plastic_q 0.2 \
-   -pseudo_plastic_uthreshold 50.0 
+   -pseudo_plastic_uthreshold 50.0
 
 The model's performance should be close to the pseudo-plastic implementation (Eq.
 :eq:`eq-pseudoplastic`), although there ought to be slightly more fast sliding and a less

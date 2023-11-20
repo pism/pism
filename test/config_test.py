@@ -15,13 +15,14 @@ def is_special(name):
     return False
 
 
-import netCDF4
 import sys
+
+import netCDF4
 import numpy as np
 
 config = netCDF4.Dataset(sys.argv[1])
 
-pism_config = config.variables['pism_config']
+pism_config = config.variables["pism_config"]
 
 attrs = pism_config.ncattrs()
 
@@ -45,7 +46,14 @@ for a in attrs:
         print("Attribute {} is a number, but it does not have units".format(a))
         sys.exit(1)
 
-    if attr_type == "flag" and attr_value not in ["yes", "no", "true", "false", "on", "off"]:
+    if attr_type == "flag" and attr_value not in [
+        "yes",
+        "no",
+        "true",
+        "false",
+        "on",
+        "off",
+    ]:
         print("Attribute {} is a flag, but its value is {}".format(a, attr_value))
         sys.exit(1)
 
@@ -53,7 +61,9 @@ for a in attrs:
         print("Attribute {} is a keyword, but {}_choices is not set".format(a, a))
         sys.exit(1)
 
-    if attr_type in ["number", "integer"] and not isinstance(attr_value, (int, float, np.number)):
+    if attr_type in ["number", "integer"] and not isinstance(
+        attr_value, (int, float, np.number)
+    ):
         print("Attribute {} is a number, but its value is not".format(a))
         print(type(attr_value))
         sys.exit(1)

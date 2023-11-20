@@ -18,12 +18,14 @@
 # Each of the requested variables must have missing values specified
 # using the _FillValue attribute.
 
-import petsc4py
 import sys
+
+import petsc4py
+
 petsc4py.init(sys.argv)
 
-from petsc4py import PETSc
 import numpy as np
+from petsc4py import PETSc
 
 
 def assemble_matrix(mask):
@@ -44,14 +46,14 @@ def assemble_matrix(mask):
     A = PETSc.Mat()
     A.create(PETSc.COMM_WORLD)
     A.setSizes([nrow * ncol, nrow * ncol])
-    A.setType('aij')  # sparse
+    A.setType("aij")  # sparse
     A.setPreallocationNNZ(5)
 
     # precompute values for setting
     # diagonal and non-diagonal entries
     diagonal = 4.0
-    offdx = - 1.0
-    offdy = - 1.0
+    offdx = -1.0
+    offdy = -1.0
 
     def R(i, j):
         "Map from the (row,column) pair to the linear row number."
@@ -61,8 +63,7 @@ def assemble_matrix(mask):
     # processor and insert entry values
     row_start, row_end = A.getOwnershipRange()
     for row in range(row_start, row_end):
-
-        i = row // ncol    # map row number to
+        i = row // ncol  # map row number to
         j = row - i * ncol  # grid coordinates
 
         if mask[i, j] == False:
@@ -72,33 +73,33 @@ def assemble_matrix(mask):
         D = diagonal
 
         # i
-        if i == 0:              # top row
+        if i == 0:  # top row
             D += offdy
 
-        if i > 0:               # interior
+        if i > 0:  # interior
             col = R(i - 1, j)
             A[row, col] = offdx
 
-        if i < nrow - 1:        # interior
+        if i < nrow - 1:  # interior
             col = R(i + 1, j)
             A[row, col] = offdx
 
-        if i == nrow - 1:       # bottom row
+        if i == nrow - 1:  # bottom row
             D += offdy
 
         # j
-        if j == 0:              # left-most column
+        if j == 0:  # left-most column
             D += offdx
 
-        if j > 0:               # interior
+        if j > 0:  # interior
             col = R(i, j - 1)
             A[row, col] = offdy
 
-        if j < ncol - 1:        # interior
+        if j < ncol - 1:  # interior
             col = R(i, j + 1)
             A[row, col] = offdy
 
-        if j == ncol - 1:       # right-most column
+        if j == ncol - 1:  # right-most column
             D += offdx
 
         A[row, row] = D
@@ -129,7 +130,7 @@ def assemble_rhs(rhs, X):
     rhs.set(0.0)
 
     for row in range(row_start, row_end):
-        i = row // ncol    # map row number to
+        i = row // ncol  # map row number to
         j = row - i * ncol  # grid coordinates
 
         if X.mask[i, j] == False:
@@ -254,13 +255,13 @@ def test():
         import pylab as plt
 
         plt.figure(1)
-        plt.imshow(zz, interpolation='nearest')
+        plt.imshow(zz, interpolation="nearest")
 
         plt.figure(2)
-        plt.imshow(field, interpolation='nearest')
+        plt.imshow(field, interpolation="nearest")
 
         plt.figure(3)
-        plt.imshow(zzz0_np, interpolation='nearest')
+        plt.imshow(zzz0_np, interpolation="nearest")
 
         plt.show()
 
@@ -303,13 +304,13 @@ def fill_variable(nc, name):
 
     # Remove the _FillValue attribute:
     try:
-        delattr(var, '_FillValue')
+        delattr(var, "_FillValue")
     except:
         pass
 
     # Remove the missing_value attribute:
     try:
-        delattr(var, 'missing_value')
+        delattr(var, "missing_value")
     except:
         pass
 
@@ -323,21 +324,21 @@ def add_history(nc):
         return
 
     # add history global attribute (after checking if present)
-    historysep = ' '
-    historystr = asctime() + ': ' + historysep.join(sys.argv) + '\n'
-    if 'history' in nc.ncattrs():
+    historysep = " "
+    historystr = asctime() + ": " + historysep.join(sys.argv) + "\n"
+    if "history" in nc.ncattrs():
         nc.history = historystr + nc.history  # prepend to history string
     else:
         nc.history = historystr
 
 
 if __name__ == "__main__":
-    from argparse import ArgumentParser
     import os
     import os.path
-    import tempfile
     import shutil
-    from time import time, asctime
+    import tempfile
+    from argparse import ArgumentParser
+    from time import asctime, time
 
     try:
         from netCDF4 import Dataset as NC
@@ -350,10 +351,15 @@ if __name__ == "__main__":
 
     parser.add_argument("INPUT", nargs=1, help="Input file name.")
     parser.add_argument("OUTPUT", nargs=1, help="Output file name.")
-    parser.add_argument("-a", "--all", dest="all", action="store_true",
-                        help="Process all variables.")
-    parser.add_argument("-v", "--vars", dest="variables",
-                        help="comma-separated list of variables to process")
+    parser.add_argument(
+        "-a", "--all", dest="all", action="store_true", help="Process all variables."
+    )
+    parser.add_argument(
+        "-v",
+        "--vars",
+        dest="variables",
+        help="comma-separated list of variables to process",
+    )
 
     options, _ = parser.parse_known_args()
 
@@ -366,7 +372,7 @@ if __name__ == "__main__":
         nc.close()
     else:
         try:
-            variables = (options.variables).split(',')
+            variables = (options.variables).split(",")
         except:
             PETSc.Sys.Print("Please specify variables using the -v option.")
             sys.exit(-1)
@@ -378,33 +384,36 @@ if __name__ == "__main__":
 
     t0 = time()
 
-    PETSc.Sys.Print("Filling missing values in %s and saving results to %s..." % (input_filename,
-                                                                                  output_filename))
+    PETSc.Sys.Print(
+        "Filling missing values in %s and saving results to %s..."
+        % (input_filename, output_filename)
+    )
     if rank == 0:
         try:
             PETSc.Sys.Print("Creating a temporary file...")
             # find the name of the directory with the output file:
             dirname = os.path.dirname(os.path.abspath(output_filename))
-            (handle, tmp_filename) = tempfile.mkstemp(prefix="fill_missing_",
-                                                      suffix=".nc",
-                                                      dir=dirname)
+            (handle, tmp_filename) = tempfile.mkstemp(
+                prefix="fill_missing_", suffix=".nc", dir=dirname
+            )
 
             os.close(handle)  # mkstemp returns a file handle (which we don't need)
         except IOError:
             PETSc.Sys.Print("ERROR: Can't create %s, Exiting..." % tmp_filename)
 
         try:
-            PETSc.Sys.Print("Copying input file %s to %s..." % (input_filename,
-                                                                tmp_filename))
+            PETSc.Sys.Print(
+                "Copying input file %s to %s..." % (input_filename, tmp_filename)
+            )
             shutil.copy(input_filename, tmp_filename)
         except IOError:
             PETSc.Sys.Print("ERROR: Can't copy %s, Exiting..." % input_filename)
 
     try:
         if rank == 0:
-            nc = NC(tmp_filename, 'a')
+            nc = NC(tmp_filename, "a")
         else:
-            nc = NC(input_filename, 'r')
+            nc = NC(input_filename, "r")
     except Exception as message:
         PETSc.Sys.Print(message)
         PETSc.Sys.Print("Note: %s was not modified." % output_filename)
@@ -425,8 +434,9 @@ if __name__ == "__main__":
         if rank == 0:
             shutil.move(tmp_filename, output_filename)
     except:
-        PETSc.Sys.Print("Error moving %s to %s. Exiting..." % (tmp_filename,
-                                                               output_filename))
+        PETSc.Sys.Print(
+            "Error moving %s to %s. Exiting..." % (tmp_filename, output_filename)
+        )
         sys.exit(-1)
 
     PETSc.Sys.Print("Total time elapsed: %5f seconds." % (time() - t0))

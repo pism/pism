@@ -40,22 +40,22 @@ def get(self, key):
         return self.get_2d_mask(key)
     except:
         pass
-  
+
     try:
         return self.get_2d_scalar(key)
     except:
         pass
-  
+
     try:
         return self.get_2d_vector(key)
     except:
         pass
-  
+
     try:
         return self.get_3d_scalar(key)
     except:
         pass
-  
+
     return self._get(key)
   %}
 }

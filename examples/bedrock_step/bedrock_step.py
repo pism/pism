@@ -26,14 +26,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import numpy as np
 
-A      = 1e-16                  # Pa^(-3) / year
-b_0    = 500.0                  # m
-g      = 9.81                   # m / s^2
-mdot_0 = 2.0                    # m / year
-n      = 3.0                    # no units
-rho    = 910.0                  # kg / m^3
-x_m    = 20000.0                # m
-x_s    = 7000.0                 # m
+A = 1e-16  # Pa^(-3) / year
+b_0 = 500.0  # m
+g = 9.81  # m / s^2
+mdot_0 = 2.0  # m / year
+n = 3.0  # no units
+rho = 910.0  # kg / m^3
+x_m = 20000.0  # m
+x_s = 7000.0  # m
+
 
 def bed_elevation(x):
     """Bed elevation in meters"""
@@ -41,6 +42,7 @@ def bed_elevation(x):
     B[x < x_s] = b_0
 
     return B
+
 
 def surface(x):
     """Steady state solution from section 6, in meters"""
@@ -51,36 +53,86 @@ def surface(x):
     s[x >= x_s] = s_x_s_x_m[x >= x_s]
 
     # correct s
-    s[x > x_m] = 0.
+    s[x > x_m] = 0.0
 
     return s
+
 
 def accumulation(x):
     "Accumulation/ablation rate in m/year."
     # Eq. 54
-    mdot = ((n*mdot_0)/(x_m**(2.*n-1.)))*x**(n-1.)*(abs(x_m-x)**(n-1.))*(x_m-2.*x)
+    mdot = (
+        ((n * mdot_0) / (x_m ** (2.0 * n - 1.0)))
+        * x ** (n - 1.0)
+        * (abs(x_m - x) ** (n - 1.0))
+        * (x_m - 2.0 * x)
+    )
 
-    mdot[x>x_m] = 0.0
+    mdot[x > x_m] = 0.0
 
     return mdot
 
-def s_eval_x_s_x_m(x,x_s,x_m,n,A,mdot_0,rho,g):
+
+def s_eval_x_s_x_m(x, x_s, x_m, n, A, mdot_0, rho, g):
     "Surface elevation on [x_s, x_m], in meters"
     # Eq. 56
-    s_x_s_x_m = (((2.*n+2.)*(n+2.)**(1./n)*mdot_0**(1./n))/(2.**(1./n)*6*n*A**(1./n)*rho*g*x_m**((2.*n-1)/n))*(x_m+2.*x)*(x_m-x)**2.)**(n/(2.*n+2.))
+    s_x_s_x_m = (
+        ((2.0 * n + 2.0) * (n + 2.0) ** (1.0 / n) * mdot_0 ** (1.0 / n))
+        / (
+            2.0 ** (1.0 / n)
+            * 6
+            * n
+            * A ** (1.0 / n)
+            * rho
+            * g
+            * x_m ** ((2.0 * n - 1) / n)
+        )
+        * (x_m + 2.0 * x)
+        * (x_m - x) ** 2.0
+    ) ** (n / (2.0 * n + 2.0))
 
     return s_x_s_x_m
 
-def s_eval_x_s(x,x_s,x_m,n,A,mdot_0,rho,g,b_0):
+
+def s_eval_x_s(x, x_s, x_m, n, A, mdot_0, rho, g, b_0):
     "Surface elevation on [0, x_s), in meters"
     # Eq. 58
-    h_splus = (((2.*n+2.)*(n+2.)**(1./n)*mdot_0**(1./n))/(2.**(1./n)*6*n*A**(1./n)*rho*g*x_m**((2.*n-1.)/n))*(x_m+2.*x_s)*(x_m-x_s)**2.)**(n/(2.*n+2.))
+    h_splus = (
+        ((2.0 * n + 2.0) * (n + 2.0) ** (1.0 / n) * mdot_0 ** (1.0 / n))
+        / (
+            2.0 ** (1.0 / n)
+            * 6
+            * n
+            * A ** (1.0 / n)
+            * rho
+            * g
+            * x_m ** ((2.0 * n - 1.0) / n)
+        )
+        * (x_m + 2.0 * x_s)
+        * (x_m - x_s) ** 2.0
+    ) ** (n / (2.0 * n + 2.0))
 
     # Eq. 59
     h_sminus = np.maximum(h_splus - b_0, 0.0)
 
     # Eq. 57
-    return (h_sminus**((2.*n+2.)/n)-h_splus**((2.*n+2.)/n)+((2.*n+2.)*(n+2.)**(1./n)*mdot_0**(1./n))/(2.**(1./n)*6*n*A**(1./n)*rho*g*x_m**((2.*n-1.)/n))*(x_m+2.*x)*(x_m-x)**2.)**(n/(2.*n+2.))
+    return (
+        h_sminus ** ((2.0 * n + 2.0) / n)
+        - h_splus ** ((2.0 * n + 2.0) / n)
+        + ((2.0 * n + 2.0) * (n + 2.0) ** (1.0 / n) * mdot_0 ** (1.0 / n))
+        / (
+            2.0 ** (1.0 / n)
+            * 6
+            * n
+            * A ** (1.0 / n)
+            * rho
+            * g
+            * x_m ** ((2.0 * n - 1.0) / n)
+        )
+        * (x_m + 2.0 * x)
+        * (x_m - x) ** 2.0
+    ) ** (n / (2.0 * n + 2.0))
+
 
 def create_pism_input(filename):
     "Create a NetCDF file that can be used with PISM"
@@ -96,35 +148,37 @@ def create_pism_input(filename):
         f.createDimension("x", len(x))
         f.createDimension("y", 3)
 
-        xv = f.createVariable("x", np.float64, ('x', ))
+        xv = f.createVariable("x", np.float64, ("x",))
         xv.units = "meter"
         xv[:] = x
 
-        yv = f.createVariable("y", np.float64, ('y', ))
+        yv = f.createVariable("y", np.float64, ("y",))
         yv.units = "meter"
-        yv[:] = [-100*dx, 0, 100*dx]
+        yv[:] = [-100 * dx, 0, 100 * dx]
 
-        b = f.createVariable("bed_elevation", np.float64, ('y', 'x'))
+        b = f.createVariable("bed_elevation", np.float64, ("y", "x"))
         b.units = "meter"
         b.standard_name = "bedrock_altitude"
         b[:] = tile(bed_elevation(np.abs(x)))
 
-        s = f.createVariable("surface_elevation", np.float64, ('y', 'x'))
+        s = f.createVariable("surface_elevation", np.float64, ("y", "x"))
         s.units = "meter"
         s.standard_name = "surface_altitude"
         s[:] = tile(surface(np.abs(x)))
 
         ice_density = 910.0
-        M = f.createVariable("climatic_mass_balance", np.float64, ('y', 'x'))
+        M = f.createVariable("climatic_mass_balance", np.float64, ("y", "x"))
         M.units = "kg m-2 year-1"
         M.standard_name = "land_ice_surface_specific_mass_balance_flux"
         M[:] = tile(accumulation(np.abs(x))) * ice_density
 
-        T = f.createVariable("ice_surface_temp", np.float64, ('y', 'x'))
+        T = f.createVariable("ice_surface_temp", np.float64, ("y", "x"))
         T.units = "Celsius"
         T.long_name = "ice surface temperature"
         T[:] = 0.0
 
+
 if __name__ == "__main__":
     import sys
+
     create_pism_input(sys.argv[1])

@@ -43,4 +43,3 @@
 - $u$ and $v$ on the sigma grid for restarting
 - vertically averaged horizontal velocity (for mass continuity time-stepping)
 - strain heating $\Sigma$.
-

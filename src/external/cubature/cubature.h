@@ -76,4 +76,3 @@ int adapt_integrate(integrand f, void *fdata,
 #endif
 
 #endif /* ifndef _cubature_h */
-

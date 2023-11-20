@@ -109,4 +109,3 @@ mpiexec -n $NN $pismexec -i $data -bootstrap $climate $physics $hydro \
     $grid -max_dt $dtmax -ys 0.0 -y $YY $diagnostics -o $oname
 
 set +x
-

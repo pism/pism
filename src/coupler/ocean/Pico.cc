@@ -467,7 +467,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
                                   const std::vector<double> &basin_salinity,
                                   array::Scalar &Toc_box0,
                                   array::Scalar &Soc_box0) const {
-  
+
   array::AccessScope list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
 
   std::vector<int> n_shelf_cells_per_basin(m_n_shelves * m_n_basins, 0);
@@ -501,7 +501,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
         }
       }
     }
-    
+
     GlobalSum(m_grid->com, n_shelf_cells.data(),
               n_shelf_cellsr.data(), m_n_shelves);
     GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(),
@@ -879,7 +879,7 @@ void Pico::compute_box_area(int box_id,
       result[shelf_id] += cell_area;
     }
   }
-  
+
   // compute GlobalSum from index 1 to index m_n_shelves-1
   std::vector<double> result1(m_n_shelves);
   GlobalSum(m_grid->com, &result[1], &result1[1], m_n_shelves-1);

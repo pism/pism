@@ -19,14 +19,16 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import sys
-import petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
-import numpy as np
-import os
-import math
 
+import petsc4py
+
+petsc4py.init(sys.argv)
+import math
+import os
+
+import numpy as np
 import PISM
+from petsc4py import PETSc
 
 
 def adjustTauc(mask, tauc):
@@ -36,7 +38,7 @@ def adjustTauc(mask, tauc):
     high_tauc = grid.ctx().config().get_number("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             if mask.ocean(i, j):
                 tauc[i, j] = 0
             elif mask.ice_free(i, j):
@@ -53,11 +55,16 @@ if __name__ == "__main__":
     append_mode = False
 
     input_filename = config.get_string("input.file")
-    inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
-    use_tauc_prior = PISM.OptionBool("-inv_use_tauc_prior",
-                                     "Use tauc_prior from inverse data file as initial guess.")
+    inv_data_filename = PISM.OptionString(
+        "-inv_data", "inverse data file", input_filename
+    ).value()
+    use_tauc_prior = PISM.OptionBool(
+        "-inv_use_tauc_prior", "Use tauc_prior from inverse data file as initial guess."
+    )
 
-    ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, 'tauc')
+    ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(
+        input_filename, inv_data_filename, "tauc"
+    )
     ssarun.setup()
 
     vecs = ssarun.modeldata.vecs
@@ -66,17 +73,26 @@ if __name__ == "__main__":
     # Determine the prior guess for tauc. This can be one of
     # a) tauc from the input file (default)
     # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
-    tauc_prior = PISM.model.createYieldStressVec(grid, 'tauc_prior')
-    tauc_prior.set_attrs("diagnostic",
-                         "initial guess for (pseudo-plastic) basal yield stress in an inversion",
-                         "Pa", "Pa", "", 0)
+    tauc_prior = PISM.model.createYieldStressVec(grid, "tauc_prior")
+    tauc_prior.set_attrs(
+        "diagnostic",
+        "initial guess for (pseudo-plastic) basal yield stress in an inversion",
+        "Pa",
+        "Pa",
+        "",
+        0,
+    )
     tauc = PISM.model.createYieldStressVec(grid)
     if use_tauc_prior:
         tauc_prior.regrid(inv_data_filename, critical=True)
     else:
         if not PISM.util.fileHasVariable(input_filename, "tauc"):
             PISM.verbPrintf(
-                1, com, "Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
+                1,
+                com,
+                "Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior."
+                % input_filename,
+            )
             exit(1)
         tauc.regrid(input_filename, True)
         tauc_prior.copy_from(tauc)
@@ -89,15 +105,23 @@ if __name__ == "__main__":
     ssarun.ssa.linearize_at(zeta)
 
     vel_ssa_observed = None
-    vel_ssa_observed = PISM.model.create2dVelocityVec(grid, '_ssa_observed', stencil_width=2)
+    vel_ssa_observed = PISM.model.create2dVelocityVec(
+        grid, "_ssa_observed", stencil_width=2
+    )
     if PISM.util.fileHasVariable(inv_data_filename, "u_ssa_observed"):
         vel_ssa_observed.regrid(inv_data_filename, True)
     else:
         if not PISM.util.fileHasVariable(inv_data_filename, "u_surface_observed"):
             PISM.verbPrintf(
-                1, context.com, "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
+                1,
+                context.com,
+                "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n"
+                % inv_data_filename,
+            )
             exit(1)
-        vel_surface_observed = PISM.model.create2dVelocityVec(grid, '_surface_observed', stencil_width=2)
+        vel_surface_observed = PISM.model.create2dVelocityVec(
+            grid, "_surface_observed", stencil_width=2
+        )
         vel_surface_observed.regrid(inv_data_filename, True)
 
         sia_solver = PISM.SIAFD
@@ -105,19 +129,27 @@ if __name__ == "__main__":
             sia_solver = PISM.SIAFD_Regional
         vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata, sia_solver)
 
-        vel_sia_observed.metadata(0).set_name('u_sia_observed')
-        vel_sia_observed.metadata(0).set_string('long_name', "x-component of the 'observed' SIA velocities")
+        vel_sia_observed.metadata(0).set_name("u_sia_observed")
+        vel_sia_observed.metadata(0).set_string(
+            "long_name", "x-component of the 'observed' SIA velocities"
+        )
 
-        vel_sia_observed.metadata(1).set_name('v_sia_observed')
-        vel_sia_observed.metadata(1).set_string('long_name', "y-component of the 'observed' SIA velocities")
+        vel_sia_observed.metadata(1).set_name("v_sia_observed")
+        vel_sia_observed.metadata(1).set_string(
+            "long_name", "y-component of the 'observed' SIA velocities"
+        )
 
         vel_ssa_observed.copy_from(vel_surface_observed)
         vel_ssa_observed.add(-1, vel_sia_observed)
 
-    (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(ssarun)
+    (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(
+        ssarun
+    )
     eta = config.get_number("inverse.tikhonov.penalty_weight")
 
-    solver_gn = PISM.InvSSATikhonovGN(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
+    solver_gn = PISM.InvSSATikhonovGN(
+        ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional
+    )
 
     seed = PISM.OptionInteger("-inv_seed", "random generator seed")
     if seed.is_set():
@@ -134,6 +166,8 @@ if __name__ == "__main__":
 
     ip1 = d1.get_vec().dot(GNd2.get_vec())
     ip2 = d2.get_vec().dot(GNd1.get_vec())
-    PISM.verbPrintf(1, grid.com, "Test of Gauss-Newton symmetry (x^t GN y) vs (y^t GN x)\n")
+    PISM.verbPrintf(
+        1, grid.com, "Test of Gauss-Newton symmetry (x^t GN y) vs (y^t GN x)\n"
+    )
     PISM.verbPrintf(1, grid.com, "ip1 %.10g ip2 %.10g\n" % (ip1, ip2))
     PISM.verbPrintf(1, grid.com, "relative error %.10g\n" % abs((ip1 - ip2) / ip1))

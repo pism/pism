@@ -70,4 +70,3 @@ protected:
 } // end of namespace pism
 
 #endif /* __basal_resistance_hh */
-

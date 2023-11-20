@@ -7,7 +7,6 @@ except:
     sys.exit(1)
 
 import MISMIP
-
 import numpy as np
 
 
@@ -45,7 +44,6 @@ def y(x):
 
 
 def thickness(experiment, step, x, calving_front=1750e3, semianalytical_profile=True):
-
     # we expect x to have an odd number of grid points so that one of them is
     # at 0
     if x.size % 2 != 1:
@@ -66,15 +64,24 @@ def thickness(experiment, step, x, calving_front=1750e3, semianalytical_profile=
     return np.tile(thk, (3, 1))
 
 
-def pism_bootstrap_file(filename, experiment, step, mode,
-                        calving_front=1750e3, N=None, semianalytical_profile=True):
+def pism_bootstrap_file(
+    filename,
+    experiment,
+    step,
+    mode,
+    calving_front=1750e3,
+    N=None,
+    semianalytical_profile=True,
+):
     import PISMNC
 
     xx = x(mode, N)
     yy = y(xx)
 
     bed_elevation = bed_topography(experiment, xx)
-    ice_thickness = thickness(experiment, step, xx, calving_front, semianalytical_profile)
+    ice_thickness = thickness(
+        experiment, step, xx, calving_front, semianalytical_profile
+    )
     ice_surface_mass_balance = surface_mass_balance(xx)
     ice_surface_temperature = ice_surface_temp(xx)
 
@@ -82,90 +89,131 @@ def pism_bootstrap_file(filename, experiment, step, mode,
     ice_extent[ice_thickness > 0] = 1
     ice_extent[bed_elevation > 0] = 1
 
-    nc = PISMNC.PISMDataset(filename, 'w', format="NETCDF3_CLASSIC")
+    nc = PISMNC.PISMDataset(filename, "w", format="NETCDF3_CLASSIC")
 
     nc.create_dimensions(xx, yy)
 
-    nc.define_2d_field('topg',
-                       attrs={'units': 'm',
-                              'long_name': 'bedrock surface elevation',
-                              'standard_name': 'bedrock_altitude'})
-    nc.write('topg', bed_elevation)
+    nc.define_2d_field(
+        "topg",
+        attrs={
+            "units": "m",
+            "long_name": "bedrock surface elevation",
+            "standard_name": "bedrock_altitude",
+        },
+    )
+    nc.write("topg", bed_elevation)
 
-    nc.define_2d_field('thk',
-                       attrs={'units': 'm',
-                              'long_name': 'ice thickness',
-                              'standard_name': 'land_ice_thickness'})
-    nc.write('thk', ice_thickness)
+    nc.define_2d_field(
+        "thk",
+        attrs={
+            "units": "m",
+            "long_name": "ice thickness",
+            "standard_name": "land_ice_thickness",
+        },
+    )
+    nc.write("thk", ice_thickness)
 
-    nc.define_2d_field('climatic_mass_balance',
-                       attrs={'units': 'kg m-2 / s',
-                              'long_name': 'ice-equivalent surface mass balance (accumulation/ablation) rate',
-                              'standard_name': 'land_ice_surface_specific_mass_balance_flux'})
-    nc.write('climatic_mass_balance', ice_surface_mass_balance)
+    nc.define_2d_field(
+        "climatic_mass_balance",
+        attrs={
+            "units": "kg m-2 / s",
+            "long_name": "ice-equivalent surface mass balance (accumulation/ablation) rate",
+            "standard_name": "land_ice_surface_specific_mass_balance_flux",
+        },
+    )
+    nc.write("climatic_mass_balance", ice_surface_mass_balance)
 
-    nc.define_2d_field('ice_surface_temp',
-                       attrs={'units': 'Kelvin',
-                              'long_name': 'annual average ice surface temperature, below firn processes'})
-    nc.write('ice_surface_temp', ice_surface_temperature)
+    nc.define_2d_field(
+        "ice_surface_temp",
+        attrs={
+            "units": "Kelvin",
+            "long_name": "annual average ice surface temperature, below firn processes",
+        },
+    )
+    nc.write("ice_surface_temp", ice_surface_temperature)
 
-    nc.define_2d_field('land_ice_area_fraction_retreat',
-                       attrs={'units': '1',
-                              'long_name': 'mask defining the maximum ice extent'})
-    nc.write('land_ice_area_fraction_retreat', ice_extent)
+    nc.define_2d_field(
+        "land_ice_area_fraction_retreat",
+        attrs={"units": "1", "long_name": "mask defining the maximum ice extent"},
+    )
+    nc.write("land_ice_area_fraction_retreat", ice_extent)
 
     nc.close()
 
 
 if __name__ == "__main__":
-
     from optparse import OptionParser
 
     parser = OptionParser()
 
     parser.usage = "%prog [options]"
     parser.description = "Creates a MISMIP boostrapping file for use with PISM."
-    parser.add_option("-o", dest="output_filename",
-                      help="output file")
-    parser.add_option("-e", "--experiment", dest="experiment", type="string",
-                      help="MISMIP experiment (one of '1a', '1b', '2a', '2b', '3a', '3b')",
-                      default="1a")
-    parser.add_option("-s", "--step", dest="step", type="int", default=1,
-                      help="MISMIP step")
-    parser.add_option("-u", "--uniform_thickness",
-                      action="store_false", dest="semianalytical_profile", default=True,
-                      help="Use uniform 10 m ice thickness")
-    parser.add_option("-m", "--mode", dest="mode", type="int", default=2,
-                      help="MISMIP grid mode")
-    parser.add_option("-N", dest="N", type="int", default=3601,
-                      help="Custom grid size; use with --mode=3")
-    parser.add_option("-c", dest="calving_front", type="float", default=1600e3,
-                      help="Calving front location, in meters (e.g. 1600e3)")
+    parser.add_option("-o", dest="output_filename", help="output file")
+    parser.add_option(
+        "-e",
+        "--experiment",
+        dest="experiment",
+        type="string",
+        help="MISMIP experiment (one of '1a', '1b', '2a', '2b', '3a', '3b')",
+        default="1a",
+    )
+    parser.add_option(
+        "-s", "--step", dest="step", type="int", default=1, help="MISMIP step"
+    )
+    parser.add_option(
+        "-u",
+        "--uniform_thickness",
+        action="store_false",
+        dest="semianalytical_profile",
+        default=True,
+        help="Use uniform 10 m ice thickness",
+    )
+    parser.add_option(
+        "-m", "--mode", dest="mode", type="int", default=2, help="MISMIP grid mode"
+    )
+    parser.add_option(
+        "-N",
+        dest="N",
+        type="int",
+        default=3601,
+        help="Custom grid size; use with --mode=3",
+    )
+    parser.add_option(
+        "-c",
+        dest="calving_front",
+        type="float",
+        default=1600e3,
+        help="Calving front location, in meters (e.g. 1600e3)",
+    )
 
     (opts, args) = parser.parse_args()
 
-    experiments = ('1a', '1b', '2a', '2b', '3a', '3b')
+    experiments = ("1a", "1b", "2a", "2b", "3a", "3b")
     if opts.experiment not in experiments:
-        print("Invalid experiment %s. Has to be one of %s." % (
-            opts.experiment, experiments))
+        print(
+            "Invalid experiment %s. Has to be one of %s."
+            % (opts.experiment, experiments)
+        )
         exit(1)
 
     if not opts.output_filename:
-        output_filename = "MISMIP_%s_%d_%d.nc" % (opts.experiment,
-                                                  opts.step,
-                                                  opts.mode)
+        output_filename = "MISMIP_%s_%d_%d.nc" % (opts.experiment, opts.step, opts.mode)
     else:
         output_filename = opts.output_filename
 
-    print("Creating MISMIP setup for experiment %s, step %s, grid mode %d in %s..." % (
-        opts.experiment, opts.step, opts.mode, output_filename))
+    print(
+        "Creating MISMIP setup for experiment %s, step %s, grid mode %d in %s..."
+        % (opts.experiment, opts.step, opts.mode, output_filename)
+    )
 
-    pism_bootstrap_file(output_filename,
-                        opts.experiment,
-                        opts.step,
-                        opts.mode,
-                        calving_front=opts.calving_front,
-                        N=opts.N,
-                        semianalytical_profile=opts.semianalytical_profile)
+    pism_bootstrap_file(
+        output_filename,
+        opts.experiment,
+        opts.step,
+        opts.mode,
+        calving_front=opts.calving_front,
+        N=opts.N,
+        semianalytical_profile=opts.semianalytical_profile,
+    )
 
     print("done.")

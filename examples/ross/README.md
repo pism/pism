@@ -9,7 +9,7 @@ These publications cover PISM applications to Antarctic ice shelves:
 
 * T. Albrecht, A. Levermann (2012).  *Fracture field for large-scale ice dynamics*.  Journal of Glaciology 58 (207), 165--176.
 * A. Levermann, T. Albrecht, R. Winkelmann, M. A. Martin, M. Haseloff, I. Joughin (2012) [*Kinematic first-order calving law implies potential for abrupt ice-shelf retreat*](http://www.the-cryosphere.net/6/273/2012/tc-6-273-2012.html).  The Cryosphere 6, 273--286.
-* M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann (2011).  [*The Potsdam Parallel Ice Sheet Model (PISM-PIK)--Part 2: Dynamic equilibrium simulation of the Antarctic ice sheet*](http://www.the-cryosphere.net/5/727/2011/tc-5-727-2011.html). The Cryosphere 5, 727--740. 
+* M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann (2011).  [*The Potsdam Parallel Ice Sheet Model (PISM-PIK)--Part 2: Dynamic equilibrium simulation of the Antarctic ice sheet*](http://www.the-cryosphere.net/5/727/2011/tc-5-727-2011.html). The Cryosphere 5, 727--740.
 
 Input datasets
 ==========
@@ -61,4 +61,3 @@ Notes
 
 * Be aware of periodic boundary conditions at boundaries of the computational domain, and that several fields have jumps at domain boundaries.
 * Evolving runs need stress boundary conditions at the ice shelf front (`-cfbc`) plus removal of icebergs if they appear.  Thus you can do runs like this with `-pik` or `-cfbc -part_grid -kill_icebergs`, but simpler option combinations `-cfbc` alone or `-cfbc -part_grid` or `-cfbc -part_grid` or `-cfbc -kill_icebergs` may fail.
-

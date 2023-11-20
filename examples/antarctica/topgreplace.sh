@@ -23,4 +23,3 @@ $DO $cmd
 cmd="ncatted -O -a pism_intent,topg,d,, $NAME"
 $DO $cmd
 echo
-

@@ -15,7 +15,7 @@ such as `yay <https://aur.archlinux.org/packages/yay/>`_. If you do not already
 have an AUR helper installed, install ``yay`` with the following commands:
 
 .. code-block:: bash
-   
+
    git clone https://aur.archlinux.org/yay.git
    cd git
    makepkg -si
@@ -23,7 +23,7 @@ have an AUR helper installed, install ``yay`` with the following commands:
 You can then install PISM and its dependencies with the following command:
 
 .. code-block:: bash
-   
+
    yay -Sy pism
 
 Once installed, the PISM binaries (e.g. ``pismr``, ``pismv``, various Python

@@ -31,26 +31,29 @@
 # J_design_transpose -- the transpose of this map, J^*, compared to the formula <Jd,r> = <d,J^*r>
 
 import sys
-import petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
-import numpy as np
-import os
-import math
-import PISM.invert.ssa
-from PISM.logging import logMessage
 
+import petsc4py
+
+petsc4py.init(sys.argv)
+import math
+import os
+
+import numpy as np
 import PISM
+import PISM.invert.ssa
+from petsc4py import PETSc
+from PISM.logging import logMessage
 
 
 def view(vec, viewer):
-    if (isinstance(vec, PISM.IceModelVec2S)):
+    if isinstance(vec, PISM.IceModelVec2S):
         v_global = PISM.IceModelVec2S()
     else:
         v_global = PISM.IceModelVec2V()
     v_global.create(vec.grid(), "", PISM.WITHOUT_GHOSTS)
     v_global.copy_from(vec)
     v_global.get_vec().view(viewer)
+
 
 # def view2(vec,viewer):
 #   v_global = PISM.IceModelVec2V()
@@ -66,7 +69,7 @@ def adjustTauc(mask, tauc):
     high_tauc = grid.ctx().config().get_number("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             if mask.ocean(i, j):
                 tauc[i, j] = 0
             elif mask.ice_free(i, j):
@@ -91,7 +94,9 @@ WIDE_STENCIL = 2
 def test_lin(ssarun):
     grid = ssarun.grid
 
-    PISM.verbPrintf(1, grid.com, "\nTest Linearization (Comparison with finite differences):\n")
+    PISM.verbPrintf(
+        1, grid.com, "\nTest Linearization (Comparison with finite differences):\n"
+    )
 
     S = 250
     d_viewer = PETSc.Viewer().createDraw(title="d", size=S)
@@ -99,7 +104,7 @@ def test_lin(ssarun):
     Td_fd_viewer = PETSc.Viewer().createDraw(title="Td_fd", size=S)
     d_Td_viewer = PETSc.Viewer().createDraw(title="d_Td", size=S)
 
-    for (i, j) in grid.points():
+    for i, j in grid.points():
         d = PISM.IceModelVec2S()
         d.create(grid, "", PISM.WITH_GHOSTS)
         d.set(0)
@@ -130,7 +135,7 @@ def test_lin(ssarun):
         Td_fd.create(grid, "", PISM.WITH_GHOSTS)
         Td_fd.copy_from(u2)
         Td_fd.add(-1, u1)
-        Td_fd.scale(1. / eps)
+        Td_fd.scale(1.0 / eps)
 
         d_Td = PISM.IceModelVec2V()
         d_Td.create(grid, "", PISM.WITH_GHOSTS)
@@ -147,8 +152,12 @@ def test_lin(ssarun):
         n_d_Td_linf = d_Td.norm(PETSc.NormType.NORM_INFINITY)
 
         PISM.verbPrintf(1, grid.com, "(i,j)=(%d,%d)\n" % (i, j))
-        PISM.verbPrintf(1, grid.com, "apply_linearization(d): l2 norm %.10g; finite difference %.10g\n" %
-                        (n_Td_l2, n_Td_fd))
+        PISM.verbPrintf(
+            1,
+            grid.com,
+            "apply_linearization(d): l2 norm %.10g; finite difference %.10g\n"
+            % (n_Td_l2, n_Td_fd),
+        )
 
         r_d_l2 = 0
         if n_Td_l2 != 0:
@@ -160,8 +169,12 @@ def test_lin(ssarun):
         r_d_linf = 0
         if n_Td_linf != 0:
             r_d_linf = n_d_Td_linf / n_Td_linf
-        PISM.verbPrintf(1, grid.com, "relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" %
-                        (r_d_l2, r_d_l1, r_d_linf))
+        PISM.verbPrintf(
+            1,
+            grid.com,
+            "relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n"
+            % (r_d_l2, r_d_l1, r_d_linf),
+        )
 
         PISM.verbPrintf(1, grid.com, "\n")
 
@@ -193,6 +206,7 @@ def test_lin(ssarun):
 
         PISM.logging.pause()
 
+
 # ######################################################################################################################
 # Jacobian design
 
@@ -211,7 +225,7 @@ def test_j_design(ssarun):
     u1.create(grid, "", PISM.WITH_GHOSTS)
     u1.copy_from(ssarun.ssa.solution())
 
-    for (i, j) in grid.points():
+    for i, j in grid.points():
         d = PISM.IceModelVec2S()
         d.create(grid, "", PISM.WITH_GHOSTS)
         d.set(0)
@@ -240,7 +254,7 @@ def test_j_design(ssarun):
         drhs_fd.create(grid, "", PISM.WITHOUT_GHOSTS)
         drhs_fd.copy_from(rhs2)
         drhs_fd.add(-1, rhs1)
-        drhs_fd.scale(1. / eps)
+        drhs_fd.scale(1.0 / eps)
 
         drhs = PISM.IceModelVec2V()
         drhs.create(grid, "", PISM.WITHOUT_GHOSTS)
@@ -261,15 +275,35 @@ def test_j_design(ssarun):
         n_d_drhs_l1 = d_drhs.norm(PETSc.NormType.NORM_1)
         n_d_drhs_linf = d_drhs.norm(PETSc.NormType.NORM_INFINITY)
 
-        PISM.verbPrintf(1, grid.com, "\nTest Jacobian Design (Comparison with finite differences):\n")
-        PISM.verbPrintf(1, grid.com, "jacobian_design(d): l2 norm %.10g; finite difference %.10g\n" %
-                        (n_drhs_l2, n_drhs_fd))
+        PISM.verbPrintf(
+            1,
+            grid.com,
+            "\nTest Jacobian Design (Comparison with finite differences):\n",
+        )
+        PISM.verbPrintf(
+            1,
+            grid.com,
+            "jacobian_design(d): l2 norm %.10g; finite difference %.10g\n"
+            % (n_drhs_l2, n_drhs_fd),
+        )
         if n_drhs_linf == 0:
-            PISM.verbPrintf(1, grid.com, "difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" %
-                            (n_d_drhs_l2, n_d_drhs_l1, n_d_drhs_linf))
+            PISM.verbPrintf(
+                1,
+                grid.com,
+                "difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n"
+                % (n_d_drhs_l2, n_d_drhs_l1, n_d_drhs_linf),
+            )
         else:
-            PISM.verbPrintf(1, grid.com, "relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" %
-                            (n_d_drhs_l2 / n_drhs_l2, n_d_drhs_l1 / n_drhs_l1, n_d_drhs_linf / n_drhs_linf))
+            PISM.verbPrintf(
+                1,
+                grid.com,
+                "relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n"
+                % (
+                    n_d_drhs_l2 / n_drhs_l2,
+                    n_d_drhs_l1 / n_drhs_l1,
+                    n_d_drhs_linf / n_drhs_linf,
+                ),
+            )
 
         view(d, d_viewer)
         view(drhs, drhs_viewer)
@@ -302,10 +336,8 @@ def test_j_design_transpose(ssarun):
     JStarR_indirect = PISM.IceModelVec2S()
     JStarR_indirect.create(grid, "", PISM.WITHOUT_GHOSTS)
 
-    for (i, j) in grid.points():
-
+    for i, j in grid.points():
         for k in range(2):
-
             r = PISM.IceModelVec2V()
             r.create(grid, "", PISM.WITH_GHOSTS)
             r.set(0)
@@ -321,7 +353,7 @@ def test_j_design_transpose(ssarun):
             r_global.create(grid, "", PISM.WITHOUT_GHOSTS)
             r_global.copy_from(r)
 
-            for (k, l) in grid.points():
+            for k, l in grid.points():
                 with PISM.vec.Access(nocomm=JStarR_indirect):
                     d = PISM.IceModelVec2S()
                     d.create(grid, "", PISM.WITH_GHOSTS)
@@ -339,7 +371,9 @@ def test_j_design_transpose(ssarun):
             d_JStarR.copy_from(JStarR)
             d_JStarR.add(-1, JStarR_indirect)
 
-            PISM.verbPrintf(1, grid.com, "\nTest Jacobian Design Transpose (%d,%d):\n" % (i, j))
+            PISM.verbPrintf(
+                1, grid.com, "\nTest Jacobian Design Transpose (%d,%d):\n" % (i, j)
+            )
 
             view(r_global, r_viewer)
             view(JStarR, JStarR_viewer)
@@ -372,10 +406,8 @@ def test_linearization_transpose(ssarun):
     TStarR_indirect = PISM.IceModelVec2S()
     TStarR_indirect.create(grid, "", PISM.WITHOUT_GHOSTS)
 
-    for (i, j) in grid.points():
-
+    for i, j in grid.points():
         for k in range(2):
-
             r = PISM.IceModelVec2V()
             r.create(grid, "", PISM.WITH_GHOSTS)
             r.set(0)
@@ -391,7 +423,7 @@ def test_linearization_transpose(ssarun):
             r_global.create(grid, "", PISM.WITHOUT_GHOSTS)
             r_global.copy_from(r)
 
-            for (k, l) in grid.points():
+            for k, l in grid.points():
                 with PISM.vec.Access(nocomm=TStarR_indirect):
                     d = PISM.IceModelVec2S()
                     d.create(grid, "", PISM.WITH_GHOSTS)
@@ -409,7 +441,9 @@ def test_linearization_transpose(ssarun):
             d_TStarR.copy_from(TStarR)
             d_TStarR.add(-1, TStarR_indirect)
 
-            PISM.verbPrintf(1, grid.com, "\nTest Linearization Transpose (%d,%d):\n" % (i, j))
+            PISM.verbPrintf(
+                1, grid.com, "\nTest Linearization Transpose (%d,%d):\n" % (i, j)
+            )
 
             view(r_global, r_viewer)
             view(TStarR, TStarR_viewer)
@@ -429,14 +463,18 @@ if __name__ == "__main__":
     append_mode = False
 
     input_filename = config.get_string("input.file")
-    inv_data_filename = PISM.OptionString("-inv_data", "inverse data file", input_filename).value()
+    inv_data_filename = PISM.OptionString(
+        "-inv_data", "inverse data file", input_filename
+    ).value()
     use_design_prior = config.get_flag("inverse.use_design_prior")
-    design_var = PISM.OptionKeyword("-inv_ssa",
-                                    "design variable for inversion",
-                                    "tauc,hardav", "tauc").value()
+    design_var = PISM.OptionKeyword(
+        "-inv_ssa", "design variable for inversion", "tauc,hardav", "tauc"
+    ).value()
     using_zeta_fixed_mask = config.get_flag("inverse.use_zeta_fixed_mask")
 
-    ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, design_var)
+    ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(
+        input_filename, inv_data_filename, design_var
+    )
     ssarun.setup()
 
     vecs = ssarun.modeldata.vecs
@@ -445,21 +483,38 @@ if __name__ == "__main__":
     # Determine the prior guess for tauc/hardav. This can be one of
     # a) tauc/hardav from the input file (default)
     # b) tauc/hardav_prior from the inv_datafile if -inv_use_design_prior is set
-    design_prior = createDesignVec(grid, design_var, '%s_prior' % design_var)
+    design_prior = createDesignVec(grid, design_var, "%s_prior" % design_var)
     long_name = design_prior.string_attr("long_name")
     units = design_prior.string_attr("units")
-    design_prior.set_attrs("",
-                           "best prior estimate for %s (used for inversion)" % long_name,
-                           units, units, "", 0)
-    if PISM.util.fileHasVariable(inv_data_filename, "%s_prior" % design_var) and use_design_prior:
-        PISM.logging.logMessage("  Reading '%s_prior' from inverse data file %s.\n" % (design_var, inv_data_filename))
+    design_prior.set_attrs(
+        "",
+        "best prior estimate for %s (used for inversion)" % long_name,
+        units,
+        units,
+        "",
+        0,
+    )
+    if (
+        PISM.util.fileHasVariable(inv_data_filename, "%s_prior" % design_var)
+        and use_design_prior
+    ):
+        PISM.logging.logMessage(
+            "  Reading '%s_prior' from inverse data file %s.\n"
+            % (design_var, inv_data_filename)
+        )
         design_prior.regrid(inv_data_filename, critical=True)
     else:
         if not PISM.util.fileHasVariable(input_filename, design_var):
-            PISM.verbPrintf(1, com, "Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (
-                design_var, input_filename))
+            PISM.verbPrintf(
+                1,
+                com,
+                "Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n"
+                % (design_var, input_filename),
+            )
             exit(1)
-        PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var, design_var))
+        PISM.logging.logMessage(
+            "Reading '%s_prior' from '%s' in input file.\n" % (design_var, design_var)
+        )
         design = createDesignVec(grid, design_var)
         design.regrid(input_filename, True)
         design_prior.copy_from(design)
@@ -470,34 +525,41 @@ if __name__ == "__main__":
             zeta_fixed_mask.regrid(inv_data_filename)
             vecs.add(zeta_fixed_mask)
         else:
-            if design_var == 'tauc':
+            if design_var == "tauc":
                 logMessage(
-                    "  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
+                    "  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n"
+                    % design_var
+                )
                 zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
                 zeta_fixed_mask.set(1)
                 mask = vecs.ice_mask
                 with PISM.vec.Access(comm=zeta_fixed_mask, nocomm=mask):
-                    for (i, j) in grid.points():
+                    for i, j in grid.points():
                         if mask.grounded_ice(i, j):
                             zeta_fixed_mask[i, j] = 0
                 vecs.add(zeta_fixed_mask)
 
                 adjustTauc(vecs.ice_mask, design_prior)
-            elif design_var == 'hardav':
+            elif design_var == "hardav":
                 pass
             else:
-                raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
+                raise NotImplementedError(
+                    "Unable to build 'zeta_fixed_mask' for design variable %s.",
+                    design_var,
+                )
 
     # Convert design_prior -> zeta_prior
     zeta1 = PISM.IceModelVec2S()
     zeta1.create(grid, "", PISM.WITH_GHOSTS, WIDE_STENCIL)
-    ssarun.designVariableParameterization().convertFromDesignVariable(design_prior, zeta1)
+    ssarun.designVariableParameterization().convertFromDesignVariable(
+        design_prior, zeta1
+    )
 
     ssarun.ssa.linearize_at(zeta1)
 
-    test_type = PISM.OptionKeyword("-inv_test", "",
-                                   "j_design,j_design_transpose,lin,lin_transpose",
-                                   "j_design")
+    test_type = PISM.OptionKeyword(
+        "-inv_test", "", "j_design,j_design_transpose,lin,lin_transpose", "j_design"
+    )
 
     if not test_type.is_set():
         PISM.verbPrintf(1, com, "Must specify a test type via -inv_test\n")

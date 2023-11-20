@@ -33,11 +33,11 @@ class CellType;
 namespace inverse {
 
 //! Implements a functional corresponding to (the square of) an \f$H^1\f$ norm of a scalar valued function over a region with only grounded ice.
-/*! The functional is, in continuous terms 
+/*! The functional is, in continuous terms
   \f[
   J(f) = \int_{\Omega_g} c_{H^1} \left|\nabla f\right|^2 + c_{L^2}f^2 \; dA
   \f]
-  where \f$\Omega_g\f$ is a subset of the square domain consisting of grounded ice. 
+  where \f$\Omega_g\f$ is a subset of the square domain consisting of grounded ice.
   Numerically it is implemented using  Q1 finite elements.  Only those elements where all nodes
   have grounded ice are included in the integration, which alleviates edge effects due to steep
   derivatives in parameters that can occur at the transition between icy/non-icy regions.
@@ -56,7 +56,7 @@ public:
     m_dirichletIndices(dirichletLocations),
     m_ice_mask(ice_mask) {};
   virtual ~IPGroundedIceH1NormFunctional2S() {};
-  
+
   virtual void valueAt(array::Scalar &x, double *OUTPUT);
   virtual void dot(array::Scalar &a, array::Scalar &b, double *OUTPUT);
   virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
@@ -71,7 +71,7 @@ protected:
 
 private:
   IPGroundedIceH1NormFunctional2S(IPGroundedIceH1NormFunctional2S const &);
-  IPGroundedIceH1NormFunctional2S & operator=(IPGroundedIceH1NormFunctional2S const &);  
+  IPGroundedIceH1NormFunctional2S & operator=(IPGroundedIceH1NormFunctional2S const &);
 };
 
 } // end of namespace inverse

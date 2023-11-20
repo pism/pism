@@ -1,6 +1,6 @@
 Example: relax Greenland's basal topograpy
 ======================
- 
+
 This minimal example shows how we can calculate the isostatically-relaxed
 basal topography for an ice-free Greenland.  The same method can be
 applied to other areas.  It uses the flux correction method

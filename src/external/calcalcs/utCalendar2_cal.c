@@ -61,7 +61,7 @@ static	char *unknown_cal_emitted_warning_for[ UTC2_MAX_UNKCAL_WARNS ];
 static int n_unkcal=0;
 
 /*========================================================================================
- * Turns the passed value into a Y/M/D date 
+ * Turns the passed value into a Y/M/D date
  */
 int utCalendar2_cal( double val, ut_unit *dataunits, int *year, int *month, int *day, int *hour,
                                 int *minute, double *second, const char *calendar_name )
@@ -86,7 +86,7 @@ int utCalendar2_cal( double val, ut_unit *dataunits, int *year, int *month, int 
 		return( UT_ENOINIT );
 		}
 
-	if( have_initted == 0 ) 
+	if( have_initted == 0 )
 		initialize( ut_get_system(dataunits) );
 
 	/* Get the calendar we will be using, based on the passed name
@@ -98,10 +98,10 @@ int utCalendar2_cal( double val, ut_unit *dataunits, int *year, int *month, int 
 		}
 
 	/* See if we are being passed the same units and calendar as last time.  If so,
-	 * we can optimize by not recomputing all this junk 
+	 * we can optimize by not recomputing all this junk
 	 */
-	if( (prev_units != NULL) && (prev_calendar != NULL) 
-			&& (strcmp(prev_calendar,cal2use->name)==0) 
+	if( (prev_units != NULL) && (prev_calendar != NULL)
+			&& (strcmp(prev_calendar,cal2use->name)==0)
 			&& (ut_compare( prev_units, dataunits ) == 0)) {
 		/* Units and calendar are same as used last call */
 		}
@@ -109,7 +109,7 @@ int utCalendar2_cal( double val, ut_unit *dataunits, int *year, int *month, int 
 		{
 		/* Units/calendar combo are different from previously saved units, must redo calcs */
 
-		if( prev_units != NULL ) 
+		if( prev_units != NULL )
 			ut_free( prev_units );
 
 		if( prev_calendar != NULL )
@@ -128,7 +128,7 @@ int utCalendar2_cal( double val, ut_unit *dataunits, int *year, int *month, int 
 			}
 
 		/* Get converter from user-specified units to "days" */
-		if( conv_user_units_to_days != NULL ) 
+		if( conv_user_units_to_days != NULL )
 			cv_free( conv_user_units_to_days );
 		conv_user_units_to_days = get_user_to_day_converter( dataunits, y0, mon0, d0, h0, min0, s0 );
 
@@ -149,7 +149,7 @@ int utCalendar2_cal( double val, ut_unit *dataunits, int *year, int *month, int 
 	fdays = cv_convert_double( conv_user_units_to_days, val );
 
 	/* Get integer number of days and seconds past that */
-	ndays = fdays;	
+	ndays = fdays;
 	extra_seconds = (fdays - ndays)*86400.0;
 
 	/* Get new Julian day */
@@ -179,7 +179,7 @@ int utCalendar2_cal( double val, ut_unit *dataunits, int *year, int *month, int 
 
 	/* Handle the rouding issues */
 	iorig  = *second;			/* Integer conversion */
-	iround = *second + sec_rounding_value;	
+	iround = *second + sec_rounding_value;
 	if( iround > iorig ) {
 		/* printf( "rounding alg invoked, orig date: %04d-%02d-%02d %02d:%02d:%.20lf\n", *year, *month, *day, *hour, *minute, *second ); */
 		*second = (double)iround;
@@ -221,7 +221,7 @@ int utInvCalendar2_cal( int year, int month, int day, int hour, int minute, doub
 	static	cv_converter *conv_days_to_user_units=NULL;
 	static char 	*prev_calendar=NULL;
 
-	if( have_initted == 0 ) 
+	if( have_initted == 0 )
 		initialize( ut_get_system(user_unit) );
 
 	/* Get the calendar we will be using, based on the passed name
@@ -232,8 +232,8 @@ int utInvCalendar2_cal( int year, int month, int day, int hour, int minute, doub
 		cal2use = getcal( "Standard" );
 		}
 
-	if( (prev_units != NULL) && (prev_calendar != NULL) 
-			&& (strcmp(prev_calendar,cal2use->name)==0) 
+	if( (prev_units != NULL) && (prev_calendar != NULL)
+			&& (strcmp(prev_calendar,cal2use->name)==0)
 			&& (ut_compare( prev_units, user_unit ) == 0)) {
 		/* Units are same as used last call */
 		}
@@ -245,7 +245,7 @@ int utInvCalendar2_cal( int year, int month, int day, int hour, int minute, doub
 		if( prev_calendar != NULL )
 			free( prev_calendar );
 
-		if( conv_days_to_user_units != NULL ) 
+		if( conv_days_to_user_units != NULL )
 			cv_free( conv_days_to_user_units );
 
 		/* Get origin day of the data units */
@@ -304,9 +304,9 @@ int utInvCalendar2_cal( int year, int month, int day, int hour, int minute, doub
 }
 
 /*==============================================================================================
- * Get a converter that turns the user's units into days 
+ * Get a converter that turns the user's units into days
  */
-static cv_converter *get_user_to_day_converter( ut_unit *uu, int y0, int mon0, int d0, int h0, int min0, double s0 ) 
+static cv_converter *get_user_to_day_converter( ut_unit *uu, int y0, int mon0, int d0, int h0, int min0, double s0 )
 {
 	char		daystr[1024];
 	ut_unit 	*udu_days;
@@ -314,7 +314,7 @@ static cv_converter *get_user_to_day_converter( ut_unit *uu, int y0, int mon0, i
 
 	sprintf( daystr, "days since %04d-%02d-%02d %02d:%02d:%f",
 		y0, mon0, d0, h0, min0, s0 );
-		
+
 	udu_days = ut_parse( ut_get_system(uu), daystr, UT_ASCII );
 	if( udu_days == NULL ) {
 		fprintf( stderr, "internal error in utCalendar2/conv_to_days: failed to parse following string: \"%s\"\n",
@@ -333,9 +333,9 @@ static cv_converter *get_user_to_day_converter( ut_unit *uu, int y0, int mon0, i
 }
 
 /*==============================================================================================
- * Get a converter that turns days into the user's units 
+ * Get a converter that turns days into the user's units
  */
-static cv_converter *get_day_to_user_converter( ut_unit *uu, int y0, int mon0, int d0, int h0, int min0, double s0 ) 
+static cv_converter *get_day_to_user_converter( ut_unit *uu, int y0, int mon0, int d0, int h0, int min0, double s0 )
 {
 	char		daystr[1024];
 	ut_unit 	*udu_days;
@@ -343,7 +343,7 @@ static cv_converter *get_day_to_user_converter( ut_unit *uu, int y0, int mon0, i
 
 	sprintf( daystr, "days since %04d-%02d-%02d %02d:%02d:%f",
 		y0, mon0, d0, h0, min0, s0 );
-		
+
 	udu_days = ut_parse( ut_get_system(uu), daystr, UT_ASCII );
 	if( udu_days == NULL ) {
 		fprintf( stderr, "internal error in utCalendar2/conv_to_user_units: failed to parse following string: \"%s\"\n",
@@ -364,7 +364,7 @@ static cv_converter *get_day_to_user_converter( ut_unit *uu, int y0, int mon0, i
 /*==========================================================================================
  * The user specified some origin to the time units. For example, if the units string
  * were "days since 2005-10-15", then the origin date is 2005-10-15.  This routine
- * deduces the specified origin date from the passed units structure 
+ * deduces the specified origin date from the passed units structure
  */
 static void get_origin( ut_unit *dataunits, int *y0, int *mon0, int *d0, int *h0, int *min0, double *s0 )
 {
@@ -396,7 +396,7 @@ static void get_origin( ut_unit *dataunits, int *y0, int *mon0, int *d0, int *h0
 		sprintf( ustr, "seconds since %04d-%02d-%02d %02d:%02d:%f",
 			y0lib, mon0lib, d0lib, h0lib, min0lib, s0lib );
 		udu_ref_date = ut_parse( ut_get_system(dataunits), ustr, UT_ASCII );
-		if( udu_ref_date == NULL ) {	
+		if( udu_ref_date == NULL ) {
 			fprintf( stderr, "internal error in routine utCalendar2/get_origin: could not parse origin string \"%s\"\n",
 				ustr );
 			exit(-1);
@@ -461,13 +461,13 @@ static calcalcs_cal *getcal( const char *name )
 
 	/* See if it is one of the previously known calendars */
 	for( i=0; i<ncals_known; i++ ) {
-		if( strcmp( known_cal_name[i], name ) == 0 ) 
+		if( strcmp( known_cal_name[i], name ) == 0 )
 			return( known_cal[i] );
 		}
 
 	/* If we get here, the cal is not known, so create it if possible */
 	new_cal = ccs_init_calendar( name );
-	if( new_cal == NULL ) 
+	if( new_cal == NULL )
 		return( NULL );		/* unknown name */
 
 	/* We now know a new calendar */
@@ -482,13 +482,13 @@ static calcalcs_cal *getcal( const char *name )
 			new_index = 10;
 		}
 
-	/* If there was already a calendar stored in this slot 
+	/* If there was already a calendar stored in this slot
 	 * (because we might be reusing slots) then clear it out
 	 */
-	if( known_cal[new_index] != NULL ) 
+	if( known_cal[new_index] != NULL )
 		ccs_free_calendar( known_cal[new_index] );
-	
-	if( known_cal_name[new_index] != NULL ) 
+
+	if( known_cal_name[new_index] != NULL )
 		free( known_cal_name[new_index] );
 
 	known_cal[new_index] = new_cal;
@@ -505,7 +505,7 @@ static void unknown_cal_emit_warning( const char *calendar_name )
 	int	i;
 
 	for( i=0; i<n_unkcal; i++ ) {
-		if( strcmp( calendar_name, unknown_cal_emitted_warning_for[i] ) == 0 ) 
+		if( strcmp( calendar_name, unknown_cal_emitted_warning_for[i] ) == 0 )
 			/* Already emitted a warning for this calendar */
 			return;
 		}

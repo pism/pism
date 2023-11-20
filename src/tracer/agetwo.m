@@ -26,7 +26,7 @@ function [x,a1,a2,v,t,a1sum,a2sum] = agetwo(N,Tf)
 %   PDE   equation (1) above
 %   BC    a(0,t) = 0
 %   IC    a(x,0) = 0
-%  
+%
 % Try:  COMPAREAGE
 
 L = 10;

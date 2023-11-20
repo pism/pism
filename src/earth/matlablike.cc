@@ -28,8 +28,7 @@ double dblquad_cubature(integrand f, double ax, double bx, double ay, double by,
   double   result = 0.0, estimated_error = 0.0;
 
   /* see cubature.h: */
-  adapt_integrate(f, fdata, 2, xmin, xmax, 
+  adapt_integrate(f, fdata, 2, xmin, xmax,
                   maxEval, 0.0, reqRelError, &result, &estimated_error);
   return result;
 }
-

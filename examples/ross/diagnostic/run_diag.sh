@@ -31,4 +31,3 @@ echo "running command:"
 echo
 echo "$cmd"
 $cmd
-

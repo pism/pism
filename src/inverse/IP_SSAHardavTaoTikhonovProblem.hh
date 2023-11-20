@@ -41,10 +41,10 @@ namespace inverse {
 class IP_SSAHardavTaoTikhonovProblem: public IPTaoTikhonovProblem<IP_SSAHardavForwardProblem> {
 public:
 
-  IP_SSAHardavTaoTikhonovProblem(IP_SSAHardavForwardProblem &forward, 
-                                  IP_SSAHardavTaoTikhonovProblem::DesignVec &d0, 
-                                  IP_SSAHardavTaoTikhonovProblem::StateVec &u_obs, double eta, 
-                                  IPFunctional<IP_SSAHardavTaoTikhonovProblem::DesignVec>&designFunctional, 
+  IP_SSAHardavTaoTikhonovProblem(IP_SSAHardavForwardProblem &forward,
+                                  IP_SSAHardavTaoTikhonovProblem::DesignVec &d0,
+                                  IP_SSAHardavTaoTikhonovProblem::StateVec &u_obs, double eta,
+                                  IPFunctional<IP_SSAHardavTaoTikhonovProblem::DesignVec>&designFunctional,
                                   IPFunctional<IP_SSAHardavTaoTikhonovProblem::StateVec>&stateFunctional) :
     IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
 
@@ -53,7 +53,7 @@ public:
   virtual void connect(Tao tao);
 
   //! Callback to TAO to set bounds on \f$\tau_c\f$ for constrained minimization algorithms.
-  virtual void getVariableBounds(Tao tao, Vec lo, Vec hi); 
+  virtual void getVariableBounds(Tao tao, Vec lo, Vec hi);
 
 };
 

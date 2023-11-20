@@ -77,7 +77,7 @@ MaxTimestep Verification::max_timestep_impl(double t) const {
 }
 
 /** Initialize climate inputs of tests K and O.
- * 
+ *
  * @return 0 on success
  */
 void Verification::update_KO() {

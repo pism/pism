@@ -2,20 +2,22 @@
 
 import sys
 import time
+
 import netCDF4
 import numpy as np
+
 
 def generate_input(filename):
     "Generate a slab-on-a-flat-bed input file for PISM."
     # Initialize a square 3x3 grid
     Mx = 3
     My = Mx
-    Lx = 50e3   # m
+    Lx = 50e3  # m
     Ly = Lx
 
     x = np.linspace(-Lx, Lx, Mx)
     y = np.linspace(-Ly, Ly, My)
-    dx = x[1]-x[0]
+    dx = x[1] - x[0]
     dy = dx
 
     topg = np.zeros((My, Mx))
@@ -28,18 +30,18 @@ def generate_input(filename):
     nc.createDimension("x", size=Mx)
     nc.createDimension("y", size=My)
 
-    x_var = nc.createVariable("x", 'f4', dimensions=("x",))
+    x_var = nc.createVariable("x", "f4", dimensions=("x",))
     x_var.units = "m"
     x_var.standard_name = "projection_x_coordinate"
     x_var[:] = x
 
-    y_var = nc.createVariable("y", 'f4', dimensions=("y",))
+    y_var = nc.createVariable("y", "f4", dimensions=("y",))
     y_var.units = "m"
     y_var.standard_name = "projection_y_coordinate"
     y_var[:] = y
 
     def def_var(nc, name, units, fillvalue):
-        var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
+        var = nc.createVariable(name, "f", dimensions=("y", "x"), fill_value=fillvalue)
         var.units = units
         return var
 
@@ -52,8 +54,8 @@ def generate_input(filename):
     thk_var[:] = thk
 
     # set global attributes
-    nc.Conventions = 'CF-1.4'
-    setattr(nc, 'history', historystr)
+    nc.Conventions = "CF-1.4"
+    setattr(nc, "history", historystr)
 
     nc.close()
 
@@ -81,7 +83,7 @@ def generate_forcing(filename):
     nc.createDimension("time", size=Mt)
 
     def def_var(nc, name, units, fillvalue):
-        var = nc.createVariable(name, 'f', dimensions=("time"), fill_value=fillvalue)
+        var = nc.createVariable(name, "f", dimensions=("time"), fill_value=fillvalue)
         var.units = units
         return var
 
@@ -91,7 +93,7 @@ def generate_forcing(filename):
     t_var.calendar = "365_day"
 
     nc.createDimension("nv", size=2)
-    tb_var = nc.createVariable("time_bounds", 'f', dimensions=("time", "nv"))
+    tb_var = nc.createVariable("time_bounds", "f", dimensions=("time", "nv"))
     tb_var[:] = time_bounds
 
     dT_var = def_var(nc, "delta_T", "K", fill_value)
@@ -100,8 +102,8 @@ def generate_forcing(filename):
     dT_var[:] = delta_T
 
     # set global attributes
-    nc.Conventions = 'CF-1.4'
-    setattr(nc, 'history', historystr)
+    nc.Conventions = "CF-1.4"
+    setattr(nc, "history", historystr)
 
     nc.close()
 
@@ -109,14 +111,14 @@ def generate_forcing(filename):
 if __name__ == "__main__":
     fill_value = np.nan
 
-    prefix = 'slab'
-    ncfile = prefix + '.nc'
-    dTfile = prefix + '_dT.nc'
+    prefix = "slab"
+    ncfile = prefix + ".nc"
+    dTfile = prefix + "_dT.nc"
 
-    historystr = time.asctime() + ': ' + ' '.join(sys.argv) + '\n'
+    historystr = time.asctime() + ": " + " ".join(sys.argv) + "\n"
 
     generate_input(ncfile)
-    print('Wrote PISM input file %s.' % ncfile)
+    print("Wrote PISM input file %s." % ncfile)
 
     generate_forcing(dTfile)
-    print('Wrote PISM surface temperature forcing file %s.' % dTfile)
+    print("Wrote PISM surface temperature forcing file %s." % dTfile)

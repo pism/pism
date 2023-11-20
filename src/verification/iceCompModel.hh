@@ -28,7 +28,7 @@ class IceCompModel : public IceModel {
 public:
   IceCompModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> ctx, int mytest);
   virtual ~IceCompModel() {}
-  
+
   // re-defined steps of init() sequence:
   virtual void allocate_storage();
   virtual void allocate_bedrock_thermal_unit();
@@ -79,7 +79,7 @@ protected:
   // tests F and G
   void computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
                                               double &gmaxWerr, double &gavWerr); // scalar errors
-  
+
   array::Array3D m_strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc

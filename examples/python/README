@@ -23,6 +23,3 @@ example should work:
 Of course you can run these inside python:
   $ python      # or ipython or 'ipython -pylab'
   $ run pross -i ross.nc -bootstrap -Mx 147 -My 147 -riggs riggs.nc  # FIXME:  not sure these options are handled correctly ... try changing them ... or do you have a different usage mode?
-
-
-

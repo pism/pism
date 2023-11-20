@@ -32,5 +32,3 @@ directory.  Try
   python ssa_testj.py -Mx 121 -My 121 -snes_monitor
 
   mpiexec -np 4 python ssa_testj.py
-
-

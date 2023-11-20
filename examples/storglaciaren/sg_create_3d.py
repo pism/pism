@@ -21,15 +21,16 @@
 
 import sys
 import time
+from sys import stderr
+
 import numpy as np
 from pyproj import Proj
-from sys import stderr
 
 write = stderr.write
 
-from netCDF4 import Dataset as CDF
-
 from optparse import OptionParser
+
+from netCDF4 import Dataset as CDF
 
 ice_density = 910.0
 
@@ -48,49 +49,49 @@ parser.description = "Preprocess Storglaciaren files."
 # Create PISM-readable input file from Storglaciaren DEM
 
 
-write('------------------------------\n')
-write('PISM-Storglaciaren example\n')
-write('------------------------------\n')
+write("------------------------------\n")
+write("PISM-Storglaciaren example\n")
+write("------------------------------\n")
 
 # data dir
-data_dir = './'
+data_dir = "./"
 # X is Northing (http://en.wikipedia.org/wiki/Swedish_grid)
-XFile = data_dir + 'X.txt.gz'
+XFile = data_dir + "X.txt.gz"
 # Y is Easting (http://en.wikipedia.org/wiki/Swedish_grid)
-YFile = data_dir + 'Y.txt.gz'
+YFile = data_dir + "Y.txt.gz"
 # Bed and Surface DEMs for Storglaciaren
-zBaseFile = data_dir + 'zBase.txt.gz'
-zSurfFile = data_dir + 'zSurf.txt.gz'
+zBaseFile = data_dir + "zBase.txt.gz"
+zSurfFile = data_dir + "zSurf.txt.gz"
 
 # load coordinate information. Note: Swedish grid (RT90) uses inverse notation
 # X -> northing, Y -> easting
 try:
-    write('Reading northing coordinate infos from %s: ' % XFile)
+    write("Reading northing coordinate infos from %s: " % XFile)
     X = np.loadtxt(XFile)
-    write('Done.\n')
-    write('Reading easting coordinate infos from %s: ' % YFile)
+    write("Done.\n")
+    write("Reading easting coordinate infos from %s: " % YFile)
     Y = np.loadtxt(YFile)
-    write('Done.\n')
+    write("Done.\n")
 except IOError:
-    write('ERROR: File %s or %s could not be found.\n' % XFile % YFile)
+    write("ERROR: File %s or %s could not be found.\n" % XFile % YFile)
     exit(2)
 
 # load Bed DEM
 try:
-    write('Reading DEM from %s: ' % zBaseFile)
+    write("Reading DEM from %s: " % zBaseFile)
     zBase = np.loadtxt(zBaseFile)
-    write('Done.\n')
+    write("Done.\n")
 except IOError:
-    write('ERROR: File %s could not be found.\n' % zBaseFile)
+    write("ERROR: File %s could not be found.\n" % zBaseFile)
     exit(2)
 
 # load Surface DEM
 try:
-    write('Reading DEM from %s: ' % zSurfFile)
+    write("Reading DEM from %s: " % zSurfFile)
     zSurf = np.loadtxt(zSurfFile)
-    write('Done.\n')
+    write("Done.\n")
 except IOError:
-    write('ERROR: File %s could not be found.\n' % zSurfFile)
+    write("ERROR: File %s could not be found.\n" % zSurfFile)
     exit(2)
 
 # Grid size. DEM has 10m spacing.
@@ -116,12 +117,14 @@ ee, nn = np.meshgrid(easting, northing)
 projection = Proj(init="epsg:3021")
 longitude, latitude = projection(ee, nn, inverse=True)
 
-write("Coordinates of the lower-left grid corner:\n"
-      "  easting  = %.0f\n"
-      "  northing = %.0f\n"
-      "Grid size:\n"
-      "  rows = %d\n"
-      "  columns = %d\n" % (e0, n0, N, M))
+write(
+    "Coordinates of the lower-left grid corner:\n"
+    "  easting  = %.0f\n"
+    "  northing = %.0f\n"
+    "Grid size:\n"
+    "  rows = %d\n"
+    "  columns = %d\n" % (e0, n0, N, M)
+)
 
 # Fill value
 fill_value = -9999
@@ -130,7 +133,7 @@ thk_valid_min = 0.0
 
 bed = np.flipud(zBase)
 dem = np.flipud(zSurf)  # ignored by bootstrapping
-thk = np.flipud(zSurf-zBase)  # used for bootstrapping
+thk = np.flipud(zSurf - zBase)  # used for bootstrapping
 
 m_bed = np.zeros((Me, Ne)) + 1100
 m_bed[0:M, 0:N] = bed[0:M, 0:N]
@@ -156,21 +159,21 @@ m_thk[m_thk < 0] = 0
 
 
 # Output filename
-ncfile = 'pism_storglaciaren_3d.nc'
+ncfile = "pism_storglaciaren_3d.nc"
 
 # Write the data:
-nc = CDF(ncfile, "w", format='NETCDF3_CLASSIC')  # for netCDF4 module
+nc = CDF(ncfile, "w", format="NETCDF3_CLASSIC")  # for netCDF4 module
 
 # Create dimensions x and y
 nc.createDimension("x", size=easting.shape[0])
 nc.createDimension("y", size=northing.shape[0])
 
-x = nc.createVariable("x", 'f4', dimensions=("x",))
+x = nc.createVariable("x", "f4", dimensions=("x",))
 x.units = "m"
 x.long_name = "easting"
 x.standard_name = "projection_x_coordinate"
 
-y = nc.createVariable("y", 'f4', dimensions=("y",))
+y = nc.createVariable("y", "f4", dimensions=("y",))
 y.units = "m"
 y.long_name = "northing"
 y.standard_name = "projection_y_coordinate"
@@ -182,7 +185,7 @@ from scipy.interpolate import griddata
 
 
 def def_var(nc, name, units, fillvalue):
-    var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
+    var = nc.createVariable(name, "f", dimensions=("y", "x"), fill_value=fillvalue)
     var.units = units
     return var
 
@@ -224,7 +227,7 @@ acab_down = easting.max() - 900  # m;location of downstream end of linear acab
 acab = np.ones_like(longitude)
 
 acab[:] = acab_min
-acab[:] = acab_max - (acab_max-acab_min) * (easting - acab_up) / (acab_down - acab_up)
+acab[:] = acab_max - (acab_max - acab_min) * (easting - acab_up) / (acab_down - acab_up)
 acab[m_thk < 1] = acab_min
 
 acab_var = def_var(nc, "climatic_mass_balance", "kg m-2 year-1", fill_value)
@@ -237,25 +240,25 @@ acab_var[:] = acab * ice_density
 # (A) Surface temperature for temperature equation bc
 T0 = 273.15  # K
 Tma = -6.0  # degC, mean annual air temperature at Tarfala
-zcts = 1300   # m a.s.l.; altitude where CTS is at the surface, projected to topg
-slope = 100    # m; range around which surface temp transition happens
+zcts = 1300  # m a.s.l.; altitude where CTS is at the surface, projected to topg
+slope = 100  # m; range around which surface temp transition happens
 
 
 # smoothed version; FIXME:  can't we at least have it depend on initial DEM?
 #   additional lapse rate?
 artm = T0 + Tma * (zcts + slope - m_bed) / (2.0 * slope)
-artm[m_bed < zcts-slope] = T0 + Tma
-artm[m_bed > zcts+slope] = T0
+artm[m_bed < zcts - slope] = T0 + Tma
+artm[m_bed > zcts + slope] = T0
 
 artm_var = def_var(nc, "ice_surface_temp", "K", fill_value)
 artm_var[:] = artm
 
 # set global attributes
 nc.Conventions = "CF-1.4"
-historysep = ' '
-historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
-setattr(nc, 'history', historystr)
+historysep = " "
+historystr = time.asctime() + ": " + historysep.join(sys.argv) + "\n"
+setattr(nc, "history", historystr)
 # PROJ string equivalent to EPSG 3021
 nc.proj = "+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 +x_0=1500000 +y_0=0 +ellps=bessel +towgs84=419.384,99.3335,591.345,0.850389,1.81728,-7.86224,-0.99496 +units=m +no_defs"
 nc.close()
-write('Done writing NetCDF file %s!\n' % ncfile)
+write("Done writing NetCDF file %s!\n" % ncfile)

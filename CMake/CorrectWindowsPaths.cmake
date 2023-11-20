@@ -11,4 +11,3 @@ macro (CONVERT_CYGWIN_PATH _path)
     string (STRIP ${${_path}} ${_path})
   endif (WIN32)
 endmacro (CONVERT_CYGWIN_PATH)
-

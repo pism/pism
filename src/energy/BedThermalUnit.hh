@@ -94,7 +94,7 @@ struct BTUGrid {
   and the top_heat_flux() method does nothing other than to copy the
   field \f$G\f$ = `bheatflx` into `result`.
 
-  If `n_levels` == 2 then everything is the general case except that 
+  If `n_levels` == 2 then everything is the general case except that
   top_heat_flux() method uses first-order differencing to compute the
   values of \f$G_0\f$.
 */
@@ -162,4 +162,3 @@ protected:
 } // end of namespace pism
 
 #endif /* _PISMBEDTHERMALUNIT_H_ */
-

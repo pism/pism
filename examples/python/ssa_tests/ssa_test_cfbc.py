@@ -21,8 +21,8 @@
 
 import PISM
 from PISM.util import convert
-help = \
-    """
+
+help = """
 SSA_TESTCFBC
   Testing program for PISM's implementations of the SSA.
   Does a time-independent calculation.  Does not run IceModel or a derived
@@ -30,26 +30,25 @@ SSA_TESTCFBC
   used in a PISM software (regression) test.
 """
 
-usage = \
-    """
+usage = """
 usage of SSA_TEST_CFBC:
   run ssa_test_cfbc -Mx <number> -My <number>
 """
 
 context = PISM.Context()
 
-H0 = 600.          # meters
+H0 = 600.0  # meters
 V0 = convert(300, "m/year", "m/second")
-C = 2.45e-18     # "typical constant ice parameter"
-T = 400          # time used to compute the calving front location
+C = 2.45e-18  # "typical constant ice parameter"
+T = 400  # time used to compute the calving front location
 
 Q0 = V0 * H0
-Hc1 = 4. * C / Q0
-Hc2 = 1. / (H0 ** 4)
+Hc1 = 4.0 * C / Q0
+Hc2 = 1.0 / (H0**4)
 
 
 def H_exact(x):
-    return (Hc1 * x + Hc2) ** (-1 / 4.)
+    return (Hc1 * x + Hc2) ** (-1 / 4.0)
 
 
 def u_exact(x):
@@ -57,22 +56,30 @@ def u_exact(x):
 
 
 class test_cfbc(PISM.ssa.SSAExactTestCase):
-
     def _initGrid(self):
         self.grid = None
         halfWidth = 250.0e3  # 500.0 km length
         Lx = halfWidth
         Ly = halfWidth
-        self.grid = PISM.Grid.Shallow(PISM.Context().ctx, Lx, Ly, 0, 0,
-                                         self.Mx, self.My,
-                                         PISM.CELL_CENTER,
-                                         PISM.Y_PERIODIC)
+        self.grid = PISM.Grid.Shallow(
+            PISM.Context().ctx,
+            Lx,
+            Ly,
+            0,
+            0,
+            self.Mx,
+            self.My,
+            PISM.CELL_CENTER,
+            PISM.Y_PERIODIC,
+        )
 
     def _initPhysics(self):
         config = self.config
 
-        config.set_number("flow_law.isothermal_Glen.ice_softness",
-                          pow(1.9e8, -config.get_number("stress_balance.ssa.Glen_exponent")))
+        config.set_number(
+            "flow_law.isothermal_Glen.ice_softness",
+            pow(1.9e8, -config.get_number("stress_balance.ssa.Glen_exponent")),
+        )
         config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", False)
         config.set_flag("stress_balance.calving_front_stress_bc", True)
         config.set_flag("stress_balance.ssa.fd.flow_line_mode", True)
@@ -89,7 +96,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
         vecs = self.modeldata.vecs
 
-        vecs.tauc.set(0.0)     # irrelevant
+        vecs.tauc.set(0.0)  # irrelevant
         vecs.bedrock_altitude.set(-1000.0)  # assures shelf is floating
 
         EC = PISM.EnthalpyConverter(PISM.Context().config)
@@ -108,7 +115,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
         x_min = grid.x(0)
         with PISM.vec.Access(comm=[thickness, surface, vel_bc_mask, vel_bc, ice_mask]):
-            for (i, j) in grid.points():
+            for i, j in grid.points():
                 x = grid.x(i)
                 if i != grid.Mx() - 1:
                     thickness[i, j] = H_exact(x - x_min)
@@ -122,11 +129,11 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
                 if i == 0:
                     vel_bc_mask[i, j] = 1
                     vel_bc[i, j].u = V0
-                    vel_bc[i, j].v = 0.
+                    vel_bc[i, j].v = 0.0
                 else:
                     vel_bc_mask[i, j] = 0
-                    vel_bc[i, j].u = 0.
-                    vel_bc[i, j].v = 0.
+                    vel_bc[i, j].u = 0.0
+                    vel_bc[i, j].v = 0.0
 
     def exactSolution(self, i, j, x, y):
         x_min = self.grid.x(0)
@@ -137,11 +144,9 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         return [u, 0]
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     config = PISM.Context().config
 
-    tc = test_cfbc(int(config.get_number("grid.Mx")),
-                   int(config.get_number("grid.My")))
+    tc = test_cfbc(int(config.get_number("grid.Mx")), int(config.get_number("grid.My")))
 
     tc.run(config.get_string("output.file"))

@@ -2,11 +2,13 @@
 
 # Copyright (C) 2012, 2014, 2020 Moritz Huetten
 
-import sys
 import getopt
 import math
-#from numpy import *
+import sys
+
+# from numpy import *
 import numpy as np
+
 try:
     from netCDF4 import Dataset as NC
 except:
@@ -17,7 +19,7 @@ except:
 # geometry setup MISMIP3D Stnd-experiment
 
 
-WRIT_FILE = 'MISMIP3D_Stnd_initialSetup.nc'
+WRIT_FILE = "MISMIP3D_Stnd_initialSetup.nc"
 
 accumrate = 0.5  # accumulation rate in m/a
 
@@ -30,7 +32,7 @@ try:
         if opt in ("-r", "--resolution"):  # resolution in km
             boxWidth = arg
 except getopt.GetoptError:
-    print('Incorrect command line arguments')
+    print("Incorrect command line arguments")
     sys.exit(2)
 
 
@@ -43,8 +45,8 @@ accumrate = float(accumrate)
 ### CONSTANTS ###
 
 
-secpera = 31556926.
-ice_density = 910.0             # [kg m-3]
+secpera = 31556926.0
+ice_density = 910.0  # [kg m-3]
 
 yExtent = 2 * boxWidth  # in km
 xExtent = 2 * 800  # in km
@@ -127,57 +129,48 @@ land_ice_area_fraction_retreat[thk > 0] = 1
 land_ice_area_fraction_retreat[topg > 0] = 1
 
 ##### define dimensions in NetCDF file #####
-ncfile = NC(WRIT_FILE, 'w', format='NETCDF3_CLASSIC')
-xdim = ncfile.createDimension('x', nx)
-ydim = ncfile.createDimension('y', ny)
+ncfile = NC(WRIT_FILE, "w", format="NETCDF3_CLASSIC")
+xdim = ncfile.createDimension("x", nx)
+ydim = ncfile.createDimension("y", ny)
 
 ##### define variables, set attributes, write data #####
 # format: ['units', 'long_name', 'standard_name', '_FillValue', array]
 
-vars = {'y':   	['m',
-                 'y-coordinate in Cartesian system',
-                 'projection_y_coordinate',
-                 None,
-                 y],
-        'x':   	['m',
-                 'x-coordinate in Cartesian system',
-                 'projection_x_coordinate',
-                 None,
-                 x],
-        'thk': 	['m',
-                 'floating ice shelf thickness',
-                 'land_ice_thickness',
-                 1.0,
-                 thk],
-        'topg': ['m',
-                 'bedrock surface elevation',
-                 'bedrock_altitude',
-                 -600.0,
-                 topg],
-        'ice_surface_temp': ['K',
-                             'annual mean air temperature at ice surface',
-                             'surface_temperature',
-                             248.0,
-                             ice_surface_temp],
-        'climatic_mass_balance': ['kg m-2 year-1',
-                                  'mean annual net ice equivalent accumulation rate',
-                                  'land_ice_surface_specific_mass_balance_flux',
-                                  0.2 * ice_density,
-                                  precip],
-        'land_ice_area_fraction_retreat' : ["1",
-                                            "maximum ice extent mask",
-                                            "",
-                                            -1,
-                                            land_ice_area_fraction_retreat]
-        }
+vars = {
+    "y": ["m", "y-coordinate in Cartesian system", "projection_y_coordinate", None, y],
+    "x": ["m", "x-coordinate in Cartesian system", "projection_x_coordinate", None, x],
+    "thk": ["m", "floating ice shelf thickness", "land_ice_thickness", 1.0, thk],
+    "topg": ["m", "bedrock surface elevation", "bedrock_altitude", -600.0, topg],
+    "ice_surface_temp": [
+        "K",
+        "annual mean air temperature at ice surface",
+        "surface_temperature",
+        248.0,
+        ice_surface_temp,
+    ],
+    "climatic_mass_balance": [
+        "kg m-2 year-1",
+        "mean annual net ice equivalent accumulation rate",
+        "land_ice_surface_specific_mass_balance_flux",
+        0.2 * ice_density,
+        precip,
+    ],
+    "land_ice_area_fraction_retreat": [
+        "1",
+        "maximum ice extent mask",
+        "",
+        -1,
+        land_ice_area_fraction_retreat,
+    ],
+}
 
 for name in list(vars.keys()):
     [_, _, _, fill_value, data] = vars[name]
-    if name in ['x', 'y']:
-        var = ncfile.createVariable(name, 'f4', (name,))
+    if name in ["x", "y"]:
+        var = ncfile.createVariable(name, "f4", (name,))
     else:
-        var = ncfile.createVariable(name, 'f4', ('y', 'x'), fill_value=fill_value)
-    for each in zip(['units', 'long_name', 'standard_name'], vars[name]):
+        var = ncfile.createVariable(name, "f4", ("y", "x"), fill_value=fill_value)
+    for each in zip(["units", "long_name", "standard_name"], vars[name]):
         if each[1]:
             setattr(var, each[0], each[1])
     var[:] = data
@@ -185,4 +178,4 @@ for name in list(vars.keys()):
 # finish up
 ncfile.close()
 print("NetCDF file ", WRIT_FILE, " created")
-print('')
+print("")

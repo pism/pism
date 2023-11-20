@@ -15,9 +15,11 @@
 
 # FIXME:  need to carefully set hardness
 
-from pylab import *
 import sys
 import time
+
+from pylab import *
+
 # try different netCDF modules
 try:
     from netCDF4 import Dataset as CDF
@@ -28,8 +30,7 @@ except:
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.usage = \
-    """%prog MX DURATION
+parser.usage = """%prog MX DURATION
 
 where MX       is number of grid points,
       DURATION is time in years for run,
@@ -56,17 +57,17 @@ ncfile = "initQ%d.nc" % Mx
 
 # basic parameters
 g = 9.81
-rho = 910.0    # density of ice; kg/m^3
-rhow = 1028.0   # density of ocean water; kg/m^3
+rho = 910.0  # density of ice; kg/m^3
+rhow = 1028.0  # density of ocean water; kg/m^3
 n = 3.0
-barB = 1.9e8    # strength of shelf; Pa s^(1/3); from MacAyeal et al 1996;
+barB = 1.9e8  # strength of shelf; Pa s^(1/3); from MacAyeal et al 1996;
 # FIXME is this equal to \tilde mu or not?
 
 # derived parameters
 m = (1.0 / n) - 1.0
-gprime = (rhow - rho) * g / rhow       # see just after (2.1) in PLW2012
+gprime = (rhow - rho) * g / rhow  # see just after (2.1) in PLW2012
 nurescale = 3.0 ** (m / 2.0) * barB / rho  # see just after (3.19) in PLW2012
-C0 = 12.0 * nurescale / gprime         # constant in (3.19) in PLW2012
+C0 = 12.0 * nurescale / gprime  # constant in (3.19) in PLW2012
 
 
 def timeQ(H0):
@@ -86,26 +87,29 @@ def geomvelQ(t, r, V):
 
 
 # similarity solution: choose dimensions, get told the time and volume
-H0 = 1000.0     # m
-R0 = 100.0e3    # m; 100 km
-V = pi * R0 ** 2 * H0
+H0 = 1000.0  # m
+R0 = 100.0e3  # m; 100 km
+V = pi * R0**2 * H0
 t0 = timeQ(H0)
 
 t = t0 + runtime
 
-print('exact Test Q has the following parameters for the start time t=t0:')
-print('  time      t0 = %.3e s = %f a' % (t0, t0 / SperA))
-print('  thickness H0 = %.3f m' % H0)
-print('  radius    R0 = %.3f km' % (R0 / 1.0e3))
-print('building PISM bootstrap file %s with Mx = %d and My = %d grid points ...' % (ncfile, Mx, My))
+print("exact Test Q has the following parameters for the start time t=t0:")
+print("  time      t0 = %.3e s = %f a" % (t0, t0 / SperA))
+print("  thickness H0 = %.3f m" % H0)
+print("  radius    R0 = %.3f km" % (R0 / 1.0e3))
+print(
+    "building PISM bootstrap file %s with Mx = %d and My = %d grid points ..."
+    % (ncfile, Mx, My)
+)
 
 # set up the grid:
 Lx = 200.0e3
 Ly = Lx
 x = linspace(-Lx, Lx, Mx)
 y = linspace(-Ly, Ly, My)
-[xx, yy] = meshgrid(x, y)         # if there were "ndgrid" in numpy?
-rr = sqrt(xx ** 2 + yy ** 2)
+[xx, yy] = meshgrid(x, y)  # if there were "ndgrid" in numpy?
+rr = sqrt(xx**2 + yy**2)
 
 fill_value = nan
 
@@ -123,25 +127,25 @@ thk_exact[rr > R_exact] = 0.0
 c_exact *= SperA
 c_exact[rr > R_exact] = 0.0
 
-print('exact Test Q at time t=%f years is in these variables:' % (t / SperA))
-print('  c_exact, with max = %.3e' % c_exact.max())
-print('  thk_exact, with max = %.3e' % thk_exact.max())
-print('and R_exact = %.3f km' % (R_exact / 1.0e3))
+print("exact Test Q at time t=%f years is in these variables:" % (t / SperA))
+print("  c_exact, with max = %.3e" % c_exact.max())
+print("  thk_exact, with max = %.3e" % thk_exact.max())
+print("and R_exact = %.3f km" % (R_exact / 1.0e3))
 
 # Write the data:
-nc = CDF(ncfile, "w", format='NETCDF3_CLASSIC')  # for netCDF4 module
+nc = CDF(ncfile, "w", format="NETCDF3_CLASSIC")  # for netCDF4 module
 
 # Create dimensions x and y
 nc.createDimension("x", size=Mx)
 nc.createDimension("y", size=My)
 
-x_var = nc.createVariable("x", 'f4', dimensions=("x",))
+x_var = nc.createVariable("x", "f4", dimensions=("x",))
 x_var.units = "m"
 x_var.long_name = "easting"
 x_var.standard_name = "projection_x_coordinate"
 x_var[:] = x
 
-y_var = nc.createVariable("y", 'f4', dimensions=("y",))
+y_var = nc.createVariable("y", "f4", dimensions=("y",))
 y_var.units = "m"
 y_var.long_name = "northing"
 y_var.standard_name = "projection_y_coordinate"
@@ -150,7 +154,7 @@ y_var[:] = y
 
 def def_var(nc, name, units, fillvalue):
     # dimension transpose is standard: "float thk(y, x)" in NetCDF file
-    var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
+    var = nc.createVariable(name, "f", dimensions=("y", "x"), fill_value=fillvalue)
     var.units = units
     return var
 
@@ -163,7 +167,9 @@ thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
-climatic_mass_balance_var = def_var(nc, "climatic_mass_balance", "kg m-2 s-1", fill_value)
+climatic_mass_balance_var = def_var(
+    nc, "climatic_mass_balance", "kg m-2 s-1", fill_value
+)
 climatic_mass_balance_var.standard_name = "land_ice_surface_specific_mass_balance"
 climatic_mass_balance_var[:] = climatic_mass_balance
 
@@ -177,7 +183,7 @@ v_bc_var = def_var(nc, "v_bc", "m s-1", fill_value)
 v_bc_var[:] = zerossabc.copy()
 
 vel_bc_mask_var = nc.createVariable("vel_bc_mask", "i", dimensions=("y", "x"))
-vel_bc_mask_var[:] = ((xx == 0.0) & (yy == 0.0))
+vel_bc_mask_var[:] = (xx == 0.0) & (yy == 0.0)
 
 thk_exact_var = def_var(nc, "thk_exact", "m", fill_value)
 thk_exact_var[:] = thk_exact
@@ -186,11 +192,11 @@ c_exact_var = def_var(nc, "c_exact", "m year-1", fill_value)
 c_exact_var[:] = c_exact
 
 # set global attributes
-nc.Conventions = 'CF-1.4'
-historysep = ' '
-historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
-setattr(nc, 'history', historystr)
+nc.Conventions = "CF-1.4"
+historysep = " "
+historystr = time.asctime() + ": " + historysep.join(sys.argv) + "\n"
+setattr(nc, "history", historystr)
 
 nc.close()
-print('file %s written ...' % ncfile)
-print('  ... now run   FIXME')
+print("file %s written ..." % ncfile)
+print("  ... now run   FIXME")

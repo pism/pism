@@ -40,7 +40,7 @@ Cosine yearly cycle
 +++++++++++++++++++
 
 :|options|: :opt:`-atmosphere yearly_cycle`
-:|variables|: :var:`air_temp_mean_annual`, 
+:|variables|: :var:`air_temp_mean_annual`,
               :var:`air_temp_mean_july`,
               :var:`precipitation` |flux|
               :var:`amplitude_scaling`
@@ -78,7 +78,7 @@ Prefix: ``atmosphere.yearly_cycle.``
 
 SeaRISE-Greenland
 +++++++++++++++++
-    
+
 :|options|: ``-atmosphere searise_greenland``
 :|variables|: :var:`lon`,
               :var:`lat`,

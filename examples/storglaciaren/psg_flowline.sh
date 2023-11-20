@@ -38,7 +38,7 @@ fi
 if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
   echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
 else
-  PISM_DO="" 
+  PISM_DO=""
 fi
 
 # prefix to pism (not to executables)
@@ -131,7 +131,7 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME -bootstrap $GRID
   $COUPLER -y ${SMOOTHRUNLENGTH} -o $OUTNAME"
 $PISM_DO $cmd
 
-# run with -no_mass (no surface change) 
+# run with -no_mass (no surface change)
 INNAME=$OUTNAME
 OUTNAME=$PREFIX${GS}m_steady.nc
 EXNAME=ex_${OUTNAME}

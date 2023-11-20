@@ -60,7 +60,7 @@ public:
   const array::Scalar& melt() const;
   const array::Scalar& runoff() const;
   const array::Scalar& temperature() const;
-  
+
 protected:
 
   virtual const array::Scalar& accumulation_impl() const;
@@ -103,7 +103,7 @@ protected:
   std::shared_ptr<array::Scalar> m_accumulation;
   std::shared_ptr<array::Scalar> m_melt;
   std::shared_ptr<array::Scalar> m_runoff;
-  
+
   std::shared_ptr<SurfaceModel> m_input_model;
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;
 };

@@ -3,7 +3,7 @@
 N=4
 xx=101
 yy=$xx
-length=400 
+length=400
 
 infile="circular_noshelf.nc"
 

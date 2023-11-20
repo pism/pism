@@ -38,7 +38,7 @@ class Config;
   ...
   E_s = EC.enthalpy_cts(p);
   ... etc ...
-  }   
+  }
   \endcode
 
   The three methods that get the enthalpy from temperatures and liquid
@@ -140,4 +140,3 @@ public:
 } // end of namespace pism
 
 #endif // __enthalpyConverter_hh
-

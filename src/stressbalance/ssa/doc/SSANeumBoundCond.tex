@@ -5,7 +5,7 @@
 \usepackage{comment}
 \usepackage{subfigure}
 \usepackage[english]{babel}
-\usepackage[top=3cm, bottom=3cm, left=3cm, right=3cm]{geometry}   
+\usepackage[top=3cm, bottom=3cm, left=3cm, right=3cm]{geometry}
 \title{Implementation of Boundary Conditions at the Calving Front}
 \author{Marianne Haseloff \& Torsten Albrecht,\\ Maria Martin, Ricarda Winkelmann, Anders Levermann}
 \begin{document}
@@ -26,11 +26,11 @@ The integration limits on the right hand side of Eq.~\eqref{MacAyeal2} account f
 \begin{equation}
 \int_{b}^{H+b}\mathbf{\sigma}\cdot\mathbf{n}dz = \int_{b}^{z_s}\rho_w g (z-z_s) dz\mathbf{n}.
 \label{BC_sheet}
-\end{equation} 
+\end{equation}
 Integration of the right-hand side of \eqref{MacAyeal2} yields:
 \begin{eqnarray}
 \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s+(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}dz & = & \rho_w g \left(\frac{z^2}{2}-z_s z\right)\mid_{z_s-\frac{\rho}{\rho_w}H}^{z_s}\mathbf{n} \\
-& = &  -\frac{\rho_w}{2}g\left(\frac{\rho}{\rho_w}H \right)^2\mathbf{n}  \label{MacAyeal3} 
+& = &  -\frac{\rho_w}{2}g\left(\frac{\rho}{\rho_w}H \right)^2\mathbf{n}  \label{MacAyeal3}
 \end{eqnarray}
 \noindent Using cartesian coordinates,
 i.e. $\mathbf{n}=n_x\overrightarrow{e_x}+n_y\overrightarrow{e_y}$, equation
@@ -66,7 +66,7 @@ Defining the vertically integrated effective viscosity as
 \begin{equation}%myNu: effective viscosity
 \tilde{\nu}=\frac{1}{\rho g}d^{\frac{1-n}{n}}\int_{h_m}^{h_s}\frac{1}{\left[A(T)\right]^{\frac{1}{n}}}dz
 \label{myNu}
-\end{equation} 
+\end{equation}
 further simplification yields:
 \begin{eqnarray}%tesnorX tensorY tensorZ
 \int_{h_m}^{h_s}\sigma_{xx}dz & = &
@@ -90,12 +90,12 @@ z$ may not depend on z, too. This allows to rewrite the left side of eq.\eqref{t
 \begin{eqnarray*}
 \int_{h_m}^{h_s}\sigma_{xx}dz & = & \rho g\tilde{\nu} \frac{\partial u}{\partial x} + \int_{h_m}^{h_s} \left[ \rho g(z-z_s) - \varrho\rho gH+\frac{1}{A(T)^\frac{1}{n}}d^\frac{1-n}{n} \left( \frac{\partial u}{\partial x}+\frac{\partial v}{\partial y} \right) \right] dz \\
 & = & \rho g\tilde{\nu} \frac{\partial u}{\partial x} +  \frac{1}{2}\rho gH^2 - \rho g \frac{\rho}{\rho_w}H^2 -\varrho\rho gH^2+\rho g \tilde{\nu}\left( \frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right) \\
-& = & \rho g \left(2\tilde{\nu}\frac{\partial u}{\partial x} + \tilde{\nu}\frac{\partial v}{\partial y} - \frac{1}{2}H^2   \right) 
+& = & \rho g \left(2\tilde{\nu}\frac{\partial u}{\partial x} + \tilde{\nu}\frac{\partial v}{\partial y} - \frac{1}{2}H^2   \right)
 \end{eqnarray*}
-and of eq.\eqref{tensorY}, accordingly. Therefore, the boundary conditions at the calving front for an arbitrary normal vector $\mathbf{n}=n_x\overrightarrow{e}_x+n_y\overrightarrow{e}_y$ in terms of velocity gradients are: 
+and of eq.\eqref{tensorY}, accordingly. Therefore, the boundary conditions at the calving front for an arbitrary normal vector $\mathbf{n}=n_x\overrightarrow{e}_x+n_y\overrightarrow{e}_y$ in terms of velocity gradients are:
 \begin{eqnarray*}
-n_x\left(2\tilde{\nu}\frac{\partial u}{\partial x}+\tilde{\nu}\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\tilde{\nu}\frac{\partial u}{\partial y} + \tilde{\nu}\frac{\partial v}{\partial x} \right) & =  & \frac{n_x}{2}\left(1-\frac{\rho}{\rho_w}\right)H^2\\  
-\frac{n_x}{2} \left(\tilde{\nu}\frac{\partial u}{\partial y} + \tilde{\nu}\frac{\partial v}{\partial x} \right) + n_y\left(\tilde{\nu}\frac{\partial u}{\partial x}+2\tilde{\nu}\frac{\partial v}{\partial y}  \right) & = & \frac{n_y}{2}\left(1-\frac{\rho}{\rho_w}\right)H^2 
+n_x\left(2\tilde{\nu}\frac{\partial u}{\partial x}+\tilde{\nu}\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\tilde{\nu}\frac{\partial u}{\partial y} + \tilde{\nu}\frac{\partial v}{\partial x} \right) & =  & \frac{n_x}{2}\left(1-\frac{\rho}{\rho_w}\right)H^2\\
+\frac{n_x}{2} \left(\tilde{\nu}\frac{\partial u}{\partial y} + \tilde{\nu}\frac{\partial v}{\partial x} \right) + n_y\left(\tilde{\nu}\frac{\partial u}{\partial x}+2\tilde{\nu}\frac{\partial v}{\partial y}  \right) & = & \frac{n_y}{2}\left(1-\frac{\rho}{\rho_w}\right)H^2
 \end{eqnarray*}
 The effective viscosity $\tilde{\nu}$ defined by \eqref{myNu} and the viscosity used by PISM $\overline{\nu}$ are linked via:
 \begin{equation*}%nuLink
@@ -104,20 +104,20 @@ The effective viscosity $\tilde{\nu}$ defined by \eqref{myNu} and the viscosity 
 \end{equation*}
 Thus, the calving front boundary conditions at a \textbf{shelf} front can be formulated as:
 \begin{eqnarray}%calv_BC1 and calv_BC2
-n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\frac{\rho g}{4}\left(1-\frac{\rho}{\rho_w}\right)H^2 \label{calv_BC1}\\  
+n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\frac{\rho g}{4}\left(1-\frac{\rho}{\rho_w}\right)H^2 \label{calv_BC1}\\
  n_y\left(\overline{\nu}H\frac{\partial u}{\partial x}+2\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_x}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & = & n_y\frac{\rho g}{4}\left(1-\frac{\rho}{\rho_w}\right)H^2 . \label{calv_BC2}
 \end{eqnarray}
 Similar calculations to rewrite \eqref{BC_sheet} yield the boundary condition on a \textbf{grounded} front:
 \begin{eqnarray}%sheet_BC1 and sheet_BC2
-n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}( z_s-b)^2  \right) \label{sheet_BC1}\\  
+n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}( z_s-b)^2  \right) \label{sheet_BC1}\\
  n_y\left(\overline{\nu}H\frac{\partial u}{\partial x}+2\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_x}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & = & n_y\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}(z_s - b)^2 \right). \label{sheet_BC2}
 \end{eqnarray}
 As the only difference between shelf and sheet is the right hand side of the boundary condition (this is not surprising as the only difference is the area on which the pressure is exerted), both boundary conditions can be formulated as one:
 \begin{eqnarray}%sheet_BC1 and sheet_BC2
-n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\tau_{ocean} \label{BC1}\\  
+n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\tau_{ocean} \label{BC1}\\
  n_y\left(\overline{\nu}H\frac{\partial u}{\partial x}+2\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_x}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & = & n_y\tau_{ocean}. \label{BC2}
 \end{eqnarray}
-with 
+with
 \begin{equation}
 \tau_{ocean} = \left\{
 \begin{array}{ll}
@@ -139,28 +139,28 @@ Obviously, there is no need to normalize the `normal vector' $\mathbf{n}$.
 \begin{align}
 \frac{2}{\Delta x}(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j
 - \frac{2}{\Delta x}(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j \nonumber \\
-+ \frac{1}{\Delta y}(\bar{\nu} H)|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}} 
-- \frac{1}{\Delta y}(\bar{\nu} H)|_i^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j-\frac{1}{2}} 
-&= \rho gH \frac{\partial h}{\partial x} \label{SSA1_dis1} 
++ \frac{1}{\Delta y}(\bar{\nu} H)|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}}
+- \frac{1}{\Delta y}(\bar{\nu} H)|_i^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j-\frac{1}{2}}
+&= \rho gH \frac{\partial h}{\partial x} \label{SSA1_dis1}
 \end{align}
 If one or more of the four nearest neighbors of the shelf box under consideration $[i,j]$ is an partially filled grid cell or ice-free ocean (\cite{Albrecht_Martin10}), the boundary between these two boxes will be a calving front and evaluating the boundary condition at these points allows to substitute the whole block which is calculated at this point:
-\begin{itemize} 
-\item calving front at $[i+\frac{1}{2},j]$: $\hat{n}=(1,0)$: 
+\begin{itemize}
+\item calving front at $[i+\frac{1}{2},j]$: $\hat{n}=(1,0)$:
 \begin{align}
 (\bar{\nu} H)|_{i+\frac{1}{2}}^j\left(2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j &= \tau_{ocean} \nonumber \\
 (\bar{\nu} H)|_{i+\frac{1}{2}}^j\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i+\frac{1}{2}}^j &= 0
 \end{align}
-\item calving front at $[i-\frac{1}{2},j]$: $\hat{n}=(-1,0)$: 
+\item calving front at $[i-\frac{1}{2},j]$: $\hat{n}=(-1,0)$:
 \begin{align}
 (\bar{\nu} H)|_{i-\frac{1}{2}}^j\left(2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j &= \tau_{ocean} \nonumber \\
 (\bar{\nu} H)|_{i-\frac{1}{2}}^j\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i-\frac{1}{2}}^j &= 0
 \end{align}
-\item calving front at $[i,j+\frac{1}{2}]$: $\hat{n}=(0,1)$: 
+\item calving front at $[i,j+\frac{1}{2}]$: $\hat{n}=(0,1)$:
 \begin{align}
 (\bar{\nu} H)|_{i}^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i}^{j+\frac{1}{2}} &= 0 \nonumber \\
 (\bar{\nu} H)|_{i}^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial x} + 2\frac{\partial v}{\partial y} \right)_{i}^{j+\frac{1}{2}} &= \tau_{ocean}
 \end{align}
-\item calving front at $[i,j-\frac{1}{2}]$: $\hat{n}=(0,-1)$: 
+\item calving front at $[i,j-\frac{1}{2}]$: $\hat{n}=(0,-1)$:
 \begin{align}
 (\bar{\nu} H)|_{i}^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i}^{j-\frac{1}{2}} &= 0 \nonumber \\
 (\bar{\nu} H)|_{i}^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial x} + 2\frac{\partial v}{\partial y} \right)_{i}^{j-\frac{1}{2}} &= \tau_{ocean}
@@ -177,7 +177,7 @@ By rewriting equation \eqref{SSA1_dis1} with booleans $a_+, a_-, b_+, b_-$ equal
 \begin{align}
 &\qquad a_+\frac{2}{\Delta x}(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j
 - a_-\frac{2}{\Delta x}(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j \nonumber \\
-+ &\qquad b_+\frac{1}{\Delta y}(\bar{\nu} H)|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}} 
++ &\qquad b_+\frac{1}{\Delta y}(\bar{\nu} H)|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}}
 - b_-\frac{1}{\Delta y}(\bar{\nu} H)|_i^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j-\frac{1}{2}} \nonumber \\
 = &\qquad \rho gH \frac{\partial h}{\partial x} + (a_+ - a_-)\frac{2}{\Delta x}\tau_{ocean} \label{SSA1_dis2}
 \end{align}
@@ -233,7 +233,7 @@ The part in round parantheses means an average over the adjacent derivatives $\f
 \bibitem{Winkelmann_Martin10} R. Winkelmann, M. A. Martin, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann
 The Potsdam Parallel Ice Sheet Model (PISM-PIK), Part I: Model Description
 (2010), The Cryosphere Discussions 4, 1277-1306, DOI:10.5194/tcd-4-1277-2010.
-	 
+
 \bibitem{Martin_Winkelmann10} M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann
 The Potsdam Parallel Ice Sheet Model (PISM-PIK), Part II: Dynamical Equilibrium Simulation of the Antarctic Ice Sheet
 (2010), The Cryosphere Discussions 4, 1307-1341, DOI:10.5194/tcd-4-1307-2010.

@@ -19,26 +19,33 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
+import math
+
 import PISM
 from PISM.util import convert
-import math
 
 context = PISM.Context()
 
-L = 50.e3  # // 50km half-width
+L = 50.0e3  # // 50km half-width
 H0 = 500  # // m
 dhdx = 0.005  # // pure number, slope of surface & bed
 nu0 = convert(30.0, "MPa year", "Pa s")
-tauc0 = 1.e4  # // 1kPa
+tauc0 = 1.0e4  # // 1kPa
 
 
 class test_linear(PISM.ssa.SSAExactTestCase):
-
     def _initGrid(self):
-        self.grid = PISM.Grid.Shallow(PISM.Context().ctx, L, L, 0, 0,
-                                         self.Mx, self.My,
-                                         PISM.CELL_CORNER,
-                                         PISM.NOT_PERIODIC)
+        self.grid = PISM.Grid.Shallow(
+            PISM.Context().ctx,
+            L,
+            L,
+            0,
+            0,
+            self.Mx,
+            self.My,
+            PISM.CELL_CORNER,
+            PISM.NOT_PERIODIC,
+        )
 
     def _initPhysics(self):
         config = self.config
@@ -59,7 +66,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
         vecs.land_ice_thickness.set(H0)
         vecs.surface_altitude.set(H0)
-        vecs.bedrock_altitude.set(0.)
+        vecs.bedrock_altitude.set(0.0)
         vecs.tauc.set(tauc0)
 
         vel_bc = vecs.vel_bc
@@ -68,8 +75,10 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
         grid = self.grid
         with PISM.vec.Access(comm=[vel_bc_mask, vel_bc]):
-            for (i, j) in grid.points():
-                edge = ((j == 0) or (j == grid.My() - 1)) or ((i == 0) or (i == grid.Mx() - 1))
+            for i, j in grid.points():
+                edge = ((j == 0) or (j == grid.My() - 1)) or (
+                    (i == 0) or (i == grid.Mx() - 1)
+                )
                 if edge:
                     vel_bc_mask[i, j] = 1
                     x = grid.x(i)
@@ -88,8 +97,9 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         self.config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", True)
 
     def exactSolution(self, i, j, x, y):
-        tauc_threshold_velocity = self.config.get_number("basal_resistance.pseudo_plastic.u_threshold",
-                                                         "m/second")
+        tauc_threshold_velocity = self.config.get_number(
+            "basal_resistance.pseudo_plastic.u_threshold", "m/second"
+        )
 
         v0 = convert(100, "m/year", "m/second")
         alpha = math.sqrt((tauc0 / tauc_threshold_velocity) / (4 * nu0 * H0))
@@ -97,11 +107,13 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
 
 # The main code for a run follows:
-if __name__ == '__main__':
+if __name__ == "__main__":
     context = PISM.Context()
     config = context.config
 
     PISM.set_abort_on_sigint(True)
 
-    tc = test_linear(int(config.get_number("grid.Mx")), int(config.get_number("grid.My")))
+    tc = test_linear(
+        int(config.get_number("grid.Mx")), int(config.get_number("grid.My"))
+    )
     tc.run(config.get_string("output.file"))

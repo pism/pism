@@ -30,7 +30,7 @@ namespace ocean {
 
 /**
  * Scalar melange back-pressure fraction forcing.
- * 
+ *
  */
 class Frac_MBP : public OceanModel
 {

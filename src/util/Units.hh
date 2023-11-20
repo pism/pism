@@ -95,7 +95,7 @@ private:
 bool are_convertible(const Unit &u1, const Unit &u2);
 
 /** Unit converter.
- * 
+ *
  * Throws pism::RuntimeError() if the conversion is not possible.
  *
  */

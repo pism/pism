@@ -10,6 +10,7 @@ diffusive, which is not a surprise."""
 
 log = PISM.Context().log
 
+
 def disc(thickness, x0, y0, H, R):
     """Set ice thickness to H within the disc centered at (x0,y0) of
     radius R and 0 elsewhere.
@@ -18,10 +19,10 @@ def disc(thickness, x0, y0, H, R):
     grid = thickness.grid()
 
     with PISM.vec.Access(nocomm=thickness):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             x = grid.x(i)
             y = grid.y(j)
-            d2 = (x - x0)**2 + (y - y0)**2
+            d2 = (x - x0) ** 2 + (y - y0) ** 2
             r2 = R**2
             if d2 <= r2:
                 thickness[i, j] = H
@@ -42,8 +43,7 @@ def set_ice_thickness(output, time):
     # 1 revolution per 1 time unit
     phi = 2 * np.pi * time
 
-    M = np.matrix([[np.cos(phi), -np.sin(phi)],
-                   [np.sin(phi),  np.cos(phi)]])
+    M = np.matrix([[np.cos(phi), -np.sin(phi)], [np.sin(phi), np.cos(phi)]])
 
     # center coordinates at time 0
     x0, y0 = 0.5 * L, 0.0
@@ -64,11 +64,11 @@ def set_velocity(v):
     radial_velocity = 2 * np.pi
 
     with PISM.vec.Access(nocomm=v):
-        for (i, j) in grid.points():
+        for i, j in grid.points():
             x = grid.x(i)
             y = grid.y(j)
 
-            v[i, j].u =  y * radial_velocity
+            v[i, j].u = y * radial_velocity
             v[i, j].v = -x * radial_velocity
 
     v.update_ghosts()
@@ -80,9 +80,7 @@ def quiver(v, **kwargs):
 
 
 class MassTransport(object):
-
     def __init__(self, grid, scheme="pism", part_grid=False):
-
         self.new_scheme = False
         self.grid = grid
 
@@ -101,11 +99,13 @@ class MassTransport(object):
             self.transport_scheme = PISM.MPDATA2(grid, 2)
             self.new_scheme = True
         else:
-            schemes = {"upwind" : PISM.PISM_UNO_UPWIND1,
-                       "lax-wendroff": PISM.PISM_UNO_LAX_WENDROFF,
-                       "fromm": PISM.PISM_UNO_FROMM,
-                       "uno2": PISM.PISM_UNO_2,
-                       "uno3": PISM.PISM_UNO_3}
+            schemes = {
+                "upwind": PISM.PISM_UNO_UPWIND1,
+                "lax-wendroff": PISM.PISM_UNO_LAX_WENDROFF,
+                "fromm": PISM.PISM_UNO_FROMM,
+                "uno2": PISM.PISM_UNO_2,
+                "uno3": PISM.PISM_UNO_3,
+            }
 
             self.transport_scheme = PISM.UNO(grid, schemes[scheme])
             self.new_scheme = True
@@ -133,9 +133,12 @@ class MassTransport(object):
         self.Q.set(0.0)
 
     def plot_thickness(self, ax, levels):
-
-        cm = ax.contour(self.grid.x(), self.grid.y(),
-                        self.geometry.ice_thickness.numpy(), levels=levels)
+        cm = ax.contour(
+            self.grid.x(),
+            self.grid.y(),
+            self.geometry.ice_thickness.numpy(),
+            levels=levels,
+        )
         ax.clabel(cm)
         ax.grid()
 
@@ -144,10 +147,9 @@ class MassTransport(object):
         t = 0.0
         j = 0
         while t < t_final:
-
-            cfl = PISM.max_timestep_cfl_2d(geometry.ice_thickness,
-                                           geometry.cell_type,
-                                           self.v)
+            cfl = PISM.max_timestep_cfl_2d(
+                geometry.ice_thickness, geometry.cell_type, self.v
+            )
             dt = cfl.dt_max.value() * C
 
             if t + dt > t_final:
@@ -156,15 +158,16 @@ class MassTransport(object):
             log.message(3, "{}, {}\n".format(t, dt))
 
             if not self.new_scheme:
-                self.ge.flow_step(geometry, dt,
-                                  self.v,
-                                  self.Q,
-                                  self.H_bc_mask)
+                self.ge.flow_step(geometry, dt, self.v, self.Q, self.H_bc_mask)
 
                 geometry.ice_thickness.add(1.0, self.ge.thickness_change_due_to_flow())
-                geometry.ice_area_specific_volume.add(1.0, self.ge.area_specific_volume_change_due_to_flow())
+                geometry.ice_area_specific_volume.add(
+                    1.0, self.ge.area_specific_volume_change_due_to_flow()
+                )
             else:
-                self.transport_scheme.update(dt, geometry.cell_type, geometry.ice_thickness, self.v, True)
+                self.transport_scheme.update(
+                    dt, geometry.cell_type, geometry.ice_thickness, self.v, True
+                )
                 geometry.ice_thickness.copy_from(self.transport_scheme.x())
 
             geometry.ensure_consistency(0.0)
@@ -172,15 +175,21 @@ class MassTransport(object):
             t += dt
             j += 1
 
+
 def volume(geometry):
     cell_area = geometry.ice_thickness.grid().cell_area()
-    return (PISM.sum(geometry.ice_thickness) + PISM.sum(geometry.ice_area_specific_volume)) * cell_area
+    return (
+        PISM.sum(geometry.ice_thickness) + PISM.sum(geometry.ice_area_specific_volume)
+    ) * cell_area
+
 
 def test():
     ctx = PISM.Context()
     Mx = int(ctx.config.get_number("grid.Mx"))
     My = int(ctx.config.get_number("grid.My"))
-    grid = PISM.Grid_Shallow(ctx.ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.Grid_Shallow(
+        ctx.ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC
+    )
 
     from matplotlib import pyplot as plt
 
@@ -219,6 +228,7 @@ def test():
     plt.show()
 
     mt.geometry.ice_thickness.dump(ctx.config.get_string("output.file"))
+
 
 if __name__ == "__main__":
     test()

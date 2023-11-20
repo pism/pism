@@ -37,7 +37,7 @@ namespace inverse {
   not work with \f$d\f$ directly but with a different
   variable \f$\zeta\f$, and a relationship \f$d=g(\zeta)\f$.
   A common choice in the glaciology literature for \f$\tau_c\f$
-  is \f$\tau_c=g(\zeta)=\zeta^2\f$, which ensures that \f$\tau_c\f$ is 
+  is \f$\tau_c=g(\zeta)=\zeta^2\f$, which ensures that \f$\tau_c\f$ is
   non-negative, but has the disadvantage that it is a 2-1 parameterization.  A potentially
   more satisfactory choice is \f$g(\zeta)=e^\zeta\f$, which ensures
   positivitiy, is 1-1, and respects the wide scale variations of \f$\tau_c\f$.
@@ -47,24 +47,24 @@ namespace inverse {
   This method of encoding mathematical expressions is flexible and convenient,
   but is also slow; it has the overhead that many virtual function calls are
   needed if the expression is being called over and over again.  If this
-  proves to be a significant source of slowness, we could look at 
+  proves to be a significant source of slowness, we could look at
   using the Expression Template idiom, http://drdobbs.com/184401627.
 
   For certain Tikhonov inversions, it is important to mainain well-scaled
-  variables.  If the design parameter name is 'foo', internally the parameterizations 
+  variables.  If the design parameter name is 'foo', internally the parameterizations
   use units of \f$d\f$ such that  the config parameter \a design_param_foo_scale equals one. I.e.
-  if 'foo' is 'tauc', then  for a conversion function \f$g(\zeta)=\zeta^2\f$, 
+  if 'foo' is 'tauc', then  for a conversion function \f$g(\zeta)=\zeta^2\f$,
   \f[
   \frac{d} = d_{\rm scale}g(\zeta^2).
   \f]
   where \f$d_{\rm scale}={\tt design_param_tauc_scale}\f$.
 */
-class IPDesignVariableParameterization 
+class IPDesignVariableParameterization
 {
 public:
-  
+
   IPDesignVariableParameterization() {};
-  
+
   virtual ~IPDesignVariableParameterization() {};
 
   virtual void set_scales(const Config &config, const std::string &design_var_name);
@@ -75,8 +75,8 @@ public:
     \param[out] value The value \f$g(\zeta)\f$.
     \param[out] derivative The value \f$g'(\zeta)\f$. */
   virtual void toDesignVariable(double zeta, double *value, double *derivative) = 0;
-  
-  //! Converts from \f$d\f$ to a parameterization value \f$\zeta\f$ such that \f$d=g(\zeta)\f$.  
+
+  //! Converts from \f$d\f$ to a parameterization value \f$\zeta\f$ such that \f$d=g(\zeta)\f$.
   /*! More than one such \f$\zeta\f$ may exist; only one is returned. */
   virtual void fromDesignVariable(double d, double *OUTPUT) = 0;
 
@@ -84,7 +84,7 @@ public:
 
   virtual void convertFromDesignVariable(array::Scalar &d, array::Scalar &zeta,  bool communicate = true);
 protected:
-  
+
   /// Value of \f$d\f$ in PISM units that equals 1 for IPDesignVariableParameterization's units.
   double m_d_scale;
 };
@@ -135,8 +135,8 @@ private:
 
 
 //! A monotone non-negative parameterization \f$\tau_c=\tau_{\rm scale}g(\zeta)\f$ that is approximately the identity away from small values of  \f$\tau_c\f$
-/*! More specifically, \f$g(\zeta)\rightarrow 0\f$ as \f$\zeta\rightarrow-\infty\f$ and \f$g(\zeta)\approx p\f$ 
-  for large values of \f$\zeta\f$.  The transition from a nonlinear to an approximately linear 
+/*! More specifically, \f$g(\zeta)\rightarrow 0\f$ as \f$\zeta\rightarrow-\infty\f$ and \f$g(\zeta)\approx p\f$
+  for large values of \f$\zeta\f$.  The transition from a nonlinear to an approximately linear
   function occurs in the neighbourhood of the parameter \f$d_0\f$. */
 class IPDesignVariableParamTruncatedIdent: public IPDesignVariableParameterization
 {

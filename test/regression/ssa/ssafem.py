@@ -22,7 +22,7 @@ grid = shallow_grid(Mx=M, My=M, Lx=10e3, Ly=10e3)
 geometry = PISM.Geometry(grid)
 
 with PISM.vec.Access(nocomm=[geometry.ice_thickness]):
-    for (i, j) in grid.points():
+    for i, j in grid.points():
         if abs(i - c) + abs(j - c) < w:
             geometry.ice_thickness[i, j] = H
         else:
@@ -68,8 +68,8 @@ node_type = PISM.Scalar(grid, "node_type")
 
 PISM.compute_node_types(geometry.ice_thickness, 1.0, node_type)
 
-def save_results(filename):
 
+def save_results(filename):
     f = PISM.util.prepare_output(filename)
 
     node_type.write(f)
@@ -82,11 +82,13 @@ def save_results(filename):
     tauc.write(f)
     f.close()
 
+
 save_results(config.get_string("output.file"))
 
+
 def plot():
-    import pylab as plt
     import numpy as np
+    import pylab as plt
 
     x = np.array(grid.x())
     dx = grid.dx()
@@ -96,15 +98,16 @@ def plot():
     v = ssa.velocity().numpy()
 
     plt.figure(1)
-    plt.imshow(v[:,:,0])
+    plt.imshow(v[:, :, 0])
     plt.title("u")
     plt.colorbar()
 
     plt.figure(2)
-    plt.imshow(v[:,:,1])
+    plt.imshow(v[:, :, 1])
     plt.title("v")
     plt.colorbar()
 
     plt.show()
+
 
 # plot()

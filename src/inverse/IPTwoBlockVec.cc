@@ -94,7 +94,7 @@ void IPTwoBlockVec::scatterToB(Vec b) {
 
 void IPTwoBlockVec::scatter(Vec ab, Vec a, Vec b) {
   this->scatterToA(ab,a);
-  this->scatterToB(ab,b);  
+  this->scatterToB(ab,b);
 }
 
 void IPTwoBlockVec::scatter_begin_end(VecScatter s, Vec a, Vec b, ScatterMode m) {

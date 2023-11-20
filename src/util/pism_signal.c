@@ -28,4 +28,3 @@ void pism_signal_handler(int sig) {
 
   signal(sig, pism_signal_handler);
 }
-

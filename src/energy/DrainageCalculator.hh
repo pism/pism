@@ -63,4 +63,3 @@ private:
 } // end of namespace pism
 
 #endif // __DrainageCalculator_hh
-

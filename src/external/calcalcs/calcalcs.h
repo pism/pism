@@ -60,14 +60,14 @@ typedef struct cccalendar calcalcs_cal;
 typedef struct ccs_ccode  ccs_country_code;
 
 /* =====================================================================================
- * Here are all the services this library supplies 
+ * Here are all the services this library supplies
  *
  * -------------------------------------------------------------------------
  * ccs_init_calendar : initialize a calendar.  Valid passed arguments are
  * 		one of the following strings:
- *	Standard, proleptic_Gregorian, proleptic_Julian, noleap (aka 365_day and no_leap), 360_day		
+ *	Standard, proleptic_Gregorian, proleptic_Julian, noleap (aka 365_day and no_leap), 360_day
  *
- * The "Standard" calendar transitions from the Julian to the Gregorian calendar, 
+ * The "Standard" calendar transitions from the Julian to the Gregorian calendar,
  * with the last day of the Julian calender being 1582-10-04 and the next day being
  * the first day of the Gregorian calendar, with the date 1582-10-15.  This "transition date"
  * can be set to be the value used by various countries, or set to any arbitrary
@@ -81,7 +81,7 @@ calcalcs_cal *ccs_init_calendar( const char *calname );
 void ccs_free_calendar( calcalcs_cal *calendar );
 
 /*--------------------------------------------------------------------------
- * ccs_date2jday: turn a Y/M/D date into a (true) Julian day number.  Note that 
+ * ccs_date2jday: turn a Y/M/D date into a (true) Julian day number.  Note that
  * 	      a Julian day is not the day number of the year, but rather
  *	      the integer day number starting from 1 on the day that would
  *            have been 1 Jan 4713 BC if the Julian calendar went back
@@ -95,14 +95,14 @@ int ccs_date2jday( calcalcs_cal *calendar, int year, int month, int day, int *jd
 int ccs_jday2date( calcalcs_cal *calendar, int jday, int *year, int *month, int *day );
 
 /*--------------------------------------------------------------------------
- * ccs_isleap: determine if the specified year is a leap year in 
+ * ccs_isleap: determine if the specified year is a leap year in
  * 	the specified calendar
  */
 int ccs_isleap( calcalcs_cal *calendar, int year, int *leap );
 
 /*--------------------------------------------------------------------------
  * ccs_dpm: returns the days per month for the given year/month.
- * Note that during the month that transitions from a Julian to a 
+ * Note that during the month that transitions from a Julian to a
  * Gregorian calendar, this might be a strange number of days.
  */
 int ccs_dpm( calcalcs_cal *calendar, int year, int month, int *dpm );
@@ -136,7 +136,7 @@ int ccs_dayssince( calcalcs_cal *calendar_orig, int year_orig, int month_orig, i
  *
  * Historically, this transition date varies by country and region.  The
  * variation can be extreme, and over the centuries country boundaries have
- * changed, so this should be considered only the grossest approximation. For 
+ * changed, so this should be considered only the grossest approximation. For
  * that matter, for several countries, different districts/regions converted
  * at different times anyway, so actually doing a good job at this task is
  * far beyond this library's capability.  Nevertheless, this does give some
@@ -144,7 +144,7 @@ int ccs_dayssince( calcalcs_cal *calendar_orig, int year_orig, int month_orig, i
  * the routines to use an arbitrary transition date of your own calculation.
  *
  * How to use these routines:
- *   
+ *
  * If you know the transition date you want to impose, simply call
  * set_cal_xition_date with the specified transition date.  The date
  * specified is the FIRST date that the new (Gregorian) calendar was
@@ -158,19 +158,19 @@ int ccs_dayssince( calcalcs_cal *calendar_orig, int year_orig, int month_orig, i
  * for the United States of America.)  If the routine returns 0, then the
  * country code is recognized and the approximate transition date is returned
  * in the passed parameters year, month, day.  These should then be given to
- * routine set_cal_xition_date to make that calendar use the specified 
+ * routine set_cal_xition_date to make that calendar use the specified
  * transition date.  If the get_cal_xition_date routine does not return 0,
  * then there is no information on that country in the database.
- * 
+ *
  * routine set_cal_xition_date returns 0 on success, and something other than
  * 0 on an error.  Errors include trying to set the transition date to an
  * invalid date, or trying to set the transition date for any calendar
  * other than the "Standard" calendar.
  *
- * The following country/region codes are recognized: AK (Alaska) 1867/10/18;  
+ * The following country/region codes are recognized: AK (Alaska) 1867/10/18;
  * AL (Albania) 1912/12/1; AT (Austria) 1583/10/16; BE (Belgium) 1582/12/25;
  * BG (Bulgaria) 1916/4/1; CN (China) 1929/1/1; CZ (Czechoslovakia) 1584/1/17;
- * DK (Denmark) 1700/3/1; NO (Norway) 1700/3/1; EG (Egypt) 1875/1/1; 
+ * DK (Denmark) 1700/3/1; NO (Norway) 1700/3/1; EG (Egypt) 1875/1/1;
  * EE (Estonia) 1918/1/1; FI (Finland) 1753/3/1; FR (France) 1582/12/20;
  * DE (Germany, note different states actually used different dates between
  * 1583 and 1700!) 1583/11/22; UK (Great Britain and Dominions) 1752/9/14;
@@ -183,7 +183,7 @@ int ccs_dayssince( calcalcs_cal *calendar_orig, int year_orig, int month_orig, i
  * ES (Spain) 1582/10/15; SE (Sweden) 1753/3/1; CH (Switzerland, note,
  * varied bewteen 1584 and 1701 by Canton) 1584/1/22; TR (Turkey)
  * 1927/1/1; YU (Yugoslavia) 1919/1/1; UK (Great Britain and Dominions) 1752/9/14;
- * US (United States) 1752/9/14; SU (former Soviet Union) 1918/2/1; 
+ * US (United States) 1752/9/14; SU (former Soviet Union) 1918/2/1;
  * RU (Russia) 1918/2/1.
  */
 int ccs_set_xition_date( calcalcs_cal *calendar, int year, int month, int day );

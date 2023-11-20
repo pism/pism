@@ -26,11 +26,11 @@ namespace inverse {
 
 
 //! Implements a functional corresponding to (the square of) an \f$H^1\f$ norm of a scalar valued function.
-/*! The functional is, in continuous terms 
+/*! The functional is, in continuous terms
   \f[
   J(f) = \int_{\Omega} c_{H^1} \left|\nabla f\right|^2 + c_{L^2}f^2 \; dA
   \f]
-  where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
+  where \f$\Omega\f$ is the square domain. Numerically it is implemented using
   Q1 finite elements.  Integration can be 'restricted', in a sense, to a subset of the domain
   using a projection that forces \f$f\f$ to equal zero at nodes specified
   by the constructor argument \a dirichletLocations.
@@ -52,7 +52,7 @@ public:
       m_cH1(cH1),
       m_dirichletIndices(dirichletLocations) {};
   virtual ~IP_H1NormFunctional2S() {};
-  
+
   virtual void valueAt(array::Scalar &x, double *OUTPUT);
   virtual void dot(array::Scalar &a, array::Scalar &b, double *OUTPUT);
   virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
@@ -65,7 +65,7 @@ protected:
 
 private:
   IP_H1NormFunctional2S(IP_H1NormFunctional2S const &);
-  IP_H1NormFunctional2S & operator=(IP_H1NormFunctional2S const &);  
+  IP_H1NormFunctional2S & operator=(IP_H1NormFunctional2S const &);
 };
 
 } // end of namespace inverse

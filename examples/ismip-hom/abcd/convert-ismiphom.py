@@ -6,10 +6,12 @@ savez_compressed().
 """
 
 import glob
-import re
 import os
+import re
+
 import numpy as np
-from scipy.interpolate import interp1d, interp2d, griddata
+from scipy.interpolate import griddata, interp1d, interp2d
+
 
 def vx_bd(filename, xs):
     "Load x-velocity for flowline experiments (B, D) and interpolate onto a given grid."
@@ -20,6 +22,7 @@ def vx_bd(filename, xs):
     if np.isnan(v[0]):
         v[0] = v[-1]
     return interp1d(x, v, fill_value="extrapolate")(xs)
+
 
 def vx_ac(filename, xs):
     "Load x-velocity for 3D experiments (A, C) and interpolate onto a given grid."
@@ -45,12 +48,15 @@ def vx_ac(filename, xs):
 
     return result
 
+
 def sample(files, exp, length_scale, xs, func):
     "Sample x-velocity along the flow for plotting."
     result = {}
 
     for filename in files:
-        pattern = ".*/([a-z0-9]+){exp}{length}(_surf)?\\.txt".format(exp=exp, length=length_scale)
+        pattern = ".*/([a-z0-9]+){exp}{length}(_surf)?\\.txt".format(
+            exp=exp, length=length_scale
+        )
         m = re.match(pattern, filename)
 
         if m is not None:
@@ -61,13 +67,14 @@ def sample(files, exp, length_scale, xs, func):
 
     return result
 
+
 if __name__ == "__main__":
     ismip_prefix = "./ismip_all/"
 
     files = glob.glob(ismip_prefix + "**/*.txt", recursive=True)
 
     # 401 is the highest grid resolution in ISMIP-HOM data
-    N_samples=401
+    N_samples = 401
     xs = np.linspace(0, 1, N_samples)
 
     for ex in "abcd":

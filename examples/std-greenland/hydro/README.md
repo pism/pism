@@ -35,4 +35,3 @@ To show some additional hydrology time-series do
 
     $ ./hydro-tsshow.py ts-routing.png ts_routing-decoupled.nc
     $ ./hydro-tsshow.py ts-distributed.png ts_distributed-decoupled.nc
-

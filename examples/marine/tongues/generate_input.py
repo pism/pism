@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-from PISMNC import PISMDataset as NC
-import numpy as np
 import argparse
+
+import numpy as np
+from PISMNC import PISMDataset as NC
 
 parser = argparse.ArgumentParser()
 parser.description = "Generates an input file for the 'tongues' experiment."
@@ -23,7 +24,7 @@ xx, yy = np.meshgrid(x, y)
 def tongue(xx, x0, width):
     "create one ice tongue"
     result = np.zeros_like(xx)
-    result[:, x0:x0 + width] = 100.0
+    result[:, x0 : x0 + width] = 100.0
     return result
 
 
@@ -54,14 +55,12 @@ vbar = np.zeros_like(thk)
 vbar[vel_bc_mask == 1] = 100.0
 
 try:
-    nc = NC(options.output, 'w')
+    nc = NC(options.output, "w")
 
     nc.create_dimensions(x, y, time_dependent=False)
 
-    nc.define_2d_field("topg", attrs={"units": "m",
-                                      "long_name": "bedrock topography"})
-    nc.define_2d_field("thk", attrs={"units": "m",
-                                     "long_name": "ice thickness"})
+    nc.define_2d_field("topg", attrs={"units": "m", "long_name": "bedrock topography"})
+    nc.define_2d_field("thk", attrs={"units": "m", "long_name": "ice thickness"})
 
     nc.define_2d_field("climatic_mass_balance", attrs={"units": "kg m-2 year-1"})
     nc.define_2d_field("ice_surface_temp", attrs={"units": "Celsius"})
@@ -69,7 +68,7 @@ try:
     nc.define_2d_field("u_bc", attrs={"units": "m/year"})
     nc.define_2d_field("v_bc", attrs={"units": "m/year"})
 except:
-    nc = NC(options.output, 'a')
+    nc = NC(options.output, "a")
 
 nc.write("topg", z)
 nc.write("thk", thk)

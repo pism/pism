@@ -78,4 +78,3 @@ for j:1 thru length(result) do
     printf(true, tex1(result[j])),
     if integerp(j / 4) then printf(true, "\\\\~%") else printf(true, " &~%"))$
 printf(true, "\\end{align*}")$
-

@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
 
-import MISMIP
-
-from pylab import figure, subplot, hold, plot, xlabel, ylabel, title, axis, vlines, savefig, text
+import os.path
+from optparse import OptionParser
 from sys import exit
 
+import MISMIP
 import numpy as np
-from optparse import OptionParser
-import os.path
+from pylab import (
+    axis,
+    figure,
+    hold,
+    plot,
+    savefig,
+    subplot,
+    text,
+    title,
+    vlines,
+    xlabel,
+    ylabel,
+)
 
 try:
     from netCDF4 import Dataset as NC
@@ -18,7 +29,7 @@ except:
 
 def parse_filename(filename, opts):
     "Get MISMIP info from a file name."
-    tokens = filename.split('_')
+    tokens = filename.split("_")
     if tokens[0] == "ex":
         tokens = tokens[1:]
 
@@ -49,7 +60,7 @@ def parse_filename(filename, opts):
 
         try:
             nc = NC(filename)
-            x = nc.variables['x'][:]
+            x = nc.variables["x"][:]
             N = (x.size - 1) / 2
             if N == 150:
                 mode = 1
@@ -67,19 +78,49 @@ def process_options():
     "Process command-line options and arguments."
     parser = OptionParser()
     parser.usage = "%prog <input files> [options]"
-    parser.description = "Plots the ice flux as a function of the distance from the divide."
-    parser.add_option("-o", "--output", dest="output", type="string",
-                      help="Output image file name (e.g. -o foo.png)")
-    parser.add_option("-e", "--experiment", dest="experiment", type="string",
-                      help="MISMIP experiment: 1a,1b,2a,2b,3a,3b (e.g. -e 1a)")
-    parser.add_option("-s", "--step", dest="step", type="int",
-                      help="MISMIP step: 1,2,3,... (e.g. -s 1)")
-    parser.add_option("-m", "--model", dest="model", type="string",
-                      help="MISMIP model (e.g. -M ABC1)")
-    parser.add_option("-f", "--flux", dest="profile", action="store_false", default=True,
-                      help="Plot ice flux only")
-    parser.add_option("-p", "--profile", dest="flux", action="store_false", default=True,
-                      help="Plot geometry profile only")
+    parser.description = (
+        "Plots the ice flux as a function of the distance from the divide."
+    )
+    parser.add_option(
+        "-o",
+        "--output",
+        dest="output",
+        type="string",
+        help="Output image file name (e.g. -o foo.png)",
+    )
+    parser.add_option(
+        "-e",
+        "--experiment",
+        dest="experiment",
+        type="string",
+        help="MISMIP experiment: 1a,1b,2a,2b,3a,3b (e.g. -e 1a)",
+    )
+    parser.add_option(
+        "-s",
+        "--step",
+        dest="step",
+        type="int",
+        help="MISMIP step: 1,2,3,... (e.g. -s 1)",
+    )
+    parser.add_option(
+        "-m", "--model", dest="model", type="string", help="MISMIP model (e.g. -M ABC1)"
+    )
+    parser.add_option(
+        "-f",
+        "--flux",
+        dest="profile",
+        action="store_false",
+        default=True,
+        help="Plot ice flux only",
+    )
+    parser.add_option(
+        "-p",
+        "--profile",
+        dest="flux",
+        action="store_false",
+        default=True,
+        help="Plot geometry profile only",
+    )
 
     opts, args = parser.parse_args()
 
@@ -110,11 +151,11 @@ def read(filename, name):
 
     N = len(var.shape)
     if N == 1:
-        return var[:]               # a coordinate variable ('x')
+        return var[:]  # a coordinate variable ('x')
     elif N == 2:
-        return var[1]               # get the middle row
+        return var[1]  # get the middle row
     elif N == 3:
-        return var[-1, 1]            # get the middle row of the last record
+        return var[-1, 1]  # get the middle row of the last record
     else:
         raise Exception("Can't read %s. (It's %d-dimensional.)" % (name, N))
 
@@ -125,7 +166,7 @@ def find_grounding_line(x, topg, thk, mask):
     topg = topg[x > 0]
     thk = thk[x > 0]
     mask = mask[x > 0]
-    x = x[x > 0]                        # this should go last
+    x = x[x > 0]  # this should go last
 
     def f(j):
         "See equation (7) in Pattyn et al, 'Role of transition zones in marine ice sheet dynamics', 2005."
@@ -143,17 +184,19 @@ def find_grounding_line(x, topg, thk, mask):
 
 
 def plot_profile(in_file, out_file):
-    print("Reading %s to plot geometry profile for model %s, experiment %s, grid mode %s, step %s" % (
-        in_file, model, experiment, mode, step))
+    print(
+        "Reading %s to plot geometry profile for model %s, experiment %s, grid mode %s, step %s"
+        % (in_file, model, experiment, mode, step)
+    )
 
     if out_file is None:
         out_file = os.path.splitext(in_file)[0] + "-profile.pdf"
 
-    mask = read(in_file, 'mask')
-    usurf = read(in_file, 'usurf')
-    topg = read(in_file, 'topg')
-    thk = read(in_file, 'thk')
-    x = read(in_file, 'x')
+    mask = read(in_file, "mask")
+    usurf = read(in_file, "usurf")
+    topg = read(in_file, "topg")
+    thk = read(in_file, "thk")
+    x = read(in_file, "x")
 
     # theoretical grounding line position
     xg = MISMIP.x_g(experiment, step)
@@ -174,35 +217,47 @@ def plot_profile(in_file, out_file):
     figure(1)
     ax = subplot(111)
     hold(True)
-    plot(x, np.zeros_like(x), ls='dotted', color='red')
-    plot(x, topg, color='black')
-    plot(x, usurf, 'o', color='blue', markersize=4)
-    plot(x, lsrf,  'o', color='blue', markersize=4)
-    xlabel('distance from the divide, km')
-    ylabel('elevation, m')
+    plot(x, np.zeros_like(x), ls="dotted", color="red")
+    plot(x, topg, color="black")
+    plot(x, usurf, "o", color="blue", markersize=4)
+    plot(x, lsrf, "o", color="blue", markersize=4)
+    xlabel("distance from the divide, km")
+    ylabel("elevation, m")
     title("MISMIP experiment %s, step %d" % (experiment, step))
-    text(0.6, 0.9, "$x_g$ (model) = %4.0f km" % (xg_PISM / 1e3), color='r',
-         transform=ax.transAxes)
-    text(0.6, 0.85, "$x_g$ (theory) = %4.0f km" % (xg / 1e3), color='black',
-         transform=ax.transAxes)
+    text(
+        0.6,
+        0.9,
+        "$x_g$ (model) = %4.0f km" % (xg_PISM / 1e3),
+        color="r",
+        transform=ax.transAxes,
+    )
+    text(
+        0.6,
+        0.85,
+        "$x_g$ (theory) = %4.0f km" % (xg / 1e3),
+        color="black",
+        transform=ax.transAxes,
+    )
 
     _, _, ymin, ymax = axis(xmin=0, xmax=x.max())
-    vlines(xg / 1e3, ymin, ymax, linestyles='dashed', color='black')
-    vlines(xg_PISM / 1e3, ymin, ymax, linestyles='dashed', color='red')
+    vlines(xg / 1e3, ymin, ymax, linestyles="dashed", color="black")
+    vlines(xg_PISM / 1e3, ymin, ymax, linestyles="dashed", color="red")
 
     print("Saving '%s'...\n" % out_file)
     savefig(out_file)
 
 
 def plot_flux(in_file, out_file):
-    print("Reading %s to plot ice flux for model %s, experiment %s, grid mode %s, step %s" % (
-        in_file, model, experiment, mode, step))
+    print(
+        "Reading %s to plot ice flux for model %s, experiment %s, grid mode %s, step %s"
+        % (in_file, model, experiment, mode, step)
+    )
 
     if out_file is None:
         out_file = os.path.splitext(in_file)[0] + "-flux.pdf"
 
-    x = read(in_file, 'x')
-    flux_mag = read(in_file, 'flux_mag')
+    x = read(in_file, "x")
+    flux_mag = read(in_file, "flux_mag")
 
     # plot positive xs only
     flux_mag = flux_mag[x >= 0]
@@ -211,15 +266,15 @@ def plot_flux(in_file, out_file):
     figure(2)
     hold(True)
 
-    plot(x / 1e3, flux_mag, 'k.-', markersize=10, linewidth=2)
-    plot(x / 1e3, x * MISMIP.a() * MISMIP.secpera(), 'r:', linewidth=1.5)
+    plot(x / 1e3, flux_mag, "k.-", markersize=10, linewidth=2)
+    plot(x / 1e3, x * MISMIP.a() * MISMIP.secpera(), "r:", linewidth=1.5)
 
     title("MISMIP experiment %s, step %d" % (experiment, step))
     xlabel("x ($\mathrm{km}$)", size=14)
     ylabel(r"flux ($\mathrm{m}^2\,\mathrm{a}^{-1}$)", size=14)
 
     print("Saving '%s'...\n" % out_file)
-    savefig(out_file, dpi=300, facecolor='w', edgecolor='w')
+    savefig(out_file, dpi=300, facecolor="w", edgecolor="w")
 
 
 if __name__ == "__main__":

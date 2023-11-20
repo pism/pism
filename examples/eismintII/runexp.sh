@@ -51,7 +51,7 @@ fi
 if [ -n "${PISM_DO:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
 else
-  PISM_DO="" 
+  PISM_DO=""
 fi
 
 SKIP=5         # adjust upward for high res
@@ -63,4 +63,3 @@ cmd="$PISM_MPIDO $NN pismr -eisII $EXP $GRIDORINPUT -ys 0 -y $DUR \
  -extra_times 1000:1000:$DUR -ts_file ts_$ROOT.nc \
  -ts_times 0:100:$DUR"
 $PISM_DO $cmd
-

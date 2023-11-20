@@ -41,4 +41,3 @@ This section describes how to understand and make these modeling choices.
 
 .. [#] See :ref:`sec-parameter-list` for the full list of configuration parameters and
        corresponding options.
-

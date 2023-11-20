@@ -2,11 +2,11 @@ digraph dataflow {
     graph [fontname=Arial fontsize=12 nodesep=0.5];
     node  [fontname=Arial fontsize=12 shape=box width=2.5];
     edge  [fontname=Arial fontsize=12];
-    
+
     subgraph cluster_atmosphere {
 	labeljust=l;
 	label="Atmosphere [optional]";
-	
+
 	atm [label="Atmosphere model"];
 	subgraph cluster_mod_a {
 	    labeljust=l;
@@ -16,7 +16,7 @@ digraph dataflow {
 	}
 	atm -> mod_a_node;
     }
-    
+
     subgraph cluster_surface {
 	labeljust=l;
 	label="Surface layer";
@@ -29,7 +29,7 @@ digraph dataflow {
 	}
 	surf->mod_s_node;
     }
-    
+
     subgraph cluster_ocean {
 	labeljust=l;
 	label="Ocean";
@@ -42,7 +42,7 @@ digraph dataflow {
 	}
 	ocean->mod_o_node;
     }
-    
+
     subgraph cluster_pism {
 	labeljust=l;
 	label="PISM Core";
@@ -50,7 +50,7 @@ digraph dataflow {
  	bed [label="Bed deformation model" rank=max];
 	ice -> bed;
 	bed -> ice;
-	
+
 	mod_a_node -> surf [color="red"];
 	/* there is a work-around at
          http://stackoverflow.com/questions/3450700/place-edge-label-on-the-other-side
@@ -59,6 +59,6 @@ digraph dataflow {
        switch to Tikz? */
 	mod_s_node -> ice [color="green" label="ice temperature\nat its top surface and\nmass flux into the ice"];
 	mod_o_node -> ice [color="blue" label="mass flux into the ocean"];
-	
+
     }
 }

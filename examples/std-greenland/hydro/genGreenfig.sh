@@ -15,4 +15,3 @@ for varname in basal_melt_rate_grounded velsurf_mag velbase_mag; do
 done
 
 ./basemapfigs.py $GREENROOT surfvelmag
-

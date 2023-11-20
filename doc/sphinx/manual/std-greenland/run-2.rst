@@ -78,7 +78,7 @@ because of relatively-recent advances in radar and image technology and processi
 
 So, how good is our model result ``velsurf_mag``? :numref:`fig-csurf-vs-observed` compares
 the radar-observed ``surfvelmag`` field in the downloaded SeaRISE-Greenland data file
-``Greenland_5km_v1.1.nc`` with the just-computed PISM result (20 km) and results from the next step in the tutorial (10 km). 
+``Greenland_5km_v1.1.nc`` with the just-computed PISM result (20 km) and results from the next step in the tutorial (10 km).
 The reader might agree with these broad qualitative judgements:
 
 - the model results and the observed surface velocity look similar, and

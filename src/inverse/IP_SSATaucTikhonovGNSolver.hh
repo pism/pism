@@ -64,11 +64,11 @@ public:
 
   // typedef IP_SSATaucTikhonovGNSolverListener Listener;
 
-  IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta, 
+  IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta,
                               IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional);
 
   ~IP_SSATaucTikhonovGNSolver() = default;
-  
+
   virtual std::shared_ptr<StateVec> stateSolution() {
     return m_ssaforward.solution();
   }
@@ -94,7 +94,7 @@ public:
   virtual std::shared_ptr<TerminationReason> init();
 
   virtual std::shared_ptr<TerminationReason> check_convergence();
-  
+
   virtual std::shared_ptr<TerminationReason> solve();
 
   virtual std::shared_ptr<TerminationReason> evaluate_objective_and_gradient();
@@ -142,13 +142,13 @@ protected:
   DesignVec m_grad_design;
   DesignVec m_grad_state;
   DesignVec m_gradient;
-  
+
   double m_val_design, m_val_state, m_value;
 
   StateVec &m_u_obs;
   StateVec1 m_u_diff;            // ghosted
 
-  petsc::KSP m_ksp;  
+  petsc::KSP m_ksp;
   petsc::Mat m_mat_GN;
 
   double m_eta;

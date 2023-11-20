@@ -1,7 +1,7 @@
-from sympy import exp, sin, cos, pi
+from blatter import eta, source_term, x, y, z
+from blatter_codegen import declare, define
+from sympy import cos, exp, pi, sin
 
-from blatter import x, y, z, source_term, eta
-from blatter_codegen import define, declare
 
 def exact():
     """X-Y verification test
@@ -15,6 +15,7 @@ def exact():
 
     return u0, v0
 
+
 def print_code(header=False):
     if header:
         declare(name="blatter_xy_exact", args=["x", "y"])
@@ -25,7 +26,7 @@ def print_code(header=False):
     f_u, f_v = source_term(eta(u0, v0, 3), u0, v0)
 
     def cleanup(expr):
-        return expr.factor().collect([sin(2*pi*y), cos(2*pi*y)])
+        return expr.factor().collect([sin(2 * pi * y), cos(2 * pi * y)])
 
     define(u0, v0, name="blatter_xy_exact", args=["x", "y"])
     define(cleanup(f_u), cleanup(f_v), name="blatter_xy_source", args=["x", "y", "B"])

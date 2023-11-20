@@ -75,13 +75,13 @@ See :ref:`sec-forcing-time-dependent` for more information.
      variable storage order: files using this order can be read in faster than ones using
      the ``t,x,y`` order, for reasons :ref:`explained in the User's Manual
      <sec-pism-io-performance>`.
-   
+
      To change the storage order in a NetCDF file, use ``ncpdq``:
-   
+
      .. code-block:: none
-   
+
        ncpdq -a t,y,x input.nc output.nc
-   
+
      will copy data from ``input.nc`` into ``output.nc``, changing the storage order to
      ``t,y,x`` at the same time.
 
@@ -177,7 +177,7 @@ Temperature-index scheme
 :|options|: ``-surface pdd``
 :|variables|: :var:`air_temp_sd`, :var:`snow_depth`
 :|implementation|: ``pism::surface::TemperatureIndex``
-                   
+
 The default PDD model used by PISM, turned on by option :opt:`-surface pdd`, is based on
 :cite:`CalovGreve05` and EISMINT-Greenland intercomparison (see :cite:`RitzEISMINT`).
 
@@ -812,7 +812,7 @@ Prefix: ``surface.elevation_change.``.
 
 Mass flux adjustment
 ++++++++++++++++++++
-    
+
 :|options|: ``-surface ...,forcing``
 :|variables|: :var:`thk` (ice thickness), :var:`ftt_mask` (mask of zeros and ones; 1 where
               surface mass flux is adjusted and 0 elsewhere)
@@ -869,7 +869,7 @@ the target thickness field has less than
 
 Using climate data anomalies
 ++++++++++++++++++++++++++++
-    
+
 :|options|: :opt:`-surface ...,anomaly`
 :|variables|: :var:`ice_surface_temp_anomaly`,
               :var:`climatic_mass_balance_anomaly` |flux|
@@ -896,7 +896,7 @@ The caching modifier
 :|options|: ``-surface ...,cache``
 :|implementation|: ``pism::surface::Cache``
 :|seealso|: :ref:`sec-ocean-cache`
-    
+
 This modifier skips surface model updates, so that a surface model is called no more than
 every :config:`surface.cache.update_interval` 365-day "years". A time-step of `1` year is
 used every time a surface model is updated.
