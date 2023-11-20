@@ -15,6 +15,8 @@ try:
     from netCDF4 import Dataset as CDF
 except:
     print("netCDF4 is not installed!")
+    import sys
+
     sys.exit(1)
 
 from optparse import OptionParser

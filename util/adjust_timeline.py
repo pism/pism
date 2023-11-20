@@ -14,7 +14,6 @@
 # \verbatim $ adjust_timeline.py --start_date '1991-1-1'
 # time_1991-2000.nc \endverbatim
 
-import os
 import time
 from argparse import ArgumentParser
 from datetime import datetime
@@ -27,6 +26,8 @@ try:
     import netCDF4 as netCDF
 except:
     print("netCDF4 is not installed!")
+    import sys
+
     sys.exit(1)
 NC = netCDF.Dataset
 import cftime
