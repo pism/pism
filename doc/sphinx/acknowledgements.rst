@@ -20,11 +20,11 @@ Thanks for comments and questions from many PISM users around the world, includi
 not already listed as PISM authors:
 
 
-    Guðfinna Aðalgeirsdóttir, Antje Fitzner, Nick Golledge, Tore Hattermann,
-    Moritz Huetten, Thomas Kleiner, Leo van Kampenhout, Marianne Madsen, Malou Maris, Tim
-    Morey, Mirena Olaizola, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen,
-    Anne Solgaard, Ben Sperisen, Synne Høyer Svendsen, Martin Truffer, Shuting Yang,
-    Ryan Woodard.
+    Guðfinna Aðalgeirsdóttir, Antje Fitzner, Nick Golledge, Tore Hattermann, Moritz
+    Huetten, Guillaume Jouvet, Thomas Kleiner, Leo van Kampenhout, Marianne Madsen, Malou
+    Maris, Tim Morey, Mirena Olaizola, Christian Rodehacke, Nathan Shemonski, Sebastian
+    Simonsen, Anne Solgaard, Ben Sperisen, Synne Høyer Svendsen, Martin Truffer, Shuting
+    Yang, Ryan Woodard.
 
 Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and
 computations. Bob Bindschadler, Sophie Nowicki, Jesse Johnson, and others in the SeaRISE
