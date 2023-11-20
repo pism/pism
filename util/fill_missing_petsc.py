@@ -66,7 +66,7 @@ def assemble_matrix(mask):
         i = row // ncol  # map row number to
         j = row - i * ncol  # grid coordinates
 
-        if mask[i, j] == False:
+        if mask[i, j] is False:
             A[row, row] = diagonal
             continue
 
@@ -133,7 +133,7 @@ def assemble_rhs(rhs, X):
         i = row // ncol  # map row number to
         j = row - i * ncol  # grid coordinates
 
-        if X.mask[i, j] == False:
+        if X.mask[i, j] is False:
             rhs[row] = 4.0 * X[i, j]
 
     rhs.assemble()

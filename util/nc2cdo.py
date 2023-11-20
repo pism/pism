@@ -180,7 +180,7 @@ if __name__ == "__main__":
 
     if bounds:
         for corner in range(0, grid_corners):
-            ## grid_corners in x-direction
+            # grid_corners in x-direction
             gc_easting[:, corner] = easting + de_vec[corner]
             # grid corners in y-direction
             gc_northing[:, corner] = northing + dn_vec[corner]
@@ -197,7 +197,7 @@ if __name__ == "__main__":
 
     var = "lon_bnds"
     # Create variable 'lon_bnds'
-    if not var in list(nc.variables.keys()):
+    if var not in list(nc.variables.keys()):
         var_out = nc.createVariable(
             var, "f", dimensions=(ydim, xdim, grid_corner_dim_name)
         )
@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     var = "lat_bnds"
     # Create variable 'lat_bnds'
-    if not var in list(nc.variables.keys()):
+    if var not in list(nc.variables.keys()):
         var_out = nc.createVariable(
             var, "f", dimensions=(ydim, xdim, grid_corner_dim_name)
         )
@@ -226,7 +226,7 @@ if __name__ == "__main__":
 
     var = "lon"
     # If it does not yet exist, create variable 'lon'
-    if not var in list(nc.variables.keys()):
+    if var not in list(nc.variables.keys()):
         var_out = nc.createVariable(var, "f", dimensions=(ydim, xdim))
     else:
         var_out = nc.variables[var]
@@ -244,7 +244,7 @@ if __name__ == "__main__":
 
     var = "lat"
     # If it does not yet exist, create variable 'lat'
-    if not var in list(nc.variables.keys()):
+    if var not in list(nc.variables.keys()):
         var_out = nc.createVariable(var, "f", dimensions=(ydim, xdim))
     else:
         var_out = nc.variables[var]

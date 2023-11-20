@@ -25,6 +25,8 @@ try:
     from netCDF4 import Dataset as CDF
 except:
     print("netCDF4 is not installed!")
+    import sys
+
     sys.exit(1)
 
 from sys import argv, exit
@@ -42,13 +44,13 @@ def get_slice(dimensions, x=None, y=None):
 
     index_list = [All] * len(dimensions)
 
-    if x != None:
+    if x is not None:
         try:
             index_list[dimensions.index("x")] = x
         except:
             pass
 
-    if y != None:
+    if y is not None:
         try:
             index_list[dimensions.index("y")] = y
         except:

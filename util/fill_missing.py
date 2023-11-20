@@ -37,14 +37,18 @@
 
 # CK, 08/12/2008
 
-from numpy import *
+# flake8: noqa: E741
+
+from typing import Tuple
+
+import numpy as np
 
 # Computes \f$\rho_{Jacobi}\f$, see formula (19.5.24), page 858.
 
 
-def rho_jacobi(dimensions):
+def rho_jacobi(dimensions: Tuple) -> float:
     (J, L) = dimensions
-    return (cos(pi / J) + cos(pi / L)) / 2
+    return (np.cos(np.pi / J) + np.cos(np.pi / L)) / 2
 
 
 # This makes the stencil wrap around the grid. It is unclear if this should be
@@ -56,7 +60,7 @@ def rho_jacobi(dimensions):
 #  dimensions.
 
 
-def fix_indices(Is, Js, dimensions):
+def fix_indices(Is, Js, dimensions: Tuple) -> Tuple:
     (M, N) = dimensions
     Is[Is == M] = 0
     Is[Is == -1] = M - 1
@@ -100,7 +104,7 @@ def fix_indices(Is, Js, dimensions):
 def laplace(data, mask, eps1, eps2, initial_guess="mean", max_iter=10000):
     dimensions = data.shape
     rjac = rho_jacobi(dimensions)
-    i, j = indices(dimensions)
+    i, j = np.indices(dimensions)
     # This splits the grid into 'odd' and 'even' parts, according to the
     # checkerboard pattern:
     odd = (i % 2 == 1) ^ (j % 2 == 0)
@@ -109,16 +113,16 @@ def laplace(data, mask, eps1, eps2, initial_guess="mean", max_iter=10000):
     odd_part = list(zip(i[mask & odd], j[mask & odd]))
     even_part = list(zip(i[mask & even], j[mask & even]))
     # relative indices of the stencil points:
-    k = array([0, 1, 0, -1])
-    l = array([-1, 0, 1, 0])
+    k = np.array([0, 1, 0, -1])
+    l = np.array([-1, 0, 1, 0])
     parts = [odd_part, even_part]
 
     try:
         initial_guess = float(initial_guess)
     except:
         if initial_guess == "mean":
-            present = mask == False
-            initial_guess = mean(data[present])
+            present = mask is False
+            initial_guess = np.mean(data[present])
         else:
             print(
                 """ERROR: initial_guess of '%s' is not supported (it should be a number or 'mean').
@@ -135,7 +139,7 @@ def laplace(data, mask, eps1, eps2, initial_guess="mean", max_iter=10000):
     for m in [0, 1]:
         for i, j in parts[m]:
             Is, Js = fix_indices(i + k, j + l, dimensions)
-            xi = sum(data[Is, Js]) - 4 * data[i, j]
+            xi = np.sum(data[Is, Js]) - 4 * data[i, j]
             initial_norm += abs(xi)
     print("Initial norm of residual =", initial_norm)
     print(
@@ -144,14 +148,14 @@ def laplace(data, mask, eps1, eps2, initial_guess="mean", max_iter=10000):
 
     omega = 1.0
     # The main loop:
-    for n in arange(max_iter):
+    for n in np.arange(max_iter):
         anorm = 0.0
         change = 0.0
         for m in [0, 1]:
             for i, j in parts[m]:
                 # stencil points:
                 Is, Js = fix_indices(i + k, j + l, dimensions)
-                residual = sum(data[Is, Js]) - 4 * data[i, j]
+                residual = np.sum(data[Is, Js]) - 4 * data[i, j]
                 delta = omega * 0.25 * residual
                 data[i, j] += delta
 
@@ -176,6 +180,7 @@ def laplace(data, mask, eps1, eps2, initial_guess="mean", max_iter=10000):
 
 
 if __name__ == "__main__":
+    import sys
     from optparse import OptionParser
     from os import close
     from shutil import copy, move
@@ -295,7 +300,7 @@ if __name__ == "__main__":
                 for t in range(0, nt):
                     print("\nInterpolating time step %i of %i\n" % (t, nt))
 
-                    data = asarray(squeeze(var[t, :, :].data))
+                    data = np.asarray(np.squeeze(var[t, :, :].data))
 
                     if "valid_range" in adict:
                         range = adict["valid_range"]
@@ -331,9 +336,9 @@ if __name__ == "__main__":
                     elif "_FillValue" in adict:
                         fill_value = adict["_FillValue"]
                         if fill_value <= 0:
-                            mask = data <= fill_value + 2 * finfo(float).eps
+                            mask = data <= fill_value + 2 * np.finfo(float).eps
                         else:
-                            mask = data >= fill_value - 2 * finfo(float).eps
+                            mask = data >= fill_value - 2 * np.finfo(float).eps
                         print(
                             "Using the _FillValue attribute; _FillValue = %10f"
                             % fill_value
@@ -341,7 +346,7 @@ if __name__ == "__main__":
 
                     elif "missing_value" in adict:
                         missing = adict["missing_value"]
-                        mask = abs(data - missing) < 2 * finfo(float).eps
+                        mask = abs(data - missing) < 2 * np.finfo(float).eps
                         print(
                             """Using the missing_value attribute; missing_value = %10f
         Warning: this attribute is deprecated by the NUG."""
@@ -373,7 +378,7 @@ if __name__ == "__main__":
                     print("This took %5f seconds." % (time() - t0))
 
             elif var.ndim == 2:
-                data = asarray(squeeze(var[:]))
+                data = np.asarray(np.squeeze(var[:]))
 
                 if "valid_range" in adict:
                     range = adict["valid_range"]
@@ -403,16 +408,16 @@ if __name__ == "__main__":
                 elif "_FillValue" in adict:
                     fill_value = adict["_FillValue"]
                     if fill_value <= 0:
-                        mask = data <= fill_value + 2 * finfo(float).eps
+                        mask = data <= fill_value + 2 * np.finfo(float).eps
                     else:
-                        mask = data >= fill_value - 2 * finfo(float).eps
+                        mask = data >= fill_value - 2 * np.finfo(float).eps
                     print(
                         "Using the _FillValue attribute; _FillValue = %10f" % fill_value
                     )
 
                 elif "missing_value" in adict:
                     missing = adict["missing_value"]
-                    mask = abs(data - missing) < 2 * finfo(float).eps
+                    mask = abs(data - missing) < 2 * np.finfo(float).eps
                     print(
                         """Using the missing_value attribute; missing_value = %10f
     Warning: this attribute is deprecated by the NUG."""

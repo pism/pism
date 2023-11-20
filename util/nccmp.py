@@ -60,8 +60,7 @@ def usagefailure(message):
 
 
 def compare_vars(nc1, nc2, name, tol, relative=False):
-    import numpy
-    from numpy import fabs, finfo, isnan, ma, squeeze
+    from numpy import finfo, ma, squeeze
 
     try:
         var1 = ma.array(squeeze(nc1.variables[name][:]))
@@ -132,7 +131,7 @@ def compare(file1, file2, variables, exclude, tol, relative):
     except:
         usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % file2)
 
-    if exclude == False:
+    if exclude is False:
         if len(variables) == 0:
             vars1 = list(nc1.variables.keys())
             vars2 = list(nc2.variables.keys())
