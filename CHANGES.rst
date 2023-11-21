@@ -9,6 +9,8 @@ Changes since v2.0.6
 - Fix a minor bug in PICO reported by Ken Mankoff.
 - Support the current PETSc version (3.20.1).
 - Minor compiler compatibility improvements.
+- Replace `examples/searise-antarctica` with `examples/antarctica` based on ALBMAP v1
+  data. This avoids a dependency on SeaRISE data hosted by the University of Montana.
 
 Changes since v2.0.5
 ====================
