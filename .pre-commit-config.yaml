@@ -43,6 +43,7 @@ repos:
     rev: v1.6.1
     hooks:
       - id: mypy
+        files: ^util
 
   - repo: local
     hooks:

@@ -109,6 +109,7 @@ exclude = [
 [tool.mypy]
 python_version = 3.11
 check_untyped_defs = "True"
+explicit_package_bases = "True"
 ignore_missing_imports = "True"
 warn_unused_ignores = "True"
 warn_redundant_casts = "True"
