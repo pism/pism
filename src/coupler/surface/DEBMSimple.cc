@@ -50,9 +50,9 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
       m_surface_albedo(m_grid, "surface_albedo"),
       m_transmissivity(m_grid, "atmosphere_transmissivity") {
 
-  m_sd_use_param = m_config->get_flag("surface.debm_simple.std_dev_param.enabled");
-  m_sd_param_a   = m_config->get_number("surface.debm_simple.std_dev_param.a");
-  m_sd_param_b   = m_config->get_number("surface.debm_simple.std_dev_param.b");
+  m_sd_use_param = m_config->get_flag("surface.debm_simple.std_dev.param.enabled");
+  m_sd_param_a   = m_config->get_number("surface.debm_simple.std_dev.param.a");
+  m_sd_param_b   = m_config->get_number("surface.debm_simple.std_dev.param.b");
 
   m_precip_as_snow = m_config->get_flag("surface.debm_simple.interpret_precip_as_snow");
   m_Tmax           = m_config->get_number("surface.debm_simple.air_temp_all_precip_as_rain");
