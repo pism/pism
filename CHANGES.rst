@@ -1,9 +1,16 @@
 .. default-role:: literal
 
 
-Changes since the last release
-==============================
+Changes since v2.0.7
+====================
 
+- Implement the diurnal energy balance model dEBM-simple (see M. Zeitz, R. Reese, J.
+  Beckmann, U. Krebs-Kanzow, and R. Winkelmann, "Impact of the melt-albedo feedback on the
+  future evolution of the Greenland Ice Sheet with PISM-dEBM-simple," The Cryosphere, vol.
+  15, no. 12, pp. 5739-5764, Dec. 2021, doi: 10.5194/tc-15-5739-2021.)
+- Implement the isochronal layer tracing scheme (see A. Born and A. Robinson, "Modeling
+  the Greenland englacial stratigraphy," The Cryosphere, vol. 15, no. 9, pp. 4539-4556,
+  2021, doi: 10.5194/tc-15-4539-2021.)
 - Support 2D precipitation offsets in `-atmosphere ...,delta_P`. If the input file set
   using `atmosphere.delta_P.file` contains a scalar time series `delta_P`, use that as a
   time-dependent constant-in-space forcing. If the input file contains a 2D variable
@@ -13,20 +20,11 @@ Changes since the last release
   time-dependent constant-in-space forcing. If the input file contains a 2D variable
   `delta_T`, use that as a time-and-space-dependent forcing.
 - Refactor utility classes used to store 2D and 3D arrays.
-- Remove a misguided energy conservation attempt that turned out to be harmful
-  (occasionally).
-- Fix a bug in the code reading periodic time-dependent forcing.
-- Update pre-processing scripts in `examples/std-greenland`.
-- Fix the scaling of the `uplift` diagnostic in `-bed_def given`.
-- Fix GSL-related build issues (unable to find GSL when it is installed in a non-standard
-  location).
 - Fix documentation of `...till_effective_fraction_overburden`.
 - Use `realpath()` to resolve relative file names. Now configuration parameters ending in
   `.file`, when saved to output files and in PISM output to `stdout`, contain *absolute*
   file names. This will make it easier to reproduce runs based on an output file.
 - Support checkpointing the HTCondor way (see commit 3740c41df).
-- Stop with an error message if a NetCDF variable in an input file contains not-a-number
-  or infinity.
 - Use `-list_diagnostics all` to print the list of all diagnostics, `-list_diagnostics
   spatial` for 2D and 3D variables, and `-list_diagnostics scalar` for scalar time series.
 - Support piecewise-constant temporal interpolation of near-surface air temperatures in
@@ -35,6 +33,21 @@ Changes since the last release
 - Extrapolate sliding velocities computed by the SSAFD solver to improve the initial guess
   used when the ice front advances (set
   :config:`stress_balance.ssa.fd.extrapolate_at_margins` to `false` to disable).
+- Fix a bug reported by Christian Rodehacke: calving mechanisms should not remove ice at
+  ice fronts adjacent to isolated patches of ice-free water (see issue #521).
+- Implement UNO2, UNO3 and a couple of related transport methods (not used, but available
+  for future use; see J.-G. Li, "Upstream Nonoscillatory Advection Schemes," Monthly
+  Weather Review, vol. 136, no. 12, pp. 4709-4729, Dec. 2008, doi:
+  10.1175/2008mwr2451.1.).
+- Add diagnostics `tendency_of_ice_{amount,mass}_due_to_frontal_melt` and
+  `tendency_of_ice_{amount,mass}_due_to_forced_retreat`. Rename diagnostic
+  `max_sliding_vel` to `max_horizontal_vel`.
+- Generate `pism.pc` and `pismicebin.pc` for use with `pkg-config`. This will make it
+  easier to use PISM as a library (to couple to a GCM, for example).
+- PISM's build system uses `pkg-config` to look for some of the required libraries.
+- Add the ability to use ocean model components implemented in Python.
+- Add CITATION.cff to properly acknowledge all contributions and to make it easier to cite
+  PISM.
 
 Changes since v1.2
 ==================
