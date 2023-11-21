@@ -41,7 +41,7 @@ mpiexec -n 8 pismr -i ${input} -bootstrap \
       -bp_mg_coarse_pc_type gamg \
       -basal_resistance.pseudo_plastic.enabled \
       -basal_resistance.pseudo_plastic.q 1.0 \
-      -basal_resistance.pseudo_plastic.u_threshold 3.1556926e7 \
+      -basal_resistance.pseudo_plastic.u_threshold 1m.s-1 \
       -basal_yield_stress.model constant \
       -energy none \
       -geometry.update.enabled false \
