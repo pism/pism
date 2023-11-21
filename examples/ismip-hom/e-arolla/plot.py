@@ -50,7 +50,7 @@ def plot_uvel(data, thk, topg, title, filename):
     # note: ignore the title (for now)
     ax.set(xlabel='x (m)', ylabel='elevation (m)')
 
-    m = ax.pcolormesh(xx, zz, data, shading="nearest")
+    m = ax.pcolormesh(xx, zz, data, shading="gouraud")
     fig.colorbar(m, pad=0.15, orientation="horizontal", aspect=40)
 
     exaggeration = 4
