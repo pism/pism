@@ -106,7 +106,7 @@ endmacro()
 
 # Set pedantic compiler flags
 macro(pism_set_pedantic_flags)
-  set (DEFAULT_PEDANTIC_FLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wno-cast-align -Wwrite-strings -Wno-conversion -Wsign-compare -Wno-redundant-decls -Wno-inline -Wno-long-long -Wmissing-format-attribute -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time -Wno-unknown-pragmas")
+  set (DEFAULT_PEDANTIC_FLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wno-cast-align -Wwrite-strings -Wno-conversion -Wsign-compare -Wno-redundant-decls -Wno-inline -Wno-long-long -Wmissing-format-attribute -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -Wno-unknown-pragmas -Wno-system-headers")
   set (DEFAULT_PEDANTIC_CFLAGS "${DEFAULT_PEDANTIC_FLAGS} -std=c99")
   set (DEFAULT_PEDANTIC_CXXFLAGS "${DEFAULT_PEDANTIC_FLAGS} -Woverloaded-virtual")
   set (PEDANTIC_CFLAGS ${DEFAULT_PEDANTIC_CFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings")
@@ -163,7 +163,10 @@ macro(pism_find_prerequisites)
   endif (DEFINED PETSC_VERSION)
 
   # MPI
-  find_package (MPI REQUIRED COMPONENTS C)
+  #
+  # Note: PISM does not use the MPI's C++ API, but Open MPI may require linking to its
+  # library
+  find_package (MPI REQUIRED COMPONENTS C CXX)
 
   # Other required libraries
   find_package (UDUNITS2 REQUIRED)
@@ -232,14 +235,15 @@ macro(pism_set_dependencies)
   #
   # Note: PISM does not use HDF5 directly, but we still need to be able to include hdf5.h
   # to record its version.
-  include_directories (BEFORE
+  include_directories (BEFORE SYSTEM
     ${PETSC_INCLUDES}
     ${FFTW_INCLUDES}
     ${GSL_INCLUDE_DIRS}
     ${UDUNITS2_INCLUDES}
     ${HDF5_INCLUDE_DIRS}
     ${NETCDF_INCLUDES}
-    ${MPI_C_INCLUDE_PATH})
+    ${MPI_C_INCLUDE_PATH}
+  )
 
   # Use option values to set compiler and linker flags
   set (Pism_EXTERNAL_LIBS "")
@@ -252,8 +256,10 @@ macro(pism_set_dependencies)
     ${GSL_LIBRARIES}
     ${NETCDF_LIBRARIES}
     ${MPI_C_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
     ${HDF5_LIBRARIES}
-    ${HDF5_HL_LIBRARIES})
+    ${HDF5_HL_LIBRARIES}
+  )
 
   # optional libraries
   if (Pism_USE_JANSSON)

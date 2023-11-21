@@ -38,9 +38,9 @@ information on additional citations.
      AUTHOR = {the {PISM} authors},
       TITLE = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel},
         URL = {https://www.pism.io},
-       YEAR = {2021},
+       YEAR = {2023},
    }
-   
+
    @article {BBssasliding,
      AUTHOR = {E. Bueler and J. Brown},
       TITLE = {Shallow shelf approximation as a "sliding law" in a
@@ -49,9 +49,8 @@ information on additional citations.
      VOLUME = {114},
         DOI = {10.1029/2008JF001179},
        YEAR = {2009},
-        URL = {http://www.agu.org/pubs/crossref/2009/2008JF001179.shtml},
    }
-   
+
    @article {Winkelmannetal2011,
      AUTHOR = {Winkelmann, R. and Martin, M. A. and Haseloff, M. and Albrecht, T.
                and Bueler, E. and Khroulev, C. and Levermann, A.},
@@ -61,5 +60,5 @@ information on additional citations.
      VOLUME = {5},
        YEAR = {2011},
       PAGES = {715--726},
-        URL = {http://www.the-cryosphere.net/5/715/2011/tc-5-715-2011.pdf},
+        DOI = {10.5194/tc-5-715-2011},
    }

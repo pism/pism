@@ -84,51 +84,66 @@ Unlike simplified-geometry experiments A--D, the diagnostic simulation of the fl
 the central flowline of Haut Glacier d'Arolla does not require any code modifications and
 uses the ``pismr`` executable. Please see ``examples/ismip-hom/e-arolla`` for details.
 
-The complete command used to produce :numref:`fig-ismiphom-e-surface`,
+The complete script used to produce data for :numref:`fig-ismiphom-e-surface`,
 :numref:`fig-ismiphom-e-no-slip`, and :numref:`fig-ismiphom-e-sliding` is below:
 
 .. code-block:: bash
 
-   # set ice softness
-   A=$(echo "scale=50; 10^(-16) / (365.2524 * 86400.0)" | bc -l)
+   # The ISMIP-HOM paper uses 1e-16
+   A=$(echo "scale=50; 10^(-16) / (365 * 86400.0)" | bc -l)
 
-   pismr -i ${input} -bootstrap \
-      -Mx 401 \
-      -grid.registration corner \
-      -grid.periodicity y \
-      -stress_balance.model blatter \
-      -stress_balance.blatter.flow_law isothermal_glen \
-      -flow_law.isothermal_Glen.ice_softness ${A} \
-      -stress_balance.blatter.coarsening_factor 7 \
-      -blatter_Mz 50 \
-      -bp_snes_monitor_ratio \
-      -bp_ksp_type gmres \
-      -bp_pc_type mg \
-      -bp_pc_mg_levels 3 \
-      -bp_mg_levels_ksp_type richardson \
-      -bp_mg_levels_pc_type sor \
-      -bp_mg_coarse_ksp_type preonly \
-      -bp_mg_coarse_pc_type lu \
-      -basal_resistance.pseudo_plastic.enabled \
-      -basal_resistance.pseudo_plastic.q 1.0 \
-      -basal_resistance.pseudo_plastic.u_threshold 3.1556926e7 \
-      -basal_yield_stress.model constant \
-      -energy none \
-      -geometry.update.enabled false \
-      -atmosphere uniform \
-      -atmosphere.uniform.precipitation 0 \
-      -surface simple \
-      -y 1e-16 \
-      -o ${output}
+   input=$1
+   output=$2
+   # number of grid points in the X direction
+   Mx=$3
+   # number of MG levels
+   M=$4
 
-This run uses the `12.5` m grid resolution along the flowline and `50` vertical levels,
-which corresponds to the vertical resolution of under `5` meters where the ice is
-thickest.
+   # coarsening factor
+   C=4
+   # number of vertical levels in the stress balance solver
+   bp_Mz=$(echo "$C^($M - 1) + 1" | bc)
 
-This grid is small enough to perform the diagnostic computation serially, avoiding
-dependence on parallel direct solvers (e.g. MUMPS) that may be needed in parallel.
+   echo "Using ${bp_Mz} vertical levels..."
 
-We use 3 multigrid levels with a *very* aggressive coarsening factor (`7`).
+   mpiexec -n 8 pismr -i ${input} -bootstrap \
+         -Mx ${Mx} \
+         -Mz 216 \
+         -Lz 215 \
+         -z_spacing equal \
+         -grid.registration corner \
+         -grid.periodicity y \
+         -stress_balance.model blatter \
+         -stress_balance.blatter.flow_law isothermal_glen \
+         -flow_law.isothermal_Glen.ice_softness ${A} \
+         -stress_balance.blatter.coarsening_factor ${C} \
+         -blatter_Mz ${bp_Mz} \
+         -bp_snes_monitor_ratio \
+         -bp_ksp_type gmres \
+         -bp_pc_type mg \
+         -bp_pc_mg_levels ${M} \
+         -bp_mg_levels_ksp_type richardson \
+         -bp_mg_levels_pc_type sor \
+         -bp_mg_coarse_ksp_type cg \
+         -bp_mg_coarse_pc_type gamg \
+         -basal_resistance.pseudo_plastic.enabled \
+         -basal_resistance.pseudo_plastic.q 1.0 \
+         -basal_resistance.pseudo_plastic.u_threshold 1m.s-1 \
+         -basal_yield_stress.model constant \
+         -energy none \
+         -geometry.update.enabled false \
+         -atmosphere uniform \
+         -atmosphere.uniform.precipitation 0 \
+         -surface simple \
+         -y 1e-16 \
+         -o_size big \
+         -o ${output}
+
+This run uses the `12` m grid resolution along the flowline and `65` vertical levels in
+the stress balance solver, which corresponds to the vertical resolution of under `4`
+meters where the ice is thickest.
+
+We use 4 multigrid levels with a rather aggressive coarsening factor (`4`).
 
 .. figure:: figures/uvelsurf.png
    :name: fig-ismiphom-e-surface

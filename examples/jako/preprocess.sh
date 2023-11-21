@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2011-2014, 2017, 2019, 2021 the PISM authors
+# Copyright (C) 2011-2014, 2017, 2019, 2021, 2023 the PISM authors
 
 # downloads SeaRISE "1km Greenland data set" NetCDF file,
 # adjusts metadata, saves under new name with fields needed
@@ -10,11 +10,11 @@
 
 set -e  # exit on error
 
-# get file; see page http://websrv.cs.umt.edu/isis/index.php/1km_Greenland_data_set
+# get file; see page http://wiki2.cs.umt.edu/isis/index.php/1km_Greenland_data_set
 
-DATAURL=http://websrv.cs.umt.edu/isis/images/a/ab/
+DATAURL=https://github.com/pism/example-inputs/raw/main/jako/
 DATANAME=Greenland1km.nc
-DATASIZE=80Mb
+DATASIZE=40Mb
 echo "fetching $DATASIZE master file $DATANAME ... "
 wget -nc ${DATAURL}${DATANAME}
 
@@ -30,7 +30,7 @@ ncwa -O -a t $WORKING $WORKING
 echo "adding lat and lon fields by using nc2cdo.py (which is in pism/util/)"
 nc2cdo.py $WORKING
 
-# create usurf, needed by regional-tools not pism
+# create usurf, needed by regional-tools (not PISM)
 ncap2 -O -s 'usurf=thk+topg' $WORKING $WORKING
 ncap2 -O -s 'where(usurf<0.0) usurf=0.0' $WORKING $WORKING
 ncatted -a standard_name,usurf,d,, $WORKING # remove it
@@ -54,9 +54,9 @@ echo
 
 
 # get file containing surface mass balance and other data on 5km grid
-# see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
+# see page http://wiki2.cs.umt.edu/isis/index.php/Present_Day_Greenland
 DATAVERSION=1.1
-DATAURL=http://websrv.cs.umt.edu/isis/images/a/a5/
+DATAURL=https://github.com/pism/example-inputs/raw/main/std-greenland/
 DATANAME=Greenland_5km_v$DATAVERSION.nc
 echo "fetching 5km SeaRISE data file which contains surface mass balance ... "
 wget -nc ${DATAURL}${DATANAME}

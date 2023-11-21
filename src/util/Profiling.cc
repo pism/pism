@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <petsclog.h>
 #include <petscviewer.h>
 
 #include "Profiling.hh"
@@ -33,10 +34,10 @@ Profiling::Profiling() {
 
 //! Enable PETSc logging.
 void Profiling::start() const {
-#if PETSC_VERSION_LE(3,6,3)
-  PetscErrorCode ierr = PetscLogBegin(); PISM_CHK(ierr, "PetscLogBegin");
-#else
+#if PETSC_VERSION_LT(3,20,0)
   PetscErrorCode ierr = PetscLogAllBegin(); PISM_CHK(ierr, "PetscLogAllBegin");
+#else
+  PetscErrorCode ierr = PetscLogDefaultBegin(); PISM_CHK(ierr, "PetscLogAllBegin");
 #endif
 }
 

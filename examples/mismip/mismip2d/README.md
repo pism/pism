@@ -1,7 +1,7 @@
 MISMIP in PISM
 ==============
 
-This directory contains scripts that can be used to run MISMIP experiments using PISM.  To understand the intent of these experiments, please see the MISMIP website at http://homepages.ulb.ac.be/~fpattyn/mismip/, and download the intercomparison description PDF from that site.
+This directory contains scripts that can be used to run MISMIP experiments using PISM.  To understand the intent of these experiments, please see the MISMIP website at https://frank.pattyn.web.ulb.be/mismip/welcome.html, and download the intercomparison description PDF from that site.
 
 Older PISM versions included C++ code managing MISMIP experiments. With the addition of more sophisticated reporting code that old code became unnecessary.  Here all MISMIP-specific code is in Python scripts.
 

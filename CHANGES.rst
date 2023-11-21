@@ -1,5 +1,17 @@
 .. default-role:: literal
 
+Changes since v2.0.6
+====================
+
+- Minor fixes in the manual (an image caption, a code block, typos, links).
+- Add time bounds to scalar forcing files in `examples/std-greenland`.
+- Use CF-compliant units "common_years" in forcing files.
+- Fix a minor bug in PICO reported by Ken Mankoff.
+- Support the current PETSc version (3.20.1).
+- Minor compiler compatibility improvements.
+- Replace `examples/searise-antarctica` with `examples/antarctica` based on ALBMAP v1
+  data. This avoids a dependency on SeaRISE data hosted by the University of Montana.
+
 Changes since v2.0.5
 ====================
 

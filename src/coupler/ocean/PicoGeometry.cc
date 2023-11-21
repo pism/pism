@@ -102,14 +102,16 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
     m_basin_neighbors = basin_neighbors(cell_type, m_basin_mask);
 
     // report
-    for (const auto &p : m_basin_neighbors) {
-      std::vector<std::string> neighbors;
-      for (const auto &n : p.second) {
-        neighbors.emplace_back(pism::printf("%d", n));
+    for (int basin_id = 1; basin_id < m_n_basins; ++basin_id) {
+      const auto &set = m_basin_neighbors[basin_id];
+      if (not set.empty()) {
+        std::vector<std::string> neighbors;
+        for (const auto &n : set) {
+          neighbors.emplace_back(pism::printf("%d", n));
+        }
+        std::string neighbor_list = pism::join(neighbors, ", ");
+        m_log->message(3, "PICO: basin %d neighbors: %s\n", basin_id, neighbor_list.c_str());
       }
-      std::string neighbor_list = pism::join(neighbors, ", ");
-      m_log->message(3, "PICO: basin %d neighbors: %s\n",
-                     p.first, neighbor_list.c_str());
     }
   }
 
@@ -529,7 +531,7 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, Ice
  *
  * Returns the map from the basin index to a set of indexes of neighbors.
  */
-std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const IceModelVec2CellType &cell_type,
+std::vector<std::set<int> > PicoGeometry::basin_neighbors(const IceModelVec2CellType &cell_type,
                                                            const IceModelVec2Int &basin_mask) {
   using mask::ice_free_ocean;
 
@@ -602,7 +604,7 @@ std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const IceModelVec2Cel
   }
 
   // Convert the matrix into a map "basin ID -> set of neighbors' IDs":
-  std::map<int,std::set<int> > result;
+  std::vector<std::set<int> > result(m_n_basins);
   for (int b1 = 1; b1 < m_n_basins; ++b1) {
     for (int b2 = b1 + 1; b2 < m_n_basins; ++b2) {
       if (adjacent(b1, b2)) {
@@ -682,7 +684,7 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
  */
 void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
                                      const IceModelVec2Int &basin_mask,
-                                     const std::map<int, std::set<int> > &basin_neighbors,
+                                     const std::vector<std::set<int> > &basin_neighbors,
                                      const std::vector<int> &most_shelf_cells_in_basin,
                                      const std::vector<int> &cfs_in_basins_per_shelf,
                                      int n_shelves,
@@ -693,26 +695,21 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
 
   IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask, &m_tmp };
 
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-      if (cell_type.as_int(i, j) == MASK_FLOATING) {
-        int b = basin_mask.as_int(i, j);
-        int s = shelf_mask.as_int(i, j);
-        int b0 = most_shelf_cells_in_basin[s];
-        // basin_neighbors.at(b) may throw
-        bool neighbors = basin_neighbors.at(b).count(b0) > 0;
-        if (b != b0 and (not neighbors) and
-            cfs_in_basins_per_shelf[s * m_n_basins + b] > 0) {
-          n_shelf_cells_to_split[s * m_n_basins + b]++;
-        }
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    if (cell_type.as_int(i, j) == MASK_FLOATING) {
+      int basin = basin_mask.as_int(i, j);
+      int shelf = shelf_mask.as_int(i, j);
+      int b0    = most_shelf_cells_in_basin[shelf];
+
+      bool neighbors = basin_neighbors[basin].count(b0) > 0;
+
+      if (basin != b0 and (not neighbors) and
+          cfs_in_basins_per_shelf[shelf * m_n_basins + basin] > 0) {
+        n_shelf_cells_to_split[shelf * m_n_basins + basin]++;
       }
     }
-  } catch (...) {
-    loop.failed();
   }
-  loop.check();
 
   {
     std::vector<int> tmp(n_shelves * m_n_basins, 0);

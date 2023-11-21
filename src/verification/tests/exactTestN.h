@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2010, 2014, 2016 Ed Bueler
+   Copyright (C) 2010, 2014, 2016, 2023 Ed Bueler
   
    This file is part of PISM.
   
@@ -45,7 +45,7 @@ struct TestNConstants {
   double T_xc;  /* = vertically-integrated longitudinal stress at calving front */
 };
 
-struct TestNConstants exactNConstants();
+struct TestNConstants exactNConstants(void);
 
 struct TestNParameters {
   int error_code;
