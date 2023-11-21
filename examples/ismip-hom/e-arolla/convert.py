@@ -14,6 +14,7 @@ surface = data[:, 2]
 sliding = data[:, 3]
 
 dx = x[1] - x[0]
+high_beta = 1e21
 
 def convert(output_filename, no_slip):
     try:
@@ -38,7 +39,6 @@ def convert(output_filename, no_slip):
         for k in range(3):
             thickness[k, :] = np.maximum(surface - bed, 0.0)
 
-        high_beta = 1e24
         TAUC = f.createVariable("tauc", "f8", ("y", "x"))
         TAUC.units = "Pa"
         if no_slip:
