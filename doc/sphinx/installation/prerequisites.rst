@@ -43,10 +43,10 @@ recommended, but not strictly required:
    ParallelIO_, Can be used for faster parallel I/O
 
 Python_ is needed for the PETSc installation process; a number of PISM's pre- and
-post-processing scripts also use Python (either 2.7 or 3.x), while Git_ is usually needed
-to download the PISM code.
+post-processing scripts also use Python (version 3.x), while Git_ is usually needed to
+download the PISM code.
 
-PISM's Python bindings support Python 2.7 or 3.3 and later [#]_.
+PISM's Python bindings support Python 3.3 and later [#]_.
 
 The following Python packages are needed to do all the examples in the :ref:`User’s Manual
 <sec-users-manual>` (which run Python scripts):
@@ -63,4 +63,4 @@ The following Python packages are needed to do all the examples in the :ref:`Use
 .. [#] Note that PISM uses ``ncgen`` (provided by NetCDF) on the system where PISM is
        *compiled*.
 .. [#] "PETSc" is pronounced "pet-see".
-.. [#] PISM's Python bindings are tested using Python 3.6.
+.. [#] PISM's Python bindings are tested using Python 3.10.12.
