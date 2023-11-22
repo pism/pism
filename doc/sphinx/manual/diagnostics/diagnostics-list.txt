@@ -23,6 +23,11 @@ Spatially-variable fields
    :Units: Kelvin
    :Description: instantaneous value of the near-surface air temperature
 
+#. ``atmosphere_transmissivity``
+
+   :Units: 1
+   :Description: atmosphere_transmissivity
+
 #. ``basal_mass_flux_floating``
 
    :Units: kg m-2 year-1
@@ -37,7 +42,7 @@ Spatially-variable fields
 
 #. ``basal_melt_rate_grounded``
 
-   :Units: m year-1
+   :Units: m s-1
    :Description: ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)
    :Comment: positive basal melt rate corresponds to ice loss
 
@@ -58,7 +63,7 @@ Spatially-variable fields
 
 #. ``bheatflx``
 
-   :Units: mW m-2
+   :Units: W m-2
    :Description: upward geothermal flux at the bottom bedrock surface
    :Comment: positive values correspond to an upward flux
 
@@ -93,7 +98,7 @@ Spatially-variable fields
 
 #. ``bwprel``
 
-   :Units: ---
+   :Units: 1
    :Description: pressure of transportable water in subglacial layer as fraction of the overburden pressure
 
 #. ``cell_grounded_fraction``
@@ -120,9 +125,39 @@ Spatially-variable fields
 
 #. ``dbdt``
 
-   :Units: mm year-1
+   :Units: m s-1
    :Description: bedrock uplift rate
    :Standard name: ``tendency_of_bedrock_altitude``
+
+#. ``debm_insolation_driven_melt_flux``
+
+   :Units: kg m-2 year-1
+   :Description: surface insolation melt, averaged over the reporting interval
+
+#. ``debm_insolation_driven_melt_rate``
+
+   :Units: Gt year-1
+   :Description: surface insolation melt, averaged over the reporting interval
+
+#. ``debm_offset_melt_flux``
+
+   :Units: kg m-2 year-1
+   :Description: offset melt, averaged over the reporting interval
+
+#. ``debm_offset_melt_rate``
+
+   :Units: Gt year-1
+   :Description: offset melt, averaged over the reporting interval
+
+#. ``debm_temperature_driven_melt_flux``
+
+   :Units: kg m-2 year-1
+   :Description: temperature-driven melt, averaged over the reporting interval
+
+#. ``debm_temperature_driven_melt_rate``
+
+   :Units: Gt year-1
+   :Description: temperature-driven melt, averaged over the reporting interval
 
 #. ``deviatoric_stresses``
 
@@ -276,24 +311,24 @@ Spatially-variable fields
 
    - ``h_x_i``
 
-     :Units: ---
+     :Units: 1
      :Description: the x-component of the surface gradient, i-offset
 
    - ``h_x_j``
 
-     :Units: ---
+     :Units: 1
      :Description: the x-component of the surface gradient, j-offset
 
 #. ``h_y``
 
    - ``h_y_i``
 
-     :Units: ---
+     :Units: 1
      :Description: the y-component of the surface gradient, i-offset
 
    - ``h_y_j``
 
-     :Units: ---
+     :Units: 1
      :Description: the y-component of the surface gradient, j-offset
 
 #. ``hardav``
@@ -355,7 +390,7 @@ Spatially-variable fields
 #. ``ice_mass``
 
    :Units: kg
-   :Description: mass per cell
+   :Description: ice mass per cell
 
 #. ``ice_surface_liquid_water_fraction``
 
@@ -367,6 +402,21 @@ Spatially-variable fields
    :Units: K
    :Description: ice temperature at the top ice surface
    :Standard name: ``temperature_at_top_of_ice_sheet_model``
+
+#. ``insolation``
+
+   :Units: W m-2
+   :Description: mean top of atmosphere insolation during the period when the sun is above the critical angle Phi
+
+#. ``isochronal_layer_thickness``
+
+   :Units: m
+   :Description: thicknesses of isochronal layers
+
+#. ``isochrone_depth``
+
+   :Units: m
+   :Description: depth below surface of isochrones for times in 'deposition_time'
 
 #. ``lat``
 
@@ -502,6 +552,12 @@ Spatially-variable fields
 
    :Units: Gt year-1
    :Description: accumulation (precipitation minus rain), averaged over the reporting interval
+
+#. ``surface_albedo``
+
+   :Units: 1
+   :Description: surface_albedo
+   :Standard name: ``surface_albedo``
 
 #. ``surface_layer_mass``
 
@@ -666,6 +722,18 @@ Spatially-variable fields
    :Description: rate of change of ice amount due to flow
    :Comment: positive flux corresponds to ice gain
 
+#. ``tendency_of_ice_amount_due_to_forced_retreat``
+
+   :Units: kg m-2 year-1
+   :Description: forced (prescribed) retreat flux
+   :Comment: positive flux corresponds to ice gain
+
+#. ``tendency_of_ice_amount_due_to_frontal_melt``
+
+   :Units: kg m-2 year-1
+   :Description: frontal melt flux
+   :Comment: positive flux corresponds to ice gain
+
 #. ``tendency_of_ice_amount_due_to_surface_mass_flux``
 
    :Units: kg m-2 year-1
@@ -707,6 +775,18 @@ Spatially-variable fields
 
    :Units: Gt year-1
    :Description: rate of change of ice mass due to flow
+   :Comment: positive flux corresponds to ice gain
+
+#. ``tendency_of_ice_mass_due_to_forced_retreat``
+
+   :Units: Gt year-1
+   :Description: forced (prescribed) retreat flux
+   :Comment: positive flux corresponds to ice gain
+
+#. ``tendency_of_ice_mass_due_to_frontal_melt``
+
+   :Units: Gt year-1
+   :Description: frontal melt flux
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass_due_to_surface_mass_flux``
@@ -825,12 +905,12 @@ Spatially-variable fields
 
    - ``u_bc``
 
-     :Units: m year-1
+     :Units: m s-1
      :Description: X-component of the SSA velocity boundary conditions
 
    - ``v_bc``
 
-     :Units: m year-1
+     :Units: m s-1
      :Description: Y-component of the SSA velocity boundary conditions
 
 #. ``velbar``
@@ -967,6 +1047,11 @@ Scalar time-series
    :Units: year
    :Description: mass continuity time step
 
+#. ``dt_ratio``
+
+   :Units: 1
+   :Description: ratio of max. allowed time steps according to CFL and SIA diffusivity criteria
+
 #. ``grounding_line_flux``
 
    :Units: Gt year-1
@@ -1076,12 +1161,12 @@ Scalar time-series
 #. ``max_diffusivity``
 
    :Units: m2 s-1
-   :Description: maximum diffusivity
+   :Description: maximum diffusivity of the flow (usually from the SIA model)
 
-#. ``max_sliding_vel``
+#. ``max_horizontal_vel``
 
    :Units: m year-1
-   :Description: max(max(abs(u)), max(abs(v))) for the sliding velocity of ice over grid in last time step during time-series reporting interval
+   :Description: max(max(abs(u)), max(abs(v))) for the horizontal velocity of ice over volume of the ice in last time step during time-series reporting interval
 
 #. ``sea_level_rise_potential``
 

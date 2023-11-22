@@ -52,13 +52,18 @@ surface_input.nc: dummy.nc
 
 # - steady state hydrology
 # - Lingle-Clark bed deformation model
+# - isochrone tracking
+# - debm_simple surface
 diag.json: dummy.nc surface_input.nc
 	pismr -i dummy.nc \
+	      -atmosphere.models searise_greenland \
+	      -surface.models debm_simple \
 	      -bootstrap \
 	      -bed_def lc \
 	      -hydrology steady \
 	      -hydrology.surface_input.file surface_input.nc \
 	      -hydrology.add_water_input_to_till_storage false \
+	      -isochrones.deposition_times 100 \
 	      -verbose 1 -o_size none \
 	      -list_diagnostics json > $@
 
