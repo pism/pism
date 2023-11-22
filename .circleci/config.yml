@@ -147,6 +147,15 @@ jobs:
           paths:
             - ~/.cache/ccache
 
+  python-util:
+      - image: ckhrulev/pism-ubuntu:0.1.7
+
+    steps:
+      - checkout
+      - run:
+          name: Build the HTML version of the manual
+          command: python -m pytest util
+          
   manual-html:
     docker:
       - image: ckhrulev/pism-ubuntu:0.1.7
@@ -364,6 +373,7 @@ workflows:
       - manual-html
       - manual-pdf
       - doxygen
+      - python-util
 
       - deploy-p:
           requires:
