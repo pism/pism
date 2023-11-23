@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,13 @@
 #ifndef _SSAFD_H_
 #define _SSAFD_H_
 
-#include "SSA.hh"
+#include "pism/stressbalance/ssa/SSA.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
+#include "pism/util/array/Staggered.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -33,10 +34,10 @@ namespace stressbalance {
 class SSAFD : public SSA
 {
 public:
-  SSAFD(IceGrid::ConstPtr g);
+  SSAFD(std::shared_ptr<const Grid> g);
   virtual ~SSAFD() = default;
 
-  const IceModelVec2Stag & integrated_viscosity() const;
+  const array::Staggered & integrated_viscosity() const;
 protected:
   virtual void init_impl();
 
@@ -60,13 +61,18 @@ protected:
 
   virtual void compute_hardav_staggered(const Inputs &inputs);
 
-  virtual void compute_nuH_staggered(const Geometry &geometry,
+  virtual void compute_nuH_staggered(const array::Scalar1 &ice_thickness,
+                                     const array::Vector1 &velocity,
+                                     const array::Staggered &hardness,
                                      double nuH_regularization,
-                                     IceModelVec2Stag &result);
+                                     array::Staggered &result);
 
-  virtual void compute_nuH_staggered_cfbc(const Geometry &geometry,
+  virtual void compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
+                                          const array::CellType2 &mask,
+                                          const array::Vector1 &velocity,
+                                          const array::Staggered &hardness,
                                           double nuH_regularization,
-                                          IceModelVec2Stag &result);
+                                          array::Staggered &result);
 
   virtual void compute_nuH_norm(double &norm,
                                 double &norm_change);
@@ -80,15 +86,13 @@ protected:
 
   virtual void update_nuH_viewers();
 
-  void set_diagonal_matrix_entry(Mat A, int i, int j, int component,
-                                         double value);
-
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
-  virtual void fracture_induced_softening(const IceModelVec2S *fracture_density);
+  virtual void fracture_induced_softening(const array::Scalar *fracture_density);
 
   // objects used internally
-  IceModelVec2Stag m_hardness, m_nuH, m_nuH_old;
+  array::Staggered m_hardness;
+  array::Staggered1 m_nuH, m_nuH_old;
 
   struct Work {
     // u_x on the i offset
@@ -104,14 +108,14 @@ protected:
     // weight for the j offset
     double w_j;
   };
-  IceModelVec2<Work> m_work;
+  array::Array2D<Work> m_work;
 
   petsc::KSP m_KSP;
   petsc::Mat m_A;
-  IceModelVec2V m_b;            // right hand side
-  double m_scaling;
+  array::Vector m_b;            // right hand side
 
-  IceModelVec2V m_velocity_old;
+  array::Vector1 m_velocity_old;
+  const double m_scaling;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;
@@ -132,7 +136,7 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid::ConstPtr grid);
+SSA * SSAFDFactory(std::shared_ptr<const Grid> grid);
 
 } // end of namespace stressbalance
 } // end of namespace pism

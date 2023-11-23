@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,22 +19,20 @@
 #ifndef _PISMEIGENCALVING_H_
 #define _PISMEIGENCALVING_H_
 
-#include "StressCalving.hh"
+#include "pism/frontretreat/calving/StressCalving.hh"
 
 namespace pism {
-
-class Geometry;
 
 namespace calving {
 
 class EigenCalving : public StressCalving {
 public:
-  EigenCalving(IceGrid::ConstPtr grid);
+  EigenCalving(std::shared_ptr<const Grid> grid);
   virtual ~EigenCalving() = default;
 
   void init();
 
-  void update(const IceModelVec2CellType &cell_type, const IceModelVec2V &ice_velocity);
+  void update(const array::CellType &cell_type, const array::Vector1 &ice_velocity);
 protected:
   DiagnosticList diagnostics_impl() const;
 

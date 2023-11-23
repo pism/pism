@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2020, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -22,9 +22,9 @@
 
 #include <gsl/gsl_math.h>       // M_PI
 
-#include "YearlyCycle.hh"
+#include "pism/coupler/atmosphere/YearlyCycle.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
@@ -33,29 +33,32 @@
 namespace pism {
 namespace atmosphere {
 
-YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
+YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
   : AtmosphereModel(g),
-    m_air_temp_mean_annual(m_grid, "air_temp_mean_annual", WITHOUT_GHOSTS),
-    m_air_temp_mean_summer(m_grid, "air_temp_mean_summer", WITHOUT_GHOSTS),
-    m_precipitation(m_grid, "precipitation", WITHOUT_GHOSTS) {
+    m_air_temp_mean_annual(m_grid, "air_temp_mean_annual"),
+    m_air_temp_mean_summer(m_grid, "air_temp_mean_summer"),
+    m_precipitation(m_grid, "precipitation") {
 
   m_snow_temp_summer_day = m_config->get_number("atmosphere.fausto_air_temp.summer_peak_day");
 
-  m_air_temp_mean_annual.set_attrs("diagnostic",
-                                   "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
-                                   "K", "K",
-                                   "", 0);  // no CF standard_name
+  m_air_temp_mean_annual.metadata(0)
+      .long_name(
+          "mean annual near-surface air temperature (without sub-year time-dependence or forcing)")
+      .units("K");
   m_air_temp_mean_annual.metadata()["source"] = m_reference;
 
-  m_air_temp_mean_summer.set_attrs("diagnostic",
-                                   "mean summer (NH: July/ SH: January) near-surface air temperature (without sub-year time-dependence or forcing)",
-                                   "Kelvin", "Kelvin",
-                                   "", 0);  // no CF standard_name
+  m_air_temp_mean_summer.metadata(0)
+      .long_name(
+          "mean summer (NH: July/ SH: January) near-surface air temperature (without sub-year time-dependence or forcing)")
+      .units("Kelvin");
   m_air_temp_mean_summer.metadata()["source"] = m_reference;
 
-  m_precipitation.set_attrs("model_state", "precipitation rate",
-                            "kg m-2 second-1", "kg m-2 year-1", "precipitation_flux", 0);
-  m_precipitation.set_time_independent(true);
+  m_precipitation.metadata(0)
+      .long_name("precipitation rate")
+      .units("kg m-2 second-1")
+      .output_units("kg m-2 year-1")
+      .standard_name("precipitation_flux")
+      .set_time_independent(true);
 }
 
 //! Reads in the precipitation data from the input file.
@@ -75,14 +78,14 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
              "      from %s ... \n",
              input_filename.c_str());
   if (do_regrid == true) {
-    m_precipitation.regrid(input_filename, CRITICAL); // fails if not found!
+    m_precipitation.regrid(input_filename, io::Default::Nil()); // fails if not found!
   } else {
     m_precipitation.read(input_filename, start); // fails if not found!
   }
 }
 
 void YearlyCycle::define_model_state_impl(const File &output) const {
-  m_precipitation.define(output);
+  m_precipitation.define(output, io::PISM_DOUBLE);
 }
 
 void YearlyCycle::write_model_state_impl(const File &output) const {
@@ -90,31 +93,31 @@ void YearlyCycle::write_model_state_impl(const File &output) const {
 }
 
 //! Copies the stored precipitation field into result.
-const IceModelVec2S& YearlyCycle::mean_precipitation_impl() const {
+const array::Scalar& YearlyCycle::precipitation_impl() const {
   return m_precipitation;
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-const IceModelVec2S& YearlyCycle::mean_annual_temp_impl() const {
+const array::Scalar& YearlyCycle::air_temperature_impl() const {
   return m_air_temp_mean_annual;
 }
 
 //! Copies the stored mean summer near-surface air temperature field into result.
-const IceModelVec2S& YearlyCycle::mean_summer_temp() const {
+const array::Scalar& YearlyCycle::mean_summer_temp() const {
   return m_air_temp_mean_summer;
 }
 
 void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
   // constants related to the standard yearly cycle
   const double
-    summerday_fraction = m_grid->ctx()->time()->day_of_the_year_to_year_fraction(m_snow_temp_summer_day);
+    summerday_fraction = time().day_of_the_year_to_year_fraction(m_snow_temp_summer_day);
 
   size_t N = ts.size();
 
   m_ts_times.resize(N);
   m_cosine_cycle.resize(N);
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    double tk = m_grid->ctx()->time()->year_fraction(ts[k]) - summerday_fraction;
+    double tk = time().year_fraction(ts[k]) - summerday_fraction;
 
     m_ts_times[k] = ts[k];
     m_cosine_cycle[k] = cos(2.0 * M_PI * tk);
@@ -153,20 +156,16 @@ namespace diagnostics {
 class MeanSummerTemperature : public Diag<YearlyCycle>
 {
 public:
-  MeanSummerTemperature(const YearlyCycle *m)
-    : Diag<YearlyCycle>(m) {
-
-    /* set metadata: */
-    m_vars = {SpatialVariableMetadata(m_sys, "air_temp_mean_summer")};
-
-    set_attrs("mean summer near-surface air temperature used in the cosine yearly cycle", "",
-              "Kelvin", "Kelvin", 0);
+  MeanSummerTemperature(const YearlyCycle *m) : Diag<YearlyCycle>(m) {
+    m_vars = { { m_sys, "air_temp_mean_summer" } };
+    m_vars[0]
+        .long_name("mean summer near-surface air temperature used in the cosine yearly cycle")
+        .units("Kelvin");
   }
-private:
-  IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_summer", WITHOUT_GHOSTS));
-    result->metadata(0) = m_vars[0];
+private:
+  std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Scalar>("air_temp_mean_summer");
 
     result->copy_from(model->mean_summer_temp());
 

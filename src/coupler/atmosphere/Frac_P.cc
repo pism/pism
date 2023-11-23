@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,17 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Frac_P.hh"
+#include "pism/coupler/atmosphere/Frac_P.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/ScalarForcing.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace atmosphere {
 
-Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
+Frac_P::Frac_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
   std::string
@@ -38,7 +39,7 @@ Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   ForcingOptions opt(*m_grid->ctx(), prefix);
 
   // will be closed at the end of scope
-  File input(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+  File input(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
 
   // Assume that we are expected to use 1D scaling if the input file contains a scalar
   // time-series.
@@ -53,15 +54,14 @@ Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   } else {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    m_2d_scaling = IceModelVec2T::ForcingField(m_grid,
+    m_2d_scaling = std::make_shared<array::Forcing>(m_grid,
                                                input,
                                                variable_name,
                                                "", // no standard name
                                                buffer_size,
                                                opt.periodic);
 
-    m_2d_scaling->set_attrs("climate_forcing",
-                            long_name, units, units, "", 0);
+    m_2d_scaling->metadata().long_name(long_name).units(units);
   }
 
   m_precipitation = allocate_precipitation(grid);
@@ -112,7 +112,7 @@ void Frac_P::end_pointwise_access_impl() const {
 
 void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
-  m_precipitation->copy_from(m_input_model->mean_precipitation());
+  m_precipitation->copy_from(m_input_model->precipitation());
 
   if (m_1d_scaling) {
     m_precipitation->scale(m_1d_scaling->value(t + 0.5 * dt));
@@ -122,12 +122,12 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
     m_2d_scaling->update(t, dt);
     m_2d_scaling->average(t, dt);
 
-    IceModelVec2S &P = *m_precipitation;
-    IceModelVec2T &S = *m_2d_scaling;
+    array::Scalar &P = *m_precipitation;
+    array::Forcing &S = *m_2d_scaling;
 
-    IceModelVec::AccessList list{&P, &S};
+    array::AccessScope list{&P, &S};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       P(i, j) *= S(i, j);
@@ -135,7 +135,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Frac_P::mean_precipitation_impl() const {
+const array::Scalar& Frac_P::precipitation_impl() const {
   return *m_precipitation;
 }
 

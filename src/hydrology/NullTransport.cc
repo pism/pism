@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2021 PISM Authors
+// Copyright (C) 2012-2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,19 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "NullTransport.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/pism_utilities.hh" // clip
+#include "pism/hydrology/NullTransport.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh" // clip
 
 namespace pism {
 namespace hydrology {
 
-NullTransport::NullTransport(IceGrid::ConstPtr g)
-  : Hydrology(g),
-    m_Wtill_old(m_grid, "Wtill_old", WITH_GHOSTS) {
+NullTransport::NullTransport(std::shared_ptr<const Grid> g)
+    : Hydrology(g), m_Wtill_old(m_grid, "Wtill_old") {
 
   m_diffuse_tillwat    = m_config->get_flag("hydrology.null_diffuse_till_water");
   m_diffusion_time     = m_config->get_number("hydrology.null_diffusion_time", "seconds");
@@ -48,8 +47,8 @@ void NullTransport::initialization_message() const {
                  "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
 
   if (m_diffuse_tillwat) {
-    m_log->message(2,
-                   "  [using lateral diffusion of stored till water as in Bueler and Brown, 2009]\n");
+    m_log->message(
+        2, "  [using lateral diffusion of stored till water as in Bueler and Brown, 2009]\n");
   }
 }
 
@@ -57,31 +56,25 @@ void NullTransport::restart_impl(const File &input_file, int record) {
   Hydrology::restart_impl(input_file, record);
 }
 
-void NullTransport::bootstrap_impl(const File &input_file,
-                                   const IceModelVec2S &ice_thickness) {
+void NullTransport::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness) {
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 }
 
-void NullTransport::init_impl(const IceModelVec2S &W_till,
-                                    const IceModelVec2S &W,
-                                    const IceModelVec2S &P) {
+void NullTransport::init_impl(const array::Scalar &W_till, const array::Scalar &W,
+                              const array::Scalar &P) {
   Hydrology::init_impl(W_till, W, P);
 }
 
 MaxTimestep NullTransport::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   if (m_diffuse_tillwat) {
-    const double
-      dx2 = m_grid->dx() * m_grid->dx(),
-      dy2 = m_grid->dy() * m_grid->dy(),
-      L   = m_diffusion_distance,
-      T   = m_diffusion_time,
-      K   = L * L / (2.0 * T);
+    const double dx2 = m_grid->dx() * m_grid->dx(), dy2 = m_grid->dy() * m_grid->dy(),
+                 L = m_diffusion_distance, T = m_diffusion_time, K = L * L / (2.0 * T);
 
     return MaxTimestep(dx2 * dy2 / (2.0 * K * (dx2 + dy2)), "null-transport hydrology");
-  } else {
-    return MaxTimestep("null-transport hydrology");
   }
+
+  return MaxTimestep("null-transport hydrology");
 }
 
 //! Update the till water thickness by simply integrating the melt input.
@@ -120,16 +113,16 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m      = m_grid->cell_area() * water_density; // kg m-1
 
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
+  const auto &cell_type = inputs.geometry->cell_type;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_basal_melt_rate,
+  array::AccessScope list{&cell_type, &m_Wtill, &m_basal_melt_rate,
       &m_conservation_error_change};
 
   if (add_surface_input) {
     list.add(m_surface_input_rate);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double
@@ -188,15 +181,15 @@ void NullTransport::diffuse_till_water(double dt) {
     Rx = K * dt / (dx * dx),
     Ry = K * dt / (dy * dy);
 
-  IceModelVec::AccessList list{&m_Wtill, &m_Wtill_old, &m_flow_change};
-  for (Points p(*m_grid); p; p.next()) {
+  array::AccessScope list{&m_Wtill, &m_Wtill_old, &m_flow_change};
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto W = m_Wtill_old.star(i, j);
 
-    double dWtill = (Rx * (W.w - 2.0 * W.ij + W.e) + Ry * (W.s - 2.0 * W.ij + W.n));
+    double dWtill = (Rx * (W.w - 2.0 * W.c + W.e) + Ry * (W.s - 2.0 * W.c + W.n));
 
-    m_Wtill(i, j) = W.ij + dWtill;
+    m_Wtill(i, j) = W.c + dWtill;
 
     m_flow_change(i, j) = dWtill;
   }

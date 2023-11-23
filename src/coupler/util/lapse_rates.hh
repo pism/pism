@@ -22,12 +22,12 @@
 
 namespace pism {
 
-class IceModelVec2S;
+namespace array { class Scalar; }
 
-void lapse_rate_correction(const IceModelVec2S &surface,
-                           const IceModelVec2S &reference_surface,
+void lapse_rate_correction(const array::Scalar &surface,
+                           const array::Scalar &reference_surface,
                            double lapse_rate,
-                           IceModelVec2S &result);
+                           array::Scalar &result);
 
 } // end of namespace pism
 

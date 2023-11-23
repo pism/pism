@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,23 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "ElevationChange.hh"
+#include "pism/coupler/atmosphere/ElevationChange.hh"
 
 #include <cmath>                // std::exp()
 
 #include "pism/coupler/util/options.hh"
 #include "pism/coupler/util/lapse_rates.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace atmosphere {
 
-ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
+ElevationChange::ElevationChange(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in),
-  m_surface(grid, "ice_surface_elevation", WITHOUT_GHOSTS) {
+  m_surface(grid, "ice_surface_elevation") {
 
   m_precip_lapse_rate = m_config->get_number("atmosphere.elevation_change.precipitation.lapse_rate",
                                              "(kg m-2 / s) / m");
@@ -54,17 +53,19 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
 
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_reference_surface = IceModelVec2T::ForcingField(m_grid,
+    m_reference_surface = std::make_shared<array::Forcing>(m_grid,
                                                       file,
                                                       "usurf",
                                                       "", // no standard name
                                                       buffer_size,
                                                       opt.periodic,
                                                       LINEAR);
-    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation",
-                                   "m", "m", "surface_altitude", 0);
+    m_reference_surface->metadata()
+        .long_name("ice surface elevation")
+        .units("m")
+        .standard_name("surface_altitude");
   }
 
   m_precipitation = allocate_precipitation(grid);
@@ -115,7 +116,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
 
   // temperature
   {
-    m_temperature->copy_from(m_input_model->mean_annual_temp());
+    m_temperature->copy_from(m_input_model->air_temperature());
 
     lapse_rate_correction(m_surface, reference_surface,
                           m_temp_lapse_rate, *m_temperature);
@@ -123,14 +124,14 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
 
   // precipitation
   {
-    m_precipitation->copy_from(m_input_model->mean_precipitation());
+    m_precipitation->copy_from(m_input_model->precipitation());
 
     switch (m_precip_method) {
     case SCALE:
       {
-        IceModelVec::AccessList list{&m_surface, &reference_surface, m_precipitation.get()};
+        array::AccessScope list{&m_surface, &reference_surface, m_precipitation.get()};
 
-        for (Points p(*m_grid); p; p.next()) {
+        for (auto p = m_grid->points(); p; p.next()) {
           const int i = p.i(), j = p.j();
 
           double dT = -m_precip_temp_lapse_rate * (m_surface(i, j) - reference_surface(i, j));
@@ -151,11 +152,11 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   }
 }
 
-const IceModelVec2S& ElevationChange::mean_annual_temp_impl() const {
+const array::Scalar& ElevationChange::air_temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S& ElevationChange::mean_precipitation_impl() const {
+const array::Scalar& ElevationChange::precipitation_impl() const {
   return *m_precipitation;
 }
 

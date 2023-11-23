@@ -59,17 +59,17 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, Nx, dt):
     My = int(2 * Ny - 1)
 
     ctx = PISM.Context().ctx
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.Grid.Shallow(ctx, L, L, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     bed_model = PISM.LingleClark(grid)
 
-    ice_thickness = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
+    ice_thickness = PISM.Scalar(grid, "thk")
 
-    bed = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
+    bed = PISM.Scalar(grid, "topg")
 
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
+    bed_uplift = PISM.Scalar(grid, "uplift")
 
-    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
+    sea_level = PISM.Scalar(grid, "sea_level")
 
     # start with a flat bed, no ice, and no uplift
     bed.set(0.0)
@@ -115,19 +115,19 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, Nx):
     My = int(2 * Ny - 1)
 
     ctx = PISM.Context().ctx
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.Grid.Shallow(ctx, L, L, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     bed_model = PISM.LingleClark(grid)
 
-    ice_thickness = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
+    ice_thickness = PISM.Scalar(grid, "thk")
 
-    bed = PISM.IceModelVec2S(grid, "topg", PISM.WITHOUT_GHOSTS)
+    bed = PISM.Scalar(grid, "topg")
     bed.set(0.0)
 
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
+    bed_uplift = PISM.Scalar(grid, "uplift")
     bed_uplift.set(0.0)
 
-    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
+    sea_level = PISM.Scalar(grid, "sea_level")
     sea_level.set(-1000.0)
 
     with PISM.vec.Access(nocomm=ice_thickness):

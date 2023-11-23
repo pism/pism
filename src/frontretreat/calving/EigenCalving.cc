@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,26 +17,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EigenCalving.hh"
+#include "pism/frontretreat/calving/EigenCalving.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace calving {
 
-EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
+EigenCalving::EigenCalving(std::shared_ptr<const Grid> grid)
   : StressCalving(grid, 2) {
 
   m_K = m_config->get_number("calving.eigen_calving.K");
 
   m_calving_rate.metadata().set_name("eigen_calving_rate");
-  m_calving_rate.set_attrs("diagnostic",
-                           "horizontal calving rate due to eigen-calving",
-                           "m s-1", "m year-1", "", 0);
+  m_calving_rate.metadata(0)
+      .long_name("horizontal calving rate due to eigen-calving")
+      .units("m s-1")
+      .output_units("m year-1");
 }
 
 void EigenCalving::init() {
@@ -57,11 +57,12 @@ void EigenCalving::init() {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void EigenCalving::update(const IceModelVec2CellType &cell_type,
-                          const IceModelVec2V &ice_velocity) {
+void EigenCalving::update(const array::CellType &cell_type,
+                          const array::Vector1 &ice_velocity) {
 
   // make a copy with a wider stencil
   m_cell_type.copy_from(cell_type);
+  assert(m_cell_type.stencil_width() >= 2);
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -74,10 +75,10 @@ void EigenCalving::update(const IceModelVec2CellType &cell_type,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{&m_cell_type, &m_calving_rate, &m_strain_rates};
+  array::AccessScope list{&m_cell_type, &m_calving_rate, &m_strain_rates};
 
   // Compute the horizontal calving rate
-  for (Points pt(*m_grid); pt; pt.next()) {
+  for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
@@ -94,8 +95,8 @@ void EigenCalving::update(const IceModelVec2CellType &cell_type,
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
           if (m_cell_type.floating_ice(I, j) and not m_cell_type.ice_margin(I, j)) {
-            eigen1 += m_strain_rates(I, j, 0);
-            eigen2 += m_strain_rates(I, j, 1);
+            eigen1 += m_strain_rates(I, j).eigen1;
+            eigen2 += m_strain_rates(I, j).eigen2;
             N += 1;
           }
         }
@@ -103,8 +104,8 @@ void EigenCalving::update(const IceModelVec2CellType &cell_type,
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
           if (m_cell_type.floating_ice(i, J) and not m_cell_type.ice_margin(i, J)) {
-            eigen1 += m_strain_rates(i, J, 0);
-            eigen2 += m_strain_rates(i, J, 1);
+            eigen1 += m_strain_rates(i, J).eigen1;
+            eigen2 += m_strain_rates(i, J).eigen2;
             N += 1;
           }
         }

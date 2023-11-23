@@ -17,7 +17,7 @@ Supercomputing Center (now RCS) has provided significant computational resources
 technical help in the development of PISM.
 
 Thanks for comments and questions from many PISM users around the world, including these
-not already listed as PISM authors:
+not already listed as :ref:`PISM authors <sec-pism-authors>`:
 
 
     Guðfinna Aðalgeirsdóttir, Antje Fitzner, Nick Golledge, Tore Hattermann, Moritz

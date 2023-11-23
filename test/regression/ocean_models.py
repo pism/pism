@@ -40,13 +40,13 @@ def water_column_pressure(ice_thickness):
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
-    T = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
-    T.set_attrs("climate", "shelf base temperature", "Kelvin", "Kelvin", "", 0)
+    T = PISM.Scalar(grid, "shelfbtemp")
+    T.metadata(0).long_name("shelf base temperature").units("Kelvin")
     T.set(temperature)
     T.write(filename)
 
-    M = PISM.IceModelVec2S(grid, "shelfbmassflux", PISM.WITHOUT_GHOSTS)
-    M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "kg m-2 s-1", "", 0)
+    M = PISM.Scalar(grid, "shelfbmassflux")
+    M.metadata(0).long_name("shelf base mass flux").units("kg m-2 s-1")
     M.set(mass_flux)
     M.write(filename)
 
@@ -197,13 +197,13 @@ class GivenTHTest(TestCase):
 
         PISM.util.prepare_output(filename)
 
-        Th = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
-        Th.set_attrs("climate", "potential temperature", "Kelvin", "Kelvin", "", 0)
+        Th = PISM.Scalar(self.grid, "theta_ocean")
+        Th.metadata(0).long_name("potential temperature").units("Kelvin")
         Th.set(potential_temperature)
         Th.write(filename)
 
-        S = PISM.IceModelVec2S(self.grid, "salinity_ocean", PISM.WITHOUT_GHOSTS)
-        S.set_attrs("climate", "ocean salinity", "g/kg", "g/kg", "", 0)
+        S = PISM.Scalar(self.grid, "salinity_ocean")
+        S.metadata(0).long_name("ocean salinity").units("g/kg")
         S.set(salinity)
         S.write(filename)
 
@@ -291,11 +291,8 @@ class AnomalyBMB(TestCase):
         self.model = PISM.OceanConstant(self.grid)
         self.dBMB = -5.0
 
-        delta_BMB = PISM.IceModelVec2S(self.grid, "shelf_base_mass_flux_anomaly",
-                                       PISM.WITHOUT_GHOSTS)
-        delta_BMB.set_attrs("climate_forcing",
-                            "2D shelf base mass flux anomaly", "kg m-2 s-1", "kg m-2 s-1",
-                            "", 0)
+        delta_BMB = PISM.Scalar(self.grid, "shelf_base_mass_flux_anomaly")
+        delta_BMB.metadata(0).long_name("2D shelf base mass flux anomaly").units("kg m-2 s-1")
         delta_BMB.set(self.dBMB)
 
         delta_BMB.dump(self.filename)

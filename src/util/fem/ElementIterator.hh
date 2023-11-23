@@ -21,13 +21,13 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 namespace fem {
 
 //! Manages iterating over element indices.
 /*! When computing residuals and Jacobians, there is a loop over all the elements in the
-  IceGrid, and computations are done on each element. The IceGrid has an underlying PETSc
+  Grid, and computations are done on each element. The Grid has an underlying PETSc
   DM, and a process typically does not own all of the nodes in the grid. Therefore we
   should perform a computation on a subset of the elements. In general, an element will
   have ghost (o) and real (*) vertices:
@@ -53,12 +53,12 @@ namespace fem {
   corresponding to that real vertex.
 
   The calculation of what elements to index over needs to account for ghosts and the
-  presence or absense of periodic boundary conditions in the IceGrid. The ElementIterator
+  presence or absense of periodic boundary conditions in the Grid. The ElementIterator
   performs that computation for you (see ElementIterator::xs and friends).
 */
 class ElementIterator {
 public:
-  ElementIterator(const IceGrid &g);
+  ElementIterator(const Grid &g);
 
   /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
   int element_count() {

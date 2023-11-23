@@ -24,7 +24,7 @@ def bed_def_iso(ice_thickness_change):
     M = 3
     L = 1000e3
 
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.Grid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     geometry = PISM.Geometry(grid)
     geometry.bed_elevation.set(0.0)
@@ -34,7 +34,7 @@ def bed_def_iso(ice_thickness_change):
     geometry.ensure_consistency(0.0)
 
     # uplift is required (but not used)
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
+    bed_uplift = PISM.Scalar(grid, "uplift")
     bed_uplift.set(0.0)
 
     bed_model = PISM.PointwiseIsostasy(grid)

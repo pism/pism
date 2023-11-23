@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,11 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "WeatherStation.hh"
+#include "pism/coupler/atmosphere/WeatherStation.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/ScalarForcing.hh"
@@ -29,7 +27,7 @@
 namespace pism {
 namespace atmosphere {
 
-WeatherStation::WeatherStation(IceGrid::ConstPtr grid)
+WeatherStation::WeatherStation(std::shared_ptr<const Grid> grid)
   : AtmosphereModel(grid) {
 
   m_log->message(2,
@@ -89,11 +87,11 @@ void WeatherStation::update_impl(const Geometry &geometry, double t, double dt) 
   m_temperature->set(m_air_temp_timeseries->average(t, dt));
 }
 
-const IceModelVec2S& WeatherStation::mean_precipitation_impl() const {
+const array::Scalar& WeatherStation::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& WeatherStation::mean_annual_temp_impl() const {
+const array::Scalar& WeatherStation::air_temperature_impl() const {
   return *m_temperature;
 }
 

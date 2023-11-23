@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "NC4_Serial.hh"
+#include "pism/util/io/NC4_Serial.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -62,7 +62,7 @@ void NC4_Serial::set_compression_level_impl(int level) const {
 }
 
 void NC4_Serial::def_var_impl(const std::string &name,
-                              IO_Type nctype,
+                              io::Type nctype,
                               const std::vector<std::string> &dims) const {
 
   // use the parent class to define the variable

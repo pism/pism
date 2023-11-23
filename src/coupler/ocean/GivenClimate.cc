@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,17 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "GivenClimate.hh"
+#include "pism/coupler/ocean/GivenClimate.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 
 #include "pism/coupler/util/options.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace ocean {
 
-Given::Given(IceGrid::ConstPtr g)
+Given::Given(std::shared_ptr<const Grid> g)
   : OceanModel(g, std::shared_ptr<OceanModel>()) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
@@ -37,9 +38,9 @@ Given::Given(IceGrid::ConstPtr g)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_shelfbtemp = IceModelVec2T::ForcingField(m_grid,
+    m_shelfbtemp = std::make_shared<array::Forcing>(m_grid,
                                                file,
                                                "shelfbtemp",
                                                "", // no standard name
@@ -47,7 +48,7 @@ Given::Given(IceGrid::ConstPtr g)
                                                opt.periodic,
                                                LINEAR);
 
-    m_shelfbmassflux = IceModelVec2T::ForcingField(m_grid,
+    m_shelfbmassflux = std::make_shared<array::Forcing>(m_grid,
                                                    file,
                                                    "shelfbmassflux",
                                                    "", // no standard name
@@ -55,12 +56,14 @@ Given::Given(IceGrid::ConstPtr g)
                                                    opt.periodic);
   }
 
-  m_shelfbtemp->set_attrs("climate_forcing",
-                          "absolute temperature at ice shelf base",
-                          "Kelvin", "Kelvin", "", 0);
-  m_shelfbmassflux->set_attrs("climate_forcing",
-                              "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                              "kg m-2 s-1", "kg m-2 year-1", "", 0);
+  m_shelfbtemp->metadata(0)
+      .long_name("absolute temperature at ice shelf base")
+      .units("Kelvin");
+
+  m_shelfbmassflux->metadata(0)
+      .long_name("ice mass flux from ice shelf base (positive flux is loss from ice shelf)")
+      .units("kg m-2 s-1")
+      .output_units("kg m-2 year-1");
 }
 
 void Given::init_impl(const Geometry &geometry) {
@@ -76,7 +79,7 @@ void Given::init_impl(const Geometry &geometry) {
 
   // read time-independent data right away:
   if (m_shelfbtemp->buffer_size() == 1 && m_shelfbmassflux->buffer_size() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, time().current(), 0); // dt is irrelevant
   }
 
   const double
@@ -115,11 +118,11 @@ MaxTimestep Given::max_timestep_impl(double t) const {
   return MaxTimestep("ocean th");
 }
 
-const IceModelVec2S& Given::shelf_base_temperature_impl() const {
+const array::Scalar& Given::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const IceModelVec2S& Given::shelf_base_mass_flux_impl() const {
+const array::Scalar& Given::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

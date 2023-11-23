@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,46 +16,49 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "BedDef.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/earth/BedDef.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 
 namespace pism {
 namespace bed {
 
-BedDef::BedDef(IceGrid::ConstPtr grid)
+BedDef::BedDef(std::shared_ptr<const Grid> grid)
   : Component(grid),
     m_wide_stencil(m_config->get_number("grid.max_stencil_width")),
-    m_topg(m_grid, "topg", WITH_GHOSTS, m_wide_stencil),
-    m_topg_last(m_grid, "topg", WITH_GHOSTS, m_wide_stencil),
-    m_uplift(m_grid, "dbdt", WITHOUT_GHOSTS)
+    m_topg(m_grid, "topg"),
+    m_topg_last(m_grid, "topg"),
+    m_uplift(m_grid, "dbdt")
 {
 
-  m_topg.set_attrs("model_state", "bedrock surface elevation",
-                   "m", "m", "bedrock_altitude", 0);
+  m_topg.metadata(0)
+      .long_name("bedrock surface elevation")
+      .units("m")
+      .standard_name("bedrock_altitude");
 
-  m_topg_last.set_attrs("model_state", "bedrock surface elevation",
-                        "m", "m", "bedrock_altitude", 0);
+  m_topg_last.metadata(0)
+      .long_name("bedrock surface elevation")
+      .units("m")
+      .standard_name("bedrock_altitude");
 
-  m_uplift.set_attrs("model_state", "bedrock uplift rate",
-                     "m s-1", "mm year-1", "tendency_of_bedrock_altitude", 0);
+  m_uplift.metadata(0)
+      .long_name("bedrock uplift rate")
+      .units("m s-1")
+      .standard_name("tendency_of_bedrock_altitude");
 }
 
-const IceModelVec2S& BedDef::bed_elevation() const {
+const array::Scalar &BedDef::bed_elevation() const {
   return m_topg;
 }
 
-const IceModelVec2S& BedDef::uplift() const {
+const array::Scalar &BedDef::uplift() const {
   return m_uplift;
 }
 
 void BedDef::define_model_state_impl(const File &output) const {
-  m_uplift.define(output);
-  m_topg.define(output);
+  m_uplift.define(output, io::PISM_DOUBLE);
+  m_topg.define(output, io::PISM_DOUBLE);
 }
 
 void BedDef::write_model_state_impl(const File &output) const {
@@ -65,73 +68,64 @@ void BedDef::write_model_state_impl(const File &output) const {
 
 DiagnosticList BedDef::diagnostics_impl() const {
   DiagnosticList result;
-  result = {
-    {"dbdt", Diagnostic::wrap(m_uplift)},
-    {"topg", Diagnostic::wrap(m_topg)}
-  };
+  result = { { "dbdt", Diagnostic::wrap(m_uplift) }, { "topg", Diagnostic::wrap(m_topg) } };
 
   return result;
 }
 
-void BedDef::init(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                  const IceModelVec2S &sea_level_elevation) {
+void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
+                  const array::Scalar &sea_level_elevation) {
   this->init_impl(opts, ice_thickness, sea_level_elevation);
 }
 
 //! Initialize using provided bed elevation and uplift.
-void BedDef::bootstrap(const IceModelVec2S &bed_elevation,
-                       const IceModelVec2S &bed_uplift,
-                       const IceModelVec2S &ice_thickness,
-                       const IceModelVec2S &sea_level_elevation) {
+void BedDef::bootstrap(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
+                       const array::Scalar &ice_thickness,
+                       const array::Scalar &sea_level_elevation) {
   this->bootstrap_impl(bed_elevation, bed_uplift, ice_thickness, sea_level_elevation);
 }
 
-void BedDef::bootstrap_impl(const IceModelVec2S &bed_elevation,
-                            const IceModelVec2S &bed_uplift,
-                            const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &sea_level_elevation) {
+void BedDef::bootstrap_impl(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
+                            const array::Scalar &ice_thickness,
+                            const array::Scalar &sea_level_elevation) {
   m_topg.copy_from(bed_elevation);
   m_uplift.copy_from(bed_uplift);
 
   // suppress a compiler warning:
-  (void) ice_thickness;
-  (void) sea_level_elevation;
+  (void)ice_thickness;
+  (void)sea_level_elevation;
 }
 
-void BedDef::update(const IceModelVec2S &ice_thickness,
-                    const IceModelVec2S &sea_level_elevation,
+void BedDef::update(const array::Scalar &ice_thickness, const array::Scalar &sea_level_elevation,
                     double t, double dt) {
   this->update_impl(ice_thickness, sea_level_elevation, t, dt);
 }
 
 //! Initialize from the context (input file and the "variables" database).
-void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                       const IceModelVec2S &sea_level_elevation) {
-  (void) ice_thickness;
-  (void) sea_level_elevation;
+void BedDef::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                       const array::Scalar &sea_level_elevation) {
+  (void)ice_thickness;
+  (void)sea_level_elevation;
 
   switch (opts.type) {
   case INIT_RESTART:
     // read bed elevation and uplift rate from file
-    m_log->message(2,
-                   "    reading bed topography and uplift from %s ... \n",
+    m_log->message(2, "    reading bed topography and uplift from %s ... \n",
                    opts.filename.c_str());
     // re-starting
-    m_topg.read(opts.filename, opts.record); // fails if not found!
+    m_topg.read(opts.filename, opts.record);   // fails if not found!
     m_uplift.read(opts.filename, opts.record); // fails if not found!
     break;
   case INIT_BOOTSTRAP:
     // bootstrapping
-    m_topg.regrid(opts.filename, OPTIONAL,
-                  m_config->get_number("bootstrapping.defaults.bed"));
-    m_uplift.regrid(opts.filename, OPTIONAL,
-                    m_config->get_number("bootstrapping.defaults.uplift"));
+    m_topg.regrid(opts.filename, io::Default(m_config->get_number("bootstrapping.defaults.bed")));
+    m_uplift.regrid(opts.filename,
+                    io::Default(m_config->get_number("bootstrapping.defaults.uplift")));
     break;
   case INIT_OTHER:
-  default:
-    {
-      // do nothing
-    }
+  default: {
+    // do nothing
+  }
   }
 
   // process -regrid_file and -regrid_vars
@@ -142,10 +136,8 @@ void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickn
 
   std::string uplift_file = m_config->get_string("bed_deformation.bed_uplift_file");
   if (not uplift_file.empty()) {
-    m_log->message(2,
-                   "    reading bed uplift from %s ... \n",
-                   uplift_file.c_str());
-    m_uplift.regrid(uplift_file, CRITICAL);
+    m_log->message(2, "    reading bed uplift from %s ... \n", uplift_file.c_str());
+    m_uplift.regrid(uplift_file, io::Default::Nil());
   }
 
   std::string correction_file = m_config->get_string("bed_deformation.bed_topography_delta_file");
@@ -161,21 +153,19 @@ void BedDef::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickn
  * Apply a correction to the bed topography by reading topg_delta from filename.
  */
 void BedDef::apply_topg_offset(const std::string &filename) {
-  m_log->message(2, "  Adding a bed topography correction read in from %s...\n",
-                 filename.c_str());
+  m_log->message(2, "  Adding a bed topography correction read in from %s...\n", filename.c_str());
 
-  IceModelVec2S topg_delta(m_grid, "topg_delta", WITHOUT_GHOSTS);
-  topg_delta.set_attrs("internal", "bed topography correction",
-                       "meters", "meters", "", 0);
+  array::Scalar topg_delta(m_grid, "topg_delta");
+  topg_delta.metadata(0).long_name("bed topography correction").units("meters");
 
-  topg_delta.regrid(filename, CRITICAL);
+  topg_delta.regrid(filename, io::Default::Nil());
 
   m_topg.add(1.0, topg_delta);
 }
 
 //! Compute bed uplift (dt is in seconds).
-void BedDef::compute_uplift(const IceModelVec2S &bed, const IceModelVec2S &bed_last,
-                            double dt, IceModelVec2S &result) {
+void BedDef::compute_uplift(const array::Scalar &bed, const array::Scalar &bed_last,
+                            double dt, array::Scalar &result) {
   bed.add(-1, bed_last, result);
   //! uplift = (topg - topg_last) / dt
   result.scale(1.0 / dt);
@@ -196,10 +186,10 @@ double compute_load(double bed, double ice_thickness, double sea_level,
 /*! Compute the load on the bedrock in units of ice-equivalent thickness.
  *
  */
-void compute_load(const IceModelVec2S &bed_elevation,
-                  const IceModelVec2S &ice_thickness,
-                  const IceModelVec2S &sea_level_elevation,
-                  IceModelVec2S &result) {
+void compute_load(const array::Scalar &bed_elevation,
+                  const array::Scalar &ice_thickness,
+                  const array::Scalar &sea_level_elevation,
+                  array::Scalar &result) {
 
   Config::ConstPtr config = result.grid()->ctx()->config();
 
@@ -207,9 +197,9 @@ void compute_load(const IceModelVec2S &bed_elevation,
     ice_density   = config->get_number("constants.ice.density"),
     ocean_density = config->get_number("constants.sea_water.density");
 
-  IceModelVec::AccessList list{&bed_elevation, &ice_thickness, &sea_level_elevation, &result};
+  array::AccessScope list{&bed_elevation, &ice_thickness, &sea_level_elevation, &result};
 
-  for (Points p(*result.grid()); p; p.next()) {
+  for (auto p = result.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = compute_load(bed_elevation(i, j),

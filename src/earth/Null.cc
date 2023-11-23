@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,21 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "BedDef.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/earth/BedDef.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace bed {
 
-Null::Null(IceGrid::ConstPtr g)
+Null::Null(std::shared_ptr<const Grid> g)
   : BedDef(g) {
   // empty
 }
 
-void Null::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                     const IceModelVec2S &sea_level_elevation) {
+void Null::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                     const array::Scalar &sea_level_elevation) {
   m_log->message(2,
              "* Initializing the dummy (no-op) bed deformation model...\n");
 
@@ -45,8 +44,8 @@ MaxTimestep Null::max_timestep_impl(double t) const {
   return MaxTimestep("bed_def none");
 }
 
-void Null::update_impl(const IceModelVec2S &ice_thickness,
-                       const IceModelVec2S &sea_level_elevation,
+void Null::update_impl(const array::Scalar &ice_thickness,
+                       const array::Scalar &sea_level_elevation,
                        double t, double dt) {
   (void) ice_thickness;
   (void) sea_level_elevation;

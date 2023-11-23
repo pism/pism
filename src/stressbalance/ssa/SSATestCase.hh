@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2021 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,16 +19,18 @@
 #ifndef _SSATESTCASE_H_
 #define _SSATESTCASE_H_
 
-#include "SSA.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/EnthalpyConverter.hh"
-#include "pism/basalstrength/basal_resistance.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/array/Array3D.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
+
+class Context;
+class Grid;
+
 namespace stressbalance {
 
 /*! An SSATestCase manages running an SSA instance against a particular
@@ -54,8 +56,8 @@ class SSATestCase
 public:
   SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
               double Lx, double Ly,
-              GridRegistration registration,
-              Periodicity periodicity);
+              grid::Registration registration,
+              grid::Periodicity periodicity);
 
   virtual ~SSATestCase();
 
@@ -88,7 +90,9 @@ protected:
   MPI_Comm m_com;
   const std::shared_ptr<Context> m_ctx;
   const Config::Ptr m_config;
-  IceGrid::Ptr m_grid;
+
+  std::shared_ptr<Grid> m_grid;
+
   const units::System::Ptr m_sys;
 
   //! "wide" stencil width
@@ -98,11 +102,11 @@ protected:
   EnthalpyConverter::Ptr m_enthalpyconverter;
 
   // SSA coefficient variables.
-  IceModelVec2S m_tauc;
-  IceModelVec3 m_ice_enthalpy;
+  array::Scalar1 m_tauc;
+  array::Array3D m_ice_enthalpy;
 
-  IceModelVec2V m_bc_values;
-  IceModelVec2Int m_bc_mask;
+  array::Vector2 m_bc_values;
+  array::Scalar2 m_bc_mask;
 
   Geometry m_geometry;
 

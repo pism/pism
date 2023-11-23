@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,73 +17,74 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "FractureDensity.hh"
+#include <algorithm> // std::min, std::max
+#include <cmath>     // std::pow
+
+#include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
-FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
+FractureDensity::FractureDensity(std::shared_ptr<const Grid> grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
-  : Component(grid),
-    m_density(grid, "fracture_density", WITH_GHOSTS, 1),
-    m_density_new(grid, "new_fracture_density", WITHOUT_GHOSTS),
-    m_growth_rate(grid, "fracture_growth_rate", WITHOUT_GHOSTS),
-    m_healing_rate(grid, "fracture_healing_rate", WITHOUT_GHOSTS),
-    m_flow_enhancement(grid, "fracture_flow_enhancement", WITHOUT_GHOSTS),
-    m_age(grid, "fracture_age", WITH_GHOSTS, 1),
-    m_age_new(grid, "new_fracture_age", WITHOUT_GHOSTS),
-    m_toughness(grid, "fracture_toughness", WITHOUT_GHOSTS),
-    m_strain_rates(grid, "strain_rates", WITHOUT_GHOSTS,
-                   2,           // dof
-                   2),          // stencil width
-    m_deviatoric_stresses(grid, "sigma",
-                          WITHOUT_GHOSTS, 3),
-    m_velocity(grid, "ghosted_velocity", WITH_GHOSTS, 1),
-    m_flow_law(flow_law) {
+    : Component(grid),
+      m_density(grid, "fracture_density"),
+      m_density_new(grid, "new_fracture_density"),
+      m_growth_rate(grid, "fracture_growth_rate"),
+      m_healing_rate(grid, "fracture_healing_rate"),
+      m_flow_enhancement(grid, "fracture_flow_enhancement"),
+      m_age(grid, "fracture_age"),
+      m_age_new(grid, "new_fracture_age"),
+      m_toughness(grid, "fracture_toughness"),
+      m_strain_rates(grid, "strain_rates", array::WITHOUT_GHOSTS),
+      m_deviatoric_stresses(grid, "sigma", array::WITHOUT_GHOSTS, 3),
+      m_velocity(grid, "ghosted_velocity"),
+      m_flow_law(flow_law) {
 
-  m_density.set_attrs("model_state", "fracture density in ice shelf", "1", "1", "", 0);
-  m_density.metadata()["valid_max"] = {1.0};
-  m_density.metadata()["valid_min"] = {0.0};
+  m_density.metadata(0).long_name("fracture density in ice shelf").units("1");
+  m_density.metadata()["valid_max"] = { 1.0 };
+  m_density.metadata()["valid_min"] = { 0.0 };
 
-  m_growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "second-1", "", 0);
-  m_growth_rate.metadata()["valid_min"] = {0.0};
+  m_growth_rate.metadata(0)
+      .long_name("fracture growth rate")
+      .units("second-1");
+  m_growth_rate.metadata()["valid_min"] = { 0.0 };
 
-  m_healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "second-1", "", 0);
+  m_healing_rate.metadata(0)
+      .long_name("fracture healing rate")
+      .units("second-1");
 
-  m_flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "", "", 0);
+  m_flow_enhancement.metadata(0)
+      .long_name("fracture-induced flow enhancement");
 
-  m_age.set_attrs("model_state", "age since fracturing", "seconds", "seconds", "", 0);
-  m_age.metadata()["glaciological_units"] = "years";
+  m_age.metadata(0)
+      .long_name("age since fracturing")
+      .units("seconds");
 
-  m_toughness.set_attrs("model_state", "fracture toughness", "Pa", "Pa", "", 0);
+  m_toughness.metadata(0)
+      .long_name("fracture toughness")
+      .units("Pa");
 
   m_strain_rates.metadata(0).set_name("eigen1");
-  m_strain_rates.set_attrs("internal",
-                           "major principal component of horizontal strain-rate",
-                           "second-1", "second-1", "", 0);
+  m_strain_rates.metadata(0)
+      .long_name("major principal component of horizontal strain-rate")
+      .units("second-1");
 
   m_strain_rates.metadata(1).set_name("eigen2");
-  m_strain_rates.set_attrs("internal",
-                           "minor principal component of horizontal strain-rate",
-                           "second-1", "second-1", "", 1);
+  m_strain_rates.metadata(1)
+      .long_name("minor principal component of horizontal strain-rate")
+      .units("second-1");
 
   m_deviatoric_stresses.metadata(0).set_name("sigma_xx");
-  m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric stress in x direction",
-                                  "Pa", "Pa", "", 0);
+  m_deviatoric_stresses.metadata(0).long_name("deviatoric stress in x direction").units("Pa");
 
   m_deviatoric_stresses.metadata(1).set_name("sigma_yy");
-  m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric stress in y direction",
-                                  "Pa", "Pa", "", 1);
+  m_deviatoric_stresses.metadata(1).long_name("deviatoric stress in y direction").units("Pa");
 
   m_deviatoric_stresses.metadata(2).set_name("sigma_xy");
-  m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric shear stress",
-                                  "Pa", "Pa", "", 2);
+  m_deviatoric_stresses.metadata(2).long_name("deviatoric shear stress").units("Pa");
 }
 
 void FractureDensity::restart(const File &input_file, int record) {
@@ -101,12 +102,12 @@ void FractureDensity::bootstrap(const File &input_file) {
   m_log->message(2, "* Bootstrapping the fracture density model from %s...\n",
                  input_file.filename().c_str());
 
-  m_density.regrid(input_file, OPTIONAL, 0.0);
-  m_age.regrid(input_file, OPTIONAL, 0.0);
+  m_density.regrid(input_file, io::Default(0.0));
+  m_age.regrid(input_file, io::Default(0.0));
 }
 
-void FractureDensity::initialize(const IceModelVec2S &density,
-                                 const IceModelVec2S &age) {
+void FractureDensity::initialize(const array::Scalar &density,
+                                 const array::Scalar &age) {
   m_density.copy_from(density);
   m_age.copy_from(age);
 }
@@ -117,8 +118,8 @@ void FractureDensity::initialize() {
 }
 
 void FractureDensity::define_model_state_impl(const File &output) const {
-  m_density.define(output);
-  m_age.define(output);
+  m_density.define(output, io::PISM_DOUBLE);
+  m_age.define(output, io::PISM_DOUBLE);
 }
 
 void FractureDensity::write_model_state_impl(const File &output) const {
@@ -128,9 +129,9 @@ void FractureDensity::write_model_state_impl(const File &output) const {
 
 void FractureDensity::update(double dt,
                              const Geometry &geometry,
-                             const IceModelVec2V &velocity,
-                             const IceModelVec2S &hardness,
-                             const IceModelVec2S &bc_mask) {
+                             const array::Vector &velocity,
+                             const array::Scalar &hardness,
+                             const array::Scalar &bc_mask) {
   using std::pow;
 
   const double
@@ -140,10 +141,11 @@ void FractureDensity::update(double dt,
     Mx = m_grid->Mx(),
     My = m_grid->My();
 
-  IceModelVec2S
+  array::Scalar1
+    &A     = m_age;
+  array::Scalar
     &D     = m_density,
     &D_new = m_density_new,
-    &A     = m_age,
     &A_new = m_age_new;
 
   m_velocity.copy_from(velocity);
@@ -158,7 +160,7 @@ void FractureDensity::update(double dt,
                                      geometry.cell_type,
                                      m_deviatoric_stresses);
 
-  IceModelVec::AccessList list{&m_velocity, &m_strain_rates, &m_deviatoric_stresses,
+  array::AccessScope list{&m_velocity, &m_strain_rates, &m_deviatoric_stresses,
                                &D, &D_new, &geometry.cell_type, &bc_mask, &A, &A_new,
                                &m_growth_rate, &m_healing_rate, &m_flow_enhancement,
                                &m_toughness, &hardness, &geometry.ice_thickness};
@@ -223,7 +225,7 @@ void FractureDensity::update(double dt,
 
   double minH = m_config->get_number("stress_balance.ice_free_thickness_standard");
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double tempFD = 0.0;
@@ -263,9 +265,9 @@ void FractureDensity::update(double dt,
     ///von mises criterion
 
     double
-      txx    = m_deviatoric_stresses(i, j, 0),
-      tyy    = m_deviatoric_stresses(i, j, 1),
-      txy    = m_deviatoric_stresses(i, j, 2),
+      txx    = m_deviatoric_stresses(i, j).xx,
+      tyy    = m_deviatoric_stresses(i, j).yy,
+      txy    = m_deviatoric_stresses(i, j).xy,
       T1     = 0.5 * (txx + tyy) + sqrt(0.25 * pow(txx - tyy, 2) + pow(txy, 2)), //Pa
       T2     = 0.5 * (txx + tyy) - sqrt(0.25 * pow(txx - tyy, 2) + pow(txy, 2)), //Pa
       sigmat = sqrt(pow(T1, 2) + pow(T2, 2) - T1 * T2);
@@ -337,8 +339,8 @@ void FractureDensity::update(double dt,
         double kappa = 2.8;
 
         // effective strain rate
-        double e1 = m_strain_rates(i, j, 0);
-        double e2 = m_strain_rates(i, j, 1);
+        double e1 = m_strain_rates(i, j).eigen1;
+        double e2 = m_strain_rates(i, j).eigen2;
         double ee = sqrt(pow(e1, 2.0) + pow(e2, 2.0) - e1 * e2);
 
         // threshold for unfractured ice
@@ -361,14 +363,14 @@ void FractureDensity::update(double dt,
         }
       }
     } else {
-      fdnew = gamma * (m_strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
+      fdnew = gamma * (m_strain_rates(i, j).eigen1 - 0.0) * (1 - D_new(i, j));
       if (sigmat > initThreshold) {
         D_new(i, j) += fdnew * dt;
       }
     }
 
     //healing
-    double fdheal = gammaheal * std::min(0.0,(m_strain_rates(i, j, 0) - healThreshold));
+    double fdheal = gammaheal * std::min(0.0, (m_strain_rates(i, j).eigen1 - healThreshold));
     if (geometry.cell_type.icy(i, j)) {
       if (constant_healing) {
         fdheal = gammaheal * (-healThreshold);
@@ -377,7 +379,7 @@ void FractureDensity::update(double dt,
         } else {
           D_new(i, j) += fdheal * dt;
         }
-      } else if (m_strain_rates(i, j, 0) < healThreshold) {
+      } else if (m_strain_rates(i, j).eigen1 < healThreshold) {
         if (fracture_weighted_healing) {
           D_new(i, j) += fdheal * dt * (1 - D(i, j));
         } else {
@@ -403,7 +405,7 @@ void FractureDensity::update(double dt,
 
       // fracture healing rate
       if (geometry.cell_type.icy(i, j)) {
-        if (constant_healing or (m_strain_rates(i, j, 0) < healThreshold)) {
+        if (constant_healing or (m_strain_rates(i, j).eigen1 < healThreshold)) {
           if (fracture_weighted_healing) {
             m_healing_rate(i, j) = fdheal * (1 - D(i, j));
           } else {
@@ -417,8 +419,8 @@ void FractureDensity::update(double dt,
       // fracture age since fracturing occurred
       {
         auto a = A.star(i, j);
-        A_new(i, j) -= dt * u * (u < 0 ? a.e - a.ij : a.ij - a.w) / dx;
-        A_new(i, j) -= dt * v * (v < 0 ? a.n - a.ij : a.ij - a.s) / dy;
+        A_new(i, j) -= dt * u * (u < 0 ? a.e - a.c : a.c - a.w) / dx;
+        A_new(i, j) -= dt * v * (v < 0 ? a.n - a.c : a.c - a.s) / dy;
         A_new(i, j) += dt;
         if (sigmat > initThreshold) {
           A_new(i, j) = 0.0;
@@ -483,27 +485,27 @@ DiagnosticList FractureDensity::diagnostics_impl() const {
   };
 }
 
-const IceModelVec2S& FractureDensity::density() const {
+const array::Scalar& FractureDensity::density() const {
   return m_density;
 }
 
-const IceModelVec2S& FractureDensity::growth_rate() const {
+const array::Scalar& FractureDensity::growth_rate() const {
   return m_growth_rate;
 }
 
-const IceModelVec2S& FractureDensity::healing_rate() const {
+const array::Scalar& FractureDensity::healing_rate() const {
   return m_healing_rate;
 }
 
-const IceModelVec2S& FractureDensity::flow_enhancement() const {
+const array::Scalar& FractureDensity::flow_enhancement() const {
   return m_flow_enhancement;
 }
 
-const IceModelVec2S& FractureDensity::age() const {
+const array::Scalar& FractureDensity::age() const {
   return m_age;
 }
 
-const IceModelVec2S& FractureDensity::toughness() const {
+const array::Scalar& FractureDensity::toughness() const {
   return m_toughness;
 }
 

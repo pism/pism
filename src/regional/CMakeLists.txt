@@ -4,6 +4,6 @@ add_library (regional OBJECT
   SSAFD_Regional.cc
   RegionalYieldStress.cc
   IceRegionalModel.cc
-  IceGrid_Regional.cc
+  Grid_Regional.cc
   EnthalpyModel_Regional.cc
   )

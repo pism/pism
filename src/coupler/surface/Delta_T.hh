@@ -37,17 +37,17 @@ namespace surface {
 class Delta_T : public SurfaceModel
 {
 public:
-  Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
+  Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in);
   virtual ~Delta_T();
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual const IceModelVec2S& temperature_impl() const;
+  virtual const array::Scalar& temperature_impl() const;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 
-  IceModelVec2S::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 } // end of namespace surface

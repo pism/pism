@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,14 +19,13 @@
 #include <cstring>
 #include <petscsys.h>
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/projection.hh"
 #include "pism/util/pism_signal.h"
 
 namespace pism {
@@ -69,7 +68,7 @@ int IceModel::process_signals() {
     File file(m_grid->com,
               file_name,
               string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE,
+              io::PISM_READWRITE_MOVE,
               m_ctx->pio_iosys_id());
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
@@ -90,19 +89,26 @@ int IceModel::process_signals() {
 }
 
 
-void IceModel::update_run_stats() {
+VariableMetadata IceModel::run_stats() const {
+
+  VariableMetadata result("run_stats", m_sys);
+
+  result["source"]    = std::string("PISM ") + pism::revision;
+  result["long_name"] = "Run statistics";
 
   // timing stats
-  // MYPPH stands for "model years per processor hour"
   double
     wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time),
     proc_hours       = m_grid->size() * wall_clock_hours,
     model_years      = units::convert(m_sys, m_time->current() - m_time->start(),
                                       "seconds", "years");
 
-  m_run_stats["wall_clock_hours"]               = {wall_clock_hours};
-  m_run_stats["processor_hours"]                = {proc_hours};
-  m_run_stats["model_years_per_processor_hour"] = {model_years / proc_hours};
+  result["wall_clock_hours"]               = { wall_clock_hours };
+  result["processor_hours"]                = { proc_hours };
+  result["model_years_per_processor_hour"] = { model_years / proc_hours };
+  result["number_of_time_steps"]           = { (double)m_step_counter };
+
+  return result;
 }
 
 //! Get time and user/host name and add it to the given string.
@@ -112,34 +118,8 @@ void  IceModel::prepend_history(const std::string &str) {
                                         m_output_global_attributes.get_string("history"));
 }
 
-//! Check if the thickness of the ice is too large.
-/*! Return true if the ice thickness exceeds the height of the computational domain.
- */
-bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness) {
-  IceGrid::ConstPtr grid = ice_thickness.grid();
-
-  const double Lz = grid->Lz();
-
-  IceModelVec::AccessList list(ice_thickness);
-
-  unsigned int counter = 0;
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (ice_thickness(i, j) > Lz) {
-      counter += 1;
-    }
-  }
-
-  if (GlobalSum(grid->com, counter) > 0) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 //! Return the grid used by this model.
-IceGrid::Ptr IceModel::grid() const {
+std::shared_ptr<Grid> IceModel::grid() const {
   return m_grid;
 }
 

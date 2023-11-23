@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017, 2018, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -16,25 +16,29 @@
 // along with Pism; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __lic_hh
-#define __lic_hh
+#ifndef PISM_LOCALINTERPCTX_H
+#define PISM_LOCALINTERPCTX_H
 
+#include <array>
 #include <vector>
 #include <memory>
 
-#include "pism/util/interpolation.hh"
-#include "pism/util/io/IO_Flags.hh"
-
 namespace pism {
 
-class IceGrid;
-class grid_info;
+enum InterpolationType : int;
+class Interpolation;
 
-//! The "local interpolation context" describes the processor's part of the source NetCDF file (for regridding).
-/*!
-  The local interpolation context contains the details of how the processor's block
-  of the new computational domain fits into the domain of the netCDF file.  Note that each vertical column 
-  of the grid is owned by exactly one processor.
+class Grid;
+
+namespace grid {
+class InputGridInfo;
+}
+
+//! The "local interpolation context" describes the processor's part of the source NetCDF
+//! file (for regridding).
+/*! The local interpolation context contains the details of how the processor's block of
+  the new computational domain fits into the domain of the netCDF file. Note that each
+  vertical column of the grid is owned by exactly one processor.
 
   For any particular dimension, we have a new computational domain \f$[a,b]\f$ with
   spacing \f$h\f$ so there are \f$n = (b - a) / h\f$ interior cells, indexed by \f$\{i_0, \dots, i_n\}\f$.
@@ -45,20 +49,23 @@ class grid_info;
   \f[  [x(i_m), x(i_{m'})] \quad \text{is a subset of} \quad  [x(I_m), x(I_{m'})]  \f]
 
   The arrays `start` and `count` have 4 integer entries, corresponding to the dimensions
-  \f$t, x, y, z(zb)\f$.
+  `t, x, y, z(zb)`.
 */
 class LocalInterpCtx {
 public:
-  LocalInterpCtx(const grid_info &input, const IceGrid &grid,
-                 const std::vector<double> &z_output, InterpolationType type);
+  LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+                 InterpolationType type);
+  LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+                 const std::vector<double> &z_internal, InterpolationType type);
+
+  int buffer_size() const;
+
   // Indices in netCDF file.
-  unsigned int start[4], count[4];
+  std::array<int, 4> start, count;
   // indexes and coefficients for 1D linear interpolation
   std::shared_ptr<Interpolation> x, y, z;
-  //! temporary storage
-  std::vector<double> buffer;
 };
 
 } // end of namespace pism
 
-#endif // __lic_hh
+#endif // PISM_LOCALINTERPCTX_H

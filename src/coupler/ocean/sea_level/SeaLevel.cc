@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,18 +28,18 @@ namespace ocean {
 namespace sea_level {
 
 // "Modifier" constructor.
-SeaLevel::SeaLevel(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> input)
+SeaLevel::SeaLevel(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLevel> input)
   : Component(grid),
     m_input_model(input),
-    m_sea_level(grid, "sea_level", WITHOUT_GHOSTS) {
+    m_sea_level(grid, "sea_level") {
 
-  m_sea_level.set_attrs("diagnostic",
-                        "sea level elevation, relative to the geoid",
-                        "meter", "meter", "", 0);
+  m_sea_level.metadata(0)
+      .long_name("sea level elevation, relative to the geoid")
+      .units("meter");
 }
 
 // "Model" constructor (returns sea level is zero).
-SeaLevel::SeaLevel(IceGrid::ConstPtr g)
+SeaLevel::SeaLevel(std::shared_ptr<const Grid> g)
   : SeaLevel(g, std::shared_ptr<SeaLevel>()) {
   // empty
 }
@@ -71,7 +71,7 @@ void SeaLevel::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& SeaLevel::elevation() const {
+const array::Scalar& SeaLevel::elevation() const {
   return m_sea_level;
 }
 
@@ -99,19 +99,14 @@ namespace diagnostics {
 /*! @brief Sea level elevation. */
 class SL : public Diag<SeaLevel> {
 public:
-  SL(const SeaLevel *m)
-    : Diag<SeaLevel>(m) {
-    /* set metadata: */
-    m_vars = {SpatialVariableMetadata(m_sys, "sea_level")};
-
-    set_attrs("sea level elevation, relative to the geoid", "", "meters", "meters", 0);
+  SL(const SeaLevel *m) : Diag<SeaLevel>(m) {
+    m_vars = { { m_sys, "sea_level" } };
+    m_vars[0].long_name("sea level elevation, relative to the geoid").units("meters");
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
-
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "sea_level", WITHOUT_GHOSTS));
-    result->metadata(0) = m_vars[0];
+  std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Scalar>("sea_level");
 
     result->copy_from(model->elevation());
 

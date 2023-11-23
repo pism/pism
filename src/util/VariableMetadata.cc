@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2022 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2023 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -20,32 +20,27 @@
 #include <algorithm>
 #include <cmath>
 
-#include "VariableMetadata.hh"
-#include "pism/util/io/File.hh"
-#include "pism_options.hh"
-#include "IceGrid.hh"
+#include "pism/util/VariableMetadata.hh"
 
-#include "ConfigInterface.hh"
-#include "error_handling.hh"
 #include "pism/util/Logger.hh"
-#include "pism_utilities.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
 VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr system,
                                    unsigned int ndims)
-  : m_n_spatial_dims(ndims),
-    m_unit_system(std::move(system)),
-    m_short_name(name),
-    m_time_independent(false),
-    m_output_type(PISM_NAT) {
+    : m_n_spatial_dims(ndims),
+      m_unit_system(std::move(system)),
+      m_short_name(name),
+      m_time_independent(false),
+      m_output_type(io::PISM_NAT) {
 
-  clear_all_strings();
-  clear_all_doubles();
+  clear();
 
   // long_name is unset
   // standard_name is unset
-  // pism_intent is unset
   // coordinates is unset
 
   // valid_min and valid_max are unset
@@ -57,19 +52,26 @@ unsigned int VariableMetadata::n_spatial_dimensions() const {
   return m_n_spatial_dims;
 }
 
-void VariableMetadata::set_time_independent(bool flag) {
+/** A "time independent" variable will be saved to a NetCDF
+    variable which does not depend on the "time" dimension.
+ */
+VariableMetadata &VariableMetadata::set_time_independent(bool flag) {
   m_time_independent = flag;
+
+  return *this;
 }
 
-void VariableMetadata::set_output_type(IO_Type type) {
+VariableMetadata &VariableMetadata::set_output_type(io::Type type) {
   m_output_type = type;
+
+  return *this;
 }
 
 bool VariableMetadata::get_time_independent() const {
   return m_time_independent;
 }
 
-IO_Type VariableMetadata::get_output_type() const {
+io::Type VariableMetadata::get_output_type() const {
   return m_output_type;
 }
 
@@ -84,48 +86,47 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
 
   auto units_string = get_string("units");
   auto name_string  = get_name();
-  const char
-    *units = units_string.c_str(),
-    *name  = name_string.c_str(),
-    *file  = filename.c_str();
+  const char *units = units_string.c_str(), *name = name_string.c_str(), *file = filename.c_str();
   double eps = 1e-12;
 
   if (has_attribute("valid_min") and has_attribute("valid_max")) {
     double valid_min = get_number("valid_min");
     double valid_max = get_number("valid_max");
     if ((min < valid_min - eps) or (max > valid_max + eps)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
-                                    "computed min = %e %s, computed max = %e %s",
-                                    name, file,
-                                    valid_min, valid_max, units, min, units, max, units);
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
+          "computed min = %e %s, computed max = %e %s",
+          name, file, valid_min, valid_max, units, min, units, max, units);
     }
   } else if (has_attribute("valid_min")) {
     double valid_min = get_number("valid_min");
     if (min < valid_min - eps) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are less than the valid minimum (%e %s).\n"
-                                    "computed min = %e %s, computed max = %e %s",
-                                    name, file,
-                                    valid_min, units, min, units, max, units);
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "some values of '%s' in '%s' are less than the valid minimum (%e %s).\n"
+          "computed min = %e %s, computed max = %e %s",
+          name, file, valid_min, units, min, units, max, units);
     }
   } else if (has_attribute("valid_max")) {
     double valid_max = get_number("valid_max");
     if (max > valid_max + eps) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are greater than the valid maximum (%e %s).\n"
-                                    "computed min = %e %s, computed max = %e %s",
-                                    name, file,
-                                    valid_max, units, min, units, max, units);
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "some values of '%s' in '%s' are greater than the valid maximum (%e %s).\n"
+          "computed min = %e %s, computed max = %e %s",
+          name, file, valid_max, units, min, units, max, units);
     }
   }
 }
 
-SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system,
-                                                 const std::string &name,
+SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
                                                  const std::vector<double> &zlevels)
-  : VariableMetadata(name, system),
-    m_x("x", system),
-    m_y("y", system),
-    m_z("z", system),
-    m_zlevels(zlevels) {
+    : VariableMetadata(name, system),
+      m_x("x", system),
+      m_y("y", system),
+      m_z("z", system),
+      m_zlevels(zlevels) {
 
   m_x["axis"]          = "X";
   m_x["long_name"]     = "X-coordinate in Cartesian system";
@@ -137,21 +138,21 @@ SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system,
   m_y["standard_name"] = "projection_y_coordinate";
   m_y["units"]         = "m";
 
-  m_z["axis"]      = "Z";
-  m_z["long_name"] = "Z-coordinate in Cartesian system";
-  m_z["units"]     = "m";
-  m_z["positive"]  = "up";
-
   if (m_zlevels.size() > 1) {
-    z().set_name("z");      // default; can be overridden easily
+    m_z.set_name("z"); // default; can be overridden easily
+    m_z["axis"]      = "Z";
+    m_z["long_name"] = "Z-coordinate in Cartesian system";
+    m_z["units"]     = "m";
+    m_z["positive"]  = "up";
+
     m_n_spatial_dims = 3;
   } else {
-    z().set_name("");
+    z().set_name("").clear();
     m_n_spatial_dims = 2;
   }
 }
 
-const std::vector<double>& SpatialVariableMetadata::levels() const {
+const std::vector<double> &SpatialVariableMetadata::levels() const {
   return m_zlevels;
 }
 
@@ -160,9 +161,7 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
                                     bool found_by_standard_name) {
 
   // units::Converter constructor will make sure that units are compatible.
-  units::Converter c(m_unit_system,
-                     this->get_string("units"),
-                     this->get_string("glaciological_units"));
+  units::Converter c(m_unit_system, this->get_string("units"), this->get_string("output_units"));
   min = c(min);
   max = c(max);
 
@@ -172,51 +171,51 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
 
     if (found_by_standard_name) {
       log.message(2,
+                  "  FOUND "
                   " %s / standard_name=%-10s\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                  get_name().c_str(),
-                  get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                  get_string("glaciological_units").c_str());
+                  get_name().c_str(), get_string("standard_name").c_str(), spacer.c_str(), min, max,
+                  get_string("output_units").c_str());
     } else {
       log.message(2,
+                  "  FOUND "
                   " %s / WARNING! standard_name=%s is missing, found by short_name\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                  get_name().c_str(),
-                  get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                  get_string("glaciological_units").c_str());
+                  get_name().c_str(), get_string("standard_name").c_str(), spacer.c_str(), min, max,
+                  get_string("output_units").c_str());
     }
 
   } else {
     log.message(2,
+                "  FOUND "
                 " %s / %-10s\n"
                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                get_name().c_str(),
-                get_string("long_name").c_str(), spacer.c_str(), min, max,
-                get_string("glaciological_units").c_str());
+                get_name().c_str(), get_string("long_name").c_str(), spacer.c_str(), min, max,
+                get_string("output_units").c_str());
   }
 }
 
-VariableMetadata& SpatialVariableMetadata::x() {
+VariableMetadata &SpatialVariableMetadata::x() {
   return m_x;
 }
 
-VariableMetadata& SpatialVariableMetadata::y() {
+VariableMetadata &SpatialVariableMetadata::y() {
   return m_y;
 }
 
-VariableMetadata& SpatialVariableMetadata::z() {
+VariableMetadata &SpatialVariableMetadata::z() {
   return m_z;
 }
 
-const VariableMetadata& SpatialVariableMetadata::x() const {
+const VariableMetadata &SpatialVariableMetadata::x() const {
   return m_x;
 }
 
-const VariableMetadata& SpatialVariableMetadata::y() const {
+const VariableMetadata &SpatialVariableMetadata::y() const {
   return m_y;
 }
 
-const VariableMetadata& SpatialVariableMetadata::z() const {
+const VariableMetadata &SpatialVariableMetadata::z() const {
   return m_z;
 }
 
@@ -237,29 +236,32 @@ bool VariableMetadata::has_attribute(const std::string &name) const {
 }
 
 bool VariableMetadata::has_attributes() const {
-  return not (this->all_strings().empty() and this->all_doubles().empty());
+  return not(this->all_strings().empty() and this->all_doubles().empty());
 }
 
-void VariableMetadata::set_name(const std::string &name) {
+VariableMetadata &VariableMetadata::set_name(const std::string &name) {
   m_short_name = name;
+
+  return *this;
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-void VariableMetadata::set_number(const std::string &name, double value) {
-  m_doubles[name] = std::vector<double>(1, value);
+VariableMetadata &VariableMetadata::set_number(const std::string &name, double value) {
+  return set_numbers(name, {value});
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-void VariableMetadata::set_numbers(const std::string &name, const std::vector<double> &values) {
+VariableMetadata &VariableMetadata::set_numbers(const std::string &name, const std::vector<double> &values) {
   m_doubles[name] = values;
+
+  return *this;
 }
 
-void VariableMetadata::clear_all_doubles() {
+VariableMetadata &VariableMetadata::clear() {
   m_doubles.clear();
-}
-
-void VariableMetadata::clear_all_strings() {
   m_strings.clear();
+
+  return *this;
 }
 
 std::string VariableMetadata::get_name() const {
@@ -288,11 +290,11 @@ std::vector<double> VariableMetadata::get_numbers(const std::string &name) const
   return {};
 }
 
-const VariableMetadata::StringAttrs& VariableMetadata::all_strings() const {
+const std::map<std::string, std::string> &VariableMetadata::all_strings() const {
   return m_strings;
 }
 
-const VariableMetadata::DoubleAttrs& VariableMetadata::all_doubles() const {
+const std::map<std::string, std::vector<double> > &VariableMetadata::all_doubles() const {
   return m_doubles;
 }
 
@@ -301,27 +303,29 @@ const VariableMetadata::DoubleAttrs& VariableMetadata::all_doubles() const {
  *
  * For example: "Pa s^(1/3)" (ice hardness units with Glen exponent n=3).
  */
-void VariableMetadata::set_units_without_validation(const std::string &value) {
-  m_strings["units"] = value;
-  m_strings["glaciological_units"] = value;
+VariableMetadata &VariableMetadata::set_units_without_validation(const std::string &value) {
+  m_strings["units"]        = value;
+  m_strings["output_units"] = value;
+
+  return *this;
 }
 
 //! Set a string attribute.
-void VariableMetadata::set_string(const std::string &name, const std::string &value) {
+VariableMetadata &VariableMetadata::set_string(const std::string &name, const std::string &value) {
 
   if (name == "units") {
     // create a dummy object to validate the units string
     units::Unit tmp(m_unit_system, value);
 
-    m_strings[name] = value;
-    m_strings["glaciological_units"] = value;
-  } else if (name == "glaciological_units") {
+    m_strings[name]           = value;
+    m_strings["output_units"] = value;
+  } else if (name == "output_units") {
     m_strings[name] = value;
 
     units::Unit internal(m_unit_system, get_string("units"));
-    units::Unit glaciological(m_unit_system, value);
+    units::Unit output(m_unit_system, value);
 
-    if (not units::are_convertible(internal, glaciological)) {
+    if (not units::are_convertible(internal, output)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "units \"%s\" and \"%s\" are not compatible",
                                     get_string("units").c_str(), value.c_str());
     }
@@ -330,6 +334,8 @@ void VariableMetadata::set_string(const std::string &name, const std::string &va
   } else {
     m_strings[name] = value;
   }
+
+  return *this;
 }
 
 //! Get a string attribute.
@@ -351,8 +357,8 @@ std::string VariableMetadata::get_string(const std::string &name) const {
 
 void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_threshold) const {
 
-  const VariableMetadata::StringAttrs &strings = this->all_strings();
-  const VariableMetadata::DoubleAttrs &doubles = this->all_doubles();
+  const auto &strings = this->all_strings();
+  const auto &doubles = this->all_doubles();
 
   // Find the maximum name length so that we can pad output below:
   size_t max_name_length = 0;

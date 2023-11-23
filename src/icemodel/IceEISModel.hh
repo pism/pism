@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ namespace pism {
 */
 class IceEISModel : public IceModel {
 public:
-  IceEISModel(IceGrid::Ptr g, std::shared_ptr<Context> ctx, char experiment);
+  IceEISModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> ctx, char experiment);
 
 protected:
   void initialize_2d();
@@ -41,8 +41,8 @@ protected:
   char m_experiment;
 };
 
-void generate_trough_topography(IceModelVec2S &result);  // for experiments I,J
-void generate_mound_topography(IceModelVec2S &result);   // for experiments K,L
+void generate_trough_topography(array::Scalar &result);  // for experiments I,J
+void generate_mound_topography(array::Scalar &result);   // for experiments K,L
 
 } // end of namespace pism
 

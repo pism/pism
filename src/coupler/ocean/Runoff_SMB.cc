@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,27 +16,29 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Runoff_SMB.hh"
+#include <cmath>
+
+#include "pism/coupler/ocean/Runoff_SMB.hh"
 #include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 
-Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+Runoff_SMB::Runoff_SMB(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(*g->ctx(),
-                                    "-ocean_runoff_smb",
+                                    "ocean.runoff_to_ocean_melt",
                                     "delta_T",
                                     "Kelvin",
                                     "Kelvin",
                                     "air temperature offsets"));
 
   m_temp_to_runoff_a       = m_config->get_number("surface.temp_to_runoff_a");
-  m_runoff_to_ocean_melt_b = m_config->get_number("ocean.runoff_to_ocean_melt_b");
+  m_runoff_to_ocean_melt_b = m_config->get_number("ocean.runoff_to_ocean_melt.b");
 
-  m_runoff_to_ocean_melt_power_alpha = m_config->get_number("ocean.runoff_to_ocean_melt_power_alpha");
-  m_runoff_to_ocean_melt_power_beta  = m_config->get_number("ocean.runoff_to_ocean_melt_power_beta");
+  m_runoff_to_ocean_melt_power_alpha = m_config->get_number("ocean.runoff_to_ocean_melt.power_alpha");
+  m_runoff_to_ocean_melt_power_beta  = m_config->get_number("ocean.runoff_to_ocean_melt.power_beta");
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 }
@@ -60,7 +62,7 @@ void Runoff_SMB::update_impl(const Geometry &geometry, double t, double dt) {
   mass_flux(m_forcing->value(t + 0.5 * dt), *m_shelf_base_mass_flux);
 }
 
-void Runoff_SMB::mass_flux(double delta_T, IceModelVec2S &result) const {
+void Runoff_SMB::mass_flux(double delta_T, array::Scalar &result) const {
 
   // short-cuts, just to make the formula below easier to read
   double

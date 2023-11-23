@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,27 +17,27 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Factory.hh"
+#include "pism/coupler/ocean/Factory.hh"
 
 // ocean models:
-#include "Anomaly.hh"
-#include "Constant.hh"
-#include "ConstantPIK.hh"
-#include "GivenClimate.hh"
-#include "Delta_T.hh"
-#include "Delta_SMB.hh"
-#include "Delta_MBP.hh"
-#include "Frac_MBP.hh"
-#include "Frac_SMB.hh"
-#include "Runoff_SMB.hh"
-#include "Cache.hh"
-#include "GivenTH.hh"
-#include "Pico.hh"
+#include "pism/coupler/ocean/Anomaly.hh"
+#include "pism/coupler/ocean/Constant.hh"
+#include "pism/coupler/ocean/ConstantPIK.hh"
+#include "pism/coupler/ocean/GivenClimate.hh"
+#include "pism/coupler/ocean/Delta_T.hh"
+#include "pism/coupler/ocean/Delta_SMB.hh"
+#include "pism/coupler/ocean/Delta_MBP.hh"
+#include "pism/coupler/ocean/Frac_MBP.hh"
+#include "pism/coupler/ocean/Frac_SMB.hh"
+#include "pism/coupler/ocean/Runoff_SMB.hh"
+#include "pism/coupler/ocean/Cache.hh"
+#include "pism/coupler/ocean/GivenTH.hh"
+#include "pism/coupler/ocean/Pico.hh"
 
 namespace pism {
 namespace ocean {
 // Ocean
-Factory::Factory(IceGrid::ConstPtr g)
+Factory::Factory(std::shared_ptr<const Grid> g)
   : PCFactory<OceanModel>(g, "ocean.models") {
 
   add_model<GivenTH>("th");

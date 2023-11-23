@@ -6,16 +6,17 @@
 #
 # to list contributors to a `branch` and the number of non-merge commits they made.
 #
-# Output as of 2023-11-16 (branch=main)
+# Output as of 2023-10-25 (branch=dev)
 #
-# 6694  Constantine Khrulev
-# 1857  Ed Bueler
-#  359  Andy Aschwanden
+# 6981  Constantine Khrulev
+# 1856  Ed Bueler
+#  360  Andy Aschwanden
 #  272  David Maxwell
-#  127  Torsten Albrecht
+#  126  Torsten Albrecht
 #   86  Jed Brown
+#   47  Maria Zeitz
 #   30  Julien Seguinot
-#   23  Elizabeth Fischer
+#   22  Elizabeth Fischer
 #   18  Matthias Mengel
 #   13  Maria Martin
 #   13  Nathan Shemonski
@@ -24,23 +25,27 @@
 #    2  Enrico Degregori
 #    2  Florian Ziemen
 #    2  Joseph H Kennedy
-#    2  Kyle Blum
 #    2  Ronja Reese
 #    2  Thomas Kleiner
-#    1  DeepSource Bot
 #    1  Johannes Feldmann
 #    1  Ken Mankoff
+#    1  Kyle Blum
 #    1  Marijke Habermann
-#    1  Moritz Kreuzer
 #    1  Simon Schöll
 #
-# Total: 24, not counting the bot.
+# Running it with branch=main also adds
+#
+#    1  Moritz Kreuzer
+#    1  DeepSource Bot
+#
+# Total: 25, not counting the bot.
 #
 # Authors who are not listed above but are known to have made a contribution:
 #
 # Anders Levermann
 # Craig Lingle
 # Daniella DellaGiustina
+# Julius Garbe
 # Marianne Haseloff
 # Regine Hock
 # Ricarda Winkelmann
@@ -48,7 +53,7 @@
 #
 # Total: 7
 #
-# Overall total: 31
+# Overall total: 32
 #
 # To validate this document, install `cffconvert`
 #
@@ -129,6 +134,11 @@ authors:
     affiliation: Potsdam Institute for Climate Impact Research (PIK)
     orcid: 'https://orcid.org/0000-0003-1248-3217'
     # contribution-areas: sub-shelf mass balance (PICO), Antarctica processes, coupling, modeling, etc
+  - given-names: Maria
+    family-names: Zeitz
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0001-8129-1329'
+    # contribution-areas: surface processes (dEBM-simple)
   - given-names: Anders
     family-names: Levermann
     affiliation: Potsdam Institute for Climate Impact Research (PIK)
@@ -139,6 +149,11 @@ authors:
     orcid: 'https://orcid.org/0000-0003-4210-0221'
     affiliation: Potsdam Institute for Climate Impact Research (PIK)
     # contribution-areas: marine ice sheet processes, grounding line dynamics
+  - given-names: Julius
+    family-names: Garbe
+    orcid: 'https://orcid.org/0000-0003-3140-3307'
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    # contribution-areas: surface mass and energy balance (dEBM-simple)
   - given-names: Marianne
     family-names: Haseloff
     affiliation: University of Wisconsin-Madison

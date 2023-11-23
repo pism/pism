@@ -30,7 +30,7 @@ namespace ocean {
 class Delta_T : public OceanModel
 {
 public:
-  Delta_T(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_T();
 
 private:
@@ -38,9 +38,9 @@ private:
 
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& shelf_base_temperature_impl() const;
+  const array::Scalar& shelf_base_temperature_impl() const;
 
-  IceModelVec2S::Ptr m_shelf_base_temperature;
+  std::shared_ptr<array::Scalar> m_shelf_base_temperature;
   std::unique_ptr<ScalarForcing> m_forcing;
 };
 

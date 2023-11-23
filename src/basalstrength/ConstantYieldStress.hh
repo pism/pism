@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,16 +19,15 @@
 #ifndef _PISMCONSTANTYIELDSTRESS_H_
 #define _PISMCONSTANTYIELDSTRESS_H_
 
-#include "YieldStress.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/basalstrength/YieldStress.hh"
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 class ConstantYieldStress : public YieldStress {
 public:
-  ConstantYieldStress(IceGrid::ConstPtr g);
+  ConstantYieldStress(std::shared_ptr<const Grid> g);
   virtual ~ConstantYieldStress() = default;
 private:
   void restart_impl(const File &input_file, int record);

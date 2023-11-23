@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2017 Ed Bueler
+// Copyright (C) 2009--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,12 +20,9 @@
 #define __tempSystem_hh
 
 #include "pism/util/ColumnSystem.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Mask.hh"
 
 namespace pism {
-
-class IceModelVec3;
 
 namespace energy {
 //! Tridiagonal linear system for vertical column of temperature-based conservation of energy problem.
@@ -55,11 +52,11 @@ public:
                 const std::string &prefix,
                 double dx, double dy, double dt,
                 const Config &config,
-                const IceModelVec3 &T3,
-                const IceModelVec3 &u3,
-                const IceModelVec3 &v3,
-                const IceModelVec3 &w3,
-                const IceModelVec3 &strain_heating3);
+                const array::Array3D &T3,
+                const array::Array3D &u3,
+                const array::Array3D &v3,
+                const array::Array3D &w3,
+                const array::Array3D &strain_heating3);
 
   void initThisColumn(int i, int j, bool is_marginal, MaskValue new_mask, double ice_thickness);
 
@@ -69,7 +66,7 @@ public:
 
   void solveThisColumn(std::vector<double> &x);
 
-  double lambda() {
+  double lambda() const {
     return m_lambda;
   }
 
@@ -78,7 +75,7 @@ public:
   }
 protected:
   double m_ice_density, m_ice_c, m_ice_k;
-  const IceModelVec3 &m_T3, &m_strain_heating3;
+  const array::Array3D &m_T3, &m_strain_heating3;
 
   std::vector<double>  m_T, m_strain_heating;
   std::vector<double> m_T_n, m_T_e, m_T_s, m_T_w;

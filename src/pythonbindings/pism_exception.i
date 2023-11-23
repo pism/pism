@@ -1,5 +1,5 @@
 %header%{
-#include "pism_python.hh"
+#include "pythonbindings/pism_python.hh"
 #include "util/pism_utilities.hh"
 %}
 

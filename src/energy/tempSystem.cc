@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,10 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
+#include <cmath>
 
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/iceModelVec.hh"
-#include "tempSystem.hh"
+#include "pism/energy/tempSystem.hh"
 #include "pism/util/Mask.hh"
 
 #include "pism/util/error_handling.hh"
@@ -32,11 +31,11 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
                              const std::string &prefix,
                              double dx, double dy, double dt,
                              const Config &config,
-                             const IceModelVec3 &T3,
-                             const IceModelVec3 &u3,
-                             const IceModelVec3 &v3,
-                             const IceModelVec3 &w3,
-                             const IceModelVec3 &strain_heating3)
+                             const array::Array3D &T3,
+                             const array::Array3D &u3,
+                             const array::Array3D &v3,
+                             const array::Array3D &w3,
+                             const array::Array3D &strain_heating3)
   : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3),
     m_T3(T3),
     m_strain_heating3(strain_heating3) {
@@ -78,16 +77,16 @@ void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mas
     return;
   }
 
-  coarse_to_fine(m_u3, m_i, m_j, &m_u[0]);
-  coarse_to_fine(m_v3, m_i, m_j, &m_v[0]);
-  coarse_to_fine(m_w3, m_i, m_j, &m_w[0]);
-  coarse_to_fine(m_strain_heating3, m_i, m_j, &m_strain_heating[0]);
-  coarse_to_fine(m_T3, m_i, m_j, &m_T[0]);
+  coarse_to_fine(m_u3, m_i, m_j, m_u.data());
+  coarse_to_fine(m_v3, m_i, m_j, m_v.data());
+  coarse_to_fine(m_w3, m_i, m_j, m_w.data());
+  coarse_to_fine(m_strain_heating3, m_i, m_j, m_strain_heating.data());
+  coarse_to_fine(m_T3, m_i, m_j, m_T.data());
 
-  coarse_to_fine(m_T3, m_i, m_j+1, &m_T_n[0]);
-  coarse_to_fine(m_T3, m_i+1, m_j, &m_T_e[0]);
-  coarse_to_fine(m_T3, m_i, m_j-1, &m_T_s[0]);
-  coarse_to_fine(m_T3, m_i-1, m_j, &m_T_w[0]);
+  coarse_to_fine(m_T3, m_i, m_j+1, m_T_n.data());
+  coarse_to_fine(m_T3, m_i+1, m_j, m_T_e.data());
+  coarse_to_fine(m_T3, m_i, m_j-1, m_T_s.data());
+  coarse_to_fine(m_T3, m_i-1, m_j, m_T_w.data());
 
   m_lambda = compute_lambda();
 }

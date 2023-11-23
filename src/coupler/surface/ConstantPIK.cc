@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 PISM Authors
+// Copyright (C) 2008-2019, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,10 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "ConstantPIK.hh"
+#include "pism/coupler/surface/ConstantPIK.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
@@ -31,7 +31,7 @@ namespace surface {
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
 
-PIK::PIK(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+PIK::PIK(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
   : SurfaceModel(grid) {
   (void) atmosphere;
 
@@ -55,7 +55,7 @@ void PIK::init_impl(const Geometry &geometry) {
                  "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
                  opts.filename.c_str());
   if (opts.type == INIT_BOOTSTRAP) {
-    m_mass_flux->regrid(opts.filename, CRITICAL); // fails if not found!
+    m_mass_flux->regrid(opts.filename, io::Default::Nil()); // fails if not found!
   } else {
     m_mass_flux->read(opts.filename, opts.record); // fails if not found!
   }
@@ -74,13 +74,13 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  const IceModelVec2S
+  const array::Scalar
     &surface_elevation = geometry.ice_surface_elevation,
     &latitude          = geometry.latitude;
 
-  IceModelVec::AccessList list{ m_temperature.get(), &surface_elevation, &latitude };
+  array::AccessScope list{ m_temperature.get(), &surface_elevation, &latitude };
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j   = p.j();
     (*m_temperature)(i, j) = 273.15 + 30 - 0.0075 * surface_elevation(i, j) - 0.68775 * latitude(i, j) * (-1.0);
   }
@@ -91,28 +91,28 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
 
 }
 
-const IceModelVec2S &PIK::mass_flux_impl() const {
+const array::Scalar &PIK::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &PIK::temperature_impl() const {
+const array::Scalar &PIK::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &PIK::accumulation_impl() const {
+const array::Scalar &PIK::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &PIK::melt_impl() const {
+const array::Scalar &PIK::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &PIK::runoff_impl() const {
+const array::Scalar &PIK::runoff_impl() const {
   return *m_runoff;
 }
 
 void PIK::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output);
+  m_mass_flux->define(output, io::PISM_DOUBLE);
   SurfaceModel::define_model_state_impl(output);
 }
 

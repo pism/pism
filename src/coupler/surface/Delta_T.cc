@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Delta_T.hh"
+#include "pism/coupler/surface/Delta_T.hh"
 #include "pism/util/ScalarForcing.hh"
 
 namespace pism {
@@ -24,7 +24,7 @@ namespace surface {
 
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
-Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
+Delta_T::Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(*g->ctx(),
@@ -55,7 +55,7 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
   m_temperature->shift(m_forcing->value(t + 0.5 * dt));
 }
 
-const IceModelVec2S &Delta_T::temperature_impl() const {
+const array::Scalar &Delta_T::temperature_impl() const {
   return *m_temperature;
 }
 

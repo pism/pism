@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,7 +33,7 @@ class SSB_beta : public Diag<ShallowStressBalance>
 public:
   SSB_beta(const ShallowStressBalance *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Computes the gravitational driving stress (diagnostically).
@@ -42,7 +42,7 @@ class SSB_taud : public Diag<ShallowStressBalance>
 public:
   SSB_taud(const ShallowStressBalance *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Computes the magnitude of the gravitational driving stress
@@ -52,7 +52,7 @@ class SSB_taud_mag : public Diag<ShallowStressBalance>
 public:
   SSB_taud_mag(const ShallowStressBalance *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! @brief Computes the basal shear stress @f$ \tau_b @f$.
@@ -61,7 +61,7 @@ class SSB_taub : public Diag<ShallowStressBalance>
 public:
   SSB_taub(const ShallowStressBalance *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Computes the magnitude of the basal shear stress
@@ -71,7 +71,7 @@ class SSB_taub_mag : public Diag<ShallowStressBalance>
 public:
   SSB_taub_mag(const ShallowStressBalance *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 } // end of namespace stressbalance

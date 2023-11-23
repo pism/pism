@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -43,17 +43,16 @@ if len(input_filename) == 0:
     import sys
     sys.exit(1)
 
-config.set_string("output.file_name", "sia_" + os.path.basename(input_filename), PISM.CONFIG_DEFAULT)
+config.set_string("output.file", "sia_" + os.path.basename(input_filename), PISM.CONFIG_DEFAULT)
 
-output_file = config.get_string("output.file_name")
+output_file = config.get_string("output.file")
 is_regional = PISM.OptionBool("-regional", "Compute SIA using regional model semantics")
 
 registration = PISM.CELL_CENTER
 if is_regional:
     registration = PISM.CELL_CORNER
 
-input_file = PISM.File(ctx.com(), input_filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-grid = PISM.IceGrid.FromFile(ctx, input_file, "enthalpy", registration)
+grid = PISM.Grid.FromFile(ctx, input_filename, ["enthalpy"], registration)
 
 config.set_flag("basal_resistance.pseudo_plastic.enabled", False)
 
@@ -72,7 +71,7 @@ vecs.add(PISM.model.createIceMaskVec(grid))
 
 # Read in the PISM state variables that are used directly in the SSA solver
 for v in [vecs.thk, vecs.topg, vecs.enthalpy]:
-    v.regrid(input_file, critical=True)
+    v.regrid(input_filename, critical=True)
 
 # variables mask and surface are computed from the geometry previously read
 sea_level = PISM.model.createSeaLevelVec(grid)

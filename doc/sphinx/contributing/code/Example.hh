@@ -3,23 +3,24 @@
 
 #include "coupler/PISMOcean.hh"
 #include "base/util/iceModelVec2T.hh"
+#include <memory>
 
 namespace pism {
 namespace ocean {
-//! \brief An example ocean model illustrating the use of `IceModelVec2T`.
+//! \brief An example ocean model illustrating the use of `array::Forcing`.
 class Example : public OceanModel {
 public:
-  Example(IceGrid::ConstPtr g);
+  Example(std::shared_ptr<const Grid> grid);
   virtual ~Example();
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
   virtual void sea_level_elevation_impl(double &result) const;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
+  virtual void shelf_base_temperature_impl(array::Scalar &result) const;
+  virtual void shelf_base_mass_flux_impl(array::Scalar &result) const;
 protected:
-  IceModelVec2T m_shelf_melt_rate;
+  array::Forcing m_shelf_melt_rate;
 };
 
 } // end of namespace ocean

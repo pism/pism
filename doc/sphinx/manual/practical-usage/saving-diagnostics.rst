@@ -95,7 +95,7 @@ The list of available diagnostic quantities depends on the model setup. For exam
 with only one vertical grid level in the bedrock thermal layer will not be able to save
 ``litho_temp``, an SIA-only run does not use a basal yield stress model and so will not
 provide ``tauc``, etc. To see which quantities are available in a particular setup, use
-the :opt:`-list_diagnostics` option, which prints the list of diagnostics and stops.
+the option :opt:`-list_diagnostics spatial`, which prints the list of diagnostics and stops.
 
 The :opt:`-extra_file` mechanism modifies PISM's adaptive time-stepping scheme so as to
 step to, and save at, *exactly* the times requested. By contrast, as noted in subsection

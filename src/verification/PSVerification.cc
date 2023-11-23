@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,20 +20,20 @@
 #include <algorithm>
 #include <vector>
 
-#include "PSVerification.hh"
+#include "pism/verification/PSVerification.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/rheology/PatersonBuddCold.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/ConfigInterface.hh"
 
-#include "tests/exactTestsABCD.h"
-#include "tests/exactTestsFG.hh"
-#include "tests/exactTestH.h"
-#include "tests/exactTestL.hh"
+#include "pism/verification/tests/exactTestsABCD.h"
+#include "pism/verification/tests/exactTestsFG.hh"
+#include "pism/verification/tests/exactTestH.h"
+#include "pism/verification/tests/exactTestL.hh"
 
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Context.hh"
 
@@ -48,7 +48,7 @@ const double Verification::Tmin = 223.15;  // K
 const double Verification::LforFG = 750000; // m
 const double Verification::ApforG = 200; // m
 
-Verification::Verification(IceGrid::ConstPtr g,
+Verification::Verification(std::shared_ptr<const Grid> g,
                            EnthalpyConverter::Ptr EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty
@@ -58,12 +58,12 @@ void Verification::init_impl(const Geometry &geometry) {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).
-  update(geometry, m_grid->ctx()->time()->current(), 0);
+  update(geometry, time().current(), 0);
 }
 
 void Verification::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output);
-  m_temperature->define(output);
+  m_mass_flux->define(output, io::PISM_DOUBLE);
+  m_temperature->define(output, io::PISM_DOUBLE);
 }
 
 void Verification::write_model_state_impl(const File &output) const {
@@ -111,11 +111,11 @@ void Verification::update_L() {
     L           = 750e3,
     Lsqr        = L * L;
 
-  IceModelVec::AccessList list(*m_mass_flux);
-  for (Points p(*m_grid); p; p.next()) {
+  array::AccessScope list(*m_mass_flux);
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = radius(*m_grid, i, j);
+    double r = grid::radius(*m_grid, i, j);
     (*m_mass_flux)(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
 
     (*m_mass_flux)(i, j) *= ice_density; // convert to [kg m-2 s-1]
@@ -186,13 +186,13 @@ void Verification::update_ABCDH(double time) {
 
   m_temperature->set(T0);
 
-  IceModelVec::AccessList list(*m_mass_flux);
+  array::AccessScope list(*m_mass_flux);
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double r = radius(*m_grid, i, j);
+      const double r = grid::radius(*m_grid, i, j);
       switch (m_testname) {
       case 'A':
         accum = exactA(r).M;
@@ -226,13 +226,13 @@ void Verification::update_FG(double time) {
   const double t = m_testname == 'F' ? 0.0 : time;
   const double A = m_testname == 'F' ? 0.0 : ApforG;
 
-  IceModelVec::AccessList list{m_mass_flux.get(), m_temperature.get()};
+  array::AccessScope list{m_mass_flux.get(), m_temperature.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin
-    const double r = std::max(radius(*m_grid, i, j), 1.0);
+    const double r = std::max(grid::radius(*m_grid, i, j), 1.0);
 
     (*m_temperature)(i, j) = Tmin + ST * r;
 

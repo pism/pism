@@ -28,7 +28,7 @@ def gaussian_bump_grid():
     Mx = int((x_max - x_min) / dx)
     My = int((y_max - y_min) / dy)
 
-    return PISM.IceGrid_Shallow(PISM.Context().ctx,
+    return PISM.Grid_Shallow(PISM.Context().ctx,
                                 Lx, Ly,
                                 x0, y0,
                                 Mx, My,
@@ -76,13 +76,13 @@ def synthetic_geometry(grid, orography):
     model.update(geometry, 0, 1)
 
     # convert from mm/s to mm/hour
-    return model.mean_precipitation().numpy() * 3600
+    return model.precipitation().numpy() * 3600
 
 def input_file(filename):
 
     ctx = PISM.Context()
 
-    grid = PISM.IceGrid.FromFile(ctx.ctx, filename, ["topg"], PISM.CELL_CENTER)
+    grid = PISM.Grid.FromFile(ctx.ctx, filename, ["topg"], PISM.CELL_CENTER)
 
     geometry = PISM.Geometry(grid)
 
@@ -95,7 +95,7 @@ def input_file(filename):
     model.init(geometry)
     model.update(geometry, 0, 1)
 
-    model.mean_precipitation().dump(config.get_string("output.file_name"))
+    model.precipitation().dump(config.get_string("output.file"))
 
 if __name__ == "__main__":
     ctx = PISM.Context()

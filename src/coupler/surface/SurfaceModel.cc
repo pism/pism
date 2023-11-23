@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -19,15 +19,12 @@
 
 #include <cassert>
 #include <gsl/gsl_math.h>       // GSL_NAN
+#include <memory>
 
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
@@ -35,108 +32,105 @@
 namespace pism {
 namespace surface {
 
-IceModelVec2S::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_mass", WITHOUT_GHOSTS));
+std::shared_ptr<array::Scalar> SurfaceModel::allocate_layer_mass(std::shared_ptr<const Grid> grid) {
+  auto result = std::make_shared<array::Scalar>(grid, "surface_layer_mass");
 
-  result->set_attrs("climate_forcing", "mass held in the surface layer",
-                    "kg", "kg", "", 0);
+  result->metadata(0)
+      .long_name("mass held in the surface layer")
+      .units("kg");
 
-  result->metadata()["valid_min"] = {0.0};
-
-  return result;
-}
-
-IceModelVec2S::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid) {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_thickness", WITHOUT_GHOSTS));
-
-  result->set_attrs("climate_forcing",
-                    "thickness of the surface process layer at the top surface of the ice",
-                    "m", "m", "", 0);
-
-  result->metadata()["valid_min"] = {0.0};
+  result->metadata()["valid_min"] = { 0.0 };
 
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPtr grid) {
+std::shared_ptr<array::Scalar> SurfaceModel::allocate_layer_thickness(std::shared_ptr<const Grid> grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid,
-                                              "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(grid, "surface_layer_thickness");
 
-  result->set_attrs("climate_forcing",
-                    "liquid water fraction of the ice at the top surface",
-                    "1", "1", "", 0);
+  result->metadata(0)
+      .long_name("thickness of the surface process layer at the top surface of the ice")
+      .units("m");
 
-  result->metadata()["valid_range"] = {0.0, 1.0};
+  result->metadata()["valid_min"] = { 0.0 };
 
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
+std::shared_ptr<array::Scalar> SurfaceModel::allocate_liquid_water_fraction(std::shared_ptr<const Grid> grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "climatic_mass_balance", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(grid, "ice_surface_liquid_water_fraction");
 
-  result->set_attrs("climate_forcing",
-                    "surface mass balance (accumulation/ablation) rate",
-                    "kg m-2 second-1", "kg m-2 year-1",
-                    "land_ice_surface_specific_mass_balance_flux", 0);
+  result->metadata(0)
+      .long_name("liquid water fraction of the ice at the top surface")
+      .units("1");
 
-  Config::ConstPtr config = grid->ctx()->config();
+  result->metadata()["valid_range"] = { 0.0, 1.0 };
+
+  return result;
+}
+
+std::shared_ptr<array::Scalar> SurfaceModel::allocate_mass_flux(std::shared_ptr<const Grid> grid) {
+
+  auto result = std::make_shared<array::Scalar>(grid, "climatic_mass_balance");
+
+  result->metadata(0)
+      .long_name("surface mass balance (accumulation/ablation) rate")
+      .units("kg m-2 second-1")
+      .output_units("kg m-2 year-1")
+      .standard_name("land_ice_surface_specific_mass_balance_flux");
+
+  auto config = grid->ctx()->config();
   const double smb_max = config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
-  result->metadata()["valid_range"] = {-smb_max, smb_max};
+  result->metadata()["valid_range"] = { -smb_max, smb_max };
 
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
+std::shared_ptr<array::Scalar>
+SurfaceModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "ice_surface_temp", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(grid, "ice_surface_temp");
 
-  result->set_attrs("climate_forcing",
-                    "temperature of the ice at the ice surface but below firn processes",
-                    "Kelvin", "Kelvin", "", 0);
+  result->metadata(0)
+      .long_name("temperature of the ice at the ice surface but below firn processes")
+      .units("Kelvin");
 
-  result->metadata()["valid_range"] = {0.0, 323.15}; // [0C, 50C]
-
-  return result;
-}
-
-IceModelVec2S::Ptr SurfaceModel::allocate_accumulation(IceGrid::ConstPtr grid) {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_accumulation_flux", WITHOUT_GHOSTS));
-
-  result->set_attrs("diagnostic",
-                    "surface accumulation (precipitation minus rain)",
-                    "kg m-2", "kg m-2", "", 0);
+  result->metadata()["valid_range"] = { 0.0, 323.15 }; // [0C, 50C]
 
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_melt(IceGrid::ConstPtr grid) {
+std::shared_ptr<array::Scalar>
+SurfaceModel::allocate_accumulation(std::shared_ptr<const Grid> grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_melt_flux", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(grid, "surface_accumulation_flux");
 
-  result->set_attrs("diagnostic",
-                    "surface melt",
-                    "kg m-2", "kg m-2", "", 0);
-
-  return result;
-}
-
-IceModelVec2S::Ptr SurfaceModel::allocate_runoff(IceGrid::ConstPtr grid) {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_runoff_flux", WITHOUT_GHOSTS));
-
-  result->set_attrs("diagnostic",
-                    "surface meltwater runoff",
-                    "kg m-2", "kg m-2", "", 0);
+  result->metadata(0).long_name("surface accumulation (precipitation minus rain)").units("kg m-2");
 
   return result;
 }
 
-SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid)
+std::shared_ptr<array::Scalar> SurfaceModel::allocate_melt(std::shared_ptr<const Grid> grid) {
+
+  auto result = std::make_shared<array::Scalar>(grid, "surface_melt_flux");
+
+  result->metadata(0).long_name("surface melt").units("kg m-2");
+
+  return result;
+}
+
+std::shared_ptr<array::Scalar> SurfaceModel::allocate_runoff(std::shared_ptr<const Grid> grid) {
+
+  auto result = std::make_shared<array::Scalar>(grid, "surface_runoff_flux");
+
+  result->metadata(0).long_name("surface meltwater runoff").units("kg m-2");
+
+  return result;
+}
+
+SurfaceModel::SurfaceModel(std::shared_ptr<const Grid> grid)
   : Component(grid) {
 
   m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
@@ -155,13 +149,13 @@ SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid)
   m_runoff->set(0.0);
 }
 
-SurfaceModel::SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
+SurfaceModel::SurfaceModel(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input)
   : Component(g) {
   m_input_model = input;
   // this is a modifier: allocate storage only if necessary (in derived classes)
 }
 
-SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid,
+SurfaceModel::SurfaceModel(std::shared_ptr<const Grid> grid,
                            std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
   : SurfaceModel(grid) {        // this constructor will allocate storage
 
@@ -173,7 +167,7 @@ SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid,
 /*!
  * Basic surface models currently implemented in PISM do not model accumulation
  */
-const IceModelVec2S& SurfaceModel::accumulation() const {
+const array::Scalar& SurfaceModel::accumulation() const {
   return accumulation_impl();
 }
 
@@ -181,7 +175,7 @@ const IceModelVec2S& SurfaceModel::accumulation() const {
 /*!
  * Basic surface models currently implemented in PISM do not model melt
  */
-const IceModelVec2S& SurfaceModel::melt() const {
+const array::Scalar& SurfaceModel::melt() const {
   return melt_impl();
 }
 
@@ -189,15 +183,15 @@ const IceModelVec2S& SurfaceModel::melt() const {
 /*!
  * Basic surface models currently implemented in PISM do not model runoff
  */
-const IceModelVec2S& SurfaceModel::runoff() const {
+const array::Scalar& SurfaceModel::runoff() const {
   return runoff_impl();
 }
 
-const IceModelVec2S& SurfaceModel::mass_flux() const {
+const array::Scalar& SurfaceModel::mass_flux() const {
   return mass_flux_impl();
 }
 
-const IceModelVec2S& SurfaceModel::temperature() const {
+const array::Scalar& SurfaceModel::temperature() const {
   return temperature_impl();
 }
 
@@ -205,7 +199,7 @@ const IceModelVec2S& SurfaceModel::temperature() const {
 /*!
  * Most PISM surface models return 0.
  */
-const IceModelVec2S& SurfaceModel::liquid_water_fraction() const {
+const array::Scalar& SurfaceModel::liquid_water_fraction() const {
   return liquid_water_fraction_impl();
 }
 
@@ -214,7 +208,7 @@ const IceModelVec2S& SurfaceModel::liquid_water_fraction() const {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-const IceModelVec2S& SurfaceModel::layer_mass() const {
+const array::Scalar& SurfaceModel::layer_mass() const {
   return layer_mass_impl();
 }
 
@@ -225,84 +219,72 @@ const IceModelVec2S& SurfaceModel::layer_mass() const {
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-const IceModelVec2S& SurfaceModel::layer_thickness() const {
+const array::Scalar& SurfaceModel::layer_thickness() const {
   return layer_thickness_impl();
 }
 
-const IceModelVec2S& SurfaceModel::accumulation_impl() const {
+const array::Scalar& SurfaceModel::accumulation_impl() const {
   if (m_input_model) {
     return m_input_model->accumulation();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-const IceModelVec2S& SurfaceModel::melt_impl() const {
+const array::Scalar& SurfaceModel::melt_impl() const {
   if (m_input_model) {
     return m_input_model->melt();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-const IceModelVec2S& SurfaceModel::runoff_impl() const {
+const array::Scalar& SurfaceModel::runoff_impl() const {
   if (m_input_model) {
     return m_input_model->runoff();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-const IceModelVec2S& SurfaceModel::mass_flux_impl() const {
+const array::Scalar& SurfaceModel::mass_flux_impl() const {
   if (m_input_model) {
     return m_input_model->mass_flux();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-const IceModelVec2S& SurfaceModel::temperature_impl() const {
+const array::Scalar& SurfaceModel::temperature_impl() const {
   if (m_input_model) {
     return m_input_model->temperature();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-const IceModelVec2S& SurfaceModel::liquid_water_fraction_impl() const {
+const array::Scalar& SurfaceModel::liquid_water_fraction_impl() const {
   if (m_input_model) {
     return m_input_model->liquid_water_fraction();
-  } else {
-    return *m_liquid_water_fraction;
   }
+
+  return *m_liquid_water_fraction;
 }
 
-const IceModelVec2S& SurfaceModel::layer_mass_impl() const {
+const array::Scalar& SurfaceModel::layer_mass_impl() const {
   if (m_input_model) {
     return m_input_model->layer_mass();
-  } else {
-    return *m_layer_mass;
   }
+
+  return *m_layer_mass;
 }
 
-const IceModelVec2S& SurfaceModel::layer_thickness_impl() const {
+const array::Scalar& SurfaceModel::layer_thickness_impl() const {
   if (m_input_model) {
     return m_input_model->layer_thickness();
-  } else {
-    return *m_layer_thickness;
-  }
-}
-
-TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
-  if (m_atmosphere) {
-    return m_atmosphere->ts_diagnostics();
   }
 
-  if (m_input_model) {
-    return m_input_model->ts_diagnostics();
-  }
-
-  return {};
+  return *m_layer_thickness;
 }
 
 void SurfaceModel::init(const Geometry &geometry) {
@@ -375,11 +357,11 @@ MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
  * runoff. This ensures that outputs of PISM's surface models satisfy "SMB = accumulation
  * - runoff".
  */
-void SurfaceModel::dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& result) {
+void SurfaceModel::dummy_accumulation(const array::Scalar& smb, array::Scalar& result) {
 
-  IceModelVec::AccessList list{&result, &smb};
+  array::AccessScope list{&result, &smb};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     result(i,j) = std::max(smb(i,j), 0.0);
   }
@@ -395,11 +377,11 @@ void SurfaceModel::dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& r
  * runoff. This ensures that outputs of PISM's surface models satisfy "SMB = accumulation
  * - runoff".
  */
-void SurfaceModel::dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result) {
+void SurfaceModel::dummy_runoff(const array::Scalar& smb, array::Scalar& result) {
 
-  IceModelVec::AccessList list{&result, &smb};
+  array::AccessScope list{&result, &smb};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     result(i,j) = std::max(-smb(i,j), 0.0);
   }
@@ -414,7 +396,7 @@ void SurfaceModel::dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result)
  * We assume that all melt runs off, i.e. runoff = melt, but treat melt as a "derived"
  * quantity.
  */
-void SurfaceModel::dummy_melt(const IceModelVec2S& smb, IceModelVec2S& result) {
+void SurfaceModel::dummy_melt(const array::Scalar& smb, array::Scalar& result) {
   dummy_runoff(smb, result);
 }
 
@@ -428,7 +410,7 @@ class PS_climatic_mass_balance : public Diag<SurfaceModel>
 public:
   PS_climatic_mass_balance(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl() const;
 };
 
 /*! @brief Ice surface temperature. */
@@ -437,7 +419,7 @@ class PS_ice_surface_temp : public Diag<SurfaceModel>
 public:
   PS_ice_surface_temp(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl() const;
 };
 
 /*! @brief Ice liquid water fraction at the ice surface. */
@@ -446,7 +428,7 @@ class PS_liquid_water_fraction : public Diag<SurfaceModel>
 public:
   PS_liquid_water_fraction(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl() const;
 };
 
 /*! @brief Mass of the surface layer (snow and firn). */
@@ -455,7 +437,7 @@ class PS_layer_mass : public Diag<SurfaceModel>
 public:
   PS_layer_mass(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl() const;
 };
 
 /*! @brief Surface layer (snow and firn) thickness. */
@@ -464,120 +446,366 @@ class PS_layer_thickness : public Diag<SurfaceModel>
 public:
   PS_layer_thickness(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl() const;
 };
 
 PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "climatic_mass_balance")};
-
-  set_attrs("surface mass balance (accumulation/ablation) rate",
-            "land_ice_surface_specific_mass_balance_flux",
-            "kg m-2 second-1", "kg m-2 year-1", 0);
+  m_vars = { { m_sys, "climatic_mass_balance" } };
+  m_vars[0]
+      .long_name("surface mass balance (accumulation/ablation) rate")
+      .standard_name("land_ice_surface_specific_mass_balance_flux")
+      .units("kg m-2 second-1")
+      .output_units("kg m-2 year-1");
 }
 
-IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() const {
+  auto result = allocate<array::Scalar>("climatic_mass_balance");
 
   result->copy_from(model->mass_flux());
 
   return result;
 }
 
-PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
-  : Diag<SurfaceModel>(m) {
-
+PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys,
-                                    ismip6 ? "litemptop" : "ice_surface_temp")};
-
-  set_attrs("ice temperature at the top ice surface",
-            "temperature_at_top_of_ice_sheet_model",
-            "K", "K", 0);
+  m_vars = { { m_sys, ismip6 ? "litemptop" : "ice_surface_temp" } };
+  m_vars[0]
+      .long_name("ice temperature at the top ice surface")
+      .standard_name("temperature_at_top_of_ice_sheet_model")
+      .units("K");
 }
 
-IceModelVec::Ptr PS_ice_surface_temp::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_temp", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() const {
+  auto result = allocate<array::Scalar>("ice_surface_temp");
 
   result->copy_from(model->temperature());
 
   return result;
 }
 
-PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m)
-  : Diag<SurfaceModel>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "ice_surface_liquid_water_fraction")};
-
-  set_attrs("ice liquid water fraction at the ice surface", "",
-            "1", "1", 0);
+PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
+  m_vars = { { m_sys, "ice_surface_liquid_water_fraction" } };
+  m_vars[0].long_name("ice liquid water fraction at the ice surface").units("1");
 }
 
-IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() const {
+std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("ice_surface_liquid_water_fraction");
 
   result->copy_from(model->liquid_water_fraction());
 
   return result;
 }
 
-PS_layer_mass::PS_layer_mass(const SurfaceModel *m)
-  : Diag<SurfaceModel>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "surface_layer_mass")};
-
-  set_attrs("mass of the surface layer (snow and firn)", "",
-            "kg", "kg", 0);
+PS_layer_mass::PS_layer_mass(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
+  m_vars = { { m_sys, "surface_layer_mass" } };
+  m_vars[0].long_name("mass of the surface layer (snow and firn)").units("kg");
 }
 
-IceModelVec::Ptr PS_layer_mass::compute_impl() const {
+std::shared_ptr<array::Array> PS_layer_mass::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_mass", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("surface_layer_mass");
 
   result->copy_from(model->layer_mass());
 
   return result;
 }
 
-PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m)
-  : Diag<SurfaceModel>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "surface_layer_thickness")};
-
-  set_attrs("thickness of the surface layer (snow and firn)", "",
-            "meters", "meters", 0);
+PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
+  m_vars = { { m_sys, "surface_layer_thickness" } };
+  m_vars[0].long_name("thickness of the surface layer (snow and firn)").units("meters");
 }
 
-IceModelVec::Ptr PS_layer_thickness::compute_impl() const {
+std::shared_ptr<array::Array> PS_layer_thickness::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("surface_layer_thickness");
 
   result->copy_from(model->layer_thickness());
 
   return result;
 }
+
+enum AmountKind {AMOUNT, MASS};
+
+/*! @brief Report surface melt, averaged over the reporting interval */
+class SurfaceMelt : public DiagAverageRate<SurfaceModel>
+{
+public:
+  SurfaceMelt(const SurfaceModel *m, AmountKind kind)
+    : DiagAverageRate<SurfaceModel>(m,
+                                        kind == AMOUNT
+                                        ? "surface_melt_flux"
+                                        : "surface_melt_rate",
+                                        TOTAL_CHANGE),
+      m_melt_mass(m_grid, "melt_mass"),
+      m_kind(kind)
+  {
+
+    std::string
+      name              = "surface_melt_flux",
+      long_name         = "surface melt, averaged over the reporting interval",
+      standard_name     = "surface_snow_and_ice_melt_flux",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_melt_rate";
+      standard_name     = "";
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
+    }
+
+    m_accumulator.metadata()["units"] = accumulator_units;
+
+    m_vars = { { m_sys, name } };
+    m_vars[0]
+        .long_name(long_name)
+        .standard_name(standard_name)
+        .units(internal_units)
+        .output_units(external_units);
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  }
+
+protected:
+  const array::Scalar& model_input() {
+    const array::Scalar &melt_amount = model->melt();
+
+    if (m_kind == MASS) {
+      double cell_area = m_grid->cell_area();
+
+      array::AccessScope list{&m_melt_mass, &melt_amount};
+
+      for (auto p = m_grid->points(); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_melt_mass(i, j) = melt_amount(i, j) * cell_area;
+      }
+      return m_melt_mass;
+    }
+
+    return melt_amount;
+  }
+private:
+  array::Scalar m_melt_mass;
+  AmountKind m_kind;
+};
+
+/*! @brief Report surface runoff, averaged over the reporting interval */
+class SurfaceRunoff : public DiagAverageRate<SurfaceModel>
+{
+public:
+  SurfaceRunoff(const SurfaceModel *m, AmountKind kind)
+    : DiagAverageRate<SurfaceModel>(m,
+                                        kind == AMOUNT
+                                        ? "surface_runoff_flux"
+                                        : "surface_runoff_rate",
+                                        TOTAL_CHANGE),
+      m_kind(kind),
+      m_runoff_mass(m_grid, "runoff_mass") {
+
+    std::string
+      name              = "surface_runoff_flux",
+      long_name         = "surface runoff, averaged over the reporting interval",
+      standard_name     = "surface_runoff_flux",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_runoff_rate";
+      standard_name     = "",
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
+    }
+
+    m_accumulator.metadata()["units"] = accumulator_units;
+
+    m_vars = { { m_sys, name } };
+    m_vars[0]
+        .long_name(long_name)
+        .standard_name(standard_name)
+        .units(internal_units)
+        .output_units(external_units);
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  }
+
+protected:
+  const array::Scalar& model_input() {
+    const array::Scalar &runoff_amount = model->runoff();
+
+    if (m_kind == MASS) {
+      double cell_area = m_grid->cell_area();
+
+      array::AccessScope list{&m_runoff_mass, &runoff_amount};
+
+      for (auto p = m_grid->points(); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_runoff_mass(i, j) = runoff_amount(i, j) * cell_area;
+      }
+      return m_runoff_mass;
+    }
+
+    return runoff_amount;
+  }
+private:
+  AmountKind m_kind;
+  array::Scalar m_runoff_mass;
+};
+
+/*! @brief Report accumulation (precipitation minus rain), averaged over the reporting interval */
+class Accumulation : public DiagAverageRate<SurfaceModel>
+{
+public:
+  Accumulation(const SurfaceModel *m, AmountKind kind)
+    : DiagAverageRate<SurfaceModel>(m,
+                                        kind == AMOUNT
+                                        ? "surface_accumulation_flux"
+                                        : "surface_accumulation_rate",
+                                        TOTAL_CHANGE),
+      m_kind(kind),
+      m_accumulation_mass(m_grid, "accumulation_mass") {
+
+    // possible standard name: surface_accumulation_flux
+    std::string
+      name              = "surface_accumulation_flux",
+      long_name         = "accumulation (precipitation minus rain), averaged over the reporting interval",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_accumulation_rate";
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
+    }
+
+    m_accumulator.metadata()["units"] = accumulator_units;
+
+    m_vars = { { m_sys, name } };
+    m_vars[0]
+        .long_name(long_name)
+        .units(internal_units)
+        .output_units(external_units);
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  }
+
+protected:
+  const array::Scalar& model_input() {
+    const array::Scalar &accumulation_amount = model->accumulation();
+
+    if (m_kind == MASS) {
+      double cell_area = m_grid->cell_area();
+
+      array::AccessScope list{&m_accumulation_mass, &accumulation_amount};
+
+      for (auto p = m_grid->points(); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_accumulation_mass(i, j) = accumulation_amount(i, j) * cell_area;
+      }
+      return m_accumulation_mass;
+    }
+
+    return accumulation_amount;
+  }
+private:
+  AmountKind m_kind;
+  array::Scalar m_accumulation_mass;
+};
+
+/*!
+ * Integrate a field over the computational domain.
+ *
+ * If the input has units kg/m^2, the output will be in kg.
+ */
+static double integrate(const array::Scalar &input) {
+  auto grid = input.grid();
+
+  double cell_area = grid->cell_area();
+
+  array::AccessScope list{&input};
+
+  double result = 0.0;
+
+  for (auto p = grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result += input(i, j) * cell_area;
+  }
+
+  return GlobalSum(grid->com, result);
+}
+
+
+//! \brief Reports the total accumulation rate.
+class TotalSurfaceAccumulation : public TSDiag<TSFluxDiagnostic, SurfaceModel>
+{
+public:
+  TotalSurfaceAccumulation(const SurfaceModel *m)
+    : TSDiag<TSFluxDiagnostic, SurfaceModel>(m, "surface_accumulation_rate") {
+
+    set_units("kg s-1", "kg year-1");
+    m_variable["long_name"] = "surface accumulation rate (PDD model)";
+  }
+
+  double compute() {
+    return integrate(model->accumulation());
+  }
+};
+
+
+//! \brief Reports the total melt rate.
+class TotalSurfaceMelt : public TSDiag<TSFluxDiagnostic, SurfaceModel>
+{
+public:
+  TotalSurfaceMelt(const SurfaceModel *m)
+    : TSDiag<TSFluxDiagnostic, SurfaceModel>(m, "surface_melt_rate") {
+
+    set_units("kg s-1", "kg year-1");
+    m_variable["long_name"] = "surface melt rate (PDD model)";
+  }
+
+  double compute() {
+    return integrate(model->melt());
+  }
+};
+
+
+//! \brief Reports the total top surface ice flux.
+class TotalSurfaceRunoff : public TSDiag<TSFluxDiagnostic, SurfaceModel>
+{
+public:
+  TotalSurfaceRunoff(const SurfaceModel *m)
+    : TSDiag<TSFluxDiagnostic, SurfaceModel>(m, "surface_runoff_rate") {
+
+    set_units("kg s-1", "kg year-1");
+    m_variable["long_name"] = "surface runoff rate (PDD model)";
+  }
+
+  double compute() {
+    return integrate(model->runoff());
+  }
+};
+
 } // end of namespace diagnostics
 
 DiagnosticList SurfaceModel::diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
+    {"surface_accumulation_flux",         Diagnostic::Ptr(new Accumulation(this, AMOUNT))},
+    {"surface_accumulation_rate",         Diagnostic::Ptr(new Accumulation(this, MASS))},
+    {"surface_melt_flux",                 Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
+    {"surface_melt_rate",                 Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
+    {"surface_runoff_flux",               Diagnostic::Ptr(new SurfaceRunoff(this, AMOUNT))},
+    {"surface_runoff_rate",               Diagnostic::Ptr(new SurfaceRunoff(this, MASS))},
     {"climatic_mass_balance",             Diagnostic::Ptr(new PS_climatic_mass_balance(this))},
     {"ice_surface_temp",                  Diagnostic::Ptr(new PS_ice_surface_temp(this))},
     {"ice_surface_liquid_water_fraction", Diagnostic::Ptr(new PS_liquid_water_fraction(this))},
@@ -595,6 +823,26 @@ DiagnosticList SurfaceModel::diagnostics_impl() const {
 
   if (m_input_model) {
     result = pism::combine(result, m_input_model->diagnostics());
+  }
+
+  return result;
+}
+
+TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
+  using namespace diagnostics;
+
+  TSDiagnosticList result = {
+    {"surface_accumulation_rate", TSDiagnostic::Ptr(new TotalSurfaceAccumulation(this))},
+    {"surface_melt_rate",         TSDiagnostic::Ptr(new TotalSurfaceMelt(this))},
+    {"surface_runoff_rate",       TSDiagnostic::Ptr(new TotalSurfaceRunoff(this))},
+  };
+
+  if (m_atmosphere) {
+    return pism::combine(result, m_atmosphere->ts_diagnostics());
+  }
+
+  if (m_input_model) {
+    return pism::combine(result, m_input_model->ts_diagnostics());
   }
 
   return result;

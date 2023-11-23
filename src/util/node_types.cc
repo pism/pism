@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,10 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "node_types.hh"
+#include "pism/util/node_types.hh"
 
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
@@ -58,19 +59,19 @@ Cell layout:
 (i-1,j-1) +-------S--------+ (i+1,j-1)
 ~~~
  */
-void compute_node_types(const IceModelVec2S &ice_thickness,
+void compute_node_types(const array::Scalar1 &ice_thickness,
                         double thickness_threshold,
-                        IceModelVec2Int &result) {
+                        array::Scalar &result) {
 
-  IceGrid::ConstPtr grid = ice_thickness.grid();
+  auto grid = ice_thickness.grid();
 
   const double &H_min = thickness_threshold;
 
-  IceModelVec::AccessList list{&ice_thickness, &result};
+  array::AccessScope list{&ice_thickness, &result};
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       auto H = ice_thickness.box(i, j);
@@ -78,7 +79,7 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
       // flags indicating whether the current node and its neighbors are "icy"
       stencils::Box<int> icy;
 
-      icy.ij = static_cast<int>(H.ij >= H_min);
+      icy.c  = static_cast<int>(H.c >= H_min);
       icy.nw = static_cast<int>(H.nw >= H_min);
       icy.n  = static_cast<int>(H.n  >= H_min);
       icy.ne = static_cast<int>(H.ne >= H_min);
@@ -91,16 +92,16 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
       // flags indicating whether neighboring elements are "icy" (an element is icy if at
       // least three of its nodes are icy)
       const bool
-        ne_element_is_icy = (icy.ij + icy.e + icy.ne + icy.n) >= 3,
-        nw_element_is_icy = (icy.ij + icy.n + icy.nw + icy.w) >= 3,
-        sw_element_is_icy = (icy.ij + icy.w + icy.sw + icy.s) >= 3,
-        se_element_is_icy = (icy.ij + icy.s + icy.se + icy.e) >= 3;
+        ne_element_is_icy = (icy.c + icy.e + icy.ne + icy.n) >= 3,
+        nw_element_is_icy = (icy.c + icy.n + icy.nw + icy.w) >= 3,
+        sw_element_is_icy = (icy.c + icy.w + icy.sw + icy.s) >= 3,
+        se_element_is_icy = (icy.c + icy.s + icy.se + icy.e) >= 3;
 
       if (ne_element_is_icy and nw_element_is_icy and
           sw_element_is_icy and se_element_is_icy) {
         // all four elements are icy: we are at an interior node
         result(i, j) = NODE_INTERIOR;
-      } else if (icy.ij != 0) {
+      } else if (icy.c != 0) {
         // the current node is icy: we are at a boundary
         result(i, j) = NODE_BOUNDARY;
       } else {

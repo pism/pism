@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "StuffAsAnomaly.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/coupler/surface/StuffAsAnomaly.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -25,7 +25,7 @@
 namespace pism {
 namespace surface {
 
-StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
+StuffAsAnomaly::StuffAsAnomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input),
     m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
     m_mass_flux_0(m_grid, "mass_flux_0", WITHOUT_GHOSTS),
@@ -38,7 +38,7 @@ StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
                       "surface mass balance (accumulation/ablation) rate",
                       "kg m-2 s-1",
                       "land_ice_surface_specific_mass_balance_flux");
-  m_mass_flux.metadata()["glaciological_units"] = "kg m-2 year-1";
+  m_mass_flux.metadata()["output_units"] = "kg m-2 year-1";
 
   m_temp.set_attrs("climate_state", "ice temperature at the ice surface",
                    "K", "");
@@ -91,17 +91,17 @@ void StuffAsAnomaly::update_impl(const Geometry &geometry, double t, double dt) 
     m_mass_flux.copy_from(m_input_model->mass_flux());
 
     // if we are at the beginning of the run...
-    if (t < m_grid->ctx()->time()->start() + 1) {
+    if (t < time().start() + 1) {
       // this is goofy, but time-steps are usually longer than 1 second, so it should work
       m_temp_0.copy_from(m_temp);
       m_mass_flux_0.copy_from(m_mass_flux);
     }
   }
 
-  IceModelVec::AccessList list{&m_mass_flux, &m_mass_flux_0, &m_mass_flux_input,
+  array::AccessScope list{&m_mass_flux, &m_mass_flux_0, &m_mass_flux_input,
       &m_temp, &m_temp_0, &m_temp_input};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     m_mass_flux(i, j) = m_mass_flux(i, j) - m_mass_flux_0(i, j) + m_mass_flux_input(i, j);
@@ -109,11 +109,11 @@ void StuffAsAnomaly::update_impl(const Geometry &geometry, double t, double dt) 
   }
 }
 
-const IceModelVec2S &StuffAsAnomaly::mass_flux_impl() const {
+const array::Scalar &StuffAsAnomaly::mass_flux_impl() const {
   return m_mass_flux;
 }
 
-const IceModelVec2S &StuffAsAnomaly::temperature_impl() const {
+const array::Scalar &StuffAsAnomaly::temperature_impl() const {
   return m_temp;
 }
 

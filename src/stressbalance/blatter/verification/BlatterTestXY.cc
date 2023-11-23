@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "BlatterTestXY.hh"
+#include "pism/stressbalance/blatter/verification/BlatterTestXY.hh"
 
 #include "pism/rheology/IsothermalGlen.hh"
 
-#include "manufactured_solutions.hh"
+#include "pism/stressbalance/blatter/verification/manufactured_solutions.hh"
 
 namespace pism {
 namespace stressbalance {
 
-BlatterTestXY::BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
+BlatterTestXY::BlatterTestXY(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor)
   : Blatter(grid, Mz, coarsening_factor) {
 
   // use the isothermal Glen flow law
@@ -57,7 +57,7 @@ bool BlatterTestXY::dirichlet_node(const DMDALocalInfo &info, const fem::Element
           I.j == 0 or I.j == info.my - 1);
 }
 
-Vector2 BlatterTestXY::u_bc(double x, double y, double z) const {
+Vector2d BlatterTestXY::u_bc(double x, double y, double z) const {
   (void) z;
 
   return blatter_xy_exact(x, y);
@@ -66,7 +66,7 @@ Vector2 BlatterTestXY::u_bc(double x, double y, double z) const {
 void BlatterTestXY::residual_source_term(const fem::Q1Element3 &element,
                                          const double *surface,
                                          const double *bed,
-                                         Vector2 *residual) {
+                                         Vector2d *residual) {
   (void) surface;
   (void) bed;
 

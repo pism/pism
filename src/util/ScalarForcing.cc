@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,11 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 #include <algorithm>            // std::min_element(), std::max_element()
 #include <cassert>              // assert()
 #include <cmath>                // std::floor()
+
+#include <gsl/gsl_spline.h>
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
@@ -31,6 +33,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -45,8 +48,8 @@ static void report_range(const std::vector<double> &data,
   double max = *std::max_element(data.begin(), data.end());
 
   units::Converter c(unit_system,
-                     metadata.get_string("units"),
-                     metadata.get_string("glaciological_units"));
+                     metadata["units"],
+                     metadata["output_units"]);
   min = c(min);
   max = c(max);
 
@@ -57,14 +60,31 @@ static void report_range(const std::vector<double> &data,
               "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
               metadata.get_name().c_str(),
               metadata.get_string("long_name").c_str(), spacer.c_str(), min, max,
-              metadata.get_string("glaciological_units").c_str());
+              metadata.get_string("output_units").c_str());
 }
+
+struct ScalarForcing::Impl {
+  // period, in seconds (zero if not periodic)
+  double period;
+
+  // start of the period, in seconds (not used if not periodic)
+  double period_start;
+
+  // Times associated with corresponding values (used for linear interpolation)
+  std::vector<double> times;
+
+  // Forcing values
+  std::vector<double> values;
+
+  gsl_interp_accel* acc;
+  gsl_spline*       spline;
+};
 
 void ScalarForcing::initialize(const Context &ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                const std::string &units,
-                               const std::string &glaciological_units,
+                               const std::string &output_units,
                                const std::string &long_name,
                                bool periodic) {
   try {
@@ -73,7 +93,7 @@ void ScalarForcing::initialize(const Context &ctx,
     VariableMetadata variable(variable_name, unit_system);
 
     variable["units"]               = units;
-    variable["glaciological_units"] = glaciological_units;
+    variable["output_units"] = output_units;
     variable["long_name"]           = long_name;
 
     double forcing_t0{};
@@ -85,7 +105,7 @@ void ScalarForcing::initialize(const Context &ctx,
                          "  reading %s (%s) from file '%s'...\n",
                          long_name.c_str(), variable_name.c_str(), filename.c_str());
 
-      File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
+      File file(ctx.com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
       // Read forcing data. The read_timeseries() call will ensure that variable_name is a
       // scalar variable.
@@ -124,28 +144,28 @@ void ScalarForcing::initialize(const Context &ctx,
         }
 
         {
-          m_period       = b1 - b0;
-          m_period_start = b0;
+          m_impl->period       = b1 - b0;
+          m_impl->period_start = b0;
 
-          assert(m_period > 0.0);
+          assert(m_impl->period > 0.0);
         }
       }
 
       // Note: this should take care of file with one record as well.
-      m_times.clear();
-      m_values.clear();
+      m_impl->times.clear();
+      m_impl->values.clear();
       {
         if (bounds.front() < times.front()) {
-          m_times.emplace_back(bounds.front());
-          m_values.emplace_back(v0);
+          m_impl->times.emplace_back(bounds.front());
+          m_impl->values.emplace_back(v0);
         }
         for (size_t k = 0; k < N; ++k) {
-          m_times.emplace_back(times[k]);
-          m_values.emplace_back(data[k]);
+          m_impl->times.emplace_back(times[k]);
+          m_impl->values.emplace_back(data[k]);
         }
         if (bounds.back()  > times.back()) {
-          m_times.emplace_back(bounds.back());
-          m_values.emplace_back(v1);
+          m_impl->times.emplace_back(bounds.back());
+          m_impl->values.emplace_back(v1);
         }
       }
 
@@ -155,18 +175,18 @@ void ScalarForcing::initialize(const Context &ctx,
     } // end of the block initializing data
 
     // validate resulting times
-    if (not is_increasing(m_times)) {
+    if (not is_increasing(m_impl->times)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "m_times have to be strictly increasing (this is a bug)");
+                                    "m_impl->times have to be strictly increasing (this is a bug)");
     }
 
-    report_range(m_values, unit_system, variable, *ctx.log());
+    report_range(m_impl->values, unit_system, variable, *ctx.log());
 
     // Set up interpolation.
     {
-      m_acc = gsl_interp_accel_alloc();
-      m_spline = gsl_spline_alloc(gsl_interp_linear, m_times.size());
-      gsl_spline_init(m_spline, m_times.data(), m_values.data(), m_times.size());
+      m_impl->acc = gsl_interp_accel_alloc();
+      m_impl->spline = gsl_spline_alloc(gsl_interp_linear, m_impl->times.size());
+      gsl_spline_init(m_impl->spline, m_impl->times.data(), m_impl->values.data(), m_impl->times.size());
     }
 
     bool extrapolate = ctx.config()->get_flag("input.forcing.time_extrapolation");
@@ -182,18 +202,17 @@ void ScalarForcing::initialize(const Context &ctx,
   }
 }
 
-ScalarForcing::ScalarForcing(const Context &ctx,
-                             const std::string &prefix,
-                             const std::string &variable_name,
-                             const std::string &units,
-                             const std::string &glaciological_units,
-                             const std::string &long_name)
-  : m_period(0.0),
-    m_period_start(0.0),
-    m_acc(nullptr),
-    m_spline(nullptr) {
+ScalarForcing::ScalarForcing(const Context &ctx, const std::string &prefix,
+                             const std::string &variable_name, const std::string &units,
+                             const std::string &output_units, const std::string &long_name)
+    : m_impl(new Impl) {
 
-  Config::ConstPtr config = ctx.config();
+  m_impl->acc    = nullptr;
+  m_impl->spline = nullptr;
+  m_impl->period = 0.0;
+  m_impl->period_start = 0.0;
+
+  auto config = ctx.config();
 
   auto filename = config->get_string(prefix + ".file");
   bool periodic = config->get_flag(prefix + ".periodic");
@@ -203,7 +222,7 @@ ScalarForcing::ScalarForcing(const Context &ctx,
                                   "%s.file is required", prefix.c_str());
   }
 
-  initialize(ctx, filename, variable_name, units, glaciological_units,
+  initialize(ctx, filename, variable_name, units, output_units,
              long_name, periodic);
 }
 
@@ -211,50 +230,54 @@ ScalarForcing::ScalarForcing(const Context &ctx,
                              const std::string &filename,
                              const std::string &variable_name,
                              const std::string &units,
-                             const std::string &glaciological_units,
+                             const std::string &output_units,
                              const std::string &long_name,
                              bool periodic)
-  : m_period(0.0),
-    m_period_start(0.0),
-    m_acc(nullptr),
-    m_spline(nullptr) {
+  : m_impl(new Impl) {
 
-  initialize(ctx, filename, variable_name, units, glaciological_units,
+  m_impl->acc    = nullptr;
+  m_impl->spline = nullptr;
+  m_impl->period = 0.0;
+  m_impl->period_start = 0.0;
+
+  initialize(ctx, filename, variable_name, units, output_units,
              long_name, periodic);
 }
 
 ScalarForcing::~ScalarForcing() {
-  if (m_spline != nullptr) {
-    gsl_spline_free(m_spline);
+  if (m_impl->spline != nullptr) {
+    gsl_spline_free(m_impl->spline);
   }
-  if (m_acc != nullptr) {
-    gsl_interp_accel_free(m_acc);
+  if (m_impl->acc != nullptr) {
+    gsl_interp_accel_free(m_impl->acc);
   }
+
+  delete m_impl;
 }
 
 double ScalarForcing::value(double t) const {
   double T = t;
 
-  if (m_period > 0.0) {
+  if (m_impl->period > 0.0) {
     // compute time since the period start
-    T -= m_period_start;
+    T -= m_impl->period_start;
 
     // remove an integer number of periods
-    T -= std::floor(T / m_period) * m_period;
+    T -= std::floor(T / m_impl->period) * m_impl->period;
 
     // add the period start back
-    T += m_period_start;
+    T += m_impl->period_start;
   }
 
-  if (T > m_times.back()) {
-    return m_values.back();
+  if (T > m_impl->times.back()) {
+    return m_impl->values.back();
   }
 
-  if (T < m_times.front()) {
-    return m_values.front();
+  if (T < m_impl->times.front()) {
+    return m_impl->values.front();
   }
 
-  return gsl_spline_eval(m_spline, T, m_acc);
+  return gsl_spline_eval(m_impl->spline, T, m_impl->acc);
 }
 
 // Integrate from a to b, interpreting data as *not* periodic
@@ -263,10 +286,10 @@ double ScalarForcing::integral(double a, double b) const {
 
   double dt = b - a;
 
-  double t0 = m_times.front();
-  double t1 = m_times.back();
-  double v0 = m_values[0];
-  double v1 = m_values.back();
+  double t0 = m_impl->times.front();
+  double t1 = m_impl->times.back();
+  double v0 = m_impl->values[0];
+  double v1 = m_impl->values.back();
 
   // both points are to the left of [t0, t1]
   if (b <= t0) {
@@ -289,15 +312,15 @@ double ScalarForcing::integral(double a, double b) const {
   }
 
   // both points are inside [t0, t1]
-  size_t ai = gsl_interp_bsearch(m_times.data(), a, 0, m_times.size() - 1);
-  size_t bi = gsl_interp_bsearch(m_times.data(), b, 0, m_times.size() - 1);
+  size_t ai = gsl_interp_bsearch(m_impl->times.data(), a, 0, m_impl->times.size() - 1);
+  size_t bi = gsl_interp_bsearch(m_impl->times.data(), b, 0, m_impl->times.size() - 1);
 
-  // gsl_interp_bsearch() above returns the index i of the array ‘m_times’ such that
-  // ‘m_times[i] <= t < m_times[i+1]’.  The index is searched for in the
-  // range [0, m_times.size() - 1] (inclusive).
+  // gsl_interp_bsearch() above returns the index i of the array ‘m_impl->times’ such that
+  // ‘m_impl->times[i] <= t < m_impl->times[i+1]’.  The index is searched for in the
+  // range [0, m_impl->times.size() - 1] (inclusive).
 
-  double v_a = gsl_spline_eval(m_spline, a, m_acc);
-  double v_b = gsl_spline_eval(m_spline, b, m_acc);
+  double v_a = gsl_spline_eval(m_impl->spline, a, m_impl->acc);
+  double v_b = gsl_spline_eval(m_impl->spline, b, m_impl->acc);
 
   if (ai == bi) {
     return 0.5 * (v_a + v_b) * dt;
@@ -305,14 +328,14 @@ double ScalarForcing::integral(double a, double b) const {
 
   double result = 0.0;
   // integrate from a to the data point just to its right
-  result += 0.5 * (v_a + m_values[ai + 1]) * (m_times[ai + 1] - a);
+  result += 0.5 * (v_a + m_impl->values[ai + 1]) * (m_impl->times[ai + 1] - a);
 
   // integrate over (possibly zero) intervals between a and b
   for (size_t k = ai + 1; k < bi; ++k) {
-    result += 0.5 * (m_values[k] + m_values[k + 1]) * (m_times[k + 1] - m_times[k]);
+    result += 0.5 * (m_impl->values[k] + m_impl->values[k + 1]) * (m_impl->times[k + 1] - m_impl->times[k]);
   }
 
-  result += 0.5 * (m_values[bi] + v_b) * (b - m_times[bi]);
+  result += 0.5 * (m_impl->values[bi] + v_b) * (b - m_impl->times[bi]);
 
   return result;
 }
@@ -326,7 +349,7 @@ double ScalarForcing::average(double t, double dt) const {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "negative interval length");
   }
 
-  if (m_period <= 0.0) {
+  if (m_impl->period <= 0.0) {
     // regular case
     return integral(t, t + dt) / dt;
   }
@@ -335,8 +358,8 @@ double ScalarForcing::average(double t, double dt) const {
   {
     double a = t;
     double b = t + dt;
-    double t0 = m_period_start;
-    double P = m_period;
+    double t0 = m_impl->period_start;
+    double P = m_impl->period;
 
     double N = std::floor((a - t0) / P);
     double M = std::floor((b - t0) / P);

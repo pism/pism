@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,49 +16,58 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "GivenClimate.hh"
+#include "pism/coupler/atmosphere/GivenClimate.hh"
 
 #include "pism/coupler/util/options.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace atmosphere {
 
-Given::Given(IceGrid::ConstPtr g)
+Given::Given(std::shared_ptr<const Grid> g)
   : AtmosphereModel(g, std::shared_ptr<AtmosphereModel>()) {
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_air_temp = IceModelVec2T::ForcingField(m_grid,
+    auto interp_type = m_config->get_string("atmosphere.given.air_temperature_interpolation");
+
+    InterpolationType interpolation = interp_type == "piecewise_linear" ? LINEAR : PIECEWISE_CONSTANT;
+
+    m_air_temp = std::make_shared<array::Forcing>(m_grid,
                                              file,
                                              "air_temp",
                                              "", // no standard name
                                              buffer_size,
                                              opt.periodic,
-                                             LINEAR);
+                                             interpolation);
 
-    m_precipitation = IceModelVec2T::ForcingField(m_grid,
-                                                  file,
-                                                  "precipitation",
-                                                  "", // no standard name
-                                                  buffer_size,
-                                                  opt.periodic);
+    m_precipitation = std::make_shared<array::Forcing>(m_grid,
+                                                       file,
+                                                       "precipitation",
+                                                       "", // no standard name
+                                                       buffer_size,
+                                                       opt.periodic);
   }
 
   {
-    m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
-                          "Kelvin", "Kelvin", "", 0);
-    m_air_temp->metadata(0)["valid_range"] = {0.0, 323.15}; // (0 C, 50 C
+    m_air_temp->metadata(0)
+        .long_name("mean annual near-surface air temperature")
+        .units("Kelvin");
+    m_air_temp->metadata(0)["valid_range"] = { 0.0, 323.15 }; // (0 C, 50 C)
   }
   {
-    m_precipitation->set_attrs("model_state", "precipitation rate",
-                               "kg m-2 second-1", "kg m-2 year-1", "precipitation_flux", 0);
+    m_precipitation->metadata(0)
+        .long_name("precipitation rate")
+        .units("kg m-2 second-1")
+        .output_units("kg m-2 year-1")
+        .standard_name("precipitation_flux");
   }
 }
 
@@ -74,7 +83,7 @@ void Given::init_impl(const Geometry &geometry) {
 
   // read time-independent data right away:
   if (m_air_temp->buffer_size() == 1 && m_precipitation->buffer_size() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, time().current(), 0); // dt is irrelevant
   }
 }
 
@@ -88,11 +97,11 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
   m_air_temp->average(t, dt);
 }
 
-const IceModelVec2S& Given::mean_precipitation_impl() const {
+const array::Scalar& Given::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& Given::mean_annual_temp_impl() const {
+const array::Scalar& Given::air_temperature_impl() const {
   return *m_air_temp;
 }
 

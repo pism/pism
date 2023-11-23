@@ -28,13 +28,13 @@ namespace atmosphere {
  */
 class Uniform : public AtmosphereModel {
 public:
-  Uniform(IceGrid::ConstPtr g);
+  Uniform(std::shared_ptr<const Grid> g);
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mean_precipitation_impl() const;
-  const IceModelVec2S& mean_annual_temp_impl() const;
+  const array::Scalar& precipitation_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
@@ -44,7 +44,7 @@ private:
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
 private:
-  IceModelVec2S::Ptr m_precipitation, m_temperature;
+  std::shared_ptr<array::Scalar> m_precipitation, m_temperature;
 };
 
 } // end of namespace atmosphere

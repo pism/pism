@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,28 +17,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Blatter.hh"
+#include "pism/stressbalance/blatter/Blatter.hh"
 
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/node_types.hh"
-#include "util/DataAccess.hh"
-#include "util/grid_hierarchy.hh"    // grid_transpose(), grid_z()
+#include "pism/stressbalance/blatter/util/DataAccess.hh"
+#include "pism/stressbalance/blatter/util/grid_hierarchy.hh"    // grid_transpose(), grid_z()
 
 namespace pism {
 namespace stressbalance {
 
-static const Vector2 u_exterior = {0.0, 0.0};
+static const Vector2d u_exterior = {0.0, 0.0};
 
 /*!
  * Computes the residual contribution of the "main" part of the Blatter system.
  */
 void Blatter::residual_f(const fem::Q1Element3 &element,
-                         const Vector2 *u_nodal,
+                         const Vector2d *u_nodal,
                          const double *B_nodal,
-                         Vector2 *residual) {
+                         Vector2d *residual) {
 
-  Vector2
+  Vector2d
     *u   = m_work2[0],
     *u_x = m_work2[1],
     *u_y = m_work2[2],
@@ -94,7 +94,7 @@ void Blatter::residual_f(const fem::Q1Element3 &element,
 void Blatter::residual_source_term(const fem::Q1Element3 &element,
                                    const double *surface,
                                    const double *bed,
-                                   Vector2 *residual) {
+                                   Vector2d *residual) {
 
   // compute s_x and s_y
   double
@@ -144,7 +144,7 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
   for (int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q) / m_scaling;
 
-    auto F = m_rho_ice_g * Vector2(s_x[q], s_y[q]);
+    auto F = m_rho_ice_g * Vector2d(s_x[q], s_y[q]);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
@@ -164,10 +164,10 @@ void Blatter::residual_basal(const fem::Q1Element3 &element,
                              const fem::Q1Element3Face &face,
                              const double *tauc_nodal,
                              const double *f_nodal,
-                             const Vector2 *u_nodal,
-                             Vector2 *residual) {
+                             const Vector2d *u_nodal,
+                             Vector2d *residual) {
 
-  Vector2 *u = m_work2[0];
+  Vector2d *u = m_work2[0];
 
   double
     *tauc       = m_work[0],
@@ -199,7 +199,7 @@ void Blatter::residual_basal(const fem::Q1Element3 &element,
  */
 void Blatter::residual_surface(const fem::Q1Element3 &element,
                                const fem::Q1Element3Face &face,
-                               Vector2 *residual) {
+                               Vector2d *residual) {
   (void) element;
   (void) face;
   (void) residual;
@@ -219,7 +219,7 @@ void Blatter::residual_lateral(const fem::Q1Element3 &element,
                                const double *surface_nodal,
                                const double *z_nodal,
                                const double *sl_nodal,
-                               Vector2 *residual) {
+                               Vector2d *residual) {
   double
     *z         = m_work[0],
     *s         = m_work[1],
@@ -234,7 +234,7 @@ void Blatter::residual_lateral(const fem::Q1Element3 &element,
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q) / m_scaling;
     auto N3 = face.normal(q);
-    Vector2 N = {N3.x, N3.y};
+    Vector2d N = {N3.x, N3.y};
 
     double
       ice_depth   = s[q] - z[q],
@@ -261,8 +261,8 @@ void Blatter::residual_lateral(const fem::Q1Element3 &element,
  */
 void Blatter::residual_dirichlet(const DMDALocalInfo &info,
                                  Parameters **P,
-                                 const Vector2 ***x,
-                                 Vector2 ***R) {
+                                 const Vector2d ***x,
+                                 Vector2d ***R) {
 
   double
     x_min   = m_grid->x0() - m_grid->Lx(),
@@ -297,7 +297,7 @@ void Blatter::residual_dirichlet(const DMDALocalInfo &info,
             b  = P[j][i].bed,
             H  = P[j][i].thickness,
             zz = grid_z(b, H, info.mz, k);
-          Vector2 U_bc = u_bc(xx, yy, zz);
+          Vector2d U_bc = u_bc(xx, yy, zz);
           R[j][i][k] = scaling * (x[j][i][k] - U_bc); // STORAGE_ORDER
         }
       }
@@ -309,7 +309,7 @@ void Blatter::residual_dirichlet(const DMDALocalInfo &info,
  * Computes the residual.
  */
 void Blatter::compute_residual(DMDALocalInfo *petsc_info,
-                               const Vector2 ***X, Vector2 ***R) {
+                               const Vector2d ***X, Vector2d ***R) {
   auto info = grid_transpose(*petsc_info);
 
   // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
@@ -339,7 +339,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   int node_type[Nk];
 
   // 2D vector quantities
-  Vector2 velocity[Nk], R_nodal[Nk];
+  Vector2d velocity[Nk], R_nodal[Nk];
 
   // note: we use info.da below because ice hardness is on the grid corresponding to the
   // current multigrid level
@@ -347,7 +347,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   // FIXME: This communicates ghosts of ice hardness
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
-  IceModelVec::AccessList list(m_parameters);
+  array::AccessScope list(m_parameters);
   auto *P = m_parameters.array();
 
   // Compute the residual at Dirichlet nodes and set it to zero elsewhere.
@@ -455,7 +455,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 }
 
 PetscErrorCode Blatter::function_callback(DMDALocalInfo *info,
-                                          const Vector2 ***x, Vector2 ***f,
+                                          const Vector2d ***x, Vector2d ***f,
                                           Blatter *solver) {
   try {
     solver->compute_residual(info, x, f);

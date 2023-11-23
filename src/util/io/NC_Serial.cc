@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "NC_Serial.hh"
+#include <mpi.h>
+
+#include "pism/util/io/NC_Serial.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -30,7 +32,7 @@
 #include "pism/util/pism_utilities.hh" // join
 #include "pism/util/error_handling.hh"
 
-#include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
+#include "pism/util/io/pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
 namespace pism {
 namespace io {
@@ -72,10 +74,10 @@ void NC_Serial::set_compression_level_impl(int level) const {
 }
 
 // open/create/close
-void NC_Serial::open_impl(const std::string &fname, IO_Mode mode) {
+void NC_Serial::open_impl(const std::string &fname, io::Mode mode) {
   int stat = NC_NOERR;
 
-  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
+  int open_mode = mode == io::PISM_READONLY ? NC_NOWRITE : NC_WRITE;
 
   if (m_rank == 0) {
     stat = nc_open(fname.c_str(), open_mode, &m_file_id);
@@ -206,14 +208,14 @@ void NC_Serial::inq_dimlen_impl(const std::string &dimension_name, unsigned int 
     stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &dimid);
 
     if (stat == NC_NOERR) {
-      stat = nc_inq_dimlen(m_file_id, dimid, &length);
+      stat   = nc_inq_dimlen(m_file_id, dimid, &length);
       result = static_cast<unsigned int>(length);
     }
   }
 
   MPI_Barrier(m_com);
   MPI_Bcast(&result, 1, MPI_UNSIGNED, 0, m_com);
-  MPI_Bcast(&stat,   1, MPI_INT,      0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   check(PISM_ERROR_LOCATION, stat);
 }
@@ -238,7 +240,7 @@ void NC_Serial::inq_unlimdim_impl(std::string &result) const {
 
   MPI_Barrier(m_com);
 
-  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
   MPI_Bcast(dimname.data(), NC_MAX_NAME, MPI_CHAR, 0, m_com);
 
   check(PISM_ERROR_LOCATION, stat);
@@ -247,9 +249,8 @@ void NC_Serial::inq_unlimdim_impl(std::string &result) const {
 }
 
 //! \brief Define a variable.
-void NC_Serial::def_var_impl(const std::string &name,
-                           IO_Type nctype,
-                           const std::vector<std::string> &dims) const {
+void NC_Serial::def_var_impl(const std::string &name, io::Type nctype,
+                             const std::vector<std::string> &dims) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -267,7 +268,7 @@ void NC_Serial::def_var_impl(const std::string &name,
 
     if (stat == NC_NOERR) {
       stat = nc_def_var(m_file_id, name.c_str(), pism_type_to_nc_type(nctype),
-                        static_cast<int>(dims.size()), &dimids[0], &varid);
+                        static_cast<int>(dims.size()), dimids.data(), &varid);
     }
   }
 
@@ -278,41 +279,32 @@ void NC_Serial::def_var_impl(const std::string &name,
 }
 
 void NC_Serial::get_varm_double_impl(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 const std::vector<unsigned int> &imap, double *op) const {
-  return this->get_var_double(variable_name,
-                              start, count, imap, op, true);
+                                     const std::vector<unsigned int> &start,
+                                     const std::vector<unsigned int> &count,
+                                     const std::vector<unsigned int> &imap, double *op) const {
+  return this->get_var_double(variable_name, start, count, imap, op, true);
 }
 
 void NC_Serial::get_vara_double_impl(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 double *op) const {
+                                     const std::vector<unsigned int> &start,
+                                     const std::vector<unsigned int> &count, double *op) const {
   std::vector<unsigned int> dummy;
-  return this->get_var_double(variable_name,
-                              start, count, dummy, op, false);
+  return this->get_var_double(variable_name, start, count, dummy, op, false);
 }
 
 //! \brief Get variable data.
 void NC_Serial::get_var_double(const std::string &variable_name,
-                            const std::vector<unsigned int> &start_input,
-                            const std::vector<unsigned int> &count_input,
-                            const std::vector<unsigned int> &imap_input, double *ip,
-                            bool transposed) const {
+                               const std::vector<unsigned int> &start_input,
+                               const std::vector<unsigned int> &count_input,
+                               const std::vector<unsigned int> &imap_input, double *ip,
+                               bool transposed) const {
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
-  std::vector<unsigned int> imap = imap_input;
-  const int start_tag = 1,
-    count_tag = 2,
-    data_tag =  3,
-    imap_tag =  4,
-    chunk_size_tag = 5;
+  std::vector<unsigned int> imap  = imap_input;
+  const int start_tag = 1, count_tag = 2, data_tag = 3, imap_tag = 4, chunk_size_tag = 5;
   int stat = NC_NOERR, com_size, ndims = static_cast<int>(start.size());
-  std::vector<double> processor_0_buffer;
   MPI_Status mpi_stat;
-  unsigned int local_chunk_size = 1,
-    processor_0_chunk_size = 0;
+  unsigned int local_chunk_size = 1, processor_0_chunk_size = 0;
 
   if (not transposed) {
     imap.resize(ndims);
@@ -332,6 +324,7 @@ void NC_Serial::get_var_double(const std::string &variable_name,
 
   // now we need to send start, count and imap data to processor 0 and receive data
   if (m_rank == 0) {
+    std::vector<double> processor_0_buffer;
     // Note: this could be optimized: if processor_0_chunk_size <=
     // max(local_chunk_size) we can avoid allocating this buffer. The inner for
     // loop will have to be re-ordered, though.
@@ -352,10 +345,10 @@ void NC_Serial::get_var_double(const std::string &variable_name,
       if (r != 0) {
         // Note: start, count, imap, and local_chunk_size on processor zero are
         // used *before* they get overwritten by these calls
-        MPI_Recv(&start[0],         ndims, MPI_UNSIGNED, r, start_tag,      m_com, &mpi_stat);
-        MPI_Recv(&count[0],         ndims, MPI_UNSIGNED, r, count_tag,      m_com, &mpi_stat);
-        MPI_Recv(&imap[0],          ndims, MPI_UNSIGNED, r, imap_tag,       m_com, &mpi_stat);
-        MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
+        MPI_Recv(start.data(), ndims, MPI_UNSIGNED, r, start_tag, m_com, &mpi_stat);
+        MPI_Recv(count.data(), ndims, MPI_UNSIGNED, r, count_tag, m_com, &mpi_stat);
+        MPI_Recv(imap.data(), ndims, MPI_UNSIGNED, r, imap_tag, m_com, &mpi_stat);
+        MPI_Recv(&local_chunk_size, 1, MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
       }
 
       // This for loop uses start, count and imap passed in as arguments when r
@@ -364,22 +357,22 @@ void NC_Serial::get_var_double(const std::string &variable_name,
         nc_start[k]  = start[k];
         nc_count[k]  = count[k];
         nc_imap[k]   = imap[k];
-        nc_stride[k] = 1;       // fill with ones; this way it works even with
-                                // NetCDF versions with a bug affecting the
-                                // stride == NULL case.
+        nc_stride[k] = 1; // fill with ones; this way it works even with
+                          // NetCDF versions with a bug affecting the
+                          // stride == NULL case.
       }
 
       if (transposed) {
-        stat = nc_get_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                  &processor_0_buffer[0]);
+        stat = nc_get_varm_double(m_file_id, varid, nc_start.data(), nc_count.data(),
+                                  nc_stride.data(), nc_imap.data(), processor_0_buffer.data());
       } else {
-        stat = nc_get_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                  &processor_0_buffer[0]);
+        stat = nc_get_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
+                                  processor_0_buffer.data());
       }
-      check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
+      check(PISM_ERROR_LOCATION, stat);
 
       if (r != 0) {
-        MPI_Send(&processor_0_buffer[0], local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
+        MPI_Send(processor_0_buffer.data(), (int)local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
       } else {
         for (unsigned int k = 0; k < local_chunk_size; ++k) {
           ip[k] = processor_0_buffer[k];
@@ -388,31 +381,26 @@ void NC_Serial::get_var_double(const std::string &variable_name,
     } // end of the for loop
 
   } else {
-    MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
-    MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
-    MPI_Send(&imap[0],           ndims, MPI_UNSIGNED, 0, imap_tag,       m_com);
-    MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, m_com);
+    MPI_Send(start.data(), ndims, MPI_UNSIGNED, 0, start_tag, m_com);
+    MPI_Send(count.data(), ndims, MPI_UNSIGNED, 0, count_tag, m_com);
+    MPI_Send(imap.data(), ndims, MPI_UNSIGNED, 0, imap_tag, m_com);
+    MPI_Send(&local_chunk_size, 1, MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
-    MPI_Recv(ip, local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com, &mpi_stat);
+    MPI_Recv(ip, (int)local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com, &mpi_stat);
   }
 }
 
 void NC_Serial::put_vara_double_impl(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start_input,
-                                 const std::vector<unsigned int> &count_input,
-                                 const double *op) const {
+                                     const std::vector<unsigned int> &start_input,
+                                     const std::vector<unsigned int> &count_input,
+                                     const double *op) const {
   // make copies of start and count so that we can use them in MPI_Recv() calls below
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
-  const int start_tag = 1,
-    count_tag = 2,
-    data_tag =  3,
-    chunk_size_tag = 4;
+  const int start_tag = 1, count_tag = 2, data_tag = 3, chunk_size_tag = 4;
   int stat = NC_NOERR, com_size = 0, ndims = static_cast<int>(start.size());
-  std::vector<double> processor_0_buffer;
   MPI_Status mpi_stat;
-  unsigned int local_chunk_size = 1,
-    processor_0_chunk_size = 0;
+  unsigned int local_chunk_size = 1, processor_0_chunk_size = 0;
 
   // get the size of the communicator
   MPI_Comm_size(m_com, &com_size);
@@ -428,6 +416,7 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
 
   // now we need to send start and count data to processor 0 and receive data
   if (m_rank == 0) {
+    std::vector<double> processor_0_buffer;
     processor_0_buffer.resize(processor_0_chunk_size);
 
     // MPI calls below require C datatypes (so that we don't have to worry about sizes of
@@ -445,11 +434,12 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
       if (r != 0) {
         // Note: start, count, and local_chunk_size on processor zero are used *before*
         // they get overwritten by these calls
-        MPI_Recv(&start[0],         ndims, MPI_UNSIGNED, r, start_tag,      m_com, &mpi_stat);
-        MPI_Recv(&count[0],         ndims, MPI_UNSIGNED, r, count_tag,      m_com, &mpi_stat);
-        MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
+        MPI_Recv(start.data(), ndims, MPI_UNSIGNED, r, start_tag, m_com, &mpi_stat);
+        MPI_Recv(count.data(), ndims, MPI_UNSIGNED, r, count_tag, m_com, &mpi_stat);
+        MPI_Recv(&local_chunk_size, 1, MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
 
-        MPI_Recv(&processor_0_buffer[0], local_chunk_size, MPI_DOUBLE, r, data_tag, m_com, &mpi_stat);
+        MPI_Recv(processor_0_buffer.data(), local_chunk_size, MPI_DOUBLE, r, data_tag, m_com,
+                 &mpi_stat);
       } else {
         for (unsigned int k = 0; k < local_chunk_size; ++k) {
           processor_0_buffer[k] = op[k];
@@ -461,21 +451,21 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
       for (int k = 0; k < ndims; ++k) {
         nc_start[k]  = start[k];
         nc_count[k]  = count[k];
-        nc_stride[k] = 1;       // fill with ones; this way it works even with
-                                // NetCDF versions with a bug affecting the
-                                // stride == NULL case.
+        nc_stride[k] = 1; // fill with ones; this way it works even with
+                          // NetCDF versions with a bug affecting the
+                          // stride == NULL case.
       }
 
-      stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                &processor_0_buffer[0]);
-      check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
+      stat = nc_put_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
+                                processor_0_buffer.data());
+      check(PISM_ERROR_LOCATION, stat);
     } // end of the for loop
   } else {
-    MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
-    MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
-    MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, m_com);
+    MPI_Send(start.data(), ndims, MPI_UNSIGNED, 0, start_tag, m_com);
+    MPI_Send(count.data(), ndims, MPI_UNSIGNED, 0, count_tag, m_com);
+    MPI_Send(&local_chunk_size, 1, MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
-    MPI_Send(const_cast<double*>(op), local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);
+    MPI_Send(const_cast<double *>(op), (int)local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);
   }
 }
 
@@ -488,7 +478,7 @@ void NC_Serial::inq_nvars_impl(int &result) const {
   }
   MPI_Barrier(m_com);
 
-  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
   check(PISM_ERROR_LOCATION, stat);
 
   MPI_Bcast(&result, 1, MPI_INT, 0, m_com);
@@ -496,7 +486,7 @@ void NC_Serial::inq_nvars_impl(int &result) const {
 
 //! \brief Get dimensions a variable depends on.
 void NC_Serial::inq_vardimid_impl(const std::string &variable_name,
-                                std::vector<std::string> &result) const {
+                                  std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
 
@@ -508,7 +498,7 @@ void NC_Serial::inq_vardimid_impl(const std::string &variable_name,
     }
   }
 
-  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
   check(PISM_ERROR_LOCATION, stat);
 
   MPI_Bcast(&ndims, 1, MPI_INT, 0, m_com);
@@ -522,10 +512,10 @@ void NC_Serial::inq_vardimid_impl(const std::string &variable_name,
   dimids.resize(ndims);
 
   if (m_rank == 0) {
-    stat = nc_inq_vardimid(m_file_id, varid, &dimids[0]);
+    stat = nc_inq_vardimid(m_file_id, varid, dimids.data());
   }
 
-  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
   check(PISM_ERROR_LOCATION, stat);
 
   MPI_Barrier(m_com);
@@ -537,7 +527,7 @@ void NC_Serial::inq_vardimid_impl(const std::string &variable_name,
       stat = nc_inq_dimname(m_file_id, dimids[k], name.data());
     }
 
-    MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+    MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
     check(PISM_ERROR_LOCATION, stat);
 
     MPI_Barrier(m_com);
@@ -560,7 +550,7 @@ void NC_Serial::inq_varnatts_impl(const std::string &variable_name, int &result)
     if (varid >= NC_GLOBAL) {
       stat = nc_inq_varnatts(m_file_id, varid, &result);
     } else {
-      stat = varid;             // LCOV_EXCL_LINE
+      stat = varid; // LCOV_EXCL_LINE
     }
   }
   MPI_Barrier(m_com);
@@ -596,7 +586,7 @@ void NC_Serial::inq_varname_impl(unsigned int j, std::string &result) const {
 
   MPI_Barrier(m_com);
 
-  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
   MPI_Bcast(varname.data(), NC_MAX_NAME, MPI_CHAR, 0, m_com);
 
   check(PISM_ERROR_LOCATION, stat);
@@ -608,9 +598,8 @@ void NC_Serial::inq_varname_impl(unsigned int j, std::string &result) const {
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC_Serial::get_att_double_impl(const std::string &variable_name,
-                                  const std::string &att_name,
-                                  std::vector<double> &result) const {
+void NC_Serial::get_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                                    std::vector<double> &result) const {
   int stat = NC_NOERR, len = 0;
 
   int varid = get_varid(variable_name);
@@ -622,7 +611,7 @@ void NC_Serial::get_att_double_impl(const std::string &variable_name,
     if (varid >= NC_GLOBAL) {
       stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
     } else {
-      stat = varid;             // LCOV_EXCL_LINE
+      stat = varid; // LCOV_EXCL_LINE
     }
 
     if (stat == NC_NOERR) {
@@ -642,32 +631,31 @@ void NC_Serial::get_att_double_impl(const std::string &variable_name,
 
   // Now read data and broadcast stat to see if we succeeded:
   if (m_rank == 0) {
-    stat = nc_get_att_double(m_file_id, varid, att_name.c_str(), &result[0]);
+    stat = nc_get_att_double(m_file_id, varid, att_name.c_str(), result.data());
   }
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   check(PISM_ERROR_LOCATION, stat);
 
   // Broadcast data
-  MPI_Bcast(&result[0], len, MPI_DOUBLE, 0, m_com);
+  MPI_Bcast(result.data(), len, MPI_DOUBLE, 0, m_com);
 }
 
 // Get a text (character array) attribute on rank 0.
-static int get_att_text(int ncid, int varid, const std::string &att_name,
-                        std::string &result) {
+static int get_att_text(int ncid, int varid, const std::string &att_name, std::string &result) {
   int stat = NC_NOERR;
 
   size_t attlen = 0;
-  stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  stat          = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
   if (stat != NC_NOERR) {
     result = "";
     return 0;
   }
 
   std::vector<char> buffer(attlen + 1, 0);
-  stat = nc_get_att_text(ncid, varid, att_name.c_str(), &buffer[0]);
+  stat = nc_get_att_text(ncid, varid, att_name.c_str(), buffer.data());
   if (stat == NC_NOERR) {
-    result = &buffer[0];
+    result = buffer.data();
   } else {
     result = "";
   }
@@ -677,19 +665,18 @@ static int get_att_text(int ncid, int varid, const std::string &att_name,
 
 // Get a string attribute on rank 0. In "string array" attributes array elements are concatenated
 // using "," as the separator.
-static int get_att_string(int ncid, int varid, const std::string &att_name,
-                          std::string &result) {
+static int get_att_string(int ncid, int varid, const std::string &att_name, std::string &result) {
   int stat = NC_NOERR;
 
   size_t attlen = 0;
-  stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  stat          = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
   if (stat != NC_NOERR) {
     result = "";
     return 0;
   }
 
-  std::vector<char*> buffer(attlen + 1, 0);
-  stat = nc_get_att_string(ncid, varid, att_name.c_str(), &buffer[0]);
+  std::vector<char *> buffer(attlen + 1, 0);
+  stat = nc_get_att_string(ncid, varid, att_name.c_str(), buffer.data());
   if (stat == NC_NOERR) {
     std::vector<std::string> strings(attlen);
     for (size_t k = 0; k < attlen; ++k) {
@@ -699,7 +686,7 @@ static int get_att_string(int ncid, int varid, const std::string &att_name,
   } else {
     result = "";
   }
-  stat = nc_free_string(attlen, &buffer[0]);
+  stat = nc_free_string(attlen, buffer.data());
 
   return stat;
 }
@@ -709,8 +696,8 @@ static int get_att_string(int ncid, int varid, const std::string &att_name,
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC_Serial::get_att_text_impl(const std::string &variable_name,
-                                const std::string &att_name, std::string &result) const {
+void NC_Serial::get_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                                  std::string &result) const {
   int stat = NC_NOERR;
 
   // Read and broadcast the attribute length:
@@ -720,7 +707,7 @@ void NC_Serial::get_att_text_impl(const std::string &variable_name,
 
     if (varid >= NC_GLOBAL) {
       nc_type nctype = NC_NAT;
-      stat = nc_inq_atttype(m_file_id, varid, att_name.c_str(), &nctype);
+      stat           = nc_inq_atttype(m_file_id, varid, att_name.c_str(), &nctype);
 
       if (stat == NC_NOERR) {
         switch (nctype) {
@@ -732,24 +719,24 @@ void NC_Serial::get_att_text_impl(const std::string &variable_name,
           break;
         default:
           result = "";
-          stat = NC_NOERR;
+          stat   = NC_NOERR;
         }
       } else if (stat == NC_ENOTATT) {
         result = "";
-        stat = NC_NOERR;
+        stat   = NC_NOERR;
       }
     } else {
-      stat = varid;             // LCOV_EXCL_LINE
+      stat = varid; // LCOV_EXCL_LINE
     }
   }
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
   check(PISM_ERROR_LOCATION, stat);
 
-  int len = result.size();
-  MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
+  unsigned int len = result.size();
+  MPI_Bcast(&len, 1, MPI_UNSIGNED, 0, m_com);
 
   result.resize(len);
-  MPI_Bcast(&result[0], len, MPI_CHAR, 0, m_com);
+  MPI_Bcast(&result[0], (int)len, MPI_CHAR, 0, m_com);
 }
 
 
@@ -758,17 +745,17 @@ void NC_Serial::get_att_text_impl(const std::string &variable_name,
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 void NC_Serial::put_att_double_impl(const std::string &variable_name, const std::string &att_name,
-                               IO_Type nctype, const std::vector<double> &data) const {
+                                    io::Type nctype, const std::vector<double> &data) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
     int varid = get_varid(variable_name);
 
     if (varid >= NC_GLOBAL) {
-      stat = nc_put_att_double(m_file_id, varid, att_name.c_str(),
-                               pism_type_to_nc_type(nctype), data.size(), &data[0]);
+      stat = nc_put_att_double(m_file_id, varid, att_name.c_str(), pism_type_to_nc_type(nctype),
+                               data.size(), data.data());
     } else {
-      stat = varid;             // LCOV_EXCL_LINE
+      stat = varid; // LCOV_EXCL_LINE
     }
   }
 
@@ -779,13 +766,12 @@ void NC_Serial::put_att_double_impl(const std::string &variable_name, const std:
 }
 
 
-
 //! \brief Writes a text attribute.
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 void NC_Serial::put_att_text_impl(const std::string &variable_name, const std::string &att_name,
-                               const std::string &value) const {
+                                  const std::string &value) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -794,7 +780,7 @@ void NC_Serial::put_att_text_impl(const std::string &variable_name, const std::s
     if (varid >= NC_GLOBAL) {
       stat = nc_put_att_text(m_file_id, varid, att_name.c_str(), value.size(), value.c_str());
     } else {
-      stat = varid;             // LCOV_EXCL_LINE
+      stat = varid; // LCOV_EXCL_LINE
     }
   }
 
@@ -808,7 +794,8 @@ void NC_Serial::put_att_text_impl(const std::string &variable_name, const std::s
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC_Serial::inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const {
+void NC_Serial::inq_attname_impl(const std::string &variable_name, unsigned int n,
+                                 std::string &result) const {
   int stat = NC_NOERR;
   std::vector<char> name(NC_MAX_NAME + 1, 0);
 
@@ -816,9 +803,10 @@ void NC_Serial::inq_attname_impl(const std::string &variable_name, unsigned int 
     int varid = get_varid(variable_name);
 
     if (varid >= NC_GLOBAL) {
-      stat = nc_inq_attname(m_file_id, varid, n, name.data()); check(PISM_ERROR_LOCATION, stat);
+      stat = nc_inq_attname(m_file_id, varid, n, name.data());
+      check(PISM_ERROR_LOCATION, stat);
     } else {
-      stat = varid;             // LCOV_EXCL_LINE
+      stat = varid; // LCOV_EXCL_LINE
     }
   }
   MPI_Barrier(m_com);
@@ -834,7 +822,8 @@ void NC_Serial::inq_attname_impl(const std::string &variable_name, unsigned int 
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC_Serial::inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
+void NC_Serial::inq_atttype_impl(const std::string &variable_name, const std::string &att_name,
+                                 io::Type &result) const {
   int stat, tmp;
 
   if (m_rank == 0) {
@@ -843,15 +832,15 @@ void NC_Serial::inq_atttype_impl(const std::string &variable_name, const std::st
     if (varid >= NC_GLOBAL) {
       // In NetCDF 3.6.x nc_type is an enum; in 4.x it is 'typedef int'.
       nc_type nctype = NC_NAT;
-      stat = nc_inq_atttype(m_file_id, varid, att_name.c_str(), &nctype);
+      stat           = nc_inq_atttype(m_file_id, varid, att_name.c_str(), &nctype);
       if (stat == NC_ENOTATT) {
-        tmp = NC_NAT;
+        tmp  = NC_NAT;
         stat = NC_NOERR;
       } else {
         tmp = static_cast<int>(nctype);
       }
     } else {
-      stat = varid;             // LCOV_EXCL_LINE
+      stat = varid; // LCOV_EXCL_LINE
     }
   }
   MPI_Barrier(m_com);
@@ -883,12 +872,13 @@ std::string NC_Serial::get_format() const {
   int format;
 
   if (m_rank == 0) {
-    int stat = nc_inq_format(m_file_id, &format); check(PISM_ERROR_LOCATION, stat);
+    int stat = nc_inq_format(m_file_id, &format);
+    check(PISM_ERROR_LOCATION, stat);
   }
   MPI_Barrier(m_com);
   MPI_Bcast(&format, 1, MPI_INT, 0, m_com);
 
-  switch(format) {
+  switch (format) {
   case NC_FORMAT_CLASSIC:
   case NC_FORMAT_64BIT_OFFSET:
     return "netcdf3";
@@ -931,16 +921,16 @@ int NC_Serial::get_varid(const std::string &variable_name) const {
 
   if (m_rank == 0) {
     int varid = -2;
-    int stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid);
+    int stat  = nc_inq_varid(m_file_id, variable_name.c_str(), &varid);
 
     if (stat == NC_NOERR) {
       return varid;
-    } else {
-      return stat;
     }
-  } else {
-    return -2;                  // this value will not be used
+
+    return stat;
   }
+
+  return -2; // this value will not be used
 }
 
 } // end of namespace io

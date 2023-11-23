@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021 PISM Authors
+// Copyright (C) 2012-2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,36 +16,31 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <algorithm>            // std::min, std::max
+#include <algorithm> // std::min, std::max
 
-#include "Distributed.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/Vars.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/hydrology/Distributed.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace hydrology {
 
-Distributed::Distributed(IceGrid::ConstPtr g)
-  : Routing(g),
-    m_P(m_grid, "bwp", WITH_GHOSTS, 1),
-    m_Pnew(m_grid, "Pnew_internal", WITHOUT_GHOSTS) {
+Distributed::Distributed(std::shared_ptr<const Grid> g)
+    : Routing(g), m_P(m_grid, "bwp"), m_Pnew(m_grid, "Pnew_internal") {
 
   // additional variables beyond hydrology::Routing
-  m_P.set_attrs("model_state",
-                "pressure of transportable water in subglacial layer",
-                "Pa", "Pa", "", 0);
-  m_P.metadata()["valid_min"] = {0.0};
+  m_P.metadata(0)
+      .long_name("pressure of transportable water in subglacial layer")
+      .units("Pa");
+  m_P.metadata()["valid_min"] = { 0.0 };
 
-  m_Pnew.set_attrs("internal",
-                   "new transportable subglacial water pressure during update",
-                   "Pa", "Pa", "", 0);
-  m_Pnew.metadata()["valid_min"] = {0.0};
+  m_Pnew.metadata(0)
+      .long_name("new transportable subglacial water pressure during update")
+      .units("Pa");
+  m_Pnew.metadata()["valid_min"] = { 0.0 };
 }
 
 void Distributed::initialization_message() const {
@@ -61,26 +56,23 @@ void Distributed::restart_impl(const File &input_file, int record) {
   regrid("Hydrology", m_P);
 }
 
-void Distributed::bootstrap_impl(const File &input_file,
-                                 const IceModelVec2S &ice_thickness) {
+void Distributed::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness) {
   Routing::bootstrap_impl(input_file, ice_thickness);
 
   double bwp_default = m_config->get_number("bootstrapping.defaults.bwp");
-  m_P.regrid(input_file, OPTIONAL, bwp_default);
+  m_P.regrid(input_file, io::Default(bwp_default));
 
   regrid("Hydrology", m_P);
 
   bool init_P_from_steady = m_config->get_flag("hydrology.distributed.init_p_from_steady");
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
-    m_log->message(2,
-                   "  initializing P from P(W) formula which applies in steady state\n");
+    m_log->message(2, "  initializing P from P(W) formula which applies in steady state\n");
 
     compute_overburden_pressure(ice_thickness, m_Pover);
 
-    IceModelVec2S sliding_speed(m_grid, "velbase_mag", WITHOUT_GHOSTS);
-    sliding_speed.set_attrs("internal", "basal sliding speed",
-                            "m s-1", "m s-1", "", 0);
+    array::Scalar sliding_speed(m_grid, "velbase_mag");
+    sliding_speed.metadata(0).long_name("basal sliding speed").units("m s-1");
 
     std::string filename = m_config->get_string("hydrology.distributed.sliding_speed_file");
 
@@ -89,16 +81,16 @@ void Distributed::bootstrap_impl(const File &input_file,
                                     "hydrology.distributed.sliding_speed_file is not set");
     }
 
-    sliding_speed.regrid(filename, CRITICAL);
+    sliding_speed.regrid(filename, io::Default::Nil());
 
     P_from_W_steady(m_W, m_Pover, sliding_speed,
                     m_P);
   }
 }
 
-void Distributed::init_impl(const IceModelVec2S &W_till,
-                              const IceModelVec2S &W,
-                              const IceModelVec2S &P) {
+void Distributed::init_impl(const array::Scalar &W_till,
+                              const array::Scalar &W,
+                              const array::Scalar &P) {
   Routing::init_impl(W_till, W, P);
 
   m_P.copy_from(P);
@@ -106,7 +98,7 @@ void Distributed::init_impl(const IceModelVec2S &W_till,
 
 void Distributed::define_model_state_impl(const File &output) const {
   Routing::define_model_state_impl(output);
-  m_P.define(output);
+  m_P.define(output, io::PISM_DOUBLE);
 }
 
 void Distributed::write_model_state_impl(const File &output) const {
@@ -122,7 +114,7 @@ std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() cons
 }
 
 //! Copies the P state variable which is the modeled water pressure.
-const IceModelVec2S& Distributed::subglacial_water_pressure() const {
+const array::Scalar& Distributed::subglacial_water_pressure() const {
   return m_P;
 }
 
@@ -131,15 +123,15 @@ const IceModelVec2S& Distributed::subglacial_water_pressure() const {
 /*!
   The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
 */
-void Distributed::check_P_bounds(IceModelVec2S &P,
-                                 const IceModelVec2S &P_o,
+void Distributed::check_P_bounds(array::Scalar &P,
+                                 const array::Scalar &P_o,
                                  bool enforce_upper) {
 
-  IceModelVec::AccessList list{&P, &P_o};
+  array::AccessScope list{&P, &P_o};
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (P(i,j) < 0.0) {
@@ -175,10 +167,10 @@ void Distributed::check_P_bounds(IceModelVec2S &P,
   in verification and/or reporting.  It is not used during time-dependent
   model runs.  To be more complete, \f$P = P(W,P_o,|v_b|)\f$.
 */
-void Distributed::P_from_W_steady(const IceModelVec2S &W,
-                                  const IceModelVec2S &P_overburden,
-                                  const IceModelVec2S &sliding_speed,
-                                  IceModelVec2S &result) {
+void Distributed::P_from_W_steady(const array::Scalar &W,
+                                  const array::Scalar &P_overburden,
+                                  const array::Scalar &sliding_speed,
+                                  array::Scalar &result) {
 
   const double
     ice_softness                   = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
@@ -189,9 +181,9 @@ void Distributed::P_from_W_steady(const IceModelVec2S &W,
 
   const double CC = cavitation_opening_coefficient / (creep_closure_coefficient * ice_softness);
 
-  IceModelVec::AccessList list{&W, &P_overburden, &sliding_speed, &result};
+  array::AccessScope list{&W, &P_overburden, &sliding_speed, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double sb = pow(CC * sliding_speed(i, j), 1.0 / Glen_exponent);
@@ -219,19 +211,19 @@ double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
 }
 
 void Distributed::update_P(double dt,
-                           const IceModelVec2CellType &cell_type,
-                           const IceModelVec2S &sliding_speed,
-                           const IceModelVec2S &surface_input_rate,
-                           const IceModelVec2S &basal_melt_rate,
-                           const IceModelVec2S &P_overburden,
-                           const IceModelVec2S &Wtill,
-                           const IceModelVec2S &Wtill_new,
-                           const IceModelVec2S &P,
-                           const IceModelVec2S &W,
-                           const IceModelVec2Stag &Ws,
-                           const IceModelVec2Stag &K,
-                           const IceModelVec2Stag &Q,
-                           IceModelVec2S &P_new) const {
+                           const array::CellType &cell_type,
+                           const array::Scalar &sliding_speed,
+                           const array::Scalar &surface_input_rate,
+                           const array::Scalar &basal_melt_rate,
+                           const array::Scalar &P_overburden,
+                           const array::Scalar &Wtill,
+                           const array::Scalar &Wtill_new,
+                           const array::Scalar &P,
+                           const array::Scalar1 &W,
+                           const array::Staggered1 &Ws,
+                           const array::Staggered1 &K,
+                           const array::Staggered1 &Q,
+                           array::Scalar &P_new) const {
 
   const double
     n    = m_config->get_number("stress_balance.sia.Glen_exponent"),
@@ -247,11 +239,11 @@ void Distributed::update_P(double dt,
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
 
-  IceModelVec::AccessList list{&P, &W, &Wtill, &Wtill_new, &sliding_speed, &Ws,
+  array::AccessScope list{&P, &W, &Wtill, &Wtill_new, &sliding_speed, &Ws,
                                &K, &Q, &surface_input_rate, &basal_melt_rate,
                                &cell_type, &P_overburden, &P_new};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto w = W.star(i, j);
@@ -261,7 +253,7 @@ void Distributed::update_P(double dt,
       P_new(i, j) = 0.0;
     } else if (cell_type.ocean(i, j)) {
       P_new(i, j) = P_o;
-    } else if (w.ij <= 0.0) {
+    } else if (w.c <= 0.0) {
       P_new(i, j) = P_o;
     } else {
       auto q = Q.star(i, j);
@@ -269,8 +261,8 @@ void Distributed::update_P(double dt,
       auto ws = Ws.star(i, j);
 
       double
-        Open  = c1 * sliding_speed(i, j) * std::max(0.0, Wr - w.ij),
-        Close = c2 * A * pow(P_o - P(i, j), n) * w.ij;
+        Open  = c1 * sliding_speed(i, j) * std::max(0.0, Wr - w.c),
+        Close = c2 * A * pow(P_o - P(i, j), n) * w.c;
 
       // compute the flux divergence the same way as in update_W()
       const double divadflux = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
@@ -280,8 +272,8 @@ void Distributed::update_P(double dt,
         Dn = m_rg * k.n * ws.n,
         Ds = m_rg * k.s * ws.s;
 
-      double diffW = (wux * (De * (w.e - w.ij) - Dw * (w.ij - w.w)) +
-                      wuy * (Dn * (w.n - w.ij) - Ds * (w.ij - w.s)));
+      double diffW = (wux * (De * (w.e - w.c) - Dw * (w.c - w.w)) +
+                      wuy * (Dn * (w.n - w.c) - Ds * (w.c - w.s)));
 
       double divflux = -divadflux + diffW;
 

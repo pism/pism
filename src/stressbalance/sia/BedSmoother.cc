@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010--2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,29 +18,27 @@
 
 #include <cassert>
 
-#include "BedSmoother.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-
-#include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Logger.hh"
+#include "pism/stressbalance/sia/BedSmoother.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 namespace stressbalance {
 
-BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
-    :
-  m_grid(g),
+BedSmoother::BedSmoother(std::shared_ptr<const Grid> g)
+    : m_grid(g),
       m_config(g->ctx()->config()),
-      m_topgsmooth(m_grid, "topgsmooth", WITH_GHOSTS, MAX_GHOSTS),
-      m_maxtl(m_grid, "maxtl", WITH_GHOSTS, MAX_GHOSTS),
-      m_C2(m_grid, "C2bedsmooth", WITH_GHOSTS, MAX_GHOSTS),
-      m_C3(m_grid, "C3bedsmooth", WITH_GHOSTS, MAX_GHOSTS),
-      m_C4(m_grid, "C4bedsmooth", WITH_GHOSTS, MAX_GHOSTS)
+      m_topgsmooth(m_grid, "topgsmooth"),
+      m_maxtl(m_grid, "maxtl"),
+      m_C2(m_grid, "C2bedsmooth"),
+      m_C3(m_grid, "C3bedsmooth"),
+      m_C4(m_grid, "C3bedsmooth")
 {
 
   const Logger &log = *m_grid->ctx()->log();
@@ -48,21 +46,21 @@ BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
   {
     // allocate Vecs that live on all procs; all have to be as "wide" as any of
     //   their prospective uses
-    m_topgsmooth.set_attrs("bed_smoother_tool",
-                           "smoothed bed elevation, in bed roughness parameterization",
-                           "m", "m", "", 0);
-    m_maxtl.set_attrs("bed_smoother_tool",
-                      "maximum elevation in local topography patch, in bed roughness parameterization",
-                      "m", "m", "", 0);
-    m_C2.set_attrs("bed_smoother_tool",
-                   "polynomial coeff of H^-2, in bed roughness parameterization",
-                   "m2", "m2", "", 0);
-    m_C3.set_attrs("bed_smoother_tool",
-                   "polynomial coeff of H^-3, in bed roughness parameterization",
-                   "m3", "m3", "", 0);
-    m_C4.set_attrs("bed_smoother_tool",
-                   "polynomial coeff of H^-4, in bed roughness parameterization",
-                   "m4", "m4", "", 0);
+    m_topgsmooth.metadata(0)
+        .long_name("smoothed bed elevation, in bed roughness parameterization")
+        .units("m");
+    m_maxtl.metadata(0)
+        .long_name("maximum elevation in local topography patch, in bed roughness parameterization")
+        .units("m");
+    m_C2.metadata(0)
+        .long_name("polynomial coeff of H^-2, in bed roughness parameterization")
+        .units("m2");
+    m_C3.metadata(0)
+        .long_name("polynomial coeff of H^-3, in bed roughness parameterization")
+        .units("m3");
+    m_C4.metadata(0)
+        .long_name("polynomial coeff of H^-4, in bed roughness parameterization")
+        .units("m4");
 
     // allocate Vecs that live on processor 0:
     m_topgp0 = m_topgsmooth.allocate_proc0_copy();
@@ -96,7 +94,7 @@ Input lambda gives physical half-width (in m) of square over which to do the
 average.  Only square smoothing domains are allowed with this call, which is the
 default case.
  */
-void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
+void BedSmoother::preprocess_bed(const array::Scalar &topg) {
 
   if (m_smoothing_range <= 0.0) {
     // smoothing completely inactive.  we transfer the original bed topg,
@@ -121,7 +119,7 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
   preprocess_bed(topg, m_Nx, m_Ny);
 }
 
-const IceModelVec2S& BedSmoother::smoothed_bed() const {
+const array::Scalar& BedSmoother::smoothed_bed() const {
   return m_topgsmooth;
 }
 
@@ -129,12 +127,12 @@ const IceModelVec2S& BedSmoother::smoothed_bed() const {
 Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
-void BedSmoother::preprocess_bed(const IceModelVec2S &topg,
+void BedSmoother::preprocess_bed(const array::Scalar &topg,
                                  unsigned int Nx, unsigned int Ny) {
 
   if ((Nx >= m_grid->Mx()) || (Ny >= m_grid->My())) {
     throw RuntimeError(PISM_ERROR_LOCATION, "input Nx, Ny in bed smoother is too large because\n"
-                       "domain of smoothing exceeds IceGrid domain");
+                       "domain of smoothing exceeds Grid domain");
   }
   m_Nx = Nx;
   m_Ny = Ny;
@@ -281,14 +279,14 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::smoothed_thk(const IceModelVec2S &usurf,
-                               const IceModelVec2S &thk,
-                               const IceModelVec2CellType &mask,
-                               IceModelVec2S &result) const {
+void BedSmoother::smoothed_thk(const array::Scalar &usurf,
+                               const array::Scalar &thk,
+                               const array::CellType2 &mask,
+                               array::Scalar &result) const {
 
-  IceModelVec::AccessList list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
+  array::AccessScope list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
 
-  unsigned int GHOSTS = result.stencil_width();
+  auto GHOSTS = result.stencil_width();
   assert(mask.stencil_width()         >= GHOSTS);
   assert(m_maxtl.stencil_width()      >= GHOSTS);
   assert(thk.stencil_width()          >= GHOSTS);
@@ -297,22 +295,23 @@ void BedSmoother::smoothed_thk(const IceModelVec2S &usurf,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+    for (auto p = m_grid->points(GHOSTS); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (thk(i, j) < 0.0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "BedSmoother detects negative original thickness\n"
                                       "at location (i, j) = (%d, %d) ... ending", i, j);
-      } else if (thk(i, j) == 0.0) {
+      }
+
+      if (thk(i, j) == 0.0) {
         result(i, j) = 0.0;
       } else if (m_maxtl(i, j) >= thk(i, j)) {
         result(i, j) = thk(i, j);
       } else {
         if (mask.grounded(i, j)) {
-          // if grounded, compute smoothed thickness as the difference of ice
-          // surface elevation and smoothed bed elevation
-          const double thks_try = usurf(i, j) - m_topgsmooth(i, j);
-          result(i, j) = (thks_try > 0.0) ? thks_try : 0.0;
+          // if grounded, compute smoothed thickness as the difference of ice surface
+          // elevation and smoothed bed elevation, making sure the result is non-negative
+          result(i, j) = std::max(usurf(i, j) - m_topgsmooth(i, j), 0.0);
         } else {
           // if floating, use original thickness (note: surface elevation was
           // computed using this thickness and the sea level elevation)
@@ -348,14 +347,14 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const {
+void BedSmoother::theta(const array::Scalar &usurf, array::Scalar &result) const {
 
   if ((m_Nx < 0) || (m_Ny < 0)) {
     result.set(1.0);
     return;
   }
 
-  IceModelVec::AccessList list{&m_C2, &m_C3, &m_C4, &m_maxtl, &result, &m_topgsmooth, &usurf};
+  array::AccessScope list{&m_C2, &m_C3, &m_C4, &m_maxtl, &result, &m_topgsmooth, &usurf};
 
   unsigned int GHOSTS = result.stencil_width();
   assert(m_C2.stencil_width()         >= GHOSTS);
@@ -371,7 +370,7 @@ void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const
 
   ParallelSection loop(m_grid->com);
   try {
-    for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+    for (auto p = m_grid->points(GHOSTS); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = usurf(i, j) - m_topgsmooth(i, j);

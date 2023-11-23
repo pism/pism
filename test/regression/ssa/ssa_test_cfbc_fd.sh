@@ -21,7 +21,13 @@ output=`mktemp pism-testv-XXXX` || exit 1
 set -e
 set -x
 
-OPTS="-verbose 1 -o_size none -My 3 -ssafd_ksp_type richardson -ssafd_pc_type lu"
+OPTS="
+-verbose 1
+-o_size none
+-My 3
+-ssafd_ksp_type richardson
+-ssafd_pc_type lu
+-stress_balance.ssa.epsilon 0"
 
 # do stuff
 $MPIEXEC_COMMAND $PISM_PATH/ssa_test_cfbc${EXT} -Mx 201 $OPTS > ${output}
@@ -33,11 +39,11 @@ set +e
 diff ${output} -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.1050      0.00506    0.1050    0.0000    0.0493    0.0000
+                0.1347      0.00684    0.1347    0.0000    0.0667    0.0000
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.0778      0.00633    0.0778    0.0000    0.0618    0.0000
+                0.0436      0.00359    0.0436    0.0000    0.0350    0.0000
 NUM ERRORS DONE
 END-OF-OUTPUT
 

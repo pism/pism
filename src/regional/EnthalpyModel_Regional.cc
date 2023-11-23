@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,21 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EnthalpyModel_Regional.hh"
+#include "pism/regional/EnthalpyModel_Regional.hh"
 
 namespace pism {
 namespace energy {
 
-EnthalpyModel_Regional::EnthalpyModel_Regional(IceGrid::ConstPtr grid,
-                                               stressbalance::StressBalance *stress_balance)
-  : EnthalpyModel(grid, stress_balance),
-    m_basal_melt_rate_stored(m_grid, "bmr_stored", WITHOUT_GHOSTS)
-{
+EnthalpyModel_Regional::EnthalpyModel_Regional(
+    std::shared_ptr<const Grid> grid,
+    std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : EnthalpyModel(grid, stress_balance), m_basal_melt_rate_stored(m_grid, "bmr_stored") {
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of basal_melt_rate_grounded instead.
-  m_basal_melt_rate_stored.set_attrs("internal",
-                                     "time-independent basal melt rate in the no-model-strip",
-                                     "m s-1", "m s-1", "", 0);
+  m_basal_melt_rate_stored.metadata(0)
+      .long_name("time-independent basal melt rate in the no-model-strip")
+      .units("m s-1");
 }
 
 void EnthalpyModel_Regional::restart_impl(const File &input_file, int record) {
@@ -41,10 +40,10 @@ void EnthalpyModel_Regional::restart_impl(const File &input_file, int record) {
 }
 
 void EnthalpyModel_Regional::bootstrap_impl(const File &input_file,
-                                            const IceModelVec2S &ice_thickness,
-                                            const IceModelVec2S &surface_temperature,
-                                            const IceModelVec2S &climatic_mass_balance,
-                                            const IceModelVec2S &basal_heat_flux) {
+                                            const array::Scalar &ice_thickness,
+                                            const array::Scalar &surface_temperature,
+                                            const array::Scalar &climatic_mass_balance,
+                                            const array::Scalar &basal_heat_flux) {
 
   EnthalpyModel::bootstrap_impl(input_file, ice_thickness, surface_temperature,
                                climatic_mass_balance, basal_heat_flux);
@@ -52,11 +51,11 @@ void EnthalpyModel_Regional::bootstrap_impl(const File &input_file,
   m_basal_melt_rate_stored.copy_from(m_basal_melt_rate);
 }
 
-void EnthalpyModel_Regional::initialize_impl(const IceModelVec2S &basal_melt_rate,
-                                             const IceModelVec2S &ice_thickness,
-                                             const IceModelVec2S &surface_temperature,
-                                             const IceModelVec2S &climatic_mass_balance,
-                                             const IceModelVec2S &basal_heat_flux) {
+void EnthalpyModel_Regional::initialize_impl(const array::Scalar &basal_melt_rate,
+                                             const array::Scalar &ice_thickness,
+                                             const array::Scalar &surface_temperature,
+                                             const array::Scalar &climatic_mass_balance,
+                                             const array::Scalar &basal_heat_flux) {
 
   EnthalpyModel::initialize_impl(basal_melt_rate,
                                  ice_thickness,
@@ -75,14 +74,14 @@ void EnthalpyModel_Regional::update_impl(double t, double dt,
 
   EnthalpyModel::update_impl(t, dt, inputs);
 
-  const IceModelVec2Int &no_model_mask = *inputs.no_model_mask;
+  const array::Scalar &no_model_mask = *inputs.no_model_mask;
 
   // The update_impl() call above sets m_work; ghosts are communicated
   // later (in EnergyModel::update()).
-  IceModelVec::AccessList list{&no_model_mask, &m_work, &m_ice_enthalpy,
+  array::AccessScope list{&no_model_mask, &m_work, &m_ice_enthalpy,
       &m_basal_melt_rate, &m_basal_melt_rate_stored};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (no_model_mask(i, j) > 0.5) {

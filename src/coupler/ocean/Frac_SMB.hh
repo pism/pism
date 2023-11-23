@@ -31,7 +31,7 @@ namespace ocean {
 class Frac_SMB : public OceanModel
 {
 public:
-  Frac_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Frac_SMB(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Frac_SMB();
 
 private:
@@ -39,9 +39,9 @@ private:
 
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  const array::Scalar& shelf_base_mass_flux_impl() const;
 
-  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 };

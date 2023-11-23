@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "AgeColumnSystem.hh"
-
+#include "pism/age/AgeColumnSystem.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
@@ -26,10 +25,10 @@ namespace pism {
 AgeColumnSystem::AgeColumnSystem(const std::vector<double>& storage_grid,
                                  const std::string &my_prefix,
                                  double dx, double dy, double dt,
-                                 const IceModelVec3 &age,
-                                 const IceModelVec3 &u3,
-                                 const IceModelVec3 &v3,
-                                 const IceModelVec3 &w3)
+                                 const array::Array3D &age,
+                                 const array::Array3D &u3,
+                                 const array::Array3D &v3,
+                                 const array::Array3D &w3)
   : columnSystemCtx(storage_grid, my_prefix, dx, dy, dt, u3, v3, w3),
     m_age3(age) {
 

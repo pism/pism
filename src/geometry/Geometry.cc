@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,10 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "Geometry.hh"
+#include "pism/geometry/Geometry.hh"
 
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/grounded_cell_fraction.hh"
@@ -28,64 +27,77 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
-Geometry::Geometry(const IceGrid::ConstPtr &grid)
+Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
-  : m_stencil_width(static_cast<int>(grid->ctx()->config()->get_number("grid.max_stencil_width"))),
-    latitude(grid, "lat", WITHOUT_GHOSTS),
-    longitude(grid, "lon", WITHOUT_GHOSTS),
-    bed_elevation(grid, "topg", WITH_GHOSTS, m_stencil_width),
-    sea_level_elevation(grid, "sea_level", WITH_GHOSTS),
-    ice_thickness(grid, "thk", WITH_GHOSTS, m_stencil_width),
-    ice_area_specific_volume(grid, "ice_area_specific_volume", WITH_GHOSTS),
-    cell_type(grid, "mask", WITH_GHOSTS, m_stencil_width),
-    cell_grounded_fraction(grid, "cell_grounded_fraction", WITHOUT_GHOSTS),
-    ice_surface_elevation(grid, "usurf", WITH_GHOSTS, m_stencil_width) {
+  : latitude(grid, "lat"),
+    longitude(grid, "lon"),
+    bed_elevation(grid, "topg"),
+    sea_level_elevation(grid, "sea_level"),
+    ice_thickness(grid, "thk"),
+    ice_area_specific_volume(grid, "ice_area_specific_volume"),
+    cell_type(grid, "mask"),
+    cell_grounded_fraction(grid, "cell_grounded_fraction"),
+    ice_surface_elevation(grid, "usurf") {
 
-  latitude.set_attrs("mapping", "latitude", "degree_north", "degree_north", "latitude", 0);
-  latitude.set_time_independent(true);
+  latitude.metadata(0)
+      .long_name("latitude")
+      .units("degree_north")
+      .standard_name("latitude")
+      .set_time_independent(true);
   latitude.metadata()["grid_mapping"] = "";
-  latitude.metadata()["valid_range"] = {-90.0, 90.0};
+  latitude.metadata()["valid_range"]  = { -90.0, 90.0 };
 
-  longitude.set_attrs("mapping", "longitude", "degree_east", "degree_east", "longitude", 0);
-  longitude.set_time_independent(true);
+  longitude.metadata(0)
+      .long_name("longitude")
+      .units("degree_east")
+      .standard_name("longitude")
+      .set_time_independent(true);
   longitude.metadata()["grid_mapping"] = "";
-  longitude.metadata()["valid_range"] = {-180.0, 180.0};
+  longitude.metadata()["valid_range"]  = { -180.0, 180.0 };
 
-  bed_elevation.set_attrs("model_state", "bedrock surface elevation",
-                          "m", "m", "bedrock_altitude", 0);
+  bed_elevation.metadata(0)
+      .long_name("bedrock surface elevation")
+      .units("m")
+      .standard_name("bedrock_altitude");
 
-  sea_level_elevation.set_attrs("model_state",
-                                "sea level elevation above reference ellipsoid", "meters", "meters",
-                                "sea_surface_height_above_reference_ellipsoid", 0);
+  sea_level_elevation.metadata(0)
+      .long_name("sea level elevation above reference ellipsoid")
+      .units("meters")
+      .standard_name("sea_surface_height_above_reference_ellipsoid");
 
-  ice_thickness.set_attrs("model_state", "land ice thickness",
-                          "m", "m", "land_ice_thickness", 0);
-  ice_thickness.metadata()["valid_min"] = {0.0};
+  ice_thickness.metadata(0)
+      .long_name("land ice thickness")
+      .units("m")
+      .standard_name("land_ice_thickness");
+  ice_thickness.metadata()["valid_min"] = { 0.0 };
 
-  ice_area_specific_volume.set_attrs("model_state",
-                                     "ice-volume-per-area in partially-filled grid cells",
-                                     "m3/m2", "m3/m2", "", 0);
+  ice_area_specific_volume.metadata(0)
+      .long_name("ice-volume-per-area in partially-filled grid cells")
+      .units("m3/m2");
   ice_area_specific_volume.metadata()["comment"] =
-    "this variable represents the amount of ice in a partially-filled cell and not "
-    "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
+      "this variable represents the amount of ice in a partially-filled cell and not "
+      "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
 
-  cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
-                      "", "", "", 0);
-  cell_type.metadata()["flag_values"] = {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
+  cell_type.metadata(0)
+      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask")
+      .set_output_type(io::PISM_INT);
+  cell_type.metadata()["flag_values"] = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+                                          MASK_ICE_FREE_OCEAN };
   cell_type.metadata()["flag_meanings"] =
-    "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
-  cell_type.metadata().set_output_type(PISM_INT);
+      "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
-  cell_grounded_fraction.set_attrs("internal",
-                                   "fractional grounded/floating mask (floating=0, grounded=1)",
-                                   "", "", "", 0);
+  cell_grounded_fraction.metadata(0).long_name(
+      "fractional grounded/floating mask (floating=0, grounded=1)");
 
-  ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
-                                  "m", "m", "surface_altitude", 0);
+  ice_surface_elevation.metadata(0)
+      .long_name("ice upper surface elevation")
+      .units("m")
+      .standard_name("surface_altitude");
 
   // make sure all the fields are initialized
   latitude.set(0.0);
@@ -97,35 +109,11 @@ Geometry::Geometry(const IceGrid::ConstPtr &grid)
   ensure_consistency(0.0);
 }
 
-void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
-  IceGrid::ConstPtr grid = ice_thickness.grid();
-
-  IceModelVec::AccessList list(ice_thickness);
-
-  ParallelSection loop(grid->com);
-  try {
-    for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (ice_thickness(i, j) < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "H = %e (negative) at point i=%d, j=%d",
-                                      ice_thickness(i, j), i, j);
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-}
-
 void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
-  IceGrid::ConstPtr grid = ice_thickness.grid();
+  auto grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
-  check_minimum_ice_thickness(ice_thickness);
-
-  IceModelVec::AccessList list{&sea_level_elevation, &bed_elevation,
+  array::AccessScope list{&sea_level_elevation, &bed_elevation,
       &ice_thickness, &ice_area_specific_volume,
       &cell_type, &ice_surface_elevation};
 
@@ -133,8 +121,14 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   {
     ParallelSection loop(grid->com);
     try {
-      for (Points p(*grid); p; p.next()) {
+      for (auto p = grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
+
+        if (ice_thickness(i, j) < 0.0) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "H = %e (negative) at point i=%d, j=%d",
+                                        ice_thickness(i, j), i, j);
+        }
 
         if (ice_thickness(i, j) > 0.0 and ice_area_specific_volume(i, j) > 0.0) {
           ice_thickness(i, j) += ice_area_specific_volume(i, j);
@@ -154,7 +148,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
     ParallelSection loop(grid->com);
     try {
-      for (Points p(*grid); p; p.next()) {
+      for (auto p = grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         int mask = 0;
@@ -187,7 +181,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   } catch (RuntimeError &e) {
     e.add_context("computing the grounded cell fraction");
 
-    std::string output_file = config->get_string("output.file_name");
+    std::string output_file = config->get_string("output.file");
     std::string o_file = filename_add_suffix(output_file,
                                              "_grounded_cell_fraction_failed", "");
     // save geometry to a file for debugging
@@ -201,7 +195,7 @@ void Geometry::dump(const char *filename) const {
 
   File file(grid->com, filename,
             string_to_backend(grid->ctx()->config()->get_string("output.format")),
-            PISM_READWRITE_CLOBBER,
+            io::PISM_READWRITE_CLOBBER,
             grid->ctx()->pio_iosys_id());
 
   io::define_time(file, *grid->ctx());
@@ -220,7 +214,7 @@ void Geometry::dump(const char *filename) const {
 
 /*! Compute the elevation of the bottom surface of the ice.
  */
-void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
+void ice_bottom_surface(const Geometry &geometry, array::Scalar &result) {
 
   auto grid = result.grid();
   auto config = grid->ctx()->config();
@@ -230,15 +224,15 @@ void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
     water_density = config->get_number("constants.sea_water.density"),
     alpha         = ice_density / water_density;
 
-  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
-  const IceModelVec2S &bed_elevation = geometry.bed_elevation;
-  const IceModelVec2S &sea_level     = geometry.sea_level_elevation;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
+  const array::Scalar &bed_elevation = geometry.bed_elevation;
+  const array::Scalar &sea_level     = geometry.sea_level_elevation;
 
-  IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
+  array::AccessScope list{&ice_thickness, &bed_elevation, &sea_level, &result};
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -260,14 +254,14 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   auto grid = geometry.ice_thickness.grid();
   auto config = grid->ctx()->config();
 
-  IceModelVec::AccessList list{&geometry.ice_thickness};
+  array::AccessScope list{&geometry.ice_thickness};
 
   double volume = 0.0;
 
   auto cell_area = grid->cell_area();
 
   {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (geometry.ice_thickness(i,j) >= thickness_threshold) {
@@ -279,7 +273,7 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   // Add the volume of the ice in Href:
   if (config->get_flag("geometry.part_grid.enabled")) {
     list.add(geometry.ice_area_specific_volume);
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       volume += geometry.ice_area_specific_volume(i,j) * cell_area;
@@ -299,12 +293,12 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
     ice_density       = config->get_number("constants.ice.density"),
     cell_area         = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness,
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness,
       &geometry.bed_elevation, &geometry.sea_level_elevation};
 
   double volume = 0.0;
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -334,8 +328,8 @@ double ice_area(const Geometry &geometry, double thickness_threshold) {
 
   auto cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.ice_thickness};
-  for (Points p(*grid); p; p.next()) {
+  array::AccessScope list{&geometry.ice_thickness};
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (geometry.ice_thickness(i, j) >= thickness_threshold) {
@@ -354,8 +348,8 @@ double ice_area_grounded(const Geometry &geometry, double thickness_threshold) {
 
   auto cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness};
-  for (Points p(*grid); p; p.next()) {
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (geometry.cell_type.grounded(i, j) and
@@ -375,8 +369,8 @@ double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
 
   auto cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness};
-  for (Points p(*grid); p; p.next()) {
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (geometry.cell_type.ocean(i, j) and
@@ -412,18 +406,18 @@ double sea_level_rise_potential(const Geometry &geometry, double thickness_thres
  * @brief Set no_model_mask variable to have value 1 in strip of width 'strip' m around
  * edge of computational domain, and value 0 otherwise.
  */
-void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2Int &result) {
+void set_no_model_strip(const Grid &grid, double width, array::Scalar &result) {
 
   if (width <= 0.0) {
     return;
   }
 
-  IceModelVec::AccessList list(result);
+  array::AccessScope list(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (in_null_strip(grid, i, j, width)) {
+    if (grid::in_null_strip(grid, i, j, width)) {
       result(i, j) = 1;
     } else {
       result(i, j) = 0;

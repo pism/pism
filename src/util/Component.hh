@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,25 +16,42 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __Component_hh
-#define __Component_hh
+#ifndef PISM_COMPONENT_H
+#define PISM_COMPONENT_H
 
 #include <string>
-#include <set>
-#include <map>
 
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/IceGrid.hh"
 #include "pism/util/Diagnostic.hh"
 
 namespace pism {
 
 class MaxTimestep;
 class File;
-class IceModelVec;
+class Geometry;
+class Time;
+class Profiling;
+class Grid;
+
+namespace array {
+template<typename T> class Array2D;
+class Array3D;
+class Array;
+class CellType1;
+class CellType2;
+class CellType;
+class Forcing;
+class Scalar1;
+class Scalar2;
+class Scalar;
+class Staggered1;
+class Staggered;
+class Vector1;
+class Vector2;
+class Vector;
+} // end of namespace array
 
 enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};
 
@@ -100,15 +117,18 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config);
 */
 class Component {
 public:
-
   /** Create a Component instance given a grid. */
-  Component(IceGrid::ConstPtr g);
+  Component(std::shared_ptr<const Grid> grid);
   virtual ~Component() = default;
 
   DiagnosticList diagnostics() const;
   TSDiagnosticList ts_diagnostics() const;
 
-  IceGrid::ConstPtr grid() const;
+  std::shared_ptr<const Grid> grid() const;
+
+  const Time &time() const;
+
+  const Profiling &profiling() const;
 
   void define_model_state(const File &output) const;
   void write_model_state(const File &output) const;
@@ -129,11 +149,11 @@ protected:
       `-regrid_vars`.
   */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
-  virtual void regrid(const std::string &module_name, IceModelVec &variable,
-                      RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
-protected:
+  void regrid(const std::string &module_name, array::Array &variable,
+              RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
+
   //! grid used by this component
-  const IceGrid::ConstPtr m_grid;
+  const std::shared_ptr<const Grid> m_grid;
   //! configuration database used by this component
   const Config::ConstPtr m_config;
   //! unit system used by this component
@@ -144,4 +164,4 @@ protected:
 
 } // end of namespace pism
 
-#endif // __Component_hh
+#endif // PISM_COMPONENT_H

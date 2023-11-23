@@ -16,12 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "NCFile.hh"
+#include "pism/util/io/NCFile.hh"
 
 #include <cstdio>               // fprintf, stderr, rename, remove
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -58,7 +57,7 @@ void NCFile::def_var_chunking_impl(const std::string &name,
 }
 
 
-void NCFile::open(const std::string &filename, IO_Mode mode) {
+void NCFile::open(const std::string &filename, io::Mode mode) {
   this->open_impl(filename, mode);
   m_filename = filename;
   m_define_mode = false;
@@ -112,7 +111,7 @@ void NCFile::inq_unlimdim(std::string &result) const {
   this->inq_unlimdim_impl(result);
 }
 
-void NCFile::def_var(const std::string &name, IO_Type nctype,
+void NCFile::def_var(const std::string &name, io::Type nctype,
                     const std::vector<std::string> &dims) const {
   redef();
   this->def_var_impl(name, nctype, dims);
@@ -156,7 +155,7 @@ void NCFile::put_vara_double(const std::string &variable_name,
 
 
 void NCFile::write_darray(const std::string &variable_name,
-                          const IceGrid &grid,
+                          const Grid &grid,
                           unsigned int z_count,
                           bool time_dependent,
                           unsigned int record,
@@ -169,33 +168,20 @@ void NCFile::write_darray(const std::string &variable_name,
  * The default implementation computes start and count and calls put_vara_double()
  */
 void NCFile::write_darray_impl(const std::string &variable_name,
-                               const IceGrid &grid,
+                               const Grid &grid,
                                unsigned int z_count,
                                bool time_dependent,
                                unsigned int record,
                                const double *input) {
-  std::vector<std::string> dims;
-  this->inq_vardimid(variable_name, dims);
-
   std::vector<unsigned int> start, count;
 
-  // time
   if (time_dependent) {
-    start.push_back(record);
-    count.push_back(1);
+    start = { record, (unsigned)grid.ys(), (unsigned)grid.xs(), 0 };
+    count = { 1,      (unsigned)grid.ym(), (unsigned)grid.xm(), z_count };
+  } else {
+    start = { (unsigned)grid.ys(), (unsigned)grid.xs(), 0 };
+    count = { (unsigned)grid.ym(), (unsigned)grid.xm(), z_count };
   }
-
-  // y
-  start.push_back(grid.ys());
-  count.push_back(grid.ym());
-
-  // x
-  start.push_back(grid.xs());
-  count.push_back(grid.xm());
-
-  // z (these are not used when writing 2D fields)
-  start.push_back(0);
-  count.push_back(z_count);
 
   this->put_vara_double(variable_name, start, count, input);
 }
@@ -253,7 +239,7 @@ void NCFile::get_att_text(const std::string &variable_name,
 
 void NCFile::put_att_double(const std::string &variable_name,
                             const std::string &att_name,
-                            IO_Type xtype,
+                            io::Type xtype,
                             const std::vector<double> &data) const {
   this->put_att_double_impl(variable_name, att_name, xtype, data);
 }
@@ -272,7 +258,7 @@ void NCFile::inq_attname(const std::string &variable_name,
 
 void NCFile::inq_atttype(const std::string &variable_name,
                          const std::string &att_name,
-                         IO_Type &result) const {
+                         io::Type &result) const {
   this->inq_atttype_impl(variable_name, att_name, result);
 }
 

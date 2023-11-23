@@ -23,27 +23,22 @@ def grid():
     P.vertical_grid_from_options(config)
     P.ownership_ranges_from_options(ctx.size)
 
-    return PISM.IceGrid(ctx.ctx, P)
+    return PISM.Grid(ctx.ctx, P)
 
 
 def allocate_storage(grid):
     "Allocate the bed, the smoothed bed, the surface elevation, and theta."
-    topg = PISM.IceModelVec2S(grid, "topg", PISM.WITH_GHOSTS, 1)
-    topg.set_attrs("internal", "original topography",
-                   "m", "m", "bedrock_altitude", 0)
+    topg = PISM.Scalar1(grid, "topg")
+    topg.metadata(0).long_name("original topography").units("m").standard_name("bedrock_altitude")
 
-    topg_smoothed = PISM.IceModelVec2S(grid, "topg_smoothed", PISM.WITHOUT_GHOSTS, 1)
-    topg_smoothed.set_attrs("internal", "smoothed topography",
-                            "m", "m", "bedrock_altitude", 0)
+    topg_smoothed = PISM.Scalar(grid, "topg_smoothed")
+    topg_smoothed.metadata(0).long_name("smoothed topography").units("m").standard_name("bedrock_altitude")
 
-    usurf = PISM.IceModelVec2S(grid, "usurf", PISM.WITH_GHOSTS, 1)
-    usurf.set_attrs("internal", "ice surface elevation",
-                    "m", "m", "surface_altitude", 0)
+    usurf = PISM.Scalar1(grid, "usurf")
+    usurf.metadata(0).long_name("ice surface elevation").units("m").standard_name("surface_altitude")
 
-    theta = PISM.IceModelVec2S(grid, "theta", PISM.WITH_GHOSTS, 1)
-    theta.set_attrs("internal",
-                    "coefficient theta in Schoof (2003) bed roughness parameterization",
-                    "", "", "", 0)
+    theta = PISM.Scalar1(grid, "theta")
+    theta.metadata(0).long_name("coefficient theta in Schoof (2003) bed roughness parameterization")
 
     return (topg, topg_smoothed, usurf, theta)
 
@@ -85,7 +80,7 @@ def smooth(topg, topg_smoothed, usurf, theta):
     "Smooth the bed topography."
     grid = topg.grid()
 
-    smoother = PISM.BedSmoother(grid, 1)
+    smoother = PISM.BedSmoother(grid)
 
     smoother.preprocess_bed(topg)
 

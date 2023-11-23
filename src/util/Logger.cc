@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2021 PISM Authors
+/* Copyright (C) 2015, 2017, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,10 +22,9 @@
 #include <stdarg.h>
 #include <petscsys.h>
 
-#include "Logger.hh"
-#include "pism_utilities.hh"
-#include "pism_options.hh"
-#include "error_handling.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

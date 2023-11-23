@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,38 +17,30 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "IceRegionalModel.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/EnthalpyConverter.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
-#include "SSAFD_Regional.hh"
-#include "pism/stressbalance/SSB_Modifier.hh"
-#include "SIAFD_Regional.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/basalstrength/ConstantYieldStress.hh"
-#include "RegionalYieldStress.hh"
-#include "pism/util/io/File.hh"
-#include "pism/coupler/OceanModel.hh"
+#include "pism/regional/IceRegionalModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "EnthalpyModel_Regional.hh"
-#include "pism/energy/CHSystem.hh"
 #include "pism/energy/BedThermalUnit.hh"
+#include "pism/energy/CHSystem.hh"
 #include "pism/energy/utilities.hh"
-#include "pism/util/iceModelVec2T.hh"
 #include "pism/hydrology/Hydrology.hh"
+#include "pism/regional/EnthalpyModel_Regional.hh"
+#include "pism/regional/RegionalYieldStress.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/array/Forcing.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 
-IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, std::shared_ptr<Context> c)
-  : IceModel(g, c),
-    m_no_model_mask(m_grid, "no_model_mask", WITH_GHOSTS, 2),
-    m_usurf_stored(m_grid, "usurfstore", WITH_GHOSTS, 2),
-    m_thk_stored(m_grid, "thkstore", WITH_GHOSTS, 1)
-{
-  // empty
+IceRegionalModel::IceRegionalModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> c)
+    : IceModel(g, c),
+      m_no_model_mask(m_grid, "no_model_mask"),
+      m_usurf_stored(m_grid, "usurfstore"),
+      m_thk_stored(m_grid, "thkstore") {
+  m_no_model_mask.set_interpolation_type(NEAREST);
 
   if (m_config->get_flag("energy.ch_warming.enabled")) {
-    m_ch_warming_flux.reset(new IceModelVec3(m_grid, "ch_warming_flux", WITHOUT_GHOSTS, m_grid->z()));
+    m_ch_warming_flux.reset(
+        new array::Array3D(m_grid, "ch_warming_flux", array::WITHOUT_GHOSTS, m_grid->z()));
   }
 }
 
@@ -57,33 +49,28 @@ void IceRegionalModel::allocate_storage() {
 
   IceModel::allocate_storage();
 
-  m_log->message(2,
-                 "  creating IceRegionalModel vecs ...\n");
+  m_log->message(2, "  creating IceRegionalModel vecs ...\n");
 
   // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
-  m_no_model_mask.set_attrs("model_state",
-                            "mask: zeros (modeling domain) and ones"
-                            " (no-model buffer near grid edges)",
-                            "", "", "", 0); // no units and no standard name
-  m_no_model_mask.metadata()["flag_values"] = {0, 1};
+  m_no_model_mask.metadata(0)
+      .long_name("mask: zeros (modeling domain) and ones (no-model buffer near grid edges)")
+      .set_time_independent(true)
+      .set_output_type(io::PISM_INT); // no units and no standard name
+  m_no_model_mask.metadata()["flag_values"]   = { 0, 1 };
   m_no_model_mask.metadata()["flag_meanings"] = "normal special_treatment";
-  m_no_model_mask.set_time_independent(true);
-  m_no_model_mask.metadata().set_output_type(PISM_INT);
+
   m_no_model_mask.set(0);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
-  m_usurf_stored.set_attrs("model_state",
-                           "saved surface elevation for use to keep surface gradient constant"
-                           " in no_model strip",
-                           "m", "m",
-                           "", 0); //  no standard name
+  m_usurf_stored.metadata(0)
+      .long_name(
+          "saved surface elevation for use to keep surface gradient constant in no_model strip")
+      .units("m"); //  no standard name
 
   // stencil width of 1 needed for differentiation
-  m_thk_stored.set_attrs("model_state",
-                         "saved ice thickness for use to keep driving stress constant"
-                         " in no_model strip",
-                         "m", "m",
-                         "", 0); //  no standard name
+  m_thk_stored.metadata(0)
+      .long_name("saved ice thickness for use to keep driving stress constant in no_model strip")
+      .units("m"); //  no standard name
 
   m_model_state.insert(&m_thk_stored);
   m_model_state.insert(&m_usurf_stored);
@@ -118,37 +105,27 @@ void IceRegionalModel::model_state_setup() {
     std::unique_ptr<File> input_file;
 
     if (use_input_file) {
-      input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
+      input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
     }
 
     switch (input.type) {
-    case INIT_RESTART:
-      {
-        m_ch_system->restart(*input_file, input.record);
-        break;
-      }
-    case INIT_BOOTSTRAP:
-      {
+    case INIT_RESTART: {
+      m_ch_system->restart(*input_file, input.record);
+      break;
+    }
+    case INIT_BOOTSTRAP: {
 
-        m_ch_system->bootstrap(*input_file,
-                               m_geometry.ice_thickness,
-                               m_surface->temperature(),
-                               m_surface->mass_flux(),
-                               m_btu->flux_through_top_surface());
-        break;
-      }
+      m_ch_system->bootstrap(*input_file, m_geometry.ice_thickness, m_surface->temperature(),
+                             m_surface->mass_flux(), m_btu->flux_through_top_surface());
+      break;
+    }
     case INIT_OTHER:
-    default:
-      {
-        m_basal_melt_rate.set(m_config->get_number("bootstrapping.defaults.bmelt"));
+    default: {
+      m_basal_melt_rate.set(m_config->get_number("bootstrapping.defaults.bmelt"));
 
-        m_ch_system->initialize(m_basal_melt_rate,
-                                m_geometry.ice_thickness,
-                                m_surface->temperature(),
-                                m_surface->mass_flux(),
-                                m_btu->flux_through_top_surface());
-
-      }
+      m_ch_system->initialize(m_basal_melt_rate, m_geometry.ice_thickness, m_surface->temperature(),
+                              m_surface->mass_flux(), m_btu->flux_through_top_surface());
+    }
     }
   }
 }
@@ -177,21 +154,21 @@ void IceRegionalModel::allocate_energy_model() {
     if (m_config->get_flag("energy.temperature_based")) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "pismr -regional does not support the '-energy cold' mode.");
-    } else {
-      m_energy_model = new energy::EnthalpyModel_Regional(m_grid, m_stress_balance.get());
     }
+
+    m_energy_model = std::make_shared<energy::EnthalpyModel_Regional>(m_grid, m_stress_balance);
   } else {
-    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance.get());
+    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
   }
 
-  m_submodels["energy balance model"] = m_energy_model;
+  m_submodels["energy balance model"] = m_energy_model.get();
 
   if (m_config->get_flag("energy.ch_warming.enabled") and
       not m_ch_system) {
 
     m_log->message(2, "# Allocating the cryo-hydrologic warming model...\n");
 
-    m_ch_system.reset(new energy::CHSystem(m_grid, m_stress_balance.get()));
+     m_ch_system = std::make_shared<energy::CHSystem>(m_grid, m_stress_balance);
     m_submodels["cryo-hydrologic warming"] = m_ch_system.get();
   }
 }
@@ -241,7 +218,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
   // no_model_mask
   {
     if (input_file.find_variable(m_no_model_mask.metadata().get_name())) {
-      m_no_model_mask.regrid(input_file, CRITICAL);
+      m_no_model_mask.regrid(input_file, io::Default::Nil());
     } else {
       // set using the no_model_strip parameter
       double strip_width = m_config->get_number("regional.no_model_strip", "meters");
@@ -253,10 +230,10 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
   }
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
-    IceModelVec::AccessList list
+    array::AccessScope list
       {&m_no_model_mask, &m_velocity_bc_mask, &m_ice_thickness_bc_mask};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_no_model_mask(i, j) > 0.5) {
@@ -291,7 +268,7 @@ void IceRegionalModel::energy_step() {
     bedrock_thermal_model_step();
 
     energy::Inputs inputs = energy_model_inputs();
-    const IceModelVec3 *strain_heating = inputs.volumetric_heating_rate;
+    const array::Array3D *strain_heating = inputs.volumetric_heating_rate;
     inputs.volumetric_heating_rate = m_ch_warming_flux.get();
 
     energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),
@@ -337,16 +314,14 @@ public:
   CHTemperature(const IceRegionalModel *m)
     : Diag<IceRegionalModel>(m) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "ch_temp", m_grid->z())};
-
-    set_attrs("temperature of the cryo-hydrologic system", "",
-              "Kelvin", "Kelvin", 0);
+    m_vars = { { m_sys, "ch_temp", m_grid->z() } };
+    m_vars[0].long_name("temperature of the cryo-hydrologic system").units("Kelvin");
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_temp", WITHOUT_GHOSTS, m_grid->z()));
+    std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_temp", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_temperature(model->cryo_hydrologic_system()->enthalpy(),
                                 model->geometry().ice_thickness,
@@ -364,16 +339,15 @@ public:
   CHLiquidWaterFraction(const IceRegionalModel *m)
     : Diag<IceRegionalModel>(m) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "ch_liqfrac", m_grid->z())};
+    m_vars = { { m_sys, "ch_liqfrac", m_grid->z() } };
 
-    set_attrs("liquid water fraction in the cryo-hydrologic system", "",
-              "1", "1", 0);
+    m_vars[0].long_name("liquid water fraction in the cryo-hydrologic system").units("1");
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_liqfrac", WITHOUT_GHOSTS, m_grid->z()));
+    std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_liquid_water_fraction(model->cryo_hydrologic_system()->enthalpy(),
                                           model->geometry().ice_thickness,
@@ -391,16 +365,14 @@ public:
   CHHeatFlux(const IceRegionalModel *m)
     : Diag<IceRegionalModel>(m) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "ch_heat_flux", m_grid->z())};
-
-    set_attrs("rate of cryo-hydrologic warming", "",
-              "W m-3", "W m-3", 0);
+    m_vars = { { m_sys, "ch_heat_flux", m_grid->z() } };
+    m_vars[0].long_name("rate of cryo-hydrologic warming").units("W m-3");
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_heat_flux", WITHOUT_GHOSTS, m_grid->z()));
+    std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_heat_flux", array::WITHOUT_GHOSTS, m_grid->z()));
     result->metadata(0) = m_vars[0];
 
     energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),
@@ -426,7 +398,7 @@ void IceRegionalModel::init_diagnostics() {
 void IceRegionalModel::hydrology_step() {
   hydrology::Inputs inputs;
 
-  IceModelVec2S &sliding_speed = *m_work2d[0];
+  array::Scalar &sliding_speed = *m_work2d[0];
   compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
 
   inputs.no_model_mask      = &m_no_model_mask;
@@ -441,7 +413,7 @@ void IceRegionalModel::hydrology_step() {
     inputs.surface_input_rate = m_surface_input_for_hydrology.get();
   } else if (m_config->get_flag("hydrology.surface_input_from_runoff")) {
     // convert [kg m-2] to [kg m-2 s-1]
-    IceModelVec2S &surface_input_rate = *m_work2d[1];
+    array::Scalar &surface_input_rate = *m_work2d[1];
     surface_input_rate.copy_from(m_surface->runoff());
     surface_input_rate.scale(1.0 / m_dt);
     inputs.surface_input_rate = &surface_input_rate;

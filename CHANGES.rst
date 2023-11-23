@@ -1,126 +1,53 @@
 .. default-role:: literal
 
-Changes since v2.0.6
+
+Changes since v2.0.7
 ====================
 
-- Minor fixes in the manual (an image caption, a code block, typos, links).
-- Add time bounds to scalar forcing files in `examples/std-greenland`.
-- Use CF-compliant units "common_years" in forcing files.
-- Fix a minor bug in PICO reported by Ken Mankoff.
-- Support the current PETSc version (3.20.1).
-- Minor compiler compatibility improvements.
-- Replace `examples/searise-antarctica` with `examples/antarctica` based on ALBMAP v1
-  data. This avoids a dependency on SeaRISE data hosted by the University of Montana.
-
-Changes since v2.0.5
-====================
-
-- Implement a flux limiter ensuring strict preservation of non-negativity of ice thickness
-  and therefore mass conservation up to rounding error.
-
-  This is a Zalesak-style (see flux corrected transport or FCT) limiter described in
-
-  P.K. Smolarkiewicz, "Comment on "A Positive Definite Advection Scheme Obtained by
-  Nonlinear Renormalization of the Advective Fluxes"," Monthly Weather Review, vol. 117,
-  Art. no. 11, 1989.
-
-  Note that this approach (unlike modifications of the discretization of SIA diffusivity
-  in the Jarosch et al paper mentioned below) works with *all* stress balance models.
-- Implement a benchmark setup checking mass conservation in an "isothermal SIA + mass
-  continuity" model setup with "rough" bed topography (see `examples/bedrock_step`).
-
-  This benchmark is described in
-
-  A.H. Jarosch, C.G. Schoof, and F.S. Anslow, "Restoring mass conservation to shallow ice
-  flow models over complex terrain," The Cryosphere, vol. 7, Art. no. 1, Feb. 2013.
-- Fix a bug in the code ensuring non-negativity of ice thickness. (The old code added too
-  much ice in an attempt to ensure non-negativity -- so much so that sometimes this caused
-  crashes with error messages stating that ice thickness exceeds `Lz`.)
-
-  Note that this "projection step" (`ice_thickness = max(tentative_ice_thickness, 0)`)
-  should have no effect now: the flux limiter mentioned above is designed to ensure
-  non-negativity. We keep this step, however, to maintain the ability to keep track of ice
-  thickness changes due to conservation errors (if they ever happen).
-- PISM no longer attempts to correct energy conservation by freezing basal water.
-
-  At each time step PISM checks basal enthalpy and if necessary modifies it to ensure
-  continuity of temperature in each `bedrock+ice` column. Sometimes this modification
-  creates energy; prior to this change PISM attempted to remove an equivalent amount of
-  energy by modifying the basal melt rate to freeze water stored at the base.
-
-  Under some conditions this basal melt rate adjustment *created mass* by freezing more
-  water than available and even led to crashes with error messages stating that ice
-  thickness exceeds `Lz`.
-- Fix bugs in scalar diagnostics `ice_volume_cold` and `ice_volume_temperate`.
-- Several insignificant fixes (compiler warnings, code cleanup, etc).
-
-Changes since v2.0.4
-====================
-
-- Fix `issue 512`_: incorrect uplift reported by `-bed_def given`.
-- Fix the build system: PISM v2.0.4 failed to find GSL if it is installed in a
-  non-standard location.
-- Minor documentation fixes.
-- Fix metadata of the `flux_staggered` diagnostic.
-- Stop with an error message if a regridded variable contains values that are not finite
-  (`NaN` or infinity).
-- Fix a bug in the code reading in periodic time-dependent forcing: the case where the
-  last time record coincides with the end of the covered time interval (end of the period)
-  needs special handling.
-
-Changes since v2.0.3
-====================
-
-- Add `time_stepping.assume_bed_elevation_changed`. With the default value ("false") PISM
-  tries to avoid re-computing bed-elevation-dependent quantities if it is known that bed
-  elevation did not change. Setting this flag to "true" disables this optimization.
-- Make the variable range check a little less strict. Now PISM uses the tolerance
-  `eps=1e-12` to check if a variable in an input file has values that are outside the
-  valid range.
-- Fix `issue 506`_ (PISM stopped with an unhelpful error message if the Glen exponent is
-  set to 1). The underlying issue is that UDUNITS does not support fractional exponents,
-  so units such as "Pa s^(1/n)" where `n` is the Glen exponent cannot be used for unit
-  conversion. Luckily we don't need to convert from "Pa s^(1/n)" to other units, so we can
-  get away with disabling unit validation in this particular case.
-- Update the build system: use proper PROJ locations on macOS with MacPorts.
-- Document that CMake >= 3.3 is required (previous versions incorrectly stated that PISM
-  supports CMake >= 3.1).
-- Restore compatibility with PETSc version 3.7.
-- Add tests to automatically check for compatibility with CMake 3.3 and PETSc 3.7.
-- Other minor fixes.
-
-Changes since v2.0.2
-====================
-
-- Support PETSc 3.17.
-- Fix an error message (should say "time bounds" instead of "cell bounds").
-- Use a newer version of NCAR ParallelIO to support GCC 11.
-- Add HDF5 version info to "pismr -version"
-- Add pism::IceModel and IceModelVec.local_part() to Python bindings.
-- Manual: fix the command used to clone the PISM repository and fix broken links
-- Run regression tests that use nose via "python3 -m nose ..."
-- Add IceModel::basal_yield_stress_model() and IceModel::bed_deformation_model()
-- Update the release checklist
-- Update the build system and the CI setup (Docker image)
-
-Changes since v2.0.1
-====================
-
-- Fix a bug in IceModelVec2T::average() that affected periodic climate inputs and made
-  PISM stop with an error message saying "invalid integration interval (a >= b)" (reported
-  by Guillaume Jouvet).
-- Fix the implementation of `time_stepping.hit_multiples`.
-- Very minor performance improvements.
-
-Changes since v2.0
-==================
-
-- Update the minimum PETSc version supported by PISM to 3.7.
-- Remove the last mention of the old website.
-- Fix a bug in the code building the manual.
-- Fix a minor bug in Python bindings.
-- Fix a bug in the code reading in periodic time-dependent inputs that are interpreted as
-  piece-wise linear in time (reported by Guillaume Jouvet).
+- Implement the diurnal energy balance model dEBM-simple (see M. Zeitz, R. Reese, J.
+  Beckmann, U. Krebs-Kanzow, and R. Winkelmann, "Impact of the melt-albedo feedback on the
+  future evolution of the Greenland Ice Sheet with PISM-dEBM-simple," The Cryosphere, vol.
+  15, no. 12, pp. 5739-5764, Dec. 2021, doi: 10.5194/tc-15-5739-2021.)
+- Implement the isochronal layer tracing scheme (see A. Born and A. Robinson, "Modeling
+  the Greenland englacial stratigraphy," The Cryosphere, vol. 15, no. 9, pp. 4539-4556,
+  2021, doi: 10.5194/tc-15-4539-2021.)
+- Support 2D precipitation offsets in `-atmosphere ...,delta_P`. If the input file set
+  using `atmosphere.delta_P.file` contains a scalar time series `delta_P`, use that as a
+  time-dependent constant-in-space forcing. If the input file contains a 2D variable
+  `delta_P`, use that as a time-and-space-dependent forcing.
+- Support 2D air temperature offsets in `-atmosphere ...,delta_T`. If the input file set
+  using `atmosphere.delta_T.file` contains a scalar time series `delta_T`, use that as a
+  time-dependent constant-in-space forcing. If the input file contains a 2D variable
+  `delta_T`, use that as a time-and-space-dependent forcing.
+- Refactor utility classes used to store 2D and 3D arrays.
+- Fix documentation of `...till_effective_fraction_overburden`.
+- Use `realpath()` to resolve relative file names. Now configuration parameters ending in
+  `.file`, when saved to output files and in PISM output to `stdout`, contain *absolute*
+  file names. This will make it easier to reproduce runs based on an output file.
+- Support checkpointing the HTCondor way (see commit 3740c41df).
+- Use `-list_diagnostics all` to print the list of all diagnostics, `-list_diagnostics
+  spatial` for 2D and 3D variables, and `-list_diagnostics scalar` for scalar time series.
+- Support piecewise-constant temporal interpolation of near-surface air temperatures in
+  `-atmosphere given`: set `atmosphere.given.air_temperature_interpolation` to
+  `piecewise_constant`.
+- Extrapolate sliding velocities computed by the SSAFD solver to improve the initial guess
+  used when the ice front advances (set
+  :config:`stress_balance.ssa.fd.extrapolate_at_margins` to `false` to disable).
+- Fix a bug reported by Christian Rodehacke: calving mechanisms should not remove ice at
+  ice fronts adjacent to isolated patches of ice-free water (see issue #521).
+- Implement UNO2, UNO3 and a couple of related transport methods (not used, but available
+  for future use; see J.-G. Li, "Upstream Nonoscillatory Advection Schemes," Monthly
+  Weather Review, vol. 136, no. 12, pp. 4709-4729, Dec. 2008, doi:
+  10.1175/2008mwr2451.1.).
+- Add diagnostics `tendency_of_ice_{amount,mass}_due_to_frontal_melt` and
+  `tendency_of_ice_{amount,mass}_due_to_forced_retreat`. Rename diagnostic
+  `max_sliding_vel` to `max_horizontal_vel`.
+- Generate `pism.pc` and `pismicebin.pc` for use with `pkg-config`. This will make it
+  easier to use PISM as a library (to couple to a GCM, for example).
+- PISM's build system uses `pkg-config` to look for some of the required libraries.
+- Add the ability to use ocean model components implemented in Python.
+- Add CITATION.cff to properly acknowledge all contributions and to make it easier to cite
+  PISM.
 
 Changes since v1.2
 ==================

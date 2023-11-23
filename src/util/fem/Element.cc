@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,9 +19,9 @@
 #include <cassert>              // assert
 #include <cmath>                // std::sqrt()
 
-#include "Element.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/fem/Element.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/DM.hh"
 
@@ -105,7 +105,7 @@ static void set_to_identity(double A[3][3]) {
   A[2][2] = 1.0;
 }
 
-Element::Element(const IceGrid &grid, int Nq, int n_chi, int block_size)
+Element::Element(const Grid &grid, int Nq, int n_chi, int block_size)
   : m_n_chi(n_chi),
     m_Nq(Nq),
     m_block_size(block_size) {
@@ -163,7 +163,7 @@ void Element::initialize(const double J[3][3],
   }
 }
 
-Element2::Element2(const IceGrid &grid, int Nq, int n_chi, int block_size)
+Element2::Element2(const Grid &grid, int Nq, int n_chi, int block_size)
   : Element(grid, Nq, n_chi, block_size) {
   // empty
 }
@@ -173,12 +173,12 @@ Element2::Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_
   // empty
 }
 
-void Element2::nodal_values(const IceModelVec2Int &x_global, int *result) const {
+void Element2::nodal_values(const array::Scalar &x_global, int *result) const {
   for (unsigned int k = 0; k < m_n_chi; ++k) {
     const int
       ii = m_i + m_i_offset[k],
       jj = m_j + m_j_offset[k];
-    result[k] = x_global.as_int(ii, jj);
+    result[k] = floor(x_global(ii, jj) + 0.5);
   }
 }
 
@@ -237,7 +237,7 @@ void Element::add_contribution(const double *K, Mat J) const {
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
-Q1Element2::Q1Element2(const IceGrid &grid, const Quadrature &quadrature)
+Q1Element2::Q1Element2(const Grid &grid, const Quadrature &quadrature)
   : Element2(grid, quadrature.weights().size(), q1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();
@@ -293,7 +293,7 @@ Q1Element2::Q1Element2(const DMDALocalInfo &grid_info,
   reset(0, 0);
 }
 
-P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int type)
+P1Element2::P1Element2(const Grid &grid, const Quadrature &quadrature, int type)
   : Element2(grid, quadrature.weights().size(), p1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();
@@ -301,14 +301,14 @@ P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int ty
 
   // outward pointing normals for all sides of a Q1 element with sides aligned with X and
   // Y axes
-  const Vector2
+  const Vector2d
     n01( 0.0, -1.0),  // south
     n12( 1.0,  0.0),  // east
     n23( 0.0,  1.0),  // north
     n30(-1.0,  0.0);  // west
 
   // "diagonal" sides
-  Vector2
+  Vector2d
     n13( 1.0, dx / dy), // 1-3 diagonal, outward for element 0
     n20(-1.0, dx / dy); // 2-0 diagonal, outward for element 1
 
@@ -318,8 +318,8 @@ P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int ty
 
   // coordinates of nodes of a Q1 element this P1 element is embedded in (up to
   // translation)
-  Vector2 p[] = {{0, 0}, {dx, 0}, {dx, dy}, {0, dy}};
-  std::vector<Vector2> pts;
+  Vector2d p[] = {{0, 0}, {dx, 0}, {dx, dy}, {0, dy}};
+  std::vector<Vector2d> pts;
 
   switch (type) {
   case 0:
@@ -380,7 +380,7 @@ Element3::Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_
   m_k = 0;
 }
 
-Element3::Element3(const IceGrid &grid, int Nq, int n_chi, int block_size)
+Element3::Element3(const Grid &grid, int Nq, int n_chi, int block_size)
   : Element(grid, Nq, n_chi, block_size) {
   m_i = 0;
   m_j = 0;
@@ -417,7 +417,7 @@ Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
   m_germs = m_chi;
 }
 
-Q1Element3::Q1Element3(const IceGrid &grid, const Quadrature &quadrature)
+Q1Element3::Q1Element3(const Grid &grid, const Quadrature &quadrature)
   : Element3(grid, quadrature.weights().size(), q13d::n_chi, q13d::n_chi),
     m_dx(grid.dx()),
     m_dy(grid.dy()),

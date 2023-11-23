@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#include "IP_SSATaucTaoTikhonovProblem.hh"
+#include "pism/inverse/IP_SSATaucTaoTikhonovProblem.hh"
 
 namespace pism {
 namespace inverse {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _ERROR_HANDLING_H_
-#define _ERROR_HANDLING_H_
+#ifndef PISM_ERROR_HANDLING_H
+#define PISM_ERROR_HANDLING_H
 
 #include <mpi.h>                // MPI_Comm
 #include <stdexcept>
@@ -27,18 +27,17 @@
 
 #include "pism/pism_config.hh"  // Pism_DEBUG
 
-
 namespace pism {
 
 class ErrorLocation {
 public:
   ErrorLocation();
-  ErrorLocation(const char *name, int line);
+  ErrorLocation(const char *filename, int line);
   const char *filename;
   int line_number;
 };
 
-#if Pism_DEBUG==1
+#if (Pism_DEBUG==1)
 #define PISM_ERROR_LOCATION pism::ErrorLocation(__FILE__, __LINE__)
 #else
 #define PISM_ERROR_LOCATION pism::ErrorLocation()
@@ -92,4 +91,4 @@ void check_petsc_call(int errcode, const char* function_name,
 
 } // end of namespace pism
 
-#endif /* _ERROR_HANDLING_H_ */
+#endif /* PISM_ERROR_HANDLING_H */

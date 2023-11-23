@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,10 +34,10 @@ namespace stressbalance {
  */
 class BlatterTestvanderVeen : public Blatter {
 public:
-  BlatterTestvanderVeen(IceGrid::ConstPtr grid, int Mz, int coarsening_factor);
+  BlatterTestvanderVeen(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor);
 
   // Exact ice velocity
-  Vector2 u_exact(double x) const;
+  Vector2d u_exact(double x) const;
 
   // Exact ice thickness
   double H_exact(double x) const;
@@ -55,18 +55,18 @@ private:
                        const double *ice_bottom,
                        const double *sea_level);
 
-  Vector2 u_bc(double x, double y, double z) const;
+  Vector2d u_bc(double x, double y, double z) const;
 
   void residual_lateral(const fem::Q1Element3 &element,
                         const fem::Q1Element3Face &face,
                         const double *surface_nodal,
                         const double *z_nodal,
                         const double *sl_nodal,
-                        Vector2 *residual);
+                        Vector2d *residual);
 
   void residual_surface(const fem::Q1Element3 &element,
                         const fem::Q1Element3Face &face,
-                        Vector2 *residual);
+                        Vector2d *residual);
 
   // constant ice hardness
   double m_B;

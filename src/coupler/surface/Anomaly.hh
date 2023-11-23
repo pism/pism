@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PSANOMALY_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace surface {
@@ -30,23 +29,23 @@ namespace surface {
 class Anomaly : public SurfaceModel
 {
 public:
-  Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
+  Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in);
   virtual ~Anomaly() = default;
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mass_flux_impl() const;
-  const IceModelVec2S& temperature_impl() const;
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const array::Scalar& mass_flux_impl() const;
+  const array::Scalar& temperature_impl() const;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
 protected:
-  IceModelVec2S::Ptr m_mass_flux;
-  IceModelVec2S::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 
-  std::shared_ptr<IceModelVec2T> m_climatic_mass_balance_anomaly;
-  std::shared_ptr<IceModelVec2T> m_ice_surface_temp_anomaly;
+  std::shared_ptr<array::Forcing> m_climatic_mass_balance_anomaly;
+  std::shared_ptr<array::Forcing> m_ice_surface_temp_anomaly;
 };
 
 } // end of namespace surface

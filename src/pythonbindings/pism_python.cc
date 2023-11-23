@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2016, 2017 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2014, 2015, 2016, 2017, 2023 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,9 +20,8 @@
 #include <errno.h>
 #include <petscsys.h>
 
-#include "pism_python.hh"
-#include "util/pism_utilities.hh"
-#include "util/error_handling.hh"
+#include "pism/pythonbindings/pism_python.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace python {
@@ -31,13 +30,13 @@ void set_abort_on_sigint(bool abort) {
   gSIGINT_is_fatal = abort;
 }
 
-SigInstaller::SigInstaller(int sig, void (*new_handler)(int) ) {
+SigInstaller::SigInstaller(int sig, void (*new_handler)(int)) {
   m_old_handler = signal(sig, new_handler);
-  m_sig = sig;
+  m_sig         = sig;
 }
 
 void SigInstaller::release() {
-  if (m_old_handler) {
+  if (m_old_handler != nullptr) {
     signal(m_sig, m_old_handler);
   }
   m_old_handler = NULL;
@@ -52,7 +51,7 @@ bool gSIGINT_is_fatal;
 
 int check_signal() {
   int rv = gSignalSet;
-  if (rv) {
+  if (rv != 0) {
     gSignalSet = 0;
   }
   return 0;
@@ -62,10 +61,10 @@ void sigint_handler(int sig) {
   if (sig == SIGINT) {
     if (gSIGINT_is_fatal) {
       throw pism::RuntimeError(ErrorLocation(), "caught signal SIGTERM.");
-    } else {
-      PetscPrintf(PETSC_COMM_WORLD, "\nCaught signal SIGTERM, waiting to exit.\n");
-      gSignalSet = SIGINT;
     }
+
+    PetscPrintf(PETSC_COMM_WORLD, "\nCaught signal SIGTERM, waiting to exit.\n");
+    gSignalSet = SIGINT;
   }
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EmptyingProblem.hh"
+#include "pism/hydrology/EmptyingProblem.hh"
 
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/interpolation.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace hydrology {
@@ -34,24 +34,24 @@ namespace diagnostics {
  * filling dips to eliminate sinks (and get a better estimate of the steady state flow
  * direction).
  */
-static void compute_sinks(const IceModelVec2Int &domain_mask,
-                          const IceModelVec2S &psi,
-                          IceModelVec2S &result) {
+static void compute_sinks(const array::Scalar &domain_mask,
+                          const array::Scalar1 &psi,
+                          array::Scalar &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
-  IceModelVec::AccessList list{&psi, &domain_mask, &result};
+  array::AccessScope list{&psi, &domain_mask, &result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto P = psi.star(i, j);
 
     double
-      v_n = - (P.n - P.ij),
-      v_e = - (P.e - P.ij),
-      v_s = - (P.ij - P.s),
-      v_w = - (P.ij - P.w);
+      v_n = - (P.n - P.c),
+      v_e = - (P.e - P.c),
+      v_s = - (P.c - P.s),
+      v_w = - (P.c - P.w);
 
     if (domain_mask(i, j) > 0.5 and v_e <= 0.0 and v_w >= 0.0 and v_n <= 0.0 and v_s >= 0.0) {
       result(i, j) = 1.0;
@@ -62,17 +62,17 @@ static void compute_sinks(const IceModelVec2Int &domain_mask,
 }
 
 static void effective_water_velocity(const Geometry &geometry,
-                                     const IceModelVec2V &water_flux,
-                                     IceModelVec2V &result) {
+                                     const array::Vector &water_flux,
+                                     array::Vector &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
-  const IceModelVec2CellType &cell_type           = geometry.cell_type;
-  const IceModelVec2S        &bed_elevation       = geometry.bed_elevation;
-  const IceModelVec2S        &ice_thickness       = geometry.ice_thickness;
-  const IceModelVec2S        &sea_level_elevation = geometry.sea_level_elevation;
+  const auto &cell_type           = geometry.cell_type;
+  const auto &bed_elevation       = geometry.bed_elevation;
+  const auto &ice_thickness       = geometry.ice_thickness;
+  const auto &sea_level_elevation = geometry.sea_level_elevation;
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
      &water_flux, &result};
 
@@ -80,7 +80,7 @@ static void effective_water_velocity(const Geometry &geometry,
     grid_spacing = 0.5 * (grid->dx() + grid->dy()),
     eps          = 1.0;         // q_sg regularization
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.icy(i, j)) {
@@ -112,49 +112,58 @@ static void effective_water_velocity(const Geometry &geometry,
 
 } // end of namespace diagnostics
 
-EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
+EmptyingProblem::EmptyingProblem(std::shared_ptr<const Grid> grid)
   : Component(grid),
-    m_potential(grid, "hydraulic_potential", WITH_GHOSTS, 1),
-    m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS),
-    m_bottom_surface(grid, "ice_bottom_surface", WITHOUT_GHOSTS),
-    m_W(grid, "remaining_water_thickness", WITH_GHOSTS, 1),
-    m_Vstag(grid, "V_staggered", WITH_GHOSTS),
-    m_Qsum(grid, "flux_total", WITH_GHOSTS, 1),
-    m_domain_mask(grid, "domain_mask", WITH_GHOSTS, 1),
-    m_Q(grid, "_water_flux", WITHOUT_GHOSTS),
-    m_q_sg(grid, "_effective_water_velocity", WITHOUT_GHOSTS),
-    m_adjustment(grid, "hydraulic_potential_adjustment", WITHOUT_GHOSTS),
-    m_sinks(grid, "sinks", WITHOUT_GHOSTS) {
+    m_potential(grid, "hydraulic_potential"),
+    m_tmp(grid, "temporary_storage"),
+    m_bottom_surface(grid, "ice_bottom_surface"),
+    m_W(grid, "remaining_water_thickness"),
+    m_Vstag(grid, "V_staggered"),
+    m_Qsum(grid, "flux_total"),
+    m_domain_mask(grid, "domain_mask"),
+    m_Q(grid, "_water_flux"),
+    m_q_sg(grid, "_effective_water_velocity"),
+    m_adjustment(grid, "hydraulic_potential_adjustment"),
+    m_sinks(grid, "sinks") {
 
-  m_potential.set_attrs("diagnostic", "estimate of the steady state hydraulic potential in the steady hydrology model",
-                        "Pa", "Pa", "", 0);
+  m_domain_mask.set_interpolation_type(NEAREST);
+  m_sinks.set_interpolation_type(NEAREST);
 
-  m_bottom_surface.set_attrs("internal", "ice bottom surface elevation",
-                             "m", "m", "", 0);
+  m_potential.metadata(0)
+      .long_name("estimate of the steady state hydraulic potential in the steady hydrology model")
+      .units("Pa");
 
-  m_W.set_attrs("diagnostic",
-                "scaled water thickness in the steady state hydrology model"
-                " (has no physical meaning)",
-                "m", "m", "", 0);
+  m_bottom_surface.metadata(0).long_name("ice bottom surface elevation").units("m");
 
-  m_Vstag.set_attrs("diagnostic", "water velocity on the staggered grid",
-                    "m s-1", "m s-1", "", 0);
+  m_W.metadata(0)
+      .long_name(
+          "scaled water thickness in the steady state hydrology model (has no physical meaning)")
+      .units("m");
 
-  m_domain_mask.set_attrs("internal", "mask defining the domain", "", "", "", 0);
+  m_Vstag.metadata(0)
+      .long_name("water velocity on the staggered grid")
+      .units("m s-1");
 
-  m_Q.set_attrs("diagnostic", "steady state water flux", "m2 s-1", "m2 s-1", "", 0);
+  m_domain_mask.metadata(0).long_name("mask defining the domain");
 
-  m_q_sg.set_attrs("diagnostic", "x-component of the effective water velocity in the steady-state hydrology model",
-                   "m s-1", "m day-1", "", 0);
-  m_q_sg.set_attrs("diagnostic", "y-component of the effective water velocity in the steady-state hydrology model",
-                   "m s-1", "m day-1", "", 1);
+  m_Q.metadata(0).long_name("steady state water flux").units("m2 s-1");
 
-  m_sinks.set_attrs("diagnostic", "map of sinks in the domain (for debugging)", "", "", "", 0);
+  m_q_sg.metadata(0)
+      .long_name("x-component of the effective water velocity in the steady-state hydrology model")
+      .units("m s-1")
+      .output_units("m day-1");
+  m_q_sg.metadata(1)
+      .long_name("y-component of the effective water velocity in the steady-state hydrology model")
+      .units("m s-1")
+      .output_units("m day-1");
 
-  m_adjustment.set_attrs("diagnostic",
-                         "potential adjustment needed to fill sinks"
-                         " when computing an estimate of the steady-state hydraulic potential",
-                         "Pa", "Pa", "", 0);
+  m_sinks.metadata(0)
+      .long_name("map of sinks in the domain (for debugging)");
+
+  m_adjustment.metadata(0)
+      .long_name(
+          "potential adjustment needed to fill sinks when computing an estimate of the steady-state hydraulic potential")
+      .units("Pa");
 
   m_eps_gradient = 1e-2;
   m_speed = 1.0;
@@ -172,8 +181,8 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
  * @param[in] water_input_rate water input rate in m/s
  */
 void EmptyingProblem::update(const Geometry &geometry,
-                             const IceModelVec2Int *no_model_mask,
-                             const IceModelVec2S &water_input_rate,
+                             const array::Scalar *no_model_mask,
+                             const array::Scalar &water_input_rate,
                              bool recompute_potential) {
 
   const double
@@ -210,9 +219,9 @@ void EmptyingProblem::update(const Geometry &geometry,
   // set initial state and compute initial volume
   double volume_0 = 0.0;
   {
-    IceModelVec::AccessList list{&geometry.cell_type, &m_W, &water_input_rate};
+    array::AccessScope list{&geometry.cell_type, &m_W, &water_input_rate};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (geometry.cell_type.icy(i, j)) {
@@ -242,27 +251,27 @@ void EmptyingProblem::update(const Geometry &geometry,
   double volume = 0.0;
   int step_counter = 0;
 
-  IceModelVec::AccessList list{&m_Qsum, &m_W, &m_Vstag, &m_domain_mask, &m_tmp};
+  array::AccessScope list{&m_Qsum, &m_W, &m_Vstag, &m_domain_mask, &m_tmp};
 
   for (step_counter = 0; step_counter < n_iterations; ++step_counter) {
     volume = 0.0;
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       auto v = m_Vstag.star(i, j);
       auto w = m_W.star(i, j);
 
       double
-        q_n = v.n * (v.n >= 0.0 ? w.ij : w.n),
-        q_e = v.e * (v.e >= 0.0 ? w.ij : w.e),
-        q_s = v.s * (v.s >= 0.0 ? w.s  : w.ij),
-        q_w = v.w * (v.w >= 0.0 ? w.w  : w.ij),
+        q_n = v.n * (v.n >= 0.0 ? w.c : w.n),
+        q_e = v.e * (v.e >= 0.0 ? w.c : w.e),
+        q_s = v.s * (v.s >= 0.0 ? w.s  : w.c),
+        q_w = v.w * (v.w >= 0.0 ? w.w  : w.c),
         divQ = (q_e - q_w) / m_dx + (q_n - q_s) / m_dy;
 
       // update water thickness
       if (m_domain_mask(i, j) > 0.5) {
-        m_tmp(i, j) = w.ij + dt * (- divQ);
+        m_tmp(i, j) = w.c + dt * (- divQ);
       } else {
         m_tmp(i, j) = 0.0;
       }
@@ -309,17 +318,17 @@ void EmptyingProblem::update(const Geometry &geometry,
  * @param[in] b ice bottom surface elevation
  * @param[out] result simplified hydraulic potential used by to compute velocity
  */
-void EmptyingProblem::compute_raw_potential(const IceModelVec2S &H,
-                                            const IceModelVec2S &b,
-                                            IceModelVec2S &result) const {
+void EmptyingProblem::compute_raw_potential(const array::Scalar &H,
+                                            const array::Scalar &b,
+                                            array::Scalar &result) const {
   const double
     g     = m_config->get_number("constants.standard_gravity"),
     rho_i = m_config->get_number("constants.ice.density"),
     rho_w = m_config->get_number("constants.fresh_water.density");
 
-  IceModelVec::AccessList list({&H, &b, &result});
+  array::AccessScope list({&H, &b, &result});
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = rho_i * g * H(i, j) + rho_w * g * b(i, j);
@@ -328,11 +337,14 @@ void EmptyingProblem::compute_raw_potential(const IceModelVec2S &H,
   result.update_ghosts();
 }
 
-void EmptyingProblem::compute_potential(const IceModelVec2S &ice_thickness,
-                                        const IceModelVec2S &ice_bottom_surface,
-                                        const IceModelVec2Int &domain_mask,
-                                        IceModelVec2S &result) {
-  IceModelVec2S &psi_new = m_tmp;
+/*!
+ * FIXME: uses "result" as temporary storage with ghosts.
+ */
+void EmptyingProblem::compute_potential(const array::Scalar &ice_thickness,
+                                        const array::Scalar &ice_bottom_surface,
+                                        const array::Scalar &domain_mask,
+                                        array::Scalar1 &result) {
+  array::Scalar &psi_new = m_tmp;
 
   double delta = m_config->get_number("hydrology.steady.potential_delta");
 
@@ -343,21 +355,21 @@ void EmptyingProblem::compute_potential(const IceModelVec2S &ice_thickness,
 
   compute_raw_potential(ice_thickness, ice_bottom_surface, result);
 
-  IceModelVec::AccessList list{&result, &psi_new, &domain_mask};
+  array::AccessScope list{&result, &psi_new, &domain_mask};
   for (step_counter = 0; step_counter < n_iterations; ++step_counter) {
 
     n_sinks_remaining = 0;
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (domain_mask(i, j) > 0.5) {
         auto P = result.star(i, j);
 
         double
-          v_n = - (P.n - P.ij),
-          v_e = - (P.e - P.ij),
-          v_s = - (P.ij - P.s),
-          v_w = - (P.ij - P.w);
+          v_n = - (P.n - P.c),
+          v_e = - (P.e - P.c),
+          v_s = - (P.c - P.s),
+          v_w = - (P.c - P.w);
 
         if (v_e <= 0.0 and v_w >= 0.0 and v_n <= 0.0 and v_s >= 0.0) {
           ++n_sinks_remaining;
@@ -394,19 +406,19 @@ void EmptyingProblem::compute_potential(const IceModelVec2S &ice_thickness,
 
 
 static double K(double psi_x, double psi_y, double speed, double epsilon) {
-  return speed / std::max(Vector2(psi_x, psi_y).magnitude(), epsilon);
+  return speed / std::max(Vector2d(psi_x, psi_y).magnitude(), epsilon);
 }
 
 /*!
  * Compute water velocity on the staggered grid.
  */
-void EmptyingProblem::compute_velocity(const IceModelVec2S &psi,
-                                       const IceModelVec2Int &domain_mask,
-                                       IceModelVec2Stag &result) const {
+void EmptyingProblem::compute_velocity(const array::Scalar &psi,
+                                       const array::Scalar1 &domain_mask,
+                                       array::Staggered &result) const {
 
-  IceModelVec::AccessList list{&psi, &result, &domain_mask};
+  array::AccessScope list{&psi, &result, &domain_mask};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o = 0; o < 2; ++o) {
@@ -423,11 +435,11 @@ void EmptyingProblem::compute_velocity(const IceModelVec2S &psi,
 
       auto M = domain_mask.star(i, j);
 
-      if (M.ij == 0 and M.e == 0) {
+      if (M.c == 0 and M.e == 0) {
         result(i, j, 0) = 0.0;
       }
 
-      if (M.ij == 0 and M.n == 0) {
+      if (M.c == 0 and M.n == 0) {
         result(i, j, 1) = 0.0;
       }
     }
@@ -438,17 +450,17 @@ void EmptyingProblem::compute_velocity(const IceModelVec2S &psi,
 /*!
  * Compute the mask that defines the domain: ones in the domain, zeroes elsewhere.
  */
-void EmptyingProblem::compute_mask(const IceModelVec2CellType &cell_type,
-                                   const IceModelVec2Int *no_model_mask,
-                                   IceModelVec2Int &result) const {
+void EmptyingProblem::compute_mask(const array::CellType &cell_type,
+                                   const array::Scalar *no_model_mask,
+                                   array::Scalar &result) const {
 
-  IceModelVec::AccessList list{&cell_type, &result};
+  array::AccessScope list{&cell_type, &result};
 
-  if (no_model_mask) {
+  if (no_model_mask != nullptr) {
     list.add(*no_model_mask);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (not cell_type.ice_free_ocean(i, j)) {
@@ -457,7 +469,7 @@ void EmptyingProblem::compute_mask(const IceModelVec2CellType &cell_type,
       result(i, j) = 0.0;
     }
 
-    if (no_model_mask and no_model_mask->as_int(i, j) == 1) {
+    if ((no_model_mask != nullptr) and no_model_mask->as_int(i, j) == 1) {
       result(i, j) = 0.0;
     }
   }
@@ -482,42 +494,42 @@ DiagnosticList EmptyingProblem::diagnostics() const {
  * This field can be used to get an idea of where water is accumulated. (This affects the
  * quality of the estimate of the water flux).
  */
-const IceModelVec2S& EmptyingProblem::remaining_water_thickness() const {
+const array::Scalar& EmptyingProblem::remaining_water_thickness() const {
   return m_W;
 }
 
 /*!
  * Steady state water flux.
  */
-const IceModelVec2V& EmptyingProblem::flux() const {
+const array::Vector& EmptyingProblem::flux() const {
   return m_Q;
 }
 
 /*!
  * Effective water velocity (flux per unit area of the front).
  */
-const IceModelVec2V& EmptyingProblem::effective_water_velocity() const {
+const array::Vector& EmptyingProblem::effective_water_velocity() const {
   return m_q_sg;
 }
 
 /*!
  * Hydraulic potential used to determine flow direction.
  */
-const IceModelVec2S& EmptyingProblem::potential() const {
+const array::Scalar& EmptyingProblem::potential() const {
   return m_potential;
 }
 
 /*!
  * Map of sinks.
  */
-const IceModelVec2Int& EmptyingProblem::sinks() const {
+const array::Scalar& EmptyingProblem::sinks() const {
   return m_sinks;
 }
 
 /*!
  * Adjustment applied to the unmodified hydraulic potential to eliminate sinks.
  */
-const IceModelVec2S& EmptyingProblem::adjustment() const {
+const array::Scalar& EmptyingProblem::adjustment() const {
   return m_adjustment;
 }
 

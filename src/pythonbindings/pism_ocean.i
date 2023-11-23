@@ -16,6 +16,7 @@
 #include "coupler/ocean/sea_level/Delta_SL_2D.hh"
 #include "coupler/ocean/Factory.hh"
 #include "coupler/ocean/sea_level/Factory.hh"
+#include "coupler/ocean/PyOceanModel.hh"
 %}
 
 %shared_ptr(pism::ocean::OceanModel)
@@ -23,6 +24,12 @@
 
 %shared_ptr(pism::ocean::CompleteOceanModel)
 %include "coupler/ocean/CompleteOceanModel.hh"
+
+%feature("director") pism::ocean::PyOceanModel;
+%shared_ptr(pism::ocean::PyOceanModel)
+%shared_ptr(pism::ocean::PyOceanModelAdapter)
+%ignore pism::ocean::PyOceanModelAdapter;
+%include "coupler/ocean/PyOceanModel.hh"
 
 %shared_ptr(pism::ocean::Constant)
 %rename(OceanConstant) pism::ocean::Constant;

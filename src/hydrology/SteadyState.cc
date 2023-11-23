@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,15 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "SteadyState.hh"
+#include "pism/hydrology/SteadyState.hh"
 
 #include <gsl/gsl_interp.h>     // gsl_interp_bsearch
 
-#include "EmptyingProblem.hh"
+#include "pism/hydrology/EmptyingProblem.hh"
 
-#include "pism/util/Time.hh"    // m_grid->ctx()->time()->current()
+#include "pism/util/Time.hh"    // time().current()
 #include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/MaxTimestep.hh"
 
 /* FIXMEs
  *
@@ -54,11 +55,11 @@ void SteadyState::initialization_message() const {
                  "* Initializing the \"steady state\" subglacial hydrology model ...\n");
 }
 
-SteadyState::SteadyState(IceGrid::ConstPtr grid)
+SteadyState::SteadyState(std::shared_ptr<const Grid> grid)
   : NullTransport(grid) {
 
   m_time_name = m_config->get_string("time.dimension_name") + "_hydrology_steady";
-  m_t_last = m_grid->ctx()->time()->current();
+  m_t_last = time().current();
   m_update_interval = m_config->get_number("hydrology.steady.flux_update_interval", "seconds");
   m_t_eps = 1.0;
   m_bootstrap = false;
@@ -86,13 +87,13 @@ void SteadyState::update_impl(double t, double dt, const Inputs& inputs) {
 
     m_log->message(3, " Updating the steady-state subglacial water flux...\n");
 
-    m_grid->ctx()->profiling().begin("steady_emptying");
+    profiling().begin("steady_emptying");
 
     m_emptying_problem->update(*inputs.geometry,
                                inputs.no_model_mask,
                                m_surface_input_rate);
 
-    m_grid->ctx()->profiling().end("steady_emptying");
+    profiling().end("steady_emptying");
     m_Q.copy_from(m_emptying_problem->flux());
 
     m_t_last = t;
@@ -189,15 +190,15 @@ void SteadyState::define_model_state_impl(const File& output) const {
   NullTransport::define_model_state_impl(output);
 
   if (not output.find_variable(m_time_name)) {
-    output.define_variable(m_time_name, PISM_DOUBLE, {});
+    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
 
     output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the steady state subglacial water flux");
-    output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->units_string());
+    output.write_attribute(m_time_name, "calendar", time().calendar());
+    output.write_attribute(m_time_name, "units", time().units_string());
   }
 
-  m_Q.define(output);
+  m_Q.define(output, io::PISM_DOUBLE);
 }
 
 void SteadyState::write_model_state_impl(const File& output) const {
@@ -217,7 +218,7 @@ void SteadyState::restart_impl(const File &input_file, int record) {
     if (input_file.find_variable(m_time_name)) {
       input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
-      m_t_last = m_grid->ctx()->time()->current();
+      m_t_last = time().current();
     }
   }
 
@@ -227,7 +228,7 @@ void SteadyState::restart_impl(const File &input_file, int record) {
 }
 
 void SteadyState::bootstrap_impl(const File &input_file,
-                                 const IceModelVec2S &ice_thickness) {
+                                 const array::Scalar &ice_thickness) {
   NullTransport::bootstrap_impl(input_file, ice_thickness);
 
   init_time(m_config->get_string("hydrology.surface_input.file"));
@@ -237,14 +238,14 @@ void SteadyState::bootstrap_impl(const File &input_file,
     if (input_file.find_variable(m_time_name)) {
       input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
-      m_t_last = m_grid->ctx()->time()->current();
+      m_t_last = time().current();
     }
   }
 
   // Read water flux
   if (input_file.find_variable(m_Q.metadata().get_name())) {
     // Regrid from the input file.
-    m_Q.regrid(input_file, CRITICAL);
+    m_Q.regrid(input_file, io::Default::Nil());
 
     // Allow regridding from a different file.
     regrid("hydrology 'steady'", m_Q, REGRID_WITHOUT_REGRID_VARS);
@@ -262,9 +263,9 @@ void SteadyState::bootstrap_impl(const File &input_file,
   }
 }
 
-void SteadyState::init_impl(const IceModelVec2S &W_till,
-                            const IceModelVec2S &W,
-                            const IceModelVec2S &P) {
+void SteadyState::init_impl(const array::Scalar &W_till,
+                            const array::Scalar &W,
+                            const array::Scalar &P) {
   NullTransport::init_impl(W_till, W, P);
 
   m_Q.set(0.0);
@@ -283,7 +284,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   std::string variable_name = "water_input_rate";
 
-  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY);
+  File file(m_grid->com, input_file, io::PISM_GUESS, io::PISM_READONLY);
 
   auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
                                       file, variable_name);
@@ -305,7 +306,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   // read time bounds data from a file
   VariableMetadata tb(bounds_name, m_grid->ctx()->unit_system());
-  tb["units"] = m_grid->ctx()->time()->units_string();
+  tb["units"] = time().units_string();
 
   io::read_time_bounds(file, tb, *m_log, m_time_bounds);
 

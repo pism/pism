@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,15 +24,15 @@
 
 #include <petscdmda.h>          // DMDALocalInfo
 
-#include "FEM.hh"
-#include "pism/util/Vector2.hh"
+#include "pism/util/fem/FEM.hh"
+#include "pism/util/Vector2d.hh"
 #include "pism/util/petscwrappers/Mat.hh" // Mat, MatStencil
 
 
 namespace pism {
 
-class IceGrid;
-class IceModelVec2Int;
+class Grid;
+namespace array { class Scalar; }
 
 struct Vector3 {
   double x, y, z;
@@ -52,7 +52,7 @@ class Quadrature;
   An Element mediates the transfer between element-local and global degrees of freedom and
   provides values of shape functions at quadrature points. In this implementation, the
   global degrees of freedom are either scalars (double's) or vectors (Vector2's), one per
-  node in the IceGrid, and the local degrees of freedom on the element are q1::n_chi or
+  node in the Grid, and the local degrees of freedom on the element are q1::n_chi or
   p1::n_chi (%i.e. four or three) scalars or vectors, one for each vertex of the element.
 
   In addition to this, the Element transfers locally computed contributions to residual
@@ -101,7 +101,7 @@ public:
   }
 
 protected:
-  Element(const IceGrid &grid, int Nq, int n_chi, int block_size);
+  Element(const Grid &grid, int Nq, int n_chi, int block_size);
   Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
 
   /*! @brief Add Jacobian contributions. */
@@ -173,7 +173,7 @@ public:
     j = m_j + m_j_offset[k];
   }
 
-  Vector2 normal(unsigned int side) const {
+  Vector2d normal(unsigned int side) const {
     assert(side < m_n_chi);
     return m_normals[side];
   }
@@ -207,7 +207,7 @@ public:
   }
 
   /*! @brief Get nodal values of an integer mask. */
-  void nodal_values(const IceModelVec2Int &x_global, int *result) const;
+  void nodal_values(const array::Scalar &x_global, int *result) const;
 
   /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
     into the element-local array `result`.
@@ -245,10 +245,10 @@ public:
   using Element::mark_col_invalid;
 
 protected:
-  Element2(const IceGrid &grid, int Nq, int n_chi, int block_size);
+  Element2(const Grid &grid, int Nq, int n_chi, int block_size);
   Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
 
-  std::vector<Vector2> m_normals;
+  std::vector<Vector2d> m_normals;
 
   std::vector<double> m_side_lengths;
 };
@@ -256,7 +256,7 @@ protected:
 //! Q1 element with sides parallel to X and Y axes
 class Q1Element2 : public Element2 {
 public:
-  Q1Element2(const IceGrid &grid, const Quadrature &quadrature);
+  Q1Element2(const Grid &grid, const Quadrature &quadrature);
   Q1Element2(const DMDALocalInfo &grid_info,
              double dx, double dy,
              const Quadrature &quadrature);
@@ -265,7 +265,7 @@ public:
 //! P1 element embedded in Q1Element2
 class P1Element2 : public Element2 {
 public:
-  P1Element2(const IceGrid &grid, const Quadrature &quadrature, int type);
+  P1Element2(const Grid &grid, const Quadrature &quadrature, int type);
 };
 
 class Element3 : public Element {
@@ -337,7 +337,7 @@ public:
   }
 protected:
   Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
-  Element3(const IceGrid &grid, int Nq, int n_chi, int block_size);
+  Element3(const Grid &grid, int Nq, int n_chi, int block_size);
 
   std::vector<int> m_k_offset;
 
@@ -356,7 +356,7 @@ public:
              double dy,
              double x_min,
              double y_min);
-  Q1Element3(const IceGrid &grid, const Quadrature &quadrature);
+  Q1Element3(const Grid &grid, const Quadrature &quadrature);
 
   void reset(int i, int j, int k, const double *z);
 

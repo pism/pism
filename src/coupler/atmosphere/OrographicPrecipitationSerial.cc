@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020, 2021 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2020, 2021, 2023 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "OrographicPrecipitationSerial.hh"
+#include "pism/coupler/atmosphere/OrographicPrecipitationSerial.hh"
 
 #include <complex> // std::complex<double>, std::sqrt()
 #include <gsl/gsl_math.h> // M_PI
@@ -25,7 +25,6 @@
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/fftw_utilities.hh"
 
 namespace pism {

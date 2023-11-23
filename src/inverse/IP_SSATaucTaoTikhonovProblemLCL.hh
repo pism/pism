@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2021  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2021, 2022, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,11 +23,10 @@
 
 #include <petscsys.h>
 
-#include "TaoUtil.hh"
-#include "IPTwoBlockVec.hh"
-#include "pism/util/iceModelVec.hh"
-#include "IP_SSATaucForwardProblem.hh"
-#include "functional/IPFunctional.hh"
+#include "pism/inverse/TaoUtil.hh"
+#include "pism/inverse/IPTwoBlockVec.hh"
+#include "pism/inverse/IP_SSATaucForwardProblem.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {
@@ -48,8 +47,8 @@ public:
 
   typedef std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
 
-  typedef IceModelVec2S DesignVec;
-  typedef IceModelVec2V StateVec;
+  typedef array::Scalar DesignVec;
+  typedef array::Vector StateVec;
   
   IP_SSATaucTaoTikhonovProblemLCLListener() {}
   virtual ~IP_SSATaucTaoTikhonovProblemLCLListener() {}
@@ -73,21 +72,24 @@ public:
                          int iter,
                          double objectiveValue,
                          double designValue,
-                         const DesignVec::Ptr &d,
-                         const DesignVec::Ptr &diff_d,
-                         const DesignVec::Ptr &grad_d,
-                         const StateVec::Ptr &u,
-                         const StateVec::Ptr &diff_u,
-                         const StateVec::Ptr &grad_u,
-                         const StateVec::Ptr &constraints) = 0;
+                         const std::shared_ptr<DesignVec> &d,
+                         const std::shared_ptr<DesignVec> &diff_d,
+                         const std::shared_ptr<DesignVec> &grad_d,
+                         const std::shared_ptr<StateVec> &u,
+                         const std::shared_ptr<StateVec> &diff_u,
+                         const std::shared_ptr<StateVec> &grad_u,
+                         const std::shared_ptr<StateVec> &constraints) = 0;
 };
 
 //! \brief Defines a Tikhonov minimization problem of determining \f$\tau_c\f$ from %SSA velocities to be solved with a TaoBasicSolver using the tao_lcl algorithm.
 /*! Experimental and not particularly functional. */
 class IP_SSATaucTaoTikhonovProblemLCL {
 public:
-  typedef IceModelVec2S DesignVec;
-  typedef IceModelVec2V StateVec;
+  typedef array::Scalar DesignVec;
+  typedef array::Scalar1 DesignVecGhosted;
+
+  typedef array::Vector StateVec;
+  typedef array::Vector1 StateVec1;
 
   typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
   
@@ -100,8 +102,8 @@ public:
     m_listeners.push_back(listener);
   }
 
-  virtual StateVec::Ptr stateSolution();
-  virtual DesignVec::Ptr designSolution();
+  virtual std::shared_ptr<StateVec> stateSolution();
+  virtual std::shared_ptr<DesignVec> designSolution();
 
   virtual void setInitialGuess(DesignVec &d0);
 
@@ -111,7 +113,7 @@ public:
 
   virtual void evaluateObjectiveAndGradient(Tao tao, Vec x, double *value, Vec gradient);
   
-  virtual TerminationReason::Ptr formInitialGuess(Vec *x);
+  virtual std::shared_ptr<TerminationReason> formInitialGuess(Vec *x);
 
   virtual void evaluateConstraints(Tao tao, Vec x, Vec r);
 
@@ -130,37 +132,37 @@ protected:
   std::unique_ptr<IPTwoBlockVec> m_x;
 
   DesignVec m_dGlobal;
-  DesignVec::Ptr m_d;
+  std::shared_ptr<DesignVecGhosted> m_d;
   DesignVec &m_d0;
-  DesignVec::Ptr m_d_diff;
-  DesignVec m_dzeta;
+  std::shared_ptr<DesignVecGhosted> m_d_diff;
+  DesignVecGhosted m_dzeta;            // ghosted
 
-  StateVec::Ptr m_uGlobal;
-  StateVec m_u;
-  StateVec m_du;
+  std::shared_ptr<StateVec> m_uGlobal;
+  StateVec1 m_u;                 // ghosted
+  StateVec1 m_du;                // ghosted
   StateVec &m_u_obs;
-  StateVec::Ptr m_u_diff;
+  std::shared_ptr<StateVec> m_u_diff;
 
-  DesignVec::Ptr m_grad_design;
-  StateVec::Ptr  m_grad_state;
+  std::shared_ptr<DesignVec> m_grad_design;
+  std::shared_ptr<StateVec>  m_grad_state;
 
   double m_eta;
 
   double m_val_design;
   double m_val_state;
 
-  StateVec::Ptr m_constraints;
+  std::shared_ptr<StateVec> m_constraints;
   petsc::Mat m_Jstate;
   petsc::Mat m_Jdesign;
 
-  IceModelVec2S m_d_Jdesign;
-  IceModelVec2V m_u_Jdesign;
+  array::Scalar1 m_d_Jdesign;   // ghosted
+  array::Vector1 m_u_Jdesign;        // ghosted
 
   double m_constraintsScale;
   double m_velocityScale;
 
-  IPFunctional<IceModelVec2S> &m_designFunctional;
-  IPFunctional<IceModelVec2V> &m_stateFunctional;
+  IPFunctional<array::Scalar> &m_designFunctional;
+  IPFunctional<array::Vector> &m_stateFunctional;
 
   std::vector<Listener::Ptr> m_listeners;
 

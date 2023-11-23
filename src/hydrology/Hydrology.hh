@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2021 PISM Authors
+// Copyright (C) 2012-2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,15 +19,10 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
-
-class IceModelVec2CellType;
-class Geometry;
 
 //! @brief Sub-glacial hydrology models and related diagnostics.
 namespace hydrology {
@@ -37,13 +32,13 @@ public:
   Inputs();
 
   // modeling domain (set to NULL in whole-ice-sheet configurations)
-  const IceModelVec2Int      *no_model_mask;
+  const array::Scalar1      *no_model_mask;
   // geometry
   const Geometry *geometry;
   // hydrological inputs
-  const IceModelVec2S        *surface_input_rate;
-  const IceModelVec2S        *basal_melt_rate;
-  const IceModelVec2S        *ice_sliding_speed;
+  const array::Scalar        *surface_input_rate;
+  const array::Scalar        *basal_melt_rate;
+  const array::Scalar        *ice_sliding_speed;
 };
 
 //! \brief The PISM subglacial hydrology model interface.
@@ -62,8 +57,8 @@ public:
 
   Additional modeled fields, for diagnostic purposes, are
   \code
-  overburden_pressure(IceModelVec2S &result)
-  wall_melt(IceModelVec2S &result)
+  overburden_pressure(array::Scalar &result)
+  wall_melt(array::Scalar &result)
   \endcode
 
   This interface is appropriate to subglacial hydrology models which track a
@@ -113,43 +108,43 @@ public:
 */
 class Hydrology : public Component {
 public:
-  Hydrology(IceGrid::ConstPtr g);
+  Hydrology(std::shared_ptr<const Grid> g);
   virtual ~Hydrology() = default;
 
   void restart(const File &input_file, int record);
 
   void bootstrap(const File &input_file,
-                 const IceModelVec2S &ice_thickness);
+                 const array::Scalar &ice_thickness);
 
-  void init(const IceModelVec2S &W_till,
-                  const IceModelVec2S &W,
-                  const IceModelVec2S &P);
+  void init(const array::Scalar &W_till,
+                  const array::Scalar &W,
+                  const array::Scalar &P);
 
   void update(double t, double dt, const Inputs& inputs);
 
-  const IceModelVec2S& till_water_thickness() const;
-  const IceModelVec2S& subglacial_water_thickness() const;
-  const IceModelVec2S& overburden_pressure() const;
-  const IceModelVec2S& surface_input_rate() const;
-  const IceModelVec2V& flux() const;
+  const array::Scalar& till_water_thickness() const;
+  const array::Scalar& subglacial_water_thickness() const;
+  const array::Scalar& overburden_pressure() const;
+  const array::Scalar& surface_input_rate() const;
+  const array::Vector& flux() const;
 
-  const IceModelVec2S& mass_change() const;
-  const IceModelVec2S& mass_change_at_grounded_margin() const;
-  const IceModelVec2S& mass_change_at_grounding_line() const;
-  const IceModelVec2S& mass_change_at_domain_boundary() const;
-  const IceModelVec2S& mass_change_due_to_conservation_error() const;
-  const IceModelVec2S& mass_change_due_to_input() const;
-  const IceModelVec2S& mass_change_due_to_lateral_flow() const;
+  const array::Scalar& mass_change() const;
+  const array::Scalar& mass_change_at_grounded_margin() const;
+  const array::Scalar& mass_change_at_grounding_line() const;
+  const array::Scalar& mass_change_at_domain_boundary() const;
+  const array::Scalar& mass_change_due_to_conservation_error() const;
+  const array::Scalar& mass_change_due_to_input() const;
+  const array::Scalar& mass_change_due_to_lateral_flow() const;
 
 protected:
   virtual void restart_impl(const File &input_file, int record);
 
   virtual void bootstrap_impl(const File &input_file,
-                              const IceModelVec2S &ice_thickness);
+                              const array::Scalar &ice_thickness);
 
-  virtual void init_impl(const IceModelVec2S &W_till,
-                               const IceModelVec2S &W,
-                               const IceModelVec2S &P);
+  virtual void init_impl(const array::Scalar &W_till,
+                               const array::Scalar &W,
+                               const array::Scalar &P);
 
   virtual void update_impl(double t, double dt, const Inputs& inputs) = 0;
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
@@ -157,65 +152,65 @@ protected:
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
 
-  void compute_overburden_pressure(const IceModelVec2S &ice_thickness,
-                                   IceModelVec2S &result) const;
+  void compute_overburden_pressure(const array::Scalar &ice_thickness,
+                                   array::Scalar &result) const;
 
-  void compute_surface_input_rate(const IceModelVec2CellType &mask,
-                                  const IceModelVec2S *surface_input_rate,
-                                  IceModelVec2S &result);
+  void compute_surface_input_rate(const array::CellType &mask,
+                                  const array::Scalar *surface_input_rate,
+                                  array::Scalar &result);
 
-  void compute_basal_melt_rate(const IceModelVec2CellType &mask,
-                               const IceModelVec2S &basal_melt_rate,
-                               IceModelVec2S &result);
+  void compute_basal_melt_rate(const array::CellType &mask,
+                               const array::Scalar &basal_melt_rate,
+                               array::Scalar &result);
 protected:
   // water flux on the regular grid
-  IceModelVec2V m_Q;
+  array::Vector m_Q;
 
   //! effective thickness of basal water stored in till
-  IceModelVec2S m_Wtill;
+  array::Scalar m_Wtill;
 
   //! effective thickness of transportable basal water
-  IceModelVec2S m_W;
+  array::Scalar1 m_W;
 
   //! overburden pressure
-  IceModelVec2S m_Pover;
+  array::Scalar m_Pover;
 
   // surface input rate
-  IceModelVec2S m_surface_input_rate;
+  array::Scalar m_surface_input_rate;
 
   // input rate due to basal melt
-  IceModelVec2S m_basal_melt_rate;
+  array::Scalar m_basal_melt_rate;
 
   // change due to flow for the current hydrology time step
-  IceModelVec2S m_flow_change_incremental;
+  array::Scalar m_flow_change_incremental;
 
   // changes in water thickness
   //
   // these quantities are re-set to zero at the beginning of the PISM time step
-  IceModelVec2S m_conservation_error_change;
-  IceModelVec2S m_grounded_margin_change;
-  IceModelVec2S m_grounding_line_change;
-  IceModelVec2S m_input_change;
-  IceModelVec2S m_no_model_mask_change;
-  IceModelVec2S m_total_change;
-  IceModelVec2S m_flow_change;
+  array::Scalar m_conservation_error_change;
+  array::Scalar m_grounded_margin_change;
+  array::Scalar m_grounding_line_change;
+  array::Scalar m_input_change;
+  array::Scalar m_no_model_mask_change;
+  array::Scalar m_total_change;
+  array::Scalar m_flow_change;
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed
-  void enforce_bounds(const IceModelVec2CellType &cell_type,
-                      const IceModelVec2Int *no_model_mask,
+  void enforce_bounds(const array::CellType &cell_type,
+                      const array::Scalar *no_model_mask,
                       double max_thickness,
                       double ocean_water_thickness,
-                      IceModelVec2S &water_thickness,
-                      IceModelVec2S &grounded_margin_change,
-                      IceModelVec2S &grounding_line_change,
-                      IceModelVec2S &conservation_error_change,
-                      IceModelVec2S &no_model_mask_change);
+                      array::Scalar &water_thickness,
+                      array::Scalar &grounded_margin_change,
+                      array::Scalar &grounding_line_change,
+                      array::Scalar &conservation_error_change,
+                      array::Scalar &no_model_mask_change);
 private:
   virtual void initialization_message() const = 0;
 };
 
-void check_bounds(const IceModelVec2S& W, double W_max);
+void check_bounds(const array::Scalar& W, double W_max);
 
 } // end of namespace hydrology
 } // end of namespace pism

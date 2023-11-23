@@ -49,14 +49,14 @@ def add_disc_load(ice_thickness, radius, thickness):
 def run(dt, restart=False):
     "Run the model for 1 time step, stop, save model state, restart, do 1 more step."
 
-    grid = PISM.IceGrid.Shallow(ctx.ctx, Lx, Ly, 0, 0, N, N,
+    grid = PISM.Grid.Shallow(ctx.ctx, Lx, Ly, 0, 0, N, N,
                                 PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     model = PISM.LingleClark(grid)
 
     geometry = PISM.Geometry(grid)
 
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
+    bed_uplift = PISM.Scalar(grid, "uplift")
 
     # start with a flat bed, no ice, and no uplift
     geometry.bed_elevation.set(0.0)

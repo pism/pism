@@ -17,7 +17,7 @@ pismr \
   -output.extra.file ex.nc \
   -output.extra.times 1000 \
   -output.extra.vars ${variables} \
-  -output.file_name bedrock_step.nc \
+  -output.file bedrock_step.nc \
   -output.timeseries.filename ts.nc \
   -output.timeseries.times 1 \
   -stress_balance.ice_free_thickness_standard 0.01 \

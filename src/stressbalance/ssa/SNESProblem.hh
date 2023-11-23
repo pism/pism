@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017 David Maxwell
+// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2022 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,11 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#ifndef _SNESPROBLEM_H_
-#define _SNESPROBLEM_H_
+#ifndef PISM_SNESPROBLEM_H
+#define PISM_SNESPROBLEM_H
 
-#include "pism/util/IceGrid.hh" // inline implementation in the header uses IceGrid
-#include "pism/util/Vector2.hh" // to get Vector2
+#include "pism/util/Grid.hh" // inline implementation in the header uses Grid
+#include "pism/util/Vector2d.hh" // to get Vector2
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/Logger.hh"
 
@@ -29,7 +29,7 @@ namespace pism {
 
 template<int DOF, class U> class SNESProblem {
 public:
-  SNESProblem(IceGrid::ConstPtr g);
+  SNESProblem(std::shared_ptr<const Grid> g);
 
   virtual ~SNESProblem();
 
@@ -47,7 +47,7 @@ protected:
   virtual void compute_local_function(DMDALocalInfo *info, const U **xg, U **yg) = 0;
   virtual void compute_local_jacobian(DMDALocalInfo *info, const U **x,  Mat B) = 0;
 
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const Grid> m_grid;
 
   petsc::Vec m_X;
   petsc::SNES m_snes;
@@ -69,7 +69,7 @@ private:
 };
 
 typedef SNESProblem<1,double> SNESScalarProblem;
-typedef SNESProblem<2,Vector2> SNESVectorProblem;
+typedef SNESProblem<2,Vector2d> SNESVectorProblem;
 
 template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::function_callback(DMDALocalInfo *info,
@@ -102,7 +102,7 @@ PetscErrorCode SNESProblem<DOF,U>::jacobian_callback(DMDALocalInfo *info,
 }
 
 template<int DOF, class U>
-SNESProblem<DOF, U>::SNESProblem(IceGrid::ConstPtr g)
+SNESProblem<DOF, U>::SNESProblem(std::shared_ptr<const Grid> g)
   : m_grid(g) {
 
   PetscErrorCode ierr;
@@ -173,4 +173,4 @@ void SNESProblem<DOF,U>::solve() {
 
 } // end of namespace pism
 
-#endif
+#endif // PISM_SNESPROBLEM_H

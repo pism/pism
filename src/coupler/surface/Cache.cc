@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,32 +17,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cmath>                // fabs()
 #include <cassert>
-#include <algorithm>            // for std::min
+#include <algorithm>            // for std::min()
 
-#include "Cache.hh"
+#include "pism/coupler/surface/Cache.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/Context.hh"
 
 namespace pism {
 namespace surface {
 
-Cache::Cache(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> in)
+Cache::Cache(std::shared_ptr<const Grid> grid, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(grid, in) {
 
-  auto time = m_grid->ctx()->time();
-
-  m_next_update_time = time->current();
+  m_next_update_time = time().current();
   m_update_interval_years = m_config->get_number("surface.cache.update_interval", "seconds");
 
   // use the current year length (according to the selected calendar) to convert update
   // interval length into years
-  m_update_interval_years = time->convert_time_interval(m_update_interval_years, "years");
+  m_update_interval_years = time().convert_time_interval(m_update_interval_years, "years");
 
   if (m_update_interval_years <= 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -66,7 +62,7 @@ void Cache::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing the 'caching' surface model modifier...\n");
 
-  m_next_update_time = m_grid->ctx()->time()->current();
+  m_next_update_time = time().current();
 }
 
 void Cache::update_impl(const Geometry &geometry, double t, double dt) {
@@ -78,14 +74,14 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
   if (t >= m_next_update_time or fabs(t - m_next_update_time) < time_resolution) {
 
     double
-      one_year_from_now = m_grid->ctx()->time()->increment_date(t, 1.0),
+      one_year_from_now = time().increment_date(t, 1.0),
       update_dt         = one_year_from_now - t;
 
     assert(update_dt > 0.0);
 
     m_input_model->update(geometry, t, update_dt);
 
-    m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
+    m_next_update_time = time().increment_date(m_next_update_time,
                                                                m_update_interval_years);
 
     // store outputs of the input model
@@ -108,7 +104,7 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   // if we got very close to the next update time, set time step
   // length to the interval between updates
   if (dt < time_resolution) {
-    double update_time_after_next = m_grid->ctx()->time()->increment_date(m_next_update_time,
+    double update_time_after_next = time().increment_date(m_next_update_time,
                                                                           m_update_interval_years);
 
     dt = update_time_after_next - m_next_update_time;
@@ -122,40 +118,40 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   MaxTimestep input_max_timestep = m_input_model->max_timestep(t);
   if (input_max_timestep.finite()) {
     return std::min(input_max_timestep, cache_dt);
-  } else {
-    return cache_dt;
   }
+
+  return cache_dt;
 }
 
-const IceModelVec2S &Cache::layer_thickness_impl() const {
+const array::Scalar &Cache::layer_thickness_impl() const {
   return *m_layer_thickness;
 }
 
-const IceModelVec2S &Cache::mass_flux_impl() const {
+const array::Scalar &Cache::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &Cache::temperature_impl() const {
+const array::Scalar &Cache::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &Cache::liquid_water_fraction_impl() const {
+const array::Scalar &Cache::liquid_water_fraction_impl() const {
   return *m_liquid_water_fraction;
 }
 
-const IceModelVec2S &Cache::layer_mass_impl() const {
+const array::Scalar &Cache::layer_mass_impl() const {
   return *m_layer_mass;
 }
 
-const IceModelVec2S& Cache::accumulation_impl() const {
+const array::Scalar& Cache::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S& Cache::melt_impl() const {
+const array::Scalar& Cache::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S& Cache::runoff_impl() const {
+const array::Scalar& Cache::runoff_impl() const {
   return *m_runoff;
 }
 

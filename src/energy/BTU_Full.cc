@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,20 +16,20 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#include "BTU_Full.hh"
+#include "pism/energy/BTU_Full.hh"
 
-#include "pism/util/pism_options.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "BedrockColumn.hh"
+#include "pism/util/array/Array3D.hh"
+#include "pism/energy/BedrockColumn.hh"
+#include <memory>
 
 namespace pism {
 namespace energy {
 
 
-BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
+BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
   : BedThermalUnit(g),
     m_bootstrapping_needed(false) {
 
@@ -64,25 +64,22 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
     }
     z.back() = 0.0;
 
-    m_temp.reset(new IceModelVec3(m_grid, "litho_temp", WITHOUT_GHOSTS, z));
-    m_temp->metadata(0).z().set_name("zb");
+    m_temp = std::make_shared<array::Array3D>(m_grid, "litho_temp", array::WITHOUT_GHOSTS, z);
+    {
+      auto &z_dim = m_temp->metadata(0).z();
 
-    std::map<std::string, std::string> z_attrs =
-      {{"units", "m"},
-       {"long_name", "Z-coordinate in bedrock"},
-       {"axis", "Z"},
-       {"positive", "up"}};
-    for (const auto &z_attr : z_attrs) {
-      m_temp->metadata(0).z().set_string(z_attr.first, z_attr.second);
+      z_dim.set_name("zb").long_name("Z-coordinate in bedrock").units("m");
+      z_dim["axis"]     = "Z";
+      z_dim["positive"] = "up";
     }
 
-    m_temp->set_attrs("model_state",
-                      "lithosphere (bedrock) temperature, in BTU_Full",
-                      "K", "K", "", 0);
-    m_temp->metadata()["valid_min"] = {0.0};
+    m_temp->metadata(0)
+        .long_name("lithosphere (bedrock) temperature, in BTU_Full")
+        .units("K");
+    m_temp->metadata(0)["valid_min"] = {0.0};
   }
 
-  m_column.reset(new BedrockColumn("bedrock_column", *m_config, vertical_spacing(), Mz()));
+  m_column = std::make_shared<BedrockColumn>("bedrock_column", *m_config, vertical_spacing(), Mz());
 }
 
 
@@ -100,7 +97,7 @@ void BTU_Full::init_impl(const InputOptions &opts) {
     const int temp_revision = m_temp->state_counter();
 
     if (opts.type == INIT_RESTART) {
-      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
 
       if (input_file.find_variable("litho_temp")) {
         m_temp->read(input_file, opts.record);
@@ -138,8 +135,8 @@ double BTU_Full::depth_impl() const {
 }
 
 void BTU_Full::define_model_state_impl(const File &output) const {
-  m_bottom_surface_flux.define(output);
-  m_temp->define(output);
+  m_bottom_surface_flux.define(output, io::PISM_DOUBLE);
+  m_temp->define(output, io::PISM_DOUBLE);
 }
 
 void BTU_Full::write_model_state_impl(const File &output) const {
@@ -156,7 +153,7 @@ MaxTimestep BTU_Full::max_timestep_impl(double t) const {
 
 /** Perform a step of the bedrock thermal model.
 */
-void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
+void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
                            double t, double dt) {
   (void) t;
 
@@ -169,11 +166,11 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
     throw RuntimeError(PISM_ERROR_LOCATION, "dt < 0 is not allowed");
   }
 
-  IceModelVec::AccessList list{m_temp.get(), &m_bottom_surface_flux, &bedrock_top_temperature};
+  array::AccessScope list{m_temp.get(), &m_bottom_surface_flux, &bedrock_top_temperature};
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double *T = m_temp->get_column(i, j);
@@ -220,11 +217,11 @@ void BTU_Full::update_flux_through_top_surface() {
   double dz = this->vertical_spacing();
   const int k0  = m_Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
-  IceModelVec::AccessList list{m_temp.get(), &m_top_surface_flux};
+  array::AccessScope list{m_temp.get(), &m_top_surface_flux};
 
   if (m_Mbz >= 3) {
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double *Tb = m_temp->get_column(i, j);
@@ -233,7 +230,7 @@ void BTU_Full::update_flux_through_top_surface() {
 
   } else {
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double *Tb = m_temp->get_column(i, j);
@@ -243,7 +240,7 @@ void BTU_Full::update_flux_through_top_surface() {
   }
 }
 
-const IceModelVec3& BTU_Full::temperature() const {
+const array::Array3D& BTU_Full::temperature() const {
   if (m_bootstrapping_needed) {
     throw RuntimeError(PISM_ERROR_LOCATION, "bedrock temperature is not available (bootstrapping is needed)");
   }
@@ -251,7 +248,7 @@ const IceModelVec3& BTU_Full::temperature() const {
   return *m_temp;
 }
 
-void BTU_Full::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
+void BTU_Full::bootstrap(const array::Scalar &bedrock_top_temperature) {
 
   m_log->message(2,
                 "  bootstrapping to fill lithosphere temperatures in the bedrock thermal layer\n"
@@ -261,8 +258,8 @@ void BTU_Full::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
   double dz = this->vertical_spacing();
   const int k0 = m_Mbz - 1; // Tb[k0] = ice/bedrock interface temp
 
-  IceModelVec::AccessList list{&bedrock_top_temperature, &m_bottom_surface_flux, m_temp.get()};
-  for (Points p(*m_grid); p; p.next()) {
+  array::AccessScope list{&bedrock_top_temperature, &m_bottom_surface_flux, m_temp.get()};
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *Tb = m_temp->get_column(i, j); // Tb points into temp memory

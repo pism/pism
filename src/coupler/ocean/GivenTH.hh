@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,15 +19,14 @@
 #ifndef _POGIVENTH_H_
 #define _POGIVENTH_H_
 
-#include "CompleteOceanModel.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/coupler/ocean/CompleteOceanModel.hh"
 
 namespace pism {
 namespace ocean {
 class GivenTH : public CompleteOceanModel
 {
 public:
-  GivenTH(IceGrid::ConstPtr g);
+  GivenTH(std::shared_ptr<const Grid> g);
   virtual ~GivenTH() = default;
 
   class Constants {
@@ -63,8 +62,8 @@ private:
   void init_impl(const Geometry &geometry);
   MaxTimestep max_timestep_impl(double t) const;
 
-  std::shared_ptr<IceModelVec2T> m_theta_ocean;
-  std::shared_ptr<IceModelVec2T> m_salinity_ocean;
+  std::shared_ptr<array::Forcing> m_theta_ocean;
+  std::shared_ptr<array::Forcing> m_salinity_ocean;
 
   void pointwise_update(const Constants &constants,
                         double sea_water_salinity,

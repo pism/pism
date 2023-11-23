@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,15 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _INTERPOLATION_H_
-#define _INTERPOLATION_H_
+#ifndef PISM_INTERPOLATION_H
+#define PISM_INTERPOLATION_H
 
+#include <cstddef>              // size_t
 #include <vector>
 #include <map>
 
 namespace pism {
 
-enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT};
+enum InterpolationType : int {LINEAR, NEAREST, PIECEWISE_CONSTANT};
 
 /**
  * Class encapsulating linear and piece-wise constant interpolation indexes and weights.
@@ -92,6 +93,11 @@ public:
   int right(size_t j) const;
   double alpha(size_t j) const;
 
+  /*!
+   * Number of grid points in the output grid.
+   */
+  int n_output() const;
+
   //! Return interpolated values (on the output grid) given `input_values` on the input grid.
   /** This is used for testing. (Regular code calls left(), right(), and alpha().)
    */
@@ -129,4 +135,4 @@ std::map<size_t, double> integration_weights(const std::vector<double> &x,
 
 } // end of namespace pism
 
-#endif /* _INTERPOLATION_H_ */
+#endif /* PISM_INTERPOLATION_H */

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define PRECIPITATIONSCALING_H
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 
@@ -56,7 +55,7 @@ namespace atmosphere {
  */
 class PrecipitationScaling : public AtmosphereModel {
 public:
-  PrecipitationScaling(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
+  PrecipitationScaling(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~PrecipitationScaling() = default;
 
 protected:
@@ -65,16 +64,16 @@ protected:
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
 
-  const IceModelVec2S& mean_precipitation_impl() const;
+  const array::Scalar& precipitation_impl() const;
 
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
 protected:
   double m_exp_factor;
-  std::unique_ptr<ScalarForcing> m_forcing;
+  std::shared_ptr<ScalarForcing> m_forcing;
   mutable std::vector<double> m_scaling_values;
 
-  IceModelVec2S::Ptr m_precipitation;
+  std::shared_ptr<array::Scalar> m_precipitation;
 };
 
 } // end of namespace atmosphere

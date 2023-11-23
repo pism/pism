@@ -26,7 +26,7 @@ def create_dummy_grid():
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config)
     params.ownership_ranges_from_options(ctx.size)
-    return PISM.IceGrid(ctx.ctx, params)
+    return PISM.Grid(ctx.ctx, params)
 
 
 def context_test():
@@ -48,7 +48,7 @@ def context_missing_attribute_test():
 
 
 def create_grid_test():
-    "Test the creation of the IceGrid object"
+    "Test the creation of the Grid object"
     grid1 = create_dummy_grid()
 
     grid2 = PISM.model.initGrid(PISM.Context(), 100e3, 100e3, 4000, 11, 11, 21, PISM.CELL_CORNER)
@@ -73,7 +73,7 @@ def printing_test():
 
 def random_vec_test():
     "Test methods creating random fields"
-    grid = PISM.IceGrid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
+    grid = PISM.Grid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
                                 PISM.NOT_PERIODIC, PISM.CELL_CENTER)
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
@@ -84,7 +84,7 @@ def random_vec_test():
 
 
 def vec_metadata_test():
-    "Test accessing IceModelVec metadata"
+    "Test accessing Array metadata"
     grid = create_dummy_grid()
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
@@ -97,7 +97,7 @@ def vec_metadata_test():
 
 
 def vars_ownership_test():
-    "Test passing IceModelVec ownership from Python to C++ (i.e. PISM)."
+    "Test passing Array ownership from Python to C++ (i.e. PISM)."
     grid = create_dummy_grid()
     variables = PISM.Vars()
 
@@ -114,7 +114,7 @@ def vars_ownership_test():
 
 
 def vec_access_test():
-    "Test the PISM.vec.Access class and IceGrid::points, points_with_ghosts, coords"
+    "Test the PISM.vec.Access class and Grid::points, points_with_ghosts, coords"
     grid = create_dummy_grid()
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
@@ -145,9 +145,8 @@ def create_modeldata_test():
 
     md2 = PISM.model.ModelData(grid, config=grid.ctx().config())
 
-
 def grid_from_file_test():
-    "Intiialize a grid from a file (test 1)"
+    "Intiialize a grid from a file"
     grid = create_dummy_grid()
 
     enthalpy = PISM.model.createEnthalpyVec(grid)
@@ -159,26 +158,7 @@ def grid_from_file_test():
 
         enthalpy.write(pio)
 
-        pio = PISM.File(grid.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-
-        grid2 = PISM.IceGrid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
-    finally:
-        os.remove(file_name)
-
-def grid_from_file_test_2():
-    "Intiialize a grid from a file (test 2)"
-    grid = create_dummy_grid()
-
-    enthalpy = PISM.model.createEnthalpyVec(grid)
-    enthalpy.set(80e3)
-
-    file_name = filename("grid_from_file")
-    try:
-        pio = PISM.util.prepare_output(file_name)
-
-        enthalpy.write(pio)
-
-        grid2 = PISM.IceGrid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
+        grid2 = PISM.Grid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
     finally:
         os.remove(file_name)
 
@@ -349,7 +329,7 @@ def sia_test():
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
     params.ownership_ranges_from_options(ctx.size)
-    grid = PISM.IceGrid(ctx.ctx, params)
+    grid = PISM.Grid(ctx.ctx, params)
 
     enthalpyconverter = PISM.EnthalpyConverter(ctx.config)
 
@@ -703,7 +683,7 @@ def ssa_trivial_test():
 
     class TrivialSSARun(PISM.ssa.SSAExactTestCase):
         def _initGrid(self):
-            self.grid = PISM.IceGrid.Shallow(context.ctx, L, L, 0, 0,
+            self.grid = PISM.Grid.Shallow(context.ctx, L, L, 0, 0,
                                              self.Mx, self.My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
         def _initPhysics(self):
@@ -790,7 +770,7 @@ def regridding_test():
     params.My = 3
     params.ownership_ranges_from_options(1)
 
-    grid = PISM.IceGrid(ctx.ctx, params)
+    grid = PISM.Grid(ctx.ctx, params)
 
     thk1 = PISM.model.createIceThicknessVec(grid)
     thk2 = PISM.model.createIceThicknessVec(grid)
@@ -826,8 +806,8 @@ def interpolation_weights_test():
     "Test 2D interpolation weights."
 
     def interp2d(grid, F, x, y):
-        i_left, i_right, j_bottom, j_top = grid.compute_point_neighbors(x, y)
-        w = grid.compute_interp_weights(x, y)
+        i_left, i_right, j_bottom, j_top = grid.point_neighbors(x, y)
+        w = grid.interpolation_weights(x, y)
 
         i = [i_left, i_right, i_right, i_left]
         j = [j_bottom, j_bottom, j_top, j_top]
@@ -843,7 +823,7 @@ def interpolation_weights_test():
     Lx = 20
     Ly = 10
 
-    grid = PISM.IceGrid_Shallow(PISM.Context().ctx,
+    grid = PISM.Grid_Shallow(PISM.Context().ctx,
                                 Lx, Ly, 0, 0, Mx, My,
                                 PISM.CELL_CORNER,
                                 PISM.NOT_PERIODIC)
@@ -883,10 +863,10 @@ def vertical_extrapolation_during_regridding_test():
     z = np.linspace(0, params.Lz, params.Mz)
     params.z[:] = z
 
-    grid = PISM.IceGrid(ctx.ctx, params)
+    grid = PISM.Grid(ctx.ctx, params)
 
-    # create an IceModelVec that uses this grid
-    v = PISM.IceModelVec3(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
+    # create an Array that uses this grid
+    v = PISM.Array3D(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
     v.set(0.0)
 
     # set a column
@@ -904,15 +884,15 @@ def vertical_extrapolation_during_regridding_test():
         z_tall = np.linspace(0, params.Lz, params.Mz)
         params.z[:] = z_tall
 
-        tall_grid = PISM.IceGrid(ctx.ctx, params)
+        tall_grid = PISM.Grid(ctx.ctx, params)
 
-        # create an IceModelVec that uses this grid
-        v_tall = PISM.IceModelVec3(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
+        # create an Array that uses this grid
+        v_tall = PISM.Array3D(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
 
         # Try regridding without extrapolation. This should fail.
         try:
             ctx.ctx.log().disable()
-            v_tall.regrid(file_name, PISM.CRITICAL)
+            v_tall.regrid(file_name, PISM.Default.Nil())
             ctx.ctx.log().enable()
             raise AssertionError("Should not be able to regrid without extrapolation")
         except RuntimeError as e:
@@ -923,7 +903,7 @@ def vertical_extrapolation_during_regridding_test():
 
         # regrid from test.nc
         ctx.ctx.log().disable()
-        v_tall.regrid(file_name, PISM.CRITICAL)
+        v_tall.regrid(file_name, PISM.Default.Nil())
         ctx.ctx.log().enable()
 
         # get a column
@@ -961,12 +941,12 @@ class PrincipalStrainRates(TestCase):
 
     def create_grid(self, Mx):
         My = Mx + 10            # a non-square grid
-        return PISM.IceGrid.Shallow(self.ctx.ctx,
+        return PISM.Grid.Shallow(self.ctx.ctx,
                                     2*np.pi, 2*np.pi,
                                     0, 0, int(Mx), int(My), PISM.CELL_CENTER, PISM.NOT_PERIODIC)
 
     def create_velocity(self, grid):
-        velocity = PISM.IceModelVec2V(grid, "bar", PISM.WITH_GHOSTS)
+        velocity = PISM.Vector1(grid, "bar")
         with PISM.vec.Access(nocomm=velocity):
             for (i, j) in grid.points():
                 u, v = self.u_exact(grid.x(i), grid.y(j))
@@ -977,7 +957,7 @@ class PrincipalStrainRates(TestCase):
         return velocity
 
     def create_cell_type(self, grid):
-        cell_type = PISM.IceModelVec2CellType(grid, "cell_type", PISM.WITH_GHOSTS)
+        cell_type = PISM.CellType1(grid, "cell_type")
         cell_type.set(PISM.MASK_GROUNDED)
         cell_type.update_ghosts()
 
@@ -988,8 +968,8 @@ class PrincipalStrainRates(TestCase):
 
         velocity = self.create_velocity(grid)
         cell_type = self.create_cell_type(grid)
-        strain_rates = PISM.IceModelVec3(grid, "strain_rates",
-                                         PISM.WITHOUT_GHOSTS, 2)
+        strain_rates = PISM.ArrayPrincipalStrainRates(grid, "strain_rates",
+                                                      PISM.WITHOUT_GHOSTS)
 
         PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
         rates = strain_rates.numpy()
@@ -1124,15 +1104,15 @@ class AgeModel(TestCase):
         "Create a dummy grid"
         params = PISM.GridParameters(ctx.config)
         params.ownership_ranges_from_options(ctx.size)
-        return PISM.IceGrid(ctx.ctx, params)
+        return PISM.Grid(ctx.ctx, params)
 
     def test_age_model_runs(self):
         "Check if AgeModel runs"
         ice_thickness = PISM.model.createIceThicknessVec(self.grid)
 
-        u = PISM.IceModelVec3(self.grid, "u", PISM.WITHOUT_GHOSTS, self.grid.z())
-        v = PISM.IceModelVec3(self.grid, "v", PISM.WITHOUT_GHOSTS, self.grid.z())
-        w = PISM.IceModelVec3(self.grid, "w", PISM.WITHOUT_GHOSTS, self.grid.z())
+        u = PISM.Array3D(self.grid, "u", PISM.WITHOUT_GHOSTS, self.grid.z())
+        v = PISM.Array3D(self.grid, "v", PISM.WITHOUT_GHOSTS, self.grid.z())
+        w = PISM.Array3D(self.grid, "w", PISM.WITHOUT_GHOSTS, self.grid.z())
 
         ice_thickness.set(4000.0)
         u.set(0.0)
@@ -1155,10 +1135,10 @@ class AgeModel(TestCase):
         os.remove(self.output_file)
 
 def checksum_test():
-    "Check if a small change in an IceModelVec affects checksum() output"
+    "Check if a small change in an Array affects checksum() output"
     grid = PISM.testing.shallow_grid(Mx=101, My=201)
 
-    v = PISM.IceModelVec2S(grid, "dummy", PISM.WITHOUT_GHOSTS)
+    v = PISM.Scalar(grid, "dummy")
     v.set(1e15)
 
     old_checksum = v.checksum(serial=False)
@@ -1564,10 +1544,10 @@ def grounding_line_flux_test():
 
     geometry.ensure_consistency(0)
 
-    velocity = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
-    thk_bc_mask = PISM.IceModelVec2Int(grid, "thk_bc_mask", PISM.WITHOUT_GHOSTS)
+    velocity = PISM.Vector(grid, "velocity")
+    thk_bc_mask = PISM.Scalar(grid, "thk_bc_mask")
     thk_bc_mask.set(0)
-    sia_flux = PISM.IceModelVec2Stag(grid, "sia_flux", PISM.WITHOUT_GHOSTS)
+    sia_flux = PISM.Staggered(grid, "sia_flux")
     sia_flux.set(0)
 
     dt = 365 * 86400
@@ -1581,7 +1561,8 @@ def grounding_line_flux_test():
 
     geometry_evolution.flow_step(geometry, dt, velocity, sia_flux, thk_bc_mask)
 
-    gl_flux = PISM.IceModelVec2S(grid, "grounding_line_flux", PISM.WITHOUT_GHOSTS)
+    gl_flux = PISM.Scalar(grid, "grounding_line_flux")
+
     PISM.grounding_line_flux(geometry.cell_type,
                              geometry_evolution.flux_staggered(),
                              dt,

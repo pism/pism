@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,19 +17,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PROJECTION_H_
-#define _PROJECTION_H_
+#ifndef PISM_PROJECTION_H
+#define PISM_PROJECTION_H
 
 #include <string>
+#include <array>
 
-#include "Units.hh"
-#include "VariableMetadata.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 
 class File;
-class IceModelVec2S;
-class IceModelVec3;
+namespace array {
+class Array3D;
+class Scalar;
+}
 
 /*! @brief Convert a proj string with an EPSG code to a set of CF attributes. */
 /*!
@@ -55,12 +58,30 @@ void check_consistency_epsg(const MappingInfo &info);
 MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
                                 units::System::Ptr unit_system);
 
-void compute_longitude(const std::string &projection, IceModelVec2S &result);
-void compute_latitude(const std::string &projection, IceModelVec2S &result);
+void compute_longitude(const std::string &projection, array::Scalar &result);
+void compute_latitude(const std::string &projection, array::Scalar &result);
 
-void compute_lon_bounds(const std::string &projection, IceModelVec3 &result);
-void compute_lat_bounds(const std::string &projection, IceModelVec3 &result);
+void compute_lon_bounds(const std::string &projection, array::Array3D &result);
+void compute_lat_bounds(const std::string &projection, array::Array3D &result);
+
+/*!
+ * Utility class converting `x,y` coordinates in a projection to a `lon,lat` pair.
+ *
+ * Requires the `PROJ` library.
+ */
+class LonLatCalculator {
+public:
+  LonLatCalculator(const std::string &proj_string);
+  ~LonLatCalculator();
+
+  double lon(double x, double y) const;
+  double lat(double x, double y) const;
+  std::array<double, 2> lonlat(double x, double y) const;
+private:
+  struct Impl;
+  Impl *m_impl;
+};
 
 } // end of namespace pism
 
-#endif /* _PROJECTION_H_ */
+#endif /* PISM_PROJECTION_H */

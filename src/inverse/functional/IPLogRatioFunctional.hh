@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef IPLOGRATIOFUNCTIONAL_HH_HSEWI0Q8
 #define IPLOGRATIOFUNCTIONAL_HH_HSEWI0Q8
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {
@@ -27,7 +27,7 @@ namespace inverse {
 //! Implements a functional for log-ratio errors.
 /*!  This type of functional appears in [\ref Morlighemetal2010].
   Specifically, given a reference function \f$u_{obs}=[U_i]\f$, and an
-  IceModelVec2V \f$x=[X_i]\f$,
+  array::Vector \f$x=[X_i]\f$,
   \f[
   J(x) = c_N \sum_i W_i\left[\log\left(\frac{|X_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}\right)\right]^2
   \f]
@@ -38,22 +38,22 @@ namespace inverse {
 
   The normalization constant \f$c_N\f$ is determined implicitly by normalize().
 */
-class IPLogRatioFunctional : public IPFunctional<IceModelVec2V> {
+class IPLogRatioFunctional : public IPFunctional<array::Vector> {
 public:
-  IPLogRatioFunctional(IceGrid::ConstPtr grid, IceModelVec2V &u_observed, double eps,
-                       IceModelVec2S *weights=NULL) :
-    IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), 
+  IPLogRatioFunctional(std::shared_ptr<const Grid> grid, array::Vector &u_observed, double eps,
+                       array::Scalar *weights=NULL) :
+    IPFunctional<array::Vector>(grid), m_u_observed(u_observed), m_weights(weights),
     m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRatioFunctional() {};
 
   virtual void normalize(double scale);
 
-  virtual void valueAt(IceModelVec2V &x, double *OUTPUT);
-  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(array::Vector &x, double *OUTPUT);
+  virtual void gradientAt(array::Vector &x, array::Vector &gradient);
 
 protected:
-  IceModelVec2V &m_u_observed;
-  IceModelVec2S *m_weights;
+  array::Vector &m_u_observed;
+  array::Scalar *m_weights;
   double m_normalization;
   double m_eps;
 

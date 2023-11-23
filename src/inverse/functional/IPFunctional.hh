@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2022  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,13 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IPFUNCTIONAL_HH_1E2DIXE6
-#define IPFUNCTIONAL_HH_1E2DIXE6
+#ifndef PISM_IPFUNCTIONAL_H
+#define PISM_IPFUNCTIONAL_H
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/fem/FEM.hh"
 
 namespace pism {
+
+class Grid;
 
 //! Inverse modeling code.
 namespace inverse {
@@ -40,7 +41,7 @@ template<class IMVecType>
 class IPFunctional {
 
 public:
-  IPFunctional(IceGrid::ConstPtr grid)
+  IPFunctional(std::shared_ptr<const Grid> grid)
     : m_grid(grid),
       m_element_index(*m_grid),
       m_element(*m_grid, fem::Q1Quadrature4())
@@ -54,7 +55,7 @@ public:
   virtual void valueAt(IMVecType &x, double *OUTPUT) = 0;
 
   //! Computes the gradient of the functional at the vector x.
-  /*! On an \f$m\times n\f$ IceGrid, an IceModelVec \f$x\f$ with \f$d\f$
+  /*! On an \f$m\times n\f$ Grid, an array::Array \f$x\f$ with \f$d\f$
     degrees of freedom will be \f$d m n\f$-dimensional with components \f$x_i\f$.
     The gradient computed here is the vector of directional derivatives \f$\nabla J\f$ of the functional
     \f$J\f$ with respect to \f$x\f$. Concretely, the \f$i^{\rm th}\f$ component of \f$\nabla J\f$
@@ -67,7 +68,7 @@ public:
   virtual void gradientAt(IMVecType &x, IMVecType &gradient) = 0;
 
 protected:
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const Grid> m_grid;
 
   fem::ElementIterator m_element_index;
   fem::Q1Element2       m_element;
@@ -93,7 +94,7 @@ template<class IMVecType>
 class IPInnerProductFunctional : public IPFunctional<IMVecType> {
 
 public:
-  IPInnerProductFunctional(IceGrid::ConstPtr grid) : IPFunctional<IMVecType>(grid) {};
+  IPInnerProductFunctional(std::shared_ptr<const Grid> grid) : IPFunctional<IMVecType>(grid) {};
 
   //! Computes the inner product \f$Q(a, b)\f$.
   virtual void dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;
@@ -123,15 +124,15 @@ public:
 
 };
 
-//! Computes finite difference approximations of a IPFunctional<IceModelVec2S> gradient.
+//! Computes finite difference approximations of a IPFunctional<array::Scalar> gradient.
 /*! Useful for debugging a hand coded gradient. */
-void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient);
+void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar &gradient);
 
-//! Computes finite difference approximations of a IPFunctional<IceModelVec2V> gradient.
+//! Computes finite difference approximations of a IPFunctional<array::Vector> gradient.
 /*! Useful for debugging a hand coded gradient. */
-void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+void gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector &gradient);
 
 } // end of namespace inverse
 } // end of namespace pism
 
-#endif /* end of include guard: FUNCTIONAL_HH_1E2DIXE6 */
+#endif // PISM_IPFUNCTIONAL_H

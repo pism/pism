@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019, 2021 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2019, 2021, 2022 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -20,8 +20,7 @@
 #define _SHALLOWSTRESSBALANCE_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
 namespace pism {
@@ -29,9 +28,8 @@ namespace rheology {
 class FlowLaw;
 }
 
-class IceGrid;
+class Grid;
 class IceBasalResistancePlasticLaw;
-class IceModelVec2CellType;
 
 namespace stressbalance {
 
@@ -40,7 +38,7 @@ class Inputs;
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance : public Component {
 public:
-  ShallowStressBalance(IceGrid::ConstPtr g);
+  ShallowStressBalance(std::shared_ptr<const Grid> g);
   virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
@@ -50,15 +48,15 @@ public:
   virtual void update(const Inputs &inputs, bool full_update) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
-  const IceModelVec2V& velocity() const;
+  const array::Vector1& velocity() const;
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
-  const IceModelVec2S& basal_frictional_heating();
+  const array::Scalar& basal_frictional_heating();
 
-  void compute_basal_frictional_heating(const IceModelVec2V &velocity,
-                                        const IceModelVec2S &tauc,
-                                        const IceModelVec2CellType &mask,
-                                        IceModelVec2S &result) const;
+  void compute_basal_frictional_heating(const array::Vector &velocity,
+                                        const array::Scalar &tauc,
+                                        const array::CellType &mask,
+                                        array::Scalar &result) const;
   // helpers:
 
   //! \brief Produce a report string for the standard output.
@@ -80,8 +78,8 @@ protected:
   std::shared_ptr<rheology::FlowLaw> m_flow_law;
   EnthalpyConverter::Ptr m_EC;
 
-  IceModelVec2V m_velocity;
-  IceModelVec2S m_basal_frictional_heating;
+  array::Vector2 m_velocity;
+  array::Scalar m_basal_frictional_heating;
 
   //! flow enhancement factor
   double m_e_factor;
@@ -95,7 +93,7 @@ protected:
 */
 class ZeroSliding : public ShallowStressBalance {
 public:
-  ZeroSliding(IceGrid::ConstPtr g);
+  ZeroSliding(std::shared_ptr<const Grid> g);
   virtual ~ZeroSliding() = default;
 
   virtual void update(const Inputs &inputs, bool full_update);
@@ -105,7 +103,7 @@ protected:
 
 class PrescribedSliding : public ZeroSliding {
 public:
-  PrescribedSliding(IceGrid::ConstPtr g);
+  PrescribedSliding(std::shared_ptr<const Grid> g);
   virtual ~PrescribedSliding() = default;
   virtual void update(const Inputs &inputs, bool full_update);
 protected:

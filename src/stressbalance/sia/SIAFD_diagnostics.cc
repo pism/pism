@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,9 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "SIAFD_diagnostics.hh"
-#include "BedSmoother.hh"
+#include "pism/stressbalance/sia/SIAFD_diagnostics.hh"
+#include "pism/stressbalance/sia/BedSmoother.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -36,23 +37,18 @@ DiagnosticList SIAFD::diagnostics_impl() const {
   return result;
 }
 
-SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
-  : Diag<SIAFD>(m) {
+SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m) : Diag<SIAFD>(m) {
+  m_vars = { { m_sys, "schoofs_theta" } };
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "schoofs_theta")};
-
-  set_attrs("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA", "",
-            "1", "", 0);
-  m_vars[0]["valid_min"] = {0};
-  m_vars[0]["valid_max"] = {1};
+  m_vars[0]
+      .long_name("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA")
+      .units("1");
+  m_vars[0]["valid_range"] = { 0.0, 1.0 };
 }
 
-IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {
-  const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "schoofs_theta", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+std::shared_ptr<array::Array> SIAFD_schoofs_theta::compute_impl() const {
+  const array::Scalar *surface = m_grid->variables().get_2d_scalar("surface_altitude");
+  auto result                  = allocate<array::Scalar>("schoofs_theta");
 
   model->bed_smoother().theta(*surface, *result);
 
@@ -60,19 +56,15 @@ IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {
 }
 
 
-SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
-  : Diag<SIAFD>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "topgsmooth")};
-  set_attrs("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
-            "", "m", "m", 0);
+SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m) : Diag<SIAFD>(m) {
+  m_vars = { { m_sys, "topgsmooth" } };
+  m_vars[0]
+      .long_name("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
+      .units("m");
 }
 
-IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "topgsmooth", WITHOUT_GHOSTS));
-  result->metadata() = m_vars[0];
+std::shared_ptr<array::Array> SIAFD_topgsmooth::compute_impl() const {
+  auto result = allocate<array::Scalar>("topgsmooth");
 
   result->copy_from(model->bed_smoother().smoothed_bed());
 
@@ -82,22 +74,27 @@ IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() const {
 SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "thksmooth")};
-  set_attrs("thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
-            "", "m", "m", 0);
+  m_vars = { { m_sys, "thksmooth" } };
+  m_vars[0]
+      .long_name(
+          "thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
+      .units("m");
 }
 
-IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
+std::shared_ptr<array::Array> SIAFD_thksmooth::compute_impl() const {
 
-  const IceModelVec2S        &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
-  const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
+  const auto &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "thksmooth", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+  array::CellType2 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
 
-  model->bed_smoother().smoothed_thk(surface, thickness, mask,
+  auto result = allocate<array::Scalar>("thksmooth");
+
+  model->bed_smoother().smoothed_thk(surface, thickness, cell_type,
                                      *result);
   return result;
 }
@@ -107,19 +104,18 @@ IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
 SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "diffusivity")};
-
-  set_attrs("diffusivity of SIA mass continuity equation", "",
-            "m2 s-1", "m2 s-1", 0);
+  m_vars = { { m_sys, "diffusivity" } };
+  m_vars[0].long_name("diffusivity of SIA mass continuity equation").units("m2 s-1");
 }
 
-IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "diffusivity", WITHOUT_GHOSTS));
-  result->metadata() = m_vars[0];
+std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
+  auto result = allocate<array::Scalar>("diffusivity");
 
-  const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
-
+  array::CellType1 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
   bool include_floating_ice = true;
   staggered_to_regular(cell_type, model->diffusivity(), include_floating_ice, *result);
 
@@ -129,22 +125,21 @@ IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
 SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "diffusivity_i"),
-            SpatialVariableMetadata(m_sys, "diffusivity_j")};
-
-  set_attrs("diffusivity of SIA mass continuity equation on the staggered grid (i-offset)", "",
-            "m2 s-1", "m2 s-1", 0);
-  set_attrs("diffusivity of SIA mass continuity equation on the staggered grid (j-offset)", "",
-            "m2 s-1", "m2 s-1", 1);
+  m_vars = { { m_sys, "diffusivity_i" }, { m_sys, "diffusivity_j" } };
+  m_vars[0]
+      .long_name("diffusivity of SIA mass continuity equation on the staggered grid (i-offset)")
+      .units("m2 s-1");
+  m_vars[1]
+      .long_name("diffusivity of SIA mass continuity equation on the staggered grid (j-offset)")
+      .units("m2 s-1");
 }
 
-static void copy_staggered_vec(const IceModelVec2Stag &input, IceModelVec2Stag &output) {
-  IceGrid::ConstPtr grid = output.grid();
+static void copy_staggered_vec(const array::Staggered &input, array::Staggered &output) {
+  auto grid = output.grid();
 
-  IceModelVec::AccessList list{ &input, &output };
+  array::AccessScope list{ &input, &output };
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     output(i, j, 0) = input(i, j, 0);
@@ -152,12 +147,10 @@ static void copy_staggered_vec(const IceModelVec2Stag &input, IceModelVec2Stag &
   }
 }
 
-IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "diffusivity", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+std::shared_ptr<array::Array> SIAFD_diffusivity_staggered::compute_impl() const {
+  auto result = allocate<array::Staggered>("diffusivity");
 
-  copy_staggered_vec(model->diffusivity(), *result.get());
+  copy_staggered_vec(model->diffusivity(), *result);
 
   return result;
 }
@@ -165,23 +158,15 @@ IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
 SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "h_x_i"),
-            SpatialVariableMetadata(m_sys, "h_x_j")};
-
-  set_attrs("the x-component of the surface gradient, i-offset", "",
-            "", "", 0);
-  set_attrs("the x-component of the surface gradient, j-offset", "",
-            "", "", 1);
+  m_vars = { { m_sys, "h_x_i" }, { m_sys, "h_x_j" } };
+  m_vars[0].long_name("the x-component of the surface gradient, i-offset").units("1");
+  m_vars[1].long_name("the x-component of the surface gradient, j-offset").units("1");
 }
 
-IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
+std::shared_ptr<array::Array> SIAFD_h_x::compute_impl() const {
+  auto result = allocate<array::Staggered>("h_x");
 
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "h_x", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
-
-  copy_staggered_vec(model->surface_gradient_x(), *result.get());
+  copy_staggered_vec(model->surface_gradient_x(), *result);
 
   return result;
 }
@@ -189,23 +174,16 @@ IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
 SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "h_y_i"),
-            SpatialVariableMetadata(m_sys, "h_y_j")};
-
-  set_attrs("the y-component of the surface gradient, i-offset", "",
-            "", "", 0);
-  set_attrs("the y-component of the surface gradient, j-offset", "",
-            "", "", 1);
+  m_vars = { { m_sys, "h_y_i" }, { m_sys, "h_y_j" } };
+  m_vars[0].long_name("the y-component of the surface gradient, i-offset").units("1");
+  m_vars[1].long_name("the y-component of the surface gradient, j-offset").units("1");
 }
 
-IceModelVec::Ptr SIAFD_h_y::compute_impl() const {
+std::shared_ptr<array::Array> SIAFD_h_y::compute_impl() const {
 
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "h_y", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Staggered>("h_y");
 
-  copy_staggered_vec(model->surface_gradient_y(), *result.get());
+  copy_staggered_vec(model->surface_gradient_y(), *result);
 
   return result;
 }

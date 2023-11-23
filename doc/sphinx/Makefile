@@ -1,6 +1,6 @@
 # Run "make all" to update lists of diagnostics and configuration parameters.
 
-all: update_diagnostics installation/code/install_libraries.sh
+all: update_diagnostics update_authorship installation/code/install_libraries.sh
 
 INTERMEDIATE=diag.json diag-2.json dummy.nc pism_config.nc surface_input.nc
 
@@ -43,7 +43,7 @@ diag-2.json: dummy.nc
 	      -calving eigen_calving,thickness_calving,vonmises_calving \
 	      -frontal_melt constant \
 	      -verbose 1 -o_size none \
-	      -list_diagnostics_json > $@
+	      -list_diagnostics json > $@
 
 # dummy surface input rate to use with the steady hydrology model
 surface_input.nc: dummy.nc
@@ -52,20 +52,28 @@ surface_input.nc: dummy.nc
 
 # - steady state hydrology
 # - Lingle-Clark bed deformation model
+# - isochrone tracking
+# - debm_simple surface
 diag.json: dummy.nc surface_input.nc
 	pismr -i dummy.nc \
+	      -atmosphere.models searise_greenland \
+	      -surface.models debm_simple \
 	      -bootstrap \
 	      -bed_def lc \
 	      -hydrology steady \
 	      -hydrology.surface_input.file surface_input.nc \
 	      -hydrology.add_water_input_to_till_storage false \
+	      -isochrones.deposition_times 100 \
 	      -verbose 1 -o_size none \
-	      -list_diagnostics_json > $@
+	      -list_diagnostics json > $@
 
 # entries from diag-2.json will override ones in diag.json (in other words, the order
 # matters here)
 update_diagnostics: diag.json diag-2.json
 	python3 ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
+
+update_authorship: ../../CITATION.cff
+	sed "s/# contrib/contrib/g" $^ | python3 authorship.py > authorship.rst
 
 pism_config.nc: ../../src/pism_config.cdl
 	ncgen -o $@ $^

@@ -1,6 +1,6 @@
 .. include:: ../../global.txt
 
-.. To update this list, run PISM with the option -list_diagnostics_json, making sure that
+.. To update this list, run PISM with the option "-list_diagnostics json", making sure that
    you enabled all the sub-models that provide diagnostics (scalar and
    spatially-variable).
 

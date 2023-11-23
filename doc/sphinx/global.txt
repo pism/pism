@@ -57,6 +57,7 @@
 .. _CF-standard-names: http://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html
 .. _cf-names-for-glaciology: https://web.archive.org/web/20221006124555/http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
 .. _cf-names-proposed: https://cfeditor.ceda.ac.uk/proposals/1
+.. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 .. _CMake: https://cmake.org/
 .. _CMake-cross-compiling: https://cmake.org/rdrctcm.php?old_link=CMake_Cross_Compiling
 .. _Enthought: https://www.enthought.com/

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "remove_narrow_tongues.hh"
+#include "pism/frontretreat/util/remove_narrow_tongues.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
@@ -58,17 +58,17 @@ namespace pism {
  * @return 0 on success
  */
 void remove_narrow_tongues(const Geometry &geometry,
-                           IceModelVec2S &ice_thickness) {
+                           array::Scalar &ice_thickness) {
 
-  auto &mask      = geometry.cell_type;
-  auto &bed       = geometry.bed_elevation;
-  auto &sea_level = geometry.sea_level_elevation;
+  const auto &mask      = geometry.cell_type;
+  const auto &bed       = geometry.bed_elevation;
+  const auto &sea_level = geometry.sea_level_elevation;
 
-  IceGrid::ConstPtr grid = mask.grid();
+  auto grid = mask.grid();
 
-  IceModelVec::AccessList list{&mask, &bed, &sea_level, &ice_thickness};
+  array::AccessScope list{&mask, &bed, &sea_level, &ice_thickness};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     if (mask.ice_free(i, j) or
         (mask.grounded_ice(i, j) and bed(i, j) >= sea_level(i, j))) {
@@ -76,9 +76,11 @@ void remove_narrow_tongues(const Geometry &geometry,
     }
 
     stencils::Box<bool> ice_free;
-    auto M = mask.box(i, j);
+    auto M = mask.box_int(i, j);
 
-    if (mask::grounded_ice(M.ij)) {
+    // Note: i,j cannot be ice-free (see the if-block above), so it is either grounded ice
+    // or floating ice
+    if (mask::grounded_ice(M.c)) {
       using mask::ice_free_ocean;
       // if (i,j) is grounded ice then we will remove it if it has
       // exclusively ice-free ocean neighbors
@@ -90,7 +92,7 @@ void remove_narrow_tongues(const Geometry &geometry,
       ice_free.nw = ice_free_ocean(M.nw);
       ice_free.se = ice_free_ocean(M.se);
       ice_free.sw = ice_free_ocean(M.sw);
-    } else if (mask.floating_ice(i,j)) {
+    } else {
       // if (i,j) is floating then we will remove it if its neighbors are
       // ice-free, whether ice-free ocean or ice-free ground
       ice_free.n  = mask::ice_free(M.n);

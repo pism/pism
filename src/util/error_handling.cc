@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "error_handling.hh"
+#include "pism/util/error_handling.hh"
 #include <petsc.h>
 
 #include <stdexcept>
@@ -199,6 +199,7 @@ void ParallelSection::reset() {
 }
 
 void ParallelSection::check() {
+#if (Pism_DEBUG==1)
   int success_flag = m_failed ? 0 : 1;
   int success_flag_global = 0;
 
@@ -207,6 +208,7 @@ void ParallelSection::check() {
   if (success_flag_global == 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Failure in a parallel section. See error messages above for more.");
   }
+#endif
 }
 
 } // end of namespace pism

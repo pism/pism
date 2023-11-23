@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef IP_L2NORMFUNCTIONAL_HH_BSVF8BMQ
 #define IP_L2NORMFUNCTIONAL_HH_BSVF8BMQ
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {
@@ -32,14 +32,14 @@ namespace inverse {
   where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
   Q1 finite elements.
 */
-class IP_L2NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
+class IP_L2NormFunctional2S : public IPInnerProductFunctional<array::Scalar> {
 public:
-  IP_L2NormFunctional2S(IceGrid::ConstPtr grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
+  IP_L2NormFunctional2S(std::shared_ptr<const Grid> grid) : IPInnerProductFunctional<array::Scalar>(grid) {};
   virtual ~IP_L2NormFunctional2S() {};
   
-  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *v);
-  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(array::Scalar &x, double *OUTPUT);
+  virtual void dot(array::Scalar &a, array::Scalar &b, double *v);
+  virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
 
 private:
   IP_L2NormFunctional2S(IP_L2NormFunctional2S const &);
@@ -54,14 +54,14 @@ private:
   where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
   Q1 finite elements.
 */
-class IP_L2NormFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
+class IP_L2NormFunctional2V : public IPInnerProductFunctional<array::Vector> {
 public:
-  IP_L2NormFunctional2V(IceGrid::ConstPtr grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
+  IP_L2NormFunctional2V(std::shared_ptr<const Grid> grid) : IPInnerProductFunctional<array::Vector>(grid) {};
   virtual ~IP_L2NormFunctional2V() {};
   
-  virtual void valueAt(IceModelVec2V &x, double *v);
-  virtual void dot(IceModelVec2V &a, IceModelVec2V &b, double *v);
-  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(array::Vector &x, double *v);
+  virtual void dot(array::Vector &a, array::Vector &b, double *v);
+  virtual void gradientAt(array::Vector &x, array::Vector &gradient);
 
 private:
   IP_L2NormFunctional2V(IP_L2NormFunctional2V const &);

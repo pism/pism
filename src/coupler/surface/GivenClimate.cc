@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,16 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "GivenClimate.hh"
+#include "pism/coupler/surface/GivenClimate.hh"
 
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {
 
-Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid)
 {
   (void) input;
@@ -35,9 +36,9 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
 
-    m_temperature = IceModelVec2T::ForcingField(m_grid,
+    m_temperature = std::make_shared<array::Forcing>(m_grid,
                                                 file,
                                                 "ice_surface_temp",
                                                 "", // no standard name
@@ -45,7 +46,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                                 opt.periodic,
                                                 LINEAR);
 
-    m_mass_flux = IceModelVec2T::ForcingField(m_grid,
+    m_mass_flux = std::make_shared<array::Forcing>(m_grid,
                                               file,
                                               "climatic_mass_balance",
                                               "land_ice_surface_specific_mass_balance_flux",
@@ -53,17 +54,18 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                               opt.periodic);
   }
 
-  m_temperature->set_attrs("climate_forcing",
-                           "temperature of the ice at the ice surface but below firn processes",
-                           "Kelvin", "Kelvin", "", 0);
-  m_temperature->metadata()["valid_range"] = {0.0, 323.15}; // [0C, 50C]
+  m_temperature->metadata(0)
+      .long_name("temperature of the ice at the ice surface but below firn processes")
+      .units("Kelvin");
+  m_temperature->metadata()["valid_range"] = { 0.0, 323.15 }; // [0C, 50C]
 
   const double smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
-  m_mass_flux->set_attrs("climate_forcing",
-                         "surface mass balance (accumulation/ablation) rate",
-                         "kg m-2 s-1", "kg m-2 year-1",
-                         "land_ice_surface_specific_mass_balance_flux", 0);
+  m_mass_flux->metadata(0)
+      .long_name("surface mass balance (accumulation/ablation) rate")
+      .units("kg m-2 s-1")
+      .output_units("kg m-2 year-1")
+      .standard_name("land_ice_surface_specific_mass_balance_flux");
 
   m_mass_flux->metadata()["valid_range"] = {-smb_max, smb_max};
 }
@@ -81,7 +83,7 @@ void Given::init_impl(const Geometry &geometry) {
 
   // read time-independent data right away:
   if (m_temperature->buffer_size() == 1 && m_mass_flux->buffer_size() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, time().current(), 0); // dt is irrelevant
   }
 }
 
@@ -100,29 +102,29 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
 
 }
 
-const IceModelVec2S &Given::mass_flux_impl() const {
+const array::Scalar &Given::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &Given::temperature_impl() const {
+const array::Scalar &Given::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &Given::accumulation_impl() const {
+const array::Scalar &Given::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &Given::melt_impl() const {
+const array::Scalar &Given::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &Given::runoff_impl() const {
+const array::Scalar &Given::runoff_impl() const {
   return *m_runoff;
 }
 
 void Given::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output);
-  m_temperature->define(output);
+  m_mass_flux->define(output, io::PISM_DOUBLE);
+  m_temperature->define(output, io::PISM_DOUBLE);
 }
 
 void Given::write_model_state_impl(const File &output) const {

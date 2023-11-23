@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 PISM Authors
+/* Copyright (C) 2018, 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Uniform.hh"
+#include "pism/coupler/atmosphere/Uniform.hh"
 
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace atmosphere {
 
-Uniform::Uniform(IceGrid::ConstPtr grid)
+Uniform::Uniform(std::shared_ptr<const Grid> grid)
   : AtmosphereModel(grid, std::shared_ptr<AtmosphereModel>()) {
   m_precipitation = allocate_precipitation(grid);
   m_temperature = allocate_temperature(grid);
@@ -45,11 +45,11 @@ void Uniform::update_impl(const Geometry &geometry, double t, double dt) {
   (void) dt;
 }
 
-const IceModelVec2S& Uniform::mean_precipitation_impl() const {
+const array::Scalar& Uniform::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& Uniform::mean_annual_temp_impl() const {
+const array::Scalar& Uniform::air_temperature_impl() const {
   return *m_temperature;
 }
 

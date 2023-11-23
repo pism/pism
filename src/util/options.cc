@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,11 +21,11 @@
 
 #include <petscsys.h>
 
-#include "error_handling.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism_options.hh"
+#include "pism/util/pism_options.hh"
 
 namespace pism {
 namespace options {

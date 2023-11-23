@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "PetscInitializer.hh"
+#include "pism/util/petscwrappers/PetscInitializer.hh"
 
 #include <petscsys.h>
 #include <mpi.h>

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,18 +17,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "utilities.hh"
+#include "pism/energy/utilities.hh"
 
-#include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/pism_utilities.hh"
-#include "bootstrapping.hh"
-#include "pism/util/Context.hh"
+#include "pism/energy/bootstrapping.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/array/Array3D.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {
@@ -44,27 +45,26 @@ content in the air is set to the value that ice would have if it a chunk of it
 occupied the air; the atmosphere actually has much lower energy content.  It is
 done this way for regularity (i.e. dEnth/dz computations).
 */
-void compute_enthalpy_cold(const IceModelVec3 &temperature,
-                           const IceModelVec2S &ice_thickness,
-                           IceModelVec3 &result) {
+void compute_enthalpy_cold(const array::Array3D &temperature, const array::Scalar &ice_thickness,
+                           array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid                 = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list{&temperature, &result, &ice_thickness};
+  array::AccessScope list{ &temperature, &result, &ice_thickness };
 
-  const unsigned int Mz = grid->Mz();
+  const unsigned int Mz        = grid->Mz();
   const std::vector<double> &z = grid->z();
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double *Tij = temperature.get_column(i,j);
-    double *Enthij = result.get_column(i,j);
+    const double *Tij = temperature.get_column(i, j);
+    double *Enthij    = result.get_column(i, j);
 
     for (unsigned int k = 0; k < Mz; ++k) {
       const double depth = ice_thickness(i, j) - z[k]; // FIXME issue #15
-      Enthij[k] = EC->enthalpy_permissive(Tij[k], 0.0, EC->pressure(depth));
+      Enthij[k]          = EC->enthalpy_permissive(Tij[k], 0.0, EC->pressure(depth));
     }
   }
 
@@ -73,29 +73,26 @@ void compute_enthalpy_cold(const IceModelVec3 &temperature,
   result.update_ghosts();
 }
 
-void compute_temperature(const IceModelVec3 &enthalpy,
-                         const IceModelVec2S &ice_thickness,
-                         IceModelVec3 &result) {
+void compute_temperature(const array::Array3D &enthalpy, const array::Scalar &ice_thickness,
+                         array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid                 = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list{&enthalpy, &ice_thickness, &result};
+  array::AccessScope list{ &enthalpy, &ice_thickness, &result };
 
-  const unsigned int Mz = grid->Mz();
+  const unsigned int Mz        = grid->Mz();
   const std::vector<double> &z = grid->z();
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double
-      *E = enthalpy.get_column(i, j),
-      H  = ice_thickness(i, j);
+    const double *E = enthalpy.get_column(i, j), H = ice_thickness(i, j);
     double *T = result.get_column(i, j);
 
     for (unsigned int k = 0; k < Mz; ++k) {
       const double depth = H - z[k]; // FIXME issue #15
-      T[k] = EC->temperature(E[k], EC->pressure(depth));
+      T[k]               = EC->temperature(E[k], EC->pressure(depth));
     }
   }
 
@@ -105,29 +102,28 @@ void compute_temperature(const IceModelVec3 &enthalpy,
 }
 
 //! Compute `result` (enthalpy) from `temperature` and liquid fraction.
-void compute_enthalpy(const IceModelVec3 &temperature,
-                      const IceModelVec3 &liquid_water_fraction,
-                      const IceModelVec2S &ice_thickness,
-                      IceModelVec3 &result) {
+void compute_enthalpy(const array::Array3D &temperature,
+                      const array::Array3D &liquid_water_fraction,
+                      const array::Scalar &ice_thickness, array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid                 = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list{&temperature, &liquid_water_fraction, &ice_thickness, &result};
+  array::AccessScope list{ &temperature, &liquid_water_fraction, &ice_thickness, &result };
 
-  const unsigned int Mz = grid->Mz();
+  const unsigned int Mz        = grid->Mz();
   const std::vector<double> &z = grid->z();
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double *T     = temperature.get_column(i,j);
-    const double *omega = liquid_water_fraction.get_column(i,j);
-    double       *E     = result.get_column(i,j);
+    const double *T     = temperature.get_column(i, j);
+    const double *omega = liquid_water_fraction.get_column(i, j);
+    double *E           = result.get_column(i, j);
 
     for (unsigned int k = 0; k < Mz; ++k) {
-      const double depth = ice_thickness(i,j) - z[k]; // FIXME issue #15
-      E[k] = EC->enthalpy_permissive(T[k], omega[k], EC->pressure(depth));
+      const double depth = ice_thickness(i, j) - z[k]; // FIXME issue #15
+      E[k]               = EC->enthalpy_permissive(T[k], omega[k], EC->pressure(depth));
     }
   }
 
@@ -137,33 +133,32 @@ void compute_enthalpy(const IceModelVec3 &temperature,
 }
 
 //! Compute the liquid fraction corresponding to enthalpy and ice_thickness.
-void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
-                                   const IceModelVec2S &ice_thickness,
-                                   IceModelVec3 &result) {
+void compute_liquid_water_fraction(const array::Array3D &enthalpy,
+                                   const array::Scalar &ice_thickness, array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   result.set_name("liqfrac");
   result.metadata(0).set_name("liqfrac");
-  result.set_attrs("diagnostic",
-                   "liquid water fraction in ice (between 0 and 1)",
-                   "1", "1", "", 0);
+  result.metadata(0)
+      .long_name("liquid water fraction in ice (between 0 and 1)")
+      .units("1");
 
-  IceModelVec::AccessList list{&result, &enthalpy, &ice_thickness};
+  array::AccessScope list{ &result, &enthalpy, &ice_thickness };
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double *Enthij = enthalpy.get_column(i,j);
-      double *omegaij = result.get_column(i,j);
+      const double *Enthij = enthalpy.get_column(i, j);
+      double *omegaij      = result.get_column(i, j);
 
-      for (unsigned int k=0; k < grid->Mz(); ++k) {
-        const double depth = ice_thickness(i,j) - grid->z(k); // FIXME issue #15
-        omegaij[k] = EC->water_fraction(Enthij[k],EC->pressure(depth));
+      for (unsigned int k = 0; k < grid->Mz(); ++k) {
+        const double depth = ice_thickness(i, j) - grid->z(k); // FIXME issue #15
+        omegaij[k]         = EC->water_fraction(Enthij[k], EC->pressure(depth));
       }
     }
   } catch (...) {
@@ -179,27 +174,26 @@ void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
 /*!
  * The actual cold-temperate transition surface (CTS) is the level set CTS = 1.
  *
- * Does not communicate ghosts for IceModelVec3 result.
+ * Does not communicate ghosts for array::Array3D result.
  */
-void compute_cts(const IceModelVec3 &ice_enthalpy,
-                 const IceModelVec2S &ice_thickness,
-                 IceModelVec3 &result) {
+void compute_cts(const array::Array3D &ice_enthalpy, const array::Scalar &ice_thickness,
+                 array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid                 = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   result.set_name("cts");
   result.metadata(0).set_name("cts");
-  result.set_attrs("diagnostic",
-                   "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
-                   "1", "1", "", 0);
+  result.metadata(0)
+      .long_name("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1")
+      .units("1");
 
-  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &result};
+  array::AccessScope list{&ice_enthalpy, &ice_thickness, &result};
 
   const unsigned int Mz = grid->Mz();
   const std::vector<double> &z = grid->z();
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *CTS  = result.get_column(i,j);
@@ -222,21 +216,21 @@ void compute_cts(const IceModelVec3 &ice_enthalpy,
   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
 */
 double total_ice_enthalpy(double thickness_threshold,
-                          const IceModelVec3 &ice_enthalpy,
-                          const IceModelVec2S &ice_thickness) {
+                          const array::Array3D &ice_enthalpy,
+                          const array::Scalar &ice_thickness) {
   double enthalpy_sum = 0.0;
 
-  IceGrid::ConstPtr grid = ice_enthalpy.grid();
+  auto grid = ice_enthalpy.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   auto cell_area = grid->cell_area();
 
   const std::vector<double> &z = grid->z();
 
-  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness};
+  array::AccessScope list{&ice_enthalpy, &ice_thickness};
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = ice_thickness(i, j);
@@ -330,11 +324,11 @@ This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
 temperature is used by BedThermalUnit::bootstrap() to determine a
 bootstrap temperature profile in the bedrock.
 */
-void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &ice_surface_temp,
-                               const IceModelVec2S &surface_mass_balance,
-                               const IceModelVec2S &basal_heat_flux,
-                               IceModelVec3 &result) {
+void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
+                               const array::Scalar &ice_surface_temp,
+                               const array::Scalar &surface_mass_balance,
+                               const array::Scalar &basal_heat_flux,
+                               array::Array3D &result) {
 
   auto grid   = result.grid();
   auto ctx    = grid->ctx();
@@ -364,12 +358,12 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
     T_melting   = config->get_number("constants.fresh_water.melting_point_temperature",
                                      "Kelvin");
 
-  IceModelVec::AccessList list{&ice_surface_temp, &surface_mass_balance,
+  array::AccessScope list{&ice_surface_temp, &surface_mass_balance,
       &ice_thickness, &basal_heat_flux, &result};
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double
@@ -380,7 +374,7 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
       const unsigned int ks = grid->kBelowHeight(H);
 
       if (G < 0.0 and ks > 0) {
-        auto units = basal_heat_flux.metadata().get_string("units");
+        std::string units = basal_heat_flux.metadata()["units"];
         int Mbz = config->get_number("grid.Mbz");
         const char *quantity = (Mbz > 0 ?
                                 "temperature of the bedrock thermal layer" :
@@ -442,11 +436,11 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
   result.update_ghosts();
 }
 
-void bootstrap_ice_enthalpy(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &ice_surface_temp,
-                            const IceModelVec2S &surface_mass_balance,
-                            const IceModelVec2S &basal_heat_flux,
-                            IceModelVec3 &result) {
+void bootstrap_ice_enthalpy(const array::Scalar &ice_thickness,
+                            const array::Scalar &ice_surface_temp,
+                            const array::Scalar &surface_mass_balance,
+                            const array::Scalar &basal_heat_flux,
+                            array::Array3D &result) {
 
   bootstrap_ice_temperature(ice_thickness, ice_surface_temp,
                             surface_mass_balance, basal_heat_flux,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,19 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Given.hh"
+#include "pism/earth/Given.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace bed {
 
-Given::Given(IceGrid::ConstPtr grid)
+Given::Given(std::shared_ptr<const Grid> grid)
   : BedDef(grid),
-    m_topg_reference(grid, "topg", WITHOUT_GHOSTS) {
+    m_topg_reference(grid, "topg") {
 
-  m_topg_reference.set_attrs("bed_deformation", "reference bed elevation",
-                             "meters",
-                             "meters",
-                             "bedrock_altitude", 0);
+  m_topg_reference.metadata(0)
+      .long_name("reference bed elevation")
+      .units("meters")
+      .standard_name("bedrock_altitude");
 
   auto filename = m_config->get_string("bed_deformation.given.file");
 
@@ -39,23 +40,19 @@ Given::Given(IceGrid::ConstPtr grid)
     // periodic inputs are not supported
     bool periodic = false;
 
-    File file(m_grid->com, filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_topg_delta = IceModelVec2T::ForcingField(m_grid,
-                                               file,
-                                               "topg_delta",
-                                               "", // no standard name
-                                               buffer_size,
-                                               periodic,
-                                               LINEAR);
-    m_topg_delta->set_attrs("bed_deformation",
-                            "two-dimensional bed elevation changes",
-                            "meters", "meters", "", 0);
+    m_topg_delta = std::make_shared<array::Forcing>(m_grid, file, "topg_delta",
+                                                    "", // no standard name
+                                                    buffer_size, periodic, LINEAR);
+    m_topg_delta->metadata(0)
+        .long_name("two-dimensional bed elevation changes")
+        .units("meters");
   }
 }
 
-void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                      const IceModelVec2S &sea_level_elevation) {
+void Given::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                      const array::Scalar &sea_level_elevation) {
   (void) ice_thickness;
   (void) sea_level_elevation;
 
@@ -66,7 +63,7 @@ void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickne
 
   {
     auto reference_filename = m_config->get_string("bed_deformation.given.reference_file");
-    m_topg_reference.regrid(reference_filename, CRITICAL); // fails if not found!
+    m_topg_reference.regrid(reference_filename, io::Default::Nil()); // fails if not found!
   }
 
   {
@@ -75,8 +72,8 @@ void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickne
   }
 }
 
-void Given::update_impl(const IceModelVec2S &ice_thickness,
-                        const IceModelVec2S &sea_level_elevation,
+void Given::update_impl(const array::Scalar &ice_thickness,
+                        const array::Scalar &sea_level_elevation,
                         double t, double dt) {
   (void) ice_thickness;
   (void) sea_level_elevation;

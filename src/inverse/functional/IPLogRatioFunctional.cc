@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020  David Maxwell
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2022, 2023  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,9 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IPLogRatioFunctional.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/inverse/functional/IPLogRatioFunctional.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/array/Vector.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
@@ -37,20 +38,20 @@ void IPLogRatioFunctional::normalize(double scale) {
 
   double w = 1.0;
 
-  IceModelVec::AccessList list(m_u_observed);
+  array::AccessScope list(m_u_observed);
 
   if (m_weights) {
     list.add(*m_weights);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
 
-    Vector2 &u_obs_ij = m_u_observed(i, j);
+    Vector2d &u_obs_ij = m_u_observed(i, j);
     double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
 
     double modelMagSq = scale*scale*(u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
@@ -62,28 +63,28 @@ void IPLogRatioFunctional::normalize(double scale) {
   m_normalization = GlobalSum(m_grid->com, value);
 }
 
-void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
+void IPLogRatioFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
 
   double w = 1.;
 
-  IceModelVec::AccessList list{&x, &m_u_observed};
+  array::AccessScope list{&x, &m_u_observed};
 
   if (m_weights) {
     list.add(*m_weights);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
-    Vector2 &x_ij = x(i, j);
-    Vector2 &u_obs_ij = m_u_observed(i, j);
-    Vector2 u_model_ij = x_ij+u_obs_ij;
+    Vector2d &x_ij = x(i, j);
+    Vector2d &u_obs_ij = m_u_observed(i, j);
+    Vector2d u_model_ij = x_ij+u_obs_ij;
     double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
 
     double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
@@ -96,26 +97,26 @@ void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+void IPLogRatioFunctional::gradientAt(array::Vector &x, array::Vector &gradient)  {
   gradient.set(0);
 
   double w = 1.;
 
-  IceModelVec::AccessList list{&x, &gradient, &m_u_observed};
+  array::AccessScope list{&x, &gradient, &m_u_observed};
 
   if (m_weights) {
     list.add(*m_weights);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
-    Vector2 &x_ij = x(i, j);
-    Vector2 &u_obs_ij = m_u_observed(i, j);
-    Vector2 u_model_ij = x_ij+u_obs_ij;
+    Vector2d &x_ij = x(i, j);
+    Vector2d &u_obs_ij = m_u_observed(i, j);
+    Vector2d u_model_ij = x_ij+u_obs_ij;
 
     double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
     double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;

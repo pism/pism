@@ -21,7 +21,7 @@ larger number, up to 100 or so with an expectation of reasonable scaling on this
 :cite:`BBssasliding`, :cite:`DickensMorey2013`.
 
 .. figure:: figures/g10km-10ka-hy-usurf-csurf-cbase.png
-   :name: fig-secondoutputfiner
+   :name: fig-second-output-finer
 
    Fields from output file ``g10km_10ka_hy.nc``.
 
@@ -32,7 +32,7 @@ larger number, up to 100 or so with an expectation of reasonable scaling on this
    :Right: :var:`velbase_mag` in m/year.
 
 Some fields from the result ``g10km_10ka_hy.nc`` are shown in
-:numref:`fig-secondoutputfiner`. :numref:`fig-csurfvsobserved` also compares observed
+:numref:`fig-second-output-finer`. :numref:`fig-csurf-vs-observed` also compares observed
 velocity to the model results from 20 km and 10 km grids. As a different comparison,
 :numref:`fig-ivolboth` shows ice volume time series ``ice_volume_glacierized`` for 20 km and
 10 km runs done here. We see that this result depends on resolution, in particular because
@@ -41,7 +41,7 @@ topographically-controlled outlet glaciers (compare :cite:`Pfefferetal2008`). Ho
 because the total ice sheet volume is a highly-averaged quantity, the
 ``ice_volume_glacierized`` difference from 20 km and 10 km resolution runs is only about one
 part in 60 (about 1.5%) at the final time. By contrast, as is seen in the near-margin ice
-in various locations shown in :numref:`fig-csurfvsobserved`, the ice velocity at a
+in various locations shown in :numref:`fig-csurf-vs-observed`, the ice velocity at a
 particular location may change by 100\% when the resolution changes from 20 km to 10 km.
 
 Roughly speaking, the reader should only consider trusting model results which are

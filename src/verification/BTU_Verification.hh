@@ -28,14 +28,14 @@ namespace energy {
 class BTU_Verification : public BTU_Full
 {
 public:
-  BTU_Verification(IceGrid::ConstPtr g,
+  BTU_Verification(std::shared_ptr<const Grid> g,
                    const BTUGrid &vertical_grid,
                    int test, bool bii);
   virtual ~BTU_Verification() = default;
 
 protected:
   virtual void initialize_bottom_surface_flux();
-  virtual void bootstrap(const IceModelVec2S &bedrock_top_temperature);
+  virtual void bootstrap(const array::Scalar &bedrock_top_temperature);
   int m_testname;
   bool m_bedrock_is_ice;
 };

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "options.hh"
+#include "pism/coupler/util/options.hh"
 
 #include "pism/util/Context.hh"
 #include "pism/util/ConfigInterface.hh"

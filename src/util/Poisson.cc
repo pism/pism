@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,22 +17,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Poisson.hh"
+#include "pism/util/Poisson.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 
-Poisson::Poisson(IceGrid::ConstPtr grid)
+Poisson::Poisson(std::shared_ptr<const Grid> grid)
   : m_grid(grid),
     m_log(grid->ctx()->log()),
-    m_b(grid, "poisson_rhs", WITHOUT_GHOSTS),
-    m_x(grid, "poisson_x", WITHOUT_GHOSTS),
-    m_mask(grid, "poisson_mask", WITH_GHOSTS){
+    m_b(grid, "poisson_rhs"),
+    m_x(grid, "poisson_x"),
+    m_mask(grid, "poisson_mask") {
 
   m_da = m_x.dm();
+  m_mask.set_interpolation_type(NEAREST);
 
   // PETSc objects and settings
   {
@@ -62,7 +64,7 @@ Poisson::Poisson(IceGrid::ConstPtr grid)
  *
  * Set the mask to 2 to use zero Neumann BC.
  */
-int Poisson::solve(const IceModelVec2Int& mask, const IceModelVec2S& bc, double rhs,
+int Poisson::solve(const array::Scalar& mask, const array::Scalar& bc, double rhs,
                    bool reuse_matrix) {
 
   PetscErrorCode ierr;
@@ -116,7 +118,7 @@ int Poisson::solve(const IceModelVec2Int& mask, const IceModelVec2S& bc, double 
   return ksp_iterations;
 }
 
-const IceModelVec2S& Poisson::solution() const {
+const array::Scalar& Poisson::solution() const {
   return m_x;
 }
 
@@ -154,7 +156,7 @@ const IceModelVec2S& Poisson::solution() const {
 // b : rhs(eq2);
 //
 // print(''out)$
-void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
+void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
   PetscErrorCode ierr = 0;
 
   const double
@@ -171,7 +173,7 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
 
   ierr = MatZeroEntries(A); PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list{&mask};
+  array::AccessScope list{&mask};
 
   /* matrix assembly loop */
   ParallelSection loop(m_grid->com);
@@ -183,8 +185,16 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
       col[m].c = 0;
     }
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
+
+
+      /* Order of grid points in the stencil:
+       *
+       *   0
+       * 1 2 3
+       *   4
+       */
 
       /* i indices */
       const int I[] = {i, i - 1,  i,  i + 1, i};
@@ -202,7 +212,7 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
 
       auto M = mask.star(i, j);
 
-      if (M.ij == 1) {
+      if (M.c == 1) {
         // Regular location: use coefficients of the discretization of the Laplacian
 
         // Use zero Neumann BC if a neighbor is marked as a Neumann boundary
@@ -255,12 +265,12 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
 }
 
 void Poisson::assemble_rhs(double rhs,
-                           const IceModelVec2Int &mask,
-                           const IceModelVec2S &bc,
-                           IceModelVec2S &b) {
-  IceModelVec::AccessList list{&mask, &bc, &b};
+                           const array::Scalar &mask,
+                           const array::Scalar &bc,
+                           array::Scalar &b) {
+  array::AccessScope list{&mask, &bc, &b};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.as_int(i, j) == 1) {

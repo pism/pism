@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2020  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2020, 2022, 2023  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,31 +16,32 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IPFunctional.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/array/Vector.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace inverse {
 
-void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
-  const IceGrid &grid = *x.grid();
+void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar &gradient) {
+  const Grid &grid = *x.grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
   
   f.valueAt(x,&F0);
   
-  IceModelVec::AccessList list(gradient);
+  array::AccessScope list(gradient);
 
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j) += h;
       }
       x.update_ghosts();
@@ -48,7 +49,7 @@ void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S 
       f.valueAt(x,&Fh);
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j) -= h;
       }
       x.update_ghosts();
@@ -61,23 +62,23 @@ void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S 
   loop.check();
 }
 
-void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
-  const IceGrid &grid = *x.grid();
+void gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector &gradient) {
+  const Grid &grid = *x.grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
   
   f.valueAt(x,&F0);
   
-  IceModelVec::AccessList access_gradient(gradient);
+  array::AccessScope access_gradient(gradient);
 
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j).u += h;
       }
       x.update_ghosts();
@@ -85,7 +86,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
       f.valueAt(x,&Fh);
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j).u -= h;
       }
       x.update_ghosts();
@@ -93,7 +94,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
       gradient(i,j).u = (Fh-F0)/h;
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j).v += h;
       }
       x.update_ghosts();
@@ -101,7 +102,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
       f.valueAt(x,&Fh);
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j).v -= h;
       }
       x.update_ghosts();
@@ -114,7 +115,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
   loop.check();
 }
 
-// PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+// PetscErrorCode gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector &gradient);
 
 } // end of namespace inverse
 } // end of namespace pism

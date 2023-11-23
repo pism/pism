@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Formulas.hh"
+#include "pism/coupler/surface/Formulas.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {
 
-PSFormulas::PSFormulas(IceGrid::ConstPtr grid)
+PSFormulas::PSFormulas(std::shared_ptr<const Grid> grid)
   : SurfaceModel(grid) {
 
   m_mass_flux   = allocate_mass_flux(grid);
@@ -34,31 +34,31 @@ PSFormulas::PSFormulas(IceGrid::ConstPtr grid)
   m_runoff       = allocate_runoff(grid);
 }
 
-const IceModelVec2S &PSFormulas::mass_flux_impl() const {
+const array::Scalar &PSFormulas::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S & PSFormulas::temperature_impl() const {
+const array::Scalar & PSFormulas::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &PSFormulas::accumulation_impl() const {
+const array::Scalar &PSFormulas::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &PSFormulas::melt_impl() const {
+const array::Scalar &PSFormulas::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &PSFormulas::runoff_impl() const {
+const array::Scalar &PSFormulas::runoff_impl() const {
   return *m_runoff;
 }
 
 void PSFormulas::define_model_state_impl(const File &output) const {
   // these are *not* model state, but I want to be able to re-start from a file produced using this
   // class
-  m_mass_flux->define(output);
-  m_temperature->define(output);
+  m_mass_flux->define(output, io::PISM_DOUBLE);
+  m_temperature->define(output, io::PISM_DOUBLE);
 }
 
 void PSFormulas::write_model_state_impl(const File &output) const {

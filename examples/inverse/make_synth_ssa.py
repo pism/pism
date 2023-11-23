@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2019, 2020, 2021, 2022 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2019, 2020, 2021, 2022, 2023 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -88,8 +88,8 @@ if __name__ == '__main__':
 
     input_file_name = config.get_string("input.file")
 
-    config.set_string("output.file_name", "make_synth_ssa.nc", PISM.CONFIG_DEFAULT)
-    output_file_name = config.get_string("output.file_name")
+    config.set_string("output.file", "make_synth_ssa.nc", PISM.CONFIG_DEFAULT)
+    output_file_name = config.get_string("output.file")
 
     sys = context.unit_system
     design_prior_scale = PISM.OptionReal(sys, "-design_prior_scale",
@@ -169,10 +169,8 @@ if __name__ == '__main__':
             vecs.tauc_prior.scale(design_prior_scale)
 
         tauc_true = modeldata.vecs.tauc
-        tauc_true.metadata(0).set_name('tauc_true')
-        tauc_true.set_attrs("diagnostic",
-                            "value of basal yield stress used to generate synthetic SSA velocities",
-                            "Pa", "Pa", "", 0)
+        tauc_true.metadata().set_name('tauc_true')
+        tauc_true.metadata().long_name("value of basal yield stress used to generate synthetic SSA velocities").units("Pa")
         vecs.markForWriting(tauc_true)
     elif design_var == 'hardav':
         # Generate a prior guess for hardav
@@ -193,19 +191,17 @@ if __name__ == '__main__':
 
         hardav_true = vecs.hardav
         hardav_true.metadata(0).set_name('hardav_true')
-        hardav_true.set_attrs("diagnostic",
-                              "vertically averaged ice hardness used to generate synthetic SSA velocities",
-                              "1", "1", "", 0) # use dummy units (for now)
+        hardav_true.metadata(0).long_name("vertically averaged ice hardness used to generate synthetic SSA velocities")
         hardav_true.metadata().set_units_without_validation("Pa s^(1/3)")
         vecs.markForWriting(hardav_true)
 
     vel_ssa_observed = vel_ssa    # vel_ssa = ssa_run.solve() earlier
 
     vel_ssa_observed.metadata(0).set_name("u_ssa_observed")
-    vel_ssa_observed.metadata(0).set_string("long_name", "x-component of 'observed' SSA velocities")
+    vel_ssa_observed.metadata(0).long_name("x-component of 'observed' SSA velocities")
 
     vel_ssa_observed.metadata(1).set_name("v_ssa_observed")
-    vel_ssa_observed.metadata(1).set_string("long_name", "y-component of 'observed' SSA velocities")
+    vel_ssa_observed.metadata(1).long_name("y-component of 'observed' SSA velocities")
 
     if generate_ssa_observed:
         vecs.markForWriting(vel_ssa_observed)
@@ -217,10 +213,10 @@ if __name__ == '__main__':
         vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata, sia_solver)
 
         vel_sia_observed.metadata(0).set_name('u_sia_observed')
-        vel_sia_observed.metadata(0).set_string('long_name', "x-component of the 'observed' SIA velocities")
+        vel_sia_observed.metadata(0).long_name("x-component of the 'observed' SIA velocities")
 
         vel_sia_observed.metadata(1).set_name('v_sia_observed')
-        vel_sia_observed.metadata(1).set_string('long_name', "y-component of the 'observed' SIA velocities")
+        vel_sia_observed.metadata(1).long_name("y-component of the 'observed' SIA velocities")
 
         vel_surface_observed = PISM.model.create2dVelocityVec(grid, "_surface_observed",
                                                               "observed surface velocities",

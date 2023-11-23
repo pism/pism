@@ -22,10 +22,10 @@
 
 namespace pism {
 
-class IceModelVec2S;
+namespace array { class Scalar; }
 class Geometry;
 
-void remove_narrow_tongues(const Geometry &geometry, IceModelVec2S &ice_thickness);
+void remove_narrow_tongues(const Geometry &geometry, array::Scalar &ice_thickness);
 
 } // end of namespace pism
 

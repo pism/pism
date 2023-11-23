@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2020 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2020, 2023 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
@@ -37,14 +37,14 @@ void IceModel::update_fracture_density() {
 
     bc_mask.set(0.0);
 
-    IceModelVec::AccessList list{&bc_mask, &m_geometry.cell_type};
+    array::AccessScope list{&bc_mask, &m_geometry.cell_type};
 
     if (dirichlet_bc) {
       list.add(m_velocity_bc_mask);
       list.add(m_velocity_bc_values);
     }
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.cell_type.grounded(i, j) and not do_fracground) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,11 +21,11 @@
 
 #include <petscsys.h>
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/stressbalance/StressBalance.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 
@@ -39,27 +39,27 @@ namespace pism {
 horizontal part of the 3D convection-diffusion problems solved by EnthalpyModel and
 TemperatureModel.
 */
-unsigned int count_CFL_violations(const IceModelVec3 &u3,
-                                  const IceModelVec3 &v3,
-                                  const IceModelVec2S &ice_thickness,
+unsigned int count_CFL_violations(const array::Array3D &u3,
+                                  const array::Array3D &v3,
+                                  const array::Scalar &ice_thickness,
                                   double dt) {
 
   if (dt == 0.0) {
     return 0;
   }
 
-  IceGrid::ConstPtr grid = u3.grid();
+  std::shared_ptr<const Grid> grid = u3.grid();
 
   const double
     CFL_x = grid->dx() / dt,
     CFL_y = grid->dy() / dt;
 
-  IceModelVec::AccessList list{&ice_thickness, &u3, &v3};
+  array::AccessScope list{&ice_thickness, &u3, &v3};
 
   unsigned int CFL_violation_count = 0;
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const int ks = grid->kBelowHeight(ice_thickness(i,j));
@@ -88,7 +88,7 @@ unsigned int count_CFL_violations(const IceModelVec3 &u3,
 
 void IceModel::print_summary(bool tempAndAge) {
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = m_stress_balance->velocity_u(),
     &v3 = m_stress_balance->velocity_v();
 

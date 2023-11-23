@@ -32,8 +32,8 @@ class BeddefGiven(TestCase):
                        time_bounds=[0.5, 1.5, 2.5, 3.5])
 
         # Create the reference topography
-        topg_ref = PISM.IceModelVec2S(self.grid, "topg", PISM.WITHOUT_GHOSTS)
-        topg_ref.set_attrs("bed", "bed elevation change relative to reference", "m", "m", "", 0)
+        topg_ref = PISM.Scalar(self.grid, "topg")
+        topg_ref.metadata(0).long_name("bed elevation change relative to reference").units("m")
         topg_ref.set(-1.0)
 
         topg_ref.dump(self.ref_filename)

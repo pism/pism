@@ -24,7 +24,7 @@ def plot(filename, output):
     with NC.Dataset(filename, "r") as f:
         x = f.variables["x"][:]
         # dimensions: time, y, x
-        s_model = f.variables["usurf"][-1, 1, :]
+        s_model = f.variables["usurf"][0, 1, :]
 
         subset = np.logical_and(x >= 0, x <= 3e4)
 

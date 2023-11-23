@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,11 +19,10 @@
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/basalstrength/OptTillphiYieldStress.hh"
-#include "pism/basalstrength/basal_resistance.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
@@ -37,15 +36,10 @@
 #include "pism/hydrology/SteadyState.hh"
 #include "pism/hydrology/Distributed.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/stressbalance/sia/SIAFD.hh"
-#include "pism/stressbalance/ssa/SSAFD.hh"
-#include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/atmosphere/Factory.hh"
@@ -58,12 +52,11 @@
 #include "pism/earth/LingleClark.hh"
 #include "pism/earth/BedDef.hh"
 #include "pism/earth/Given.hh"
-#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/age/AgeModel.hh"
+#include "pism/age/Isochrones.hh"
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
@@ -72,6 +65,9 @@
 #include "pism/coupler/frontalmelt/Factory.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/util/ScalarForcing.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/util/array/Forcing.hh"
+#include <memory>
 
 namespace pism {
 
@@ -134,7 +130,7 @@ void IceModel::model_state_setup() {
   std::unique_ptr<File> input_file;
 
   if (use_input_file) {
-    input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
+    input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
@@ -218,7 +214,7 @@ void IceModel::model_state_setup() {
       break;
     case INIT_OTHER:
       {
-        IceModelVec2S
+        array::Scalar
           &W_till = *m_work2d[0],
           &W      = *m_work2d[1],
           &P      = *m_work2d[2];
@@ -272,13 +268,21 @@ void IceModel::model_state_setup() {
   // BOTTOM surface of the bedrock layer.
   //
   // The code then delays bootstrapping of the thickness field until the first time step.
-  if (m_btu) {
+  if (m_btu != nullptr) {
     m_btu->init(input);
   }
 
   if (m_age_model) {
     m_age_model->init(input);
     m_grid->variables().add(m_age_model->age());
+  }
+
+  if (m_isochrones) {
+    if (input.type == INIT_RESTART) {
+      m_isochrones->restart(*input_file, (int)input.record);
+    } else {
+      m_isochrones->bootstrap(m_geometry.ice_thickness);
+    }
   }
 
   // Initialize the energy balance sub-model.
@@ -323,12 +327,12 @@ void IceModel::model_state_setup() {
   // we keep ice thickness fixed at all the locations where the sliding (SSA) velocity is
   // prescribed
   {
-    IceModelVec::AccessList list{&m_ice_thickness_bc_mask, &m_velocity_bc_mask};
+    array::AccessScope list{&m_ice_thickness_bc_mask, &m_velocity_bc_mask};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_velocity_bc_mask.as_int(i, j)) {
+      if (m_velocity_bc_mask.as_int(i, j) != 0) {
         m_ice_thickness_bc_mask(i, j) = 1.0;
       }
     }
@@ -354,7 +358,7 @@ void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
 
   m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
-  for (auto variable : m_model_state) {
+  for (auto *variable : m_model_state) {
     variable->read(input_file, last_record);
   }
 }
@@ -382,7 +386,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   // longitude
   {
-    m_geometry.longitude.regrid(input_file, OPTIONAL);
+    m_geometry.longitude.regrid(input_file, io::Default(0.0));
 
     auto lon = input_file.find_variable("lon", "longitude");
 
@@ -393,7 +397,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   // latitude
   {
-    m_geometry.latitude.regrid(input_file, OPTIONAL);
+    m_geometry.latitude.regrid(input_file, io::Default(0.0));
 
     auto lat = input_file.find_variable("lat", "latitude");
 
@@ -402,18 +406,8 @@ void IceModel::bootstrap_2d(const File &input_file) {
     }
   }
 
-  m_geometry.ice_thickness.regrid(input_file, OPTIONAL,
-                                  m_config->get_number("bootstrapping.defaults.ice_thickness"));
-  // check the range of the ice thickness
-  {
-    auto thk_range = m_geometry.ice_thickness.range();
-
-    if (thk_range[1] >= m_grid->Lz() + 1e-6) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
-                                    "exceeds the height of the computational domain (%f meters).",
-                                    thk_range[1], m_grid->Lz());
-    }
-  }
+  m_geometry.ice_thickness.regrid(
+      input_file, io::Default(m_config->get_number("bootstrapping.defaults.ice_thickness")));
 
   if (m_config->get_flag("geometry.part_grid.enabled")) {
     // Read the Href field from an input file. This field is
@@ -424,29 +418,29 @@ void IceModel::bootstrap_2d(const File &input_file) {
     //
     // On the other hand, we need to read it in to be able to re-start
     // from a PISM output file using the -bootstrap option.
-    m_geometry.ice_area_specific_volume.regrid(input_file, OPTIONAL, 0.0);
+    m_geometry.ice_area_specific_volume.regrid(input_file, io::Default(0.0));
   }
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
-    m_velocity_bc_mask.regrid(input_file, OPTIONAL, 0.0);
+    m_velocity_bc_mask.regrid(input_file, io::Default(0.0));
     // In absence of u_bc and v_bc in the file the only B.C. that make sense are the
     // zero Dirichlet B.C.
-    m_velocity_bc_values.regrid(input_file, OPTIONAL,  0.0);
+    m_velocity_bc_values.regrid(input_file, io::Default(0.0));
   } else {
     m_velocity_bc_mask.set(0.0);
     m_velocity_bc_values.set(0.0);
   }
 
-  m_ice_thickness_bc_mask.regrid(input_file, OPTIONAL, 0.0);
+  m_ice_thickness_bc_mask.regrid(input_file, io::Default(0.0));
 
   // check if Lz is valid
-  auto thk_range = m_geometry.ice_thickness.range();
+  auto max_thickness = array::max(m_geometry.ice_thickness);
 
-  if (thk_range[1] > m_grid->Lz()) {
+  if (max_thickness > m_grid->Lz()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
-                                  thk_range[1], m_grid->Lz());
+                                  max_thickness, m_grid->Lz());
   }
 }
 
@@ -470,17 +464,17 @@ void IceModel::regrid() {
   m_log->message(2, "regridding from file %s ...\n", filename.c_str());
 
   {
-    File regrid_file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
-    for (auto v : m_model_state) {
+    File regrid_file(m_grid->com, filename, io::PISM_GUESS, io::PISM_READONLY);
+    for (auto *v : m_model_state) {
       if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
-        v->regrid(regrid_file, CRITICAL);
+        v->regrid(regrid_file, io::Default::Nil());
       }
     }
 
     // Check the range of the ice thickness.
     {
       double
-        max_thickness = m_geometry.ice_thickness.range()[1],
+        max_thickness = array::max(m_geometry.ice_thickness),
         Lz            = m_grid->Lz();
 
       if (max_thickness >= Lz + 1e-6) {
@@ -537,9 +531,9 @@ void IceModel::allocate_iceberg_remover() {
 
     if ((member(model, {"ssa", "ssa+sia"}) and ssa_method == "fem") or
         model == "blatter") {
-      m_iceberg_remover.reset(new calving::IcebergRemoverFEM(m_grid));
+      m_iceberg_remover = std::make_shared<calving::IcebergRemoverFEM>(m_grid);
     } else {
-      m_iceberg_remover.reset(new calving::IcebergRemover(m_grid));
+      m_iceberg_remover = std::make_shared<calving::IcebergRemover>(m_grid);
     }
 
     m_submodels["iceberg remover"] = m_iceberg_remover.get();
@@ -555,13 +549,35 @@ void IceModel::allocate_age_model() {
   if (m_config->get_flag("age.enabled")) {
     m_log->message(2, "# Allocating an ice age model...\n");
 
-    if (m_stress_balance == NULL) {
+    if (m_stress_balance == nullptr) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Cannot allocate an age model: m_stress_balance == NULL.");
+                                    "Cannot allocate an age model: m_stress_balance == nullptr.");
     }
 
-    m_age_model.reset(new AgeModel(m_grid, m_stress_balance.get()));
+    m_age_model = std::make_shared<AgeModel>(m_grid, m_stress_balance);
     m_submodels["age model"] = m_age_model.get();
+  }
+}
+
+void IceModel::allocate_isochrones() {
+
+  if (m_isochrones) {
+    return;
+  }
+
+  auto deposition_times = m_config->get_string("isochrones.deposition_times");
+  if (not deposition_times.empty()) {
+    m_log->message(2, "# Allocating isochrone tracking...\n");
+
+    if (m_stress_balance == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "Cannot allocate the isochrone tracking model: m_stress_balance == nullptr.");
+    }
+
+    m_isochrones = std::make_shared<Isochrones>(m_grid, m_stress_balance);
+
+    m_submodels["isochrones"] = m_isochrones.get();
   }
 }
 
@@ -575,22 +591,22 @@ void IceModel::allocate_energy_model() {
 
   if (m_config->get_flag("energy.enabled")) {
     if (m_config->get_flag("energy.temperature_based")) {
-      m_energy_model = new energy::TemperatureModel(m_grid, m_stress_balance.get());
+      m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance);
     } else {
-      m_energy_model = new energy::EnthalpyModel(m_grid, m_stress_balance.get());
+      m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance);
     }
   } else {
-    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance.get());
+    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
   }
 
-  m_submodels["energy balance model"] = m_energy_model;
+  m_submodels["energy balance model"] = m_energy_model.get();
 }
 
 
 //! \brief Decide which bedrock thermal unit to use.
 void IceModel::allocate_bedrock_thermal_unit() {
 
-  if (m_btu != NULL) {
+  if (m_btu != nullptr) {
     return;
   }
 
@@ -598,7 +614,7 @@ void IceModel::allocate_bedrock_thermal_unit() {
 
   m_btu = energy::BedThermalUnit::FromOptions(m_grid, m_ctx);
 
-  m_submodels["bedrock thermal model"] = m_btu;
+  m_submodels["bedrock thermal model"] = m_btu.get();
 }
 
 //! \brief Decide which subglacial hydrology model to use.
@@ -647,11 +663,11 @@ void IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
-      m_basal_yield_stress_model.reset(new ConstantYieldStress(m_grid));
+      m_basal_yield_stress_model = std::make_shared<ConstantYieldStress>(m_grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model.reset(new MohrCoulombYieldStress(m_grid));
+      m_basal_yield_stress_model = std::make_shared<MohrCoulombYieldStress>(m_grid);
     } else if (yield_stress_model == "tillphi_opt") {
-      m_basal_yield_stress_model.reset(new OptTillphiYieldStress(m_grid));
+      m_basal_yield_stress_model = std::make_shared<OptTillphiYieldStress>(m_grid);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
@@ -664,7 +680,7 @@ void IceModel::allocate_basal_yield_stress() {
 //! Allocate PISM's sub-models implementing some physical processes.
 /*!
   This method is called after memory allocation but before filling any of
-  IceModelVecs because all the physical parameters should be initialized before
+  Arrays because all the physical parameters should be initialized before
   setting up the coupling or filling model-state variables.
  */
 void IceModel::allocate_submodels() {
@@ -678,6 +694,7 @@ void IceModel::allocate_submodels() {
   // this has to happen *after* allocate_stressbalance()
   {
     allocate_age_model();
+    allocate_isochrones();
     allocate_energy_model();
     allocate_subglacial_hydrology();
   }
@@ -692,7 +709,7 @@ void IceModel::allocate_submodels() {
   allocate_couplers();
 
   if (m_config->get_flag("fracture_density.enabled")) {
-    m_fracture.reset(new FractureDensity(m_grid, m_stress_balance->shallow()->flow_law()));
+    m_fracture = std::make_shared<FractureDensity>(m_grid, m_stress_balance->shallow()->flow_law());
     m_submodels["fracture_density"] = m_fracture.get();
   }
 }
@@ -707,7 +724,7 @@ void IceModel::allocate_couplers() {
 
     surface::Factory ps(m_grid, atmosphere::Factory(m_grid).create());
 
-    m_surface.reset(new surface::InitializationHelper(m_grid, ps.create()));
+    m_surface = std::make_shared<surface::InitializationHelper>(m_grid, ps.create());
 
     m_submodels["surface process model"] = m_surface.get();
   }
@@ -717,7 +734,7 @@ void IceModel::allocate_couplers() {
 
     using namespace ocean::sea_level;
 
-    m_sea_level.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
+    m_sea_level = std::make_shared<InitializationHelper>(m_grid, Factory(m_grid).create());
 
     m_submodels["sea level forcing"] = m_sea_level.get();
   }
@@ -727,7 +744,7 @@ void IceModel::allocate_couplers() {
 
     using namespace ocean;
 
-    m_ocean.reset(new InitializationHelper(m_grid, Factory(m_grid).create()));
+    m_ocean = std::make_shared<InitializationHelper>(m_grid, Factory(m_grid).create());
 
     m_submodels["ocean model"] = m_ocean.get();
   }
@@ -741,7 +758,7 @@ void IceModel::misc_setup() {
 
   if (not (opts.type == INIT_OTHER)) {
     // initializing from a file
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
 
     std::string source = file.read_text_attribute("PISM_GLOBAL", "source");
 
@@ -776,7 +793,7 @@ void IceModel::misc_setup() {
       Mz = m_grid->Mz();
     std::string output_format = m_config->get_string("output.format");
     if (Mx * My * Mz * sizeof(double) > two_to_thirty_two - 4 and
-        (output_format == PISM_NETCDF3)) {
+        (output_format == io::PISM_NETCDF3)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "The computational grid is too big to fit in a NetCDF-3 file.\n"
                                     "Each 3D variable requires %lu Mb.\n"
@@ -802,7 +819,7 @@ void IceModel::misc_setup() {
   init_front_retreat();
   init_diagnostics();
   init_snapshots();
-  init_backups();
+  init_checkpoints();
   init_timeseries();
   init_extras();
 
@@ -827,14 +844,14 @@ void IceModel::misc_setup() {
   {
     // reset: this gives diagnostics a chance to capture the current state of the model at the
     // beginning of the run
-    for (auto d : m_diagnostics) {
+    for (const auto& d : m_diagnostics) {
       d.second->reset();
     }
 
     // read in the state (accumulators) if we are re-starting a run
     if (opts.type == INIT_RESTART) {
-      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
-      for (auto d : m_diagnostics) {
+      File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
+      for (const auto& d : m_diagnostics) {
         d.second->init(file, opts.record);
       }
     }
@@ -851,7 +868,7 @@ void IceModel::misc_setup() {
       m_fracture->initialize();
     } else {
       // initializing from a file
-      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
 
       if (opts.type == INIT_RESTART) {
         m_fracture->restart(file, opts.record);
@@ -879,7 +896,7 @@ void IceModel::init_frontal_melt() {
     m_submodels["frontal melt"] = m_frontal_melt.get();
 
     if (not m_front_retreat) {
-      m_front_retreat.reset(new FrontRetreat(m_grid));
+      m_front_retreat = std::make_shared<FrontRetreat>(m_grid);
     }
   }
 }
@@ -888,7 +905,7 @@ void IceModel::init_front_retreat() {
   auto front_retreat_file = m_config->get_string("geometry.front_retreat.prescribed.file");
 
   if (not front_retreat_file.empty()) {
-    m_prescribed_retreat.reset(new PrescribedRetreat(m_grid));
+    m_prescribed_retreat = std::make_shared<PrescribedRetreat>(m_grid);
 
     m_prescribed_retreat->init();
 
@@ -905,7 +922,7 @@ void IceModel::init_calving() {
   if (member("thickness_calving", methods)) {
 
     if (not m_thickness_threshold_calving) {
-      m_thickness_threshold_calving.reset(new calving::CalvingAtThickness(m_grid));
+      m_thickness_threshold_calving = std::make_shared<calving::CalvingAtThickness>(m_grid);
     }
 
     m_thickness_threshold_calving->init();
@@ -919,7 +936,7 @@ void IceModel::init_calving() {
     allocate_front_retreat = true;
 
     if (not m_eigen_calving) {
-      m_eigen_calving.reset(new calving::EigenCalving(m_grid));
+      m_eigen_calving = std::make_shared<calving::EigenCalving>(m_grid);
     }
 
     m_eigen_calving->init();
@@ -932,8 +949,8 @@ void IceModel::init_calving() {
     allocate_front_retreat = true;
 
     if (not m_vonmises_calving) {
-      m_vonmises_calving.reset(new calving::vonMisesCalving(m_grid,
-                                                            m_stress_balance->shallow()->flow_law()));
+      m_vonmises_calving = std::make_shared<calving::vonMisesCalving>(
+          m_grid, m_stress_balance->shallow()->flow_law());
     }
 
     m_vonmises_calving->init();
@@ -946,7 +963,7 @@ void IceModel::init_calving() {
     allocate_front_retreat = true;
 
     if (not m_hayhurst_calving) {
-      m_hayhurst_calving.reset(new calving::HayhurstCalving(m_grid));
+      m_hayhurst_calving = std::make_shared<calving::HayhurstCalving>(m_grid);
     }
 
     m_hayhurst_calving->init();
@@ -957,7 +974,7 @@ void IceModel::init_calving() {
 
   if (member("float_kill", methods)) {
     if (not m_float_kill_calving) {
-      m_float_kill_calving.reset(new calving::FloatKill(m_grid));
+      m_float_kill_calving = std::make_shared<calving::FloatKill>(m_grid);
     }
 
     m_float_kill_calving->init();
@@ -974,7 +991,7 @@ void IceModel::init_calving() {
 
   // allocate front retreat code if necessary
   if (not m_front_retreat and allocate_front_retreat) {
-    m_front_retreat.reset(new FrontRetreat(m_grid));
+    m_front_retreat = std::make_shared<FrontRetreat>(m_grid);
   }
 
   {
@@ -1024,6 +1041,7 @@ void IceModel::process_options() {
              "Processing physics-related command-line options...\n");
 
   set_config_from_options(m_sys, *m_config);
+  m_config->resolve_filenames();
 
   // Set global attributes using the config database:
   m_output_global_attributes["title"] = m_config->get_string("run_info.title");

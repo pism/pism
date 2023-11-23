@@ -21,7 +21,7 @@ def allocate_grid(ctx):
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
     params.ownership_ranges_from_options(ctx.size)
-    return PISM.IceGrid(ctx.ctx, params)
+    return PISM.Grid(ctx.ctx, params)
 
 def allocate_storage(grid):
     ice_thickness = PISM.model.createIceThicknessVec(grid)

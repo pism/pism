@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2012-2017 Ed Bueler and Constantine Khroulev
+   Copyright (C) 2012-2017, 2023 Ed Bueler and Constantine Khroulev
 
    This file is part of PISM.
 
@@ -18,11 +18,10 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <cassert>
-#include <cstdlib>
-#include <cmath>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_matrix.h>
+#include "pism/verification/tests/exactTestP.hh"
+#include <gsl/gsl_errno.h>    // for GSL_SUCCESS
+#include <cmath>              // for pow, fabs
+#include <cstdlib>            // for NULL
 
 #include <gsl/gsl_version.h>
 #if (defined GSL_MAJOR_VERSION) && (defined GSL_MINOR_VERSION) && \
@@ -30,8 +29,6 @@
 #define PISM_USE_ODEIV2 1
 #include <gsl/gsl_odeiv2.h>
 #endif
-
-#include "exactTestP.hh"
 
 namespace pism {
 
@@ -97,20 +94,22 @@ int funcP(double r, const double W[], double f[], void *params) {
   if (r < 0.0) {
     f[0] = 0.0; /* place-holder */
     return TESTP_R_NEGATIVE;
-  } else if (r > TESTP_L) {
+  }
+
+  if (r > TESTP_L) {
     f[0] = 0.0;
     return GSL_SUCCESS;
-  } else {
-    getsb(r, &sb, &dsb);
-    omega0 = m0 / (2.0 * rhow * k);
-    dPo    = -(2.0 * rhoi * g * h0 / (TESTP_R0 * TESTP_R0)) * r;
-    tmp1   = pow(W[0], 4.0 / 3.0) * pow(Wr - W[0], 2.0 / 3.0);
-    numer  = dsb * W[0] * (Wr - W[0]);
-    numer  = numer - (omega0 * r / W[0] + dPo) * tmp1;
-    denom  = (1.0 / 3.0) * sb * Wr + rhow * g * tmp1;
-    f[0]   = numer / denom;
-    return GSL_SUCCESS;
   }
+
+  getsb(r, &sb, &dsb);
+  omega0 = m0 / (2.0 * rhow * k);
+  dPo    = -(2.0 * rhoi * g * h0 / (TESTP_R0 * TESTP_R0)) * r;
+  tmp1   = pow(W[0], 4.0 / 3.0) * pow(Wr - W[0], 2.0 / 3.0);
+  numer  = dsb * W[0] * (Wr - W[0]);
+  numer  = numer - (omega0 * r / W[0] + dPo) * tmp1;
+  denom  = (1.0 / 3.0) * sb * Wr + rhow * g * tmp1;
+  f[0]   = numer / denom;
+  return GSL_SUCCESS;
 }
 
 
@@ -178,7 +177,8 @@ int getW(const double *r, int N, double *W, double EPS_ABS, double EPS_REL, int 
       }
       if (W[count] > Wr) {
         return TESTP_W_EXCEEDS_WR;
-      } else if (W[count] < criticalW(r[count])) {
+      }
+      if (W[count] < criticalW(r[count])) {
         return TESTP_W_BELOW_WCRIT;
       }
     }
@@ -245,17 +245,16 @@ int exactP_list(const double *r, int N, double *h, double *magvb, double *Wcrit,
 
   status = getW(&(r[M]), N - M, &(W[M]), EPS_ABS, EPS_REL, ode_method);
 
-  if (status) {
+  if (status != 0) {
     for (i = M; i < N; i++) {
       P[i] = 0.0;
     }
     return status;
-  } else {
-    for (i = M; i < N; i++) {
-      P[i] = psteady(W[i], magvb[i], rhoi * g * h[i]);
-    }
-    return 0;
   }
+  for (i = M; i < N; i++) {
+    P[i] = psteady(W[i], magvb[i], rhoi * g * h[i]);
+  }
+  return 0;
 }
 
 TestPParameters exactP(const std::vector<double> &r,
@@ -263,12 +262,12 @@ TestPParameters exactP(const std::vector<double> &r,
   TestPParameters result(r.size());
   result.r = r;
 
-  result.error_code = exactP_list(&r[0], r.size(),
-                                  &result.h[0],
-                                  &result.magvb[0],
-                                  &result.Wcrit[0],
-                                  &result.W[0],
-                                  &result.P[0],
+  result.error_code = exactP_list(r.data(), r.size(),
+                                  (result.h).data(),
+                                  (result.magvb).data(),
+                                  (result.Wcrit).data(),
+                                  (result.W).data(),
+                                  (result.P).data(),
                                   EPS_ABS, EPS_REL, ode_method);
 
   switch (result.error_code) {

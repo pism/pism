@@ -34,7 +34,7 @@ namespace sea_level {
  */
 class InitializationHelper : public SeaLevel {
 public:
-  InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in);
+  InitializationHelper(std::shared_ptr<const Grid> g, std::shared_ptr<SeaLevel> in);
 
 private:
   void define_model_state_impl(const File &output) const;
@@ -43,7 +43,7 @@ private:
   void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
 
-  const IceModelVec2S& sea_level_elevation_impl() const;
+  const array::Scalar& sea_level_elevation_impl() const;
 };
 
 } // end of namespace sea_level

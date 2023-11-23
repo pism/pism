@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,13 +19,13 @@
 #include <gsl/gsl_poly.h>
 #include <cassert>
 
-#include "GivenTH.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/geometry/Geometry.hh"
+#include "pism/coupler/ocean/GivenTH.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace ocean {
@@ -57,7 +57,7 @@ GivenTH::Constants::Constants(const Config &config) {
   limit_salinity_range             = config.get_flag("ocean.th.clip_salinity");
 }
 
-GivenTH::GivenTH(IceGrid::ConstPtr g)
+GivenTH::GivenTH(std::shared_ptr<const Grid> g)
   : CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");
@@ -65,9 +65,9 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
+    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
                                                 file,
                                                 "theta_ocean",
                                                 "", // no standard name
@@ -75,7 +75,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                 opt.periodic,
                                                 LINEAR);
 
-    m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
+    m_salinity_ocean = std::make_shared<array::Forcing>(m_grid,
                                                    file,
                                                    "salinity_ocean",
                                                    "", // no standard name
@@ -84,13 +84,13 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                    LINEAR);
   }
 
-  m_theta_ocean->set_attrs("climate_forcing",
-                           "potential temperature of the adjacent ocean",
-                           "Kelvin", "Kelvin", "", 0);
+  m_theta_ocean->metadata(0)
+      .long_name("potential temperature of the adjacent ocean")
+      .units("Kelvin");
 
-  m_salinity_ocean->set_attrs("climate_forcing",
-                              "salinity of the adjacent ocean",
-                              "g/kg", "g/kg", "", 0);
+  m_salinity_ocean->metadata(0)
+      .long_name("salinity of the adjacent ocean")
+      .units("g/kg");
 }
 
 void GivenTH::init_impl(const Geometry &geometry) {
@@ -106,7 +106,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
 
   // read ocean salinity from a file if present, otherwise use a constant
   {
-    File input(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
+    File input(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
 
     auto variable_name = m_salinity_ocean->metadata().get_name();
 
@@ -115,7 +115,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
     } else {
       double salinity = m_config->get_number("constants.sea_water.salinity", "g / kg");
 
-      m_salinity_ocean = IceModelVec2T::Constant(m_grid, variable_name, salinity);
+      m_salinity_ocean = array::Forcing::Constant(m_grid, variable_name, salinity);
 
       m_log->message(2, "  Variable '%s' not found; using constant salinity: %f (g / kg).\n",
                      variable_name.c_str(), salinity);
@@ -124,7 +124,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
 
   // read time-independent data right away:
   if (m_theta_ocean->buffer_size() == 1 && m_salinity_ocean->buffer_size() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, time().current(), 0); // dt is irrelevant
   }
 
   const double
@@ -145,15 +145,15 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
 
   Constants c(*m_config);
 
-  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
 
-  IceModelVec2S &temperature = *m_shelf_base_temperature;
-  IceModelVec2S &mass_flux = *m_shelf_base_mass_flux;
+  array::Scalar &temperature = *m_shelf_base_temperature;
+  array::Scalar &mass_flux = *m_shelf_base_mass_flux;
 
-  IceModelVec::AccessList list{ &ice_thickness, m_theta_ocean.get(), m_salinity_ocean.get(),
+  array::AccessScope list{ &ice_thickness, m_theta_ocean.get(), m_salinity_ocean.get(),
       &temperature, &mass_flux};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double potential_temperature_celsius = (*m_theta_ocean)(i,j) - 273.15;

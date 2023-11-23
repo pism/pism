@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,34 +17,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Initialization.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/coupler/ocean/Initialization.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/coupler/util/init_step.hh"
-#include "pism/util/Context.hh"
 
 namespace pism {
 namespace ocean {
 
-InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_water_column_pressure = allocate_water_column_pressure(g);
   m_water_column_pressure->set_name("effective_water_column_pressure");
-  m_water_column_pressure->metadata()["pism_intent"] = "model_state";
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_temperature->set_name("effective_shelf_base_temperature");
-  m_shelf_base_temperature->metadata()["pism_intent"] = "model_state";
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
   m_shelf_base_mass_flux->set_name("effective_shelf_base_mass_flux");
   // use internal units when saving
-  auto units = m_shelf_base_mass_flux->metadata().get_string("units");
-  m_shelf_base_mass_flux->metadata()["glaciological_units"] = units;
-  m_shelf_base_mass_flux->metadata()["pism_intent"] = "model_state";
+  auto units = m_shelf_base_mass_flux->metadata()["units"];
+  m_shelf_base_mass_flux->metadata().output_units(units);
 }
 
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
@@ -64,7 +58,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     m_log->message(2, "* Reading effective ocean model outputs from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
     const unsigned int time_length = file.nrecords();
     const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 
@@ -76,7 +70,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   } else {
     m_log->message(2, "* Performing a 'fake' ocean model time-step for bootstrapping...\n");
 
-    init_step(this, geometry, *m_grid->ctx()->time());
+    init_step(this, geometry, time());
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to
@@ -92,9 +86,9 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 }
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
-  m_water_column_pressure->define(output);
-  m_shelf_base_mass_flux->define(output);
-  m_shelf_base_temperature->define(output);
+  m_water_column_pressure->define(output, io::PISM_DOUBLE);
+  m_shelf_base_mass_flux->define(output, io::PISM_DOUBLE);
+  m_shelf_base_temperature->define(output, io::PISM_DOUBLE);
 
   m_input_model->define_model_state(output);
 }
@@ -107,15 +101,15 @@ void InitializationHelper::write_model_state_impl(const File &output) const {
   m_input_model->write_model_state(output);
 }
 
-const IceModelVec2S& InitializationHelper::shelf_base_temperature_impl() const {
+const array::Scalar& InitializationHelper::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const IceModelVec2S& InitializationHelper::shelf_base_mass_flux_impl() const {
+const array::Scalar& InitializationHelper::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const IceModelVec2S& InitializationHelper::average_water_column_pressure_impl() const {
+const array::Scalar& InitializationHelper::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

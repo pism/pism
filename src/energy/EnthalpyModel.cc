@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,22 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EnthalpyModel.hh"
-
-#include "DrainageCalculator.hh"
-#include "pism/util/EnthalpyConverter.hh"
+#include "pism/energy/EnthalpyModel.hh"
+#include "pism/energy/DrainageCalculator.hh"
 #include "pism/energy/enthSystem.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/io/File.hh"
-#include "utilities.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/energy/utilities.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 namespace energy {
 
-EnthalpyModel::EnthalpyModel(IceGrid::ConstPtr grid,
-                             stressbalance::StressBalance *stress_balance)
+EnthalpyModel::EnthalpyModel(std::shared_ptr<const Grid> grid,
+                             std::shared_ptr<const stressbalance::StressBalance> stress_balance)
   : EnergyModel(grid, stress_balance) {
   // empty
 }
@@ -50,16 +48,16 @@ void EnthalpyModel::restart_impl(const File &input_file, int record) {
 }
 
 void EnthalpyModel::bootstrap_impl(const File &input_file,
-                                   const IceModelVec2S &ice_thickness,
-                                   const IceModelVec2S &surface_temperature,
-                                   const IceModelVec2S &climatic_mass_balance,
-                                   const IceModelVec2S &basal_heat_flux) {
+                                   const array::Scalar &ice_thickness,
+                                   const array::Scalar &surface_temperature,
+                                   const array::Scalar &climatic_mass_balance,
+                                   const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model from %s...\n",
                  input_file.filename().c_str());
 
-  m_basal_melt_rate.regrid(input_file, OPTIONAL,
-                           m_config->get_number("bootstrapping.defaults.bmelt"));
+  m_basal_melt_rate.regrid(input_file,
+                           io::Default(m_config->get_number("bootstrapping.defaults.bmelt")));
 
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
@@ -72,11 +70,11 @@ void EnthalpyModel::bootstrap_impl(const File &input_file,
   }
 }
 
-void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
-                                    const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &surface_temperature,
-                                    const IceModelVec2S &climatic_mass_balance,
-                                    const IceModelVec2S &basal_heat_flux) {
+void EnthalpyModel::initialize_impl(const array::Scalar &basal_melt_rate,
+                                    const array::Scalar &ice_thickness,
+                                    const array::Scalar &surface_temperature,
+                                    const array::Scalar &climatic_mass_balance,
+                                    const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model...\n");
 
@@ -98,7 +96,7 @@ void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
 This method is documented by the page \ref bombproofenth and by [\ref
 AschwandenBuelerKhroulevBlatter].
 
-This method updates IceModelVec3 m_work and IceModelVec2S basal_melt_rate.
+This method updates array::Array3D m_work and array::Scalar basal_melt_rate.
 No communication of ghosts is done for any of these fields.
 
 We use an instance of enthSystemCtx.
@@ -122,22 +120,23 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   inputs.check();
 
   // give them names that are a bit shorter...
-  const IceModelVec3
+  const array::Array3D
     &strain_heating3 = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;
 
-  const IceModelVec2CellType &cell_type = *inputs.cell_type;
+  const auto &cell_type = *inputs.cell_type;
 
-  const IceModelVec2S
+  const array::Scalar
     &basal_frictional_heating = *inputs.basal_frictional_heating,
     &basal_heat_flux          = *inputs.basal_heat_flux,
-    &ice_thickness            = *inputs.ice_thickness,
     &surface_liquid_fraction  = *inputs.surface_liquid_fraction,
     &shelf_base_temp          = *inputs.shelf_base_temp,
     &ice_surface_temp         = *inputs.surface_temp,
     &till_water_thickness     = *inputs.till_water_thickness;
+
+  const array::Scalar1 &ice_thickness = *inputs.ice_thickness;
 
   energy::enthSystemCtx system(m_grid->z(), "energy.enthalpy", m_grid->dx(), m_grid->dy(), dt,
                                *m_config, m_ice_enthalpy, u3, v3, w3, strain_heating3, EC);
@@ -146,7 +145,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   const double dz = system.dz();
   std::vector<double> Enthnew(Mz_fine); // new enthalpy in column
 
-  IceModelVec::AccessList list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
+  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
       &ice_thickness, &basal_frictional_heating, &basal_heat_flux, &till_water_thickness,
       &cell_type, &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_enthalpy,
       &m_work};
@@ -157,7 +156,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points pt(*m_grid); pt; pt.next()) {
+    for (auto pt = m_grid->points(); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
       const double H = ice_thickness(i, j);
@@ -347,8 +346,8 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 }
 
 void EnthalpyModel::define_model_state_impl(const File &output) const {
-  m_ice_enthalpy.define(output);
-  m_basal_melt_rate.define(output);
+  m_ice_enthalpy.define(output, io::PISM_DOUBLE);
+  m_basal_melt_rate.define(output, io::PISM_DOUBLE);
 }
 
 void EnthalpyModel::write_model_state_impl(const File &output) const {

@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -259,7 +259,7 @@ def run():
     com = context.com
     PISM.set_abort_on_sigint(True)
 
-    WIDE_STENCIL = int(config.get_number("grid.max_stencil_width"))
+    WIDE_STENCIL = 2
 
     usage = \
         """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model]
@@ -290,7 +290,7 @@ def run():
     append = PISM.OptionString("-a", "append file")
     append_filename = append.value() if append.is_set() else None
 
-    output_filename = config.get_string("output.file_name")
+    output_filename = config.get_string("output.file")
     if len(output_filename) == 0:
         output_filename = None
 
@@ -359,8 +359,9 @@ def run():
     design_prior = createDesignVec(grid, design_var, '%s_prior' % design_var)
     long_name = design_prior.metadata().get_string("long_name")
     units = design_prior.metadata().get_string("units")
-    design_prior.set_attrs("", "best prior estimate for %s (used for inversion)" % long_name,
-                           units, units, "", 0)
+
+    design_prior.metadata().long_name("best prior estimate for %s (used for inversion)" % long_name).units(units)
+
     if PISM.util.fileHasVariable(inv_data_filename, "%s_prior" % design_var) and use_design_prior:
         PISM.logging.logMessage("  Reading '%s_prior' from inverse data file %s.\n" % (design_var, inv_data_filename))
         design_prior.regrid(inv_data_filename, critical=True)
@@ -403,15 +404,15 @@ def run():
                 raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
 
     # Convert design_prior -> zeta_prior
-    zeta_prior = PISM.IceModelVec2S(grid, "zeta_prior", PISM.WITH_GHOSTS, WIDE_STENCIL)
+    zeta_prior = PISM.Scalar2(grid, "zeta_prior")
     design_param.convertFromDesignVariable(design_prior, zeta_prior)
     vecs.add(zeta_prior, writing=True)
 
     # Determine the initial guess for zeta.  If we are restarting, load it from
     # the output file.  Otherwise, if 'zeta_inv' is in the inverse data file, use it.
     # If none of the above, copy from 'zeta_prior'.
-    zeta = PISM.IceModelVec2S(grid, "zeta_inv", PISM.WITH_GHOSTS, WIDE_STENCIL)
-    zeta.set_attrs("diagnostic", "zeta_inv", "1", "1", "zeta_inv", 0)
+    zeta = PISM.Scalar2(grid, "zeta_inv")
+    zeta.metadata(0).long_name("zeta_inv").units("1").output_units("1").standard_name("zeta_inv")
     if do_restart:
         # Just to be sure, verify that we have a 'zeta_inv' in the output file.
         if not PISM.util.fileHasVariable(output_filename, 'zeta_inv'):
@@ -447,10 +448,10 @@ def run():
         vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata, sia_solver)
 
         vel_sia_observed.metadata(0).set_name('u_sia_observed')
-        vel_sia_observed.metadata(0).set_string('long_name', "x-component of the 'observed' SIA velocities")
+        vel_sia_observed.metadata(0).long_name("x-component of the 'observed' SIA velocities")
 
         vel_sia_observed.metadata(1).set_name('v_sia_observed')
-        vel_sia_observed.metadata(1).set_string('long_name', "y-component of the 'observed' SIA velocities")
+        vel_sia_observed.metadata(1).long_name("y-component of the 'observed' SIA velocities")
 
         vel_ssa_observed.copy_from(vel_surface_observed)
         vel_ssa_observed.add(-1, vel_sia_observed)
@@ -560,11 +561,9 @@ def run():
     residual.copy_from(u)
     residual.add(-1, vel_ssa_observed)
 
-    r_mag = PISM.IceModelVec2S(grid, "inv_ssa_residual", PISM.WITHOUT_GHOSTS, 0)
+    r_mag = PISM.Scalar(grid, "inv_ssa_residual")
 
-    r_mag.set_attrs("diagnostic",
-                    "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
-                    "m s-1", "m year-1", "inv_ssa_residual", 0)
+    r_mag.metadata(0).long_name("magnitude of mismatch between observed surface velocities and their reconstrution by inversion").units("m s-1").output_units("m year-1")
     r_mag.metadata().set_number("_FillValue", convert(-0.01, 'm/year', 'm/s'))
     r_mag.metadata().set_number("valid_min", 0.0)
 

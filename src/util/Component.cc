@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2020, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,16 +18,14 @@
 
 #include <cassert>
 
-#include "Component.hh"
+#include "pism/util/Component.hh"
+#include "pism/util/Profiling.hh"
 #include "pism/util/io/File.hh"
-#include "IceGrid.hh"
-#include "pism_utilities.hh"
-#include "VariableMetadata.hh"
-#include "iceModelVec.hh"
-#include "pism_options.hh"
-#include "error_handling.hh"
-#include "ConfigInterface.hh"
-#include "MaxTimestep.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Context.hh"
 
@@ -43,8 +41,8 @@ InputOptions::InputOptions(InitializationType t, const std::string &file, unsign
  *
  */
 InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
-  InitializationType type   = INIT_OTHER;
-  unsigned int       record = 0;
+  InitializationType type = INIT_OTHER;
+  unsigned int record     = 0;
 
   std::string input_filename = config->get_string("input.file");
 
@@ -64,7 +62,7 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
 
   // get the index of the last record in the input file
   if (not input_filename.empty()) {
-    File input_file(com, input_filename, PISM_NETCDF3, PISM_READONLY);
+    File input_file(com, input_filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     // Find the index of the last record in the input file.
     unsigned int last_record = input_file.nrecords();
@@ -80,9 +78,11 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
   return InputOptions(type, input_filename, record);
 }
 
-Component::Component(IceGrid::ConstPtr g)
-  : m_grid(g), m_config(g->ctx()->config()), m_sys(g->ctx()->unit_system()),
-    m_log(g->ctx()->log()) {
+Component::Component(std::shared_ptr<const Grid> g)
+    : m_grid(g),
+      m_config(g->ctx()->config()),
+      m_sys(g->ctx()->unit_system()),
+      m_log(g->ctx()->log()) {
   // empty
 }
 
@@ -102,8 +102,16 @@ TSDiagnosticList Component::ts_diagnostics_impl() const {
   return {};
 }
 
-IceGrid::ConstPtr Component::grid() const {
+std::shared_ptr<const Grid> Component::grid() const {
   return m_grid;
+}
+
+const Time &Component::time() const {
+  return *m_grid->ctx()->time();
+}
+
+const Profiling &Component::profiling() const {
+  return m_grid->ctx()->profiling();
 }
 
 /*! @brief Define model state variables in an output file. */
@@ -138,7 +146,7 @@ void Component::write_model_state_impl(const File &output) const {
  *
  * @param[in] module_name Module name, used to annotate options when run with -help.
  *
- * @param[out] variable pointer to an IceModelVec; @c variable has to
+ * @param[out] variable pointer to an array::Array; @c variable has to
  *             have metadata set for this to work.
  *
  * @param[in] flag Regridding flag. If set to
@@ -148,7 +156,7 @@ void Component::write_model_state_impl(const File &output) const {
  *            `-regrid_vars` are set *and* the name of the variable is
  *            found in the set of names given with `-regrid_vars`.
  */
-void Component::regrid(const std::string &module_name, IceModelVec &variable,
+void Component::regrid(const std::string &module_name, array::Array &variable,
                        RegriddingFlag flag) {
 
   auto regrid_file = m_config->get_string("input.regrid.file");
@@ -160,7 +168,7 @@ void Component::regrid(const std::string &module_name, IceModelVec &variable,
 
   SpatialVariableMetadata &m = variable.metadata();
 
-  if (((not regrid_vars.empty()) and member(m.get_string("short_name"), regrid_vars)) or
+  if (((not regrid_vars.empty()) and member(m["short_name"], regrid_vars)) or
       (regrid_vars.empty() and flag == REGRID_WITHOUT_REGRID_VARS)) {
 
     m_log->message(2,
@@ -168,7 +176,7 @@ void Component::regrid(const std::string &module_name, IceModelVec &variable,
                module_name.c_str(),
                m.get_string("short_name").c_str(), regrid_file.c_str());
 
-    variable.regrid(regrid_file, CRITICAL);
+    variable.regrid(regrid_file, io::Default::Nil());
   }
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Factory.hh"
+#include "pism/coupler/ocean/sea_level/Factory.hh"
 
 // ocean models:
 #include "pism/coupler/SeaLevel.hh"
-#include "Delta_SL.hh"
-#include "Delta_SL_2D.hh"
+#include "pism/coupler/ocean/sea_level/Delta_SL.hh"
+#include "pism/coupler/ocean/sea_level/Delta_SL_2D.hh"
 
 namespace pism {
 namespace ocean {
 namespace sea_level {
 
-Factory::Factory(IceGrid::ConstPtr grid)
+Factory::Factory(std::shared_ptr<const Grid> grid)
   : PCFactory<SeaLevel>(grid, "sea_level.models") {
 
   add_model<SeaLevel>("constant");

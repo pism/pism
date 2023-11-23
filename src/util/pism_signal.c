@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2007 Jed Brown
+ Copyright (C) 2007, 2023 Jed Brown
 
  This file is part of Pism.
 
@@ -18,7 +18,7 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "pism_signal.h"
+#include "pism/util/pism_signal.h"
 
 volatile sig_atomic_t pism_signal;
 

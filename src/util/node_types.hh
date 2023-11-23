@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,12 +36,14 @@ enum NodeType {
   NODE_EXTERIOR = 1
 };
 
-class IceModelVec2S;
-class IceModelVec2Int;
+namespace array {
+class Scalar;
+class Scalar1;
+}
 
-void compute_node_types(const IceModelVec2S &ice_thickness,
+void compute_node_types(const array::Scalar1 &ice_thickness,
                         double thickness_threshold,
-                        IceModelVec2Int &result);
+                        array::Scalar &result);
 
 } // end of namespace pism
 

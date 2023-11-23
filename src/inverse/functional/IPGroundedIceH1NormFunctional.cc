@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,16 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IPGroundedIceH1NormFunctional.hh"
+#include "pism/inverse/functional/IPGroundedIceH1NormFunctional.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace inverse {
 
-void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
+void IPGroundedIceH1NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -37,7 +37,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
-  IceModelVec::AccessList list{&x, &m_ice_mask};
+  array::AccessScope list{&x, &m_ice_mask};
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -78,7 +78,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
+void IPGroundedIceH1NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -90,7 +90,7 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   double a_e[Nk];
   double a_q[Nq_max], dadx_q[Nq_max], dady_q[Nq_max];
 
-  IceModelVec::AccessList list{&a, &b, &m_ice_mask};
+  array::AccessScope list{&a, &b, &m_ice_mask};
 
   double b_e[Nk];
   double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
@@ -141,7 +141,7 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 }
 
 
-void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
+void IPGroundedIceH1NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -153,7 +153,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
-  IceModelVec::AccessList list{&x, &gradient, &m_ice_mask};
+  array::AccessScope list{&x, &gradient, &m_ice_mask};
 
   double gradient_e[Nk];
 
@@ -221,7 +221,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   fem::DirichletData_Scalar zeroLocs(m_dirichletIndices, NULL);
 
-  IceModelVec::AccessList list(m_ice_mask);
+  array::AccessScope list(m_ice_mask);
 
   // Loop through all the elements.
   const int

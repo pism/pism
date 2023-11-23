@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,9 +20,9 @@
 #define _PISMBEDTHERMALUNIT_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 
 #include "pism/util/Diagnostic.hh"
+#include <memory>
 
 namespace pism {
 
@@ -90,7 +90,7 @@ struct BTUGrid {
   method uses second-order differencing to compute the values of \f$G_0\f$.
 
   If `n_levels` <= 1 then this object becomes very simplified: there is no internal
-  state in IceModelVec3 temp.  The update() and allocate() methods are null,
+  state in array::Array3D temp.  The update() and allocate() methods are null,
   and the top_heat_flux() method does nothing other than to copy the
   field \f$G\f$ = `bheatflx` into `result`.
 
@@ -101,10 +101,10 @@ struct BTUGrid {
 class BedThermalUnit : public Component {
 public:
 
-  static BedThermalUnit* FromOptions(IceGrid::ConstPtr g,
-                                     std::shared_ptr<const Context> ctx);
+  static std::shared_ptr<BedThermalUnit> FromOptions(std::shared_ptr<const Grid> g,
+                                                     std::shared_ptr<const Context> ctx);
 
-  BedThermalUnit(IceGrid::ConstPtr g);
+  BedThermalUnit(std::shared_ptr<const Grid> g);
 
   virtual ~BedThermalUnit() = default;
 
@@ -114,12 +114,12 @@ public:
   void init(const InputOptions &opts);
 
   //! Return the upward heat flux through the top surface of the bedrock thermal layer.
-  const IceModelVec2S& flux_through_top_surface() const;
+  const array::Scalar& flux_through_top_surface() const;
 
   //! Return the upward heat flux through the bottom surface of the bedrock thermal layer.
-  const IceModelVec2S& flux_through_bottom_surface() const;
+  const array::Scalar& flux_through_bottom_surface() const;
 
-  void update(const IceModelVec2S &bedrock_top_temperature,
+  void update(const array::Scalar &bedrock_top_temperature,
               double t, double dt);
 
   double vertical_spacing() const;
@@ -132,7 +132,7 @@ protected:
 
   virtual void init_impl(const InputOptions &opts);
 
-  virtual void update_impl(const IceModelVec2S &bedrock_top_temperature,
+  virtual void update_impl(const array::Scalar &bedrock_top_temperature,
                            double t, double dt) = 0;
 
   virtual double vertical_spacing_impl() const = 0;
@@ -143,19 +143,19 @@ protected:
   virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
-protected:
+
   //! upward heat flux through the bottom surface of the bed thermal layer
-  IceModelVec2S m_bottom_surface_flux;
+  array::Scalar m_bottom_surface_flux;
 
   //! upward heat flux through the top surface of the bed thermal layer
-  IceModelVec2S m_top_surface_flux;
+  array::Scalar m_top_surface_flux;
 };
 
 class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
 public:
   BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 } // end of namespace energy

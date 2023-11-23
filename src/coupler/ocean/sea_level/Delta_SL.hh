@@ -30,7 +30,7 @@ namespace sea_level {
 
 class Delta_SL : public SeaLevel {
 public:
-  Delta_SL(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in);
+  Delta_SL(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLevel> in);
   virtual ~Delta_SL();
 
 private:

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2021 David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
 
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "IPDesignVariableParameterization.hh"
+#include "pism/inverse/IPDesignVariableParameterization.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
 
@@ -105,13 +105,16 @@ class IP_SSATaucForwardProblem : public stressbalance::SSAFEM
 public:
 
   /// The function space for the design variable, i.e. \f$\tau_c\f$.
-  typedef IceModelVec2S DesignVec;
+  typedef array::Scalar DesignVec;
+  typedef array::Scalar1 DesignVecGhosted;
+
   /// The function space for the state variable, \f$u_{\rm SSA}\f$.
-  typedef IceModelVec2V StateVec;
+  typedef array::Vector StateVec;
+  typedef array::Vector1 StateVec1;
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$
   //! is parameterized.
-  IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
+  IP_SSATaucForwardProblem(std::shared_ptr<const Grid> g,
                            IPDesignVariableParameterization &tp);
 
   virtual ~IP_SSATaucForwardProblem() = default;
@@ -129,13 +132,13 @@ public:
     having the desired values in the fixed locations, and using set_tauc_fixed_locations()
     to indicate the nodes that should not be changed.
   */
-  virtual void set_tauc_fixed_locations(IceModelVec2Int &locations)
+  virtual void set_tauc_fixed_locations(array::Scalar &locations)
   {
     m_fixed_tauc_locations = &locations;
   }
 
   //! Returns the last solution of the %SSA as computed by \ref linearize_at.
-  virtual IceModelVec2V::Ptr solution() {
+  virtual std::shared_ptr<array::Vector> solution() {
     m_velocity_shared->copy_from(m_velocity);
     return m_velocity_shared;
   }
@@ -145,25 +148,25 @@ public:
     return m_tauc_param;
   }
 
-  virtual void set_design(IceModelVec2S &zeta);
+  virtual void set_design(array::Scalar &zeta);
 
-  virtual TerminationReason::Ptr linearize_at(IceModelVec2S &zeta);
+  virtual std::shared_ptr<TerminationReason> linearize_at(array::Scalar &zeta);
 
-  virtual void assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
-  virtual void assemble_residual(IceModelVec2V &u, Vec R);
+  virtual void assemble_residual(array::Vector &u, array::Vector &R);
+  virtual void assemble_residual(array::Vector &u, Vec R);
 
-  virtual void assemble_jacobian_state(IceModelVec2V &u, Mat J);
+  virtual void assemble_jacobian_state(array::Vector &u, Mat J);
 
-  virtual void apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &du);
-  virtual void apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du);
-  virtual void apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vector2 **du_a);
+  virtual void apply_jacobian_design(array::Vector &u, array::Scalar &dzeta, array::Vector &du);
+  virtual void apply_jacobian_design(array::Vector &u, array::Scalar &dzeta, Vec du);
+  virtual void apply_jacobian_design(array::Vector &u, array::Scalar &dzeta, Vector2d **du_a);
 
-  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, IceModelVec2S &dzeta);
-  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta);
-  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, double **dzeta);
+  virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du, array::Scalar &dzeta);
+  virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du, Vec dzeta);
+  virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du, double **dzeta);
 
-  virtual void apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du);
-  virtual void apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);
+  virtual void apply_linearization(array::Scalar &dzeta, array::Vector &du);
+  virtual void apply_linearization_transpose(array::Vector &du, array::Scalar &dzeta);
 
   //! Exposes the DMDA of the underlying grid for the benefit of TAO.
   petsc::DM& get_da() const {
@@ -173,25 +176,25 @@ public:
 protected:
 
   /// Current value of zeta, provided from caller.
-  IceModelVec2S   *m_zeta;
+  array::Scalar   *m_zeta;
   /// Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
-  IceModelVec2S   m_dzeta_local;
+  array::Scalar1   m_dzeta_local;
   /// Storage for tauc (avoids modifying fields obtained via pism::Vars)
-  IceModelVec2S m_tauc_copy;
+  array::Scalar2 m_tauc_copy;
 
   /// Locations where \f$\tau_c\f$ should not be adjusted.
-  IceModelVec2Int *m_fixed_tauc_locations;
+  array::Scalar *m_fixed_tauc_locations;
 
   /// The function taking \f$\zeta\f$ to \f$\tau_c\f$.
   IPDesignVariableParameterization &m_tauc_param;
 
   /// Copy of the velocity field managed using a shared pointer.
-  IceModelVec2V::Ptr m_velocity_shared;
+  std::shared_ptr<array::Vector> m_velocity_shared;
 
   /// Temporary storage when state vectors need to be used without ghosts.
-  IceModelVec2V  m_du_global;
+  array::Vector  m_du_global;
   /// Temporary storage when state vectors need to be used with ghosts.
-  IceModelVec2V  m_du_local;
+  array::Vector1  m_du_local;
 
   fem::ElementIterator m_element_index;
   fem::Q1Element2       m_element;

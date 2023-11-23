@@ -11,7 +11,7 @@ def create_dummy_grid():
     "Create a dummy grid"
     params = PISM.GridParameters(ctx.config)
     params.ownership_ranges_from_options(ctx.size)
-    return PISM.IceGrid(ctx.ctx, params)
+    return PISM.Grid(ctx.ctx, params)
 
 
 def setup():
@@ -25,13 +25,13 @@ def setup():
 
     grid = create_dummy_grid()
 
-    zero = PISM.IceModelVec2S(grid, "zero", PISM.WITHOUT_GHOSTS)
+    zero = PISM.Scalar(grid, "zero")
     zero.set(0.0)
 
-    cell_type = PISM.IceModelVec2CellType(grid, "mask", PISM.WITHOUT_GHOSTS)
+    cell_type = PISM.CellType(grid, "mask")
     cell_type.set(PISM.MASK_GROUNDED)
 
-    basal_heat_flux = PISM.IceModelVec2S(grid, "bheatflx", PISM.WITHOUT_GHOSTS)
+    basal_heat_flux = PISM.Scalar(grid, "bheatflx")
     basal_heat_flux.set(convert(10, "mW m-2", "W m-2"))
 
     ice_thickness = PISM.model.createIceThicknessVec(grid)
@@ -39,19 +39,19 @@ def setup():
     # TemperatureModel needs ice_thickness to set enthalpy in restart(...)
     grid.variables().add(ice_thickness)
 
-    shelf_base_temp = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
+    shelf_base_temp = PISM.Scalar(grid, "shelfbtemp")
     shelf_base_temp.set(260.0)
 
-    surface_temp = PISM.IceModelVec2S(grid, "surface_temp", PISM.WITHOUT_GHOSTS)
+    surface_temp = PISM.Scalar(grid, "surface_temp")
     surface_temp.set(260.0)
 
-    strain_heating3 = PISM.IceModelVec3(grid, "sigma", PISM.WITHOUT_GHOSTS)
+    strain_heating3 = PISM.Array3D(grid, "sigma", PISM.WITHOUT_GHOSTS)
 
-    u = PISM.IceModelVec3(grid, "u", PISM.WITHOUT_GHOSTS)
+    u = PISM.Array3D(grid, "u", PISM.WITHOUT_GHOSTS)
 
-    v = PISM.IceModelVec3(grid, "v", PISM.WITHOUT_GHOSTS)
+    v = PISM.Array3D(grid, "v", PISM.WITHOUT_GHOSTS)
 
-    w = PISM.IceModelVec3(grid, "w", PISM.WITHOUT_GHOSTS)
+    w = PISM.Array3D(grid, "w", PISM.WITHOUT_GHOSTS)
 
     ice_thickness.set(4000.0)
     u.set(0.0)

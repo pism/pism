@@ -126,6 +126,11 @@ netcdf pism_config {
     pism_config:atmosphere.frac_P.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:atmosphere.frac_P.periodic_type = "flag";
 
+    pism_config:atmosphere.given.air_temperature_interpolation = "piecewise_linear";
+    pism_config:atmosphere.given.air_temperature_interpolation_choices = "piecewise_linear,piecewise_constant";
+    pism_config:atmosphere.given.air_temperature_interpolation_doc = "Temporal interpolation type used for near-surface air temperatures";
+    pism_config:atmosphere.given.air_temperature_interpolation_type = "keyword";
+
     pism_config:atmosphere.given.file = "";
     pism_config:atmosphere.given.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:atmosphere.given.file_option = "atmosphere_given_file";
@@ -136,7 +141,7 @@ netcdf pism_config {
     pism_config:atmosphere.given.periodic_type = "flag";
 
     pism_config:atmosphere.models = "given";
-    pism_config:atmosphere.models_doc = "Comma-separated list of atmosphere melt models and modifiers.";
+    pism_config:atmosphere.models_doc = "Comma-separated list of atmosphere melt models and modifiers";
     pism_config:atmosphere.models_option = "atmosphere";
     pism_config:atmosphere.models_type = "string";
 
@@ -1074,6 +1079,10 @@ netcdf pism_config {
     pism_config:frontal_melt.models_option = "frontal_melt";
     pism_config:frontal_melt.models_type = "string";
 
+    pism_config:frontal_melt.open_ocean_margins_only = "no";
+    pism_config:frontal_melt.open_ocean_margins_only_doc = "Apply frontal melt parameterizations only at ice fronts bordering ice-free ocean areas that are connected to the open ocean";
+    pism_config:frontal_melt.open_ocean_margins_only_type = "flag";
+
     pism_config:frontal_melt.routing.file = "";
     pism_config:frontal_melt.routing.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:frontal_melt.routing.file_option = "frontal_melt_routing_file";
@@ -1545,6 +1554,20 @@ netcdf pism_config {
     pism_config:inverse.use_zeta_fixed_mask_option = "inv_use_zeta_fixed_mask";
     pism_config:inverse.use_zeta_fixed_mask_type = "flag";
 
+    pism_config:isochrones.bootstrapping.n_layers = 0;
+    pism_config:isochrones.bootstrapping.n_layers_doc = "number of isochronal layers created during bootstrapping";
+    pism_config:isochrones.bootstrapping.n_layers_type = "integer";
+    pism_config:isochrones.bootstrapping.n_layers_units = "count";
+
+    pism_config:isochrones.deposition_times = "";
+    pism_config:isochrones.deposition_times_doc = "List or a range of deposition times used to create isochronal layers";
+    pism_config:isochrones.deposition_times_type = "string";
+
+    pism_config:isochrones.max_n_layers = 100;
+    pism_config:isochrones.max_n_layers_doc = "maximum number of isochronal layers";
+    pism_config:isochrones.max_n_layers_type = "integer";
+    pism_config:isochrones.max_n_layers_units = "count";
+
     pism_config:ocean.anomaly.file = "";
     pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
     pism_config:ocean.anomaly.file_option = "ocean_anomaly_file";
@@ -1643,7 +1666,7 @@ netcdf pism_config {
     pism_config:ocean.given.periodic_type = "flag";
 
     pism_config:ocean.models = "constant";
-    pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers.";
+    pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers";
     pism_config:ocean.models_option = "ocean";
     pism_config:ocean.models_type = "string";
 
@@ -1759,17 +1782,30 @@ netcdf pism_config {
     pism_config:output.ISMIP6_ts_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
     pism_config:output.ISMIP6_ts_variables_type = "string";
 
-    pism_config:output.backup_interval = 1.0;
-    pism_config:output.backup_interval_doc = "wall-clock time between automatic backups";
-    pism_config:output.backup_interval_option = "backup_interval";
-    pism_config:output.backup_interval_type = "number";
-    pism_config:output.backup_interval_units = "hours";
+    pism_config:output.checkpoint.exit = "no";
+    pism_config:output.checkpoint.exit_doc = "If ``true`` PISM will exit with after checkpointing.";
+    pism_config:output.checkpoint.exit_type = "flag";
 
-    pism_config:output.backup_size = "small";
-    pism_config:output.backup_size_choices = "none,small,medium,big_2d,big";
-    pism_config:output.backup_size_doc = "The \"size\" of a backup file. See parameters :config:`output.sizes.medium`, :config:`output.sizes.big_2d`, :config:`output.sizes.big`";
-    pism_config:output.backup_size_option = "backup_size";
-    pism_config:output.backup_size_type = "keyword";
+    pism_config:output.checkpoint.exit_code = 85;
+    pism_config:output.checkpoint.exit_code_doc = "Exit code to use if :config:`output.checkpoint.exit` is set.";
+    pism_config:output.checkpoint.exit_code_type = "integer";
+    pism_config:output.checkpoint.exit_code_units = "none";
+
+    pism_config:output.checkpoint.file = "";
+    pism_config:output.checkpoint.file_doc = "If set, save model checkpoints to this file, otherwise build the name by appending ``_checkpoint`` to :config:`output.file`.";
+    pism_config:output.checkpoint.file_type = "string";
+
+    pism_config:output.checkpoint.interval = 1.0;
+    pism_config:output.checkpoint.interval_doc = "wall-clock time between checkpointing";
+    pism_config:output.checkpoint.interval_option = "checkpoint_interval";
+    pism_config:output.checkpoint.interval_type = "number";
+    pism_config:output.checkpoint.interval_units = "hours";
+
+    pism_config:output.checkpoint.size = "small";
+    pism_config:output.checkpoint.size_choices = "none,small,medium,big_2d,big";
+    pism_config:output.checkpoint.size_doc = "The \"size\" of a checkpoint file. See parameters :config:`output.sizes.medium`, :config:`output.sizes.big_2d`, :config:`output.sizes.big`";
+    pism_config:output.checkpoint.size_option = "checkpoint_size";
+    pism_config:output.checkpoint.size_type = "keyword";
 
     pism_config:output.compression_level = 0;
     pism_config:output.compression_level_doc = "Compression level for 2D and 3D output variables (if supported by :config:`output.format`)";
@@ -1782,7 +1818,7 @@ netcdf pism_config {
     pism_config:output.extra.append_type = "flag";
 
     pism_config:output.extra.file = "";
-    pism_config:output.extra.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file_name`.";
+    pism_config:output.extra.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file`.";
     pism_config:output.extra.file_option = "extra_file";
     pism_config:output.extra.file_type = "string";
 
@@ -1806,10 +1842,10 @@ netcdf pism_config {
     pism_config:output.extra.vars_option = "extra_vars";
     pism_config:output.extra.vars_type = "string";
 
-    pism_config:output.file_name = "unnamed.nc";
-    pism_config:output.file_name_doc = "The file to save final model results to.";
-    pism_config:output.file_name_option = "o";
-    pism_config:output.file_name_type = "string";
+    pism_config:output.file = "unnamed.nc";
+    pism_config:output.file_doc = "The file to save final model results to.";
+    pism_config:output.file_option = "o";
+    pism_config:output.file_type = "string";
 
     pism_config:output.fill_value = -2e9;
     pism_config:output.fill_value_doc = "_FillValue used when saving diagnostic quantities";
@@ -1973,7 +2009,7 @@ netcdf pism_config {
     pism_config:sea_level.constant.value_type = "number";
 
     pism_config:sea_level.models = "constant";
-    pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers.";
+    pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers";
     pism_config:sea_level.models_option = "sea_level";
     pism_config:sea_level.models_type = "string";
 
@@ -2128,6 +2164,10 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.brutal_sliding_scale_type = "number";
     pism_config:stress_balance.ssa.fd.brutal_sliding_scale_units = "1";
 
+    pism_config:stress_balance.ssa.fd.extrapolate_at_margins = "true";
+    pism_config:stress_balance.ssa.fd.extrapolate_at_margins_doc = "Extrapolate SSA velocity to ice-free cells near the margin to improve SSA velocities at advancing ice fronts";
+    pism_config:stress_balance.ssa.fd.extrapolate_at_margins_type = "flag";
+
     pism_config:stress_balance.ssa.fd.flow_line_mode = "false";
     pism_config:stress_balance.ssa.fd.flow_line_mode_doc = "Set `v` (the `y` component of the ice velocity) to zero when assembling the system";
     pism_config:stress_balance.ssa.fd.flow_line_mode_type = "flag";
@@ -2227,6 +2267,159 @@ netcdf pism_config {
     pism_config:surface.cache.update_interval_type = "integer";
     pism_config:surface.cache.update_interval_units = "365days";
 
+    pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
+    pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "Threshold temperature above which all precipitation is interpreted as rain; must exceed :config:`surface.debm_simple.air_temp_all_precip_as_snow`";
+    pism_config:surface.debm_simple.air_temp_all_precip_as_rain_type = "number";
+    pism_config:surface.debm_simple.air_temp_all_precip_as_rain_units = "Kelvin";
+
+    pism_config:surface.debm_simple.air_temp_all_precip_as_snow = 273.15;
+    pism_config:surface.debm_simple.air_temp_all_precip_as_snow_doc = "Threshold temperature below which all precipitation is interpreted as snow";
+    pism_config:surface.debm_simple.air_temp_all_precip_as_snow_type = "number";
+    pism_config:surface.debm_simple.air_temp_all_precip_as_snow_units = "Kelvin";
+
+    pism_config:surface.debm_simple.albedo_input.file = "";
+    pism_config:surface.debm_simple.albedo_input.file_doc = "Name of the file containing the variable :var:`albedo` to use instead of parameterizing it";
+    pism_config:surface.debm_simple.albedo_input.file_type = "string";
+
+    pism_config:surface.debm_simple.albedo_input.periodic = "no";
+    pism_config:surface.debm_simple.albedo_input.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.debm_simple.albedo_input.periodic_type = "flag";
+
+    pism_config:surface.debm_simple.albedo_max = 0.82;
+    pism_config:surface.debm_simple.albedo_max_doc = "Maximum (\"fresh snow\") albedo in albedo parametrization (tuning parameter)";
+    pism_config:surface.debm_simple.albedo_max_type = "number";
+    pism_config:surface.debm_simple.albedo_max_units = "1";
+
+    pism_config:surface.debm_simple.albedo_min = 0.47;
+    pism_config:surface.debm_simple.albedo_min_doc = "Minimum (\"bare ice\") albedo in albedo parametrization";
+    pism_config:surface.debm_simple.albedo_min_type = "number";
+    pism_config:surface.debm_simple.albedo_min_units = "1";
+
+    pism_config:surface.debm_simple.albedo_ocean = 0.1;
+    pism_config:surface.debm_simple.albedo_ocean_doc = "Albedo of ice-free ocean";
+    pism_config:surface.debm_simple.albedo_ocean_type = "number";
+    pism_config:surface.debm_simple.albedo_ocean_units = "1";
+
+    pism_config:surface.debm_simple.albedo_slope = -790;
+    pism_config:surface.debm_simple.albedo_slope_doc = "Slope in albedo parametrization (tuning parameter)";
+    pism_config:surface.debm_simple.albedo_slope_type = "number";
+    pism_config:surface.debm_simple.albedo_slope_units = "m2 s kg-1";
+
+    pism_config:surface.debm_simple.c1 = 29.0;
+    pism_config:surface.debm_simple.c1_doc = "Tuning parameter in the temperature-driven melt contribution";
+    pism_config:surface.debm_simple.c1_type = "number";
+    pism_config:surface.debm_simple.c1_units = "W m-2 K-1";
+
+    pism_config:surface.debm_simple.c2 = -93.0;
+    pism_config:surface.debm_simple.c2_doc = "Tuning parameter controlling the melt offset";
+    pism_config:surface.debm_simple.c2_type = "number";
+    pism_config:surface.debm_simple.c2_units = "W m-2";
+
+    pism_config:surface.debm_simple.interpret_precip_as_snow = "no";
+    pism_config:surface.debm_simple.interpret_precip_as_snow_doc = "If true, interpret *all* precipitation as snow";
+    pism_config:surface.debm_simple.interpret_precip_as_snow_type = "flag";
+
+    pism_config:surface.debm_simple.max_evals_per_year = 52;
+    pism_config:surface.debm_simple.max_evals_per_year_doc = "Maximum number of air temperature and precipitation samples per year used to build location-dependent time series for computing melt and snow accumulation; the default means use weekly samples of the annual cycle";
+    pism_config:surface.debm_simple.max_evals_per_year_type = "integer";
+    pism_config:surface.debm_simple.max_evals_per_year_units = "count";
+
+    pism_config:surface.debm_simple.melting_threshold_temp = 266.65;
+    pism_config:surface.debm_simple.melting_threshold_temp_doc = "Threshold temperature below which no melting occurs";
+    pism_config:surface.debm_simple.melting_threshold_temp_type = "number";
+    pism_config:surface.debm_simple.melting_threshold_temp_units = "Kelvin";
+
+    pism_config:surface.debm_simple.paleo.eccentricity =  0.0167;
+    pism_config:surface.debm_simple.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";
+    pism_config:surface.debm_simple.paleo.eccentricity_type = "number";
+    pism_config:surface.debm_simple.paleo.eccentricity_units = "1";
+
+    pism_config:surface.debm_simple.paleo.enabled = "false";
+    pism_config:surface.debm_simple.paleo.enabled_doc = "If true, use orbital parameters to compute top of the atmosphere insolation";
+    pism_config:surface.debm_simple.paleo.enabled_option = "debm_simple_paleo";
+    pism_config:surface.debm_simple.paleo.enabled_type = "flag";
+
+    pism_config:surface.debm_simple.paleo.file = "";
+    pism_config:surface.debm_simple.paleo.file_doc = "File containing orbital parameters (:var:`eccentricity`, :var:`obliquity`, :var:`perihelion_longitude`) for paleo-simulations";
+    pism_config:surface.debm_simple.paleo.file_option = "debm_simple_paleo_file";
+    pism_config:surface.debm_simple.paleo.file_type = "string";
+
+    pism_config:surface.debm_simple.paleo.obliquity =  23.44;
+    pism_config:surface.debm_simple.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth";
+    pism_config:surface.debm_simple.paleo.obliquity_type = "number";
+    pism_config:surface.debm_simple.paleo.obliquity_units = "degree";
+
+    pism_config:surface.debm_simple.paleo.perihelion_longitude =  102.94719;
+    pism_config:surface.debm_simple.paleo.perihelion_longitude_doc = "Mean longitude of the perihelion relative to the vernal equinox";
+    pism_config:surface.debm_simple.paleo.perihelion_longitude_type = "number";
+    pism_config:surface.debm_simple.paleo.perihelion_longitude_units = "degree";
+
+    pism_config:surface.debm_simple.paleo.periodic = "no";
+    pism_config:surface.debm_simple.paleo.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.debm_simple.paleo.periodic_type = "flag";
+
+    pism_config:surface.debm_simple.phi =  17.5;
+    pism_config:surface.debm_simple.phi_doc = "Threshold solar elevation angle above which melt is possible";
+    pism_config:surface.debm_simple.phi_type = "number";
+    pism_config:surface.debm_simple.phi_units = "degree";
+
+    pism_config:surface.debm_simple.positive_threshold_temp = 273.15;
+    pism_config:surface.debm_simple.positive_threshold_temp_doc = "Temperature threshold used to define the \"positive\" temperature";
+    pism_config:surface.debm_simple.positive_threshold_temp_type = "number";
+    pism_config:surface.debm_simple.positive_threshold_temp_units = "Kelvin";
+
+    pism_config:surface.debm_simple.refreeze = 0.6;
+    pism_config:surface.debm_simple.refreeze_doc = "Refreeze fraction: this fraction of snow melt is assumed to re-freeze. See also :config:`surface.debm_simple.refreeze_ice_melt`.";
+    pism_config:surface.debm_simple.refreeze_type = "number";
+    pism_config:surface.debm_simple.refreeze_units = "1";
+
+    pism_config:surface.debm_simple.refreeze_ice_melt = "no";
+    pism_config:surface.debm_simple.refreeze_ice_melt_doc = "If set to 'yes', refreeze :config:`surface.debm_simple.refreeze` fraction of melted ice, otherwise all of the melted ice runs off.";
+    pism_config:surface.debm_simple.refreeze_ice_melt_type = "flag";
+
+    pism_config:surface.debm_simple.solar_constant = 1361.0;
+    pism_config:surface.debm_simple.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area :cite:`Kopp2011`";
+    pism_config:surface.debm_simple.solar_constant_type = "number";
+    pism_config:surface.debm_simple.solar_constant_units = "W m-2";
+
+    pism_config:surface.debm_simple.std_dev = 5.0;
+    pism_config:surface.debm_simple.std_dev_doc = "Standard deviation of daily near-surface air temperature variation";
+    pism_config:surface.debm_simple.std_dev_type = "number";
+    pism_config:surface.debm_simple.std_dev_units = "Kelvin";
+
+    pism_config:surface.debm_simple.std_dev.file = "";
+    pism_config:surface.debm_simple.std_dev.file_doc = "The file to read :var:`air_temp_sd` (standard deviation of air temperature) from";
+    pism_config:surface.debm_simple.std_dev.file_option = "debm_simple_sd_file";
+    pism_config:surface.debm_simple.std_dev.file_type = "string";
+
+    pism_config:surface.debm_simple.std_dev.param.a = -0.15;
+    pism_config:surface.debm_simple.std_dev.param.a_doc = "Parameter `a` in `\\sigma = \\max(a\\, (T - T_{\\text{melting}}) + b, 0)`. Used only if :config:`surface.debm_simple.std_dev.param.enabled` is set to yes.";
+    pism_config:surface.debm_simple.std_dev.param.a_type = "number";
+    pism_config:surface.debm_simple.std_dev.param.a_units = "1";
+
+    pism_config:surface.debm_simple.std_dev.param.b = 0.66;
+    pism_config:surface.debm_simple.std_dev.param.b_doc = "Parameter `b` in `\\sigma = \\max(a\\, (T - T_{\\text{melting}}) + b, 0)`. Used only if :config:`surface.debm_simple.std_dev.param.enabled` is set to yes.";
+    pism_config:surface.debm_simple.std_dev.param.b_type = "number";
+    pism_config:surface.debm_simple.std_dev.param.b_units = "Kelvin";
+
+    pism_config:surface.debm_simple.std_dev.param.enabled = "no";
+    pism_config:surface.debm_simple.std_dev.param.enabled_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by :config:`geometry.ice_free_thickness_standard`.";
+    pism_config:surface.debm_simple.std_dev.param.enabled_type = "flag";
+
+    pism_config:surface.debm_simple.std_dev.periodic = "no";
+    pism_config:surface.debm_simple.std_dev.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.debm_simple.std_dev.periodic_type = "flag";
+
+    pism_config:surface.debm_simple.tau_a_intercept = 0.65;
+    pism_config:surface.debm_simple.tau_a_intercept_doc = "Intercept in the parametrization of atmosphere transmissivity";
+    pism_config:surface.debm_simple.tau_a_intercept_type = "number";
+    pism_config:surface.debm_simple.tau_a_intercept_units = "";
+
+    pism_config:surface.debm_simple.tau_a_slope = 0.000032;
+    pism_config:surface.debm_simple.tau_a_slope_doc = "Slope in the parametrization of atmosphere transmissivity";
+    pism_config:surface.debm_simple.tau_a_slope_type = "number";
+    pism_config:surface.debm_simple.tau_a_slope_units = "m-1";
+
     pism_config:surface.delta_T.file = "";
     pism_config:surface.delta_T.file_doc = "Name of the file containing temperature offsets.";
     pism_config:surface.delta_T.file_option = "surface_delta_T_file";
@@ -2275,6 +2468,11 @@ netcdf pism_config {
     pism_config:surface.force_to_thickness.alpha_type = "number";
     pism_config:surface.force_to_thickness.alpha_units = "year-1";
 
+    pism_config:surface.force_to_thickness.file = "";
+    pism_config:surface.force_to_thickness.file_doc = "The name of the file to read the target ice thickness from.";
+    pism_config:surface.force_to_thickness.file_option = "force_to_thickness_file";
+    pism_config:surface.force_to_thickness.file_type = "string";
+
     pism_config:surface.force_to_thickness.ice_free_alpha_factor = 1.0;
     pism_config:surface.force_to_thickness.ice_free_alpha_factor_doc = ":config:`surface.force_to_thickness.alpha` is multiplied by this factor in areas that are ice-free according to the target ice thickness and :config:`surface.force_to_thickness.ice_free_thickness_threshold`";
     pism_config:surface.force_to_thickness.ice_free_alpha_factor_option = "force_to_thickness_ice_free_alpha_factor";
@@ -2291,11 +2489,6 @@ netcdf pism_config {
     pism_config:surface.force_to_thickness.start_time_doc = "Starting time for the \"force to thickness\" modifier; the default is \"start from the creation of the Earth.\"";
     pism_config:surface.force_to_thickness.start_time_type = "number";
     pism_config:surface.force_to_thickness.start_time_units = "years";
-
-    pism_config:surface.force_to_thickness_file = "";
-    pism_config:surface.force_to_thickness_file_doc = "The name of the file to read the target ice thickness from.";
-    pism_config:surface.force_to_thickness_file_option = "force_to_thickness_file";
-    pism_config:surface.force_to_thickness_file_type = "string";
 
     pism_config:surface.given.file = "";
     pism_config:surface.given.file_doc = "Name of the file containing climate forcing fields.";
@@ -2325,8 +2518,13 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
     pism_config:surface.ismip6.reference_file_type = "string";
 
+    pism_config:surface.mass_balance_year_start_day = 274;
+    pism_config:surface.mass_balance_year_start_day_doc = "day of year for October 1st, beginning of the balance year in northern latitudes.";
+    pism_config:surface.mass_balance_year_start_day_type = "integer";
+    pism_config:surface.mass_balance_year_start_day_units = "ordinal day number";
+
     pism_config:surface.models = "given";
-    pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers.";
+    pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers";
     pism_config:surface.models_option = "surface";
     pism_config:surface.models_type = "string";
 
@@ -2339,11 +2537,6 @@ netcdf pism_config {
     pism_config:surface.pdd.air_temp_all_precip_as_snow_doc = "threshold temperature below which all precipitation is snow";
     pism_config:surface.pdd.air_temp_all_precip_as_snow_type = "number";
     pism_config:surface.pdd.air_temp_all_precip_as_snow_units = "Kelvin";
-
-    pism_config:surface.pdd.balance_year_start_day = 274;
-    pism_config:surface.pdd.balance_year_start_day_doc = "day of year for October 1st, beginning of the balance year in northern latitudes.";
-    pism_config:surface.pdd.balance_year_start_day_type = "integer";
-    pism_config:surface.pdd.balance_year_start_day_units = "ordinal day number";
 
     pism_config:surface.pdd.factor_ice = 0.00879120879120879;
     pism_config:surface.pdd.factor_ice_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`; = (8 mm liquid-water-equivalent) / (pos degree day)";
@@ -2545,11 +2738,6 @@ netcdf pism_config {
     pism_config:time_stepping.assume_bed_elevation_changed = "no";
     pism_config:time_stepping.assume_bed_elevation_changed_doc = "If set, assume that bed elevation changes every time step. If not set, PISM tries to avoid unnecessary computations if the bed deformation model did not update bed elevation (to reduce the computational cost a little bit).";
     pism_config:time_stepping.assume_bed_elevation_changed_type = "flag";
-
-    pism_config:time_stepping.count_steps = "no";
-    pism_config:time_stepping.count_steps_doc = "If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.";
-    pism_config:time_stepping.count_steps_option = "count_steps";
-    pism_config:time_stepping.count_steps_type = "flag";
 
     pism_config:time_stepping.hit_extra_times = "yes";
     pism_config:time_stepping.hit_extra_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.extra.times`.";

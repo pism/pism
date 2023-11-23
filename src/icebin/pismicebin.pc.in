@@ -1,0 +1,12 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}/bin
+libdir=${prefix}/lib
+includedir=${prefix}/include
+compiler=@CMAKE_CXX_COMPILER@ @CMAKE_CXX_COMPILER_ARG1@
+
+Name: pismicebin
+Description: PISM-IceBin interface library
+Version: @Pism_VERSION@
+Libs: -L${libdir} -lpismicebin
+Libs.private: -lpetsc -lpism
+Cflags: -I${includedir}

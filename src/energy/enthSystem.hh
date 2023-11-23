@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,6 @@
 namespace pism {
 
 class Config;
-class IceModelVec3;
 
 namespace energy {
 
@@ -43,24 +42,24 @@ public:
                 const std::string &prefix,
                 double dx,  double dy, double dt,
                 const Config &config,
-                const IceModelVec3 &Enth3,
-                const IceModelVec3 &u3,
-                const IceModelVec3 &v3,
-                const IceModelVec3 &w3,
-                const IceModelVec3 &strain_heating3,
+                const array::Array3D &Enth3,
+                const array::Array3D &u3,
+                const array::Array3D &v3,
+                const array::Array3D &w3,
+                const array::Array3D &strain_heating3,
                 EnthalpyConverter::Ptr EC);
-  ~enthSystemCtx();
+  ~enthSystemCtx() = default;
 
   void init(int i, int j, bool ismarginal, double ice_thickness);
 
   double k_from_T(double T) const;
 
-  void set_surface_heat_flux(double hf);
+  void set_surface_heat_flux(double heat_flux);
   void set_surface_neumann_bc(double dE);
   void set_surface_dirichlet_bc(double E_surface);
 
   void set_basal_dirichlet_bc(double E_basal);
-  void set_basal_heat_flux(double hf);
+  void set_basal_heat_flux(double heat_flux);
   void set_basal_neumann_bc(double dE);
 
   virtual void save_system(std::ostream &output, unsigned int M) const;
@@ -103,18 +102,18 @@ protected:
   double m_L_ks, m_D_ks, m_U_ks, m_B_ks;   // coefficients of the last (surface) equation
   bool m_marginal, m_k_depends_on_T;
 
-  bool m_exclude_horizontal_advection;
-  bool m_exclude_vertical_advection;
-  bool m_exclude_strain_heat;
+  bool m_margin_exclude_horizontal_advection;
+  bool m_margin_exclude_vertical_advection;
+  bool m_margin_exclude_strain_heat;
 
-  const IceModelVec3 &m_Enth3, &m_strain_heating3;
+  const array::Array3D &m_Enth3, &m_strain_heating3;
   EnthalpyConverter::Ptr m_EC;  // conductivity has known dependence on T, not enthalpy
 
   void compute_enthalpy_CTS();
   double compute_lambda();
 
   void assemble_R();
-  void checkReadyToSolve();
+  void checkReadyToSolve() const;
 };
 
 } // end of namespace energy

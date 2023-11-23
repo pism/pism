@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,20 +18,19 @@
 
 #include <cmath>
 
-#include "tests/exactTestsFG.hh"
-#include "tests/exactTestK.h"
-#include "tests/exactTestO.h"
-#include "iceCompModel.hh"
+#include "pism/verification/tests/exactTestsFG.hh"
+#include "pism/verification/tests/exactTestK.h"
+#include "pism/verification/tests/exactTestO.h"
+#include "pism/verification/iceCompModel.hh"
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/pism_options.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/earth/BedDef.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
-#include "BTU_Verification.hh"
+#include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/OceanModel.hh"
@@ -49,8 +48,8 @@ void IceCompModel::energy_step() {
 
   energy::EnergyModelStats stats;
 
-  IceModelVec2S &bedtoptemp              = *m_work2d[1];
-  IceModelVec2S &basal_enthalpy          = *m_work2d[2];
+  array::Scalar &bedtoptemp              = *m_work2d[1];
+  array::Scalar &basal_enthalpy          = *m_work2d[2];
   extract_surface(m_energy_model->enthalpy(), 0.0, basal_enthalpy);
 
   bedrock_surface_temperature(m_geometry.sea_level_elevation,
@@ -67,7 +66,7 @@ void IceCompModel::energy_step() {
   {
     inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
     inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
-    inputs.cell_type                = &m_geometry.cell_type;              // geometry
+    inputs.cell_type                = &m_geometry.cell_type;
     inputs.ice_thickness            = &m_geometry.ice_thickness;          // geometry
     inputs.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
     inputs.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
@@ -100,16 +99,16 @@ void IceCompModel::energy_step() {
 
 void IceCompModel::initTestFG() {
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness};
+  array::AccessScope list{&m_geometry.ice_thickness};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin
-    const double r = std::max(radius(*m_grid, i, j), 1.0);
+    const double r = std::max(grid::radius(*m_grid, i, j), 1.0);
 
     if (r > m_LforFG - 1.0) { // if (essentially) outside of sheet
       m_geometry.ice_thickness(i, j) = 0.0;
@@ -121,13 +120,13 @@ void IceCompModel::initTestFG() {
   m_geometry.ice_thickness.update_ghosts();
 
   {
-    IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
+    array::Scalar bed_topography(m_grid, "topg");
     bed_topography.set(0.0);
 
-    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+    array::Scalar bed_uplift(m_grid, "uplift");
     bed_uplift.set(0.0);
 
-    IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+    array::Scalar sea_level(m_grid, "sea_level");
     sea_level.set(0.0);
 
     m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness,
@@ -137,13 +136,13 @@ void IceCompModel::initTestFG() {
 
 void IceCompModel::initTestsKO() {
 
-  IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
+  array::Scalar bed_topography(m_grid, "topg");
   bed_topography.set(0.0);
 
-  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+  array::Scalar bed_uplift(m_grid, "uplift");
   bed_uplift.set(0.0);
 
-  IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+  array::Scalar sea_level(m_grid, "sea_level");
   sea_level.set(0.0);
 
   m_geometry.ice_thickness.set(3000.0);
@@ -160,22 +159,22 @@ void IceCompModel::getCompSourcesTestFG() {
 
   // before temperature and flow step, set strain_heating_c from exact values
 
-  IceModelVec::AccessList list{&m_strain_heating3_comp};
+  array::AccessScope list{&m_strain_heating3_comp};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = std::max(radius(*m_grid, i, j), 1.0); // avoid singularity at origin
+    double r = std::max(grid::radius(*m_grid, i, j), 1.0); // avoid singularity at origin
 
     if (r > m_LforFG - 1.0) {  // outside of sheet
       m_strain_heating3_comp.set_column(i, j, 0.0);
     } else {
       TestFGParameters P = exactFG(time, r, m_grid->z(), A);
 
-      m_strain_heating3_comp.set_column(i, j, &P.Sigc[0]);
+      m_strain_heating3_comp.set_column(i, j, (P.Sigc).data());
     }
   }
 
@@ -194,17 +193,17 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
-  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->temperature();
+  auto *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model.get());
+  const auto &ice_temperature = m->temperature();
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &ice_temperature};
+  array::AccessScope list{&m_geometry.ice_thickness, &ice_temperature};
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double r = radius(*m_grid, i, j);
+      const double r = grid::radius(*m_grid, i, j);
       const double *T = ice_temperature.get_column(i, j);
 
       // only evaluate error if inside sheet and not at central
@@ -247,14 +246,15 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   const double *Tb, *T;
   std::vector<double> Tex(m_grid->Mz());
 
-  energy::BTU_Verification *my_btu = dynamic_cast<energy::BTU_Verification*>(m_btu);
+  auto *my_btu = dynamic_cast<energy::BTU_Verification*>(m_btu.get());
   if (my_btu == NULL) {
     throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Verification is required");
   }
-  auto &bedrock_temp = my_btu->temperature();
+
+  const auto &bedrock_temp = my_btu->temperature();
 
   auto zblevels = bedrock_temp.levels();
-  unsigned int Mbz = (unsigned int)zblevels.size();
+  auto Mbz = zblevels.size();
   std::vector<double> Tbex(Mbz);
 
   switch (m_testname) {
@@ -280,12 +280,12 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       throw RuntimeError(PISM_ERROR_LOCATION, "ice and bedrock temperature errors only for tests K and O");
   }
 
-  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->temperature();
+  auto *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model.get());
+  const auto &ice_temperature = m->temperature();
 
-  IceModelVec::AccessList list{&ice_temperature, &bedrock_temp};
+  array::AccessScope list{&ice_temperature, &bedrock_temp};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Tb = bedrock_temp.get_column(i, j);
@@ -333,17 +333,17 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
   std::vector<double> z(1, 0.0);
 
-  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->temperature();
+  auto *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model.get());
+  const auto &ice_temperature = m->temperature();
 
-  IceModelVec::AccessList list(ice_temperature);
+  array::AccessScope list(ice_temperature);
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double r = std::max(radius(*m_grid, i, j), 1.0);
+      double r = std::max(grid::radius(*m_grid, i, j), 1.0);
 
       if (r > m_LforFG - 1.0) { // outside of sheet
         Texact = m_Tmin + m_ST * r; // = Ts
@@ -389,19 +389,19 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
     ice_rho   = m_config->get_number("constants.ice.density"),
     ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
-  const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();
+  const auto &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &strain_heating3};
+  array::AccessScope list{&m_geometry.ice_thickness, &strain_heating3};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double r = radius(*m_grid, i, j);
+      double r = grid::radius(*m_grid, i, j);
       if ((r >= 1.0) && (r <= m_LforFG - 1.0)) {
         // only evaluate error if inside sheet and not at central singularity
 
@@ -443,19 +443,19 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
     avUerr  = 0.0,
     avWerr  = 0.0;
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = m_stress_balance->velocity_u(),
     &v3 = m_stress_balance->velocity_v(),
     &w3 = m_stress_balance->velocity_w();
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &u3, &v3, &w3};
+  array::AccessScope list{&m_geometry.ice_thickness, &u3, &v3, &w3};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = m_geometry.ice_thickness(i, j);
@@ -464,7 +464,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
       const double
         x = m_grid->x(i),
         y = m_grid->y(j),
-        r = radius(*m_grid, i, j);
+        r = grid::radius(*m_grid, i, j);
 
       if ((r >= 1.0) and (r <= m_LforFG - 1.0)) {
         // only evaluate error if inside sheet and not at central singularity
@@ -513,11 +513,11 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
   // we just need one constant from exact solution:
   double bmelt = exactO(0.0).bmelt;
 
-  const IceModelVec2S &basal_melt_rate = m_energy_model->basal_melt_rate();
+  const array::Scalar &basal_melt_rate = m_energy_model->basal_melt_rate();
 
-  IceModelVec::AccessList list(basal_melt_rate);
+  array::AccessScope list(basal_melt_rate);
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double err = fabs(basal_melt_rate(i, j) - bmelt);

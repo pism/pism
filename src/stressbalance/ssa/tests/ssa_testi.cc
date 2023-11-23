@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,6 @@ static char help[] =
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
@@ -55,8 +54,8 @@ public:
                   Mx, My,
                   std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * (3.0 * L_schoof) / (My - 1))),
                   3.0 * L_schoof,
-                  CELL_CORNER,
-                  NOT_PERIODIC) {
+                  grid::CELL_CORNER,
+                  grid::NOT_PERIODIC) {
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
     m_config->set_flag("basal_resistance.pseudo_plastic.enabled", false);
@@ -89,9 +88,9 @@ void SSATestCaseI::initializeSSACoefficients() {
   m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
   m_config->set_number("stress_balance.ssa.epsilon", 0.0);  // don't use this lower bound
 
-  IceModelVec::AccessList list{&m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation, &m_geometry.bed_elevation};
+  array::AccessScope list{&m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation, &m_geometry.bed_elevation};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // Evaluate the exact solution and yield stress. Exact u, v will only be used at the
@@ -102,10 +101,9 @@ void SSATestCaseI::initializeSSACoefficients() {
 
     m_tauc(i,j) = I.tauc;
 
-    if (grid_edge(*m_grid, i, j)) {
-      m_bc_mask(i,j) = 1;
-      m_bc_values(i,j).u = I.u;
-      m_bc_values(i,j).v = I.v;
+    if (grid::domain_edge(*m_grid, i, j)) {
+      m_bc_mask(i, j)   = 1;
+      m_bc_values(i, j) = { I.u, I.v };
     }
   }
 
@@ -159,7 +157,7 @@ int main(int argc, char *argv[]) {
     unsigned int My = config->get_number("grid.My");
 
     auto method = config->get_string("stress_balance.ssa.method");
-    auto output_file = config->get_string("output.file_name");
+    auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
 

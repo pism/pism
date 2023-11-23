@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2021  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,16 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IP_SSATaucTaoTikhonovProblemLCL.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
+#include <memory>
 
 namespace pism {
 namespace inverse {
 
-typedef IceModelVec2S  DesignVec;
-typedef IceModelVec2V  StateVec;
+typedef array::Scalar  DesignVec;
+typedef array::Vector  StateVec;
 
 // typedef TikhonovProblemListener<InverseProblem> Listener;
 // typedef typename Listener::Ptr ListenerPtr;
@@ -37,46 +38,42 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
                                                                  IPFunctional<DesignVec> &designFunctional,
                                                                  IPFunctional<StateVec> &stateFunctional)
 : m_ssaforward(ssaforward),
-  m_dGlobal(d0.grid(), "design variable (global)", WITHOUT_GHOSTS, d0.stencil_width()),
+  m_dGlobal(d0.grid(), "design variable (global)"),
   m_d0(d0),
-  m_dzeta(d0.grid(),"dzeta",WITH_GHOSTS, d0.stencil_width()),
-  m_u(d0.grid(), "state variable", WITH_GHOSTS, u_obs.stencil_width()),
-  m_du(d0.grid(), "du", WITH_GHOSTS, u_obs.stencil_width()),
+  m_dzeta(d0.grid(), "dzeta"),
+  m_u(d0.grid(), "state variable"),
+  m_du(d0.grid(), "du"),
   m_u_obs(u_obs),
   m_eta(eta),
-  m_d_Jdesign(d0.grid(), "Jdesign design variable", WITH_GHOSTS, d0.stencil_width()),
-  m_u_Jdesign(d0.grid(), "Jdesign state variable", WITH_GHOSTS, u_obs.stencil_width()),
+  m_d_Jdesign(d0.grid(), "Jdesign design variable"),
+  m_u_Jdesign(d0.grid(), "Jdesign state variable"),
   m_designFunctional(designFunctional),
   m_stateFunctional(stateFunctional)
 {
 
   PetscErrorCode ierr;
-  IceGrid::ConstPtr grid = m_d0.grid();
+  std::shared_ptr<const Grid> grid = m_d0.grid();
 
   double stressScale = grid->ctx()->config()->get_number("inverse.design.param_tauc_scale");
   m_constraintsScale = grid->Lx()*grid->Ly()*4*stressScale;
 
   m_velocityScale = grid->ctx()->config()->get_number("inverse.ssa.velocity_scale", "m second-1");
 
-
-  int design_stencil_width = m_d0.stencil_width();
-  int state_stencil_width = m_u_obs.stencil_width();
-  m_d.reset(new DesignVec(grid, "design variable", WITH_GHOSTS, design_stencil_width));
+  m_d.reset(new DesignVecGhosted(grid, "design variable"));
 
   m_dGlobal.copy_from(m_d0);
 
-  m_uGlobal.reset(new StateVec(grid, "state variable (global)",
-                               WITHOUT_GHOSTS, state_stencil_width));
+  m_uGlobal.reset(new StateVec(grid, "state variable (global)"));
 
-  m_u_diff.reset(new StateVec(grid, "state residual", WITH_GHOSTS, state_stencil_width));
+  m_u_diff.reset(new StateVec1(grid, "state residual"));
 
-  m_d_diff.reset(new DesignVec(grid, "design residual", WITH_GHOSTS, design_stencil_width));
+  m_d_diff.reset(new DesignVecGhosted(grid, "design residual"));
 
-  m_grad_state.reset(new StateVec(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width));
+  m_grad_state.reset(new StateVec(grid, "state gradient"));
 
-  m_grad_design.reset(new DesignVec(grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width));
+  m_grad_design.reset(new DesignVec(grid, "design gradient"));
 
-  m_constraints.reset(new StateVec(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width));
+  m_constraints.reset(new StateVec(grid, "PDE constraints"));
 
   petsc::DM &da = m_ssaforward.get_da();
 
@@ -107,7 +104,8 @@ void IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {
   m_dGlobal.copy_from(d0);
 }
 
-IP_SSATaucTaoTikhonovProblemLCL::StateVec::Ptr IP_SSATaucTaoTikhonovProblemLCL::stateSolution() {
+std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCL::StateVec>
+IP_SSATaucTaoTikhonovProblemLCL::stateSolution() {
 
   m_x->scatterToB(m_uGlobal->vec());
   m_uGlobal->scale(m_velocityScale);
@@ -115,8 +113,9 @@ IP_SSATaucTaoTikhonovProblemLCL::StateVec::Ptr IP_SSATaucTaoTikhonovProblemLCL::
   return m_uGlobal;
 }
 
-IP_SSATaucTaoTikhonovProblemLCL::DesignVec::Ptr IP_SSATaucTaoTikhonovProblemLCL::designSolution() {
-  m_x->scatterToA(m_d->vec()); //CHKERRQ(ierr);
+std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCL::DesignVec>
+IP_SSATaucTaoTikhonovProblemLCL::designSolution() {
+  m_x->scatterToA(m_d->vec());
   return m_d;
 }
 
@@ -184,9 +183,9 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(Tao /*tao*/, 
   *value = m_val_design / m_eta + m_val_state;
 }
 
-TerminationReason::Ptr IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x) {
+std::shared_ptr<TerminationReason> IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x) {
   m_d->copy_from(m_dGlobal);
-  TerminationReason::Ptr reason = m_ssaforward.linearize_at(*m_d);
+  auto reason = m_ssaforward.linearize_at(*m_d);
   if (reason->failed()) {
     return reason;
   }

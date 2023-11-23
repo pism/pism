@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "DirichletData.hh"
+#include "pism/util/fem/DirichletData.hh"
 
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
@@ -39,8 +39,8 @@ DirichletData::~DirichletData() {
   finish(NULL);
 }
 
-void DirichletData::init(const IceModelVec2Int *indices,
-                         const IceModelVec *values,
+void DirichletData::init(const array::Scalar *indices,
+                         const array::Array *values,
                          double weight) {
   m_weight = weight;
 
@@ -54,7 +54,7 @@ void DirichletData::init(const IceModelVec2Int *indices,
   }
 }
 
-void DirichletData::finish(const IceModelVec *values) {
+void DirichletData::finish(const array::Array *values) {
   if (m_indices != NULL) {
     MPI_Comm com = m_indices->grid()->ctx()->com();
     try {
@@ -90,8 +90,8 @@ void DirichletData::constrain(Element2 &element) {
 
 // Scalar version
 
-DirichletData_Scalar::DirichletData_Scalar(const IceModelVec2Int *indices,
-                                           const IceModelVec2S *values,
+DirichletData_Scalar::DirichletData_Scalar(const array::Scalar *indices,
+                                           const array::Scalar *values,
                                            double weight)
   : m_values(values) {
   init(indices, m_values, weight);
@@ -122,10 +122,10 @@ void DirichletData_Scalar::enforce_homogeneous(const Element2 &element, double* 
 void DirichletData_Scalar::fix_residual(double const *const *const x_global, double **r_global) {
   assert(m_values != NULL);
 
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // For each node that we own:
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {
@@ -136,10 +136,10 @@ void DirichletData_Scalar::fix_residual(double const *const *const x_global, dou
 }
 
 void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // For each node that we own:
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {
@@ -150,7 +150,7 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
 }
 
 void DirichletData_Scalar::fix_jacobian(Mat J) {
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
   // have not been set. We now put an identity block in for these
@@ -161,7 +161,7 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
   const double identity = m_weight;
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*m_indices)(i, j) > 0.5) {
@@ -186,14 +186,14 @@ DirichletData_Scalar::~DirichletData_Scalar() {
 
 // Vector version
 
-DirichletData_Vector::DirichletData_Vector(const IceModelVec2Int *indices,
-                                           const IceModelVec2V *values,
+DirichletData_Vector::DirichletData_Vector(const array::Scalar *indices,
+                                           const array::Vector *values,
                                            double weight)
   : m_values(values) {
   init(indices, m_values, weight);
 }
 
-void DirichletData_Vector::enforce(const Element2 &element, Vector2* x_nodal) {
+void DirichletData_Vector::enforce(const Element2 &element, Vector2d* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(m_indices->array(), m_indices_e);
@@ -206,7 +206,7 @@ void DirichletData_Vector::enforce(const Element2 &element, Vector2* x_nodal) {
   }
 }
 
-void DirichletData_Vector::enforce_homogeneous(const Element2 &element, Vector2* x_nodal) {
+void DirichletData_Vector::enforce_homogeneous(const Element2 &element, Vector2d* x_nodal) {
   element.nodal_values(m_indices->array(), m_indices_e);
   for (int k = 0; k < element.n_chi(); k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
@@ -215,13 +215,13 @@ void DirichletData_Vector::enforce_homogeneous(const Element2 &element, Vector2*
   }
 }
 
-void DirichletData_Vector::fix_residual(Vector2 const *const *const x_global, Vector2 **r_global) {
+void DirichletData_Vector::fix_residual(Vector2d const *const *const x_global, Vector2d **r_global) {
   assert(m_values != NULL);
 
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // For each node that we own:
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {
@@ -231,11 +231,11 @@ void DirichletData_Vector::fix_residual(Vector2 const *const *const x_global, Ve
   }
 }
 
-void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
-  const IceGrid &grid = *m_indices->grid();
+void DirichletData_Vector::fix_residual_homogeneous(Vector2d **r_global) {
+  const Grid &grid = *m_indices->grid();
 
   // For each node that we own:
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {
@@ -247,7 +247,7 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
 }
 
 void DirichletData_Vector::fix_jacobian(Mat J) {
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
   // have not been set. We now put an identity block in for these
@@ -259,7 +259,7 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
                               0, m_weight};
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*m_indices)(i, j) > 0.5) {

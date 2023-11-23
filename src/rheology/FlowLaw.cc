@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,17 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "FlowLaw.hh"
+#include "pism/rheology/FlowLaw.hh"
 
 #include <petsc.h>
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Array3D.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 #include "pism/util/error_handling.hh"
 
@@ -87,8 +86,8 @@ double FlowLaw::softness_paterson_budd(double T_pa) const {
 
 //! The flow law itself.
 double FlowLaw::flow(double stress, double enthalpy,
-                     double pressure, double gs) const {
-  return this->flow_impl(stress, enthalpy, pressure, gs);
+                     double pressure, double grain_size) const {
+  return this->flow_impl(stress, enthalpy, pressure, grain_size);
 }
 
 double FlowLaw::flow_impl(double stress, double enthalpy,
@@ -160,15 +159,15 @@ double FlowLaw::hardness_impl(double E, double p) const {
  * \param[out] nu effective viscosity
  * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
  */
-void FlowLaw::effective_viscosity(double B, double gamma,
+void FlowLaw::effective_viscosity(double hardness, double gamma,
                                   double *nu, double *dnu) const {
-  effective_viscosity(B, gamma, m_schoofReg, nu, dnu);
+  effective_viscosity(hardness, gamma, m_schoofReg, nu, dnu);
 }
 
-void FlowLaw::effective_viscosity(double B, double gamma, double eps,
+void FlowLaw::effective_viscosity(double hardness, double gamma, double eps,
                                   double *nu, double *dnu) const {
   const double
-    my_nu = 0.5 * B * pow(eps + gamma, m_viscosity_power);
+    my_nu = 0.5 * hardness * pow(eps + gamma, m_viscosity_power);
 
   if (PetscLikely(nu != NULL)) {
     *nu = my_nu;
@@ -180,24 +179,24 @@ void FlowLaw::effective_viscosity(double B, double gamma, double eps,
 }
 
 void averaged_hardness_vec(const FlowLaw &ice,
-                           const IceModelVec2S &thickness,
-                           const IceModelVec3  &enthalpy,
-                           IceModelVec2S &result) {
+                           const array::Scalar &thickness,
+                           const array::Array3D  &enthalpy,
+                           array::Scalar &result) {
 
-  const IceGrid &grid = *thickness.grid();
+  const Grid &grid = *thickness.grid();
 
-  IceModelVec::AccessList list{&thickness, &result, &enthalpy};
+  array::AccessScope list{&thickness, &result, &enthalpy};
 
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // Evaluate column integrals in flow law at every quadrature point's column
       double H = thickness(i,j);
       const double *enthColumn = enthalpy.get_column(i, j);
       result(i,j) = averaged_hardness(ice, H, grid.kBelowHeight(H),
-                                      &(grid.z()[0]), enthColumn);
+                                      grid.z().data(), enthColumn);
     }
   } catch (...) {
     loop.failed();
@@ -212,12 +211,13 @@ void averaged_hardness_vec(const FlowLaw &ice,
  * See comment for hardness(). Note `E[0], ..., E[kbelowH]` must be valid.
  */
 double averaged_hardness(const FlowLaw &ice,
-                         double thickness, int kbelowH,
+                         double thickness,
+                         unsigned int kbelowH,
                          const double *zlevels,
                          const double *enthalpy) {
   double B = 0;
 
-  EnthalpyConverter &EC = *ice.EC();
+  const auto &EC = *ice.EC();
 
   // Use trapezoidal rule to integrate from 0 to zlevels[kbelowH]:
   if (kbelowH > 0) {
@@ -226,7 +226,7 @@ double averaged_hardness(const FlowLaw &ice,
       E0 = enthalpy[0],
       h0 = ice.hardness(E0, p0); // ice hardness at the left endpoint
 
-    for (int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
+    for (unsigned int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
       const double
         p1 = EC.pressure(thickness - zlevels[i]), // pressure at the right endpoint
         E1 = enthalpy[i], // enthalpy at the right endpoint

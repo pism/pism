@@ -1,4 +1,4 @@
-// Copyright (C) 2019 PISM Authors
+// Copyright (C) 2019, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,15 +21,13 @@
 
 #include "pism/coupler/FrontalMelt.hh"
 
-#include "pism/util/iceModelVec2T.hh"
-
 namespace pism {
 namespace frontalmelt {
 
 class Given : public FrontalMelt
 {
 public:
-  Given(IceGrid::ConstPtr g);
+  Given(std::shared_ptr<const Grid> g);
   virtual ~Given() = default;
 
 private:
@@ -39,9 +37,9 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  const IceModelVec2S& frontal_melt_rate_impl() const;
+  const array::Scalar& frontal_melt_rate_impl() const;
 
-  std::shared_ptr<IceModelVec2T> m_frontal_melt_rate;
+  std::shared_ptr<array::Forcing> m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

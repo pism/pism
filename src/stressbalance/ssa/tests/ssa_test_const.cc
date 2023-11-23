@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,6 @@ static char help[] =
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
@@ -60,7 +59,7 @@ class SSATestCaseConst: public SSATestCase
 public:
   SSATestCaseConst(std::shared_ptr<Context> ctx, int Mx, int My, double q,
                    SSAFactory ssafactory):
-    SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC),
+    SSATestCase(ctx, Mx, My, 50e3, 50e3, grid::CELL_CORNER, grid::NOT_PERIODIC),
     basal_q(q)
   {
     L     = units::convert(ctx->unit_system(), 50.0, "km", "m"); // 50km half-width
@@ -105,10 +104,10 @@ void SSATestCaseConst::initializeSSACoefficients() {
   m_geometry.ice_thickness.set(H0);
   m_tauc.set(tauc0);
 
-  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask,
+  array::AccessScope list{&m_bc_values, &m_bc_mask,
       &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double u, v;
@@ -183,7 +182,7 @@ int main(int argc, char *argv[]) {
     double basal_q = config->get_number("basal_resistance.pseudo_plastic.q");
 
     auto method = config->get_string("stress_balance.ssa.method");
-    auto output_file = config->get_string("output.file_name");
+    auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
 

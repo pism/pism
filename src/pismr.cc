@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@ static char help[] =
 #include "pism/icemodel/IceModel.hh"
 #include "pism/icemodel/IceEISModel.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 #include "pism/util/Context.hh"
 #include "pism/util/Profiling.hh"
@@ -34,7 +34,7 @@ static char help[] =
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_options.hh"
 
-#include "pism/regional/IceGrid_Regional.hh"
+#include "pism/regional/Grid_Regional.hh"
 #include "pism/regional/IceRegionalModel.hh"
 
 using namespace pism;
@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
 
   com = PETSC_COMM_WORLD;
 
+  int exit_code = 0;
   try {
     // Note: EISMINT II experiments G and H are not supported.
     auto eisII = options::Keyword("-eisII",
@@ -107,6 +108,7 @@ int main(int argc, char *argv[]) {
       config->import_from(*overrides);
       // process command-line options
       set_config_from_options(ctx->unit_system(), *config);
+      config->resolve_filenames();
     } else {
       required_options.emplace_back("-i");
     }
@@ -138,14 +140,14 @@ int main(int argc, char *argv[]) {
       ctx->profiling().start();
     }
 
-    IceGrid::Ptr grid;
+    std::shared_ptr<Grid> grid;
     std::unique_ptr<IceModel> model;
 
     if (options::Bool("-regional", "enable regional (outlet glacier) mode")) {
       grid = regional_grid_from_options(ctx);
       model.reset(new IceRegionalModel(grid, ctx));
     } else {
-      grid = IceGrid::FromOptions(ctx);
+      grid = Grid::FromOptions(ctx);
 
       if (eisII.is_set()) {
         char experiment = eisII.value()[0];
@@ -157,22 +159,37 @@ int main(int argc, char *argv[]) {
 
     model->init();
 
-    const bool
-      list_ascii = options::Bool("-list_diagnostics",
-                                 "List available diagnostic quantities and stop"),
-      list_json = options::Bool("-list_diagnostics_json",
-                                "List available diagnostic quantities (JSON format) and stop");
+    auto list_type = options::Keyword("-list_diagnostics",
+                                      "List available diagnostic quantities and stop.",
+                                      "all,spatial,scalar,json",
+                                      "all");
 
-    if (list_ascii) {
-      model->list_diagnostics();
-    } else if (list_json) {
-      model->list_diagnostics_json();
+    if (list_type.is_set()) {
+      model->list_diagnostics(list_type);
     } else {
-      model->run();
+      auto termination_reason = model->run();
 
-      log->message(2, "... done with run\n");
-
-      model->save_results();
+      switch (termination_reason) {
+      case PISM_CHEKPOINT:
+        {
+          exit_code = static_cast<int>(config->get_number("output.checkpoint.exit_code"));
+          log->message(2, "... stopping (exit_code=%d) after saving the checkpoint file\n",
+                       exit_code);
+          break;
+        }
+      case PISM_SIGNAL:
+        {
+          exit_code = 0;
+          break;
+        }
+      case PISM_DONE:
+        {
+          log->message(2, "... done with the run\n");
+          model->save_results();
+          exit_code = 0;
+          break;
+        }
+      }
     }
     print_unused_parameters(*log, 3, *config);
 
@@ -182,8 +199,8 @@ int main(int argc, char *argv[]) {
   }
   catch (...) {
     handle_fatal_errors(com);
-    return 1;
+    exit_code = 1;
   }
 
-  return 0;
+  return exit_code;
 }

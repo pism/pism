@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 PISM Authors
+/* Copyright (C) 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Delta_MBP.hh"
+#include "pism/coupler/ocean/Delta_MBP.hh"
 #include "pism/util/ScalarForcing.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace ocean {
 
-Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+Delta_MBP::Delta_MBP(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(*g->ctx(),
@@ -58,9 +58,9 @@ void Delta_MBP::update_impl(const Geometry &geometry, double t, double dt) {
   const auto &P = m_input_model->average_water_column_pressure();
   const auto &H = geometry.ice_thickness;
   auto &P_new = *m_water_column_pressure;
-  IceModelVec::AccessList list{&P, &H, &P_new};
+  array::AccessScope list{&P, &H, &P_new};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double dP = H(i, j) > 0.0 ? (melange_thickness * dP_melange) / H(i, j) : 0.0;
@@ -69,7 +69,7 @@ void Delta_MBP::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Delta_MBP::average_water_column_pressure_impl() const {
+const array::Scalar& Delta_MBP::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,10 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "grid_hierarchy.hh"
-#include "pism/util/fem/FEM.hh"
-#include "pism/util/node_types.hh"
-#include "pism/util/error_handling.hh"
+#include "pism/stressbalance/blatter/util/grid_hierarchy.hh"
 
 namespace pism {
 
@@ -137,7 +134,8 @@ PetscErrorCode setup_level(DM dm, int mg_levels) {
       Mz = info.mz;
     ierr = PetscPrintf(comm,
                        "Blatter grid level %d: %3d x %3d x %3d (%8d) nodes\n",
-                       (mg_levels - 1) - (int)level, Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);
+                       (mg_levels - 1) - static_cast<int>(level),
+                       Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);
   }
   return 0;
 }

@@ -28,7 +28,7 @@ class testj(PISM.ssa.SSAExactTestCase):
         Lx = halfWidth
         Ly = halfWidth
         ctx = PISM.Context().ctx
-        self.grid = PISM.IceGrid.Shallow(ctx, Lx, Ly, 0, 0,
+        self.grid = PISM.Grid.Shallow(ctx, Lx, Ly, 0, 0,
                                          self.Mx, self.My,
                                          PISM.CELL_CENTER,
                                          PISM.XY_PERIODIC)
@@ -104,4 +104,4 @@ if __name__ == '__main__':
     config = context.config
 
     tc = testj(int(config.get_number("grid.Mx")), int(config.get_number("grid.My")))
-    tc.run(config.get_string("output.file_name"))
+    tc.run(config.get_string("output.file"))

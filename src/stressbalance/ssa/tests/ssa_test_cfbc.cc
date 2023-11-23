@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,6 @@ static char help[] =
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
@@ -56,7 +55,7 @@ static double u_exact(double V0, double H0, double C, double x) {
 class SSATestCaseCFBC: public SSATestCase {
 public:
   SSATestCaseCFBC(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 250e3, 250e3, CELL_CENTER, Y_PERIODIC) {
+    : SSATestCase(ctx, Mx, My, 250e3, 250e3, grid::CELL_CENTER, grid::Y_PERIODIC) {
     V0 = units::convert(ctx->unit_system(), 300.0, "m year-1", "m second-1");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;
@@ -66,6 +65,7 @@ public:
     m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", false);
     m_config->set_flag("stress_balance.calving_front_stress_bc", true);
     m_config->set_flag("stress_balance.ssa.fd.flow_line_mode", true);
+    m_config->set_flag("stress_balance.ssa.fd.extrapolate_at_margins", false);
     m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
 
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
@@ -102,12 +102,12 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
   m_ice_enthalpy.set(enth0);
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness,
+  array::AccessScope list{&m_geometry.ice_thickness,
       &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values, &m_geometry.cell_type};
 
   const double x_min = m_grid->x(0);
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double x = m_grid->x(i);
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     unsigned int My = config->get_number("grid.My");
 
     auto method = config->get_string("stress_balance.ssa.method");
-    auto output_file = config->get_string("output.file_name");
+    auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
 

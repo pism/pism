@@ -81,7 +81,7 @@ def print_exact(args):
     U = U.subs({s: surface, n: 3}).doit()
 
     print("")
-    print("Vector2 blatter_xz_exact({args}) {{".format(args=arguments))
+    print("Vector2d blatter_xz_exact({args}) {{".format(args=arguments))
     print(return_template.format(sp.ccode(U), 0.0))
     print("}")
 
@@ -90,7 +90,7 @@ def print_source(args, header=False):
     arguments = ", ".join(["double " + x for x in args])
 
     print("")
-    print("Vector2 blatter_xz_source({args}) {{".format(args=arguments))
+    print("Vector2d blatter_xz_source({args}) {{".format(args=arguments))
     print_var(psi_1.subs(s, surface), "phi_1")
     print_var(psi_2, "phi_2")
     print_var(psi_3, "phi_3")
@@ -105,7 +105,7 @@ def print_source_bed(args, header=False):
     arguments = ", ".join(["double " + x for x in args])
 
     print("")
-    print("Vector2 blatter_xz_source_bed({args}) {{".format(args=arguments))
+    print("Vector2d blatter_xz_source_bed({args}) {{".format(args=arguments))
     print_var(psi_1.subs(s, surface), "phi_1")
     print_var(psi_2, "phi_2")
     print_var(psi_3, "phi_3")
@@ -121,7 +121,7 @@ def print_source_surface(args, header=False):
     arguments = ", ".join(["double " + x for x in args])
 
     print("")
-    print("Vector2 blatter_xz_source_surface({args}) {{".format(args=arguments))
+    print("Vector2d blatter_xz_source_surface({args}) {{".format(args=arguments))
     print_var(psi_1.subs(s, surface), "phi_1")
     print_var(psi_2, "phi_2")
     print_var(psi_3, "phi_3")

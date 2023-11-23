@@ -42,15 +42,15 @@ namespace atmosphere {
  */
 class WeatherStation : public AtmosphereModel {
 public:
-  WeatherStation(IceGrid::ConstPtr g);
+  WeatherStation(std::shared_ptr<const Grid> g);
   virtual ~WeatherStation() = default;
 
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mean_precipitation_impl() const;
-  const IceModelVec2S& mean_annual_temp_impl() const;
+  const array::Scalar& precipitation_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
@@ -66,8 +66,8 @@ protected:
 
   mutable std::vector<double> m_precip_values, m_air_temp_values;
 
-  IceModelVec2S::Ptr m_temperature;
-  IceModelVec2S::Ptr m_precipitation;
+  std::shared_ptr<array::Scalar> m_temperature;
+  std::shared_ptr<array::Scalar> m_precipitation;
 };
 
 } // end of namespace atmosphere

@@ -7,8 +7,8 @@ Atmosphere model components
 
 .. _sec-atmosphere-given:
 
-Reading boundary conditions from a file
-+++++++++++++++++++++++++++++++++++++++
+Boundary conditions read from a file
+++++++++++++++++++++++++++++++++++++
 
 :|options|: ``-atmosphere given``
 :|variables|: :var:`air_temp`, :var:`precipitation` |flux|
@@ -24,7 +24,7 @@ records correspond to.
 This model component was created to force PISM with sampled (possibly periodic) climate
 data, e.g. using monthly records of :var:`air_temp` and :var:`precipitation`.
 
-It can also used to drive a temperature-index (PDD) climatic mass balance computation
+It can also be used to drive a temperature-index (PDD) climatic mass balance computation
 (section :ref:`sec-surface-pdd`).
 
 .. rubric:: Parameters

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,20 +22,21 @@
 #include <algorithm>            // std::max
 #include <cstring>              // memset
 
-#include "Blatter.hh"
-#include "pism/util/fem/FEM.hh"
+#include "pism/stressbalance/blatter/Blatter.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 
-#include "util/DataAccess.hh"
-#include "util/grid_hierarchy.hh"
+#include "pism/stressbalance/blatter/util/DataAccess.hh"
+#include "pism/stressbalance/blatter/util/grid_hierarchy.hh"
 #include "pism/util/node_types.hh"
 
 #include "pism/rheology/FlowLawFactory.hh"
 
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/util/pism_options.hh"
+#include "pism/util/pism_utilities.hh" // pism::printf()
 
 namespace pism {
 namespace stressbalance {
@@ -54,7 +55,7 @@ namespace stressbalance {
  */
 void Blatter::compute_node_type(double min_thickness) {
 
-  IceModelVec2S node_type(m_grid, "node_type", WITH_GHOSTS);
+  array::Scalar1 node_type(m_grid, "node_type");
   node_type.set(0.0);
 
   DMDALocalInfo info;
@@ -66,7 +67,7 @@ void Blatter::compute_node_type(double min_thickness) {
 
   Parameters p[fem::q1::n_chi];
 
-  IceModelVec::AccessList l{&node_type, &m_parameters};
+  array::AccessScope l{&node_type, &m_parameters};
 
   // Loop over all the elements with at least one owned node and compute the number of icy
   // elements each node belongs to.
@@ -128,7 +129,7 @@ bool Blatter::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::Glo
 
 /*! Dirichlet BC
 */
-Vector2 Blatter::u_bc(double x, double y, double z) const {
+Vector2d Blatter::u_bc(double x, double y, double z) const {
   (void) x;
   (void) y;
   (void) z;
@@ -199,7 +200,7 @@ bool Blatter::partially_submerged_face(int face, const double *z, const double *
     below = false;
 
   for (int n = 0; n < N; ++n) {
-    int k = nodes[n];
+    auto k = nodes[n];
     if (z[k] > sea_level[k]) {
       above = true;
     } else {
@@ -254,9 +255,9 @@ bool Blatter::marine_boundary(int face,
  * @param[in] Mz number of vertical levels
  * @param[in] coarsening_factor grid coarsening factor
  */
-Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
+Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor)
   : ShallowStressBalance(grid),
-    m_parameters(grid, "bp_input_parameters", WITH_GHOSTS),
+    m_parameters(grid, "bp_input_parameters", array::WITH_GHOSTS),
     m_face4(grid->dx(), grid->dy(), fem::Q1Quadrature4()),    // 4-point Gaussian quadrature
     m_face100(grid->dx(), grid->dy(), fem::Q1QuadratureN(10)) // 100-point quadrature for grounding lines
 {
@@ -280,15 +281,15 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
     }
     sigma.back() = 1.0;
 
-    m_u_sigma.reset(new IceModelVec3(grid, "uvel_sigma", WITHOUT_GHOSTS, sigma));
-    m_u_sigma->set_attrs("diagnostic",
-                         "u velocity component on the sigma grid",
-                         "m s-1", "m s-1", "", 0);
+    m_u_sigma = std::make_shared<array::Array3D>(grid, "uvel_sigma", array::WITHOUT_GHOSTS, sigma);
+    m_u_sigma->metadata(0)
+        .long_name("u velocity component on the sigma grid")
+        .units("m s-1");
 
-    m_v_sigma.reset(new IceModelVec3(grid, "vvel_sigma", WITHOUT_GHOSTS, sigma));
-    m_v_sigma->set_attrs("diagnostic",
-                         "v velocity component on the sigma grid",
-                         "m s-1", "m s-1", "", 0);
+    m_v_sigma = std::make_shared<array::Array3D>(grid, "vvel_sigma", array::WITHOUT_GHOSTS, sigma);
+    m_v_sigma->metadata(0)
+        .long_name("v velocity component on the sigma grid")
+        .units("m s-1");
 
     std::map<std::string,std::string> z_attrs =
       {{"axis", "Z"},
@@ -378,7 +379,7 @@ static PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ct
 /*!
  * Allocates the 3D DM, the corresponding solution vector, and the SNES solver.
  */
-PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
+PetscErrorCode Blatter::setup(DM pism_da, grid::Periodicity periodicity, int Mz,
                               int coarsening_factor,
                               const std::string &prefix) {
   MPI_Comm comm;
@@ -448,8 +449,8 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
       stencil_width = 1;
 
     DMBoundaryType
-      bx = (periodicity & X_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
-      by = (periodicity & Y_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      bx = (periodicity & grid::X_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      by = (periodicity & grid::Y_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
       bz = DM_BOUNDARY_NONE;
 
     ierr = DMDACreate3d(comm,
@@ -527,16 +528,16 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
     water_density = m_config->get_number("constants.sea_water.density"),
     alpha         = ice_density / water_density;
 
-  const IceModelVec2S
+  const array::Scalar
     &tauc      = *inputs.basal_yield_stress,
     &H         = inputs.geometry->ice_thickness,
     &b         = inputs.geometry->bed_elevation,
     &sea_level = inputs.geometry->sea_level_elevation;
 
   {
-    IceModelVec::AccessList list{&tauc, &H, &b, &sea_level, &m_parameters};
+    array::AccessScope list{&tauc, &H, &b, &sea_level, &m_parameters};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -586,9 +587,9 @@ void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
   const auto &ice_thickness = inputs.geometry->ice_thickness;
   DataAccess<double***> hardness(da, 3, NOT_GHOSTED);
 
-  IceModelVec::AccessList list{enthalpy, &ice_thickness};
+  array::AccessScope list{enthalpy, &ice_thickness};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double H = ice_thickness(i, j);
@@ -658,7 +659,7 @@ void Blatter::init_impl() {
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
   if (opts.type == INIT_RESTART) {
-    File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
     bool u_sigma_found = input_file.find_variable("uvel_sigma");
     bool v_sigma_found = input_file.find_variable("vvel_sigma");
     unsigned int start = input_file.nrecords() - 1;
@@ -680,8 +681,8 @@ void Blatter::init_impl() {
 }
 
 void Blatter::define_model_state_impl(const File &output) const {
-  m_u_sigma->define(output);
-  m_v_sigma->define(output);
+  m_u_sigma->define(output, io::PISM_DOUBLE);
+  m_v_sigma->define(output, io::PISM_DOUBLE);
 }
 
 void Blatter::write_model_state_impl(const File &output) const {
@@ -697,7 +698,7 @@ void Blatter::report_mesh_info() {
 
   fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
 
-  IceModelVec::AccessList l{&m_parameters};
+  array::AccessScope l{&m_parameters};
 
   double R_min = 1e16, R_max = 0.0, R_avg = 0.0;
   double dxy = std::max(m_grid->dx(), m_grid->dy());
@@ -1092,14 +1093,14 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 }
 
 void Blatter::copy_solution() {
-  Vector2 ***x = nullptr;
+  Vector2d ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
   int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{m_u_sigma.get(), m_v_sigma.get()};
+  array::AccessScope list{m_u_sigma.get(), m_v_sigma.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto *u = m_u_sigma->get_column(i, j);
@@ -1114,13 +1115,13 @@ void Blatter::copy_solution() {
   ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
 }
 
-void Blatter::get_basal_velocity(IceModelVec2V &result) {
-  Vector2 ***x = nullptr;
+void Blatter::get_basal_velocity(array::Vector &result) {
+  Vector2d ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-  IceModelVec::AccessList list{&result};
+  array::AccessScope list{&result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = x[j][i][0];      // STORAGE_ORDER
@@ -1130,16 +1131,16 @@ void Blatter::get_basal_velocity(IceModelVec2V &result) {
 }
 
 
-void Blatter::set_initial_guess(const IceModelVec3 &u_sigma,
-                                const IceModelVec3 &v_sigma) {
-  Vector2 ***x = nullptr;
+void Blatter::set_initial_guess(const array::Array3D &u_sigma,
+                                const array::Array3D &v_sigma) {
+  Vector2d ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
   int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{&u_sigma, &v_sigma};
+  array::AccessScope list{&u_sigma, &v_sigma};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const auto *u = u_sigma.get_column(i, j);
@@ -1154,22 +1155,22 @@ void Blatter::set_initial_guess(const IceModelVec3 &u_sigma,
   ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
 }
 
-void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
+void Blatter::compute_averaged_velocity(array::Vector &result) {
   PetscErrorCode ierr;
 
-  Vector2 ***x = nullptr;
+  Vector2d ***x = nullptr;
   ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
   int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{&result, &m_parameters};
+  array::AccessScope list{&result, &m_parameters};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double H = m_parameters(i, j).thickness;
 
-    Vector2 V(0.0, 0.0);
+    Vector2d V(0.0, 0.0);
 
     if (H > 0.0) {
       // use trapezoid rule to compute the column average
@@ -1189,11 +1190,11 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
 }
 
 
-IceModelVec3::Ptr Blatter::velocity_u_sigma() const {
+std::shared_ptr<array::Array3D> Blatter::velocity_u_sigma() const {
   return m_u_sigma;
 }
 
-IceModelVec3::Ptr Blatter::velocity_v_sigma() const {
+std::shared_ptr<array::Array3D> Blatter::velocity_v_sigma() const {
   return m_v_sigma;
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG
 #define IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {
@@ -33,21 +33,21 @@ namespace inverse {
   provided weight function.  The normalization constant \f$c_N\f$ is determined 
   implicitly by normalize().
 */
-class IPLogRelativeFunctional : public IPFunctional<IceModelVec2V> {
+class IPLogRelativeFunctional : public IPFunctional<array::Vector> {
 public:
-  IPLogRelativeFunctional(IceGrid::ConstPtr grid, IceModelVec2V &u_observed, double eps,
-                          IceModelVec2S *weights=NULL) :
-    IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), m_normalization(1.), m_eps(eps) {};
+  IPLogRelativeFunctional(std::shared_ptr<const Grid> grid, array::Vector &u_observed, double eps,
+                          array::Scalar *weights=NULL) :
+    IPFunctional<array::Vector>(grid), m_u_observed(u_observed), m_weights(weights), m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRelativeFunctional() {};
 
   virtual void normalize(double scale);
 
-  virtual void valueAt(IceModelVec2V &x, double *OUTPUT);
-  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(array::Vector &x, double *OUTPUT);
+  virtual void gradientAt(array::Vector &x, array::Vector &gradient);
 
 protected:
-  IceModelVec2V &m_u_observed;
-  IceModelVec2S *m_weights;
+  array::Vector &m_u_observed;
+  array::Scalar *m_weights;
   double m_normalization;
   double m_eps;
 };

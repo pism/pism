@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2021 PISM Authors
+// Copyright (C) 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,21 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "ISMIP6Climate.hh"
+#include "pism/coupler/surface/ISMIP6Climate.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {
 
-ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid),
-    m_mass_flux_reference(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
-    m_temperature_reference(m_grid, "ice_surface_temp", WITHOUT_GHOSTS),
-    m_surface_reference(m_grid, "usurf", WITHOUT_GHOSTS)
+    m_mass_flux_reference(m_grid, "climatic_mass_balance"),
+    m_temperature_reference(m_grid, "ice_surface_temp"),
+    m_surface_reference(m_grid, "usurf")
 {
   (void) input;
 
@@ -40,28 +41,30 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
 
   // set metadata of reference fields
   {
-    m_mass_flux_reference.set_attrs("climate_forcing",
-                                    "reference surface mass balance rate",
-                                    "kg m-2 s-1", "kg m-2 year-1",
-                                    "land_ice_surface_specific_mass_balance_flux", 0);
+    m_mass_flux_reference.metadata(0)
+        .long_name("reference surface mass balance rate")
+        .units("kg m-2 s-1")
+        .output_units("kg m-2 year-1")
+        .standard_name("land_ice_surface_specific_mass_balance_flux")
+        .set_time_independent(true);
 
     auto smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
-    m_mass_flux_reference.metadata()["valid_range"] = {-smb_max, smb_max};
-    m_mass_flux_reference.set_time_independent(true);
+    m_mass_flux_reference.metadata()["valid_range"] = { -smb_max, smb_max };
 
-    m_surface_reference.set_attrs("climate_forcing",
-                                  "reference surface altitude",
-                                  "m", "m", "surface_altitude", 0);
+    m_surface_reference.metadata(0)
+        .long_name("reference surface altitude")
+        .units("m")
+        .standard_name("surface_altitude")
+        .set_time_independent(true);
 
-    m_surface_reference.metadata()["valid_range"] = {0.0, m_grid->Lz()};
-    m_surface_reference.set_time_independent(true);
+    m_surface_reference.metadata()["valid_range"] = { 0.0, m_grid->Lz() };
 
-    m_temperature_reference.set_attrs("climate_forcing",
-                                      "reference temperature",
-                                      "Kelvin", "Kelvin", "", 0);
+    m_temperature_reference.metadata(0)
+        .long_name("reference temperature")
+        .units("Kelvin")
+        .set_time_independent(true);
 
-    m_temperature_reference.metadata()["valid_range"] = {0.0, 373.15};
-    m_temperature_reference.set_time_independent(true);
+    m_temperature_reference.metadata()["valid_range"] = { 0.0, 373.15 };
   }
 
   // allocate storage for time-dependent inputs
@@ -70,63 +73,53 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     {
-      m_mass_flux_anomaly = IceModelVec2T::ForcingField(m_grid,
-                                                        file,
-                                                        "climatic_mass_balance_anomaly",
-                                                        "", // no standard name
-                                                        buffer_size,
-                                                        opt.periodic);
+      m_mass_flux_anomaly =
+          std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance_anomaly",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
 
-      m_mass_flux_anomaly->set_attrs("climate_forcing",
-                                     "surface mass balance rate anomaly",
-                                     "kg m-2 s-1", "kg m-2 year-1",
-                                     "", 0);
-
+      m_mass_flux_anomaly->metadata(0)
+          .long_name("surface mass balance rate anomaly")
+          .units("kg m-2 s-1")
+          .output_units("kg m-2 year-1");
     }
 
     {
-      m_mass_flux_gradient = IceModelVec2T::ForcingField(m_grid,
-                                                         file,
-                                                         "climatic_mass_balance_gradient",
-                                                         "", // no standard name
-                                                         buffer_size,
-                                                         opt.periodic);
+      m_mass_flux_gradient =
+          std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance_gradient",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
 
-      m_mass_flux_gradient->set_attrs("climate_forcing",
-                                      "surface mass balance rate elevation lapse rate",
-                                      "kg m-2 s-1 m-1", "kg m-2 year-1 m-1",
-                                      "", 0);
+      m_mass_flux_gradient->metadata(0)
+          .long_name("surface mass balance rate elevation lapse rate")
+          .units("kg m-2 s-1 m-1")
+          .output_units("kg m-2 year-1 m-1");
     }
 
     {
-      m_temperature_anomaly = IceModelVec2T::ForcingField(m_grid,
-                                                          file,
-                                                          "ice_surface_temp_anomaly",
-                                                          "", // no standard name
-                                                          buffer_size,
-                                                          opt.periodic);
+      m_temperature_anomaly =
+          std::make_shared<array::Forcing>(m_grid, file, "ice_surface_temp_anomaly",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
 
-      m_temperature_anomaly->set_attrs("climate_forcing",
-                                       "ice surface temperature anomaly",
-                                       "Kelvin", "Kelvin", "", 0);
+      m_temperature_anomaly->metadata(0)
+          .long_name("ice surface temperature anomaly")
+          .units("Kelvin");
     }
 
     {
-      m_temperature_gradient = IceModelVec2T::ForcingField(m_grid,
-                                                           file,
-                                                           "ice_surface_temp_gradient",
-                                                           "", // no standard name
-                                                           buffer_size,
-                                                           opt.periodic);
+      m_temperature_gradient =
+          std::make_shared<array::Forcing>(m_grid, file, "ice_surface_temp_gradient",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
 
-      m_temperature_gradient->set_attrs("climate_forcing",
-                                        "ice surface temperature elevation lapse rate",
-                                        "Kelvin m-1", "Kelvin m-1", "", 0);
+      m_temperature_gradient->metadata(0)
+          .long_name("ice surface temperature elevation lapse rate")
+          .units("Kelvin m-1");
     }
-
   }
 }
 
@@ -138,11 +131,11 @@ void ISMIP6::init_impl(const Geometry &geometry) {
   {
     // File with reference surface elevation, temperature, and climatic mass balance
     auto reference_filename = m_config->get_string("surface.ismip6.reference_file");
-    File reference_file(m_grid->com, reference_filename, PISM_GUESS, PISM_READONLY);
+    File reference_file(m_grid->com, reference_filename, io::PISM_GUESS, io::PISM_READONLY);
 
-    m_mass_flux_reference.regrid(reference_file, CRITICAL);
-    m_surface_reference.regrid(reference_file, CRITICAL);
-    m_temperature_reference.regrid(reference_file, CRITICAL);
+    m_mass_flux_reference.regrid(reference_file, io::Default::Nil());
+    m_surface_reference.regrid(reference_file, io::Default::Nil());
+    m_temperature_reference.regrid(reference_file, io::Default::Nil());
   }
 
   {
@@ -159,19 +152,19 @@ void ISMIP6::init_impl(const Geometry &geometry) {
 void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
 
   // inputs
-  const IceModelVec2S &h       = geometry.ice_surface_elevation;
-  const IceModelVec2S &h_ref   = m_surface_reference;
-  const IceModelVec2S &T_ref   = m_temperature_reference;
-  const IceModelVec2S &SMB_ref = m_mass_flux_reference;
+  const array::Scalar &h       = geometry.ice_surface_elevation;
+  const array::Scalar &h_ref   = m_surface_reference;
+  const array::Scalar &T_ref   = m_temperature_reference;
+  const array::Scalar &SMB_ref = m_mass_flux_reference;
 
-  IceModelVec2T &dTdz   = *m_temperature_gradient;
-  IceModelVec2T &dSMBdz = *m_mass_flux_gradient;
-  IceModelVec2T &aT     = *m_temperature_anomaly;
-  IceModelVec2T &aSMB   = *m_mass_flux_anomaly;
+  array::Forcing &dTdz   = *m_temperature_gradient;
+  array::Forcing &dSMBdz = *m_mass_flux_gradient;
+  array::Forcing &aT     = *m_temperature_anomaly;
+  array::Forcing &aSMB   = *m_mass_flux_anomaly;
 
   // outputs
-  IceModelVec2S &T   = *m_temperature;
-  IceModelVec2S &SMB = *m_mass_flux;
+  array::Scalar &T   = *m_temperature;
+  array::Scalar &SMB = *m_mass_flux;
 
   // get time-dependent input fields at the current time
   {
@@ -189,11 +182,9 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   // From http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland:
   // SMB(x,y,t) = SMB_ref(x,y) + aSMB(x,y,t) + dSMBdz(x,y,t) * [h(x,y,t) - h_ref(x,y)]
 
-  IceModelVec::AccessList list{&h, &h_ref,
-                               &SMB, &SMB_ref, &aSMB, &dSMBdz,
-                               &T, &T_ref, &aT, &dTdz};
+  array::AccessScope list{ &h, &h_ref, &SMB, &SMB_ref, &aSMB, &dSMBdz, &T, &T_ref, &aT, &dTdz };
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     SMB(i, j) = SMB_ref(i, j) + aSMB(i, j) + dSMBdz(i, j) * (h(i, j) - h_ref(i, j));
@@ -209,34 +200,33 @@ MaxTimestep ISMIP6::max_timestep_impl(double t) const {
   using std::min;
 
   auto dt = m_temperature_anomaly->max_timestep(t);
-  dt = min(dt, m_temperature_gradient->max_timestep(t));
-  dt = min(dt, m_mass_flux_anomaly->max_timestep(t));
-  dt = min(dt, m_mass_flux_gradient->max_timestep(t));
+  dt      = min(dt, m_temperature_gradient->max_timestep(t));
+  dt      = min(dt, m_mass_flux_anomaly->max_timestep(t));
+  dt      = min(dt, m_mass_flux_gradient->max_timestep(t));
 
   if (dt.finite()) {
     return MaxTimestep(dt.value(), "surface ISMIP6");
-  } else {
-    return MaxTimestep("surface ISMIP6");
   }
+  return MaxTimestep("surface ISMIP6");
 }
 
-const IceModelVec2S &ISMIP6::mass_flux_impl() const {
+const array::Scalar &ISMIP6::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &ISMIP6::temperature_impl() const {
+const array::Scalar &ISMIP6::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &ISMIP6::accumulation_impl() const {
+const array::Scalar &ISMIP6::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &ISMIP6::melt_impl() const {
+const array::Scalar &ISMIP6::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &ISMIP6::runoff_impl() const {
+const array::Scalar &ISMIP6::runoff_impl() const {
   return *m_runoff;
 }
 

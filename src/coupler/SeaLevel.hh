@@ -32,9 +32,9 @@ namespace sea_level {
 class SeaLevel : public Component {
 public:
   // "modifier" constructor
-  SeaLevel(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> input);
+  SeaLevel(std::shared_ptr<const Grid> g, std::shared_ptr<SeaLevel> input);
   // "model" constructor
-  SeaLevel(IceGrid::ConstPtr g);
+  SeaLevel(std::shared_ptr<const Grid> g);
 
   virtual ~SeaLevel() = default;
 
@@ -42,7 +42,7 @@ public:
 
   void update(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& elevation() const;
+  const array::Scalar& elevation() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -59,7 +59,7 @@ protected:
 
 protected:
   std::shared_ptr<SeaLevel> m_input_model;
-  IceModelVec2S m_sea_level;
+  array::Scalar m_sea_level;
 };
 
 } // end of namespace sea_level

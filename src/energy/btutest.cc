@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,13 +22,11 @@ static char help[] =
   "Tests BedThermalUnit using Test K, without IceModel.\n\n";
 
 #include "pism/util/pism_options.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
 
 #include "pism/verification/tests/exactTestK.h"
@@ -37,7 +35,6 @@ static char help[] =
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/Config.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
@@ -59,11 +56,12 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   config->set_number("grid.Mbz", 11);
   config->set_number("grid.Lbz", 1000);
 
-  // when IceGrid constructor is called, these settings are used
+  // when Grid constructor is called, these settings are used
   config->set_string("time.start", "0s");
   config->set_number("time.run_length", 1.0);
 
   set_config_from_options(sys, *config);
+  config->resolve_filenames();
 
   print_config(*logger, 3, *config);
 
@@ -105,11 +103,11 @@ int main(int argc, char *argv[]) {
     }
 
     log->message(2,
-                 "  initializing IceGrid from options ...\n");
+                 "  initializing Grid from options ...\n");
 
     Config::Ptr config = ctx->config();
 
-    GridParameters P(config);
+    grid::Parameters P(*config);
     P.Mx = 3;
     P.My = P.Mx;
     P.Lx = 1500e3;
@@ -119,23 +117,22 @@ int main(int argc, char *argv[]) {
     P.ownership_ranges_from_options(ctx->size());
 
     // create grid and set defaults
-    IceGrid::Ptr grid(new IceGrid(ctx, P));
+    std::shared_ptr<Grid> grid(new Grid(ctx, P));
 
-    auto outname = config->get_string("output.file_name");
+    auto outname = config->get_string("output.file");
 
     options::Real dt_years(ctx->unit_system(),
                            "-dt", "Time-step, in years", "years", 1.0);
 
-    // allocate tools and IceModelVecs
-    IceModelVec2S bedtoptemp(grid, "bedtoptemp", WITHOUT_GHOSTS);
-    bedtoptemp.set_attrs("",
-                         "temperature at top of bedrock thermal layer",
-                         "K", "K", "", 0);
+    // allocate tools and Arrays
+    array::Scalar bedtoptemp(grid, "bedtoptemp");
+    bedtoptemp.metadata(0).long_name("temperature at top of bedrock thermal layer").units("K");
 
-    IceModelVec2S heat_flux_at_ice_base(grid, "upward_heat_flux_at_ice_base", WITHOUT_GHOSTS);
-    heat_flux_at_ice_base.set_attrs("",
-                                    "upward geothermal flux at bedrock thermal layer base",
-                                    "W m-2", "mW m-2", "", 0);
+    array::Scalar heat_flux_at_ice_base(grid, "upward_heat_flux_at_ice_base");
+    heat_flux_at_ice_base.metadata(0)
+        .long_name("upward geothermal flux at bedrock thermal layer base")
+        .units("W m-2")
+        .output_units("mW m-2");
 
     // initialize BTU object:
     energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(ctx);
@@ -173,8 +170,8 @@ int main(int argc, char *argv[]) {
 
       // compute exact ice temperature at z=0 at time y
       {
-        IceModelVec::AccessList list(bedtoptemp);
-        for (Points p(*grid); p; p.next()) {
+        array::AccessScope list(bedtoptemp);
+        for (auto p = grid->points(); p; p.next()) {
           const int i = p.i(), j = p.j();
 
           bedtoptemp(i,j) = exactK(time, 0.0, 0).T;
@@ -220,7 +217,7 @@ int main(int argc, char *argv[]) {
     File file(grid->com,
               outname,
               string_to_backend(config->get_string("output.format")),
-              PISM_READWRITE_MOVE,
+              io::PISM_READWRITE_MOVE,
               ctx->pio_iosys_id());
 
     io::define_time(file, *ctx);

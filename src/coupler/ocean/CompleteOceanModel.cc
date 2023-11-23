@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 PISM Authors
+/* Copyright (C) 2018, 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "CompleteOceanModel.hh"
+#include "pism/coupler/ocean/CompleteOceanModel.hh"
 
 namespace pism {
 namespace ocean {
 
 // "modifier" constructor
-CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
+CompleteOceanModel::CompleteOceanModel(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> input)
   : OceanModel(g, input) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
@@ -31,16 +31,16 @@ CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g, std::shared_ptr<Ocea
 }
 
 // "model" constructor
-CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g)
+CompleteOceanModel::CompleteOceanModel(std::shared_ptr<const Grid> g)
   : CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
   // empty
 }
 
-const IceModelVec2S& CompleteOceanModel::shelf_base_temperature_impl() const {
+const array::Scalar& CompleteOceanModel::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const IceModelVec2S& CompleteOceanModel::shelf_base_mass_flux_impl() const {
+const array::Scalar& CompleteOceanModel::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

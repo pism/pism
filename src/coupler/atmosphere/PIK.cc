@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
+// Copyright (C) 2009-2018, 2023 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -21,18 +21,18 @@
 
 // This includes the PIK temperature parameterization.
 
-#include "PIK.hh"
+#include "pism/coupler/atmosphere/PIK.hh"
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace atmosphere {
 
-PIK::PIK(IceGrid::ConstPtr g)
+PIK::PIK(std::shared_ptr<const Grid> g)
   : YearlyCycle(g) {
 
   auto parameterization = m_config->get_string("atmosphere.pik.parameterization");
@@ -128,16 +128,16 @@ static double huybrechts_dewolde_mean_summer(double surface_elevation, double la
  * Parameterization of mean annual and mean summer near-surface temperature as in
  * Huybrechts & DeWolde (1999)
  */
-static void huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+static void huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
+  auto grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     T_ma(i, j) = huybrechts_dewolde_mean_annual(h(i, j), lat(i, j));
@@ -148,16 +148,16 @@ static void huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T_ma, Ic
 /*!
  * Parametrization based on multiple regression analysis of ERA INTERIM data
  */
-static void era_interim(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+static void era_interim(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
+  auto grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     T_ma(i, j) = 273.15 + 29.2 - 0.0082 * h(i, j) - 0.576 * lat(i, j) * (-1.0);
@@ -168,16 +168,16 @@ static void era_interim(const Geometry &geometry, IceModelVec2S &T_ma, IceModelV
 /*!
  * Parametrization based on multiple regression analysis of ERA INTERIM data with sin(lat)
  */
-static void era_interim_sin(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+static void era_interim_sin(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
+  auto grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     T_ma(i, j) = 273.15 - 2.0 - 0.0082 * h(i, j) + 18.4 * (sin(3.1415 * lat(i, j) / 180.0) + 0.8910) / (1 - 0.8910);
@@ -188,17 +188,17 @@ static void era_interim_sin(const Geometry &geometry, IceModelVec2S &T_ma, IceMo
 /*!
  * Parametrization based on multiple regression analysis of ERA INTERIM data with cos(lon)
  */
-static void era_interim_lon(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+static void era_interim_lon(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
+  auto grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude,
     &lon = geometry.longitude;
 
-  IceModelVec::AccessList list{&h, &lat, &lon, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &lon, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double hmod = std::max(1000.0, h(i, j));
@@ -220,16 +220,16 @@ static double martin2011_mean_annual(double elevation, double latitude) {
  * - annual mean temperature as in Martin et al. (2011)
  * - no seasonal variation of air temperature
  */
-static void martin2011(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+static void martin2011(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
+  auto grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     T_ma(i, j) = martin2011_mean_annual(h(i, j), lat(i, j));
@@ -241,16 +241,16 @@ static void martin2011(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVe
  * - annual mean temperature as in Martin et al. (2011)
  * - summer mean temperature computed as an anomaly to Huybrechts & DeWolde (1999)
  */
-static void martin_huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+static void martin_huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
+  auto grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // mean annual surface temperature as in Martin et al. 2011, equation (1)

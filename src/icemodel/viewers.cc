@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,18 +19,18 @@
 #include <cstring>
 #include <cmath>
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
+#include "pism/util/Vars.hh"
 
 namespace pism {
 
-void IceModel::view_field(const IceModelVec *field) {
+void IceModel::view_field(const array::Array *field) {
   unsigned int viewer_size = (unsigned int)m_config->get_number("output.runtime.viewer.size");
 
   if (field->ndims() != 2) {
@@ -42,10 +42,8 @@ void IceModel::view_field(const IceModelVec *field) {
 
   if (m_viewers[name].empty()) {
     for (size_t k = 0; k < field->ndof(); ++k) {
-      auto dof_name = field->metadata(k).get_string("short_name");
-      auto v = std::make_shared<petsc::Viewer>(m_grid->com,
-                                               dof_name, viewer_size,
-                                               m_grid->Lx(), m_grid->Ly());
+      auto v = std::make_shared<petsc::Viewer>(m_grid->com, field->metadata(k)["short_name"],
+                                               viewer_size, m_grid->Lx(), m_grid->Ly());
       m_viewers[name].emplace_back(v);
     }
   }

@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2021 PISM Authors
+// Copyright (C) 2011--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,26 +19,22 @@
 #ifndef _PISMOPTTILLPHIYIELDSTRESS_H_
 #define _PISMOPTTILLPHIYIELDSTRESS_H_
 
-#include "MohrCoulombYieldStress.hh"
-
-#include "pism/util/iceModelVec.hh"
+#include "pism/basalstrength/MohrCoulombYieldStress.hh"
 
 namespace pism {
-
-class IceModelVec2CellType;
 
 //! Iterative optimization of the till friction angle.
 class OptTillphiYieldStress : public MohrCoulombYieldStress {
 public:
-  OptTillphiYieldStress(IceGrid::ConstPtr g);
+  OptTillphiYieldStress(std::shared_ptr<const Grid> g);
   virtual ~OptTillphiYieldStress() = default;
 
 private:
   DiagnosticList diagnostics_impl() const;
 
-  void update_tillphi(const IceModelVec2S &ice_surface_elevation,
-                      const IceModelVec2S &bed_topography,
-                      const IceModelVec2CellType &mask);
+  void update_tillphi(const array::Scalar &ice_surface_elevation,
+                      const array::Scalar &bed_topography,
+                      const array::CellType &mask);
 
   void init_t_last(const File &input_file);
   void init_usurf_target(const File &input_file);
@@ -53,9 +49,9 @@ private:
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
-  IceModelVec2S m_mask;
-  IceModelVec2S m_usurf_difference;
-  IceModelVec2S m_usurf_target;
+  array::Scalar1 m_mask;
+  array::Scalar1 m_usurf_difference;
+  array::Scalar1 m_usurf_target;
 
   double m_dphi_scale;
 

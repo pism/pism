@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include <cmath>
 
-#include "PatersonBuddCold.hh"
+#include "pism/rheology/PatersonBuddCold.hh"
 
 namespace pism {
 namespace rheology {

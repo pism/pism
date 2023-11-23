@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _SSB_MODIFIER_H_
 #define _SSB_MODIFIER_H_
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Staggered.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
@@ -38,24 +38,24 @@ class Inputs;
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier : public Component {
 public:
-  SSB_Modifier(IceGrid::ConstPtr g);
+  SSB_Modifier(std::shared_ptr<const Grid> g);
   virtual ~SSB_Modifier() = default;
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &sliding_velocity,
+  virtual void update(const array::Vector &sliding_velocity,
                       const Inputs &inputs,
                       bool full_update) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  const IceModelVec2Stag& diffusive_flux();
+  const array::Staggered& diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   double max_diffusivity() const;
 
-  const IceModelVec3& velocity_u() const;
+  const array::Array3D& velocity_u() const;
 
-  const IceModelVec3& velocity_v() const;
+  const array::Array3D& velocity_v() const;
 
   virtual std::string stdout_report() const;
 
@@ -65,20 +65,20 @@ protected:
   std::shared_ptr<rheology::FlowLaw> m_flow_law;
   EnthalpyConverter::Ptr m_EC;
   double m_D_max;
-  IceModelVec2Stag m_diffusive_flux;
-  IceModelVec3 m_u, m_v;
+  array::Staggered1 m_diffusive_flux;
+  array::Array3D m_u, m_v;
 };
 
 
 //! The trivial Shallow Stress Balance modifier.
 class ConstantInColumn : public SSB_Modifier {
 public:
-  ConstantInColumn(IceGrid::ConstPtr g);
+  ConstantInColumn(std::shared_ptr<const Grid> g);
   virtual ~ConstantInColumn() = default;
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &sliding_velocity,
+  virtual void update(const array::Vector &sliding_velocity,
                       const Inputs &inputs,
                       bool full_update);
 };

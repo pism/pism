@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,6 @@ static char help[] =
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
@@ -52,7 +51,7 @@ class SSATestCasePlug: public SSATestCase {
 public:
   SSATestCasePlug(std::shared_ptr<Context> ctx, int Mx, int My,
                   double n, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC) {
+    : SSATestCase(ctx, Mx, My, 50e3, 50e3, grid::CELL_CORNER, grid::NOT_PERIODIC) {
     H0    = 2000.;              // m
     L     = 50.e3;              // 50km half-width
     dhdx  = 0.001;              // pure number, slope of surface & bed
@@ -109,9 +108,9 @@ void SSATestCasePlug::initializeSSACoefficients() {
   // Set boundary conditions (Dirichlet all the way around).
   m_bc_mask.set(0.0);
 
-  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask, &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
+  array::AccessScope list{&m_bc_values, &m_bc_mask, &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
@@ -183,7 +182,7 @@ int main(int argc, char *argv[]) {
     unsigned int My = config->get_number("grid.My");
 
     auto method      = config->get_string("stress_balance.ssa.method");
-    auto output_file = config->get_string("output.file_name");
+    auto output_file = config->get_string("output.file");
     auto glen_n      = config->get_number("stress_balance.ssa.Glen_exponent");
 
     bool write_output = config->get_string("output.size") != "none";

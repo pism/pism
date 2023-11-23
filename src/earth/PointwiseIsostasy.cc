@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "BedDef.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/earth/BedDef.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
@@ -26,15 +26,13 @@
 namespace pism {
 namespace bed {
 
-PointwiseIsostasy::PointwiseIsostasy(IceGrid::ConstPtr g)
-  : BedDef(g),
-    m_load_last(m_grid, "load_last", WITHOUT_GHOSTS)
-{
+PointwiseIsostasy::PointwiseIsostasy(std::shared_ptr<const Grid> grid)
+    : BedDef(grid), m_load_last(m_grid, "load_last") {
   // empty
 }
 
-void PointwiseIsostasy::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                                  const IceModelVec2S &sea_level_elevation) {
+void PointwiseIsostasy::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                                  const array::Scalar &sea_level_elevation) {
 
   m_log->message(2,
                  "* Initializing the pointwise isostasy bed deformation model...\n");
@@ -46,10 +44,10 @@ void PointwiseIsostasy::init_impl(const InputOptions &opts, const IceModelVec2S 
 }
 
 
-void PointwiseIsostasy::bootstrap_impl(const IceModelVec2S &bed_elevation,
-                                       const IceModelVec2S &bed_uplift,
-                                       const IceModelVec2S &ice_thickness,
-                                       const IceModelVec2S &sea_level_elevation) {
+void PointwiseIsostasy::bootstrap_impl(const array::Scalar &bed_elevation,
+                                       const array::Scalar &bed_uplift,
+                                       const array::Scalar &ice_thickness,
+                                       const array::Scalar &sea_level_elevation) {
   BedDef::bootstrap_impl(bed_elevation, bed_uplift, ice_thickness, sea_level_elevation);
 
   // store initial load and bed elevation
@@ -63,8 +61,8 @@ MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
 }
 
 //! Updates the pointwise isostasy model.
-void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &sea_level_elevation,
+void PointwiseIsostasy::update_impl(const array::Scalar &ice_thickness,
+                                    const array::Scalar &sea_level_elevation,
                                     double t, double dt) {
   (void) t;
 
@@ -77,12 +75,12 @@ void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
 
   //! Our goal: topg = topg_last - f*(load - load_last)
 
-  IceModelVec::AccessList list{&m_topg, &m_topg_last,
+  array::AccessScope list{&m_topg, &m_topg_last,
                                &ice_thickness, &sea_level_elevation, &m_load_last};
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double load = compute_load(m_topg(i, j),

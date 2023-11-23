@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,10 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PADTFORCING_H_
-#define _PADTFORCING_H_
-
-#include <memory>
+#ifndef PISM_ATMOSPHERE_DELTA_T
+#define PISM_ATMOSPHERE_DELTA_T
 
 #include "pism/coupler/AtmosphereModel.hh"
 
@@ -31,26 +29,31 @@ namespace atmosphere {
 
 class Delta_T : public AtmosphereModel {
 public:
-  Delta_T(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
-  virtual ~Delta_T() {}
-protected:
+  Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in);
+  virtual ~Delta_T() = default;
+
+private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mean_annual_temp_impl() const;
+  void begin_pointwise_access_impl() const;
+  void end_pointwise_access_impl() const;
+
+  const array::Scalar& air_temperature_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
-private:
-  IceModelVec2S::Ptr m_temperature;
-
-  std::unique_ptr<ScalarForcing> m_forcing;
 
   mutable std::vector<double> m_offset_values;
-};
 
+  std::shared_ptr<ScalarForcing> m_1d_offsets;
+
+  std::shared_ptr<array::Forcing> m_2d_offsets;
+
+  std::shared_ptr<array::Scalar> m_temperature;
+};
 
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PADTFORCING_H_ */
+#endif /* PISM_ATMOSPHERE_DELTA_T */

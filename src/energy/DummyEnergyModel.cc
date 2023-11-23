@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,15 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EnthalpyModel.hh"
+#include "pism/energy/EnthalpyModel.hh"
 #include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace energy {
 
-DummyEnergyModel::DummyEnergyModel(IceGrid::ConstPtr grid,
-                                   stressbalance::StressBalance *stress_balance)
-  : EnthalpyModel(grid, stress_balance) {
+DummyEnergyModel::DummyEnergyModel(
+    std::shared_ptr<const Grid> grid,
+    std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : EnthalpyModel(grid, stress_balance) {
   // empty
 }
 
@@ -37,10 +38,10 @@ void DummyEnergyModel::restart_impl(const File &input_file, int record) {
 }
 
 void DummyEnergyModel::bootstrap_impl(const File &input_file,
-                                   const IceModelVec2S &ice_thickness,
-                                   const IceModelVec2S &surface_temperature,
-                                   const IceModelVec2S &climatic_mass_balance,
-                                   const IceModelVec2S &basal_heat_flux) {
+                                   const array::Scalar &ice_thickness,
+                                   const array::Scalar &surface_temperature,
+                                   const array::Scalar &climatic_mass_balance,
+                                   const array::Scalar &basal_heat_flux) {
   EnthalpyModel::bootstrap_impl(input_file,
                                 ice_thickness, surface_temperature,
                                 climatic_mass_balance, basal_heat_flux);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,11 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "timestepping.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/stressbalance/timestepping.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/array/Array3D.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
 
@@ -40,18 +41,18 @@ Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.
 Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect the output.
  */
-CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2CellType &cell_type,
-                            const IceModelVec3 &u3,
-                            const IceModelVec3 &v3,
-                            const IceModelVec3 &w3) {
+CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
+                            const array::CellType &cell_type,
+                            const array::Array3D &u3,
+                            const array::Array3D &v3,
+                            const array::Array3D &w3) {
 
-  IceGrid::ConstPtr grid = ice_thickness.grid();
+  auto grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
 
-  IceModelVec::AccessList list{&ice_thickness, &u3, &v3, &w3, &cell_type};
+  array::AccessScope list{&ice_thickness, &u3, &v3, &w3, &cell_type};
 
   // update global max of abs of velocities for CFL; only velocities under surface
   const double
@@ -61,7 +62,7 @@ CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
   double u_max = 0.0, v_max = 0.0, w_max = 0.0;
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.icy(i, j)) {
@@ -113,11 +114,11 @@ CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
   That is, because the map-plane mass continuity is advective in the
   sliding case we have a CFL condition.
  */
-CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2CellType &cell_type,
-                            const IceModelVec2V &velocity) {
+CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
+                            const array::CellType &cell_type,
+                            const array::Vector &velocity) {
 
-  IceGrid::ConstPtr grid = ice_thickness.grid();
+  auto grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
@@ -126,10 +127,10 @@ CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
     dx = grid->dx(),
     dy = grid->dy();
 
-  IceModelVec::AccessList list{&velocity, &cell_type};
+  array::AccessScope list{&velocity, &cell_type};
 
   double u_max = 0.0, v_max = 0.0;
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.icy(i, j)) {
@@ -155,6 +156,16 @@ CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
   result.dt_max = MaxTimestep(GlobalMin(grid->com, dt_max));
 
   return result;
+}
+
+MaxTimestep max_timestep_diffusivity(double D_max, double dx, double dy,
+                                     double adaptive_timestepping_ratio) {
+  if (D_max > 0.0) {
+    double grid_factor = 1.0 / (dx * dx) + 1.0 / (dy * dy);
+    return MaxTimestep(adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor), "diffusivity");
+  }
+
+  return {};
 }
 
 } // end of namespace pism

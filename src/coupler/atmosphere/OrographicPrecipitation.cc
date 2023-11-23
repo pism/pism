@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,19 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "OrographicPrecipitation.hh"
+#include "pism/coupler/atmosphere/OrographicPrecipitation.hh"
 
-#include "OrographicPrecipitationSerial.hh"
+#include "pism/coupler/atmosphere/OrographicPrecipitationSerial.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/Time.hh"
+#include "pism/util/Grid.hh"
 
 namespace pism {
 namespace atmosphere {
 
-OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr grid,
+OrographicPrecipitation::OrographicPrecipitation(std::shared_ptr<const Grid> grid,
                                                  std::shared_ptr<AtmosphereModel> in)
     : AtmosphereModel(grid, in) {
 
@@ -40,8 +39,8 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr grid,
     Mx = m_grid->Mx(),
     My = m_grid->My(),
     Z  = m_config->get_number("atmosphere.orographic_precipitation.grid_size_factor"),
-    Nx = m_grid->periodicity() & X_PERIODIC ? Mx : Z * (Mx - 1) + 1,
-    Ny = m_grid->periodicity() & Y_PERIODIC ? My : Z * (My - 1) + 1;
+    Nx = m_grid->periodicity() & grid::X_PERIODIC ? Mx : Z * (Mx - 1) + 1,
+    Ny = m_grid->periodicity() & grid::Y_PERIODIC ? My : Z * (My - 1) + 1;
 
   ParallelSection rank0(m_grid->com);
   try {
@@ -61,7 +60,7 @@ OrographicPrecipitation::~OrographicPrecipitation() {
   // empty
 }
 
-const IceModelVec2S &OrographicPrecipitation::mean_precipitation_impl() const {
+const array::Scalar &OrographicPrecipitation::precipitation_impl() const {
   return *m_precipitation;
 }
 

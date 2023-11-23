@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PAGIVEN_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 
@@ -31,14 +30,14 @@ namespace atmosphere {
 class Given : public AtmosphereModel
 {
 public:
-  Given(IceGrid::ConstPtr g);
+  Given(std::shared_ptr<const Grid> g);
   virtual ~Given() = default;
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mean_precipitation_impl() const;
-  const IceModelVec2S& mean_annual_temp_impl() const;
+  const array::Scalar& precipitation_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
@@ -47,8 +46,8 @@ private:
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  std::shared_ptr<IceModelVec2T> m_precipitation;
-  std::shared_ptr<IceModelVec2T> m_air_temp;
+  std::shared_ptr<array::Forcing> m_precipitation;
+  std::shared_ptr<array::Forcing> m_air_temp;
 };
 
 } // end of namespace atmosphere

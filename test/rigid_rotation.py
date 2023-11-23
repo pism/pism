@@ -10,7 +10,6 @@ diffusive, which is not a surprise."""
 
 log = PISM.Context().log
 
-
 def disc(thickness, x0, y0, H, R):
     """Set ice thickness to H within the disc centered at (x0,y0) of
     radius R and 0 elsewhere.
@@ -82,19 +81,34 @@ def quiver(v, **kwargs):
 
 class MassTransport(object):
 
-    def __init__(self, grid, part_grid=False):
+    def __init__(self, grid, scheme="pism", part_grid=False):
 
+        self.new_scheme = False
         self.grid = grid
 
-        if part_grid:
-            grid.ctx().config().set_flag("geometry.part_grid.enabled", True)
-
-        self.v = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
-        self.Q = PISM.IceModelVec2Stag(grid, "Q", PISM.WITHOUT_GHOSTS)
-        self.v_bc_mask = PISM.IceModelVec2Int(grid, "v_bc_mask", PISM.WITHOUT_GHOSTS)
-        self.H_bc_mask = PISM.IceModelVec2Int(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
+        self.v = PISM.Vector(grid, "velocity")
+        self.Q = PISM.Staggered(grid, "Q")
+        self.H_bc_mask = PISM.Scalar(grid, "H_bc_mask")
 
         self.ge = PISM.GeometryEvolution(grid)
+
+        if scheme == "pism":
+            self.new_scheme = False
+
+            if part_grid:
+                grid.ctx().config().set_flag("geometry.part_grid.enabled", True)
+        elif scheme == "mpdata":
+            self.transport_scheme = PISM.MPDATA2(grid, 2)
+            self.new_scheme = True
+        else:
+            schemes = {"upwind" : PISM.PISM_UNO_UPWIND1,
+                       "lax-wendroff": PISM.PISM_UNO_LAX_WENDROFF,
+                       "fromm": PISM.PISM_UNO_FROMM,
+                       "uno2": PISM.PISM_UNO_2,
+                       "uno3": PISM.PISM_UNO_3}
+
+            self.transport_scheme = PISM.UNO(grid, schemes[scheme])
+            self.new_scheme = True
 
         self.geometry = PISM.Geometry(grid)
 
@@ -116,13 +130,14 @@ class MassTransport(object):
 
         set_velocity(self.v)
 
-    def plot_thickness(self, levels, title):
-        import pylab as plt
-        cm = plt.contour(self.grid.x(), self.grid.y(),
-                         self.geometry.ice_thickness.numpy(), levels=levels)
-        plt.clabel(cm)
-        plt.grid()
-        plt.title(title)
+        self.Q.set(0.0)
+
+    def plot_thickness(self, ax, levels):
+
+        cm = ax.contour(self.grid.x(), self.grid.y(),
+                        self.geometry.ice_thickness.numpy(), levels=levels)
+        ax.clabel(cm)
+        ax.grid()
 
     def step(self, t_final, C=1):
         geometry = self.geometry
@@ -130,23 +145,28 @@ class MassTransport(object):
         j = 0
         while t < t_final:
 
-            dt = PISM.max_timestep_cfl_2d(geometry.ice_thickness,
-                                          geometry.cell_type,
-                                          self.v).dt_max.value() * C
+            cfl = PISM.max_timestep_cfl_2d(geometry.ice_thickness,
+                                           geometry.cell_type,
+                                           self.v)
+            dt = cfl.dt_max.value() * C
 
             if t + dt > t_final:
                 dt = t_final - t
 
-            log.message(2, "{}, {}\n".format(t, dt))
+            log.message(3, "{}, {}\n".format(t, dt))
 
-            self.ge.flow_step(geometry, dt,
-                              self.v,
-                              self.Q,
-                              self.v_bc_mask,
-                              self.H_bc_mask)
+            if not self.new_scheme:
+                self.ge.flow_step(geometry, dt,
+                                  self.v,
+                                  self.Q,
+                                  self.H_bc_mask)
 
-            geometry.ice_thickness.add(1.0, self.ge.thickness_change_due_to_flow())
-            geometry.ice_area_specific_volume.add(1.0, self.ge.area_specific_volume_change_due_to_flow())
+                geometry.ice_thickness.add(1.0, self.ge.thickness_change_due_to_flow())
+                geometry.ice_area_specific_volume.add(1.0, self.ge.area_specific_volume_change_due_to_flow())
+            else:
+                self.transport_scheme.update(dt, geometry.cell_type, geometry.ice_thickness, self.v, True)
+                geometry.ice_thickness.copy_from(self.transport_scheme.x())
+
             geometry.ensure_consistency(0.0)
 
             t += dt
@@ -154,37 +174,51 @@ class MassTransport(object):
 
 def volume(geometry):
     cell_area = geometry.ice_thickness.grid().cell_area()
-    volume = ((geometry.ice_thickness.numpy() + geometry.ice_area_specific_volume.numpy()) *
-              cell_area)
-    return volume.sum()
+    return (PISM.sum(geometry.ice_thickness) + PISM.sum(geometry.ice_area_specific_volume)) * cell_area
 
 def test():
     ctx = PISM.Context()
     Mx = int(ctx.config.get_number("grid.Mx"))
     My = int(ctx.config.get_number("grid.My"))
-    grid = PISM.IceGrid_Shallow(ctx.ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.Grid_Shallow(ctx.ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
-    import pylab as plt
-    plt.rcParams['figure.figsize'] = (8.0, 8.0)
+    from matplotlib import pyplot as plt
 
-    mt = MassTransport(grid)
+    fig, ax = plt.subplots()
+    fig.set_size_inches(8, 8)
+
+    opt = PISM.OptionString("-scheme", "mass transport scheme", "pism")
+
+    mt = MassTransport(grid, opt.value())
 
     mt.reset()
-    levels = np.linspace(0, 1, 11)
+    levels = np.linspace(0, 2, 41)[1:]
 
-    t = 0
-    dt = 0.333
-    C = 1.0
+    t0 = 0
+    tf = 1
+    t = t0
+    dt = 0.25
+    C = PISM.OptionReal(ctx.unit_system, "-cfl", "CFL number", "1", 0.5).value()
+    N = int(tf / dt)
 
-    for j in [1, 2, 4, 3]:
-        plt.subplot(2, 2, j)
-        mt.plot_thickness(levels, "time={}, V={}".format(t, volume(mt.geometry)))
+    mt.plot_thickness(ax, levels)
 
+    Range = mt.geometry.ice_thickness.range()
+    print(f"time={t}, min={Range[0]}, max={Range[1]}, V={volume(mt.geometry)}")
+
+    for j in range(N):
         mt.step(dt, C)
         t += dt
 
+        mt.plot_thickness(ax, levels)
+
+        Range = mt.geometry.ice_thickness.range()
+
+        print(f"time={t}, min={Range[0]}, max={Range[1]}, V={volume(mt.geometry)}")
+
     plt.show()
 
+    mt.geometry.ice_thickness.dump(ctx.config.get_string("output.file"))
 
 if __name__ == "__main__":
     test()

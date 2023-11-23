@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,34 +16,37 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Constant.hh"
+#include "pism/coupler/frontalmelt/Constant.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace frontalmelt {
 
-Constant::Constant(IceGrid::ConstPtr g)
+Constant::Constant(std::shared_ptr<const Grid> g)
   : FrontalMelt(g) {
-  m_frontal_melt_rate = allocate_frontal_melt_rate(g);
+  m_frontal_melt_rate = std::make_shared<array::Scalar>(g, "frontal_melt_rate");
+  m_frontal_melt_rate->metadata(0)
+      .long_name("frontal melt rate")
+      .units("m s-1")
+      .output_units("m day-1");
 }
 
 void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   (void) t;
   (void) dt;
 
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
+  const auto &cell_type = inputs.geometry->cell_type;
 
   const double
     melt_rate = m_config->get_number("frontal_melt.constant.melt_rate", "m second-1");
 
-  IceModelVec::AccessList list{&cell_type, m_frontal_melt_rate.get()};
+  array::AccessScope list{&cell_type, m_frontal_melt_rate.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (apply(cell_type, i, j)) {
@@ -54,7 +57,7 @@ void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt)
   }
 }
 
-const IceModelVec2S& Constant::frontal_melt_rate_impl() const {
+const array::Scalar& Constant::frontal_melt_rate_impl() const {
   return *m_frontal_melt_rate;
 }
   

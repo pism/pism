@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021 PISM Authors
+/* Copyright (C) 2018, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,14 +20,14 @@
 #ifndef WEERTMANSLIDING_H
 #define WEERTMANSLIDING_H
 
-#include "ShallowStressBalance.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 
 namespace pism {
 namespace stressbalance {
 
 class WeertmanSliding : public ShallowStressBalance {
 public:
-  WeertmanSliding(IceGrid::ConstPtr g);
+  WeertmanSliding(std::shared_ptr<const Grid> g);
   virtual ~WeertmanSliding() = default;
   virtual void update(const Inputs &inputs, bool full_update);
 protected:

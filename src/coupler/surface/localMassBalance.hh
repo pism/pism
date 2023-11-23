@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,8 @@
 #ifndef __localMassBalance_hh
 #define __localMassBalance_hh
 
-
-#include <gsl/gsl_rng.h>
-
-#include "pism/util/iceModelVec.hh"  // only needed for FaustoGrevePDDObject
+#include "pism/util/array/Scalar.hh"  // only needed for FaustoGrevePDDObject
+#include "pism/util/ConfigInterface.hh" // needed to get Config::ConstPtr
 
 namespace pism {
 namespace surface {
@@ -153,8 +151,6 @@ public:
                double accumulation);
 
 protected:
-  double CalovGreveIntegrand(double sigma, double TacC);
-
   //! interpret all the precipitation as snow (no rain)
   bool precip_as_snow;
   //! refreeze melted ice
@@ -187,7 +183,7 @@ public:
 
   PDDrandMassBalance(Config::ConstPtr config,
                      units::System::Ptr system,
-                     Kind repeatable);
+                     Kind kind);
   virtual ~PDDrandMassBalance();
 
   virtual unsigned int get_timeseries_length(double dt);
@@ -197,7 +193,8 @@ public:
                         const std::vector<double> &T,
                         std::vector<double> &PDDs);
 protected:
-  gsl_rng *pddRandGen;
+  struct Impl;
+  Impl *m_impl;
 };
 
 
@@ -218,19 +215,19 @@ protected:
 class FaustoGrevePDDObject {
 
 public:
-  FaustoGrevePDDObject(IceGrid::ConstPtr g);
+  FaustoGrevePDDObject(std::shared_ptr<const Grid> g);
   virtual ~FaustoGrevePDDObject() = default;
 
-  void update_temp_mj(const IceModelVec2S &surfelev,
-                              const IceModelVec2S &lat,
-                              const IceModelVec2S &lon);
+  void update_temp_mj(const array::Scalar &surfelev,
+                      const array::Scalar &lat,
+                      const array::Scalar &lon);
 
   /*! If this method is called, it is assumed that i,j is in the ownership range
-    for IceModelVec2S temp_mj. */
+    for array::Scalar temp_mj. */
   LocalMassBalance::DegreeDayFactors degree_day_factors(int i, int j, double latitude);
 
 protected:
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const Grid> m_grid;
   const Config::ConstPtr m_config;
 
   double m_beta_ice_w;
@@ -244,7 +241,7 @@ protected:
   double m_pdd_fausto_latitude_beta_w;
   double m_refreeze_fraction;
 
-  IceModelVec2S m_temp_mj;
+  array::Scalar m_temp_mj;
 };
 
 

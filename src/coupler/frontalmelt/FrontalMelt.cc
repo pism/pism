@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020 Constantine Khroulev and Andy Aschwanden
+/* Copyright (C) 2018, 2019, 2020, 2022, 2023 Constantine Khroulev and Andy Aschwanden
  *
  * This file is part of PISM.
  *
@@ -18,7 +18,6 @@
  */
 
 #include "pism/coupler/FrontalMelt.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh" // combine()
 #include "pism/geometry/Geometry.hh"
@@ -35,22 +34,6 @@ FrontalMeltInputs::FrontalMeltInputs() {
 
 namespace frontalmelt {
 
-IceModelVec2S::Ptr FrontalMelt::allocate_frontal_melt_rate(IceGrid::ConstPtr g,
-                                                           int stencil_width) {
-  IceModelVec2S::Ptr result;
-
-  if (stencil_width > 0) {
-    result.reset(new IceModelVec2S(g, "frontal_melt_rate", WITH_GHOSTS, stencil_width));
-  } else {
-    result.reset(new IceModelVec2S(g, "frontal_melt_rate", WITHOUT_GHOSTS));
-  }
-
-  result->set_attrs("diagnostic", "frontal melt rate",
-                    "m s-1", "m day-1", "", 0);
-
-  return result;
-}
-
 /*!
  * Compute retreat rate corresponding to a given frontal melt rate.
  *
@@ -58,28 +41,29 @@ IceModelVec2S::Ptr FrontalMelt::allocate_frontal_melt_rate(IceGrid::ConstPtr g,
  * scale the provided melt rate.
  */
 void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
-                                       const IceModelVec2S &frontal_melt_rate,
-                                       IceModelVec2S &result) const {
+                                       const array::Scalar &frontal_melt_rate,
+                                       array::Scalar &result) const {
 
   GeometryCalculator gc(*m_config);
 
-  const IceModelVec2S
-    &bed_elevation       = geometry.bed_elevation,
+  const array::Scalar2
+    &bed_elevation       = geometry.bed_elevation;
+  const array::Scalar1
+    &sea_level_elevation = geometry.sea_level_elevation,
     &surface_elevation   = geometry.ice_surface_elevation,
-    &ice_thickness       = geometry.ice_thickness,
-    &sea_level_elevation = geometry.sea_level_elevation;
-  const IceModelVec2CellType &cell_type = geometry.cell_type;
+    &ice_thickness       = geometry.ice_thickness;
+  const array::CellType1 &cell_type = geometry.cell_type;
 
   const double
     ice_density = m_config->get_number("constants.ice.density"),
     alpha       = ice_density / m_config->get_number("constants.sea_water.density");
 
-  IceModelVec::AccessList list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
+  array::AccessScope list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
                                &bed_elevation, &surface_elevation, &ice_thickness, &result};
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
@@ -89,7 +73,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
         auto H = ice_thickness.star(i, j);
         auto h = surface_elevation.star(i, j);
-        auto M = cell_type.star(i, j);
+        auto M = cell_type.star_int(i, j);
 
         double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
 
@@ -111,19 +95,21 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 }
 
 // "modifier" constructor
-FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input)
-  : Component(g),
-    m_input_model(input),
-    m_retreat_rate(m_grid, "retreat_rate_due_to_frontal_melt", WITHOUT_GHOSTS)
-{
-  m_retreat_rate.set_attrs("diagnostic", "retreat rate due to frontal melt",
-                           "m s-1", "m day-1", "", 0);
+FrontalMelt::FrontalMelt(std::shared_ptr<const Grid> g, std::shared_ptr<FrontalMelt> input)
+    : Component(g),
+      m_input_model(input),
+      m_retreat_rate(m_grid, "retreat_rate_due_to_frontal_melt") {
+
+  m_retreat_rate.metadata(0)
+      .long_name("retreat rate due to frontal melt")
+      .units("m s-1")
+      .output_units("m day-1");
 
   m_include_floating_ice = m_config->get_flag("frontal_melt.include_floating_ice");
 }
 
 // "model" constructor
-FrontalMelt::FrontalMelt(IceGrid::ConstPtr g)
+FrontalMelt::FrontalMelt(std::shared_ptr<const Grid> g)
   : FrontalMelt(g, nullptr) {
   // empty
 }
@@ -144,11 +130,11 @@ void FrontalMelt::update(const FrontalMeltInputs &inputs, double t, double dt) {
   compute_retreat_rate(*inputs.geometry, frontal_melt_rate(), m_retreat_rate);
 }
 
-const IceModelVec2S& FrontalMelt::frontal_melt_rate() const {
+const array::Scalar& FrontalMelt::frontal_melt_rate() const {
   return frontal_melt_rate_impl();
 }
 
-const IceModelVec2S& FrontalMelt::retreat_rate() const {
+const array::Scalar& FrontalMelt::retreat_rate() const {
   return m_retreat_rate;
 }
 
@@ -181,9 +167,8 @@ void FrontalMelt::define_model_state_impl(const File &output) const {
 void FrontalMelt::write_model_state_impl(const File &output) const {
   if (m_input_model) {
     return m_input_model->write_model_state(output);
-  } else {
-    // no state to write
   }
+  // no state to write
 }
 
 namespace diagnostics {
@@ -195,18 +180,19 @@ public:
   FrontalMeltRate(const FrontalMelt *m)
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_rate", RATE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_rate")};
     m_accumulator.metadata()["units"] = "m";
 
-    set_attrs("frontal melt rate", "",
-              "m second-1", "m day-1", 0);
+    m_vars = { { m_sys, "frontal_melt_rate" } };
+    m_vars[0]
+        .long_name("frontal melt rate")
+        .units("m second-1")
+        .output_units("m day-1");
     m_vars[0]["cell_methods"] = "time: mean";
-
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->frontal_melt_rate();
   }
 };
@@ -217,20 +203,20 @@ class FrontalMeltRetreatRate : public DiagAverageRate<FrontalMelt>
 public:
   FrontalMeltRetreatRate(const FrontalMelt *m)
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_retreat_rate", RATE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_retreat_rate")};
     m_accumulator.metadata()["units"] = "m";
 
-    set_attrs("retreat rate due to frontal melt", "",
-              "m second-1", "m year-1", 0);
+    m_vars = { { m_sys, "frontal_melt_retreat_rate" } };
+    m_vars[0]
+        .long_name("retreat rate due to frontal melt")
+        .units("m second-1")
+        .output_units("m year-1");
     m_vars[0]["cell_methods"] = "time: mean";
-
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
     m_vars[0]["comment"] = "takes into account what part of the front is submerged";
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->retreat_rate();
   }
 };
@@ -246,27 +232,25 @@ DiagnosticList FrontalMelt::diagnostics_impl() const {
 
   if (m_input_model) {
     return combine(m_input_model->diagnostics(), result);
-  } else {
-    return result;
   }
+  return result;
 }
 
 TSDiagnosticList FrontalMelt::ts_diagnostics_impl() const {
   if (m_input_model) {
     return m_input_model->ts_diagnostics();
-  } else {
-    return {};
   }
+  return {};
 }
 
-bool FrontalMelt::apply(const IceModelVec2CellType &M, int i, int j) {
+bool FrontalMelt::apply(const array::CellType1 &M, int i, int j) const {
   // icy and grounded_ice cells are included for visualization only (values at these
   // locations have no effect)
   if (m_include_floating_ice) {
     return (M.ice_free_ocean(i, j) and M.next_to_ice(i, j)) or M.icy(i, j);
-  } else {
-    return (M.ice_free_ocean(i, j) and M.next_to_grounded_ice(i, j)) or M.grounded_ice(i, j);
   }
+
+  return (M.ice_free_ocean(i, j) and M.next_to_grounded_ice(i, j)) or M.grounded_ice(i, j);
 }
 
 

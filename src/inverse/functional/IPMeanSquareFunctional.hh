@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2020  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2020, 2022  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,12 @@
 #ifndef IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C
 #define IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {
 
-//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an IceModelVec2S.
+//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an array::Scalar.
 /*! If the vector has components \f$x_i\f$ the functional is
   \f[
   J(x) = c_N \sum_{i} w_i x_i^2
@@ -32,27 +32,27 @@ namespace inverse {
   where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
   of the normalization constant is set implicitly by a call to normalize().
 */
-class IPMeanSquareFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
+class IPMeanSquareFunctional2S : public IPInnerProductFunctional<array::Scalar> {
 public:
   /*!
    * @param[in] grid the computational grid
    * @param[in] weights Vector of weights (NULL implies all weights are 1)
    */
-  IPMeanSquareFunctional2S(IceGrid::ConstPtr grid, 
-                           IceModelVec2S *weights=NULL)
-    : IPInnerProductFunctional<IceModelVec2S>(grid),
+  IPMeanSquareFunctional2S(std::shared_ptr<const Grid> grid,
+                           array::Scalar *weights=NULL)
+    : IPInnerProductFunctional<array::Scalar>(grid),
       m_weights(weights),
       m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2S() {};
 
   virtual void normalize(double scale);
 
-  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
-  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(array::Scalar &x, double *OUTPUT);
+  virtual void dot(array::Scalar &a, array::Scalar &b, double *OUTPUT);
+  virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
 
 protected:
-  IceModelVec2S *m_weights;
+  array::Scalar *m_weights;
   double m_normalization;
 
 private:
@@ -61,7 +61,7 @@ private:
 };
 
 
-//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an IceModelVec2S.
+//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an array::Scalar.
 /*! If the vector has component vectors \f$x_i\f$ the functional is
   \f[
   J(x) = c_N \sum_{i} w_i |x_i|^2
@@ -69,20 +69,20 @@ private:
   where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
   of the normalization constant is set implicitly by a call to normalize().
 */
-class IPMeanSquareFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
+class IPMeanSquareFunctional2V : public IPInnerProductFunctional<array::Vector> {
 public:
-  IPMeanSquareFunctional2V(IceGrid::ConstPtr grid, IceModelVec2S *weights=NULL) :
-    IPInnerProductFunctional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
+  IPMeanSquareFunctional2V(std::shared_ptr<const Grid> grid, array::Scalar *weights=NULL) :
+    IPInnerProductFunctional<array::Vector>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2V() {};
 
   virtual void normalize(double scale);
 
-  virtual void valueAt(IceModelVec2V &x, double *OUTPUT);
-  virtual void dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT);
-  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(array::Vector &x, double *OUTPUT);
+  virtual void dot(array::Vector &a, array::Vector &b, double *OUTPUT);
+  virtual void gradientAt(array::Vector &x, array::Vector &gradient);
 
 protected:
-  IceModelVec2S *m_weights;
+  array::Scalar *m_weights;
   double m_normalization;
 
 private:

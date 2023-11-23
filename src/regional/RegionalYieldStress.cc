@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,9 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "RegionalYieldStress.hh"
+#include "pism/regional/RegionalYieldStress.hh"
 #include "pism/util/pism_utilities.hh" // pism::combine()
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 
@@ -35,13 +37,13 @@ RegionalYieldStress::RegionalYieldStress(std::shared_ptr<YieldStress> input)
  * Set `basal_yield_stress` to `tauc` in areas indicated using `mask`.
  */
 static void set_no_model_yield_stress(double tauc,
-                                      const IceModelVec2Int &mask,
-                                      IceModelVec2S &basal_yield_stress) {
+                                      const array::Scalar &mask,
+                                      array::Scalar &basal_yield_stress) {
   auto grid = mask.grid();
 
-  IceModelVec::AccessList list{&mask, &basal_yield_stress};
+  array::AccessScope list{&mask, &basal_yield_stress};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask(i, j) > 0.5) {
@@ -57,11 +59,11 @@ void RegionalYieldStress::restart_impl(const File &input_file, int record) {
   // call above should read it in.
   m_basal_yield_stress.copy_from(m_input->basal_material_yield_stress());
 
-  IceModelVec2Int no_model_mask(m_grid, "no_model_mask", WITHOUT_GHOSTS);
-  no_model_mask.set_attrs("model_state",
-                          "mask: zeros (modeling domain) and ones"
-                          " (no-model buffer near grid edges)",
-                          "", "", "", 0); // no units and no standard name
+  array::Scalar no_model_mask(m_grid, "no_model_mask");
+  no_model_mask.set_interpolation_type(NEAREST);
+  no_model_mask.metadata(0)
+      .long_name(
+          "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)"); // no units and no standard name
   // We are re-starting a simulation, so the input file has to contain no_model_mask.
   no_model_mask.read(input_file, record);
   // However, the used can set "-regrid_vars no_model_mask,...", so we have to try this,
@@ -101,7 +103,7 @@ void RegionalYieldStress::define_model_state_impl(const File &output) const {
 
   // define tauc (this is likely to be a no-op because m_input should have defined it by
   // now)
-  m_basal_yield_stress.define(output);
+  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
 }
 
 void RegionalYieldStress::write_model_state_impl(const File &output) const {

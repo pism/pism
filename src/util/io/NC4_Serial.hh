@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _NC4_Serial_H_
 #define _NC4_Serial_H_
 
-#include "NC_Serial.hh"
+#include "pism/util/io/NC_Serial.hh"
 
 namespace pism {
 namespace io {
@@ -35,7 +35,7 @@ protected:
 
   void create_impl(const std::string &filename);
 
-  void def_var_impl(const std::string &name, IO_Type nctype,
+  void def_var_impl(const std::string &name, io::Type nctype,
                     const std::vector<std::string> &dims) const;
 
   mutable int m_compression_level;

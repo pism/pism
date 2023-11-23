@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _PISMNC4_PAR_H_
 #define _PISMNC4_PAR_H_
 
-#include "NC4File.hh"
+#include "pism/util/io/NC4File.hh"
 
 namespace pism {
 namespace io {
@@ -32,7 +32,7 @@ public:
   virtual ~NC4_Par() {}
 protected:
   // open/create/close
-  virtual void open_impl(const std::string &filename, IO_Mode mode);
+  virtual void open_impl(const std::string &filename, io::Mode mode);
 
   virtual void create_impl(const std::string &filename);
 

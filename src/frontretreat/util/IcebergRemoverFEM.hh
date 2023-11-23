@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 PISM Authors
+/* Copyright (C) 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,8 @@
 #ifndef ICEBERGREMOVERFEM_H
 #define ICEBERGREMOVERFEM_H
 
-#include "IcebergRemover.hh"
+#include "pism/frontretreat/util/IcebergRemover.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 namespace calving {
@@ -32,12 +33,12 @@ namespace calving {
  */
 class IcebergRemoverFEM : public IcebergRemover {
 public:
-  IcebergRemoverFEM(IceGrid::ConstPtr g);
+  IcebergRemoverFEM(std::shared_ptr<const Grid> g);
 private:
-  void update_impl(const IceModelVec2Int &bc_mask,
-                   IceModelVec2CellType &pism_mask,
-                   IceModelVec2S &ice_thickness);
-  IceModelVec2Int m_mask;
+  void update_impl(const array::Scalar &bc_mask,
+                   array::CellType1 &cell_type,
+                   array::Scalar &ice_thickness);
+  array::Scalar m_mask;
 };
 
 } // end of namespace calving

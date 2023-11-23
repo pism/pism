@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PAANOMALY_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -29,15 +28,15 @@ namespace atmosphere {
 class Anomaly : public AtmosphereModel
 {
 public:
-  Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
+  Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Anomaly() = default;
 
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mean_precipitation_impl() const;
-  const IceModelVec2S& mean_annual_temp_impl() const;
+  const array::Scalar& precipitation_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void begin_pointwise_access_impl() const;
@@ -47,11 +46,11 @@ protected:
 protected:
   mutable std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 
-  std::shared_ptr<IceModelVec2T> m_air_temp_anomaly;
-  std::shared_ptr<IceModelVec2T> m_precipitation_anomaly;
+  std::shared_ptr<array::Forcing> m_air_temp_anomaly;
+  std::shared_ptr<array::Forcing> m_precipitation_anomaly;
 
-  IceModelVec2S::Ptr m_precipitation;
-  IceModelVec2S::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_precipitation;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 } // end of namespace atmosphere

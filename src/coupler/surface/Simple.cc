@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,14 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#include "Simple.hh"
+#include "pism/coupler/surface/Simple.hh"
 
 #include "pism/coupler/AtmosphereModel.hh"
 
 namespace pism {
 namespace surface {
 
-Simple::Simple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+Simple::Simple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
   : SurfaceModel(g, atmosphere) {
 
   m_temperature = allocate_temperature(g);
@@ -47,31 +47,31 @@ void Simple::update_impl(const Geometry &geometry, double t, double dt) {
     m_atmosphere->update(geometry, t, dt);
   }
 
-  m_mass_flux->copy_from(m_atmosphere->mean_precipitation());
-  m_temperature->copy_from(m_atmosphere->mean_annual_temp());
+  m_mass_flux->copy_from(m_atmosphere->precipitation());
+  m_temperature->copy_from(m_atmosphere->air_temperature());
 
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
   dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
-const IceModelVec2S &Simple::mass_flux_impl() const {
+const array::Scalar &Simple::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &Simple::temperature_impl() const {
+const array::Scalar &Simple::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &Simple::accumulation_impl() const {
+const array::Scalar &Simple::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &Simple::melt_impl() const {
+const array::Scalar &Simple::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &Simple::runoff_impl() const {
+const array::Scalar &Simple::runoff_impl() const {
   return *m_runoff;
 }
 

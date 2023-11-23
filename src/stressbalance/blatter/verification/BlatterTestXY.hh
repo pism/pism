@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -45,7 +45,7 @@ namespace stressbalance {
  */
 class BlatterTestXY : public Blatter {
 public:
-  BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int coarsening_factor);
+  BlatterTestXY(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor);
 
 protected:
   bool marine_boundary(int face,
@@ -55,12 +55,12 @@ protected:
 
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
-  Vector2 u_bc(double x, double y, double z) const;
+  Vector2d u_bc(double x, double y, double z) const;
 
   void residual_source_term(const fem::Q1Element3 &element,
                             const double *surface,
                             const double *bed,
-                            Vector2 *residual);
+                            Vector2d *residual);
   //! constant ice hardness
   double m_B;
 };

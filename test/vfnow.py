@@ -5,7 +5,7 @@
 # \brief A script for verification of numerical schemes in PISM.
 # \details It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
 # pismv accordingly.
-# Copyright (C) 2007--2013, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev
+# Copyright (C) 2007--2013, 2015, 2016, 2018, 2022 Ed Bueler and Constantine Khroulev
 ##
 # Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in the user manual.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 ##
@@ -206,12 +206,12 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     J.executable = "ssa_testj"
     J.name = "J"
     J.test = "periodic ice shelf (linearized SSA)"
-    J.Mx = [49, 98, 196, 392, 784]
+    J.Mx = [49, 98, 196, 392, 784, 1568, 3136]
     J.My = J.Mx
     J.path = "(refine Mx={})".format(J.Mx)
-    J.Mz = [11] * 5
+    J.Mz = [11] * len(J.Mx)
     J.executable = "ssa_testj"
-    J.opts = "-ssa_method fd -ssafd_pc_type asm -ssafd_sub_pc_type lu -ssafd_ksp_rtol %1.e" % KSPRTOL
+    J.opts = "-ssa_method fd -ssafd_pc_type gamg -ssafd_ksp_rtol %1.e" % KSPRTOL
     tests['J'] = J
     # K
     K = PISMVerificationTest()

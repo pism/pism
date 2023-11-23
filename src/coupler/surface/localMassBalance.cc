@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -24,11 +24,11 @@
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <algorithm>
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "localMassBalance.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/coupler/surface/localMassBalance.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 namespace surface {
@@ -91,14 +91,14 @@ This integral is used for the expected number of positive degree days. The user 
 length `dt` instead of a whole year as stated in \ref CalovGreve05 . If `sigma` is zero,
 return the positive part of `TacC`.
  */
-double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
+static double CalovGreveIntegrand(double sigma, double TacC) {
 
   if (sigma == 0) {
     return std::max(TacC, 0.0);
-  } else {
-    const double Z = TacC / (sqrt(2.0) * sigma);
-    return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
   }
+
+  const double Z = TacC / (sqrt(2.0) * sigma);
+  return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
 }
 
 
@@ -288,6 +288,9 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   return result;
 }
 
+struct PDDrandMassBalance::Impl {
+  gsl_rng *rng;
+};
 
 /*!
 Initializes the random number generator (RNG).  The RNG is GSL's recommended default,
@@ -296,9 +299,11 @@ wall clock time in seconds in non-repeatable case, and with 0 in repeatable case
  */
 PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::Ptr system,
                                        Kind kind)
-  : PDDMassBalance(config, system) {
-  pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
-  gsl_rng_set(pddRandGen, kind == REPEATABLE ? 0 : time(0));
+  : PDDMassBalance(config, system),
+    m_impl(new Impl)
+{
+  m_impl->rng = gsl_rng_alloc(gsl_rng_default);  // so m_impl->rng != NULL now
+  gsl_rng_set(m_impl->rng, kind == REPEATABLE ? 0 : time(0));
 
   m_method = (kind == NOT_REPEATABLE
               ? "simulation of a random process"
@@ -307,10 +312,11 @@ PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::P
 
 
 PDDrandMassBalance::~PDDrandMassBalance() {
-  if (pddRandGen != NULL) {
-    gsl_rng_free(pddRandGen);
-    pddRandGen = NULL;
+  if (m_impl->rng != NULL) {
+    gsl_rng_free(m_impl->rng);
+    m_impl->rng = NULL;
   }
+  delete m_impl;
 }
 
 
@@ -329,12 +335,12 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
   return std::max(static_cast<size_t>(ceil(dt / m_seconds_per_day)), (size_t)2);
 }
 
-/** 
+/**
  * Computes
  * \f[
  * \text{PDD} = \sum_{i=0}^{N-1} h_{\text{days}} \cdot \text{max}(T_i-T_{\text{threshold}}, 0).
  * \f]
- * 
+ *
  * @param S \f$\sigma\f$ (standard deviation for daily temperature excursions)
  * @param dt_series time-series step, in seconds
  * @param T air temperature
@@ -353,7 +359,7 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 
   for (unsigned int k = 0; k < N; ++k) {
     // average temperature in k-th interval
-    double T_k = T[k] + gsl_ran_gaussian(pddRandGen, S[k]); // add random: N(0,sigma)
+    double T_k = T[k] + gsl_ran_gaussian(m_impl->rng, S[k]); // add random: N(0,sigma)
 
     if (T_k > pdd_threshold_temp) {
       PDDs[k] = h_days * (T_k - pdd_threshold_temp);
@@ -362,9 +368,9 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr grid)
+FaustoGrevePDDObject::FaustoGrevePDDObject(std::shared_ptr<const Grid> grid)
   : m_grid(grid), m_config(grid->ctx()->config()),
-    m_temp_mj(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS)
+    m_temp_mj(grid, "temp_mj_faustogreve")
 {
 
   m_beta_ice_w  = m_config->get_number("surface.pdd.fausto.beta_ice_w");
@@ -380,9 +386,9 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr grid)
   m_pdd_fausto_latitude_beta_w = m_config->get_number("surface.pdd.fausto.latitude_beta_w");
   m_refreeze_fraction          = m_config->get_number("surface.pdd.refreeze");
 
-  m_temp_mj.set_attrs("internal",
-                    "mean July air temp from Fausto et al (2009) parameterization",
-                      "K", "K", "", 0);
+  m_temp_mj.metadata(0)
+      .long_name("mean July air temp from Fausto et al (2009) parameterization")
+      .units("K");
 }
 
 LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int i, int j,
@@ -391,7 +397,7 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
   LocalMassBalance::DegreeDayFactors ddf;
   ddf.refreeze_fraction = m_refreeze_fraction;
 
-  IceModelVec::AccessList list(m_temp_mj);
+  array::AccessScope list(m_temp_mj);
   const double T_mj = m_temp_mj(i,j);
 
   if (latitude < m_pdd_fausto_latitude_beta_w) { // case latitude < 72 deg N
@@ -428,23 +434,23 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
 /*!
 Unfortunately this duplicates code in SeaRISEGreenland::update();
  */
-void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
-                                          const IceModelVec2S &lat,
-                                          const IceModelVec2S &lon) {
+void FaustoGrevePDDObject::update_temp_mj(const array::Scalar &surfelev,
+                                          const array::Scalar &lat,
+                                          const array::Scalar &lon) {
   const double
     d_mj     = m_config->get_number("atmosphere.fausto_air_temp.d_mj"),      // K
     gamma_mj = m_config->get_number("atmosphere.fausto_air_temp.gamma_mj"),  // K m-1
     c_mj     = m_config->get_number("atmosphere.fausto_air_temp.c_mj"),      // K (degN)-1
     kappa_mj = m_config->get_number("atmosphere.fausto_air_temp.kappa_mj");  // K (degW)-1
 
-  const IceModelVec2S
+  const array::Scalar
     &h        = surfelev,
     &lat_degN = lat,
     &lon_degE = lon;
 
-  IceModelVec::AccessList list{&h, &lat_degN, &lon_degE, &m_temp_mj};
+  array::AccessScope list{&h, &lat_degN, &lon_degE, &m_temp_mj};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }

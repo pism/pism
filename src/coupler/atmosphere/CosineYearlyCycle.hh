@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include <memory>               // unique_ptr
 
-#include "YearlyCycle.hh"
+#include "pism/coupler/atmosphere/YearlyCycle.hh"
 
 namespace pism {
 class ScalarForcing;
@@ -30,7 +30,7 @@ namespace atmosphere {
 
 class CosineYearlyCycle : public YearlyCycle {
 public:
-  CosineYearlyCycle(IceGrid::ConstPtr g);
+  CosineYearlyCycle(std::shared_ptr<const Grid> g);
   virtual ~CosineYearlyCycle() = default;
 
   virtual void init_impl(const Geometry &geometry);
@@ -39,7 +39,7 @@ protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  std::unique_ptr<ScalarForcing> m_A; // amplitude scaling
+  std::shared_ptr<ScalarForcing> m_A; // amplitude scaling
 };
 
 } // end of namespace atmosphere

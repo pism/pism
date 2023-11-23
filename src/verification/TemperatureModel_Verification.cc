@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "TemperatureModel_Verification.hh"
+#include "pism/verification/TemperatureModel_Verification.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/verification/tests/exactTestsFG.hh"
@@ -35,18 +35,21 @@ static const double LforFG = 750000; // m
 static const double ST     = 1.67e-5;
 static const double Tmin   = 223.15; // K
 
-TemperatureModel_Verification::TemperatureModel_Verification(IceGrid::ConstPtr grid,
-                                                             stressbalance::StressBalance *stress_balance,
-                                                             int testname, bool bedrock_is_ice)
-  : TemperatureModel(grid, stress_balance), m_testname(testname), m_bedrock_is_ice(bedrock_is_ice) {
+TemperatureModel_Verification::TemperatureModel_Verification(
+    std::shared_ptr<const Grid> grid,
+    std::shared_ptr<const stressbalance::StressBalance> stress_balance, int testname,
+    bool bedrock_is_ice)
+    : TemperatureModel(grid, stress_balance),
+      m_testname(testname),
+      m_bedrock_is_ice(bedrock_is_ice) {
   // empty
 }
 
-void TemperatureModel_Verification::initialize_impl(const IceModelVec2S &basal_melt_rate,
-                                                    const IceModelVec2S &ice_thickness,
-                                                    const IceModelVec2S &surface_temperature,
-                                                    const IceModelVec2S &climatic_mass_balance,
-                                                    const IceModelVec2S &basal_heat_flux) {
+void TemperatureModel_Verification::initialize_impl(const array::Scalar &basal_melt_rate,
+                                                    const array::Scalar &ice_thickness,
+                                                    const array::Scalar &surface_temperature,
+                                                    const array::Scalar &climatic_mass_balance,
+                                                    const array::Scalar &basal_heat_flux) {
 
   // ignore provided basal melt rate
   (void) basal_melt_rate;
@@ -76,22 +79,22 @@ void TemperatureModel_Verification::initialize_impl(const IceModelVec2S &basal_m
 
 void TemperatureModel_Verification::initTestFG() {
 
-  IceModelVec::AccessList list{&m_ice_temperature};
+  array::AccessScope list{&m_ice_temperature};
 
-  const double time = m_testname == 'F' ? 0.0 : m_grid->ctx()->time()->current();
+  const double time = m_testname == 'F' ? 0.0 : this->time().current();
   const double A    = m_testname == 'F' ? 0.0 : ApforG;
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin
-    const double r = std::max(radius(*m_grid, i, j), 1.0);
+    const double r = std::max(grid::radius(*m_grid, i, j), 1.0);
 
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
       m_ice_temperature.set_column(i, j, Tmin + ST * r);
     } else {
       TestFGParameters P = exactFG(time, r, m_grid->z(), A);
-      m_ice_temperature.set_column(i, j, &P.T[0]);
+      m_ice_temperature.set_column(i, j, P.T.data());
     }
   }
 }
@@ -100,26 +103,26 @@ void TemperatureModel_Verification::initTestsKO() {
 
   const unsigned int Mz = m_grid->Mz();
 
-  std::vector<double> T_column(Mz);
+  std::vector<double> temperature(Mz);
 
-  const double time = m_grid->ctx()->time()->current();
+  const double time = this->time().current();
 
   // evaluate exact solution in a column; all columns are the same
   for (unsigned int k = 0; k < Mz; k++) {
     if (m_testname == 'K') {
-      T_column[k] = exactK(time, m_grid->z(k), m_bedrock_is_ice).T;
+      temperature[k] = exactK(time, m_grid->z(k), m_bedrock_is_ice ? 1 : 0).T;
     } else {
-      T_column[k] = exactO(m_grid->z(k)).TT;
+      temperature[k] = exactO(m_grid->z(k)).TT;
     }
   }
 
   // fill m_ice_temperature
-  IceModelVec::AccessList list(m_ice_temperature);
+  array::AccessScope list(m_ice_temperature);
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
-      m_ice_temperature.set_column(p.i(), p.j(), &T_column[0]);
+    for (auto p = m_grid->points(); p; p.next()) {
+      m_ice_temperature.set_column(p.i(), p.j(), temperature.data());
     }
   } catch (...) {
     loop.failed();

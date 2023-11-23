@@ -34,7 +34,7 @@ namespace ocean {
 class Delta_MBP : public OceanModel
 {
 public:
-  Delta_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Delta_MBP(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_MBP();
 
 private:
@@ -42,7 +42,7 @@ private:
 
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& average_water_column_pressure_impl() const;
+  const array::Scalar& average_water_column_pressure_impl() const;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 };

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,18 +16,19 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <cmath>                // std::pow(), std::sqrt()
+#include <algorithm>            // std::min
 
-#include "EISMINTII.hh"
-#include "pism/coupler/AtmosphereModel.hh"
+#include "pism/coupler/surface/EISMINTII.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace surface {
 
-EISMINTII::EISMINTII(IceGrid::ConstPtr g, int experiment)
+EISMINTII::EISMINTII(std::shared_ptr<const Grid> g, int experiment)
   : PSFormulas(g), m_experiment(experiment) {
   // empty
 }
@@ -120,9 +121,9 @@ void EISMINTII::initialize_using_formulas() {
     cy += 100.0e3;
   }
 
-  IceModelVec::AccessList list{m_temperature.get(), m_mass_flux.get()};
+  array::AccessScope list{m_temperature.get(), m_mass_flux.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double r = sqrt(pow(m_grid->x(i) - cx, 2) + pow(m_grid->y(j) - cy, 2));

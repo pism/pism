@@ -15,7 +15,7 @@ ctx = PISM.Context()
 filename = ctx.config.get_string("input.file")
 
 # create the grid using the input file
-grid = PISM.IceGrid.FromFile(ctx.ctx, filename, ["thk"], PISM.CELL_CENTER)
+grid = PISM.Grid.FromFile(ctx.ctx, filename, ["thk"], PISM.CELL_CENTER)
 
 # initialize geometric data
 geometry = PISM.Geometry(grid)
@@ -32,7 +32,7 @@ fracture = PISM.FractureDensity(grid, flow_law)
 fracture.initialize()
 
 # read in the velocity field
-velocity = PISM.IceModelVec2V(grid, "_bc", PISM.WITHOUT_GHOSTS)
+velocity = PISM.Vector(grid, "_bc")
 velocity.set_attrs("", "x-component of the ice velocity", "m s-1", "m s-1", "", 0)
 velocity.set_attrs("", "y-component of the ice velocity", "m s-1", "m s-1", "", 1)
 velocity.regrid(filename)
@@ -42,11 +42,11 @@ data = PISM.max_timestep_cfl_2d(geometry.ice_thickness, geometry.cell_type, velo
 dt = data.dt_max.value()
 
 # read in the BC mask
-vel_bc_mask = PISM.IceModelVec2Int(grid, "vel_bc_mask", PISM.WITHOUT_GHOSTS)
+vel_bc_mask = PISM.Scalar(grid, "vel_bc_mask")
 vel_bc_mask.regrid(filename)
 
 # Set hardness to a constant corresponding to -30C at 0 Pa
-hardness = PISM.IceModelVec2S(grid, "hardness", PISM.WITHOUT_GHOSTS)
+hardness = PISM.Scalar(grid, "hardness")
 T = -30
 P = 0.0
 E = ctx.enthalpy_converter.enthalpy(T + 273.15, 0.0, P)
@@ -58,7 +58,7 @@ for k in range(N):
     fracture.update(dt, geometry, velocity, hardness, vel_bc_mask)
 
 # save results
-output_filename = ctx.config.get_string("output.file_name")
+output_filename = ctx.config.get_string("output.file")
 
 f = PISM.util.prepare_output(output_filename, append_time=True)
 fracture.density().write(f)

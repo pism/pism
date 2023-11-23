@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,32 +16,33 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "LingleClark.hh"
+#include "pism/earth/LingleClark.hh"
 
 #include "pism/util/io/File.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/fftw_utilities.hh"
-#include "LingleClarkSerial.hh"
+#include "pism/earth/LingleClarkSerial.hh"
 #include "pism/util/Context.hh"
+#include <memory>
 
 namespace pism {
 namespace bed {
 
-LingleClark::LingleClark(IceGrid::ConstPtr grid)
+LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
   : BedDef(grid),
-    m_total_displacement(m_grid, "bed_displacement", WITHOUT_GHOSTS),
-    m_relief(m_grid, "bed_relief", WITHOUT_GHOSTS),
-    m_load_thickness(grid, "load_thickness", WITHOUT_GHOSTS),
-    m_elastic_displacement(grid, "elastic_bed_displacement", WITHOUT_GHOSTS) {
+    m_total_displacement(m_grid, "bed_displacement"),
+    m_relief(m_grid, "bed_relief"),
+    m_load_thickness(grid, "load_thickness"),
+    m_elastic_displacement(grid, "elastic_bed_displacement") {
 
   m_time_name = m_config->get_string("time.dimension_name") + "_lingle_clark";
-  m_t_last = m_grid->ctx()->time()->current();
+  m_t_last = time().current();
   m_update_interval = m_config->get_number("bed_deformation.lc.update_interval", "seconds");
   m_t_eps = m_config->get_number("time_stepping.resolution", "seconds");
 
@@ -53,23 +54,23 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
-  m_total_displacement.set_attrs("internal",
-                                 "total (viscous and elastic) displacement "
-                                 "in the Lingle-Clark bed deformation model",
-                                 "meters", "meters", "", 0);
+  m_total_displacement.metadata(0)
+      .long_name(
+          "total (viscous and elastic) displacement in the Lingle-Clark bed deformation model")
+      .units("meters");
 
   m_work0 = m_total_displacement.allocate_proc0_copy();
 
-  m_relief.set_attrs("internal",
-                     "bed relief relative to the modeled bed displacement",
-                     "meters", "meters", "", 0);
+  m_relief.metadata(0)
+      .long_name("bed relief relative to the modeled bed displacement")
+      .units("meters");
 
   bool use_elastic_model = m_config->get_flag("bed_deformation.lc.elastic_model");
 
-  m_elastic_displacement.set_attrs("model state",
-                                   "elastic part of the displacement in the "
-                                   "Lingle-Clark bed deformation model; "
-                                   "see :cite:`BLKfastearth`", "meters", "meters", "", 0);
+  m_elastic_displacement.metadata(0)
+      .long_name(
+          "elastic part of the displacement in the Lingle-Clark bed deformation model; see :cite:`BLKfastearth`")
+      .units("meters");
   m_elastic_displacement0 = m_elastic_displacement.allocate_proc0_copy();
 
   const int
@@ -83,18 +84,15 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
     Lx = Z * (m_grid->x0() - m_grid->x(0)),
     Ly = Z * (m_grid->y0() - m_grid->y(0));
 
-  m_extended_grid = IceGrid::Shallow(m_grid->ctx(),
-                                     Lx, Ly,
-                                     m_grid->x0(), m_grid->y0(),
-                                     Nx, Ny, CELL_CORNER, NOT_PERIODIC);
+  m_extended_grid = Grid::Shallow(m_grid->ctx(), Lx, Ly, m_grid->x0(), m_grid->y0(), Nx, Ny,
+                                  grid::CELL_CORNER, grid::NOT_PERIODIC);
 
-  m_viscous_displacement.reset(new IceModelVec2S(m_extended_grid,
-                                                 "viscous_bed_displacement", WITHOUT_GHOSTS));
-  m_viscous_displacement->set_attrs("model state",
-                                    "bed displacement in the viscous half-space "
-                                    "bed deformation model; "
-                                    "see BuelerLingleBrown",
-                                    "meters", "meters", "", 0);
+  m_viscous_displacement =
+      std::make_shared<array::Scalar>(m_extended_grid, "viscous_bed_displacement");
+  m_viscous_displacement->metadata(0)
+      .long_name(
+          "bed displacement in the viscous half-space bed deformation model; see BuelerLingleBrown")
+      .units("meters");
 
   // coordinate variables of the extended grid should have different names
   m_viscous_displacement->metadata().x().set_name("x_lc");
@@ -132,11 +130,11 @@ LingleClark::~LingleClark() {
  * This method has to initialize m_viscous_displacement, m_elastic_displacement,
  * m_total_displacement, and m_relief.
  */
-void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
-                                 const IceModelVec2S &bed_uplift,
-                                 const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2S &sea_level_elevation) {
-  m_t_last = m_grid->ctx()->time()->current();
+void LingleClark::bootstrap_impl(const array::Scalar &bed_elevation,
+                                 const array::Scalar &bed_uplift,
+                                 const array::Scalar &ice_thickness,
+                                 const array::Scalar &sea_level_elevation) {
+  m_t_last = time().current();
 
   m_topg_last.copy_from(bed_elevation);
 
@@ -187,8 +185,8 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
  *
  * This method is used for testing only.
  */
-IceModelVec2S::Ptr LingleClark::elastic_load_response_matrix() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_extended_grid, "lrm", WITHOUT_GHOSTS));
+std::shared_ptr<array::Scalar> LingleClark::elastic_load_response_matrix() const {
+  std::shared_ptr<array::Scalar> result(new array::Scalar(m_extended_grid, "lrm"));
 
   int
     Nx = m_extended_grid->Mx(),
@@ -226,20 +224,20 @@ IceModelVec2S::Ptr LingleClark::elastic_load_response_matrix() const {
  * - plate displacement (either read from a file or bootstrapped using uplift) and
  *   possibly re-gridded.
  */
-void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &sea_level_elevation) {
+void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                            const array::Scalar &sea_level_elevation) {
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
 
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
-    File input_file(m_grid->com, opts.filename, PISM_NETCDF3, PISM_READONLY);
+    File input_file(m_grid->com, opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     if (input_file.find_variable(m_time_name)) {
       input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
-      m_t_last = m_grid->ctx()->time()->current();
+      m_t_last = time().current();
     }
   } else {
-    m_t_last = m_grid->ctx()->time()->current();
+    m_t_last = time().current();
   }
 
   // Initialize bed topography and uplift maps.
@@ -321,24 +319,24 @@ MaxTimestep LingleClark::max_timestep_impl(double t) const {
 /*!
  * Get total bed displacement on the PISM grid.
  */
-const IceModelVec2S& LingleClark::total_displacement() const {
+const array::Scalar& LingleClark::total_displacement() const {
   return m_total_displacement;
 }
 
-const IceModelVec2S& LingleClark::viscous_displacement() const {
+const array::Scalar& LingleClark::viscous_displacement() const {
   return *m_viscous_displacement;
 }
 
-const IceModelVec2S& LingleClark::elastic_displacement() const {
+const array::Scalar& LingleClark::elastic_displacement() const {
   return m_elastic_displacement;
 }
 
-const IceModelVec2S& LingleClark::relief() const {
+const array::Scalar& LingleClark::relief() const {
   return m_relief;
 }
 
-void LingleClark::step(const IceModelVec2S &ice_thickness,
-                       const IceModelVec2S &sea_level_elevation,
+void LingleClark::step(const array::Scalar &ice_thickness,
+                       const array::Scalar &sea_level_elevation,
                        double dt) {
 
   compute_load(m_topg, ice_thickness, sea_level_elevation,
@@ -386,8 +384,8 @@ void LingleClark::step(const IceModelVec2S &ice_thickness,
 }
 
 //! Update the Lingle-Clark bed deformation model.
-void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
-                              const IceModelVec2S &sea_level_elevation,
+void LingleClark::update_impl(const array::Scalar &ice_thickness,
+                              const array::Scalar &sea_level_elevation,
                               double t, double dt) {
 
   double
@@ -407,16 +405,16 @@ void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
 
 void LingleClark::define_model_state_impl(const File &output) const {
   BedDef::define_model_state_impl(output);
-  m_viscous_displacement->define(output);
-  m_elastic_displacement.define(output);
+  m_viscous_displacement->define(output, io::PISM_DOUBLE);
+  m_elastic_displacement.define(output, io::PISM_DOUBLE);
 
   if (not output.find_variable(m_time_name)) {
-    output.define_variable(m_time_name, PISM_DOUBLE, {});
+    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
 
     output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the Lingle-Clark bed deformation model");
-    output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->units_string());
+    output.write_attribute(m_time_name, "calendar", time().calendar());
+    output.write_attribute(m_time_name, "units", time().units_string());
   }
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "BTU_Minimal.hh"
+#include "pism/energy/BTU_Minimal.hh"
 #include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace energy {
 
-BTU_Minimal::BTU_Minimal(IceGrid::ConstPtr g)
+BTU_Minimal::BTU_Minimal(std::shared_ptr<const Grid> g)
   : BedThermalUnit(g) {
   // empty
 }
@@ -57,7 +57,7 @@ MaxTimestep BTU_Minimal::max_timestep_impl(double t) const {
   return MaxTimestep("minimal thermal bedrock layer");
 }
 
-void BTU_Minimal::update_impl(const IceModelVec2S &bedrock_top_temperature, double t, double dt) {
+void BTU_Minimal::update_impl(const array::Scalar &bedrock_top_temperature, double t, double dt) {
   (void) bedrock_top_temperature;
   (void) t;
   (void) dt;

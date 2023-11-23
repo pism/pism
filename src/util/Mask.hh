@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,12 +20,13 @@
 #define _MASK_H_
 
 // the following three includes are needed here because of inlined code
-#include "iceModelVec.hh"
-#include "ConfigInterface.hh"
-#include "error_handling.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
-
+namespace array {
+class Scalar;
+}
 enum MaskValue {
   MASK_UNKNOWN          = -1,
   MASK_ICE_FREE_BEDROCK = 0,
@@ -36,61 +37,64 @@ enum MaskValue {
 
 namespace mask {
 //! \brief An ocean cell (floating ice or ice-free).
-  inline bool ocean(int M) {
-    return M >= MASK_FLOATING;
-  }
-  //! \brief Grounded cell (grounded ice or ice-free).
-  inline bool grounded(int M) {
-    return not ocean(M);
-  }
-  //! \brief Ice-filled cell (grounded or floating).
-  inline bool icy(int M) {
-    return (M == MASK_GROUNDED) || (M == MASK_FLOATING);
-  }
-  inline bool grounded_ice(int M) {
-    return icy(M) && grounded(M);
-  }
-  inline bool floating_ice(int M) {
-    return icy(M) && ocean(M);
-  }
-  //! \brief Ice-free cell (grounded or ocean).
-  inline bool ice_free(int M) {
-    return not icy(M);
-  }
-  inline bool ice_free_ocean(int M) {
-    return ocean(M) && ice_free(M);
-  }
-  inline bool ice_free_land(int M) {
-    return grounded(M) && ice_free(M);
-  }
+inline bool ocean(int M) {
+  return M >= MASK_FLOATING;
 }
+//! \brief Grounded cell (grounded ice or ice-free).
+inline bool grounded(int M) {
+  return not ocean(M);
+}
+//! \brief Ice-filled cell (grounded or floating).
+inline bool icy(int M) {
+  return (M == MASK_GROUNDED) || (M == MASK_FLOATING);
+}
+inline bool grounded_ice(int M) {
+  return icy(M) && grounded(M);
+}
+inline bool floating_ice(int M) {
+  return icy(M) && ocean(M);
+}
+//! \brief Ice-free cell (grounded or ocean).
+inline bool ice_free(int M) {
+  return not icy(M);
+}
+inline bool ice_free_ocean(int M) {
+  return ocean(M) && ice_free(M);
+}
+inline bool ice_free_land(int M) {
+  return grounded(M) && ice_free(M);
+}
+} // namespace mask
 
 class GeometryCalculator {
 public:
   GeometryCalculator(const Config &config) {
-    m_alpha = 1 - config.get_number("constants.ice.density") / config.get_number("constants.sea_water.density");
+    m_alpha = 1 - config.get_number("constants.ice.density") /
+                      config.get_number("constants.sea_water.density");
     m_icefree_thickness = config.get_number("geometry.ice_free_thickness_standard");
     if (m_icefree_thickness < 0.0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "invalid ice-free thickness threshold: %f", m_icefree_thickness);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid ice-free thickness threshold: %f",
+                                    m_icefree_thickness);
     }
   }
 
   void set_icefree_thickness(double threshold) {
     if (threshold < 0.0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid ice-free thickness threshold: %f", threshold);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid ice-free thickness threshold: %f",
+                                    threshold);
     }
     m_icefree_thickness = threshold;
   }
 
-  void compute(const IceModelVec2S &sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
-               IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
+  void compute(const array::Scalar &sea_level, const array::Scalar &bed,
+               const array::Scalar &thickness, array::Scalar &out_mask,
+               array::Scalar &out_surface) const;
 
-  void compute_mask(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
-                    const IceModelVec2S& thickness, IceModelVec2Int& result) const;
+  void compute_mask(const array::Scalar &sea_level, const array::Scalar &bed,
+                    const array::Scalar &thickness, array::Scalar &result) const;
 
-  void compute_surface(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
-                       const IceModelVec2S& thickness, IceModelVec2S& result) const;
+  void compute_surface(const array::Scalar &sea_level, const array::Scalar &bed,
+                       const array::Scalar &thickness, array::Scalar &result) const;
 
   inline void compute(double sea_level, double bed, double thickness,
                       int *out_mask, double *out_surface) const {

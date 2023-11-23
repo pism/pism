@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 PISM Authors
+// Copyright (C) 2004--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,18 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "MohrCoulombYieldStress.hh"
-#include "MohrCoulombPointwise.hh"
+#include "pism/basalstrength/MohrCoulombYieldStress.hh"
+#include "pism/basalstrength/MohrCoulombPointwise.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 
@@ -87,16 +87,17 @@ This determines the map of @f$\varphi(x,y)@f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
+MohrCoulombYieldStress::MohrCoulombYieldStress(std::shared_ptr<const Grid> grid)
   : YieldStress(grid),
-  m_till_phi(m_grid, "tillphi", WITHOUT_GHOSTS) {
+  m_till_phi(m_grid, "tillphi") {
 
   m_name = "Mohr-Coulomb yield stress model";
 
-  m_till_phi.set_attrs("model_state",
-                       "friction angle for till under grounded ice sheet",
-                       "degrees", "degrees", "", 0);
-  m_till_phi.set_time_independent(true);
+  m_till_phi.metadata()
+      .long_name("friction angle for till under grounded ice sheet")
+      .units("degrees")
+      .set_time_independent(true);
+
   // in this model; need not be time-independent in general
 
   {
@@ -118,16 +119,17 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
 
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_delta = IceModelVec2T::ForcingField(m_grid,
+    m_delta = std::make_shared<array::Forcing>(m_grid,
                                           file,
                                           "mohr_coulomb_delta",
                                           "", // no standard name
                                           buffer_size,
                                           opt.periodic, LINEAR);
-    m_delta->set_attrs("", "minimum effective pressure on till as a fraction of overburden pressure",
-                       "1", "1", "", 0);
+    m_delta->metadata()
+        .long_name("minimum effective pressure on till as a fraction of overburden pressure")
+        .units("1");
   }
 }
 
@@ -144,7 +146,7 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
   auto tauc_to_phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.tauc_to_phi.file");
 
   if (not tauc_to_phi_file.empty()) {
-    m_basal_yield_stress.regrid(tauc_to_phi_file, CRITICAL);
+    m_basal_yield_stress.regrid(tauc_to_phi_file, io::Default::Nil());
 
     m_log->message(2,
                    "  Will compute till friction angle (tillphi) as a function"
@@ -172,7 +174,7 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
 
   } else {
     double till_phi_default = m_config->get_number("basal_yield_stress.mohr_coulomb.till_phi_default");
-    m_till_phi.regrid(input_file, OPTIONAL, till_phi_default);
+    m_till_phi.regrid(input_file, io::Default(till_phi_default));
   }
 
   finish_initialization(inputs);
@@ -200,7 +202,7 @@ void MohrCoulombYieldStress::finish_initialization(const YieldStressInputs &inpu
 
   // We use a short time step length because we can get away with it here, but we can
   // probably do better...
-  this->update(inputs, m_grid->ctx()->time()->current(), 1.0 /* one second time step */);
+  this->update(inputs, time().current(), 1.0 /* one second time step */);
 }
 
 MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) const {
@@ -217,13 +219,13 @@ MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) const {
   return MaxTimestep(name());
 }
 
-void MohrCoulombYieldStress::set_till_friction_angle(const IceModelVec2S &input) {
+void MohrCoulombYieldStress::set_till_friction_angle(const array::Scalar &input) {
   m_till_phi.copy_from(input);
 }
 
 void MohrCoulombYieldStress::define_model_state_impl(const File &output) const {
-  m_basal_yield_stress.define(output);
-  m_till_phi.define(output);
+  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
+  m_till_phi.define(output, io::PISM_DOUBLE);
 }
 
 void MohrCoulombYieldStress::write_model_state_impl(const File &output) const {
@@ -280,16 +282,16 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
 
   MohrCoulombPointwise mc(m_config);
 
-  const IceModelVec2S
+  const array::Scalar
     &W_till        = *inputs.till_water_thickness,
     &W_subglacial  = *inputs.subglacial_water_thickness,
     &ice_thickness = inputs.geometry->ice_thickness;
 
-  const IceModelVec2CellType &cell_type      = inputs.geometry->cell_type;
-  const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
-  const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
+  const auto &cell_type      = inputs.geometry->cell_type;
+  const auto &bed_topography = inputs.geometry->bed_elevation;
+  const auto &sea_level      = inputs.geometry->sea_level_elevation;
 
-  IceModelVec::AccessList list{&W_till, &m_till_phi, &m_basal_yield_stress, &cell_type,
+  array::AccessScope list{&W_till, &m_till_phi, &m_basal_yield_stress, &cell_type,
                                &bed_topography, &sea_level, &ice_thickness};
 
   if (add_transportable_water) {
@@ -302,7 +304,7 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
     list.add(*m_delta);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j)) {
@@ -346,8 +348,8 @@ where \f$\phi_{\text{min}}=\f$`phi_min`, \f$\phi_{\text{max}}=\f$`phi_max`,
 
 The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl.
 */
-void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &bed_topography,
-                                                 IceModelVec2S &result) {
+void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &bed_topography,
+                                                 array::Scalar &result) {
 
   const double
     phi_min  = m_config->get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
@@ -376,9 +378,9 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &bed_topogr
 
   const double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
-  IceModelVec::AccessList list{&bed_topography, &result};
+  array::AccessScope list{&bed_topography, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double bed = bed_topography(i, j);
 
@@ -402,11 +404,11 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &bed_topogr
  *
  * This is the inverse of the formula used by `update_impl()`.
  */
-void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &basal_yield_stress,
-                                                 const IceModelVec2S &till_water_thickness,
-                                                 const IceModelVec2S &ice_thickness,
-                                                 const IceModelVec2CellType &cell_type,
-                                                 IceModelVec2S &result) {
+void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &basal_yield_stress,
+                                                 const array::Scalar &till_water_thickness,
+                                                 const array::Scalar &ice_thickness,
+                                                 const array::CellType &cell_type,
+                                                 array::Scalar &result) {
 
   MohrCoulombPointwise mc(m_config);
 
@@ -417,12 +419,12 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &basal_yiel
   double
     delta = m_config->get_number("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden");
 
-  const IceModelVec2S
+  const array::Scalar
     &W_till = till_water_thickness;
 
-  IceModelVec::AccessList list{&cell_type, &basal_yield_stress, &W_till, &ice_thickness, &result};
+  array::AccessScope list{&cell_type, &basal_yield_stress, &W_till, &ice_thickness, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ocean(i, j)) {

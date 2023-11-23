@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,16 +18,13 @@
  */
 #include <algorithm>            // std::max
 
-#include "CHSystem.hh"
-
-#include "DrainageCalculator.hh"
-#include "pism/util/EnthalpyConverter.hh"
+#include "pism/energy/CHSystem.hh"
 #include "pism/energy/enthSystem.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/io/File.hh"
-#include "utilities.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/energy/utilities.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 namespace energy {
@@ -57,9 +54,9 @@ namespace energy {
  * by default). During the winter the CH system is allowed to cool.
 */
 
-CHSystem::CHSystem(IceGrid::ConstPtr grid,
-                   stressbalance::StressBalance *stress_balance)
-  : EnergyModel(grid, stress_balance) {
+CHSystem::CHSystem(std::shared_ptr<const Grid> grid,
+                   std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : EnergyModel(grid, stress_balance) {
 
   m_ice_enthalpy.set_name("ch_enthalpy");
   m_ice_enthalpy.metadata().set_name("ch_enthalpy");
@@ -77,10 +74,10 @@ void CHSystem::restart_impl(const File &input_file, int record) {
 }
 
 void CHSystem::bootstrap_impl(const File &input_file,
-                              const IceModelVec2S &ice_thickness,
-                              const IceModelVec2S &surface_temperature,
-                              const IceModelVec2S &climatic_mass_balance,
-                              const IceModelVec2S &basal_heat_flux) {
+                              const array::Scalar &ice_thickness,
+                              const array::Scalar &surface_temperature,
+                              const array::Scalar &climatic_mass_balance,
+                              const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the cryo-hydrologic warming model from %s...\n",
                  input_file.filename().c_str());
@@ -94,11 +91,11 @@ void CHSystem::bootstrap_impl(const File &input_file,
   }
 }
 
-void CHSystem::initialize_impl(const IceModelVec2S &basal_melt_rate,
-                               const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &surface_temperature,
-                               const IceModelVec2S &climatic_mass_balance,
-                               const IceModelVec2S &basal_heat_flux) {
+void CHSystem::initialize_impl(const array::Scalar &basal_melt_rate,
+                               const array::Scalar &ice_thickness,
+                               const array::Scalar &surface_temperature,
+                               const array::Scalar &climatic_mass_balance,
+                               const array::Scalar &basal_heat_flux) {
   (void) basal_melt_rate;
 
   m_log->message(2, "* Bootstrapping the cryo-hydrologic warming model...\n");
@@ -114,7 +111,7 @@ void CHSystem::initialize_impl(const IceModelVec2S &basal_melt_rate,
 
 //! Update the enthalpy of the cryo-hydrologic system.
 /*!
-  This method updates IceModelVec3 m_work. No communication of ghosts is done.
+  This method updates array::Array3D m_work. No communication of ghosts is done.
 */
 void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
@@ -125,21 +122,22 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   inputs.check();
 
   // give them names that are a bit shorter...
-  const IceModelVec3
+  const array::Array3D
     &volumetric_heat = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;
 
-  const IceModelVec2CellType &cell_type = *inputs.cell_type;
+  const auto &cell_type = *inputs.cell_type;
 
-  const IceModelVec2S
+  const array::Scalar
     &basal_frictional_heating = *inputs.basal_frictional_heating,
     &basal_heat_flux          = *inputs.basal_heat_flux,
-    &ice_thickness            = *inputs.ice_thickness,
     &surface_liquid_fraction  = *inputs.surface_liquid_fraction,
     &shelf_base_temp          = *inputs.shelf_base_temp,
     &ice_surface_temp         = *inputs.surface_temp;
+
+  const array::Scalar1 &ice_thickness = *inputs.ice_thickness;
 
   energy::enthSystemCtx system(m_grid->z(), "energy.ch_warming", m_grid->dx(), m_grid->dy(), dt,
                                *m_config, m_ice_enthalpy, u3, v3, w3, volumetric_heat, EC);
@@ -148,7 +146,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   const double dz = system.dz();
   std::vector<double> Enthnew(Mz_fine); // new enthalpy in column
 
-  IceModelVec::AccessList list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
+  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
       &ice_thickness, &basal_frictional_heating, &basal_heat_flux,
       &cell_type, &u3, &v3, &w3, &volumetric_heat, &m_ice_enthalpy,
       &m_work};
@@ -163,7 +161,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points pt(*m_grid); pt; pt.next()) {
+    for (auto pt = m_grid->points(); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
       const double H = ice_thickness(i, j);
@@ -235,7 +233,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
 }
 
 void CHSystem::define_model_state_impl(const File &output) const {
-  m_ice_enthalpy.define(output);
+  m_ice_enthalpy.define(output, io::PISM_DOUBLE);
 }
 
 void CHSystem::write_model_state_impl(const File &output) const {
@@ -252,10 +250,10 @@ void CHSystem::write_model_state_impl(const File &output) const {
  */
 void cryo_hydrologic_warming_flux(double k,
                                   double R,
-                                  const IceModelVec2S &ice_thickness,
-                                  const IceModelVec3 &ice_enthalpy,
-                                  const IceModelVec3 &ch_enthalpy,
-                                  IceModelVec3 &result) {
+                                  const array::Scalar &ice_thickness,
+                                  const array::Array3D &ice_enthalpy,
+                                  const array::Array3D &ch_enthalpy,
+                                  array::Array3D &result) {
 
   auto grid = result.grid();
 
@@ -264,13 +262,13 @@ void cryo_hydrologic_warming_flux(double k,
 
   auto EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList access{&ice_thickness, &ice_enthalpy, &ch_enthalpy, &result};
+  array::AccessScope access{&ice_thickness, &ice_enthalpy, &ch_enthalpy, &result};
 
   double C = k / (R * R);
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double

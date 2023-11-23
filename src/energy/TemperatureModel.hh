@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,31 +20,32 @@
 #ifndef TEMPERATUREMODEL_H
 #define TEMPERATUREMODEL_H
 
-#include "EnergyModel.hh"
+#include "pism/energy/EnergyModel.hh"
 
 namespace pism {
 namespace energy {
 
 class TemperatureModel : public EnergyModel {
 public:
-  TemperatureModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
+  TemperatureModel(std::shared_ptr<const Grid> grid,
+                   std::shared_ptr<const stressbalance::StressBalance> stress_balance);
 
-  const IceModelVec3 & temperature() const;
+  const array::Array3D & temperature() const;
 
 protected:
   void restart_impl(const File &input_file, int record);
 
   void bootstrap_impl(const File &input_file,
-                      const IceModelVec2S &ice_thickness,
-                      const IceModelVec2S &surface_temperature,
-                      const IceModelVec2S &climatic_mass_balance,
-                      const IceModelVec2S &basal_heat_flux);
+                      const array::Scalar &ice_thickness,
+                      const array::Scalar &surface_temperature,
+                      const array::Scalar &climatic_mass_balance,
+                      const array::Scalar &basal_heat_flux);
 
-  void initialize_impl(const IceModelVec2S &basal_melt_rate,
-                       const IceModelVec2S &ice_thickness,
-                       const IceModelVec2S &surface_temperature,
-                       const IceModelVec2S &climatic_mass_balance,
-                       const IceModelVec2S &basal_heat_flux);
+  void initialize_impl(const array::Scalar &basal_melt_rate,
+                       const array::Scalar &ice_thickness,
+                       const array::Scalar &surface_temperature,
+                       const array::Scalar &climatic_mass_balance,
+                       const array::Scalar &basal_heat_flux);
 
   using EnergyModel::update_impl;
   void update_impl(double t, double dt, const Inputs &inputs);
@@ -56,7 +57,7 @@ protected:
                        const double z, const double dz,
                        double *Texcess, double *bwat) const;
 
-  IceModelVec3 m_ice_temperature;
+  array::Array3D m_ice_temperature;
 };
 
 } // end of namespace energy

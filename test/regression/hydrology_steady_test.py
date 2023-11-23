@@ -19,7 +19,7 @@ class SteadyHydrology(TestCase):
         Mx = 101
         My = 101
 
-        grid = PISM.IceGrid.Shallow(ctx.ctx, Lx, Ly, x0, y0, Mx, My,
+        grid = PISM.Grid.Shallow(ctx.ctx, Lx, Ly, x0, y0, Mx, My,
                                     PISM.CELL_CENTER, PISM.NOT_PERIODIC)
         self.grid = grid
 
@@ -37,8 +37,8 @@ class SteadyHydrology(TestCase):
         geometry.sea_level_elevation.set(0.0)
         geometry.ensure_consistency(0.0)
 
-        surface_input_rate = PISM.IceModelVec2S(grid, "water_input_rate", PISM.WITHOUT_GHOSTS)
-        surface_input_rate.set_attrs("", "water input rate", "kg m-2 s-1", "kg m-2 s-1", "", 0)
+        surface_input_rate = PISM.Scalar(grid, "water_input_rate")
+        surface_input_rate.metadata(0).long_name("water input rate").units("kg m-2 s-1")
         self.surface_input_rate = surface_input_rate
 
         self.surface_input_file = "hydrology_steady_surface_input.nc"
@@ -63,7 +63,7 @@ class SteadyHydrology(TestCase):
 
         self.model = PISM.SteadyState(grid)
 
-        zero = PISM.IceModelVec2S(grid, "zero", PISM.WITHOUT_GHOSTS)
+        zero = PISM.Scalar(grid, "zero")
         zero.set(0.0)
         self.zero = zero
 
@@ -87,7 +87,7 @@ class SteadyHydrology(TestCase):
         dt = self.model.max_timestep(0).value()
         self.model.update(0, dt, inputs)
 
-        flux_magnitude = PISM.IceModelVec2S(grid, "flux_magnitude", PISM.WITHOUT_GHOSTS)
+        flux_magnitude = PISM.Scalar(grid, "flux_magnitude")
 
         PISM.compute_magnitude(self.model.flux(), flux_magnitude)
 
@@ -120,7 +120,7 @@ class SteadyHydrology(TestCase):
         geometry = self.geometry
         model = self.model
 
-        output_file = ctx.config.get_string("output.file_name")
+        output_file = ctx.config.get_string("output.file")
 
         f = PISM.util.prepare_output(output_file)
 
@@ -131,7 +131,7 @@ class SteadyHydrology(TestCase):
         model.surface_input_rate().write(f)
         model.flux().write(f)
 
-        Q = PISM.IceModelVec2S(self.grid, "water_flux_magnitude", PISM.WITHOUT_GHOSTS)
+        Q = PISM.Scalar(self.grid, "water_flux_magnitude", PISM.WITHOUT_GHOSTS)
         Q.set_attrs("", "magnitude of the water flux", "m2 s-1", "m2 s-1", "", 0)
         Q.set_to_magnitude(model.flux())
         Q.write(f)

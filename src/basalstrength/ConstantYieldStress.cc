@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,17 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "ConstantYieldStress.hh"
+#include "pism/basalstrength/ConstantYieldStress.hh"
 
-#include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
-ConstantYieldStress::ConstantYieldStress(IceGrid::ConstPtr grid)
+ConstantYieldStress::ConstantYieldStress(std::shared_ptr<const Grid> grid)
   : YieldStress(grid) {
 
   m_name = "constant yield stress model";
@@ -43,7 +41,7 @@ void ConstantYieldStress::bootstrap_impl(const File &input_file,
   (void) inputs;
 
   double tauc = m_config->get_number("basal_yield_stress.constant.value");
-  m_basal_yield_stress.regrid(input_file, OPTIONAL, tauc);
+  m_basal_yield_stress.regrid(input_file, io::Default(tauc));
 
   regrid(name(), m_basal_yield_stress);
 }

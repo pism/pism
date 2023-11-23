@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,23 +32,22 @@ namespace surface {
  */
 class PSFormulas : public SurfaceModel {
 public:
-  PSFormulas(IceGrid::ConstPtr g);
+  PSFormulas(std::shared_ptr<const Grid> g);
   ~PSFormulas() = default;
 protected:
 
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
 
-  const IceModelVec2S& mass_flux_impl() const;
-  const IceModelVec2S& temperature_impl() const;
+  const array::Scalar& mass_flux_impl() const;
+  const array::Scalar& temperature_impl() const;
 
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
 
-protected:
-  IceModelVec2S::Ptr m_mass_flux;
-  IceModelVec2S::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 

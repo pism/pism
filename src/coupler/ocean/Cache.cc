@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,29 +21,24 @@
 #include <cassert>
 #include <cmath>
 
-#include "Cache.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
-
-#include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/coupler/ocean/Cache.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace ocean {
 
-Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+Cache::Cache(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
-  auto time = m_grid->ctx()->time();
-
-  m_next_update_time = time->current();
+  m_next_update_time = time().current();
   m_update_interval_years = m_config->get_number("ocean.cache.update_interval", "seconds");
 
   // use the current year length (according to the selected calendar) to convert update
   // interval length into years
-  m_update_interval_years = time->convert_time_interval(m_update_interval_years, "years");
+  m_update_interval_years = time().convert_time_interval(m_update_interval_years, "years");
 
   if (m_update_interval_years <= 0.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -64,7 +59,7 @@ void Cache::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing the 'caching' ocean model modifier...\n");
 
-  m_next_update_time = m_grid->ctx()->time()->current();
+  m_next_update_time = time().current();
 }
 
 void Cache::update_impl(const Geometry &geometry, double t, double dt) {
@@ -78,14 +73,14 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
       fabs(t - m_next_update_time) < time_resolution) {
 
     double
-      one_year_from_now = m_grid->ctx()->time()->increment_date(t, 1.0),
+      one_year_from_now = time().increment_date(t, 1.0),
       update_dt         = one_year_from_now - t;
 
     assert(update_dt > 0.0);
 
     m_input_model->update(geometry, t, update_dt);
 
-    m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
+    m_next_update_time = time().increment_date(m_next_update_time,
                                                                m_update_interval_years);
 
     m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
@@ -104,7 +99,7 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   // if we got very close to the next update time, set time step
   // length to the interval between updates
   if (dt < time_resolution) {
-    double update_time_after_next = m_grid->ctx()->time()->increment_date(m_next_update_time,
+    double update_time_after_next = time().increment_date(m_next_update_time,
                                                                 m_update_interval_years);
 
     dt = update_time_after_next - m_next_update_time;
@@ -121,15 +116,15 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   }
 }
 
-const IceModelVec2S& Cache::shelf_base_temperature_impl() const {
+const array::Scalar& Cache::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const IceModelVec2S& Cache::shelf_base_mass_flux_impl() const {
+const array::Scalar& Cache::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const IceModelVec2S& Cache::average_water_column_pressure_impl() const {
+const array::Scalar& Cache::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

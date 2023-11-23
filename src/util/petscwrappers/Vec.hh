@@ -22,8 +22,8 @@
 
 #include <petscvec.h>
 
-#include "Wrapper.hh"
-#include "DM.hh"
+#include "pism/util/Wrapper.hh"
+#include "pism/util/petscwrappers/DM.hh"
 
 namespace pism {
 namespace petsc {
@@ -33,7 +33,7 @@ namespace petsc {
  *
  * The destructor call VecDestroy().
  */
-class Vec : public petsc::Wrapper< ::Vec > {
+class Vec : public Wrapper< ::Vec > {
 public:
   Vec();
   Vec(::Vec v);

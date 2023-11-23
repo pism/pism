@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018, 2020, 2021, 2022 Constantine Khroulev
+// Copyright (C) 2009--2018, 2020, 2021, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,11 +24,12 @@
 #include <vector>
 #include <string>
 
-#include "Units.hh"
-
-#include "pism/util/io/IO_Flags.hh" // IO_Type
+#include "pism/util/Units.hh"
 
 namespace pism {
+namespace io {
+enum Type : int;
+}
 
 class Logger;
 
@@ -39,9 +40,9 @@ class Logger;
 
   - units: specifies internal units. When read, a variable is
   converted to these units. When written, it is converted from these
-  to glaciological_units.
+  to output_units.
 
-  - glaciological_units: is never written to a file; replaces 'units'
+  - output_units: is never written to a file; replaces 'units'
   in the output file.
 
   - valid_min, valid_max: specify the valid range of a variable. Are
@@ -60,7 +61,7 @@ class Logger;
   - standard_name
   - pism_intent
   - units
-  - glaciological_units (saved to files as "units")
+  - output_units (saved to files as "units")
 
   Use the `name` of "PISM_GLOBAL" to read and write global attributes.
   (See also File.)
@@ -105,32 +106,50 @@ public:
     return Attribute(this, name);
   }
 
-  const ConstAttribute operator[](const std::string &name) const {
+  ConstAttribute operator[](const std::string &name) const {
     return ConstAttribute(this, name);
+  }
+
+  // setters for common attributes
+
+  VariableMetadata &long_name(const std::string &input) {
+    return set_string("long_name", input);
+  }
+
+  VariableMetadata &standard_name(const std::string &input) {
+    return set_string("standard_name", input);
+  }
+
+  VariableMetadata &units(const std::string &input) {
+    return set_string("units", input);
+  }
+
+  VariableMetadata &output_units(const std::string &input) {
+    return set_string("output_units", input);
   }
 
   // getters and setters
   double get_number(const std::string &name) const;
-  void set_number(const std::string &name, double value);
+  VariableMetadata &set_number(const std::string &name, double value);
 
   std::vector<double> get_numbers(const std::string &name) const;
-  void set_numbers(const std::string &name, const std::vector<double> &values);
+  VariableMetadata &set_numbers(const std::string &name, const std::vector<double> &values);
 
   std::string get_name() const;
-  void set_name(const std::string &name);
+  VariableMetadata &set_name(const std::string &name);
 
   std::string get_string(const std::string &name) const;
-  void set_string(const std::string &name, const std::string &value);
-  void set_units_without_validation(const std::string &value);
+  VariableMetadata &set_string(const std::string &name, const std::string &value);
+  VariableMetadata &set_units_without_validation(const std::string &value);
 
   bool get_time_independent() const;
-  void set_time_independent(bool flag);
+  VariableMetadata &set_time_independent(bool flag);
 
-  IO_Type get_output_type() const;
-  void set_output_type(IO_Type type);
+  io::Type get_output_type() const;
+  VariableMetadata &set_output_type(io::Type type);
 
-  void clear_all_doubles();
-  void clear_all_strings();
+  //! Clear all attributes
+  VariableMetadata &clear();
 
   // more getters
   units::System::Ptr unit_system() const;
@@ -140,11 +159,8 @@ public:
   bool has_attribute(const std::string &name) const;
   bool has_attributes() const;
 
-  typedef std::map<std::string,std::string> StringAttrs;
-  const StringAttrs& all_strings() const;
-
-  typedef std::map<std::string,std::vector<double> > DoubleAttrs;
-  const DoubleAttrs& all_doubles() const;
+  const std::map<std::string, std::string> &all_strings() const;
+  const std::map<std::string, std::vector<double> > &all_doubles() const;
 
   void report_to_stdout(const Logger &log, int verbosity_threshold) const;
   void check_range(const std::string &filename, double min, double max) const;
@@ -165,7 +181,7 @@ private:
   std::string m_short_name;
   bool m_time_independent;
 
-  IO_Type m_output_type;
+  io::Type m_output_type;
 };
 
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).

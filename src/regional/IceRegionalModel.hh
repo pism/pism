@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,7 +34,7 @@ class CHSystem;
 //! `no_model_mask` and its semantics.
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(IceGrid::Ptr g, std::shared_ptr<Context> c);
+  IceRegionalModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> c);
 
   const energy::CHSystem* cryo_hydrologic_system() const;
 
@@ -58,12 +58,12 @@ protected:
   void init_diagnostics();
 
 private:
-  IceModelVec2Int m_no_model_mask;
-  IceModelVec2S   m_usurf_stored;
-  IceModelVec2S   m_thk_stored;
+  array::Scalar2 m_no_model_mask;
+  array::Scalar2   m_usurf_stored;
+  array::Scalar1   m_thk_stored;
 
   std::shared_ptr<energy::CHSystem> m_ch_system;
-  IceModelVec3::Ptr m_ch_warming_flux;
+  std::shared_ptr<array::Array3D> m_ch_warming_flux;
 };
 
 } // end of namespace pism

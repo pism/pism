@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,25 +17,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EnergyModel.hh"
-#include "pism/util/MaxTimestep.hh"
+#include "pism/energy/EnergyModel.hh"
+#include "pism/energy/utilities.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/Vars.hh"
-#include "utilities.hh"
-#include "pism/util/EnthalpyConverter.hh"
-#include "bootstrapping.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/pism_options.hh"
+#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {
 
-static void check_input(const IceModelVec *ptr, const char *name) {
+static void check_input(const array::Array *ptr, const char *name) {
   if (ptr == NULL) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "energy balance model input %s was not provided", name);
   }
@@ -91,31 +87,11 @@ EnergyModelStats& EnergyModelStats::operator+=(const EnergyModelStats &other) {
 }
 
 
-bool marginal(const IceModelVec2S &thickness, int i, int j, double threshold) {
-  int
-    n = j + 1,
-    e = i + 1,
-    s = j - 1,
-    w = i - 1;
+bool marginal(const array::Scalar1 &thickness, int i, int j, double threshold) {
+  auto H = thickness.box(i, j);
 
-  const double
-    N  = thickness(i, n),
-    E  = thickness(e, j),
-    S  = thickness(i, s),
-    W  = thickness(w, j),
-    NW = thickness(w, n),
-    SW = thickness(w, s),
-    NE = thickness(e, n),
-    SE = thickness(e, s);
-
-  return ((E  < threshold) or
-          (NE < threshold) or
-          (N  < threshold) or
-          (NW < threshold) or
-          (W  < threshold) or
-          (SW < threshold) or
-          (S  < threshold) or
-          (SE < threshold));
+  return ((H.e < threshold) or (H.ne < threshold) or (H.n < threshold) or (H.nw < threshold) or
+          (H.w < threshold) or (H.sw < threshold) or (H.s < threshold) or (H.se < threshold));
 }
 
 
@@ -127,73 +103,72 @@ void EnergyModelStats::sum(MPI_Comm com) {
 }
 
 
-EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
-                         stressbalance::StressBalance *stress_balance)
-  : Component(grid),
-    m_ice_enthalpy(m_grid, "enthalpy", WITH_GHOSTS, m_grid->z(), m_config->get_number("grid.max_stencil_width")),
-    m_work(m_grid, "work_vector", WITHOUT_GHOSTS, m_grid->z()),
-    m_basal_melt_rate(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS),
-    m_stress_balance(stress_balance) {
+EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
+                         std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : Component(grid),
+      m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(),
+                     m_config->get_number("grid.max_stencil_width")),
+      m_work(m_grid, "work_vector", array::WITHOUT_GHOSTS, m_grid->z()),
+      m_basal_melt_rate(m_grid, "basal_melt_rate_grounded"),
+      m_stress_balance(stress_balance) {
 
   // POSSIBLE standard name = land_ice_enthalpy
-  m_ice_enthalpy.set_attrs("model_state",
-                           "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                           "J kg-1", "J kg-1", "", 0);
+  m_ice_enthalpy.metadata(0)
+      .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
+      .units("J kg-1");
 
   {
     // ghosted to allow the "redundant" computation of tauc
-    m_basal_melt_rate.set_attrs("model_state",
-                                "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)",
-                                "m s-1", "m year-1", "", 0);
+    m_basal_melt_rate.metadata(0)
+        .long_name(
+            "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)")
+        .units("m s-1");
     // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
     // have this standard name.
     m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   }
 
   // a 3d work vector
-  m_work.set_attrs("internal",
-                   "usually new values of temperature or enthalpy during time step",
-                   "", "", "", 0);
+  m_work.metadata(0).long_name("usually new values of temperature or enthalpy during time step");
 }
 
 void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record) {
 
   if (input_file.find_variable("enthalpy")) {
     if (do_regrid) {
-      m_ice_enthalpy.regrid(input_file, CRITICAL);
+      m_ice_enthalpy.regrid(input_file, io::Default::Nil());
     } else {
       m_ice_enthalpy.read(input_file, record);
     }
   } else if (input_file.find_variable("temp")) {
-    IceModelVec3
-      &temp    = m_work,
-      &liqfrac = m_ice_enthalpy;
+    array::Array3D &temp = m_work, &liqfrac = m_ice_enthalpy;
 
     {
       temp.set_name("temp");
       temp.metadata(0).set_name("temp");
-      temp.set_attrs("temporary", "ice temperature",
-                     "Kelvin", "Kelvin", "land_ice_temperature", 0);
+      temp.metadata(0)
+          .long_name("ice temperature")
+          .units("Kelvin")
+          .standard_name("land_ice_temperature");
 
       if (do_regrid) {
-        temp.regrid(input_file, CRITICAL);
+        temp.regrid(input_file, io::Default::Nil());
       } else {
         temp.read(input_file, record);
       }
     }
 
-    const IceModelVec2S & ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+    const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     if (input_file.find_variable("liqfrac")) {
       SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
 
       liqfrac.set_name("liqfrac");
       liqfrac.metadata(0).set_name("liqfrac");
-      liqfrac.set_attrs("temporary", "ice liquid water fraction",
-                        "1", "1", "", 0);
+      liqfrac.metadata(0).long_name("ice liquid water fraction").units("1");
 
       if (do_regrid) {
-        liqfrac.regrid(input_file, CRITICAL);
+        liqfrac.regrid(input_file, io::Default::Nil());
       } else {
         liqfrac.read(input_file, record);
       }
@@ -235,7 +210,7 @@ void EnergyModel::regrid_enthalpy() {
   std::string enthalpy_name = m_ice_enthalpy.metadata().get_name();
 
   if (regrid_vars.empty() or member(enthalpy_name, regrid_vars)) {
-    File regrid_file(m_grid->com, regrid_filename, PISM_GUESS, PISM_READONLY);
+    File regrid_file(m_grid->com, regrid_filename, io::PISM_GUESS, io::PISM_READONLY);
     init_enthalpy(regrid_file, true, 0);
   }
 }
@@ -246,20 +221,20 @@ void EnergyModel::restart(const File &input_file, int record) {
 }
 
 void EnergyModel::bootstrap(const File &input_file,
-                            const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &surface_temperature,
-                            const IceModelVec2S &climatic_mass_balance,
-                            const IceModelVec2S &basal_heat_flux) {
+                            const array::Scalar &ice_thickness,
+                            const array::Scalar &surface_temperature,
+                            const array::Scalar &climatic_mass_balance,
+                            const array::Scalar &basal_heat_flux) {
   this->bootstrap_impl(input_file,
                        ice_thickness, surface_temperature,
                        climatic_mass_balance, basal_heat_flux);
 }
 
-void EnergyModel::initialize(const IceModelVec2S &basal_melt_rate,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &surface_temperature,
-                             const IceModelVec2S &climatic_mass_balance,
-                             const IceModelVec2S &basal_heat_flux) {
+void EnergyModel::initialize(const array::Scalar &basal_melt_rate,
+                             const array::Scalar &ice_thickness,
+                             const array::Scalar &surface_temperature,
+                             const array::Scalar &climatic_mass_balance,
+                             const array::Scalar &basal_heat_flux) {
   this->initialize_impl(basal_melt_rate,
                         ice_thickness,
                         surface_temperature,
@@ -272,16 +247,14 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
   m_stdout_flags = "";
   m_stats = EnergyModelStats();
 
-  const Profiling &profiling = m_grid->ctx()->profiling();
-
-  profiling.begin("ice_energy");
+  profiling().begin("ice_energy");
   {
     // this call should fill m_work with new values of enthalpy
     this->update_impl(t, dt, inputs);
 
     m_ice_enthalpy.copy_from(m_work);
   }
-  profiling.end("ice_energy");
+  profiling().end("ice_energy");
 
   // globalize m_stats and update m_stdout_flags
   {
@@ -326,12 +299,12 @@ const EnergyModelStats& EnergyModel::stats() const {
   return m_stats;
 }
 
-const IceModelVec3 & EnergyModel::enthalpy() const {
+const array::Array3D & EnergyModel::enthalpy() const {
   return m_ice_enthalpy;
 }
 
 /*! @brief Basal melt rate in grounded areas. (It is set to zero elsewhere.) */
-const IceModelVec2S & EnergyModel::basal_melt_rate() const {
+const array::Scalar & EnergyModel::basal_melt_rate() const {
   return m_basal_melt_rate;
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,15 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Anomaly.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/io/io_helpers.hh"
+#include "pism/coupler/surface/Anomaly.hh"
+#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {
 
-Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
+Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "surface.anomaly");
@@ -32,9 +32,9 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_ice_surface_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
+    m_ice_surface_temp_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                              file,
                                                              "ice_surface_temp_anomaly",
                                                              "", // no standard name
@@ -42,7 +42,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                                              opt.periodic,
                                                              LINEAR);
 
-    m_climatic_mass_balance_anomaly = IceModelVec2T::ForcingField(m_grid,
+    m_climatic_mass_balance_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                                   file,
                                                                   "climatic_mass_balance_anomaly",
                                                                   "", // no standard name
@@ -50,13 +50,15 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                                                   opt.periodic);
   }
 
-  m_ice_surface_temp_anomaly->set_attrs("climate_forcing",
-                                        "anomaly of the temperature of the ice at the ice surface"
-                                        " but below firn processes",
-                                        "Kelvin", "Kelvin", "", 0);
-  m_climatic_mass_balance_anomaly->set_attrs("climate_forcing",
-                                             "anomaly of the surface mass balance (accumulation/ablation) rate",
-                                             "kg m-2 s-1", "kg m-2 year-1", "", 0);
+  m_ice_surface_temp_anomaly->metadata(0)
+      .long_name(
+          "anomaly of the temperature of the ice at the ice surface but below firn processes")
+      .units("Kelvin");
+
+  m_climatic_mass_balance_anomaly->metadata(0)
+      .long_name("anomaly of the surface mass balance (accumulation/ablation) rate")
+      .units("kg m-2 s-1")
+      .output_units("kg m-2 year-1");
 
   m_mass_flux = allocate_mass_flux(g);
   m_temperature = allocate_temperature(g);
@@ -103,23 +105,23 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
-const IceModelVec2S &Anomaly::mass_flux_impl() const {
+const array::Scalar &Anomaly::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &Anomaly::temperature_impl() const {
+const array::Scalar &Anomaly::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &Anomaly::accumulation_impl() const {
+const array::Scalar &Anomaly::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &Anomaly::melt_impl() const {
+const array::Scalar &Anomaly::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &Anomaly::runoff_impl() const {
+const array::Scalar &Anomaly::runoff_impl() const {
   return *m_runoff;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,21 +17,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Initialization.hh"
+#include "pism/coupler/ocean/sea_level/Initialization.hh"
 
 #include "pism/coupler/util/init_step.hh"
-#include "pism/util/Context.hh"
 
 namespace pism {
 namespace ocean {
 namespace sea_level {
 
-InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid,
+InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid,
                                            std::shared_ptr<SeaLevel> in)
   : SeaLevel(grid, in) {
 
   m_sea_level.metadata().set_name("effective_sea_level_elevation");
-  m_sea_level.metadata()["pism_intent"] = "model_state";
 }
 
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
@@ -49,7 +47,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     m_log->message(2, "* Reading effective sea level forcing from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
     const unsigned int time_length = file.nrecords();
     const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 
@@ -59,7 +57,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   } else {
     m_log->message(2, "* Performing a 'fake' sea level forcing time-step for bootstrapping...\n");
 
-    init_step(this, geometry, *m_grid->ctx()->time());
+    init_step(this, geometry, time());
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is
@@ -71,7 +69,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 }
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
-  m_sea_level.define(output);
+  m_sea_level.define(output, io::PISM_DOUBLE);
 
   m_input_model->define_model_state(output);
 }
@@ -82,7 +80,7 @@ void InitializationHelper::write_model_state_impl(const File &output) const {
   m_input_model->write_model_state(output);
 }
 
-const IceModelVec2S& InitializationHelper::sea_level_elevation_impl() const {
+const array::Scalar& InitializationHelper::sea_level_elevation_impl() const {
   return m_sea_level;
 }
 

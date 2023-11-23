@@ -116,15 +116,14 @@ def surface_simple(grid):
     return PISM.SurfaceSimple(grid, PISM.AtmosphereUniform(grid))
 
 def climatic_mass_balance(grid, value):
-    SMB = PISM.IceModelVec2S(grid, "climatic_mass_balance", PISM.WITHOUT_GHOSTS)
-    SMB.set_attrs("climate", "surface mass balance", "kg m-2 s-1", "kg m-2 s-1",
-                  "land_ice_surface_specific_mass_balance_flux", 0)
+    SMB = PISM.Scalar(grid, "climatic_mass_balance")
+    SMB.metadata(0).long_name("surface mass balance").units("kg m-2 s-1").standard_name("land_ice_surface_specific_mass_balance_flux")
     SMB.set(value)
     return SMB
 
 def ice_surface_temp(grid, value):
-    temperature = PISM.IceModelVec2S(grid, "ice_surface_temp", PISM.WITHOUT_GHOSTS)
-    temperature.set_attrs("climate", "ice temperature at the top surface", "Kelvin", "Kelvin", "", 0)
+    temperature = PISM.Scalar(grid, "ice_surface_temp")
+    temperature.metadata(0).long_name("ice temperature at the top surface").units("Kelvin")
     temperature.set(value)
     return temperature
 
@@ -473,8 +472,8 @@ class Simple(TestCase):
 
         model.update(self.geometry, 0, 1)
 
-        T = sample(atmosphere.mean_annual_temp())
-        M = sample(atmosphere.mean_precipitation())
+        T = sample(atmosphere.air_temperature())
+        M = sample(atmosphere.precipitation())
 
         check_model(model, T, 0.0, M, accumulation=M)
 
@@ -496,18 +495,14 @@ class Anomaly(TestCase):
 
         PISM.util.prepare_output(self.filename)
 
-        delta_SMB = PISM.IceModelVec2S(self.grid, "climatic_mass_balance_anomaly",
-                                       PISM.WITHOUT_GHOSTS)
-        delta_SMB.set_attrs("climate_forcing",
-                            "2D surface mass flux anomaly", "kg m-2 s-1", "kg m-2 s-1", "", 0)
+        delta_SMB = PISM.Scalar(self.grid, "climatic_mass_balance_anomaly")
+        delta_SMB.metadata(0).long_name("2D surface mass flux anomaly").units("kg m-2 s-1").output_units("kg m-2 s-1")
         delta_SMB.set(self.dSMB)
 
         delta_SMB.write(self.filename)
 
-        delta_T = PISM.IceModelVec2S(self.grid, "ice_surface_temp_anomaly",
-                                     PISM.WITHOUT_GHOSTS)
-        delta_T.set_attrs("climate_forcing",
-                          "2D surface temperature anomaly", "Kelvin", "Kelvin", "", 0)
+        delta_T = PISM.Scalar(self.grid, "ice_surface_temp_anomaly")
+        delta_T.metadata(0).long_name("2D surface temperature anomaly").units("Kelvin").output_units("Kelvin")
         delta_T.set(self.dT)
 
         delta_T.write(self.filename)
@@ -618,7 +613,7 @@ class ForceThickness(TestCase):
         PISM.util.prepare_output(self.filename)
         self.geometry.ice_thickness.write(self.filename)
 
-        ftt_mask = PISM.IceModelVec2S(self.grid, "ftt_mask", PISM.WITHOUT_GHOSTS)
+        ftt_mask = PISM.Scalar(self.grid, "ftt_mask")
         ftt_mask.set(1.0)
         ftt_mask.write(self.filename)
 
@@ -626,7 +621,7 @@ class ForceThickness(TestCase):
         ice_density = config.get_number("constants.ice.density")
         self.dSMB   = -ice_density * alpha * self.dH
 
-        config.set_string("surface.force_to_thickness_file", self.filename)
+        config.set_string("surface.force_to_thickness.file", self.filename)
         config.set_number("surface.force_to_thickness.alpha", convert(alpha, "1/s", "1/year"))
 
     def forcing_test(self):
@@ -737,13 +732,12 @@ class ISMIP6(TestCase):
     def prepare_reference_data(self, grid, filename):
 
         usurf   = PISM.model.createIceSurfaceVec(grid)
-        SMB_ref = PISM.IceModelVec2S(grid, "climatic_mass_balance", PISM.WITHOUT_GHOSTS)
-        T_ref   = PISM.IceModelVec2S(grid, "ice_surface_temp", PISM.WITHOUT_GHOSTS)
+        SMB_ref = PISM.Scalar(grid, "climatic_mass_balance")
+        T_ref   = PISM.Scalar(grid, "ice_surface_temp")
 
         usurf.metadata(0).set_string("units", "m")
 
-        SMB_ref.set_attrs("climate_forcing", "reference SMB", "kg m-2 s-1", "kg m-2 s-1",
-                          "land_ice_surface_specific_mass_balance_flux", 0)
+        SMB_ref.metadata(0).long_name("reference SMB").units("kg m-2 s-1").output_units("kg m-2 s-1").standard_name("land_ice_surface_specific_mass_balance_flux")
 
         T_ref.metadata(0).set_string("units", "K")
 
@@ -755,24 +749,24 @@ class ISMIP6(TestCase):
 
         # write time-independent fields
         for v in [usurf, SMB_ref, T_ref]:
-            v.set_time_independent(True)
+            v.metadata().set_time_independent(True)
             v.write(out)
 
         out.close()
 
     def prepare_climate_forcing(self, grid, filename):
 
-        aSMB = PISM.IceModelVec2S(grid, "climatic_mass_balance_anomaly", PISM.WITHOUT_GHOSTS)
-        aSMB.set_attrs("climate_forcing", "SMB anomaly", "kg m-2 s-1", "kg m-2 s-1", "", 0)
+        aSMB = PISM.Scalar(grid, "climatic_mass_balance_anomaly")
+        aSMB.metadata(0).long_name("SMB anomaly").units("kg m-2 s-1").output_units("kg m-2 s-1")
 
-        dSMBdz = PISM.IceModelVec2S(grid, "climatic_mass_balance_gradient", PISM.WITHOUT_GHOSTS)
-        dSMBdz.set_attrs("climate_forcing", "SMB gradient", "kg m-2 s-1 m-1", "kg m-2 s-1 m-1", "", 0)
+        dSMBdz = PISM.Scalar(grid, "climatic_mass_balance_gradient")
+        dSMBdz.metadata(0).long_name("SMB gradient").units("kg m-2 s-1 m-1").output_units("kg m-2 s-1 m-1")
 
-        aT = PISM.IceModelVec2S(grid, "ice_surface_temp_anomaly", PISM.WITHOUT_GHOSTS)
-        aT.set_attrs("climate_forcing", "temperature anomaly", "Kelvin", "Kelvin", "", 0)
+        aT = PISM.Scalar(grid, "ice_surface_temp_anomaly")
+        aT.metadata(0).long_name("temperature anomaly").units("Kelvin").output_units("Kelvin")
 
-        dTdz = PISM.IceModelVec2S(grid, "ice_surface_temp_gradient", PISM.WITHOUT_GHOSTS)
-        dTdz.set_attrs("climate_forcing", "surface temperature gradient", "K m-1", "K m-1", "", 0)
+        dTdz = PISM.Scalar(grid, "ice_surface_temp_gradient")
+        dTdz.metadata(0).long_name("surface temperature gradient").units("K m-1").output_units("K m-1")
 
         out = PISM.util.prepare_output(filename, append_time=False)
 

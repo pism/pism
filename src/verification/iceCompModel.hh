@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,14 +20,13 @@
 #define __iceCompModel_hh
 
 #include "pism/icemodel/IceModel.hh"
-#include "pism/energy/BedThermalUnit.hh"
 
 namespace pism {
 
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid::Ptr g, std::shared_ptr<Context> ctx, int mytest);
+  IceCompModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> ctx, int mytest);
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:
@@ -62,7 +61,7 @@ protected:
   void reset_thickness_test_A();
 
   // related to test L
-  IceModelVec2S m_HexactL;
+  array::Scalar m_HexactL;
   void initTestL();
 
   // related to tests F G; see iCMthermo.cc
@@ -81,7 +80,7 @@ protected:
   void computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
                                               double &gmaxWerr, double &gavWerr); // scalar errors
   
-  IceModelVec3 m_strain_heating3_comp;
+  array::Array3D m_strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc
   void initTestsKO();

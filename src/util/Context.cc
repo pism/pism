@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2019, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,12 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Context.hh"
-#include "Profiling.hh"
-#include "Units.hh"
-#include "Config.hh"
-#include "Time.hh"
-#include "Logger.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/pism_config.hh"
@@ -38,30 +37,30 @@ namespace pism {
 class Context::Impl {
 public:
   Impl(MPI_Comm c,
-       UnitsSystemPtr sys,
-       ConfigPtr conf,
-       EnthalpyConverterPtr EC,
-       TimePtr t,
-       LoggerPtr log,
+       std::shared_ptr<units::System> sys,
+       std::shared_ptr<Config> conf,
+       std::shared_ptr<EnthalpyConverter> EC,
+       std::shared_ptr<Time> t,
+       std::shared_ptr<Logger> log,
        const std::string &p)
     : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t), prefix(p),
       logger(log), pio_iosys_id(-1) {
     // empty
   }
   MPI_Comm com;
-  UnitsSystemPtr unit_system;
-  ConfigPtr config;
-  EnthalpyConverterPtr enthalpy_converter;
-  TimePtr time;
+  std::shared_ptr<units::System> unit_system;
+  std::shared_ptr<Config> config;
+  std::shared_ptr<EnthalpyConverter> enthalpy_converter;
+  std::shared_ptr<Time> time;
   std::string prefix;
   Profiling profiling;
-  LoggerPtr logger;
+  std::shared_ptr<Logger> logger;
   int pio_iosys_id;
 };
 
-Context::Context(MPI_Comm c, UnitsSystemPtr sys,
-                 ConfigPtr config, EnthalpyConverterPtr EC, TimePtr t,
-                 LoggerPtr L,
+Context::Context(MPI_Comm c, std::shared_ptr<units::System> sys,
+                 std::shared_ptr<Config> config, std::shared_ptr<EnthalpyConverter> EC, std::shared_ptr<Time> t,
+                 std::shared_ptr<Logger> L,
                  const std::string &p)
   : m_impl(new Impl(c, sys, config, EC, t, L, p)) {
   // empty
@@ -95,27 +94,27 @@ int Context::rank() const {
   return R;
 }
 
-Context::UnitsSystemPtr Context::unit_system() const {
+std::shared_ptr<units::System> Context::unit_system() const {
   return m_impl->unit_system;
 }
 
-Context::ConfigPtr Context::config() {
+std::shared_ptr<Config> Context::config() {
   return m_impl->config;
 }
 
-Context::ConstConfigPtr Context::config() const {
+std::shared_ptr<const Config> Context::config() const {
   return m_impl->config;
 }
 
-Context::EnthalpyConverterPtr Context::enthalpy_converter() const {
+std::shared_ptr<EnthalpyConverter> Context::enthalpy_converter() const {
   return m_impl->enthalpy_converter;
 }
 
-Context::TimePtr Context::time() {
+std::shared_ptr<Time> Context::time() {
   return m_impl->time;
 }
 
-Context::ConstTimePtr Context::time() const {
+std::shared_ptr<const Time> Context::time() const {
   return m_impl->time;
 }
 
@@ -127,11 +126,11 @@ const Profiling& Context::profiling() const {
   return m_impl->profiling;
 }
 
-Context::ConstLoggerPtr Context::log() const {
+std::shared_ptr<const Logger> Context::log() const {
   return m_impl->logger;
 }
 
-Context::LoggerPtr Context::log() {
+std::shared_ptr<Logger> Context::log() {
   return m_impl->logger;
 }
 

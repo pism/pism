@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2016, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2016, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -55,7 +55,7 @@ void label_connected_components(double *image, int nrows, int ncols, bool identi
   std::vector<Run> runs;
 
   for (int r = 0; r < nrows; ++r) {
-    const double *row = &image[r * ncols];
+    const double *row = &image[static_cast<std::ptrdiff_t>(r) * ncols];
 
     int c = 0;
     while (c < ncols) {
@@ -71,7 +71,7 @@ void label_connected_components(double *image, int nrows, int ncols, bool identi
         // Iterate over all the pixels in this run
         while (c < ncols and row[c] > 0) {
 
-          if (identify_icebergs and (int)row[c] == mask_grounded) {
+          if (identify_icebergs and static_cast<int>(row[c]) == mask_grounded) {
             // looking at a "grounded" pixel
             if (L != provisional_label) {
               labels[L] = grounded_label;
@@ -119,7 +119,7 @@ void label_connected_components(double *image, int nrows, int ncols, bool identi
     } // end of the loop over columns
   } // end of the loop over rows
 
-  int N_labels = labels.size();
+  auto N_labels = static_cast<int>(labels.size());
 
   // Flatten the table of equivalences
   {
@@ -145,7 +145,7 @@ void label_connected_components(double *image, int nrows, int ncols, bool identi
     // Blobs connected to grounded areas have the label "1", icebergs
     // have labels 2 and greater.
     for (int k = 1; k < N_labels; ++k) {
-      labels[k] = static_cast<bool>(labels[k] > 1);
+      labels[k] = labels[k] > 1 ? 1 : 0;
     }
   } else {
     // Here we subtract 1 because provisional labels start at 2 (1 is

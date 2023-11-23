@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,16 @@
 #ifndef IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
 #define IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 #include "pism/util/Mask.hh"
 
 namespace pism {
 
-class IceModelVec2CellType;
+namespace array {
+class CellType1;
+class CellType2;
+class CellType;
+} // end of namespace array
 
 namespace inverse {
 
@@ -41,29 +45,29 @@ namespace inverse {
   using a projection that forces \f$f\f$ to equal zero at nodes specified
   by the constructor argument \a dirichletLocations.
 */
-class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
+class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<array::Scalar> {
 public:
-  IPGroundedIceH1NormFunctional2S(IceGrid::ConstPtr grid, double cL2, 
-                                  double cH1, IceModelVec2CellType &ice_mask,
-                                  IceModelVec2Int *dirichletLocations=NULL)
-    : IPInnerProductFunctional<IceModelVec2S>(grid),
+  IPGroundedIceH1NormFunctional2S(std::shared_ptr<const Grid> grid, double cL2,
+                                  double cH1, array::CellType1 &ice_mask,
+                                  array::Scalar *dirichletLocations=NULL)
+    : IPInnerProductFunctional<array::Scalar>(grid),
     m_cL2(cL2),
     m_cH1(cH1),
     m_dirichletIndices(dirichletLocations),
     m_ice_mask(ice_mask) {};
   virtual ~IPGroundedIceH1NormFunctional2S() {};
   
-  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
-  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(array::Scalar &x, double *OUTPUT);
+  virtual void dot(array::Scalar &a, array::Scalar &b, double *OUTPUT);
+  virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
 
   virtual void assemble_form(Mat J);
 
 protected:
 
   double m_cL2, m_cH1;
-  IceModelVec2Int *m_dirichletIndices;
-  IceModelVec2CellType &m_ice_mask;
+  array::Scalar *m_dirichletIndices;
+  array::CellType1 &m_ice_mask;
 
 private:
   IPGroundedIceH1NormFunctional2S(IPGroundedIceH1NormFunctional2S const &);

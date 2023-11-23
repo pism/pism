@@ -14,7 +14,7 @@ surface = data[:, 2]
 sliding = data[:, 3]
 
 dx = x[1] - x[0]
-high_beta = 1e22
+high_beta = 1e21
 
 def convert(output_filename, no_slip):
     try:

@@ -19,15 +19,18 @@
 
 namespace pism {
 
-class IceModelVec2S;
-class IceModelVec2Stag;
+namespace array {
+class Scalar1;
+class Staggered;
+class Staggered1;
+} // end of namespace array
 
 /*! Limit fluxes to preserve non-negativity of a transported quantity.
  *
  */
 void make_nonnegative_preserving(double dt,
-                                 const IceModelVec2S &x,
-                                 const IceModelVec2Stag &flux,
-                                 IceModelVec2Stag &result);
+                                 const array::Scalar1 &x,
+                                 const array::Staggered1 &flux,
+                                 array::Staggered &result);
 
 } // end of namespace pism

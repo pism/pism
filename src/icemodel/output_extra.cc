@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,9 +22,8 @@
 #include <netcdf_meta.h>
 #endif
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 
@@ -104,7 +103,7 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
     }
 
     result.erase("ismip6");
-    for (auto v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
+    for (const auto& v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
       result.insert(v);
     }
   }
@@ -155,7 +154,7 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    File file(m_grid->com, m_extra_filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, m_extra_filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     std::string time_name = m_config->get_string("time.dimension_name");
     if (file.find_variable(time_name)) {
@@ -314,7 +313,7 @@ void IceModel::write_extras() {
 
   // default behavior is to move the file aside if it exists already; option allows appending
   bool append = m_config->get_flag("output.extra.append");
-  IO_Mode mode = m_extra_file_is_ready or append ? PISM_READWRITE : PISM_READWRITE_MOVE;
+  auto mode = m_extra_file_is_ready or append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
 
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
@@ -335,21 +334,21 @@ void IceModel::write_extras() {
       m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
       io::define_time_bounds(m_extra_bounds,
-                             time_name, "nv", *m_extra_file);
+                             time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
 
       write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
 
       m_extra_file_is_ready = true;
     }
 
-    write_run_stats(*m_extra_file);
+    write_run_stats(*m_extra_file, run_stats());
 
     save_variables(*m_extra_file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                    m_extra_vars,
                    0.5 * (m_last_extra + current_time), // use the mid-point of the
                                                         // current reporting interval
-                   PISM_FLOAT);
+                   io::PISM_FLOAT);
 
     // Get the length of the time dimension *after* it is appended to.
     unsigned int time_length = m_extra_file->dimension_length(time_name);

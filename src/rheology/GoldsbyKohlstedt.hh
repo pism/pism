@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,10 @@
 #ifndef _GOLDSBYKOHLSTEDT_H_
 #define _GOLDSBYKOHLSTEDT_H_
 
-#include "FlowLaw.hh"
+#include <string>                          // for string
+#include "pism/rheology/FlowLaw.hh"                      // for FlowLaw
+#include "pism/util/EnthalpyConverter.hh"  // for EnthalpyConverter, Enthalp...
+namespace pism { class Config; }
 
 namespace pism {
 namespace rheology {

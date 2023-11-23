@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2020, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "SSAFD_Regional.hh"
+#include "pism/regional/SSAFD_Regional.hh"
 #include "pism/util/Vars.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
@@ -25,7 +25,7 @@ namespace pism {
 
 namespace stressbalance {
 
-SSAFD_Regional::SSAFD_Regional(IceGrid::ConstPtr g)
+SSAFD_Regional::SSAFD_Regional(std::shared_ptr<const Grid> g)
   : SSAFD(g) {
 
   m_h_stored      = NULL;
@@ -66,11 +66,11 @@ static int weight(int M_ij, int M_n, double h_ij, double h_n) {
   return 1;
 }
 
-void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
-                                            const IceModelVec2S &surface_elevation,
-                                            const IceModelVec2CellType &cell_type,
-                                            const IceModelVec2Int *no_model_mask,
-                                            IceModelVec2V &result) const {
+void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
+                                            const array::Scalar1 &surface_elevation,
+                                            const array::CellType1 &cell_type,
+                                            const array::Scalar1 *no_model_mask,
+                                            array::Vector &result) const {
 
   SSAFD::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask, result);
 
@@ -82,14 +82,14 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
     Mx = m_grid->Mx(),
     My = m_grid->My();
 
-  IceModelVec::AccessList list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
+  array::AccessScope list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto M = no_model_mask->star(i, j);
 
-    if (M.ij == 0) {
+    if (M.c == 0) {
       // this grid point is in the modeled area so we don't need to modify the driving
       // stress
       continue;
@@ -112,11 +112,11 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
         east = M.e == 1 and i < Mx - 1;
 
       // don't use differences spanning "cliffs"
-      west *= weight(CT.ij, CT.w, h.ij, h.w);
-      east *= weight(CT.ij, CT.e, h.ij, h.e);
+      west *= weight(CT.c, CT.w, h.c, h.w);
+      east *= weight(CT.c, CT.e, h.c, h.e);
 
       if (east + west > 0) {
-        h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
       } else {
         h_x = 0.0;
       }
@@ -130,21 +130,21 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
         north = M.n == 1 and j < My - 1;
 
       // don't use differences spanning "cliffs"
-      south *= weight(CT.ij, CT.s, h.ij, h.s);
-      north *= weight(CT.ij, CT.n, h.ij, h.n);
+      south *= weight(CT.c, CT.s, h.c, h.s);
+      north *= weight(CT.c, CT.n, h.c, h.n);
 
       if (north + south > 0) {
-        h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
       } else {
         h_y = 0.0;
       }
     }
 
-    result(i, j) = - pressure * Vector2(h_x, h_y);
+    result(i, j) = - pressure * Vector2d(h_x, h_y);
   } // end of the loop over grid points
 }
 
-SSA * SSAFD_RegionalFactory(IceGrid::ConstPtr grid) {
+SSA * SSAFD_RegionalFactory(std::shared_ptr<const Grid> grid) {
   return new SSAFD_Regional(grid);
 }
 

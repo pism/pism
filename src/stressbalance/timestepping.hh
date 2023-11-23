@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,10 +24,15 @@
 
 namespace pism {
 
-class IceModelVec2S;
-class IceModelVec2CellType;
-class IceModelVec2V;
-class IceModelVec3;
+
+namespace array {
+class Array3D;
+class CellType1;
+class CellType2;
+class CellType;
+class Scalar;
+class Vector;
+} // end of namespace array
 
 struct CFLData {
   CFLData();
@@ -43,21 +48,26 @@ struct CFLData {
  * does *not* use the w component of the velocity field in the computation of the max. time step.
  * The maximum of the speed along the z axis is computed for reporting.
  */
-CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2CellType &cell_type,
-                            const IceModelVec3 &u3,
-                            const IceModelVec3 &v3,
-                            const IceModelVec3 &w3);
+CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
+                            const array::CellType &cell_type,
+                            const array::Array3D &u3,
+                            const array::Array3D &v3,
+                            const array::Array3D &w3);
 
 /*! @brief Compute the max. time step according to the CFL condition (within the ice, 2D). */
 /*!
  * Returns the maximum time step along with maximum speeds along x and y directions within the
  * ice.
  */
-CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2CellType &cell_type,
-                            const IceModelVec2V &velocity);
+CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
+                            const array::CellType &cell_type,
+                            const array::Vector &velocity);
 
+/*!
+ * Compute the max. time step according to the max. diffusivity of the SIA flow
+ */
+MaxTimestep max_timestep_diffusivity(double D_max, double dx, double dy,
+                                     double adaptive_timestepping_ratio);
 } // end of namespace pism
 
 

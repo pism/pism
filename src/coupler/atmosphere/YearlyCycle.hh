@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PAYEARLYCYCLE_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -31,10 +30,10 @@ namespace atmosphere {
 //! (constant in time) precipitation field.
 class YearlyCycle : public AtmosphereModel {
 public:
-  YearlyCycle(IceGrid::ConstPtr g);
+  YearlyCycle(std::shared_ptr<const Grid> g);
   virtual ~YearlyCycle() = default;
 
-  virtual const IceModelVec2S& mean_summer_temp() const;
+  virtual const array::Scalar& mean_summer_temp() const;
 
 protected:
   virtual void define_model_state_impl(const File &output) const;
@@ -42,8 +41,8 @@ protected:
 
   virtual void init_impl(const Geometry &geometry);
 
-  virtual const IceModelVec2S& mean_precipitation_impl() const;
-  virtual const IceModelVec2S& mean_annual_temp_impl() const;
+  virtual const array::Scalar& precipitation_impl() const;
+  virtual const array::Scalar& air_temperature_impl() const;
 
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;
@@ -61,7 +60,7 @@ protected:
 
   double m_snow_temp_summer_day;
   std::string m_reference;
-  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_summer, m_precipitation;
+  array::Scalar m_air_temp_mean_annual, m_air_temp_mean_summer, m_precipitation;
   mutable std::vector<double> m_cosine_cycle;
 };
 

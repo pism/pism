@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#include <cmath>                // exp()
 
-#include "PrecipitationScaling.hh"
+#include "pism/coupler/atmosphere/PrecipitationScaling.hh"
 
 #include "pism/util/ScalarForcing.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -24,7 +25,7 @@
 namespace pism {
 namespace atmosphere {
 
-PrecipitationScaling::PrecipitationScaling(IceGrid::ConstPtr grid,
+PrecipitationScaling::PrecipitationScaling(std::shared_ptr<const Grid> grid,
                                            std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
@@ -60,11 +61,11 @@ void PrecipitationScaling::init_timeseries_impl(const std::vector<double> &ts) c
 void PrecipitationScaling::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_precipitation->copy_from(m_input_model->mean_precipitation());
+  m_precipitation->copy_from(m_input_model->precipitation());
   m_precipitation->scale(exp(m_exp_factor * m_forcing->value(t + 0.5 * dt)));
 }
 
-const IceModelVec2S& PrecipitationScaling::mean_precipitation_impl() const {
+const array::Scalar& PrecipitationScaling::precipitation_impl() const {
   return *m_precipitation;
 }
 

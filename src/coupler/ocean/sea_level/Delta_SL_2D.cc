@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,16 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Delta_SL_2D.hh"
+#include "pism/coupler/ocean/sea_level/Delta_SL_2D.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace ocean {
 namespace sea_level {
 
-Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
+Delta_SL_2D::Delta_SL_2D(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLevel> in)
   : SeaLevel(grid, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.delta_sl_2d");
@@ -33,18 +34,18 @@ Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_forcing = IceModelVec2T::ForcingField(m_grid,
-                                            file,
-                                            "delta_SL",
-                                            "", // no standard name
-                                            buffer_size,
-                                            opt.periodic,
-                                            LINEAR);
-    m_forcing->set_attrs("climate_forcing",
-                         "two-dimensional sea level offsets",
-                         "meters", "meters", "", 0);
+    m_forcing = std::make_shared<array::Forcing>(m_grid,
+                                                 file,
+                                                 "delta_SL",
+                                                 "", // no standard name
+                                                 buffer_size,
+                                                 opt.periodic,
+                                                 LINEAR);
+    m_forcing->metadata(0)
+        .long_name("two-dimensional sea level offsets")
+        .units("meters");
   }
 }
 

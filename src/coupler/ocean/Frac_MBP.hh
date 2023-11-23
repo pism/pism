@@ -35,7 +35,7 @@ namespace ocean {
 class Frac_MBP : public OceanModel
 {
 public:
-  Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Frac_MBP(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Frac_MBP();
 
 private:
@@ -43,7 +43,7 @@ private:
 
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& average_water_column_pressure_impl() const;
+  const array::Scalar& average_water_column_pressure_impl() const;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 };

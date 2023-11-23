@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2021, 2022 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -26,28 +26,25 @@
 
 namespace pism {
 
-class Geometry;
-class IceModelVec2S;
-
 //! @brief Atmosphere models and modifiers: provide precipitation and
 //! temperature to a surface::SurfaceModel below
 namespace atmosphere {
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
 class AtmosphereModel : public Component {
 public:
-  AtmosphereModel(IceGrid::ConstPtr g);
-  AtmosphereModel(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> input);
+  AtmosphereModel(std::shared_ptr<const Grid> g);
+  AtmosphereModel(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> input);
   virtual ~AtmosphereModel() = default;
 
   void init(const Geometry &geometry);
 
   void update(const Geometry &geometry, double t, double dt);
 
-  //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
-  const IceModelVec2S& mean_precipitation() const;
+  //! @brief Sets result to the mean precipitation, in "kg m-2 second-1".
+  const array::Scalar& precipitation() const;
 
-  //! \brief Sets result to the mean annual near-surface air temperature, in degrees Kelvin.
-  const IceModelVec2S& mean_annual_temp() const;
+  //! @brief Sets result to the mean near-surface air temperature, in degrees Kelvin.
+  const array::Scalar& air_temperature() const;
 
   void begin_pointwise_access() const;
   void end_pointwise_access() const;
@@ -71,8 +68,8 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
-  virtual const IceModelVec2S& mean_precipitation_impl() const;
-  virtual const IceModelVec2S& mean_annual_temp_impl() const;
+  virtual const array::Scalar& precipitation_impl() const;
+  virtual const array::Scalar& air_temperature_impl() const;
 
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;
@@ -87,8 +84,8 @@ protected:
 
   std::shared_ptr<AtmosphereModel> m_input_model;
 
-  static IceModelVec2S::Ptr allocate_temperature(IceGrid::ConstPtr grid);
-  static IceModelVec2S::Ptr allocate_precipitation(IceGrid::ConstPtr grid);
+  static std::shared_ptr<array::Scalar> allocate_temperature(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_precipitation(std::shared_ptr<const Grid> grid);
 };
 
 } // end of namespace atmosphere

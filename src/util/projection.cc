@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,15 +18,16 @@
  */
 
 #include <cstdlib>              // strtol
-#include <cmath>                // fabs
+#include <cmath>                // std::pow, std::sqrt, std::fabs
 
-#include "projection.hh"
-#include "VariableMetadata.hh"
-#include "error_handling.hh"
-#include "io/File.hh"
-#include "io/io_helpers.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/projection.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Array3D.hh"
 
 #include "pism/pism_config.hh"
 
@@ -155,7 +156,7 @@ void check_consistency_epsg(const MappingInfo &info) {
                                       s.first.c_str());
       }
 
-      std::string string = info.mapping.get_string(s.first);
+      std::string string = info.mapping[s.first];
 
       if (not (string == s.second)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
@@ -181,7 +182,7 @@ void check_consistency_epsg(const MappingInfo &info) {
 
       double value = info.mapping.get_number(d.first);
 
-      if (fabs(value - d.second[0]) > 1e-12) {
+      if (std::fabs(value - d.second[0]) > 1e-12) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has %s = %f.",
@@ -254,8 +255,8 @@ static double triangle_area(const double *A, const double *B, const double *C) {
                   pow(V1[0]*V2[1] - V2[0]*V1[1], 2));
 }
 
-void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
-  IceGrid::ConstPtr grid = result.grid();
+void compute_cell_areas(const std::string &projection, array::Scalar &result) {
+  auto grid = result.grid();
 
   Proj pism_to_geocent(projection, "+proj=geocent +datum=WGS84 +ellps=WGS84");
 
@@ -272,9 +273,9 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
 
   double dx2 = 0.5 * grid->dx(), dy2 = 0.5 * grid->dy();
 
-  IceModelVec::AccessList list(result);
+  array::AccessScope list(result);
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -309,7 +310,7 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
 }
 
 static void compute_lon_lat(const std::string &projection,
-                            LonLat which, IceModelVec2S &result) {
+                            LonLat which, array::Scalar &result) {
 
   Proj crs(projection, "EPSG:4326");
 
@@ -324,11 +325,11 @@ static void compute_lon_lat(const std::string &projection,
 // +-----------+
 // (sw)        (se)
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
-  IceModelVec::AccessList list{&result};
+  array::AccessScope list{&result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     PJ_COORD in, out;
@@ -346,19 +347,19 @@ static void compute_lon_lat(const std::string &projection,
 
 static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
-                                   IceModelVec3 &result) {
+                                   array::Array3D &result) {
 
   Proj crs(projection, "EPSG:4326");
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   double dx2 = 0.5 * grid->dx(), dy2 = 0.5 * grid->dy();
   double x_offsets[] = {-dx2, dx2, dx2, -dx2};
   double y_offsets[] = {-dy2, -dy2, dy2, dy2};
 
-  IceModelVec::AccessList list{&result};
+  array::AccessScope list{&result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double x0 = grid->x(i), y0 = grid->y(j);
@@ -385,15 +386,15 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
 #else
 
-void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
+void compute_cell_areas(const std::string &projection, array::Scalar &result) {
   (void) projection;
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
   result.set(grid->dx() * grid->dy());
 }
 
 static void compute_lon_lat(const std::string &projection, LonLat which,
-                            IceModelVec2S &result) {
+                            array::Scalar &result) {
   (void) projection;
   (void) which;
   (void) result;
@@ -404,7 +405,7 @@ static void compute_lon_lat(const std::string &projection, LonLat which,
 
 static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
-                                   IceModelVec3 &result) {
+                                   array::Array3D &result) {
   (void) projection;
   (void) which;
   (void) result;
@@ -415,19 +416,62 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
 #endif
 
-void compute_longitude(const std::string &projection, IceModelVec2S &result) {
+void compute_longitude(const std::string &projection, array::Scalar &result) {
   compute_lon_lat(projection, LONGITUDE, result);
 }
-void compute_latitude(const std::string &projection, IceModelVec2S &result) {
+void compute_latitude(const std::string &projection, array::Scalar &result) {
   compute_lon_lat(projection, LATITUDE, result);
 }
 
-void compute_lon_bounds(const std::string &projection, IceModelVec3 &result) {
+void compute_lon_bounds(const std::string &projection, array::Array3D &result) {
   compute_lon_lat_bounds(projection, LONGITUDE, result);
 }
 
-void compute_lat_bounds(const std::string &projection, IceModelVec3 &result) {
+void compute_lat_bounds(const std::string &projection, array::Array3D &result) {
   compute_lon_lat_bounds(projection, LATITUDE, result);
+}
+
+struct LonLatCalculator::Impl {
+#if (Pism_USE_PROJ==1)
+  Impl(const std::string &proj_string) : coordinate_mapping(proj_string, "EPSG:4326") {
+  }
+  Proj coordinate_mapping;
+#else
+  Impl(const std::string & /*unused*/) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Build PISM with PROJ to use pism::LonLatCalculator");
+  }
+#endif
+};
+
+LonLatCalculator::LonLatCalculator(const std::string &proj_string) : m_impl(new Impl(proj_string)) {
+}
+
+LonLatCalculator::~LonLatCalculator() {
+  delete m_impl;
+}
+
+double LonLatCalculator::lon(double x, double y) const {
+  return lonlat(x, y)[0];
+}
+
+double LonLatCalculator::lat(double x, double y) const {
+  return lonlat(x, y)[1];
+}
+
+std::array<double, 2> LonLatCalculator::lonlat(double x, double y) const {
+#if (Pism_USE_PROJ == 1)
+  PJ_COORD in, out;
+
+  in.xy = { x, y };
+  out   = proj_trans(*(m_impl->coordinate_mapping), PJ_FWD, in);
+
+  return { out.lp.phi, out.lp.lam };
+#else
+  (void) x;
+  (void) y;
+#endif
+  return { 0.0, 0.0 };
 }
 
 } // end of namespace pism

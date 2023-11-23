@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,19 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Constant.hh"
+#include "pism/coupler/ocean/Constant.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace ocean {
 
-Constant::Constant(IceGrid::ConstPtr g)
+Constant::Constant(std::shared_ptr<const Grid> g)
   : CompleteOceanModel(g) {
   // empty
 }
@@ -37,8 +35,6 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
-
   const double
     melt_rate     = m_config->get_number("ocean.constant.melt_rate", "m second-1"),
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -46,7 +42,7 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
     g             = m_config->get_number("constants.standard_gravity"),
     mass_flux     = melt_rate * ice_density;
 
-  melting_point_temperature(ice_thickness, *m_shelf_base_temperature);
+  melting_point_temperature(geometry.ice_thickness, *m_shelf_base_temperature);
 
   m_shelf_base_mass_flux->set(mass_flux);
 
@@ -78,17 +74,17 @@ MaxTimestep Constant::max_timestep_impl(double t) const {
 /*!
  * Compute melting point temperature of ice at the depth `depth`.
  */
-void Constant::melting_point_temperature(const IceModelVec2S& depth,
-                                         IceModelVec2S &result) const {
+void Constant::melting_point_temperature(const array::Scalar& depth,
+                                         array::Scalar &result) const {
   const double
     T0          = m_config->get_number("constants.fresh_water.melting_point_temperature"),
     beta_CC     = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
     g           = m_config->get_number("constants.standard_gravity"),
     ice_density = m_config->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{&depth, &result};
+  array::AccessScope list{&depth, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * depth(i, j); // FIXME issue #15
 

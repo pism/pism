@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,12 +17,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "vonMisesCalving.hh"
+#include <cmath>                // std::pow, std::sqrt
+#include <algorithm>            // std::max
 
-#include "pism/util/IceGrid.hh"
+#include "pism/frontretreat/calving/vonMisesCalving.hh"
+
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
@@ -32,10 +35,10 @@
 namespace pism {
 namespace calving {
 
-vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
+vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : StressCalving(grid, 2),
-    m_calving_threshold(m_grid, "vonmises_calving_threshold", WITHOUT_GHOSTS),
+    m_calving_threshold(m_grid, "vonmises_calving_threshold"),
     m_flow_law(flow_law)
 {
 
@@ -46,16 +49,15 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
   }
 
   m_calving_rate.metadata().set_name("vonmises_calving_rate");
-  m_calving_rate.set_attrs("diagnostic",
-                           "horizontal calving rate due to von Mises calving",
-                           "m s-1", "m year-1", "", 0);
+  m_calving_rate.metadata(0)
+      .long_name("horizontal calving rate due to von Mises calving")
+      .units("m s-1")
+      .output_units("m year-1");
 
-  m_calving_threshold.set_attrs("diagnostic",
-                                "threshold used by the 'von Mises' calving method",
-                                "Pa", "Pa",
-                                "", 0); // no standard name
-  m_calving_threshold.set_time_independent(true);
-
+  m_calving_threshold.metadata(0)
+      .long_name("threshold used by the 'von Mises' calving method")
+      .units("Pa")
+      .set_time_independent(true); // no standard name
 }
 
 void vonMisesCalving::init() {
@@ -73,13 +75,15 @@ void vonMisesCalving::init() {
                    "  Reading von Mises calving threshold from file '%s'...\n",
                    threshold_file.c_str());
 
-    m_calving_threshold.regrid(threshold_file, CRITICAL);
+    m_calving_threshold.regrid(threshold_file, io::Default::Nil());
   } else {
     m_log->message(2,
                    "  von Mises calving threshold: %3.3f Pa.\n", sigma_max);
   }
 
-  if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
+  // grid "squareness" criterion
+  const double eps = 1e-2;
+  if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > eps) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "-calving vonmises_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
@@ -94,10 +98,10 @@ void vonMisesCalving::init() {
 /*!
   See equation (4) in [@ref Morlighem2016].
 */
-void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2V &ice_velocity,
-                             const IceModelVec3 &ice_enthalpy) {
+void vonMisesCalving::update(const array::CellType1 &cell_type,
+                             const array::Scalar &ice_thickness,
+                             const array::Vector1 &ice_velocity,
+                             const array::Array3D &ice_enthalpy) {
 
   using std::max;
   using std::sqrt;
@@ -113,14 +117,14 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &m_cell_type, &ice_velocity,
+  array::AccessScope list{&ice_enthalpy, &ice_thickness, &m_cell_type, &ice_velocity,
                                &m_strain_rates, &m_calving_rate, &m_calving_threshold};
 
-  const double *z = &m_grid->z()[0];
+  const double *z = m_grid->z().data();
 
   double glen_exponent = m_flow_law->exponent();
 
-  for (Points pt(*m_grid); pt; pt.next()) {
+  for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
@@ -142,11 +146,11 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
             velocity_magnitude += ice_velocity(I, j).magnitude();
             {
               double H = ice_thickness(I, j);
-              unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], ice_enthalpy.get_column(I, j));
+              auto k = m_grid->kBelowHeight(H);
+              hardness += averaged_hardness(*m_flow_law, H, k, z, ice_enthalpy.get_column(I, j));
             }
-            eigen1 += m_strain_rates(I, j, 0);
-            eigen2 += m_strain_rates(I, j, 1);
+            eigen1 += m_strain_rates(I, j).eigen1;
+            eigen2 += m_strain_rates(I, j).eigen2;
             N += 1;
           }
         }
@@ -157,11 +161,11 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
             velocity_magnitude += ice_velocity(i, J).magnitude();
             {
               double H = ice_thickness(i, J);
-              unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], ice_enthalpy.get_column(i, J));
+              auto k = m_grid->kBelowHeight(H);
+              hardness += averaged_hardness(*m_flow_law, H, k, z, ice_enthalpy.get_column(i, J));
             }
-            eigen1 += m_strain_rates(i, J, 0);
-            eigen2 += m_strain_rates(i, J, 1);
+            eigen1 += m_strain_rates(i, J).eigen1;
+            eigen2 += m_strain_rates(i, J).eigen2;
             N += 1;
           }
         }
@@ -190,7 +194,7 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
   }   // end of loop over grid points
 }
 
-const IceModelVec2S& vonMisesCalving::threshold() const {
+const array::Scalar& vonMisesCalving::threshold() const {
   return m_calving_threshold;
 }
 

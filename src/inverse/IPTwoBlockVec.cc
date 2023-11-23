@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2017, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include <cassert>
 
-#include "IPTwoBlockVec.hh"
+#include "pism/inverse/IPTwoBlockVec.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {

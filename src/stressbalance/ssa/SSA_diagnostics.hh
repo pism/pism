@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef _SSA_DIAGNOSTICS_H_
 #define _SSA_DIAGNOSTICS_H_
 
-#include "SSA.hh"
+#include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/util/Diagnostic.hh"
 
 namespace pism {
@@ -33,7 +33,7 @@ class SSA_taud_mag : public Diag<SSA>
 public:
   SSA_taud_mag(const SSA *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! @brief Computes the driving shear stress at the base of ice
@@ -46,7 +46,7 @@ class SSA_taud : public Diag<SSA>
 public:
   SSA_taud(const SSA *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 } // end of namespace stressbalance

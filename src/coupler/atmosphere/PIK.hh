@@ -1,4 +1,4 @@
-// Copyright (C)  2009-2018, 2021 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
+// Copyright (C)  2009-2018, 2021, 2023 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -19,14 +19,14 @@
 #ifndef __PAPIK_hh
 #define __PAPIK_hh
 
-#include "YearlyCycle.hh"
+#include "pism/coupler/atmosphere/YearlyCycle.hh"
 
 namespace pism {
 namespace atmosphere {
 
 class PIK : public YearlyCycle {
 public:
-  PIK(IceGrid::ConstPtr g);
+  PIK(std::shared_ptr<const Grid> g);
   virtual ~PIK() = default;
 
 private:

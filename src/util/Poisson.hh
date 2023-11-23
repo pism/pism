@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,37 +17,38 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/util/IceGrid.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
 
 namespace pism {
 
+class Grid;
+
 class Poisson {
 public:
-  Poisson(IceGrid::ConstPtr grid);
+  Poisson(std::shared_ptr<const Grid> grid);
 
-  int solve(const IceModelVec2Int& mask, const IceModelVec2S& bc, double rhs,
+  int solve(const array::Scalar& mask, const array::Scalar& bc, double rhs,
             bool reuse_matrix = false);
 
-  const IceModelVec2S &solution() const;
+  const array::Scalar &solution() const;
 private:
-  void assemble_matrix(const IceModelVec2Int &mask, Mat A);
+  void assemble_matrix(const array::Scalar1 &mask, Mat A);
   void assemble_rhs(double rhs,
-                    const IceModelVec2Int &mask,
-                    const IceModelVec2S &bc,
-                    IceModelVec2S &b);
+                    const array::Scalar &mask,
+                    const array::Scalar &bc,
+                    array::Scalar &b);
 
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const Grid> m_grid;
   Logger::ConstPtr m_log;
   std::shared_ptr<petsc::DM> m_da;         // dof=1 DA used by the KSP solver
   petsc::KSP m_KSP;
   petsc::Mat m_A;
-  IceModelVec2S m_b;
-  IceModelVec2S m_x;
-  IceModelVec2Int m_mask;
+  array::Scalar m_b;
+  array::Scalar m_x;
+  array::Scalar1 m_mask;
 };
 
 } // end of namespace pism

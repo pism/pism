@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,14 +20,14 @@
 #ifndef BTU_MINIMAL_H
 #define BTU_MINIMAL_H
 
-#include "BedThermalUnit.hh"
+#include "pism/energy/BedThermalUnit.hh"
 
 namespace pism {
 namespace energy {
 
 class BTU_Minimal : public BedThermalUnit {
 public:
-  BTU_Minimal(IceGrid::ConstPtr g);
+  BTU_Minimal(std::shared_ptr<const Grid> g);
 
 protected:
   void init_impl(const InputOptions &opts);
@@ -38,7 +38,7 @@ protected:
   MaxTimestep max_timestep_impl(double t) const;
 
   using BedThermalUnit::update_impl;
-  void update_impl(const IceModelVec2S &bedrock_top_temperature, double t, double dt);
+  void update_impl(const array::Scalar &bedrock_top_temperature, double t, double dt);
 };
 
 } // end of namespace energy

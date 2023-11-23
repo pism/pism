@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021 PISM Authors
+/* Copyright (C) 2018, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "WeertmanSliding.hh"
+#include "pism/stressbalance/WeertmanSliding.hh"
 
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/geometry/Geometry.hh"
-#include "StressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
 namespace stressbalance {
 
-WeertmanSliding::WeertmanSliding(IceGrid::ConstPtr grid)
+WeertmanSliding::WeertmanSliding(std::shared_ptr<const Grid> grid)
   : ShallowStressBalance(grid) {
   // Use the SIA flow law.
   rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
@@ -75,25 +75,25 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
 
   (void) full_update;
 
-  const IceModelVec2S        &H         = inputs.geometry->ice_thickness;
-  const IceModelVec2S        &h         = inputs.geometry->ice_surface_elevation;
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
-  const IceModelVec3         &enthalpy  = *inputs.enthalpy;
+  const array::Scalar &H         = inputs.geometry->ice_thickness;
+  const array::Scalar &h         = inputs.geometry->ice_surface_elevation;
+  const auto          &cell_type = inputs.geometry->cell_type;
+  const array::Array3D  &enthalpy  = *inputs.enthalpy;
 
   double n   = m_flow_law->exponent();
   double A_s = m_config->get_number("stress_balance.weertman_sliding.A", "Pa-3 s-1 m-2");
   double k   = m_config->get_number("stress_balance.weertman_sliding.k");
 
-  IceModelVec::AccessList list{&m_velocity, &H, &h, &enthalpy, &cell_type};
+  array::AccessScope list{&m_velocity, &H, &h, &enthalpy, &cell_type};
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double
         P_o    = m_EC->pressure(H(i, j)),
-        E_base = enthalpy(i, j, 0);
+        E_base = enthalpy.get_column(i, j)[0];
 
       if (not m_EC->is_temperate(E_base, P_o) or cell_type.ocean(i, j)) {
         m_velocity(i, j) = 0.0;
@@ -101,7 +101,7 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
       }
 
       // Note: we may need to decide if we should use one-sided FD at ice margins.
-      Vector2 grad_h = {diff_x_p(h, i, j), diff_y_p(h, i, j)};
+      Vector2d grad_h = {diff_x_p(h, i, j), diff_y_p(h, i, j)};
 
       // Note: this could be optimized by computing this instead
       // 2 * A_s / (1 - k) * pow(P * P * (h_x * h_x + h_y * h_y), (n - 1) / 2) * grad_h;

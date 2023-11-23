@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007, 2015, 2017, 2018, 2019 Jed Brown and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2007, 2015, 2017, 2018, 2019, 2023 Jed Brown and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,13 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cassert>
-#include <vector>
-#include <cmath>
-#include <gsl/gsl_sf_bessel.h>
-#include <gsl/gsl_integration.h>
-
-#include "greens.hh"
+#include "pism/earth/greens.hh"
+#include <gsl/gsl_integration.h>  // for gsl_integration_qag, gsl_integratio...
+#include <gsl/gsl_math.h>         // for gsl_function
+#include <gsl/gsl_sf_bessel.h>    // for gsl_sf_bessel_J0, gsl_sf_bessel_J1
+#include <cassert>                // for assert
+#include <cmath>                  // for pow, exp, sqrt
+#include <vector>                 // for vector
 
 namespace pism {
 namespace bed {
@@ -62,11 +62,11 @@ greens_elastic::~greens_elastic() {
 double greens_elastic::operator()(double r) {
   if (r < 0.01) {
     return GE[0] / (rmkm[1] * 1.0e3 * 1.0e12);
-  } else if (r > rmkm[N - 1] * 1.0e3) {
-    return 0.0;
-  } else {
-    return gsl_spline_eval(spline, r / 1.0e3, acc) / (r * 1.0e12);
   }
+  if (r > rmkm[N - 1] * 1.0e3) {
+    return 0.0;
+  }
+  return gsl_spline_eval(spline, r / 1.0e3, acc) / (r * 1.0e12);
 }
 
 const double greens_elastic::rmkm[greens_elastic::N] =

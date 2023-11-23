@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,25 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Elevation.hh"
+#include "pism/coupler/surface/Elevation.hh"
 
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace surface {
 
 ///// Elevation-dependent temperature and surface mass balance.
-Elevation::Elevation(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+Elevation::Elevation(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid) {
   (void) input;
 
@@ -174,35 +169,35 @@ void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
   
 }
 
-const IceModelVec2S &Elevation::mass_flux_impl() const {
+const array::Scalar &Elevation::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &Elevation::temperature_impl() const {
+const array::Scalar &Elevation::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &Elevation::accumulation_impl() const {
+const array::Scalar &Elevation::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &Elevation::melt_impl() const {
+const array::Scalar &Elevation::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &Elevation::runoff_impl() const {
+const array::Scalar &Elevation::runoff_impl() const {
   return *m_runoff;
 }
   
-void Elevation::compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &result) const {
+void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &result) const {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
-  IceModelVec::AccessList list{&result, &surface};
+  array::AccessScope list{&result, &surface};
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double z = surface(i, j);
@@ -233,14 +228,14 @@ void Elevation::compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &r
   result.scale(m_config->get_number("constants.ice.density"));
 }
 
-void Elevation::compute_temperature(const IceModelVec2S &surface, IceModelVec2S &result) const {
+void Elevation::compute_temperature(const array::Scalar &surface, array::Scalar &result) const {
 
-  IceModelVec::AccessList list{&result, &surface};
+  array::AccessScope list{&result, &surface};
 
   double dTdz = (m_T_max - m_T_min)/(m_z_T_max - m_z_T_min);
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double z = surface(i, j);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "ElementIterator.hh"
+#include "pism/util/fem/ElementIterator.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 namespace pism {
 namespace fem {
 
-ElementIterator::ElementIterator(const IceGrid &grid) {
+ElementIterator::ElementIterator(const Grid &grid) {
   // Start by assuming ghost elements exist in all directions.
   // Elements are indexed by their lower left vertex.  If there is a ghost
   // element on the right, its i-index will be the same as the maximum
@@ -42,7 +42,7 @@ ElementIterator::ElementIterator(const IceGrid &grid) {
   // Now correct if needed. The only way there will not be ghosts is if the
   // grid is not periodic and we are up against the grid boundary.
 
-  if (!(grid.periodicity() & X_PERIODIC)) {
+  if (!(grid.periodicity() & grid::X_PERIODIC)) {
     // Leftmost element has x-index 0.
     if (xs < 0) {
       xs = 0;
@@ -54,7 +54,7 @@ ElementIterator::ElementIterator(const IceGrid &grid) {
     }
   }
 
-  if (!(grid.periodicity() & Y_PERIODIC)) {
+  if (!(grid.periodicity() & grid::Y_PERIODIC)) {
     // Bottom element has y-index 0.
     if (ys < 0) {
       ys = 0;

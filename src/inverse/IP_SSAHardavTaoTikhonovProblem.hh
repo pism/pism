@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,11 +20,11 @@
 #ifndef IP_SSAHARDAVTAOTIKHONOVPROBLEM_HH_HB8UWICX
 #define IP_SSAHARDAVTAOTIKHONOVPROBLEM_HH_HB8UWICX
 
-#include "IPTaoTikhonovProblem.hh"
-#include "IP_SSAHardavForwardProblem.hh"
+#include "pism/inverse/IPTaoTikhonovProblem.hh"
+#include "pism/inverse/IP_SSAHardavForwardProblem.hh"
 
-#include "TaoUtil.hh"
-#include "functional/IPFunctional.hh"
+#include "pism/inverse/TaoUtil.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

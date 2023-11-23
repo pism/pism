@@ -31,14 +31,14 @@ class OrographicPrecipitationSerial;
 
 class OrographicPrecipitation : public AtmosphereModel {
 public:
-  OrographicPrecipitation(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
+  OrographicPrecipitation(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~OrographicPrecipitation();
 
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S &mean_precipitation_impl() const;
+  const array::Scalar &precipitation_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
@@ -48,7 +48,7 @@ private:
 protected:
   std::string m_reference;
 
-  IceModelVec2S::Ptr m_precipitation;
+  std::shared_ptr<array::Scalar> m_precipitation;
 
   //! Storage on rank zero. Used to pass the load to the serial orographic precipitation
   //! Model.

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,9 +28,9 @@ namespace pism {
 
 //! @brief Compute threshold thickness used when deciding if a
 //! partially-filled cell should be considered 'full'.
-double part_grid_threshold_thickness(stencils::Star<int> M,
-                                     stencils::Star<double> H,
-                                     stencils::Star<double> h,
+double part_grid_threshold_thickness(stencils::Star<int> cell_type,
+                                     stencils::Star<double> ice_thickness,
+                                     stencils::Star<double> surface_elevation,
                                      double bed_elevation) {
   // get mean ice thickness and surface elevation over adjacent
   // icy cells
@@ -40,19 +40,17 @@ double part_grid_threshold_thickness(stencils::Star<int> M,
     H_threshold = 0.0;
   int N = 0;
 
-  const Direction dirs[] = {North, East, South, West};
-  for (int n = 0; n < 4; ++n) {
-    Direction direction = dirs[n];
-    if (mask::icy(M[direction])) {
-      H_average += H[direction];
-      h_average += h[direction];
+  for (auto d : {North, East, South, West}) {
+    if (mask::icy(cell_type[d])) {
+      H_average += ice_thickness[d];
+      h_average += surface_elevation[d];
       N++;
     }
   }
 
   if (N == 0) {
     // If there are no "icy" neighbors, return the threshold thickness
-    // of zero, forcing Href to be converted to H immediately.
+    // of zero, forcing Href to be converted to ice_thickness immediately.
     return 0.0;
   }
 

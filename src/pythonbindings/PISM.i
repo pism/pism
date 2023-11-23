@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2022 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2023 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,6 @@
 #include "geometry/grounded_cell_fraction.hh"
 #include "util/Mask.hh"
 #include "basalstrength/basal_resistance.hh"
-#include "util/EnthalpyConverter.hh"
 #include "basalstrength/MohrCoulombYieldStress.hh"
 #include "util/error_handling.hh"
 #include "util/Diagnostic.hh"
@@ -56,15 +55,12 @@
 #include "util/MaxTimestep.hh"
 #include "stressbalance/timestepping.hh"
 #include "util/Context.hh"
-#include "util/Logger.hh"
 #include "util/Profiling.hh"
 
 #include "util/projection.hh"
 #include "energy/bootstrapping.hh"
 #include "util/node_types.hh"
 
-#include "util/Time.hh"
-#include "util/Poisson.hh"
 #include "util/label_components.hh"
 #include "icemodel/IceModel.hh"
 %}
@@ -197,14 +193,13 @@
 %include "util/pism_utilities.hh"
 %include "util/interpolation.hh"
 
-%shared_ptr(pism::Logger);
 %shared_ptr(pism::StringLogger);
-%include "util/Logger.hh"
+pism_class(pism::Logger, "pism/util/Logger.hh");
 
 %include pism_options.i
 
-%ignore pism::Vector2::operator=;
-%include "util/Vector2.hh"
+%ignore pism::Vector2d::operator=;
+%include "util/Vector2d.hh"
 
 %ignore pism::units::Unit::operator=;
 %rename(UnitSystem) pism::units::System;
@@ -233,29 +228,27 @@
 #endif
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
-%shared_ptr(pism::EnthalpyConverter);
 %shared_ptr(pism::ColdEnthalpyConverter);
-%include "util/EnthalpyConverter.hh"
+pism_class(pism::EnthalpyConverter, "pism/util/EnthalpyConverter.hh");
 
-%shared_ptr(pism::Time);
-%include "util/Time.hh"
+pism_class(pism::Time, "pism/util/Time.hh")
 
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);
 %include "util/Context.hh"
 
-%include pism_IceGrid.i
+%include pism_Grid.i
 
-/* File uses IceGrid, so IceGrid has to be wrapped first. */
+/* File uses Grid, so Grid has to be wrapped first. */
 %include pism_File.i
 
 /* make sure pism_File.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
 
-/* IceModelVec uses IceGrid and VariableMetadata so they have to be wrapped first. */
-%include pism_IceModelVec.i
+/* array::Array uses Grid and VariableMetadata so they have to be wrapped first. */
+%include pism_Array.i
 
-/* pism::Vars uses IceModelVec, so IceModelVec has to be wrapped first. */
+/* pism::Vars uses array::Array, so Array has to be wrapped first. */
 %include pism_Vars.i
 
 
@@ -379,11 +372,11 @@ pism_class(pism::ScalarForcing, "pism/util/ScalarForcing.hh")
 
 %include "energy/bootstrapping.hh"
 
-%shared_ptr(pism::Poisson)
-%include "util/Poisson.hh"
+#if (Pism_DEBUG==1)
+pism_class(pism::Poisson, "pism/util/Poisson.hh")
+#endif
 
 pism_class(pism::FractureDensity, "pism/fracturedensity/FractureDensity.hh")
 %include "util/label_components.hh"
 
-%shared_ptr(pism::IceModel)
-%include "icemodel/IceModel.hh"
+pism_class(pism::IceModel, "pism/icemodel/IceModel.hh")

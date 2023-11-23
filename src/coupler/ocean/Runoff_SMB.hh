@@ -53,7 +53,7 @@ namespace ocean {
 class Runoff_SMB : public OceanModel
 {
 public:
-  Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Runoff_SMB(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Runoff_SMB();
 
 private:
@@ -61,7 +61,7 @@ private:
 
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  void mass_flux(double delta_T, IceModelVec2S &result) const;
+  void mass_flux(double delta_T, array::Scalar &result) const;
 
   // @brief constant in the parameterization of the subglacial
   // runoff flux as a function of air temperature
@@ -72,7 +72,7 @@ private:
   double m_runoff_to_ocean_melt_power_alpha;
   double m_runoff_to_ocean_melt_power_beta;
 
-  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
   std::unique_ptr<ScalarForcing> m_forcing;
 };
 

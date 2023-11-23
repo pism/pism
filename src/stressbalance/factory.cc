@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2017, 2018, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,14 +19,14 @@
 
 #include <memory>
 
-#include "StressBalance.hh"
-#include "ShallowStressBalance.hh"
-#include "WeertmanSliding.hh"
-#include "SSB_Modifier.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/WeertmanSliding.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/regional/SSAFD_Regional.hh"
 #include "pism/regional/SIAFD_Regional.hh"
-#include "blatter/Blatter.hh"
-#include "blatter/BlatterMod.hh"
+#include "pism/stressbalance/blatter/Blatter.hh"
+#include "pism/stressbalance/blatter/BlatterMod.hh"
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
@@ -36,7 +36,7 @@ namespace pism {
 namespace stressbalance {
 
 std::shared_ptr<StressBalance> create(const std::string &model,
-                                      IceGrid::ConstPtr grid,
+                                      std::shared_ptr<const Grid> grid,
                                       bool regional) {
 
   auto config = grid->ctx()->config();

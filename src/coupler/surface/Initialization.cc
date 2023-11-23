@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,9 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Initialization.hh"
+#include "pism/coupler/surface/Initialization.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Context.hh"
@@ -27,10 +26,10 @@
 namespace pism {
 namespace surface {
 
-InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> input)
+InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(grid, input),
-    m_mass_flux(m_grid, "effective_climatic_mass_balance", WITHOUT_GHOSTS),
-    m_temperature(m_grid, "effective_ice_surface_temp", WITHOUT_GHOSTS)
+    m_mass_flux(m_grid, "effective_climatic_mass_balance"),
+    m_temperature(m_grid, "effective_ice_surface_temp")
 {
 
   if (not input) {
@@ -39,37 +38,41 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_p
 
   // allocate storage
   {
-    m_mass_flux.set_attrs("model_state",
-                          "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)",
-                          "kg m-2 s-1", "kg m-2 year-1", "", 0);
-    m_mass_flux.set_time_independent(false);
+    m_mass_flux.metadata(0)
+        .long_name(
+            "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)")
+        .units("kg m-2 s-1")
+        .set_time_independent(false);
 
-    m_temperature.set_attrs("model_state",
-                            "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)",
-                            "Kelvin", "Kelvin", "", 0);
-    m_temperature.set_time_independent(false);
+    m_temperature.metadata(0)
+        .long_name(
+            "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)")
+        .units("Kelvin")
+        .set_time_independent(false);
 
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
     m_liquid_water_fraction->metadata().set_name("effective_ice_surface_liquid_water_fraction");
-    m_liquid_water_fraction->set_attrs("model_state",
-                                       "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)",
-                                       "1", "1", "", 0);
-    m_liquid_water_fraction->set_time_independent(false);
+    m_liquid_water_fraction->metadata(0)
+        .long_name(
+            "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)")
+        .units("1")
+        .set_time_independent(false);
 
     m_layer_mass = allocate_layer_mass(grid);
     m_layer_mass->metadata().set_name("effective_surface_layer_mass");
-    m_layer_mass->set_attrs("model_state",
-                            "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)",
-                            "kg", "kg",
-                            "", 0);
-    m_layer_mass->set_time_independent(false);
+    m_layer_mass->metadata(0)
+        .long_name(
+            "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)")
+        .units("kg")
+        .set_time_independent(false);
 
     m_layer_thickness = allocate_layer_thickness(grid);
     m_layer_thickness->metadata().set_name("effective_surface_layer_thickness");
-    m_layer_thickness->set_attrs("model_state",
-                                 "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)",
-                                 "meters", "meters", "", 0);
-    m_layer_thickness->set_time_independent(false);
+    m_layer_thickness->metadata(0)
+        .long_name(
+            "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)")
+        .units("meters")
+        .set_time_independent(false);
   }
 
   m_accumulation = allocate_accumulation(grid);
@@ -101,20 +104,20 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     m_log->message(2, "* Reading effective surface model outputs from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
     const unsigned int last_record = file.nrecords() - 1;
-    for (auto v : m_variables) {
+    for (auto *v : m_variables) {
       v->read(file, last_record);
     }
   } else {
     m_log->message(2, "* Performing a 'fake' surface model time-step for bootstrapping...\n");
 
-    init_step(this, geometry, *m_grid->ctx()->time());
+    init_step(this, geometry, time());
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to
   // "-i ... -bootstrap -regrid_file ..."
-  for (auto v : m_variables) {
+  for (auto *v : m_variables) {
     regrid("surface model initialization helper", *v, REGRID_WITHOUT_REGRID_VARS);
   }
 }
@@ -133,47 +136,47 @@ void InitializationHelper::update_impl(const Geometry &geometry, double t, doubl
   m_runoff->copy_from(m_input_model->runoff());
 }
 
-const IceModelVec2S &InitializationHelper::layer_thickness_impl() const {
+const array::Scalar &InitializationHelper::layer_thickness_impl() const {
   return *m_layer_thickness;
 }
 
-const IceModelVec2S &InitializationHelper::mass_flux_impl() const {
+const array::Scalar &InitializationHelper::mass_flux_impl() const {
   return m_mass_flux;
 }
 
-const IceModelVec2S &InitializationHelper::temperature_impl() const {
+const array::Scalar &InitializationHelper::temperature_impl() const {
   return m_temperature;
 }
 
-const IceModelVec2S &InitializationHelper::liquid_water_fraction_impl() const {
+const array::Scalar &InitializationHelper::liquid_water_fraction_impl() const {
   return *m_liquid_water_fraction;
 }
 
-const IceModelVec2S &InitializationHelper::layer_mass_impl() const {
+const array::Scalar &InitializationHelper::layer_mass_impl() const {
   return *m_layer_mass;
 }
 
-const IceModelVec2S &InitializationHelper::accumulation_impl() const {
+const array::Scalar &InitializationHelper::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &InitializationHelper::melt_impl() const {
+const array::Scalar &InitializationHelper::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &InitializationHelper::runoff_impl() const {
+const array::Scalar &InitializationHelper::runoff_impl() const {
   return *m_runoff;
 }
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
-  for (auto v : m_variables) {
-    v->define(output);
+  for (auto *v : m_variables) {
+    v->define(output, io::PISM_DOUBLE);
   }
   m_input_model->define_model_state(output);
 }
 
 void InitializationHelper::write_model_state_impl(const File &output) const {
-  for (auto v : m_variables) {
+  for (auto *v : m_variables) {
     v->write(output);
   }
   m_input_model->write_model_state(output);

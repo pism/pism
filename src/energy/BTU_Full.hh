@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,10 +20,11 @@
 #ifndef BTU_FULL_H
 #define BTU_FULL_H
 
-#include "BedThermalUnit.hh"
+#include "pism/energy/BedThermalUnit.hh"
 #include "pism/util/Context.hh"
 
 namespace pism {
+
 namespace energy {
 
 class BedrockColumn;
@@ -82,14 +83,14 @@ class BedrockColumn;
 */
 class BTU_Full : public BedThermalUnit {
 public:
-  BTU_Full(IceGrid::ConstPtr g, const BTUGrid &vertical_grid);
+  BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &vertical_grid);
   virtual ~BTU_Full() = default;
 
   //! Bedrock thermal layer temperature field.
-  const IceModelVec3& temperature() const;
+  const array::Array3D& temperature() const;
 
 protected:
-  virtual void bootstrap(const IceModelVec2S &bedrock_top_temperature);
+  virtual void bootstrap(const array::Scalar &bedrock_top_temperature);
 
   virtual void init_impl(const InputOptions &opts);
 
@@ -100,7 +101,7 @@ protected:
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
   using BedThermalUnit::update_impl;
-  virtual void update_impl(const IceModelVec2S &bedrock_top_temperature,
+  virtual void update_impl(const array::Scalar &bedrock_top_temperature,
                            double t, double dt);
 
   virtual void define_model_state_impl(const File &output) const;
@@ -108,7 +109,7 @@ protected:
 protected:
   //! bedrock thermal layer temperature, in degrees Kelvin; part of state; uses equally-spaced
   //! layers.
-  IceModelVec3::Ptr m_temp;
+  std::shared_ptr<array::Array3D> m_temp;
 
   //! bedrock thermal conductivity
   double m_k;

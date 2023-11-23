@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,21 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "IcebergRemover.hh"
+#include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/util/connected_components.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace calving {
 
-IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
+IcebergRemover::IcebergRemover(std::shared_ptr<const Grid> g)
   : Component(g),
-    m_iceberg_mask(m_grid, "iceberg_mask", WITHOUT_GHOSTS){
+    m_iceberg_mask(m_grid, "iceberg_mask"){
 
   m_mask_p0 = m_iceberg_mask.allocate_proc0_copy();
 }
@@ -42,15 +41,15 @@ IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
  * @param[in,out] pism_mask PISM's ice cover mask
  * @param[in,out] ice_thickness ice thickness
  */
-void IcebergRemover::update(const IceModelVec2Int &bc_mask,
-                            IceModelVec2CellType &mask,
-                            IceModelVec2S &ice_thickness) {
-  update_impl(bc_mask, mask, ice_thickness);
+void IcebergRemover::update(const array::Scalar &bc_mask,
+                            array::CellType1 &cell_type,
+                            array::Scalar &ice_thickness) {
+  update_impl(bc_mask, cell_type, ice_thickness);
 }
 
-void IcebergRemover::update_impl(const IceModelVec2Int &bc_mask,
-                                 IceModelVec2CellType &mask,
-                                 IceModelVec2S &ice_thickness) {
+void IcebergRemover::update_impl(const array::Scalar &bc_mask,
+                                 array::CellType1 &cell_type,
+                                 array::Scalar &ice_thickness) {
   const int
     mask_grounded_ice = 1,
     mask_floating_ice = 2;
@@ -60,23 +59,23 @@ void IcebergRemover::update_impl(const IceModelVec2Int &bc_mask,
   {
     m_iceberg_mask.set(0.0);
 
-    IceModelVec::AccessList list{&mask, &m_iceberg_mask, &bc_mask};
+    array::AccessScope list{&cell_type, &m_iceberg_mask, &bc_mask};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.grounded_ice(i,j)) {
+      if (cell_type.grounded_ice(i,j)) {
         m_iceberg_mask(i,j) = mask_grounded_ice;
-      } else if (mask.floating_ice(i,j)) {
+      } else if (cell_type.floating_ice(i,j)) {
         m_iceberg_mask(i,j) = mask_floating_ice;
       }
     }
 
     // Mark icy Dirichlet B.C. cells as "grounded" because we don't want them removed.
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (bc_mask(i, j) > 0.5 and mask.icy(i, j)) {
+      if (bc_mask(i, j) > 0.5 and cell_type.icy(i, j)) {
         m_iceberg_mask(i, j) = mask_grounded_ice;
       }
     }
@@ -103,21 +102,21 @@ void IcebergRemover::update_impl(const IceModelVec2Int &bc_mask,
   // correct ice thickness and the cell type mask using the resulting
   // "iceberg" mask:
   {
-    IceModelVec::AccessList list{&ice_thickness, &mask, &m_iceberg_mask, &bc_mask};
+    array::AccessScope list{&ice_thickness, &cell_type, &m_iceberg_mask, &bc_mask};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {
         ice_thickness(i,j) = 0.0;
-        mask(i,j)     = MASK_ICE_FREE_OCEAN;
+        cell_type(i,j)     = MASK_ICE_FREE_OCEAN;
       }
     }
   }
 
-  // update ghosts of the mask and the ice thickness (then surface
+  // update ghosts of the cell_type and the ice thickness (then surface
   // elevation can be updated redundantly)
-  mask.update_ghosts();
+  cell_type.update_ghosts();
   ice_thickness.update_ghosts();
 }
 

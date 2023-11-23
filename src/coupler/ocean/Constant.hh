@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _POCONSTANT_H_
 #define _POCONSTANT_H_
 
-#include "CompleteOceanModel.hh"
+#include "pism/coupler/ocean/CompleteOceanModel.hh"
 
 namespace pism {
 namespace ocean {
@@ -28,7 +28,7 @@ namespace ocean {
 //! sub-shelf heat flux.
 class Constant : public CompleteOceanModel {
 public:
-  Constant(IceGrid::ConstPtr g);
+  Constant(std::shared_ptr<const Grid> g);
   virtual ~Constant() = default;
 
 private:
@@ -36,8 +36,8 @@ private:
   void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
 
-  void melting_point_temperature(const IceModelVec2S& depth,
-                                 IceModelVec2S &result) const;
+  void melting_point_temperature(const array::Scalar& depth,
+                                 array::Scalar &result) const;
 };
 
 } // end of namespace ocean

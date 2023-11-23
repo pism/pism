@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "BlatterISMIPHOM.hh"
+#include "pism/stressbalance/blatter/ismip-hom/BlatterISMIPHOM.hh"
 
 #include "pism/util/node_types.hh"
 
@@ -53,7 +53,7 @@ static double C_bed(double x, double y, double L) {
   return C_surface(x, y, L) - 1000.0;
 }
 
-BlatterISMIPHOM::BlatterISMIPHOM(IceGrid::ConstPtr grid,
+BlatterISMIPHOM::BlatterISMIPHOM(std::shared_ptr<const Grid> grid,
                                  int Mz,
                                  int coarsening_factor,
                                  ISMIPHOMTest test)

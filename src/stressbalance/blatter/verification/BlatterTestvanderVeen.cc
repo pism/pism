@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "BlatterTestvanderVeen.hh"
+#include "pism/stressbalance/blatter/verification/BlatterTestvanderVeen.hh"
 #include "pism/util/node_types.hh"
 
 #include "pism/rheology/IsothermalGlen.hh"
 
-#include "manufactured_solutions.hh"
+#include "pism/stressbalance/blatter/verification/manufactured_solutions.hh"
 
 namespace pism {
 namespace stressbalance {
 
-BlatterTestvanderVeen::BlatterTestvanderVeen(IceGrid::ConstPtr grid,
+BlatterTestvanderVeen::BlatterTestvanderVeen(std::shared_ptr<const Grid> grid,
                                              int Mz, int coarsening_factor)
   : Blatter(grid, Mz, coarsening_factor) {
 
@@ -38,7 +38,7 @@ BlatterTestvanderVeen::BlatterTestvanderVeen(IceGrid::ConstPtr grid,
   assert(m_flow_law->exponent() == 3.0);
 
   // make sure the grid is periodic in the Y direction
-  assert(m_grid->periodicity() == Y_PERIODIC);
+  assert(m_grid->periodicity() == grid::Y_PERIODIC);
 
   // store constant ice hardness (enthalpy and pressure values are irrelevant)
   m_B = m_flow_law->hardness(1e5, 0);
@@ -88,14 +88,14 @@ bool BlatterTestvanderVeen::marine_boundary(int face,
   return true;
 }
 
-Vector2 BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
+Vector2d BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
   (void) y;
   (void) z;
 
   return u_exact(x);
 }
 
-Vector2 BlatterTestvanderVeen::u_exact(double x) const {
+Vector2d BlatterTestvanderVeen::u_exact(double x) const {
   double Q0 = m_H0 * m_V0;
   return blatter_xz_vanderveen_exact(x, m_alpha, m_H0, Q0, m_rho_ice, m_g, m_B);
 }
@@ -119,7 +119,7 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
                                              const double *surface_nodal,
                                              const double *z_nodal,
                                              const double *sl_nodal,
-                                             Vector2 *residual) {
+                                             Vector2d *residual) {
   (void) surface_nodal;
   (void) sl_nodal;
   (void) z_nodal;
@@ -160,7 +160,7 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
  */
 void BlatterTestvanderVeen::residual_surface(const fem::Q1Element3 &element,
                                              const fem::Q1Element3Face &face,
-                                             Vector2 *residual) {
+                                             Vector2d *residual) {
   double Q0 = m_H0 * m_V0;
 
   // compute x coordinates of quadrature points

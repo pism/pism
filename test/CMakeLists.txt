@@ -32,7 +32,7 @@ if (Pism_BUILD_PYTHON_BINDINGS AND Pism_USE_NOSE_TESTS)
   endmacro()
 
   pism_nose_test("misc" miscellaneous.py)
-  pism_nose_test("IceModelVec2T" icemodelvec2t.py)
+  pism_nose_test("array:Forcing" icemodelvec2t.py)
   pism_nose_test("enthalpy:converter" enthalpy/converter.py)
   pism_nose_test("enthalpy:column" enthalpy/column.py)
   pism_nose_test("sia:bed_smoother" bed_smoother.py)

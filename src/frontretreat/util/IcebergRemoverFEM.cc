@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 PISM Authors
+/* Copyright (C) 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,19 +23,20 @@
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/connected_components.hh"
 
-#include "IcebergRemoverFEM.hh"
+#include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 
 #include "pism/util/fem/Element.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 namespace calving {
 
-IcebergRemoverFEM::IcebergRemoverFEM(IceGrid::ConstPtr grid)
+IcebergRemoverFEM::IcebergRemoverFEM(std::shared_ptr<const Grid> grid)
   : IcebergRemover(grid),
-    m_mask(grid, "temporary_mask", WITHOUT_GHOSTS) {
-  // empty
+    m_mask(grid, "temporary_mask") {
+  m_mask.set_interpolation_type(NEAREST);
 }
 
 /*! Remove "icebergs" using the finite element notion of connectivity: two elements are
@@ -63,20 +64,20 @@ IcebergRemoverFEM::IcebergRemoverFEM(IceGrid::ConstPtr grid)
  * 4. Now loop over all nodes and remove nodes with positive mask values.
  *
  */
-void IcebergRemoverFEM::update_impl(const IceModelVec2Int &bc_mask,
-                                    IceModelVec2CellType &pism_mask,
-                                    IceModelVec2S &ice_thickness) {
+void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
+                                    array::CellType1 &cell_type,
+                                    array::Scalar &ice_thickness) {
   const int
     mask_grounded_ice = 1,
     mask_floating_ice = 2;
 
   int bc_mask_nodal[fem::q1::n_chi];
-  int pism_mask_nodal[fem::q1::n_chi];
+  int cell_type_nodal[fem::q1::n_chi];
 
   assert(bc_mask.stencil_width() >= 1);
-  assert(pism_mask.stencil_width() >= 1);
+  assert(cell_type.stencil_width() >= 1);
 
-  IceModelVec::AccessList list{&bc_mask, &pism_mask, &m_iceberg_mask};
+  array::AccessScope list{&bc_mask, &cell_type, &m_iceberg_mask};
 
   fem::Q1Element2 element(*m_grid, fem::Q1Quadrature1());
 
@@ -84,18 +85,18 @@ void IcebergRemoverFEM::update_impl(const IceModelVec2Int &bc_mask,
   // lower left corner
   {
     // loop over all nodes in a local sub-domain
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       element.reset(i, j);
       // the following two calls use ghost values
       element.nodal_values(bc_mask, bc_mask_nodal);
-      element.nodal_values(pism_mask, pism_mask_nodal);
+      element.nodal_values(cell_type, cell_type_nodal);
 
       // check if all nodes are icy
       bool icy = true;
       for (int n = 0; icy and n < fem::q1::n_chi; ++n) {
-        icy &= mask::icy(pism_mask_nodal[n]);
+        icy &= mask::icy(cell_type_nodal[n]);
       }
 
       if (icy) {
@@ -103,7 +104,7 @@ void IcebergRemoverFEM::update_impl(const IceModelVec2Int &bc_mask,
         // set of Dirichlet nodes
         bool grounded = true;
         for (int n = 0; grounded and n < fem::q1::n_chi; ++n) {
-          grounded &= (mask::grounded(pism_mask_nodal[n]) or bc_mask_nodal[n] == 1);
+          grounded &= (mask::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
         }
 
         m_iceberg_mask(i, j) = grounded ? mask_grounded_ice : mask_floating_ice;
@@ -159,19 +160,19 @@ void IcebergRemoverFEM::update_impl(const IceModelVec2Int &bc_mask,
 
         // the following two calls use ghost values
         element.nodal_values(bc_mask, bc_mask_nodal);
-        element.nodal_values(pism_mask, pism_mask_nodal);
+        element.nodal_values(cell_type, cell_type_nodal);
 
         // check if all nodes are icy
         bool icy = true;
         for (int n = 0; icy and n < fem::q1::n_chi; ++n) {
-          icy &= mask::icy(pism_mask_nodal[n]);
+          icy &= mask::icy(cell_type_nodal[n]);
         }
 
         if (icy) {
           // check if all nodes are grounded or are a part of the set of Dirichlet nodes
           bool grounded = true;
           for (int n = 0; grounded and n < fem::q1::n_chi; ++n) {
-            grounded &= (mask::grounded(pism_mask_nodal[n]) or bc_mask_nodal[n] == 1);
+            grounded &= (mask::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
           }
 
           if (m_iceberg_mask(i, j) == 1) {
@@ -189,19 +190,19 @@ void IcebergRemoverFEM::update_impl(const IceModelVec2Int &bc_mask,
   {
     list.add(ice_thickness);
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_mask(i, j) > 0) {
         ice_thickness(i,j) = 0.0;
-        pism_mask(i,j)          = MASK_ICE_FREE_OCEAN;
+        cell_type(i,j)          = MASK_ICE_FREE_OCEAN;
       }
     }
   }
 
   // update ghosts of the mask and the ice thickness (then surface
   // elevation can be updated redundantly)
-  pism_mask.update_ghosts();
+  cell_type.update_ghosts();
   ice_thickness.update_ghosts();
 }
 

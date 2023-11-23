@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,15 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Units.hh"
+#include "pism/util/Units.hh"
 
 #include <udunits2.h>
 
 #include "pism/external/calcalcs/utCalendar2_cal.h"
 
 #include "pism/util/error_handling.hh"
-
-#include "pism_utilities.hh"
 
 namespace pism {
 

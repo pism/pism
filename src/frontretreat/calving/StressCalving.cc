@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,37 +17,39 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "StressCalving.hh"
+#include "pism/frontretreat/calving/StressCalving.hh"
 
 namespace pism {
 namespace calving {
 
-StressCalving::StressCalving(IceGrid::ConstPtr grid,
+StressCalving::StressCalving(std::shared_ptr<const Grid> grid,
                              unsigned int stencil_width)
   : Component(grid),
     m_stencil_width(stencil_width),
-    m_strain_rates(m_grid, "strain_rates", WITH_GHOSTS, 2,
-                   m_stencil_width),
-    m_calving_rate(m_grid, "calving_rate", WITHOUT_GHOSTS),
-    m_cell_type(m_grid, "cell_type", WITH_GHOSTS)
+    m_strain_rates(m_grid, "strain_rates", array::WITH_GHOSTS, 2),
+    m_calving_rate(m_grid, "calving_rate"),
+    m_cell_type(m_grid, "cell_type")
 {
 
   m_strain_rates.metadata(0).set_name("eigen1");
-  m_strain_rates.set_attrs("internal",
-                           "major principal component of horizontal strain-rate",
-                           "second-1", "second-1", "", 0);
+  m_strain_rates.metadata(0)
+      .long_name("major principal component of horizontal strain-rate")
+      .units("second-1");
 
   m_strain_rates.metadata(1).set_name("eigen2");
-  m_strain_rates.set_attrs("internal",
-                           "minor principal component of horizontal strain-rate",
-                           "second-1", "second-1", "", 1);
+  m_strain_rates.metadata(1)
+      .long_name("minor principal component of horizontal strain-rate")
+      .units("second-1");
 
-  m_calving_rate.set_attrs("internal", "horizontal calving rate", "m s-1", "m year-1", "", 0);
+  m_calving_rate.metadata(0)
+      .long_name("horizontal calving rate")
+      .units("m s-1")
+      .output_units("m year-1");
 
-  m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
+  m_cell_type.metadata(0).long_name("cell type mask");
 }
 
-const IceModelVec2S &StressCalving::calving_rate() const {
+const array::Scalar &StressCalving::calving_rate() const {
   return m_calving_rate;
 }
 

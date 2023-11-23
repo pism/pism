@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,17 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Anomaly.hh"
+#include "pism/coupler/atmosphere/Anomaly.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/io/io_helpers.hh"
+#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace atmosphere {
 
-Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
+Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.anomaly");
@@ -34,9 +34,9 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_air_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
+    m_air_temp_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                      file,
                                                      "air_temp_anomaly",
                                                      "", // no standard name
@@ -44,7 +44,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
                                                      opt.periodic,
                                                      LINEAR);
 
-    m_precipitation_anomaly = IceModelVec2T::ForcingField(m_grid,
+    m_precipitation_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                           file,
                                                           "precipitation_anomaly",
                                                           "", // no standard name
@@ -52,13 +52,14 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
                                                           opt.periodic);
   }
 
-  m_air_temp_anomaly->set_attrs("climate_forcing",
-                                "anomaly of the near-surface air temperature",
-                                "Kelvin", "Kelvin", "", 0);
+  m_air_temp_anomaly->metadata(0)
+      .long_name("anomaly of the near-surface air temperature")
+      .units("Kelvin");
 
-  m_precipitation_anomaly->set_attrs("climate_forcing",
-                                     "anomaly of the ice-equivalent precipitation rate",
-                                     "kg m-2 second-1", "kg m-2 year-1", "", 0);
+  m_precipitation_anomaly->metadata(0)
+      .long_name("anomaly of the ice-equivalent precipitation rate")
+      .units("kg m-2 second-1")
+      .output_units("kg m-2 year-1");
 
   m_precipitation = allocate_precipitation(g);
   m_temperature   = allocate_temperature(g);
@@ -91,22 +92,22 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
 
   // precipitation
   {
-    m_precipitation->copy_from(m_input_model->mean_precipitation());
+    m_precipitation->copy_from(m_input_model->precipitation());
     m_precipitation->add(1.0, *m_precipitation_anomaly);
   }
 
   // temperature
   {
-    m_temperature->copy_from(m_input_model->mean_annual_temp());
+    m_temperature->copy_from(m_input_model->air_temperature());
     m_temperature->add(1.0, *m_air_temp_anomaly);
   }
 }
 
-const IceModelVec2S& Anomaly::mean_precipitation_impl() const {
+const array::Scalar& Anomaly::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& Anomaly::mean_annual_temp_impl() const {
+const array::Scalar& Anomaly::air_temperature_impl() const {
   return *m_temperature;
 }
 

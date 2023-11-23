@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,12 @@
 #include <cmath>
 #include <petsc.h>
 
-#include "pism/util/iceModelVec.hh"
-#include "IPDesignVariableParameterization.hh"
-#include "pism/util/pism_options.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/inverse/IPDesignVariableParameterization.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace inverse {
@@ -47,18 +47,18 @@ void IPDesignVariableParameterization::set_scales(const Config & config,
 }
 
 //! Transforms a vector of \f$\zeta\f$ values to a vector of \f$d\f$ values.
-void IPDesignVariableParameterization::convertToDesignVariable(IceModelVec2S &zeta,
-                                                               IceModelVec2S &d,
+void IPDesignVariableParameterization::convertToDesignVariable(array::Scalar &zeta,
+                                                               array::Scalar &d,
                                                                bool communicate) {
   PetscErrorCode ierr;
 
-  IceModelVec::AccessList list{&zeta, &d};
+  array::AccessScope list{&zeta, &d};
 
-  const IceGrid &grid = *zeta.grid();
+  const Grid &grid = *zeta.grid();
 
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       this->toDesignVariable(zeta(i, j), &d(i, j), NULL);
@@ -80,17 +80,17 @@ void IPDesignVariableParameterization::convertToDesignVariable(IceModelVec2S &ze
 }
 
   //! Transforms a vector of \f$d\f$ values to a vector of \f$\zeta\f$ values.
-void IPDesignVariableParameterization::convertFromDesignVariable(IceModelVec2S &d,
-                                                                 IceModelVec2S &zeta,
+void IPDesignVariableParameterization::convertFromDesignVariable(array::Scalar &d,
+                                                                 array::Scalar &zeta,
                                                                  bool communicate) {
   PetscErrorCode ierr;
-  IceModelVec::AccessList list{&zeta, &d};
+  array::AccessScope list{&zeta, &d};
 
-  const IceGrid &grid = *zeta.grid();
+  const Grid &grid = *zeta.grid();
 
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       this->fromDesignVariable(d(i, j), &zeta(i, j));
@@ -175,17 +175,12 @@ void IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
                                                      const std::string &design_var_name) {
   IPDesignVariableParameterization::set_scales(config, design_var_name);
 
-  std::string key("inverse.design.param_trunc_");
-  key += design_var_name;
-  key += "0";
+  auto key = pism::printf("inverse.design.param_trunc_%s0", design_var_name.c_str());
 
   double d0 = config.get_number(key);
   m_d0_sq = d0*d0 / (m_d_scale*m_d_scale);
 
-
-  key = "inverse.design.param_";
-  key += design_var_name;
-  key += "_eps";
+  key = pism::printf("inverse.design.param_%s_eps", design_var_name.c_str());
   m_d_eps = config.get_number(key);
 }
 

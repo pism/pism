@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,29 +17,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "TemperatureModel.hh"
+#include "pism/energy/TemperatureModel.hh"
 #include "pism/energy/tempSystem.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/energy/utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {
 
-TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
-                                   stressbalance::StressBalance *stress_balance)
-  : EnergyModel(grid, stress_balance),
-    m_ice_temperature(m_grid, "temp", WITH_GHOSTS, m_grid->z()) {
+TemperatureModel::TemperatureModel(
+    std::shared_ptr<const Grid> grid,
+    std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : EnergyModel(grid, stress_balance),
+      m_ice_temperature(m_grid, "temp", array::WITH_GHOSTS, m_grid->z()) {
 
-  m_ice_temperature.set_attrs("model_state",
-                              "ice temperature",
-                              "K", "K", "land_ice_temperature", 0);
+  m_ice_temperature.metadata(0)
+      .long_name("ice temperature")
+      .units("K")
+      .standard_name("land_ice_temperature");
   m_ice_temperature.metadata()["valid_min"] = {0.0};
 }
 
-const IceModelVec3 & TemperatureModel::temperature() const {
+const array::Array3D & TemperatureModel::temperature() const {
   return m_ice_temperature;
 }
 
@@ -50,7 +52,7 @@ void TemperatureModel::restart_impl(const File &input_file, int record) {
 
   m_basal_melt_rate.read(input_file, record);
 
-  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   if (input_file.find_variable(m_ice_temperature.metadata().get_name())) {
     m_ice_temperature.read(input_file, record);
@@ -66,16 +68,16 @@ void TemperatureModel::restart_impl(const File &input_file, int record) {
 }
 
 void TemperatureModel::bootstrap_impl(const File &input_file,
-                                      const IceModelVec2S &ice_thickness,
-                                      const IceModelVec2S &surface_temperature,
-                                      const IceModelVec2S &climatic_mass_balance,
-                                      const IceModelVec2S &basal_heat_flux) {
+                                      const array::Scalar &ice_thickness,
+                                      const array::Scalar &surface_temperature,
+                                      const array::Scalar &climatic_mass_balance,
+                                      const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
                  input_file.filename().c_str());
 
-  m_basal_melt_rate.regrid(input_file, OPTIONAL,
-                           m_config->get_number("bootstrapping.defaults.bmelt"));
+  m_basal_melt_rate.regrid(input_file,
+                           io::Default(m_config->get_number("bootstrapping.defaults.bmelt")));
   regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
   int temp_revision = m_ice_temperature.state_counter();
@@ -89,11 +91,11 @@ void TemperatureModel::bootstrap_impl(const File &input_file,
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
-void TemperatureModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
-                                       const IceModelVec2S &ice_thickness,
-                                       const IceModelVec2S &surface_temperature,
-                                       const IceModelVec2S &climatic_mass_balance,
-                                       const IceModelVec2S &basal_heat_flux) {
+void TemperatureModel::initialize_impl(const array::Scalar &basal_melt_rate,
+                                       const array::Scalar &ice_thickness,
+                                       const array::Scalar &surface_temperature,
+                                       const array::Scalar &climatic_mass_balance,
+                                       const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model...\n");
 
@@ -185,23 +187,24 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   const double bulge_max  = m_config->get_number("energy.enthalpy.cold_bulge_max") / ice_c;
 
   inputs.check();
-  const IceModelVec3
+  const array::Array3D
     &strain_heating3 = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;
 
-  const IceModelVec2CellType &cell_type = *inputs.cell_type;
+  const auto &cell_type = *inputs.cell_type;
 
-  const IceModelVec2S
+  const array::Scalar
     &basal_frictional_heating = *inputs.basal_frictional_heating,
     &basal_heat_flux          = *inputs.basal_heat_flux,
-    &ice_thickness            = *inputs.ice_thickness,
     &shelf_base_temp          = *inputs.shelf_base_temp,
     &ice_surface_temp         = *inputs.surface_temp,
     &till_water_thickness     = *inputs.till_water_thickness;
 
-  IceModelVec::AccessList list{&ice_surface_temp, &shelf_base_temp, &ice_thickness,
+  const array::Scalar1 &ice_thickness = *inputs.ice_thickness;
+
+  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &ice_thickness,
       &cell_type, &basal_heat_flux, &till_water_thickness, &basal_frictional_heating,
       &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_temperature, &m_work};
 
@@ -224,7 +227,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       MaskValue mask = static_cast<MaskValue>(cell_type.as_int(i,j));
@@ -360,8 +363,8 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 }
 
 void TemperatureModel::define_model_state_impl(const File &output) const {
-  m_ice_temperature.define(output);
-  m_basal_melt_rate.define(output);
+  m_ice_temperature.define(output, io::PISM_DOUBLE);
+  m_basal_melt_rate.define(output, io::PISM_DOUBLE);
   // ice enthalpy is not a part of the model state
 }
 

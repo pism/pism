@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,11 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "CosineYearlyCycle.hh"
+#include "pism/coupler/atmosphere/CosineYearlyCycle.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/io/File.hh"
 
 #include "pism/util/error_handling.hh"
@@ -31,7 +31,7 @@
 namespace pism {
 namespace atmosphere {
 
-CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr grid)
+CosineYearlyCycle::CosineYearlyCycle(std::shared_ptr<const Grid> grid)
   : YearlyCycle(grid) {
 
   auto scaling_file = m_config->get_string("atmosphere.yearly_cycle.scaling.file");
@@ -63,9 +63,9 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
                  "  Reading mean annual air temperature, mean July air temperature, and\n"
                  "  precipitation fields from '%s'...\n", input_file.c_str());
 
-  m_air_temp_mean_annual.regrid(input_file, CRITICAL);
-  m_air_temp_mean_summer.regrid(input_file, CRITICAL);
-  m_precipitation.regrid(input_file, CRITICAL);
+  m_air_temp_mean_annual.regrid(input_file, io::Default::Nil());
+  m_air_temp_mean_summer.regrid(input_file, io::Default::Nil());
+  m_precipitation.regrid(input_file, io::Default::Nil());
 }
 
 MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {

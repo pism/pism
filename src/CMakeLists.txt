@@ -35,6 +35,7 @@ add_library (pism
   ${CMAKE_CURRENT_BINARY_DIR}/pism_config.cc
   age/AgeColumnSystem.cc
   age/AgeModel.cc
+  age/Isochrones.cc
   basalstrength/ConstantYieldStress.cc
   basalstrength/MohrCoulombYieldStress.cc
   basalstrength/MohrCoulombPointwise.cc
@@ -64,11 +65,10 @@ add_library (pism
   icemodel/diagnostics.cc
   icemodel/diagnostics.cc
   icemodel/energy.cc
-  icemodel/flux_balance.hh
   icemodel/fracture_density.cc
   icemodel/initialization.cc
   icemodel/output.cc
-  icemodel/output_backup.cc
+  icemodel/output_checkpoint.cc
   icemodel/output_extra.cc
   icemodel/output_save.cc
   icemodel/output_ts.cc
@@ -96,6 +96,15 @@ add_library (pism
 )
 target_link_libraries (pism ${Pism_EXTERNAL_LIBS})
 add_dependencies (pism pism_config)
+
+if (Pism_DEBUG)
+  target_sources(pism
+    PRIVATE
+    geometry/MPDATA2.cc
+    geometry/UNO.cc
+  )
+endif()
+
 
 if (Pism_USE_JANSSON)
   if (Pism_BUILD_JANSSON)
@@ -185,3 +194,7 @@ endif()
 if (Pism_DEBUG OR Pism_BUILD_PYTHON_BINDINGS)
   add_subdirectory (pythonbindings)
 endif()
+
+# Generate the pkg-config file
+configure_file(pism.pc.in ${CMAKE_CURRENT_BINARY_DIR}/pism.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pism.pc DESTINATION lib/pkgconfig)

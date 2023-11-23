@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "YieldStress.hh"
+#include "pism/basalstrength/YieldStress.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Logger.hh"
@@ -31,15 +31,14 @@ YieldStressInputs::YieldStressInputs() {
   subglacial_water_thickness = nullptr;
 }
 
-YieldStress::YieldStress(IceGrid::ConstPtr g)
+YieldStress::YieldStress(std::shared_ptr<const Grid> g)
   : Component(g),
-  m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS,
-                       m_config->get_number("grid.max_stencil_width")) {
+  m_basal_yield_stress(m_grid, "tauc") {
 
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
-  m_basal_yield_stress.set_attrs("model_state",
-                                 "yield stress for basal till (plastic or pseudo-plastic model)",
-                                 "Pa", "Pa", "", 0);
+  m_basal_yield_stress.metadata(0)
+      .long_name("yield stress for basal till (plastic or pseudo-plastic model)")
+      .units("Pa");
 }
 
 /*!
@@ -77,7 +76,7 @@ void YieldStress::update(const YieldStressInputs &inputs, double t, double dt) {
   this->update_impl(inputs, t, dt);
 }
 
-const IceModelVec2S& YieldStress::basal_material_yield_stress() {
+const array::Scalar& YieldStress::basal_material_yield_stress() {
   return m_basal_yield_stress;
 }
 
@@ -95,7 +94,7 @@ const IceModelVec2S& YieldStress::basal_material_yield_stress() {
  * step basal_material_yield_stress() gets called before update().
  */
 void YieldStress::define_model_state_impl(const File &output) const {
-  m_basal_yield_stress.define(output);
+  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
 }
 
 void YieldStress::write_model_state_impl(const File &output) const {

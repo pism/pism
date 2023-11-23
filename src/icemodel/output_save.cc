@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
@@ -156,7 +156,7 @@ void IceModel::write_snapshot() {
   const Profiling &profiling = m_ctx->profiling();
 
   profiling.begin("io.snapshots");
-  IO_Mode mode = m_snapshots_file_is_ready ? PISM_READWRITE : PISM_READWRITE_MOVE;
+  auto mode = m_snapshots_file_is_ready ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
   {
     File file(m_grid->com,
               filename,
@@ -170,7 +170,7 @@ void IceModel::write_snapshot() {
       m_snapshots_file_is_ready = true;
     }
 
-    write_run_stats(file);
+    write_run_stats(file, run_stats());
 
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
   }

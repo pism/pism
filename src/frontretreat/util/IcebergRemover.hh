@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,11 +21,8 @@
 #define _PISMICEBERGREMOVER_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
-
-class IceModelVec2CellType;
 
 namespace calving {
 
@@ -49,19 +46,19 @@ namespace calving {
 class IcebergRemover : public Component
 {
 public:
-  IcebergRemover(IceGrid::ConstPtr g);
+  IcebergRemover(std::shared_ptr<const Grid> g);
   virtual ~IcebergRemover() = default;
 
-  void update(const IceModelVec2Int &bc_mask,
-              IceModelVec2CellType &pism_mask,
-              IceModelVec2S &ice_thickness);
+  void update(const array::Scalar &bc_mask,
+              array::CellType1 &cell_type,
+              array::Scalar &ice_thickness);
 protected:
-  virtual void update_impl(const IceModelVec2Int &bc_mask,
-                           IceModelVec2CellType &pism_mask,
-                           IceModelVec2S &ice_thickness);
+  virtual void update_impl(const array::Scalar &bc_mask,
+                           array::CellType1 &cell_type,
+                           array::Scalar &ice_thickness);
 
 
-  IceModelVec2S m_iceberg_mask;
+  array::Scalar m_iceberg_mask;
   std::shared_ptr<petsc::Vec> m_mask_p0;
 };
 

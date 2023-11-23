@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMNCWRAPPER_H_
-#define _PISMNCWRAPPER_H_
+#ifndef PISM_NCFILE_H
+#define PISM_NCFILE_H
 
 #include <memory>
 #include <string>
@@ -25,11 +25,14 @@
 
 #include <mpi.h>
 
-#include "IO_Flags.hh"
-
 namespace pism {
 
-class IceGrid;
+class Grid;
+
+namespace io {
+enum Mode : int;
+enum Type : int;
+}
 
 //! Input and output code (NetCDF wrappers, etc)
 namespace io {
@@ -53,8 +56,7 @@ namespace io {
  * - Methods of this class should do what corresponding NetCDF C API calls do,
  *   no more and no less.
  */
-class NCFile
-{
+class NCFile {
 public:
   typedef std::shared_ptr<NCFile> Ptr;
 
@@ -62,7 +64,7 @@ public:
   virtual ~NCFile() = default;
 
   // open/create/close
-  void open(const std::string &filename, IO_Mode mode);
+  void open(const std::string &filename, io::Mode mode);
 
   void create(const std::string &filename);
 
@@ -85,33 +87,23 @@ public:
   void inq_unlimdim(std::string &result) const;
 
   // var
-  void def_var(const std::string &name, IO_Type nctype,
+  void def_var(const std::string &name, io::Type nctype,
                const std::vector<std::string> &dims) const;
 
   void def_var_chunking(const std::string &name, std::vector<size_t> &dimensions) const;
 
-  void get_vara_double(const std::string &variable_name,
-                       const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       double *ip) const;
+  void get_vara_double(const std::string &variable_name, const std::vector<unsigned int> &start,
+                       const std::vector<unsigned int> &count, double *ip) const;
 
-  void put_vara_double(const std::string &variable_name,
-                       const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       const double *op) const;
+  void put_vara_double(const std::string &variable_name, const std::vector<unsigned int> &start,
+                       const std::vector<unsigned int> &count, const double *op) const;
 
-  void write_darray(const std::string &variable_name,
-                    const IceGrid &grid,
-                    unsigned int z_count,
-                    bool time_dependent,
-                    unsigned int record,
-                    const double *input);
+  void write_darray(const std::string &variable_name, const Grid &grid, unsigned int z_count,
+                    bool time_dependent, unsigned int record, const double *input);
 
-  void get_varm_double(const std::string &variable_name,
-                       const std::vector<unsigned int> &start,
+  void get_varm_double(const std::string &variable_name, const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count,
-                       const std::vector<unsigned int> &imap,
-                       double *ip) const;
+                       const std::vector<unsigned int> &imap, double *ip) const;
 
   void inq_nvars(int &result) const;
 
@@ -119,7 +111,7 @@ public:
 
   void inq_varnatts(const std::string &variable_name, int &result) const;
 
-  void inq_varid(const std::string &variable_name, bool &exists) const;
+  void inq_varid(const std::string &variable_name, bool &result) const;
 
   void inq_varname(unsigned int j, std::string &result) const;
 
@@ -132,15 +124,16 @@ public:
   void get_att_text(const std::string &variable_name, const std::string &att_name,
                     std::string &result) const;
 
-  void put_att_double(const std::string &variable_name, const std::string &att_name,
-                      IO_Type xtype, const std::vector<double> &data) const;
+  void put_att_double(const std::string &variable_name, const std::string &att_name, io::Type xtype,
+                      const std::vector<double> &data) const;
 
   void put_att_text(const std::string &variable_name, const std::string &att_name,
                     const std::string &value) const;
 
   void inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const;
 
-  void inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const;
+  void inq_atttype(const std::string &variable_name, const std::string &att_name,
+                   io::Type &result) const;
 
   // misc
   void set_fill(int fillmode, int &old_modep) const;
@@ -153,10 +146,10 @@ protected:
   // implementations:
 
   // open/create/close
-  virtual void open_impl(const std::string &filename, IO_Mode mode) = 0;
-  virtual void create_impl(const std::string &filename) = 0;
-  virtual void sync_impl() const = 0;
-  virtual void close_impl() = 0;
+  virtual void open_impl(const std::string &filename, io::Mode mode) = 0;
+  virtual void create_impl(const std::string &filename)              = 0;
+  virtual void sync_impl() const                                     = 0;
+  virtual void close_impl()                                          = 0;
 
   // redef/enddef
   virtual void enddef_impl() const = 0;
@@ -173,38 +166,34 @@ protected:
   virtual void inq_unlimdim_impl(std::string &result) const = 0;
 
   // var
-  virtual void def_var_impl(const std::string &name, IO_Type nctype,
-                           const std::vector<std::string> &dims) const = 0;
+  virtual void def_var_impl(const std::string &name, io::Type nctype,
+                            const std::vector<std::string> &dims) const = 0;
 
   virtual void def_var_chunking_impl(const std::string &name,
-                                    std::vector<size_t> &dimensions) const;
+                                     std::vector<size_t> &dimensions) const;
 
   virtual void get_vara_double_impl(const std::string &variable_name,
-                                   const std::vector<unsigned int> &start,
-                                   const std::vector<unsigned int> &count,
-                                   double *ip) const = 0;
+                                    const std::vector<unsigned int> &start,
+                                    const std::vector<unsigned int> &count, double *ip) const = 0;
 
   virtual void put_vara_double_impl(const std::string &variable_name,
-                                   const std::vector<unsigned int> &start,
-                                   const std::vector<unsigned int> &count,
-                                   const double *op) const = 0;
+                                    const std::vector<unsigned int> &start,
+                                    const std::vector<unsigned int> &count,
+                                    const double *op) const = 0;
 
-  virtual void write_darray_impl(const std::string &variable_name,
-                                 const IceGrid &grid,
-                                 unsigned int z_count,
-                                 bool time_dependent,
-                                 unsigned int record,
+  virtual void write_darray_impl(const std::string &variable_name, const Grid &grid,
+                                 unsigned int z_count, bool time_dependent, unsigned int record,
                                  const double *input);
 
   virtual void get_varm_double_impl(const std::string &variable_name,
-                                   const std::vector<unsigned int> &start,
-                                   const std::vector<unsigned int> &count,
-                                   const std::vector<unsigned int> &imap,
-                                   double *ip) const = 0;
+                                    const std::vector<unsigned int> &start,
+                                    const std::vector<unsigned int> &count,
+                                    const std::vector<unsigned int> &imap, double *ip) const = 0;
 
   virtual void inq_nvars_impl(int &result) const = 0;
 
-  virtual void inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const = 0;
+  virtual void inq_vardimid_impl(const std::string &variable_name,
+                                 std::vector<std::string> &result) const = 0;
 
   virtual void inq_varnatts_impl(const std::string &variable_name, int &result) const = 0;
 
@@ -215,17 +204,23 @@ protected:
   virtual void set_compression_level_impl(int level) const = 0;
 
   // att
-  virtual void get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const = 0;
+  virtual void get_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                                   std::vector<double> &result) const = 0;
 
-  virtual void get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const = 0;
+  virtual void get_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                                 std::string &result) const = 0;
 
-  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const = 0;
+  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                                   io::Type xtype, const std::vector<double> &data) const = 0;
 
-  virtual void put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const = 0;
+  virtual void put_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                                 const std::string &value) const = 0;
 
-  virtual void inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const = 0;
+  virtual void inq_attname_impl(const std::string &variable_name, unsigned int n,
+                                std::string &result) const = 0;
 
-  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const = 0;
+  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name,
+                                io::Type &result) const = 0;
 
   // misc
   virtual void set_fill_impl(int fillmode, int &old_modep) const = 0;
@@ -244,4 +239,4 @@ private:
 } // end of namespace io
 } // end of namespace pism
 
-#endif /* _PISMNCWRAPPER_H_ */
+#endif /* PISM_NCFILE_H */

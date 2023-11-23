@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,23 +21,21 @@
 
 #include "pism/coupler/AtmosphereModel.hh"
 
-#include "pism/util/iceModelVec2T.hh"
-
 namespace pism {
 namespace atmosphere {
 
 class ElevationChange : public AtmosphereModel
 {
 public:
-  ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
+  ElevationChange(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~ElevationChange() = default;
 
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mean_precipitation_impl() const;
-  const IceModelVec2S& mean_annual_temp_impl() const;
+  const array::Scalar& precipitation_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
@@ -61,11 +59,11 @@ protected:
   // surface temperature lapse rate
   double m_temp_lapse_rate;
 
-  std::shared_ptr<IceModelVec2T> m_reference_surface;
+  std::shared_ptr<array::Forcing> m_reference_surface;
 
-  IceModelVec2S::Ptr m_precipitation;
-  IceModelVec2S::Ptr m_temperature;
-  IceModelVec2S m_surface;
+  std::shared_ptr<array::Scalar> m_precipitation;
+  std::shared_ptr<array::Scalar> m_temperature;
+  array::Scalar m_surface;
 };
 
 } // end of namespace atmosphere

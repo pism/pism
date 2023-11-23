@@ -19,8 +19,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     pism_DM.i
     pism_FlowLaw.i
     pism_Hydrology.i
-    pism_IceGrid.i
-    pism_IceModelVec.i
+    pism_Grid.i
+    pism_Array.i
     pism_File.i
     pism_SIA.i
     pism_SSA.i
@@ -46,6 +46,12 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_USE_JANSSON=1" APPEND)
   else()
     set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_USE_JANSSON=0" APPEND)
+  endif()
+
+  if(Pism_DEBUG)
+    set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_DEBUG=1" APPEND)
+  else()
+    set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_DEBUG=0" APPEND)
   endif()
 
   set_source_files_properties(PISM.i PROPERTIES

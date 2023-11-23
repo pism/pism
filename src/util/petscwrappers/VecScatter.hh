@@ -22,11 +22,11 @@
 
 #include <petscvec.h>
 
-#include "Wrapper.hh"
+#include "pism/util/Wrapper.hh"
 
 namespace pism {
 namespace petsc {
-class VecScatter : public petsc::Wrapper< ::VecScatter > {
+class VecScatter : public Wrapper< ::VecScatter > {
 public:
   VecScatter();
   VecScatter(::VecScatter m);

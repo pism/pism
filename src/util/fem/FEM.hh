@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,12 +20,12 @@
 #define PISM_FEM_H
 
 
-//! \brief Classes for implementing the Finite Element Method on an IceGrid.
+//! \brief Classes for implementing the Finite Element Method on an Grid.
 /*! @file FEM.hh We assume that the reader has a basic understanding of the finite element method. The
   following is a reminder of the method that also gives the background for the how to implement it
-  on an IceGrid with the tools in this module.
+  on an Grid with the tools in this module.
 
-  The IceGrid domain \f$\Omega\f$ is decomposed into a grid of rectangular physical elements indexed
+  The Grid domain \f$\Omega\f$ is decomposed into a grid of rectangular physical elements indexed
   by indices (i,j):
 
   ~~~
@@ -241,12 +241,12 @@ enum ElementFace {FACE_LEFT   = 0,
 } // end of namespace fem
 } // end of namespace pism
 
-#include "DirichletData.hh"
+#include "pism/util/fem/DirichletData.hh"
 
-#include "Element.hh"
+#include "pism/util/fem/Element.hh"
 
-#include "ElementIterator.hh"
+#include "pism/util/fem/ElementIterator.hh"
 
-#include "Quadrature.hh"
+#include "pism/util/fem/Quadrature.hh"
 
 #endif /* PISM_FEM_H */

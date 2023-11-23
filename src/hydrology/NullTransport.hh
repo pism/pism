@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018, 2021 PISM Authors
+// Copyright (C) 2012-2018, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _NULLTRANSPORT_H_
 #define _NULLTRANSPORT_H_
 
-#include "Hydrology.hh"
+#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 
@@ -39,18 +39,18 @@ namespace hydrology {
 */
 class NullTransport : public Hydrology {
 public:
-  NullTransport(IceGrid::ConstPtr g);
+  NullTransport(std::shared_ptr<const Grid> g);
   virtual ~NullTransport() = default;
 
 protected:
   virtual void restart_impl(const File &input_file, int record);
 
   virtual void bootstrap_impl(const File &input_file,
-                              const IceModelVec2S &ice_thickness);
+                              const array::Scalar &ice_thickness);
 
-  virtual void init_impl(const IceModelVec2S &W_till,
-                               const IceModelVec2S &W,
-                               const IceModelVec2S &P);
+  virtual void init_impl(const array::Scalar &W_till,
+                               const array::Scalar &W,
+                               const array::Scalar &P);
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 
@@ -60,13 +60,13 @@ protected:
   void diffuse_till_water(double dt);
 
 private:
-  double m_diffuse_tillwat;
+  bool m_diffuse_tillwat;
   double m_diffusion_time;
   double m_diffusion_distance;
   double m_tillwat_max;
   double m_tillwat_decay_rate;
 
-  IceModelVec2S m_Wtill_old;
+  array::Scalar1 m_Wtill_old;
 
   void initialization_message() const;
 };

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 PISM Authors
+// Copyright (C) 2004--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,12 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "OptTillphiYieldStress.hh"
+#include "pism/basalstrength/OptTillphiYieldStress.hh"
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
@@ -34,33 +34,32 @@ namespace pism {
   Pollard et al. (2012), TC 6(5), "A simple inverse method for the distribution of basal
   sliding coefficients under ice sheets, applied to Antarctica"
 */
-OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
+OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
   : MohrCoulombYieldStress(grid),
-    m_mask(m_grid, "diff_mask", WITH_GHOSTS),
-    m_usurf_difference(m_grid, "usurf_difference", WITH_GHOSTS),
-    m_usurf_target(m_grid, "usurf", WITH_GHOSTS)
+    m_mask(m_grid, "diff_mask"),
+    m_usurf_difference(m_grid, "usurf_difference"),
+    m_usurf_target(m_grid, "usurf")
 {
   // In this model tillphi is NOT time-independent.
-  m_till_phi.set_time_independent(false);
+  m_till_phi.metadata().set_time_independent(false);
 
   m_name = "Iterative optimization of the till friction angle for the Mohr-Coulomb yield stress model";
 
-  m_usurf_target.set_attrs("",
-                           "target surface elevation for tillphi optimization",
-                           "m", "m", "" /* no standard name */, 0);
-  m_usurf_target.set_time_independent(true);
+  m_usurf_target.metadata()
+      .long_name("target surface elevation for tillphi optimization")
+      .units("m")
+      .set_time_independent(true);
 
-  m_usurf_difference.set_attrs("diagnostic",
-                               "difference between modeled and target"
-                               " surface elevations",
-                               "m", "m", "" /* no standard name */, 0);
+  m_usurf_difference.metadata()
+      .long_name("difference between modeled and target surface elevations")
+      .units("m");
+
   m_usurf_difference.set(0.0);
 
-  m_mask.set_attrs("diagnostic",
-                   "one if the till friction angle was"
-                   " updated by the last iteration, zero otherwise ",
-                   "", "",      // no units
-                   "" /* no standard name */, 0);
+  m_mask.metadata()
+      .long_name(
+          "one if the till friction angle was updated by the last iteration, zero otherwise ");
+
   m_mask.metadata()["flag_values"] = {0.0, 1.0};
   m_mask.metadata()["flag_meanings"] = "no_update updated_during_last_iteration";
 
@@ -94,7 +93,7 @@ OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
 
   {
     m_time_name = m_config->get_string("time.dimension_name") + "_tillphi_opt";
-    m_t_last = m_grid->ctx()->time()->current();
+    m_t_last = time().current();
     m_update_interval = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dt", "seconds");
     m_t_eps = m_config->get_number("time_stepping.resolution", "seconds");
   }
@@ -117,7 +116,7 @@ void OptTillphiYieldStress::init_t_last(const File &input_file) {
   if (input_file.find_variable(m_time_name)) {
     input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
   } else {
-    m_t_last = m_grid->ctx()->time()->current();
+    m_t_last = time().current();
   }
 }
 
@@ -128,12 +127,12 @@ void OptTillphiYieldStress::init_usurf_target(const File &input_file) {
   auto filename = m_config->get_string("basal_yield_stress.mohr_coulomb.tillphi_opt.file");
 
   if (not filename.empty()) {
-    m_usurf_target.regrid(filename, CRITICAL);
+    m_usurf_target.regrid(filename, io::Default::Nil());
   } else {
     m_log->message(2, "* No file set to read target surface elevation from... using '%s'\n",
                    input_file.filename().c_str());
 
-    m_usurf_target.regrid(input_file, CRITICAL);
+    m_usurf_target.regrid(input_file, io::Default::Nil());
   }
 
   m_usurf_target.metadata().set_name("usurf_target");
@@ -219,20 +218,20 @@ void OptTillphiYieldStress::update_impl(const YieldStressInputs &inputs,
 
 //! Perform an iteration to adjust the till friction angle according to the difference
 //! between target and modeled surface elevations.
-void OptTillphiYieldStress::update_tillphi(const IceModelVec2S &ice_surface_elevation,
-                                           const IceModelVec2S &bed_topography,
-                                           const IceModelVec2CellType &cell_type) {
+void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elevation,
+                                           const array::Scalar &bed_topography,
+                                           const array::CellType &cell_type) {
 
   m_log->message(2, "* Updating till friction angle...\n");
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     { &m_till_phi, &m_usurf_target, &m_usurf_difference, &m_mask, &ice_surface_elevation, &bed_topography, &cell_type };
 
   m_mask.set(0.0);
 
   double slope = (m_phi0_max - m_phi0_min) / (m_topg_max - m_topg_min);
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // Compute the lower bound of the till friction angle (default value corresponds
@@ -276,12 +275,12 @@ void OptTillphiYieldStress::define_model_state_impl(const File &output) const {
   MohrCoulombYieldStress::define_model_state_impl(output);
 
   if (not output.find_variable(m_time_name)) {
-    output.define_variable(m_time_name, PISM_DOUBLE, {});
+    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
 
     output.write_attribute(m_time_name, "long_name",
                            "time of the last update of the till friction angle");
-    output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->units_string());
+    output.write_attribute(m_time_name, "calendar", time().calendar());
+    output.write_attribute(m_time_name, "units", time().units_string());
   }
 }
 

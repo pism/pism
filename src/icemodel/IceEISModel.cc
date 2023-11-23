@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,11 +18,10 @@
 
 #include <gsl/gsl_math.h>       // M_PI
 
-#include "IceEISModel.hh"
+#include "pism/icemodel/IceEISModel.hh"
 
 #include "pism/util/Context.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 #include "pism/coupler/ocean/Constant.hh"
 #include "pism/coupler/ocean/Initialization.hh"
@@ -37,7 +36,7 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid::Ptr g,
+IceEISModel::IceEISModel(std::shared_ptr<Grid> g,
                          std::shared_ptr<Context> context,
                          char experiment)
   : IceModel(g, context), m_experiment(experiment) {
@@ -65,11 +64,11 @@ void IceEISModel::allocate_couplers() {
   }
 }
 
-void generate_trough_topography(IceModelVec2S &result) {
+void generate_trough_topography(array::Scalar &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   const double
     b0    = 1000.0,  // plateau elevation
@@ -78,8 +77,8 @@ void generate_trough_topography(IceModelVec2S &result) {
     slope = b0 / L,
     dx61  = (2.0 * L) / 60; // = 25.0e3
 
-  IceModelVec::AccessList list(result);
-  for (Points p(*grid); p; p.next()) {
+  array::AccessScope list(result);
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double nsd = i * grid->dx(), ewd = j * grid->dy();
@@ -92,17 +91,17 @@ void generate_trough_topography(IceModelVec2S &result) {
   }
 }
 
-void generate_mound_topography(IceModelVec2S &result) {
+void generate_mound_topography(array::Scalar &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   const double slope = 250.0;
   const double w     = 150.0e3; // mound width
 
-  IceModelVec::AccessList list(result);
-  for (Points p(*grid); p; p.next()) {
+  array::AccessScope list(result);
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double nsd = i * grid->dx(), ewd = j * grid->dy();
@@ -134,7 +133,7 @@ void IceEISModel::initialize_2d() {
   m_geometry.sea_level_elevation.set(0.0);
 
   // set uplift
-  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+  array::Scalar bed_uplift(m_grid, "uplift");
   bed_uplift.set(0.0);
 
   // start with zero ice

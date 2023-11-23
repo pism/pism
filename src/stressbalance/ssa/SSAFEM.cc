@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2023 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/util/IceGrid.hh"
-#include "SSAFEM.hh"
+#include "pism/util/Grid.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/Mask.hh"
 #include "pism/basalstrength/basal_resistance.hh"
@@ -29,7 +29,8 @@
 #include "pism/geometry/Geometry.hh"
 
 #include "pism/util/node_types.hh"
-
+#include "pism/util/pism_utilities.hh" // average_water_column_pressure()
+#include "pism/util/interpolation.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
@@ -42,45 +43,43 @@ namespace stressbalance {
  *
  *
  */
-SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
-  : SSA(grid),
-    m_bc_mask(grid, "bc_mask", WITH_GHOSTS),
-    m_bc_values(grid, "_bc", WITH_GHOSTS),
-    m_gc(*m_config),
-    m_coefficients(grid, "ssa_coefficients", WITH_GHOSTS, 1),
-    m_node_type(m_grid, "node_type", WITH_GHOSTS, 1),
-    m_boundary_integral(m_grid, "boundary_integral", WITH_GHOSTS, 1),
-    m_element_index(*grid),
-    m_q1_element(*grid, fem::Q1Quadrature4())
-{
+SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
+    : SSA(grid),
+      m_bc_mask(grid, "bc_mask"),
+      m_bc_values(grid, "_bc"),
+      m_gc(*m_config),
+      m_coefficients(grid, "ssa_coefficients", array::WITH_GHOSTS, 1),
+      m_node_type(m_grid, "node_type"),
+      m_boundary_integral(m_grid, "boundary_integral"),
+      m_element_index(*grid),
+      m_q1_element(*grid, fem::Q1Quadrature4()) {
+  m_bc_mask.set_interpolation_type(NEAREST);
+  m_node_type.set_interpolation_type(NEAREST);
 
   const double ice_density = m_config->get_number("constants.ice.density");
-  m_alpha = 1 - ice_density / m_config->get_number("constants.sea_water.density");
-  m_rho_g = ice_density * m_config->get_number("constants.standard_gravity");
+  m_alpha                  = 1 - ice_density / m_config->get_number("constants.sea_water.density");
+  m_rho_g                  = ice_density * m_config->get_number("constants.standard_gravity");
 
   m_driving_stress_x = NULL;
   m_driving_stress_y = NULL;
 
   PetscErrorCode ierr;
 
-  m_dirichletScale = 1.0;
+  m_dirichletScale        = 1.0;
   m_beta_ice_free_bedrock = m_config->get_number("basal_resistance.beta_ice_free_bedrock");
 
   ierr = SNESCreate(m_grid->com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian.
-  m_callback_data.da = *m_da;
+  m_callback_data.da  = *m_da;
   m_callback_data.ssa = this;
 
-  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
-                                  (DMDASNESFunction)function_callback,
+  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES, (DMDASNESFunction)function_callback,
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
-  ierr = DMDASNESSetJacobianLocal(*m_da,
-                                  (DMDASNESJacobian)jacobian_callback,
-                                  &m_callback_data);
+  ierr = DMDASNESSetJacobianLocal(*m_da, (DMDASNESJacobian)jacobian_callback, &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 
   ierr = DMSetMatType(*m_da, "baij");
@@ -94,25 +93,23 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
 
   // Default of maximum 200 iterations; possibly overridden by command line options
   int snes_max_it = 200;
-  ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT,
-                           snes_max_it, PETSC_DEFAULT);
+  ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT, snes_max_it,
+                           PETSC_DEFAULT);
   PISM_CHK(ierr, "SNESSetTolerances");
 
   ierr = SNESSetFromOptions(m_snes);
   PISM_CHK(ierr, "SNESSetFromOptions");
 
-  m_node_type.set_attrs("internal", // intent
-                        "node types: interior, boundary, exterior", // long name
-                        "", "", "", 0); // no units or standard name
+  m_node_type.metadata(0).long_name(
+      "node types: interior, boundary, exterior"); // no units or standard name
 
-  // Element::nodal_values() expects a ghosted IceModelVec2S. Ghosts if this field are never
-  // assigned to and not communicated, though.
-  m_boundary_integral.set_attrs("internal", // intent
-                                "residual contribution from lateral boundaries", // long name
-                                "", "", "", 0); // no units or standard name
+  // Element::nodal_values() expects a ghosted array::Scalar. Ghosts if this field are
+  // never assigned to and not communicated, though.
+  m_boundary_integral.metadata(0).long_name(
+      "residual contribution from lateral boundaries"); // no units or standard name
 }
 
-SSA* SSAFEMFactory(IceGrid::ConstPtr g) {
+SSA *SSAFEMFactory(std::shared_ptr<const Grid> g) {
   return new SSAFEM(g);
 }
 
@@ -128,21 +125,18 @@ void SSAFEM::init_impl() {
     m_driving_stress_y = m_grid->variables().get_2d_scalar("ssa_driving_stress_y");
   }
 
-  m_log->message(2,
-                 "  [using the SNES-based finite element method implementation]\n");
+  m_log->message(2, "  [using the SNES-based finite element method implementation]\n");
 
   // process command-line options
   {
     m_dirichletScale = 1.0e9;
     m_dirichletScale = options::Real(m_sys, "-ssa_fe_dirichlet_scale",
                                      "Enforce Dirichlet conditions with this additional scaling",
-                                     "1",
-                                     m_dirichletScale);
-
+                                     "1", m_dirichletScale);
   }
 
   // On restart, SSA::init() reads the SSA velocity from a PISM output file
-  // into IceModelVec2V "velocity". We use that field as an initial guess.
+  // into array::Vector "velocity". We use that field as an initial guess.
   // If we are not restarting from a PISM file, "velocity" is identically zero,
   // and the call below clears m_velocity_global.
 
@@ -165,16 +159,19 @@ void SSAFEM::init_impl() {
  */
 void SSAFEM::solve(const Inputs &inputs) {
 
-  TerminationReason::Ptr reason = solve_with_reason(inputs);
+  auto reason = solve_with_reason(inputs);
   if (reason->failed()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "SSAFEM solve failed to converge (SNES reason %s)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "SSAFEM solve failed to converge (SNES reason %s)",
                                   reason->description().c_str());
-  } else if (m_log->get_threshold() > 2) {
+  }
+
+  if (m_log->get_threshold() > 2) {
     m_stdout_ssa += "SSAFEM converged (SNES reason " + reason->description() + ")";
   }
 }
 
-TerminationReason::Ptr SSAFEM::solve_with_reason(const Inputs &inputs) {
+std::shared_ptr<TerminationReason> SSAFEM::solve_with_reason(const Inputs &inputs) {
 
   // Set up the system to solve.
   cache_inputs(inputs);
@@ -184,7 +181,7 @@ TerminationReason::Ptr SSAFEM::solve_with_reason(const Inputs &inputs) {
 
 //! Solve the SSA without first recomputing the values of coefficients at quad
 //! points.  See the disccusion of SSAFEM::solve for more discussion.
-TerminationReason::Ptr SSAFEM::solve_nocache() {
+std::shared_ptr<TerminationReason> SSAFEM::solve_nocache() {
   PetscErrorCode ierr;
 
   m_epsilon_ssa = m_config->get_number("stress_balance.ssa.epsilon");
@@ -221,7 +218,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
   SNESConvergedReason snes_reason;
   ierr = SNESGetConvergedReason(m_snes, &snes_reason); PISM_CHK(ierr, "SNESGetConvergedReason");
 
-  TerminationReason::Ptr reason(new SNESTerminationReason(snes_reason));
+  std::shared_ptr<TerminationReason> reason(new SNESTerminationReason(snes_reason));
   if (not reason->failed()) {
 
     // Extract the solution back from SSAX to velocity and communicate.
@@ -271,7 +268,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
 
   const std::vector<double> &z = m_grid->z();
 
-  IceModelVec::AccessList list{&m_coefficients,
+  array::AccessScope list{&m_coefficients,
       inputs.enthalpy,
       &inputs.geometry->ice_thickness,
       &inputs.geometry->bed_elevation,
@@ -285,24 +282,24 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double thickness = inputs.geometry->ice_thickness(i, j);
 
-      Vector2 tau_d;
+      Vector2d tau_d;
       if (use_explicit_driving_stress) {
         tau_d.u = (*m_driving_stress_x)(i, j);
         tau_d.v = (*m_driving_stress_y)(i, j);
       } else {
-	// tau_d above is set to zero by the Vector2
+	// tau_d above is set to zero by the Vector2d
 	// constructor, but is not used
       }
 
       const double *enthalpy = inputs.enthalpy->get_column(i, j);
       double hardness = rheology::averaged_hardness(*m_flow_law, thickness,
                                                     m_grid->kBelowHeight(thickness),
-                                                    &z[0], enthalpy);
+                                                    z.data(), enthalpy);
 
       Coefficients c;
       c.thickness      = thickness;
@@ -372,7 +369,7 @@ void SSAFEM::quad_point_values(const fem::Element &E,
 //! Uses explicitly-provided nodal values.
 void SSAFEM::explicit_driving_stress(const fem::Element &E,
                                      const Coefficients *x,
-                                     Vector2 *result) const {
+                                     Vector2d *result) const {
   const unsigned int n = E.n_pts();
 
   for (unsigned int q = 0; q < n; q++) {
@@ -432,7 +429,7 @@ void SSAFEM::explicit_driving_stress(const fem::Element &E,
 */
 void SSAFEM::driving_stress(const fem::Element &E,
                             const Coefficients *x,
-                            Vector2 *result) const {
+                            Vector2d *result) const {
   const unsigned int n = E.n_pts();
 
   for (unsigned int q = 0; q < n; q++) {
@@ -498,9 +495,9 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
                                  double hardness,
                                  int mask,
                                  double tauc,
-                                 const Vector2 &U,
-                                 const Vector2 &U_x,
-                                 const Vector2 &U_y,
+                                 const Vector2d &U,
+                                 const Vector2d &U_x,
+                                 const Vector2d &U_y,
                                  double *nuH, double *dnuH,
                                  double *beta, double *dbeta) {
 
@@ -589,7 +586,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
     return;
   }
 
-  IceModelVec::AccessList list{&m_node_type,
+  array::AccessScope list{&m_node_type,
       &inputs.geometry->ice_thickness,
       &inputs.geometry->bed_elevation,
       &inputs.geometry->sea_level_elevation,
@@ -633,7 +630,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         }
 
         // residual contributions at element nodes
-        std::vector<Vector2> I(Nk);
+        std::vector<Vector2d> I(Nk);
 
         double H_nodal[Nk];
         E->nodal_values(inputs.geometry->ice_thickness.array(), H_nodal);
@@ -726,8 +723,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
  *
  * The weak form of the SSA system is
  */
-void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
-                                    Vector2 **residual_global) {
+void SSAFEM::compute_local_function(Vector2d const *const *const velocity_global,
+                                    Vector2d **residual_global) {
 
   const bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
 
@@ -743,12 +740,12 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                P1Element2(*m_grid, Q_p1, 2),
                                P1Element2(*m_grid, Q_p1, 3)};
 
-  IceModelVec::AccessList list{&m_node_type, &m_coefficients, &m_boundary_integral};
+  array::AccessScope list{&m_node_type, &m_coefficients, &m_boundary_integral};
 
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
   // to set it using Element::add_contribution() because that would lead to
   // double-counting. Also note that without CFBC m_boundary_integral is exactly zero.
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     residual_global[j][i] = m_boundary_integral(i, j);
@@ -758,7 +755,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   fem::DirichletData_Vector dirichlet_data(&m_bc_mask, &m_bc_values, m_dirichletScale);
 
   // Storage for the current solution and its derivatives at quadrature points.
-  Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
+  Vector2d U[Nq_max], U_x[Nq_max], U_y[Nq_max];
 
   // Iterate over the elements.
   const int
@@ -804,13 +801,13 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         const unsigned int Nq = E->n_pts();
 
         // Storage for the solution and residuals at element nodes.
-        Vector2 residual[Nk];
+        Vector2d residual[Nk];
 
         int    mask[Nq_max];
         double thickness[Nq_max];
         double tauc[Nq_max];
         double hardness[Nq_max];
-        Vector2 tau_d[Nq_max];
+        Vector2d tau_d[Nq_max];
 
         {
           Coefficients coeffs[Nk];
@@ -827,7 +824,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         {
           // Obtain the value of the solution at the nodes
-          Vector2 velocity_nodal[Nk];
+          Vector2d velocity_nodal[Nk];
           E->nodal_values(velocity_global, velocity_nodal);
 
           // These values now need to be adjusted if some nodes in the element have Dirichlet data.
@@ -861,7 +858,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                               &eta, NULL, &beta, NULL);              // outputs
 
           // The next few lines compute the actual residual for the element.
-          const Vector2 tau_b = U[q] * (- beta); // basal shear stress
+          const Vector2d tau_b = U[q] * (- beta); // basal shear stress
 
           const double
             u_x          = U_x[q].u,
@@ -904,8 +901,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   monitor_function(velocity_global, residual_global);
 }
 
-void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
-                              Vector2 const *const *const residual_global) {
+void SSAFEM::monitor_function(Vector2d const *const *const velocity_global,
+                              Vector2d const *const *const residual_global) {
   PetscErrorCode ierr;
   bool monitorFunction = options::Bool("-ssa_monitor_function", "monitor the SSA residual");
   if (not monitorFunction) {
@@ -918,7 +915,7 @@ void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       ierr = PetscSynchronizedPrintf(m_grid->com,
@@ -948,7 +945,7 @@ void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
   approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 
 */
-void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global, Mat Jac) {
+void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global, Mat Jac) {
 
   const bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
@@ -966,13 +963,13 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   PetscErrorCode ierr = MatZeroEntries(Jac);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list{&m_node_type, &m_coefficients};
+  array::AccessScope list{&m_node_type, &m_coefficients};
 
   // Start access to Dirichlet data if present.
   fem::DirichletData_Vector dirichlet_data(&m_bc_mask, &m_bc_values, m_dirichletScale);
 
   // Storage for the current solution at quadrature points.
-  Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
+  Vector2d U[Nq_max], U_x[Nq_max], U_y[Nq_max];
 
   // Loop through all the elements.
   int
@@ -1034,7 +1031,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
         {
           // Values of the solution at the nodes of the current element.
-          Vector2 velocity_nodal[Nk];
+          Vector2d velocity_nodal[Nk];
           E->nodal_values(velocity_global, velocity_nodal);
 
           // These values now need to be adjusted if some nodes in the element have
@@ -1203,8 +1200,8 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
 
 //!
 PetscErrorCode SSAFEM::function_callback(DMDALocalInfo *info,
-                                         Vector2 const *const *const velocity,
-                                         Vector2 **residual,
+                                         Vector2d const *const *const velocity,
+                                         Vector2d **residual,
                                          CallbackData *fe) {
   try {
     (void) info;
@@ -1219,7 +1216,7 @@ PetscErrorCode SSAFEM::function_callback(DMDALocalInfo *info,
 }
 
 PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info,
-                                         Vector2 const *const *const velocity,
+                                         Vector2d const *const *const velocity,
                                          Mat A, Mat J, CallbackData *fe) {
   try {
     (void) A;

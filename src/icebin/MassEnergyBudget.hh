@@ -1,11 +1,7 @@
 #pragma once
 
-// --------------------------------
-// PISM Includes... want to be included first
-#include <petsc.h>
-#include <pism/util/IceGrid.hh>
-#include <pism/util/iceModelVec.hh>
-// --------------------------------
+#include "pism/util/array/Scalar.hh"
+#include <memory>
 
 namespace pism {
 namespace icebin {
@@ -13,34 +9,24 @@ namespace icebin {
 /** Encapsulates mass and enthalpy together.  Used to tabulate total
 enthalpy of a bunch of advected H2O based on its mass and specific
 enthalpy.  This allows us to have only one C++ variable per advected
-quanity, instead of two. */
-struct MassEnthVec2S : public pism::PetscAccessible
-{
-    pism::IceModelVec2S mass;
-    pism::IceModelVec2S enth;
+quantity, instead of two. */
+struct MassEnthVec2S : public pism::PetscAccessible {
+  pism::array::Scalar mass;
+  pism::array::Scalar enth;
 
-    ~MassEnthVec2S() {}
+  MassEnthVec2S(std::shared_ptr<const pism::Grid> grid, const std::string &name);
 
-    MassEnthVec2S(pism::IceGrid::ConstPtr my_grid, const std::string &my_name,
-                  pism::IceModelVecKind ghostedp, int width = 1);
+  void set_attrs(const std::string &long_name, const std::string &units);
 
-    void set_attrs(
-        const std::string &my_pism_intent,
-        const std::string &my_long_name,
-        const std::string &my_units,
-        const std::string &my_standard_name);
+  virtual void begin_access() const {
+    mass.begin_access();
+    enth.begin_access();
+  }
 
-    virtual void begin_access() const
-    {
-        mass.begin_access();
-        enth.begin_access();
-    }
-
-    virtual void end_access() const
-    {
-        mass.end_access();
-        enth.end_access();
-    }
+  virtual void end_access() const {
+    mass.end_access();
+    enth.end_access();
+  }
 
 #if 0
     /** @param mass [kg m-2]
@@ -58,122 +44,123 @@ struct MassEnthVec2S : public pism::PetscAccessible
 };
 
 struct VecWithFlags {
-    pism::IceModelVec2S &vec;
-    int flags;
+  pism::array::Scalar &vec;
+  int flags;
 
-    /** IF this variable is used directly as a contractual ice model
+  /** IF this variable is used directly as a contractual ice model
     output, the name of that contract entry. */
-    std::string contract_name;
+  std::string contract_name;
 
-    VecWithFlags(pism::IceModelVec2S &_vec, int _flags, std::string const &_contract_name) :
-        vec(_vec), flags(_flags), contract_name(_contract_name) {}
+  VecWithFlags(pism::array::Scalar &_vec, int _flags, std::string const &_contract_name)
+      : vec(_vec), flags(_flags), contract_name(_contract_name) {
+  }
 };
 
 class MassEnergyBudget {
 public:
-    // ============================================================
-    // Total State
+  // ============================================================
+  // Total State
 
-    // ------------ Enthalpy State
-    MassEnthVec2S total;            // Total mass [kg m-2] and enthalpy [J m-2] of the ice sheet
+  // ------------ Enthalpy State
+  MassEnthVec2S total; // Total mass [kg m-2] and enthalpy [J m-2] of the ice sheet
 
-    // =============================================================
-    // Cumulative Fluxes
+  // =============================================================
+  // Cumulative Fluxes
 
-    // ======================= Variables to accumulate PISM output
-    // These are accumulated as [kg m-2] or [J m-2]
-    // They are accumulated for the life of the simulation, and never zeroed.
-    // Other instances of MassEnergyBudget are used to compute differences.
+  // ======================= Variables to accumulate PISM output
+  // These are accumulated as [kg m-2] or [J m-2]
+  // They are accumulated for the life of the simulation, and never zeroed.
+  // Other instances of MassEnergyBudget are used to compute differences.
 
-    // ----------- Heat generation of flows [vertical]
-    pism::IceModelVec2S basal_frictional_heating;   //!< Total amount of basal friction heating [J/m^2]
-    pism::IceModelVec2S strain_heating; //!< Total amount of strain heating [J/m^2]
-    pism::IceModelVec2S geothermal_flux;    //!< Total amount of geothermal energy [J/m^2]
-    pism::IceModelVec2S upward_geothermal_flux; //!< Total amount of geothermal energy [J/m^2]
+  // ----------- Heat generation of flows [vertical]
+  pism::array::Scalar basal_frictional_heating; //!< Total amount of basal friction heating [J/m^2]
+  pism::array::Scalar strain_heating;           //!< Total amount of strain heating [J/m^2]
+  pism::array::Scalar geothermal_flux;          //!< Total amount of geothermal energy [J/m^2]
+  pism::array::Scalar upward_geothermal_flux;   //!< Total amount of geothermal energy [J/m^2]
 
-    // ----------- Mass advection, with accompanying enthalpy change
-    // The enthalpy reported for these mass fluxes are the enthalpies
-    // AS REPORTED TO ICEBIN!  That is not necessarily the same as the enthalpy
-    // that PISM sees internally.
-    MassEnthVec2S calving;          //!< Equal to IceModel::discharge_flux_2D_cumulative
+  // ----------- Mass advection, with accompanying enthalpy change
+  // The enthalpy reported for these mass fluxes are the enthalpies
+  // AS REPORTED TO ICEBIN!  That is not necessarily the same as the enthalpy
+  // that PISM sees internally.
+  MassEnthVec2S calving; //!< Equal to IceModel::discharge_flux_2D_cumulative
 
-    // Let's not use basal_runoff (which would be derived from the variables
-    // in NullTransportHydrology).
-    // 
-    // 1. It is derived directly from
-    //    bmelt/basal_meltrate/melt_grounded/meltrate_grounded, which is
-    //    already computed here.
-    // 
-    // 2. bmelt plays directly into removal of mass from the ice sheet (see
-    //    accumulateFluxes_massContExplicitStep() in iMgeometry.cc).
-    //    Including basal_runoff would be double-counting it.
-//  MassEnthVec2S basal_runoff;     //!< Enthalpy here is predictable, since runoff is 0C 100% water fraction.
+  // Let's not use basal_runoff (which would be derived from the variables
+  // in NullTransportHydrology).
+  //
+  // 1. It is derived directly from
+  //    bmelt/basal_meltrate/melt_grounded/meltrate_grounded, which is
+  //    already computed here.
+  //
+  // 2. bmelt plays directly into removal of mass from the ice sheet (see
+  //    accumulateFluxes_massContExplicitStep() in iMgeometry.cc).
+  //    Including basal_runoff would be double-counting it.
+  //  MassEnthVec2S basal_runoff;     //!< Enthalpy here is predictable, since runoff is 0C 100% water fraction.
 
-    MassEnthVec2S icebin_xfer;       //!< accumulation / ablation, as provided by Icebin
-    pism::IceModelVec2S icebin_deltah;  //!< Change in enthalpy of top layer
-    MassEnthVec2S pism_smb;     //! SMB as seen by PISM in iMgeometry.cc massContExplicitSte().  Used to check icebin_xfer.mass, but does not figure into contract.
-    pism::IceModelVec2S href_to_h;
-    pism::IceModelVec2S nonneg_rule;
-    MassEnthVec2S melt_grounded;        //!< basal melt (grounded) (from summing meltrate_grounded)
-    MassEnthVec2S melt_floating;        //!< sub-shelf melt (from summing meltrate_floating)
+  MassEnthVec2S smb;          //!< accumulation / ablation, as provided by Icebin
+  pism::array::Scalar deltah; //!< Change in enthalpy of top layer
+  MassEnthVec2S
+      pism_smb; //! SMB as seen by PISM in iMgeometry.cc massContExplicitSte().  Used to check icebin_smb.mass, but does not figure into contract.
+  pism::array::Scalar href_to_h;
+  pism::array::Scalar nonneg_rule;
+  MassEnthVec2S melt_grounded; //!< basal melt (grounded) (from summing meltrate_grounded)
+  MassEnthVec2S melt_floating; //!< sub-shelf melt (from summing meltrate_floating)
 
-    // ----------- Mass advection WITHIN the ice sheet
-    MassEnthVec2S internal_advection;
-//  MassEnthVec2S divQ_SIA;
-//  MassEnthVec2S divQ_SSA;     //!< flux divergence
+  // ----------- Mass advection WITHIN the ice sheet
+  MassEnthVec2S internal_advection;
+  //  MassEnthVec2S divQ_SIA;
+  //  MassEnthVec2S divQ_SSA;     //!< flux divergence
 
-    // ======================= Balance the Budget
-    // At each step, we set epsilon as follows:
-    // total - (sum of fluxes) + epsilon = 0
-    // ==> epsilon = (sum of fluxes) - total
-    MassEnthVec2S epsilon;
+  // ======================= Balance the Budget
+  // At each step, we set epsilon as follows:
+  // total - (sum of fluxes) + epsilon = 0
+  // ==> epsilon = (sum of fluxes) - total
+  MassEnthVec2S epsilon;
 
-    // ======================== Different sets (flags)
-    static const int MASS = 1;
-    static const int ENTH = 2;
+  // ======================== Different sets (flags)
+  static const int MASS = 1;
+  static const int ENTH = 2;
 
-    static const int TOTAL = 4;     // To be differenced at the end.
-    static const int DELTA = 8;
-    static const int EPSILON = 16;      // To be differenced at the end.
+  // No post-processing: Value written to NetCDF is same as accumulated value.
+  // Good for things taht are set once.
+  // (eg: total.mass and total.enth, which are not wrten to NetCDF).
+  static const int TOTAL = 4;
+  // Variable to be accumulated, differenced and /dt at end;
+  // and also go into computation of epsilon
+  static const int DELTA = 8;
+  // Do NOT include in computation of epsilon, since this flag IS
+  // for the varaiable epsilon (and also pism_smb)
+  static const int EPSILON = 16; // To be differenced at the end.
+  static const int ADVECTION =
+      32; // This energy term is due to advection of a related mass term (not acted upon)
 
-    // ======================== Summary of above variables
-    // This makes it easy to difference two MassEnergyBudget instances.
-    std::vector<VecWithFlags> all_vecs;
+  // ======================== Summary of above variables
+  // This makes it easy to difference two MassEnergyBudget instances.
+  std::vector<VecWithFlags> all_vecs;
 
 
-// =====================================================================
-    std::ostream &print_formulas(std::ostream &out);
+  // =====================================================================
+  std::ostream &print_formulas(std::ostream &out);
 
 protected:
-    void add_mass(pism::IceModelVec2S &vec, int flags,
-        std::string const &contract_name)
-    {
-        all_vecs.push_back(VecWithFlags(vec, MASS | flags, contract_name));
-    }
+  void add_mass(pism::array::Scalar &vec, int flags, std::string const &contract_name) {
+    all_vecs.push_back(VecWithFlags(vec, MASS | flags, contract_name));
+  }
 
-    /** @param contract_name The name of this variable in the ice model's output contract. */
-    void add_enth(pism::IceModelVec2S &vec, int flags,
-        std::string const &contract_name)
-    {
-        all_vecs.push_back(VecWithFlags(vec, ENTH | flags, contract_name));
-    }
+  /** @param contract_name The name of this variable in the ice model's output contract. */
+  void add_enth(pism::array::Scalar &vec, int flags, std::string const &contract_name) {
+    all_vecs.push_back(VecWithFlags(vec, ENTH | flags, contract_name));
+  }
 
-    void add_massenth(MassEnthVec2S &massenth, int flags,
-        std::string const &contract_name_mass,
-        std::string const &contract_name_enth)
-    {
-        all_vecs.push_back(VecWithFlags(massenth.mass, MASS | flags,
-            contract_name_mass));
-        all_vecs.push_back(VecWithFlags(massenth.enth, ENTH | flags,
-            contract_name_enth));
-    }
+  void add_massenth(MassEnthVec2S &massenth, int flags, std::string const &contract_name_mass,
+                    std::string const &contract_name_enth) {
+    all_vecs.push_back(VecWithFlags(massenth.mass, MASS | flags, contract_name_mass));
+    all_vecs.push_back(VecWithFlags(massenth.enth, ENTH | ADVECTION | flags, contract_name_enth));
+  }
 
 public:
+  MassEnergyBudget(std::shared_ptr<const pism::Grid> grid, std::string const &prefix);
 
-    MassEnergyBudget(pism::IceGrid::ConstPtr grid, std::string const &prefix,
-                     pism::IceModelVecKind ghostedp, unsigned int width = 1);
-
-    void set_epsilon(pism::IceGrid::ConstPtr grid);
+  void set_epsilon();
 };
 
 } // end of namespace icebin

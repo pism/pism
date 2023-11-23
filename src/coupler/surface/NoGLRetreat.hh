@@ -27,24 +27,24 @@ namespace surface {
 
 class NoGLRetreat : public SurfaceModel {
 public:
-  NoGLRetreat(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input);
+  NoGLRetreat(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input);
   virtual ~NoGLRetreat() = default;
 
-  const IceModelVec2S& smb_adjustment() const;
+  const array::Scalar& smb_adjustment() const;
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mass_flux_impl() const;
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const array::Scalar& mass_flux_impl() const;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
 
   DiagnosticList diagnostics_impl() const;
 private:
-  IceModelVec2S::Ptr m_mass_flux;
-  IceModelVec2S m_smb_adjustment;
-  IceModelVec2S m_min_ice_thickness;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  array::Scalar m_smb_adjustment;
+  array::Scalar m_min_ice_thickness;
 };
 
 } // end of namespace surface

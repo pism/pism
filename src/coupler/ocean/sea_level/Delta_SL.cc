@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,14 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Delta_SL.hh"
+#include "pism/coupler/ocean/sea_level/Delta_SL.hh"
 #include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 namespace sea_level {
 
-Delta_SL::Delta_SL(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
+Delta_SL::Delta_SL(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLevel> in)
   : SeaLevel(grid, in) {
 
   m_forcing.reset(new ScalarForcing(*grid->ctx(),

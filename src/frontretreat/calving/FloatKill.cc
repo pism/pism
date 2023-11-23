@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,19 +17,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "FloatKill.hh"
+#include "pism/frontretreat/calving/FloatKill.hh"
 
 #include "pism/util/Mask.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace calving {
 
-FloatKill::FloatKill(IceGrid::ConstPtr g)
-  : Component(g) {
+FloatKill::FloatKill(std::shared_ptr<const Grid> g)
+  : Component(g),
+    m_old_mask(m_grid, "old_mask") {
   m_margin_only = m_config->get_flag("calving.float_kill.margin_only");
   m_calve_near_grounding_line = m_config->get_flag("calving.float_kill.calve_near_grounding_line");
 }
@@ -58,30 +57,33 @@ void FloatKill::init() {
  *
  * @return 0 on success
  */
-void FloatKill::update(IceModelVec2CellType &mask, IceModelVec2S &ice_thickness) {
+void FloatKill::update(array::Scalar &cell_type, array::Scalar &ice_thickness) {
 
-  IceModelVec::AccessList list{&mask, &ice_thickness};
+  // this call fills ghosts of m_old_mask
+  m_old_mask.copy_from(cell_type);
+
+  array::AccessScope list{&cell_type, &m_old_mask, &ice_thickness};
 
   const bool dont_calve_near_grounded_ice = not m_calve_near_grounding_line;
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.floating_ice(i, j)) {
-      if (m_margin_only and not mask.next_to_ice_free_ocean(i, j)) {
+    if (m_old_mask.floating_ice(i, j)) {
+      if (m_margin_only and not m_old_mask.next_to_ice_free_ocean(i, j)) {
         continue;
       }
 
-      if (dont_calve_near_grounded_ice and mask.next_to_grounded_ice(i, j)) {
+      if (dont_calve_near_grounded_ice and m_old_mask.next_to_grounded_ice(i, j)) {
         continue;
       }
 
       ice_thickness(i, j) = 0.0;
-      mask(i, j)          = MASK_ICE_FREE_OCEAN;
+      cell_type(i, j)     = MASK_ICE_FREE_OCEAN;
     }
   }
 
-  mask.update_ghosts();
+  cell_type.update_ghosts();
   ice_thickness.update_ghosts();
 }
 

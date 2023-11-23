@@ -17,13 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "flux_limiter.hh"
+#include "pism/geometry/flux_limiter.hh"
 
 #include <cassert>
 #include <algorithm>
 #include <limits>
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Staggered.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh" // GlobalSum()
@@ -72,9 +73,9 @@ static inline double flux_out(const stencils::Star<double> &u, double dx, double
  *
  */
 void make_nonnegative_preserving(double dt,
-                                 const IceModelVec2S &x,
-                                 const IceModelVec2Stag &flux,
-                                 IceModelVec2Stag &result) {
+                                 const array::Scalar1 &x,
+                                 const array::Staggered1 &flux,
+                                 array::Staggered &result) {
 
   using details::pp;
   using details::np;
@@ -87,7 +88,7 @@ void make_nonnegative_preserving(double dt,
     dx = grid->dx(),
     dy = grid->dy();
 
-  IceModelVec::AccessList list{&flux, &x, &result};
+  array::AccessScope list{&flux, &x, &result};
 
   // flux divergence
   auto div = [dx, dy](const stencils::Star<double> &Q) {
@@ -96,7 +97,7 @@ void make_nonnegative_preserving(double dt,
 
   int limiter_count = 0;
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto Q   = flux.star(i, j);

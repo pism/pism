@@ -21,17 +21,18 @@
 #include <cstring>              // strlen()
 #include <limits>
 
-#include "Time.hh"
+#include "pism/util/Time.hh"
 
 #include "pism/external/calcalcs/calcalcs.h"
 
-#include "ConfigInterface.hh"
-#include "VariableMetadata.hh"
-#include "pism_utilities.hh"
-#include "error_handling.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -684,7 +685,8 @@ double Time::convert_time_interval(double T, const std::string &units) const {
 
   for more details about supported calendars.
  */
-Time::Time(MPI_Comm com, Config::ConstPtr config,
+Time::Time(MPI_Comm com,
+           Config::ConstPtr config,
            const Logger &log,
            units::System::Ptr unit_system)
   : m_config(config),
@@ -697,7 +699,7 @@ Time::Time(MPI_Comm com, Config::ConstPtr config,
 
   std::unique_ptr<File> file{};
   if (not input_file.empty()) {
-    file.reset(new File(com, input_file, PISM_NETCDF3, PISM_READONLY));
+    file.reset(new File(com, input_file, io::PISM_NETCDF3, io::PISM_READONLY));
   }
 
   // set the reference date
@@ -766,7 +768,7 @@ void Time::init_from_file(MPI_Comm com,
   try {
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    File file(com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
+    File file(com, filename, io::PISM_NETCDF3, io::PISM_READONLY); // OK to use netcdf3
 
     // Set the calendar name from file.
     std::string new_calendar = file.read_text_attribute(time_name, "calendar");

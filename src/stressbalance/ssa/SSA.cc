@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021, 2022, 2023 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -16,21 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "SSA.hh"
-#include "pism/basalstrength/basal_resistance.hh"
+#include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 
-#include "SSA_diagnostics.hh"
+#include "pism/stressbalance/ssa/SSA_diagnostics.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -72,11 +68,11 @@ double SSAStrengthExtension::get_min_thickness() const {
 }
 
 
-SSA::SSA(IceGrid::ConstPtr g)
+SSA::SSA(std::shared_ptr<const Grid> g)
   : ShallowStressBalance(g),
-    m_mask(m_grid, "ssa_mask", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
-    m_taud(m_grid, "taud", WITHOUT_GHOSTS),
-    m_velocity_global(m_grid, "bar", WITHOUT_GHOSTS)
+    m_mask(m_grid, "ssa_mask"),
+    m_taud(m_grid, "taud"),
+    m_velocity_global(m_grid, "bar")
 {
 
   m_e_factor = m_config->get_number("stress_balance.ssa.enhancement_factor");
@@ -84,26 +80,25 @@ SSA::SSA(IceGrid::ConstPtr g)
   strength_extension = new SSAStrengthExtension(*m_config);
 
   // grounded_dragging_floating integer mask
-  m_mask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
-                   "", "", "", 0);
-  m_mask.metadata()["flag_values"] =
-    {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
-  m_mask.metadata()["flag_meanings"] =
-    "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
+  m_mask.metadata(0)
+      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
+  m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+                                         MASK_ICE_FREE_OCEAN };
+  m_mask.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
-  m_taud.set_attrs("diagnostic",
-                   "X-component of the driving shear stress at the base of ice",
-                   "Pa", "Pa", "", 0);
-  m_taud.set_attrs("diagnostic",
-                   "Y-component of the driving shear stress at the base of ice",
-                   "Pa", "Pa", "", 1);
+  m_taud.metadata(0)
+      .long_name("X-component of the driving shear stress at the base of ice")
+      .units("Pa");
+  m_taud.metadata(1)
+      .long_name("Y-component of the driving shear stress at the base of ice")
+      .units("Pa");
 
   // override velocity metadata
   m_velocity.metadata(0).set_name("u_ssa");
-  m_velocity.metadata(0)["long_name"] = "SSA model ice velocity in the X direction";
+  m_velocity.metadata(0).long_name("SSA model ice velocity in the X direction");
 
   m_velocity.metadata(1).set_name("v_ssa");
-  m_velocity.metadata(1)["long_name"] = "SSA model ice velocity in the Y direction";
+  m_velocity.metadata(1).long_name("SSA model ice velocity in the Y direction");
 
   m_da = m_velocity_global.dm();
 
@@ -137,7 +132,7 @@ void SSA::init_impl() {
   // and read the initial guess (unless asked not to).
   if (opts.type == INIT_RESTART) {
     if (m_config->get_flag("stress_balance.ssa.read_initial_guess")) {
-      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
       bool u_ssa_found = input_file.find_variable("u_ssa");
       bool v_ssa_found = input_file.find_variable("v_ssa");
       unsigned int start = input_file.nrecords() - 1;
@@ -234,11 +229,11 @@ static int weight(bool margin_bc,
 Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
  */
-void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2S &surface_elevation,
-                                 const IceModelVec2CellType &cell_type,
-                                 const IceModelVec2Int *no_model_mask,
-                                 IceModelVec2V &result) const {
+void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
+                                 const array::Scalar1 &surface_elevation,
+                                 const array::CellType1 &cell_type,
+                                 const array::Scalar1 *no_model_mask,
+                                 array::Vector &result) const {
 
   using mask::ice_free_ocean;
   using mask::floating_ice;
@@ -250,13 +245,13 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     dx = m_grid->dx(),
     dy = m_grid->dy();
 
-  IceModelVec::AccessList list{&surface_elevation, &cell_type, &ice_thickness, &result};
+  array::AccessScope list{&surface_elevation, &cell_type, &ice_thickness, &result};
 
   if (no_model_mask) {
     list.add(*no_model_mask);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double pressure = m_EC->pressure(ice_thickness(i, j)); // FIXME issue #15
@@ -270,7 +265,7 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
       double
         h_x = diff_x_p(surface_elevation, i, j),
         h_y = diff_y_p(surface_elevation, i, j);
-      result(i, j) = - pressure * Vector2(h_x, h_y);
+      result(i, j) = - pressure * Vector2d(h_x, h_y);
       continue;
     }
 
@@ -296,19 +291,19 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     stencils::Star<int> N(0);
 
     if (no_model_mask) {
-      N = no_model_mask->star(i, j);
+      N = no_model_mask->star_int(i, j);
     }
 
     // x-derivative
     double h_x = 0.0;
     {
       double
-        west = weight(cfbc, M.ij, M.w, h.ij, h.w, N.ij, N.w),
-        east = weight(cfbc, M.ij, M.e, h.ij, h.e, N.ij, N.e);
+        west = weight(cfbc, M.c, M.w, h.c, h.w, N.c, N.w),
+        east = weight(cfbc, M.c, M.e, h.c, h.e, N.c, N.e);
 
       if (east + west > 0) {
-        h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
-        if (floating_ice(M.ij) and (ice_free_ocean(M.e) or ice_free_ocean(M.w)))  {
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
+        if (floating_ice(M.c) and (ice_free_ocean(M.e) or ice_free_ocean(M.w)))  {
           // at the ice front: use constant extrapolation to approximate the value outside
           // the ice extent (see the notes in the manual)
           h_x /= 2.0;
@@ -322,12 +317,12 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     double h_y = 0.0;
     {
       double
-        south = weight(cfbc, M.ij, M.s, h.ij, h.s, N.ij, N.s),
-        north = weight(cfbc, M.ij, M.n, h.ij, h.n, N.ij, N.n);
+        south = weight(cfbc, M.c, M.s, h.c, h.s, N.c, N.s),
+        north = weight(cfbc, M.c, M.n, h.c, h.n, N.c, N.n);
 
       if (north + south > 0) {
-        h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
-        if (floating_ice(M.ij) and (ice_free_ocean(M.s) or ice_free_ocean(M.n)))  {
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
+        if (floating_ice(M.c) and (ice_free_ocean(M.s) or ice_free_ocean(M.n)))  {
           // at the ice front: use constant extrapolation to approximate the value outside
           // the ice extent
           h_y /= 2.0;
@@ -337,9 +332,49 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
       }
     }
 
-    result(i, j) = - pressure * Vector2(h_x, h_y);
+    result(i, j) = - pressure * Vector2d(h_x, h_y);
   }
 }
+
+
+/*!
+ * Estimate velocity at ice-free cells near the ice margin using interpolation from
+ * immediate neighbors that are icy.
+ *
+ * This is used to improve the initial guess of ice viscosity at marginal locations when
+ * ice advances: otherwise we would use the *zero* velocity (if CFBC is "on"), and that is
+ * a poor estimate at best.
+ *
+ * Note: icy cells of `velocity` are treated as read-only, and ice-free marginal cells are
+ * write-only. This means that it's okay for `velocity` to be a input-output argument: we
+ * don't use of the values modified by this method.
+ */
+void SSA::extrapolate_velocity(const array::CellType1 &cell_type,
+                               array::Vector1 &velocity) const {
+  array::AccessScope list{&cell_type, &velocity};
+
+  for (auto p = m_grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {
+
+      auto M = cell_type.star(i, j);
+      auto vel = velocity.star(i, j);
+
+      Vector2d sum{0.0, 0.0};
+      int N = 0;
+      for (auto d : {North, East, South, West}) {
+        if (mask::icy(M[d])) {
+          sum += vel[d];
+          ++N;
+        }
+      }
+      velocity(i, j) = sum / std::max(N, 1);
+    }
+  }
+  velocity.update_ghosts();
+}
+
 
 std::string SSA::stdout_report() const {
   return m_stdout_ssa;
@@ -347,17 +382,17 @@ std::string SSA::stdout_report() const {
 
 
 //! \brief Set the initial guess of the SSA velocity.
-void SSA::set_initial_guess(const IceModelVec2V &guess) {
+void SSA::set_initial_guess(const array::Vector &guess) {
   m_velocity.copy_from(guess);
 }
 
-const IceModelVec2V& SSA::driving_stress() const {
+const array::Vector& SSA::driving_stress() const {
   return m_taud;
 }
 
 
 void SSA::define_model_state_impl(const File &output) const {
-  m_velocity.define(output);
+  m_velocity.define(output, io::PISM_DOUBLE);
 }
 
 void SSA::write_model_state_impl(const File &output) const {
@@ -378,24 +413,20 @@ SSA_taud::SSA_taud(const SSA *m)
   : Diag<SSA>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "taud_x"),
-            SpatialVariableMetadata(m_sys, "taud_y")};
+  m_vars = { { m_sys, "taud_x" }, { m_sys, "taud_y" } };
 
-  set_attrs("X-component of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 0);
-  set_attrs("Y-component of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 1);
+  m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
+  m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
 
   for (auto &v : m_vars) {
+    v.units("Pa");
     v["comment"] = "this is the driving stress used by the SSA solver";
   }
 }
 
-IceModelVec::Ptr SSA_taud::compute_impl() const {
+std::shared_ptr<array::Array> SSA_taud::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Vector>("taud");
 
   result->copy_from(model->driving_stress());
 
@@ -406,19 +437,14 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
   : Diag<SSA>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "taud_mag")};
+  m_vars = { { m_sys, "taud_mag" } };
 
-  set_attrs("magnitude of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 0);
-  m_vars[0]["comment"] =
-    "this is the magnitude of the driving stress used by the SSA solver";
+  m_vars[0].long_name("magnitude of the driving shear stress at the base of ice").units("Pa");
+  m_vars[0]["comment"] = "this is the magnitude of the driving stress used by the SSA solver";
 }
 
-IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
-
-  // Allocate memory:
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
-  result->metadata() = m_vars[0];
+std::shared_ptr<array::Array> SSA_taud_mag::compute_impl() const {
+  auto result = allocate<array::Scalar>("taud_mag");
 
   compute_magnitude(model->driving_stress(), *result);
 

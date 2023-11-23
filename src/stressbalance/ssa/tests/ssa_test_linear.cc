@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,6 @@ static char help[] =
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
@@ -54,7 +53,7 @@ class SSATestCaseExp: public SSATestCase
 {
 public:
   SSATestCaseExp(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC) {
+    : SSATestCase(ctx, Mx, My, 50e3, 50e3, grid::CELL_CORNER, grid::NOT_PERIODIC) {
     L     = units::convert(ctx->unit_system(), 50, "km", "m"); // 50km half-width
     H0    = 500;                      // meters
     dhdx  = 0.005;                    // pure number
@@ -99,9 +98,9 @@ void SSATestCaseExp::initializeSSACoefficients() {
   // Set boundary conditions (Dirichlet all the way around).
   m_bc_mask.set(0.0);
 
-  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask};
+  array::AccessScope list{&m_bc_values, &m_bc_mask};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
@@ -167,7 +166,7 @@ int main(int argc, char *argv[]) {
     unsigned int My = config->get_number("grid.My");
 
     auto method      = config->get_string("stress_balance.ssa.method");
-    auto output_file = config->get_string("output.file_name");
+    auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
 

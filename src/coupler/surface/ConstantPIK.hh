@@ -33,17 +33,17 @@ namespace surface {
 
 class PIK : public SurfaceModel {
 public:
-  PIK(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
+  PIK(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mass_flux_impl() const;
-  const IceModelVec2S& temperature_impl() const;
+  const array::Scalar& mass_flux_impl() const;
+  const array::Scalar& temperature_impl() const;
 
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
 
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
@@ -51,8 +51,8 @@ protected:
   MaxTimestep max_timestep_impl(double t) const;
 
 protected:
-  IceModelVec2S::Ptr m_mass_flux;
-  IceModelVec2S::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 } // end of namespace surface

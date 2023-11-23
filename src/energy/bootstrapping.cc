@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,9 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cmath>
-
-#include "pism/energy/bootstrapping.hh"
+#include <algorithm>                       // for min
+#include <cmath>                           // for sqrt, erf, M_PI
+#include <memory>                          // for __shared_ptr_access
+#include "pism/energy/bootstrapping.hh"    // for ice_temperature_guess, ice...
+#include "pism/util/EnthalpyConverter.hh"  // for EnthalpyConverter, Enthalp...
 
 namespace pism {
 namespace energy {
@@ -40,24 +42,20 @@ double ice_temperature_guess(EnthalpyConverter::Ptr EC,
   return std::min(Tpmp, T_surface + alpha * d2 + beta * d2 * d2);
 }
 
-double ice_temperature_guess_smb(EnthalpyConverter::Ptr EC,
-                                 double H, double z, double T_surface,
+double ice_temperature_guess_smb(EnthalpyConverter::Ptr EC, double H, double z, double T_surface,
                                  double G, double ice_k, double K, double SMB) {
-  const double
-    depth = H - z,
-    Tpmp  = EC->melting_temperature(EC->pressure(depth));
+  const double depth = H - z, Tpmp = EC->melting_temperature(EC->pressure(depth));
 
   if (SMB <= 0.0) {
     // negative or zero surface mass balance: linear temperature profile
     return std::min(Tpmp, G / ice_k * depth + T_surface);
-  } else {
-    // positive surface mass balance
-    const double
-      C0     = (G * sqrt(M_PI * H * K)) / (ice_k * sqrt(2.0 * SMB)),
-      gamma0 = sqrt(SMB * H / (2.0 * K));
-
-    return std::min(Tpmp, T_surface + C0 * (erf(gamma0) - erf(gamma0 * z / H)));
   }
+
+  // positive surface mass balance
+  const double C0     = (G * sqrt(M_PI * H * K)) / (ice_k * sqrt(2.0 * SMB)),
+               gamma0 = sqrt(SMB * H / (2.0 * K));
+
+  return std::min(Tpmp, T_surface + C0 * (erf(gamma0) - erf(gamma0 * z / H)));
 }
 
 } // end of namespace energy

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,15 +16,19 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "StressBalance_diagnostics.hh"
-#include "SSB_Modifier.hh"
-#include "ShallowStressBalance.hh"
+#include <cmath>                // std::pow, std::sqrt
+#include <algorithm>            // std::max
+
+
+#include "pism/stressbalance/StressBalance_diagnostics.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/util/Context.hh"
@@ -85,28 +89,32 @@ PSB_velbar::PSB_velbar(const StressBalance *m)
   m_vars = {{m_sys, ismip6 ? "xvelmean" : "ubar"},
             {m_sys, ismip6 ? "yvelmean" : "vbar"}};
 
-  set_attrs("vertical mean of horizontal ice velocity in the X direction",
-            "land_ice_vertical_mean_x_velocity",
-            "m s-1", "m year-1", 0);
-  set_attrs("vertical mean of horizontal ice velocity in the Y direction",
-            "land_ice_vertical_mean_y_velocity",
-            "m s-1", "m year-1", 1);
+  m_vars[0]
+      .long_name("vertical mean of horizontal ice velocity in the X direction")
+      .standard_name("land_ice_vertical_mean_x_velocity")
+      .units("m s-1")
+      .output_units("m year-1");
+  m_vars[1]
+      .long_name("vertical mean of horizontal ice velocity in the Y direction")
+      .standard_name("land_ice_vertical_mean_y_velocity")
+      .units("m s-1")
+      .output_units("m year-1");
 }
 
-IceModelVec::Ptr PSB_velbar::compute_impl() const {
+std::shared_ptr<array::Array> PSB_velbar::compute_impl() const {
   // get the thickness
-  const IceModelVec2S* thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Scalar* thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // Compute the vertically-integrated horizontal ice flux:
-  IceModelVec2V::Ptr result = IceModelVec::cast<IceModelVec2V>(PSB_flux(model).compute());
+  auto result = array::cast<array::Vector>(PSB_flux(model).compute());
 
   // Override metadata set by the flux computation
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  IceModelVec::AccessList list{thickness, result.get()};
+  array::AccessScope list{thickness, result.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     double thk = (*thickness)(i,j);
 
@@ -128,25 +136,25 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
   // set metadata:
   m_vars = {{m_sys, "velbar_mag"}};
 
-  set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
-            "m second-1", "m year-1", 0);
+  m_vars[0]
+      .long_name("magnitude of vertically-integrated horizontal velocity of ice")
+      .units("m second-1")
+      .output_units("m year-1");
 
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   m_vars[0]["valid_min"] = {0.0};
 }
 
-IceModelVec::Ptr PSB_velbar_mag::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbar_mag", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+std::shared_ptr<array::Array> PSB_velbar_mag::compute_impl() const {
+  auto result = allocate<array::Scalar>("velbar_mag");
 
   // compute vertically-averaged horizontal velocity:
-  IceModelVec2V::Ptr velbar = IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute());
+  auto velbar = array::cast<array::Vector>(PSB_velbar(model).compute());
 
   // compute its magnitude:
   compute_magnitude(*velbar, *result);
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // mask out ice-free areas:
   apply_mask(*thickness, to_internal(m_fill_value), *result);
@@ -160,36 +168,35 @@ PSB_flux::PSB_flux(const StressBalance *m)
 
   // set metadata:
   m_vars = {{m_sys, "uflux"}, {m_sys, "vflux"}};
-
-  set_attrs("Vertically integrated horizontal flux of ice in the X direction",
-            "",                 // no CF standard name
-            "m2 s-1", "m2 year-1", 0);
-  set_attrs("Vertically integrated horizontal flux of ice in the Y direction",
-            "",                 // no CF standard name
-            "m2 s-1", "m2 year-1", 1);
+  m_vars[0]
+      .long_name("Vertically integrated horizontal flux of ice in the X direction")
+      .units("m2 s-1")
+      .output_units("m2 year-1");
+  m_vars[1]
+      .long_name("Vertically integrated horizontal flux of ice in the Y direction")
+      .units("m2 s-1")
+      .output_units("m2 year-1");
 }
 
-IceModelVec::Ptr PSB_flux::compute_impl() const {
+std::shared_ptr<array::Array> PSB_flux::compute_impl() const {
   double H_threshold = m_config->get_number("geometry.ice_free_thickness_standard");
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "flux", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Vector>("flux");
 
   // get the thickness
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v();
 
-  IceModelVec::AccessList list{&u3, &v3, thickness, result.get()};
+  array::AccessScope list{&u3, &v3, thickness, result.get()};
 
-  auto &z = m_grid->z();
+  const auto &z = m_grid->z();
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double H = (*thickness)(i,j);
@@ -205,16 +212,16 @@ IceModelVec::Ptr PSB_flux::compute_impl() const {
         auto u = u3.get_column(i, j);
         auto v = v3.get_column(i, j);
 
-        Vector2 Q(0.0, 0.0);
+        Vector2d Q(0.0, 0.0);
 
         // ks is "k just below the surface"
         int ks = m_grid->kBelowHeight(H);
 
         if (ks > 0) {
-          Vector2 v0(u[0], v[0]);
+          Vector2d v0(u[0], v[0]);
 
           for (int k = 1; k <= ks; ++k) {
-            Vector2 v1(u[k], v[k]);
+            Vector2d v1(u[k], v[k]);
 
             // trapezoid rule
             Q += (z[k] - z[k - 1]) * 0.5 * (v0 + v1);
@@ -224,7 +231,7 @@ IceModelVec::Ptr PSB_flux::compute_impl() const {
         }
 
         // rectangle method to integrate over the last level
-        Q += (H - z[ks]) * Vector2(u[ks], v[ks]);
+        Q += (H - z[ks]) * Vector2d(u[ks], v[ks]);
 
         (*result)(i, j) = Q;
       }
@@ -242,26 +249,26 @@ PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars = {{m_sys, "flux_mag"}};
-
-  set_attrs("magnitude of vertically-integrated horizontal flux of ice", "",
-            "m2 s-1", "m2 year-1", 0);
-
+  m_vars = { { m_sys, "flux_mag" } };
+  m_vars[0]
+      .long_name("magnitude of vertically-integrated horizontal flux of ice")
+      .units("m2 s-1")
+      .output_units("m2 year-1");
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   m_vars[0]["valid_min"] = {0.0};
 }
 
-IceModelVec::Ptr PSB_flux_mag::compute_impl() const {
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+std::shared_ptr<array::Array> PSB_flux_mag::compute_impl() const {
+  const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // Compute the vertically-averaged horizontal ice velocity:
-  auto result = IceModelVec::cast<IceModelVec2S>(PSB_velbar_mag(model).compute());
+  auto result = array::cast<array::Scalar>(PSB_velbar_mag(model).compute());
 
   result->metadata() = m_vars[0];
 
-  IceModelVec::AccessList list{thickness, result.get()};
+  array::AccessScope list{thickness, result.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) *= (*thickness)(i,j);
@@ -275,29 +282,27 @@ IceModelVec::Ptr PSB_flux_mag::compute_impl() const {
 PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
-  // set metadata:
-  m_vars = {{m_sys, "velbase_mag"}};
-
-  set_attrs("magnitude of horizontal velocity of ice at base of ice", "",
-            "m s-1", "m year-1", 0);
-
+  m_vars = { { m_sys, "velbase_mag" } };
+  m_vars[0]
+      .long_name("magnitude of horizontal velocity of ice at base of ice")
+      .units("m s-1")
+      .output_units("m year-1");
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   m_vars[0]["valid_min"] = {0.0};
 }
 
-IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbase_mag", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+std::shared_ptr<array::Array> PSB_velbase_mag::compute_impl() const {
+  auto result = allocate<array::Scalar>("velbase_mag");
 
-  compute_magnitude(*IceModelVec::cast<IceModelVec2V>(PSB_velbase(model).compute()), *result);
+  compute_magnitude(*array::cast<array::Vector>(PSB_velbase(model).compute()), *result);
 
   double fill_value = to_internal(m_fill_value);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, result.get()};
+  array::AccessScope list{&mask, result.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
@@ -310,29 +315,27 @@ IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
 
 PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
-  // set metadata:
-  m_vars = {{m_sys, "velsurf_mag"}};
-
-  set_attrs("magnitude of horizontal velocity of ice at ice surface", "",
-            "m s-1", "m year-1", 0);
-
+  m_vars = { { m_sys, "velsurf_mag" } };
+  m_vars[0]
+      .long_name("magnitude of horizontal velocity of ice at ice surface")
+      .units("m s-1")
+      .output_units("m year-1");
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   m_vars[0]["valid_min"] = {0.0};
 }
 
-IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
+std::shared_ptr<array::Array> PSB_velsurf_mag::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velsurf_mag", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("velsurf_mag");
 
-  compute_magnitude(*IceModelVec::cast<IceModelVec2V>(PSB_velsurf(model).compute()), *result);
+  compute_magnitude(*array::cast<array::Vector>(PSB_velsurf(model).compute()), *result);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, result.get()};
+  array::AccessScope list{&mask, result.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
@@ -348,146 +351,127 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
-
-  // set metadata:
-  m_vars = {{m_sys, ismip6 ? "xvelsurf" : "uvelsurf"},
-            {m_sys, ismip6 ? "yvelsurf" : "vvelsurf"}};
-
-  set_attrs("x-component of the horizontal velocity of ice at ice surface",
-            "land_ice_surface_x_velocity", // InitMIP "standard" name
-            "m s-1", "m year-1", 0);
-  set_attrs("y-component of the horizontal velocity of ice at ice surface",
-            "land_ice_surface_y_velocity", // InitMIP "standard" name
-            "m s-1", "m year-1", 1);
+  m_vars = { { m_sys, ismip6 ? "xvelsurf" : "uvelsurf" },
+             { m_sys, ismip6 ? "yvelsurf" : "vvelsurf" } };
+  m_vars[0]
+      .long_name("x-component of the horizontal velocity of ice at ice surface")
+      .standard_name("land_ice_surface_x_velocity"); // InitMIP "standard" name
+  m_vars[1]
+      .long_name("y-component of the horizontal velocity of ice at ice surface")
+      .standard_name("land_ice_surface_y_velocity"); // InitMIP "standard" name
 
   auto large_number = to_internal(1e6);
-
-  m_vars[0]["valid_range"] = {-large_number, large_number};
-  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-
-  m_vars[1]["valid_range"] = {-large_number, large_number};
-  m_vars[1]["_FillValue"] = {to_internal(m_fill_value)};
+  for (auto &v : m_vars) {
+    v.units("m s-1").output_units("m year-1");
+    v["valid_range"] = {-large_number, large_number};
+    v["_FillValue"] = {to_internal(m_fill_value)};
+  }
 }
 
-IceModelVec::Ptr PSB_velsurf::compute_impl() const {
+std::shared_ptr<array::Array> PSB_velsurf::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "surf", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Vector>("surf");
 
-  IceModelVec2S u_surf(m_grid, "u_surf", WITHOUT_GHOSTS);
-  IceModelVec2S v_surf(m_grid, "v_surf", WITHOUT_GHOSTS);
+  array::Scalar u_surf(m_grid, "u_surf");
+  array::Scalar v_surf(m_grid, "v_surf");
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v();
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   extract_surface(u3, *thickness, u_surf);
   extract_surface(v3, *thickness, v_surf);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &cell_type = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, &u_surf, &v_surf, result.get()};
+  array::AccessScope list{ &cell_type, &u_surf, &v_surf, result.get() };
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.ice_free(i, j)) {
+    if (cell_type.ice_free(i, j)) {
       (*result)(i, j) = fill_value;
     } else {
-      (*result)(i, j) = {u_surf(i, j), v_surf(i, j)};
+      (*result)(i, j) = { u_surf(i, j), v_surf(i, j) };
     }
   }
 
   return result;
 }
 
-PSB_wvel::PSB_wvel(const StressBalance *m)
-  : Diag<StressBalance>(m) {
+PSB_wvel::PSB_wvel(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "wvel", m_grid->z() } };
+  m_vars[0]
+      .long_name("vertical velocity of ice, relative to geoid")
+      .units("m s-1")
+      .output_units("m year-1");
 
-  // set metadata:
-  m_vars = {{m_sys, "wvel", m_grid->z()}};
-
-  set_attrs("vertical velocity of ice, relative to geoid", "",
-            "m s-1", "m year-1", 0);
-
-  auto large_number = to_internal(1e6);
-
-  m_vars[0]["valid_range"] = {-large_number, large_number};
+  auto large_number        = to_internal(1e6);
+  m_vars[0]["valid_range"] = { -large_number, large_number };
 }
 
-IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
-  IceModelVec3::Ptr result3(new IceModelVec3(m_grid, "wvel", WITHOUT_GHOSTS, m_grid->z()));
+std::shared_ptr<array::Array> PSB_wvel::compute(bool zero_above_ice) const {
+  std::shared_ptr<array::Array3D> result3(
+      new array::Array3D(m_grid, "wvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result3->metadata() = m_vars[0];
 
-  const IceModelVec2S *bed, *uplift;
+  const array::Scalar *bed, *uplift;
   bed    = m_grid->variables().get_2d_scalar("bedrock_altitude");
   uplift = m_grid->variables().get_2d_scalar("tendency_of_bedrock_altitude");
 
-  const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
+  const array::Scalar &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const auto &mask               = *m_grid->variables().get_2d_cell_type("mask");
 
-  const IceModelVec3
-    &u3 = model->velocity_u(),
-    &v3 = model->velocity_v(),
-    &w3 = model->velocity_w();
+  const array::Array3D &u3 = model->velocity_u(), &v3 = model->velocity_v(),
+                       &w3 = model->velocity_w();
 
-  IceModelVec::AccessList list{&thickness, &mask, bed, &u3, &v3, &w3, uplift, result3.get()};
+  array::AccessScope list{ &thickness, &mask, bed, &u3, &v3, &w3, uplift, result3.get() };
 
-  const double ice_density = m_config->get_number("constants.ice.density"),
-    sea_water_density = m_config->get_number("constants.sea_water.density"),
-    R = ice_density / sea_water_density;
+  const double ice_density       = m_config->get_number("constants.ice.density"),
+               sea_water_density = m_config->get_number("constants.sea_water.density"),
+               R                 = ice_density / sea_water_density;
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double
-        *u = u3.get_column(i, j),
-        *v = v3.get_column(i, j),
-        *w = w3.get_column(i, j);
+      const double *u = u3.get_column(i, j), *v = v3.get_column(i, j), *w = w3.get_column(i, j);
       double *result = result3->get_column(i, j);
 
-      int ks = m_grid->kBelowHeight(thickness(i,j));
+      int ks = m_grid->kBelowHeight(thickness(i, j));
 
       // in the ice:
-      if (mask.grounded(i,j)) {
-        const double
-          bed_dx = diff_x_p(*bed, i, j),
-          bed_dy = diff_y_p(*bed, i, j),
-          uplift_ij = (*uplift)(i,j);
-        for (int k = 0; k <= ks ; k++) {
+      if (mask.grounded(i, j)) {
+        const double bed_dx = diff_x_p(*bed, i, j), bed_dy = diff_y_p(*bed, i, j),
+                     uplift_ij = (*uplift)(i, j);
+        for (int k = 0; k <= ks; k++) {
           result[k] = w[k] + uplift_ij + u[k] * bed_dx + v[k] * bed_dy;
         }
 
-      } else {                  // floating
-        const double
-          z_sl = R * thickness(i,j),
-          w_sl = w3.interpolate(i, j, z_sl);
+      } else { // floating
+        const double z_sl = R * thickness(i, j), w_sl = w3.interpolate(i, j, z_sl);
 
-        for (int k = 0; k <= ks ; k++) {
+        for (int k = 0; k <= ks; k++) {
           result[k] = w[k] - w_sl;
         }
-
       }
 
       // above the ice:
       if (zero_above_ice) {
         // set to zeros
-        for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
+        for (unsigned int k = ks + 1; k < m_grid->Mz(); k++) {
           result[k] = 0.0;
         }
       } else {
         // extrapolate using the topmost value
-        for (unsigned int k = ks+1; k < m_grid->Mz() ; k++) {
+        for (unsigned int k = ks + 1; k < m_grid->Mz(); k++) {
           result[k] = result[ks];
         }
       }
-
     }
   } catch (...) {
     loop.failed();
@@ -497,46 +481,45 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
   return result3;
 }
 
-IceModelVec::Ptr PSB_wvel::compute_impl() const {
-  return this->compute(true);   // fill wvel above the ice with zeros
+std::shared_ptr<array::Array> PSB_wvel::compute_impl() const {
+  return this->compute(true); // fill wvel above the ice with zeros
 }
 
-PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
-  : Diag<StressBalance>(m) {
+PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m) : Diag<StressBalance>(m) {
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
 
   // set metadata:
-  m_vars = {{m_sys, ismip6 ? "zvelsurf" : "wvelsurf"}};
+  m_vars = { { m_sys, ismip6 ? "zvelsurf" : "wvelsurf" } };
 
-  set_attrs("vertical velocity of ice at ice surface, relative to the geoid",
-            "land_ice_surface_upward_velocity", // InitMIP "standard" name
-            "m s-1", "m year-1", 0);
+  m_vars[0]
+      .long_name("vertical velocity of ice at ice surface, relative to the geoid")
+      .standard_name("land_ice_surface_upward_velocity") // InitMIP "standard" name
+      .units("m s-1")
+      .output_units("m year-1");
 
   auto large_number = to_internal(1e6);
-
-  m_vars[0]["valid_range"] = {-large_number, large_number};
-  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["valid_range"] = { -large_number, large_number };
+  m_vars[0]["_FillValue"]  = { to_internal(m_fill_value) };
 }
 
-IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
+std::shared_ptr<array::Array> PSB_wvelsurf::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelsurf", WITHOUT_GHOSTS));
-  result->metadata() = m_vars[0];
+  auto result = allocate<array::Scalar>("wvelsurf");
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
-  auto w3 = IceModelVec::cast<IceModelVec3>(PSB_wvel(model).compute(false));
+  auto w3 = array::cast<array::Array3D>(PSB_wvel(model).compute(false));
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   extract_surface(*w3, *thickness, *result);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, result.get()};
+  array::AccessScope list{ &mask, result.get() };
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
@@ -547,40 +530,38 @@ IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
   return result;
 }
 
-PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
-  : Diag<StressBalance>(m) {
+PSB_wvelbase::PSB_wvelbase(const StressBalance *m) : Diag<StressBalance>(m) {
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-  // set metadata:
-  m_vars = {{m_sys, ismip6 ? "zvelbase" : "wvelbase"}};
-
-  set_attrs("vertical velocity of ice at the base of ice, relative to the geoid",
-            "land_ice_basal_upward_velocity", // InitMIP "standard" name
-            "m s-1", "m year-1", 0);
+  m_vars = { { m_sys, ismip6 ? "zvelbase" : "wvelbase" } };
+  m_vars[0]
+      .long_name("vertical velocity of ice at the base of ice, relative to the geoid")
+      .standard_name("land_ice_basal_upward_velocity") // InitMIP "standard" name
+      .units("m s-1")
+      .output_units("m year-1");
 
   auto large_number = to_internal(1e6);
 
-  m_vars[0]["valid_range"] = {-large_number, large_number};
-  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["valid_range"] = { -large_number, large_number };
+  m_vars[0]["_FillValue"]  = { to_internal(m_fill_value) };
 }
 
-IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
+std::shared_ptr<array::Array> PSB_wvelbase::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelbase", WITHOUT_GHOSTS));
-  result->metadata() = m_vars[0];
+  auto result = allocate<array::Scalar>("wvelbase");
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
-  auto w3 = IceModelVec::cast<IceModelVec3>(PSB_wvel(model).compute(false));
+  auto w3 = array::cast<array::Array3D>(PSB_wvel(model).compute(false));
 
   extract_surface(*w3, 0.0, *result);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, result.get()};
+  array::AccessScope list{ &mask, result.get() };
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
@@ -591,60 +572,54 @@ IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
   return result;
 }
 
-PSB_velbase::PSB_velbase(const StressBalance *m)
-  : Diag<StressBalance>(m) {
+PSB_velbase::PSB_velbase(const StressBalance *m) : Diag<StressBalance>(m) {
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
 
   // set metadata:
-  m_vars = {{m_sys, ismip6 ? "xvelbase" : "uvelbase"},
-            {m_sys, ismip6 ? "yvelbase" : "vvelbase"}};
+  m_vars = { { m_sys, ismip6 ? "xvelbase" : "uvelbase" },
+             { m_sys, ismip6 ? "yvelbase" : "vvelbase" } };
+  m_vars[0]
+      .long_name("x-component of the horizontal velocity of ice at the base of ice")
+      .standard_name("land_ice_basal_x_velocity"); // InitMIP "standard" name
+  m_vars[1]
+      .long_name("y-component of the horizontal velocity of ice at the base of ice")
+      .standard_name("land_ice_basal_y_velocity"); // InitMIP "standard" name
 
-  set_attrs("x-component of the horizontal velocity of ice at the base of ice",
-            "land_ice_basal_x_velocity", // InitMIP "standard" name
-            "m s-1", "m year-1", 0);
-  set_attrs("y-component of the horizontal velocity of ice at the base of ice",
-            "land_ice_basal_y_velocity", // InitMIP "standard" name
-            "m s-1", "m year-1", 1);
-
-  auto fill_value = to_internal(m_fill_value);
+  auto fill_value   = to_internal(m_fill_value);
   auto large_number = to_internal(1e6);
 
-  m_vars[0]["valid_range"] = {-large_number, large_number};
-  m_vars[1]["valid_range"] = {-large_number, large_number};
-
-  m_vars[0]["_FillValue"] = {fill_value};
-  m_vars[1]["_FillValue"] = {fill_value};
+  for (auto &v : m_vars) {
+    v.units("m s-1").output_units("m year-1");
+    v["valid_range"] = { -large_number, large_number };
+    v["_FillValue"]  = { fill_value };
+  }
 }
 
-IceModelVec::Ptr PSB_velbase::compute_impl() const {
+std::shared_ptr<array::Array> PSB_velbase::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "base", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Vector>("base");
 
-  IceModelVec2S u_base(m_grid, "u_base", WITHOUT_GHOSTS);
-  IceModelVec2S v_base(m_grid, "v_base", WITHOUT_GHOSTS);
+  array::Scalar u_base(m_grid, "u_base");
+  array::Scalar v_base(m_grid, "v_base");
 
-  const IceModelVec3
-    &u3 = model->velocity_u(),
-    &v3 = model->velocity_v();
+  const array::Array3D &u3 = model->velocity_u(), &v3 = model->velocity_v();
 
   extract_surface(u3, 0.0, u_base);
   extract_surface(v3, 0.0, v_base);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, &u_base, &v_base, result.get()};
+  array::AccessScope list{ &mask, &u_base, &v_base, result.get() };
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
       (*result)(i, j) = fill_value;
     } else {
-      (*result)(i, j) = {u_base(i, j), v_base(i, j)};
+      (*result)(i, j) = { u_base(i, j), v_base(i, j) };
     }
   }
 
@@ -652,20 +627,14 @@ IceModelVec::Ptr PSB_velbase::compute_impl() const {
 }
 
 
-PSB_bfrict::PSB_bfrict(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-
-  // set metadata:
-  m_vars = {{m_sys, "bfrict"}};
-
-  set_attrs("basal frictional heating", "",
-            "W m-2", "W m-2", 0);
+PSB_bfrict::PSB_bfrict(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "bfrict" } };
+  m_vars[0].long_name("basal frictional heating").units("W m-2");
 }
 
-IceModelVec::Ptr PSB_bfrict::compute_impl() const {
+std::shared_ptr<array::Array> PSB_bfrict::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bfrict", WITHOUT_GHOSTS));
-  result->metadata() = m_vars[0];
+  auto result = allocate<array::Scalar>("bfrict");
 
   result->copy_from(model->basal_frictional_heating());
 
@@ -673,44 +642,43 @@ IceModelVec::Ptr PSB_bfrict::compute_impl() const {
 }
 
 
-PSB_uvel::PSB_uvel(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-
-  // set metadata:
-  m_vars = {{m_sys, "uvel", m_grid->z()}};
-
-  set_attrs("horizontal velocity of ice in the X direction", "land_ice_x_velocity",
-            "m s-1", "m year-1", 0);
+PSB_uvel::PSB_uvel(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "uvel", m_grid->z() } };
+  m_vars[0]
+      .long_name("horizontal velocity of ice in the X direction")
+      .standard_name("land_ice_x_velocity")
+      .units("m s-1")
+      .output_units("m year-1");
 }
 
 /*!
  * Copy F to result and set it to zero above the surface of the ice.
  */
-static void zero_above_ice(const IceModelVec3 &F, const IceModelVec2S &H,
-                           IceModelVec3 &result) {
+static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
+                           array::Array3D &result) {
 
-  IceModelVec::AccessList list{&F, &H, &result};
+  array::AccessScope list{ &F, &H, &result };
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   auto Mz = grid->Mz();
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      int ks = grid->kBelowHeight(H(i,j));
+      int ks = grid->kBelowHeight(H(i, j));
 
-      const double *F_ij = F.get_column(i,j);
-      double *F_out_ij = result.get_column(i,j);
+      const double *F_ij = F.get_column(i, j);
+      double *F_out_ij   = result.get_column(i, j);
 
       // in the ice:
-      for (int k = 0; k <= ks ; k++) {
+      for (int k = 0; k <= ks; k++) {
         F_out_ij[k] = F_ij[k];
       }
       // above the ice:
-      for (unsigned int k = ks+1; k < Mz ; k++) {
+      for (unsigned int k = ks + 1; k < Mz; k++) {
         F_out_ij[k] = 0.0;
       }
     }
@@ -720,75 +688,72 @@ static void zero_above_ice(const IceModelVec3 &F, const IceModelVec2S &H,
   loop.check();
 }
 
-IceModelVec::Ptr PSB_uvel::compute_impl() const {
+std::shared_ptr<array::Array> PSB_uvel::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "uvel", WITHOUT_GHOSTS, m_grid->z()));
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "uvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  zero_above_ice(model->velocity_u(),
-                 *m_grid->variables().get_2d_scalar("land_ice_thickness"),
+  zero_above_ice(model->velocity_u(), *m_grid->variables().get_2d_scalar("land_ice_thickness"),
                  *result);
 
   return result;
 }
 
-PSB_vvel::PSB_vvel(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-
-  // set metadata:
-  m_vars = {{m_sys, "vvel", m_grid->z()}};
-
-  set_attrs("horizontal velocity of ice in the Y direction", "land_ice_y_velocity",
-            "m s-1", "m year-1", 0);
+PSB_vvel::PSB_vvel(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "vvel", m_grid->z() } };
+  m_vars[0]
+      .long_name("horizontal velocity of ice in the Y direction")
+      .standard_name("land_ice_y_velocity")
+      .units("m s-1")
+      .output_units("m year-1");
 }
 
-IceModelVec::Ptr PSB_vvel::compute_impl() const {
+std::shared_ptr<array::Array> PSB_vvel::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "vvel", WITHOUT_GHOSTS, m_grid->z()));
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "vvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  zero_above_ice(model->velocity_v(),
-                 *m_grid->variables().get_2d_scalar("land_ice_thickness"),
+  zero_above_ice(model->velocity_v(), *m_grid->variables().get_2d_scalar("land_ice_thickness"),
                  *result);
 
   return result;
 }
 
-PSB_wvel_rel::PSB_wvel_rel(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-
-  // set metadata:
-  m_vars = {{m_sys, "wvel_rel", m_grid->z()}};
-
-  set_attrs("vertical velocity of ice, relative to base of ice directly below", "",
-            "m s-1", "m year-1", 0);
+PSB_wvel_rel::PSB_wvel_rel(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "wvel_rel", m_grid->z() } };
+  m_vars[0]
+      .long_name("vertical velocity of ice, relative to base of ice directly below")
+      .units("m s-1")
+      .output_units("m year-1");
 }
 
-IceModelVec::Ptr PSB_wvel_rel::compute_impl() const {
+std::shared_ptr<array::Array> PSB_wvel_rel::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "wvel_rel", WITHOUT_GHOSTS, m_grid->z()));
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  zero_above_ice(model->velocity_w(),
-                 *m_grid->variables().get_2d_scalar("land_ice_thickness"),
+  zero_above_ice(model->velocity_w(), *m_grid->variables().get_2d_scalar("land_ice_thickness"),
                  *result);
 
   return result;
 }
 
 
-PSB_strainheat::PSB_strainheat(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-
-  // set metadata:
-  m_vars = {{m_sys, "strainheat", m_grid->z()}};
-
-  set_attrs("rate of strain heating in ice (dissipation heating)", "",
-            "W m-3", "mW m-3", 0);
+PSB_strainheat::PSB_strainheat(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "strainheat", m_grid->z() } };
+  m_vars[0]
+      .long_name("rate of strain heating in ice (dissipation heating)")
+      .units("W m-3")
+      .output_units("mW m-3");
 }
 
-IceModelVec::Ptr PSB_strainheat::compute_impl() const {
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "strainheat", WITHOUT_GHOSTS, m_grid->z()));
+std::shared_ptr<array::Array> PSB_strainheat::compute_impl() const {
+  auto result =
+      std::make_shared<array::Array3D>(m_grid, "strainheat", array::WITHOUT_GHOSTS, m_grid->z());
+
   result->metadata() = m_vars[0];
 
   result->copy_from(model->volumetric_strain_heating());
@@ -796,111 +761,113 @@ IceModelVec::Ptr PSB_strainheat::compute_impl() const {
   return result;
 }
 
-PSB_strain_rates::PSB_strain_rates(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-  // set metadata:
-  m_vars = {{m_sys, "eigen1"}, {m_sys, "eigen2"}};
+PSB_strain_rates::PSB_strain_rates(const StressBalance *m) : Diag<StressBalance>(m) {
 
-  set_attrs("first eigenvalue of the horizontal, vertically-integrated strain rate tensor",
-            "", "s-1", "s-1", 0);
-  set_attrs("second eigenvalue of the horizontal, vertically-integrated strain rate tensor",
-            "", "s-1", "s-1", 1);
+  m_vars = { { m_sys, "eigen1" }, { m_sys, "eigen2" } };
+  m_vars[0]
+      .long_name("first eigenvalue of the horizontal, vertically-integrated strain rate tensor")
+      .units("s-1");
+  m_vars[1]
+      .long_name("second eigenvalue of the horizontal, vertically-integrated strain rate tensor")
+      .units("s-1");
 }
 
-IceModelVec::Ptr PSB_strain_rates::compute_impl() const {
-  auto velbar = IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute());
+std::shared_ptr<array::Array> PSB_strain_rates::compute_impl() const {
+  auto velbar = array::cast<array::Vector>(PSB_velbar(model).compute());
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid,
-                                            "strain_rates", WITHOUT_GHOSTS, 2));
+  auto result = std::make_shared<array::Array2D<PrincipalStrainRates> >(m_grid, "strain_rates",
+                                                                        array::WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-
-  IceModelVec2V velbar_with_ghosts(m_grid, "velbar", WITH_GHOSTS);
+  array::Vector1 velbar_with_ghosts(m_grid, "velbar");
 
   // copy_from communicates ghosts
   velbar_with_ghosts.copy_from(*velbar);
 
-  compute_2D_principal_strain_rates(velbar_with_ghosts, mask, *result);
+  array::CellType1 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
+
+  compute_2D_principal_strain_rates(velbar_with_ghosts, cell_type, *result);
 
   return result;
 }
 
-PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-  // set metadata:
-  m_vars = {{m_sys, "sigma_xx"}, {m_sys, "sigma_yy"}, {m_sys, "sigma_xy"}};
+PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "sigma_xx" }, { m_sys, "sigma_yy" }, { m_sys, "sigma_xy" } };
 
-  set_attrs("deviatoric stress in X direction", "", "Pa", "Pa", 0);
-  set_attrs("deviatoric stress in Y direction", "", "Pa", "Pa", 1);
-  set_attrs("deviatoric shear stress", "", "Pa", "Pa", 2);
-
+  m_vars[0].long_name("deviatoric stress in X direction").units("Pa");
+  m_vars[1].long_name("deviatoric stress in Y direction").units("Pa");
+  m_vars[2].long_name("deviatoric shear stress").units("Pa");
 }
 
-IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
+std::shared_ptr<array::Array> PSB_deviatoric_stresses::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid,
-                                            "deviatoric_stresses",
-                                            WITHOUT_GHOSTS, 3));
+  auto result = std::make_shared<array::Array2D<stressbalance::DeviatoricStresses> >(
+      m_grid, "deviatoric_stresses", array::WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
   result->metadata(2) = m_vars[2];
 
-  const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
-  const IceModelVec3         *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
-  const IceModelVec2S        *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Array3D *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+  const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec2S hardness(m_grid, "hardness", WITHOUT_GHOSTS);
-  IceModelVec2V velocity(m_grid, "velocity", WITH_GHOSTS);
+  array::Scalar hardness(m_grid, "hardness");
+  array::Vector1 velocity(m_grid, "velocity");
 
-  averaged_hardness_vec(*model->shallow()->flow_law(), *thickness, *enthalpy,
-                        hardness);
+  averaged_hardness_vec(*model->shallow()->flow_law(), *thickness, *enthalpy, hardness);
 
   // copy_from updates ghosts
-  velocity.copy_from(*IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute()));
+  velocity.copy_from(*array::cast<array::Vector>(PSB_velbar(model).compute()));
 
-  stressbalance::compute_2D_stresses(*model->shallow()->flow_law(),
-                                     velocity, hardness, cell_type, *result);
+  array::CellType1 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
+
+  stressbalance::compute_2D_stresses(*model->shallow()->flow_law(), velocity, hardness, cell_type,
+                                     *result);
 
   return result;
 }
 
-PSB_pressure::PSB_pressure(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-
-  // set metadata:
-  m_vars = {{m_sys, "pressure", m_grid->z()}};
-
-  set_attrs("pressure in ice (hydrostatic)", "", "Pa", "Pa", 0);
+PSB_pressure::PSB_pressure(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "pressure", m_grid->z() } };
+  m_vars[0].long_name("pressure in ice (hydrostatic)").units("Pa");
 }
 
-IceModelVec::Ptr PSB_pressure::compute_impl() const {
+std::shared_ptr<array::Array> PSB_pressure::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "pressure", WITHOUT_GHOSTS, m_grid->z()));
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "pressure", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec::AccessList list{thickness, result.get()};
+  array::AccessScope list{ thickness, result.get() };
 
-  const double rg = m_config->get_number("constants.ice.density") * m_config->get_number("constants.standard_gravity");
+  const double rg = m_config->get_number("constants.ice.density") *
+                    m_config->get_number("constants.standard_gravity");
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      unsigned int ks = m_grid->kBelowHeight((*thickness)(i,j));
-      double *P_out_ij = result->get_column(i,j);
-      const double H = (*thickness)(i,j);
+      unsigned int ks  = m_grid->kBelowHeight((*thickness)(i, j));
+      double *P_out_ij = result->get_column(i, j);
+      const double H   = (*thickness)(i, j);
       // within the ice:
       for (unsigned int k = 0; k <= ks; ++k) {
-        P_out_ij[k] = rg * (H - m_grid->z(k));  // FIXME: add atmospheric pressure?
+        P_out_ij[k] = rg * (H - m_grid->z(k)); // FIXME: add atmospheric pressure?
       }
       // above the ice:
       for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
-        P_out_ij[k] = 0.0;  // FIXME: use atmospheric pressure?
+        P_out_ij[k] = 0.0; // FIXME: use atmospheric pressure?
       }
     }
   } catch (...) {
@@ -912,14 +879,9 @@ IceModelVec::Ptr PSB_pressure::compute_impl() const {
 }
 
 
-PSB_tauxz::PSB_tauxz(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-
-  // set metadata:
+PSB_tauxz::PSB_tauxz(const StressBalance *m) : Diag<StressBalance>(m) {
   m_vars = {{m_sys, "tauxz", m_grid->z()}};
-
-  set_attrs("shear stress xz component (in shallow ice approximation SIA)", "",
-            "Pa", "Pa", 0);
+  m_vars[0].long_name("shear stress xz component (in shallow ice approximation SIA)").units("Pa");
 }
 
 
@@ -929,34 +891,34 @@ PSB_tauxz::PSB_tauxz(const StressBalance *m)
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH PSB_tauyz
  */
-IceModelVec::Ptr PSB_tauxz::compute_impl() const {
+std::shared_ptr<array::Array> PSB_tauxz::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "tauxz", WITHOUT_GHOSTS, m_grid->z()));
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "tauxz", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S *thickness, *surface;
+  const array::Scalar *thickness, *surface;
 
   thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   surface   = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec::AccessList list{surface, thickness, result.get()};
+  array::AccessScope list{ surface, thickness, result.get() };
 
-  const double rg = m_config->get_number("constants.ice.density") * m_config->get_number("constants.standard_gravity");
+  const double rg = m_config->get_number("constants.ice.density") *
+                    m_config->get_number("constants.standard_gravity");
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      unsigned int ks = m_grid->kBelowHeight((*thickness)(i,j));
+      unsigned int ks      = m_grid->kBelowHeight((*thickness)(i, j));
       double *tauxz_out_ij = result->get_column(i, j);
-      const double
-        H    = (*thickness)(i,j),
-        dhdx = diff_x_p(*surface, i,j);
+      const double H = (*thickness)(i, j), dhdx = diff_x_p(*surface, i, j);
 
       // within the ice:
       for (unsigned int k = 0; k <= ks; ++k) {
-        tauxz_out_ij[k] = - rg * (H - m_grid->z(k)) * dhdx;
+        tauxz_out_ij[k] = -rg * (H - m_grid->z(k)) * dhdx;
       }
       // above the ice:
       for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
@@ -972,14 +934,9 @@ IceModelVec::Ptr PSB_tauxz::compute_impl() const {
 }
 
 
-PSB_tauyz::PSB_tauyz(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-
-  // set metadata:
-  m_vars = {{m_sys, "tauyz", m_grid->z()}};
-
-  set_attrs("shear stress yz component (in shallow ice approximation SIA)", "",
-            "Pa", "Pa", 0);
+PSB_tauyz::PSB_tauyz(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "tauyz", m_grid->z() } };
+  m_vars[0].long_name("shear stress yz component (in shallow ice approximation SIA)").units("Pa");
 }
 
 
@@ -989,32 +946,32 @@ PSB_tauyz::PSB_tauyz(const StressBalance *m)
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH PSB_tauxz
  */
-IceModelVec::Ptr PSB_tauyz::compute_impl() const {
+std::shared_ptr<array::Array> PSB_tauyz::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "tauyz", WITHOUT_GHOSTS, m_grid->z()));
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "tauyz", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2S *surface   = m_grid->variables().get_2d_scalar("surface_altitude");
+  const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Scalar *surface   = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec::AccessList list{surface, thickness, result.get()};
+  array::AccessScope list{ surface, thickness, result.get() };
 
-  const double rg = m_config->get_number("constants.ice.density") * m_config->get_number("constants.standard_gravity");
+  const double rg = m_config->get_number("constants.ice.density") *
+                    m_config->get_number("constants.standard_gravity");
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      unsigned int ks = m_grid->kBelowHeight((*thickness)(i,j));
+      unsigned int ks      = m_grid->kBelowHeight((*thickness)(i, j));
       double *tauyz_out_ij = result->get_column(i, j);
-      const double
-        H    = (*thickness)(i,j),
-        dhdy = diff_y_p(*surface, i,j);
+      const double H = (*thickness)(i, j), dhdy = diff_y_p(*surface, i, j);
 
       // within the ice:
       for (unsigned int k = 0; k <= ks; ++k) {
-        tauyz_out_ij[k] = - rg * (H - m_grid->z(k)) * dhdy;
+        tauyz_out_ij[k] = -rg * (H - m_grid->z(k)) * dhdy;
       }
       // above the ice:
       for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
@@ -1029,37 +986,31 @@ IceModelVec::Ptr PSB_tauyz::compute_impl() const {
   return result;
 }
 
-PSB_vonmises_stress::PSB_vonmises_stress(const StressBalance *m)
-  : Diag<StressBalance>(m) {
-
-  /* set metadata: */
-  m_vars = {{m_sys, "vonmises_stress"}};
-
-  set_attrs("tensile von Mises stress",
-            "",                 // no standard name
-            "Pascal", "Pascal", 0);
+PSB_vonmises_stress::PSB_vonmises_stress(const StressBalance *m) : Diag<StressBalance>(m) {
+  m_vars = { { m_sys, "vonmises_stress" } };
+  m_vars[0].long_name("tensile von Mises stress").units("Pascal");
 }
 
-IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
+std::shared_ptr<array::Array> PSB_vonmises_stress::compute_impl() const {
 
   using std::max;
   using std::sqrt;
   using std::pow;
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "vonmises_stress", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("vonmises_stress");
 
-  IceModelVec2S &vonmises_stress = *result;
+  array::Scalar &vonmises_stress = *result;
 
-  auto velbar = IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute());
-  IceModelVec2V &velocity = *velbar;
+  auto velbar = array::cast<array::Vector>(PSB_velbar(model).compute());
+  array::Vector &velocity = *velbar;
 
-  auto eigen12 = IceModelVec::cast<IceModelVec3>(PSB_strain_rates(model).compute());
-  IceModelVec3 &strain_rates = *eigen12;
+  using StrainRates = array::Array2D<PrincipalStrainRates>;
+  auto eigen12 = array::cast<StrainRates>(PSB_strain_rates(model).compute());
+  const auto &strain_rates = *eigen12;
 
-  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Array3D *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   std::shared_ptr<const rheology::FlowLaw> flow_law;
 
@@ -1075,10 +1026,10 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
 
   double glen_exponent = flow_law->exponent();
 
-  IceModelVec::AccessList list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
+  array::AccessScope list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
       enthalpy, &mask};
 
-  for (Points pt(*m_grid); pt; pt.next()) {
+  for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
     if (mask.icy(i, j)) {
@@ -1089,8 +1040,8 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
       const double
         *enthalpy_column   = enthalpy->get_column(i, j),
         hardness           = averaged_hardness(*flow_law, H, k, z, enthalpy_column),
-        eigen1             = strain_rates(i, j, 0),
-        eigen2             = strain_rates(i, j, 1);
+        eigen1             = strain_rates(i, j).eigen1,
+        eigen2             = strain_rates(i, j).eigen2;
 
       // [\ref Morlighem2016] equation 6
       const double effective_tensile_strain_rate = sqrt(0.5 * (pow(max(0.0, eigen1), 2) +

@@ -1,4 +1,4 @@
-FROM ubuntu:21.04
+FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required packages listed in the manual. This is done separately so that we can
@@ -24,35 +24,49 @@ RUN set -eux; \
 # - MPICH is needed to build PETSc and PISM
 # - doxygen and graphviz are needed to build the source code browser
 # - python2 is needed to install old PETSc
+# - gcc-10 and g++-10 are needed to build old CMake and for testing
 RUN set -eux; \
-        apt-get update && apt-get install -y \
-        apt-utils \
-        ccache \
-        clang \
-        cython3 \
-        doxygen \
-        graphviz \
-        latexmk \
-        libmpich-dev \
-        libproj-dev \
-        lld \
-        m4 \
-        nco \
-        python2 \
-        python3-dev \
-        python3-netcdf4 \
-        python3-nose \
-        python3-numpy \
-        python3-pip \
-        python3-scipy \
-        python3-sphinx \
-        python3-sphinxcontrib.bibtex \
-        swig \
-        texlive-latex-extra \
-        texlive-latex-recommended \
-        wget \
-        ; \
-        rm -rf /var/lib/apt/lists/*
+    apt-get update && apt-get install -y \
+    apt-utils \
+    ccache \
+    clang \
+    clang-11 \
+    clang-12 \
+    clang-13 \
+    clang-14 \
+    clang-15 \
+    cython3 \
+    doxygen \
+    g++-10 \
+    g++-11 \
+    g++-12 \
+    g++-9 \
+    gcc-10 \
+    gcc-11 \
+    gcc-12 \
+    gcc-9 \
+    graphviz \
+    latexmk \
+    libmpich-dev \
+    libproj-dev \
+    lld \
+    m4 \
+    nco \
+    python2 \
+    python3-dev \
+    python3-netcdf4 \
+    python3-nose \
+    python3-numpy \
+    python3-pip \
+    python3-scipy \
+    python3-sphinx \
+    python3-sphinxcontrib.bibtex \
+    swig \
+    texlive-latex-extra \
+    texlive-latex-recommended \
+    wget \
+    ; \
+    rm -rf /var/lib/apt/lists/*
 
 RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
@@ -87,17 +101,17 @@ RUN set -eux;\
 # Build the oldest supported PETSc version. The goal is to check if PISM's C++ code
 # compiles with PETSc 3.7. We do not support PISM's Python bindings with old PETSc
 # versions, so we build PETSc without petsc4py here.
-COPY petsc-3_7_0.sh /tmp/
+COPY old-petsc.sh /tmp/
 RUN set -eux;\
         cd /tmp && \
-        ./petsc-3_7_0.sh && \
+        version=3.7.0 ./old-petsc.sh && \
         rm -rf ~/local/build
 
 # Build the oldest supported CMake version
-COPY cmake-3_3_0.sh /tmp/
+COPY cmake-3_7_0.sh /tmp/
 RUN set -eux;\
         cd /tmp && \
-        ./cmake-3_3_0.sh && \
+        ./cmake-3_7_0.sh && \
         rm -rf ~/local/build
 
 ENV PETSC_DIR="/home/builder/local/petsc" \

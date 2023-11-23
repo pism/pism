@@ -47,13 +47,14 @@ the ``-bootstrap`` option), the other variables, especially the bedrock topograp
 ``topg`` and the climate data, are brought in to PISM at "full" resolution, that is, on
 the original 5 km grid in the data file ``pism_Greenland_5km_v1.1.nc``.
 
-This technique could be called "grid sequencing".\ [#not-mg]_ The result of the above
-command will be to compute the near-equilibrium result on the fine 5 km grid, taking
-advantage of the coarse-gridded computation of approximate equilibrium, and despite a run
-of only 200 model years (``-ys -200 -ye 0``). How close to equilibrium we get depends on
-both durations, i.e. on both the coarse and fine grid run durations, but certainly the
-computational effort is reduced by doing a short run on the fine grid. Note that in the
-previous subsection we also used regridding. In that application, however,
+This technique could be called "grid sequencing".\ [#not-mg]_
+
+By approximating the equilibrium state on a coarser grid and then interpolating onto a
+finer grid the command above allows us to obtain the near-equilibrium result on the finer
+5km grid using a relatively short (200 model years) run. How close to equilibrium we get
+depends on both durations, i.e. on both the coarse and fine grid run durations, but
+certainly the computational effort is reduced by doing a short run on the fine grid. Note
+that in the previous subsection we also used regridding. In that application, however,
 ``-regrid_file`` only "brings in" fields from a run on the same resolution.
 
 Generally the fine grid run duration in grid sequencing should be at least `t = \dx /
@@ -113,7 +114,7 @@ about 6 wall-clock hours (24 processor-hours).
    including Jakobshavn Isbrae (lowest major flow), from runs of resolution 40, 20, 10, 5
    km (left-to-right). Color scheme and scale, including 100 m/year contour (solid black),
    are all identical to ``velsurf_mag`` Figures :numref:`fig-secondoutputcoarse`,
-   :numref:`fig-csurfvsobserved`, and :numref:`fig-secondoutputfiner`.
+   :numref:`fig-csurf-vs-observed`, and :numref:`fig-second-output-finer`.
 
 :numref:`fig-gridseqdetail`, showing only a detail of the western coast of Greenland, with
 several outlet glaciers visible, suggests what is accomplished: the high resolution runs
@@ -125,13 +126,13 @@ subfigures). In the two left-hand subfigures we show the same field from NetCDF 
 an obvious modification of the run in section :ref:`sec-ssarun`.
 
 .. figure:: figures/ivol-gridseq.png
-   :name: fig-ivolgridseq
+   :name: fig-ivol-gridseq
 
    Time series of ice volume ``ice_volume_glacierized`` from the three runs in our grid
    sequencing example: 20 km for 10 ka = ``ts_g20km_10ka_hy.nc``, 10 km for 2 ka =
    ``ts_g10km_gridseq.nc``, and 5 km for 200 a = ``ts_g5km_gridseq.nc``.
 
-:numref:`fig-ivolgridseq`, which shows time series of ice volume, also shows the cost of
+:numref:`fig-ivol-gridseq`, which shows time series of ice volume, also shows the cost of
 high resolution, however. The short 200 a run on the 5 km grid took about 3 wall-clock
 hours compared to the 10 minutes taken by the 10 ka run on a 20 km grid. The fact that the
 time series for ice volume on 10 km and 5 km grids are not very "steady" also suggests

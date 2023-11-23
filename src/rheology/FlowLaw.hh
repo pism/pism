@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,13 +22,14 @@
 #include <string>
 
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 
 namespace pism {
 
-class IceModelVec2S;
-class IceModelVec3;
-
+namespace array {
+class Scalar;
+class Array3D;
+}
 class Config;
 
 /*!
@@ -41,7 +42,7 @@ class Config;
  * u_z = v_z = 0 @f$) and neglect horizontal derivatives of the vertical velocity (@f$ w_x = w_y = 0
  * @f$).
  */
-static inline double secondInvariant_2D(const Vector2 &U_x, const Vector2 &U_y) {
+static inline double secondInvariant_2D(const Vector2d &U_x, const Vector2d &U_y) {
   const double
     u_x = U_x.u,
     u_y = U_y.u,
@@ -96,7 +97,7 @@ public:
 
   double softness(double E, double p) const;
 
-  double flow(double stress, double E, double pressure, double grainsize) const;
+  double flow(double stress, double enthalpy, double pressure, double grain_size) const;
   void flow_n(const double *stress, const double *E,
               const double *pressure, const double *grainsize,
               unsigned int n, double *result) const;
@@ -155,14 +156,14 @@ protected:
 
 double averaged_hardness(const FlowLaw &ice,
                          double ice_thickness,
-                         int kbelowH,
+                         unsigned int kbelowH,
                          const double *zlevels,
                          const double *enthalpy);
 
 void averaged_hardness_vec(const FlowLaw &ice,
-                           const IceModelVec2S &ice_thickness,
-                           const IceModelVec3  &enthalpy,
-                           IceModelVec2S &result);
+                           const array::Scalar &ice_thickness,
+                           const array::Array3D  &enthalpy,
+                           array::Scalar &result);
 
 bool FlowLawUsesGrainSize(const FlowLaw &flow_law);
 

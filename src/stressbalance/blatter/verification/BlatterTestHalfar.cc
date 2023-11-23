@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "BlatterTestHalfar.hh"
+#include "pism/stressbalance/blatter/verification/BlatterTestHalfar.hh"
 
 #include "pism/rheology/IsothermalGlen.hh"
 
-#include "manufactured_solutions.hh"
+#include "pism/stressbalance/blatter/verification/manufactured_solutions.hh"
 
 namespace pism {
 namespace stressbalance {
 
-BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid,
+BlatterTestHalfar::BlatterTestHalfar(std::shared_ptr<const Grid> grid,
                                      int Mz, int coarsening_factor)
   : Blatter(grid, Mz, coarsening_factor) {
 
@@ -37,7 +37,7 @@ BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid,
   assert(m_flow_law->exponent() == 3.0);
 
   // make sure the grid is periodic in the Y direction
-  assert(m_grid->periodicity() == Y_PERIODIC);
+  assert(m_grid->periodicity() == grid::Y_PERIODIC);
 
   // store constant ice hardness (enthalpy and pressure values are irrelevant)
   m_B = m_flow_law->hardness(1e5, 0);
@@ -59,7 +59,7 @@ bool BlatterTestHalfar::dirichlet_node(const DMDALocalInfo &info,
   return I.i == 0 or I.i == info.mx - 1;
 }
 
-Vector2 BlatterTestHalfar::u_bc(double x, double y, double z) const {
+Vector2d BlatterTestHalfar::u_bc(double x, double y, double z) const {
   (void) y;
 
   return blatter_xz_halfar_exact(x, z, m_H0, m_R0, m_rho, m_g, m_B);
@@ -79,7 +79,7 @@ double BlatterTestHalfar::u_exact(double x, double z) const {
 void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element,
                                              const double *surface,
                                              const double *bed,
-                                             Vector2 *residual) {
+                                             Vector2d *residual) {
 
   (void) surface;
   (void) bed;
@@ -122,7 +122,7 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
                                          const double *surface_nodal,
                                          const double *z_nodal,
                                          const double *sl_nodal,
-                                         Vector2 *residual) {
+                                         Vector2d *residual) {
   (void) surface_nodal;
   (void) sl_nodal;
 
@@ -146,7 +146,7 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q) / m_scaling;
     auto N3 = face.normal(q);
-    Vector2 N = {N3.x, N3.y};
+    Vector2d N = {N3.x, N3.y};
 
     double F = 0.0;
     if (x[q] > 0.0) {
@@ -168,7 +168,7 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
  */
 void BlatterTestHalfar::residual_surface(const fem::Q1Element3 &element,
                                          const fem::Q1Element3Face &face,
-                                         Vector2 *residual) {
+                                         Vector2d *residual) {
 
   // compute x coordinates of quadrature points
   double
@@ -204,8 +204,8 @@ void BlatterTestHalfar::residual_basal(const fem::Q1Element3 &element,
                                        const fem::Q1Element3Face &face,
                                        const double *tauc_nodal,
                                        const double *f_nodal,
-                                       const Vector2 *u_nodal,
-                                       Vector2 *residual) {
+                                       const Vector2d *u_nodal,
+                                       Vector2d *residual) {
   (void) tauc_nodal;
   (void) f_nodal;
   (void) u_nodal;
@@ -239,7 +239,7 @@ void BlatterTestHalfar::residual_basal(const fem::Q1Element3 &element,
 void BlatterTestHalfar::jacobian_basal(const fem::Q1Element3Face &face,
                                        const double *tauc_nodal,
                                        const double *f_nodal,
-                                       const Vector2 *u_nodal,
+                                       const Vector2d *u_nodal,
                                        double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]) {
   (void) face;
   (void) tauc_nodal;

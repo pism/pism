@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,54 +50,58 @@ class BedSmoother;
 class SIAFD : public SSB_Modifier
 {
 public:
-  SIAFD(IceGrid::ConstPtr g);
+  SIAFD(std::shared_ptr<const Grid> g);
 
   virtual ~SIAFD();
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &sliding_velocity,
+  virtual void update(const array::Vector &sliding_velocity,
                       const Inputs &inputs,
                       bool full_update);
 
   const BedSmoother& bed_smoother() const;
 
-  const IceModelVec2Stag& surface_gradient_x() const;
-  const IceModelVec2Stag& surface_gradient_y() const;
-  const IceModelVec2Stag& diffusivity() const;
+  const array::Staggered& surface_gradient_x() const;
+  const array::Staggered& surface_gradient_y() const;
+  const array::Staggered1& diffusivity() const;
 
 protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   virtual void compute_surface_gradient(const Inputs &inputs,
-                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+                                        array::Staggered1 &h_x,
+                                        array::Staggered1 &h_y);
 
-  virtual void surface_gradient_eta(const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &bed_elevation,
-                                    IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual void surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
-                                         const IceModelVec2CellType &cell_type,
-                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual void surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
-                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_eta(const array::Scalar2 &ice_thickness,
+                                    const array::Scalar2 &bed_elevation,
+                                    array::Staggered1 &h_x,
+                                    array::Staggered1 &h_y);
+  virtual void surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevation,
+                                         const array::CellType2 &cell_type,
+                                         array::Staggered1 &h_x,
+                                         array::Staggered1 &h_y);
+  virtual void surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
+                                        array::Staggered1 &h_x,
+                                        array::Staggered1 &h_y);
 
   virtual void compute_diffusivity(bool full_update,
                                    const Geometry &geometry,
-                                   const IceModelVec3 *enthalpy,
-                                   const IceModelVec3 *age,
-                                   const IceModelVec2Stag &h_x,
-                                   const IceModelVec2Stag &h_y,
-                                   IceModelVec2Stag &result);
+                                   const array::Array3D *enthalpy,
+                                   const array::Array3D *age,
+                                   const array::Staggered1 &h_x,
+                                   const array::Staggered1 &h_y,
+                                   array::Staggered1 &result);
 
-  virtual void compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
-                                      const IceModelVec2Stag &diffusivity,
-                                      IceModelVec2Stag &result);
+  virtual void compute_diffusive_flux(const array::Staggered &h_x, const array::Staggered &h_y,
+                                      const array::Staggered &diffusivity,
+                                      array::Staggered &result);
 
   virtual void compute_3d_horizontal_velocity(const Geometry &geometry,
-                                              const IceModelVec2Stag &h_x,
-                                              const IceModelVec2Stag &h_y,
-                                              const IceModelVec2V &vel_input,
-                                              IceModelVec3 &u_out, IceModelVec3 &v_out);
+                                              const array::Staggered &h_x,
+                                              const array::Staggered &h_y,
+                                              const array::Vector &vel_input,
+                                              array::Array3D &u_out, array::Array3D &v_out);
 
   virtual void compute_I(const Geometry &geometry);
 
@@ -106,16 +110,16 @@ protected:
   const unsigned int m_stencil_width;
 
   //! temporary storage for eta, theta and the smoothed thickness
-  IceModelVec2S m_work_2d_0;
-  IceModelVec2S m_work_2d_1;
+  array::Scalar2 m_work_2d_0;
+  array::Scalar2 m_work_2d_1;
   //! temporary storage for the surface gradient and the diffusivity
-  IceModelVec2Stag m_h_x, m_h_y, m_D;
+  array::Staggered1 m_h_x, m_h_y, m_D;
   //! temporary storage for delta on the staggered grid
-  IceModelVec3 m_delta_0;
-  IceModelVec3 m_delta_1;
+  array::Array3D m_delta_0;
+  array::Array3D m_delta_1;
   //! temporary storage used to store I and strain_heating on the staggered grid
-  IceModelVec3 m_work_3d_0;
-  IceModelVec3 m_work_3d_1;
+  array::Array3D m_work_3d_0;
+  array::Array3D m_work_3d_1;
 
   BedSmoother *m_bed_smoother;
 
