@@ -35,8 +35,6 @@
 
 #include "pism/geometry/flux_limiter.hh"
 
-#include "flux_limiter.hh"
-
 namespace pism {
 
 using mask::floating_ice;

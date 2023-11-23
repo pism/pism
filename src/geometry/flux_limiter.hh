@@ -1,4 +1,4 @@
-/* Copyright (C) 2022, 2023 PISM Authors
+/* Copyright (C) 2022 PISM Authors
  *
  * This file is part of PISM.
  *

@@ -62,7 +62,6 @@
 #include "util/node_types.hh"
 
 #include "util/label_components.hh"
-#include "icemodel/IceModel.hh"
 %}
 
 // Tell SWIG that the following variables are truly constant

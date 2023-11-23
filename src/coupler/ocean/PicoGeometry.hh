@@ -81,7 +81,7 @@ private:
                          const std::vector<int> &cfs_in_basins_per_shelf,
                          int n_shelves,
                          array::Scalar &shelf_mask);
-
+ 
   void compute_distances_cf(const array::Scalar1 &ocean_mask,
                             const array::Scalar &ice_rises,
                             bool exclude_ice_rises,
