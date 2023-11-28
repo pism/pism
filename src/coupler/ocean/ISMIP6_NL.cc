@@ -87,7 +87,7 @@ void ISMIP6nl::init_impl(const Geometry &geometry) {
   m_shelfbtemp->init(opt.filename, opt.periodic);
   m_salinity_ocean->init(opt.filename, opt.periodic);
 
-  m_basin_mask.regrid(opt.filename, io::CRITICAL);
+  m_basin_mask.regrid(opt.filename, io::Default::Nil());
   m_n_basins = static_cast<int>(array::max(m_basin_mask)) + 1; // Basins id starts at 0 in the input file
 
   // read time-independent data right away:
