@@ -27,6 +27,10 @@ set -x
 
 version=${1:?Usage: \"$0 X.Y.Z\" where X.Y.Z is the new PISM version.}
 
+# update VERSION
+echo ${version} > VERSION
+git add VERSION
+
 # update the list of diagnostics and configuration parameters
 make -C doc/sphinx
 
@@ -38,10 +42,6 @@ git add doc/sphinx/funding.txt
 # set Pism_BRANCH to "stable"
 sed -Ei 's/(Pism_BRANCH)[^)]+/\1 "stable"/' CMakeLists.txt
 git add CMakeLists.txt
-
-# update Pism_VERSION
-sed -Ei "s/(set +\(Pism_VERSION)[^)]+/\1 \"v${version}\"/" CMake/PISM_CMake_macros.cmake
-git add CMake/PISM_CMake_macros.cmake
 
 # update version in the manual
 sed -Ei "s/^(version|release).+/\1 = '${version}'/" doc/sphinx/conf.py

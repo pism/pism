@@ -48,45 +48,50 @@ macro(pism_strictly_static)
   pism_dont_use_rpath()
 endmacro(pism_strictly_static)
 
-# Set the revision tag if PISM was checked out using Git.
-macro(pism_set_revision_tag_git)
-  if (NOT Pism_VERSION)
-    if (EXISTS ${Pism_SOURCE_DIR}/.git)
-      find_program (GIT_EXECUTABLE git DOC "Git executable")
-      mark_as_advanced(GIT_EXECUTABLE)
-      if (${Pism_BRANCH} MATCHES "stable")
-        execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v?.?*
-          WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-          OUTPUT_VARIABLE Pism_VERSION
-          OUTPUT_STRIP_TRAILING_WHITESPACE)
-      else()
-        execute_process (COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-          WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-          OUTPUT_VARIABLE Pism_VERSION
-          OUTPUT_STRIP_TRAILING_WHITESPACE)
-      endif()
-      execute_process (COMMAND ${GIT_EXECUTABLE} --no-pager log -1 "--pretty=format:committed by %an on %ci"
-        WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-        OUTPUT_VARIABLE Pism_COMMIT_INFO
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-      set(Pism_VERSION "${Pism_VERSION} ${Pism_COMMIT_INFO}")
-    endif (EXISTS ${Pism_SOURCE_DIR}/.git)
-  endif(NOT Pism_VERSION)
-endmacro(pism_set_revision_tag_git)
-
-# Set the PISM revision tag
+# Set Pism_REVISION_TAG, Pism_VERSION, Pism_VERSION_LONG
 macro(pism_set_revision_tag)
-  # Git
-  pism_set_revision_tag_git()
+  if (EXISTS ${Pism_SOURCE_DIR}/.git)
+    # get version information from the repository
+    find_program (GIT_EXECUTABLE git DOC "Git executable")
+    mark_as_advanced(GIT_EXECUTABLE)
+    if (${Pism_BRANCH} MATCHES "stable")
+      # Get the latest tag
+      execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v?.?*
+        WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+        OUTPUT_VARIABLE Pism_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+      # remove "v" from vX.Y.Z:
+      string(REPLACE "v" "" Pism_VERSION ${Pism_VERSION})
+    else()
+      execute_process (COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+        OUTPUT_VARIABLE Pism_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
+    execute_process (COMMAND ${GIT_EXECUTABLE} --no-pager log -1 "--pretty=format:%an"
+      WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+      OUTPUT_VARIABLE Pism_COMMIT_AUTHOR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process (COMMAND ${GIT_EXECUTABLE} --no-pager log -1 "--pretty=format:%cs"
+      WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+      OUTPUT_VARIABLE Pism_COMMIT_DATE
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if (${Pism_BRANCH} MATCHES "stable")
+      set(Pism_VERSION_LONG "${Pism_VERSION}-(${Pism_COMMIT_AUTHOR})")
+    else()
+      set(Pism_VERSION_LONG "${Pism_COMMIT_DATE}-${Pism_VERSION}-(${Pism_COMMIT_AUTHOR})")
+    endif()
+  elseif(EXISTS ${Pism_SOURCE_DIR}/VERSION)
+    # No repository info: we are probably building from a tarball
+    file(STRINGS ${Pism_SOURCE_DIR}/VERSION Pism_VERSION LIMIT_COUNT 1)
+    set(Pism_VERSION_LONG "${Pism_VERSION}")
+  else()
+    set (Pism_VERSION "unknown")
+  endif (EXISTS ${Pism_SOURCE_DIR}/.git)
 
-  # Otherwise...
-  if (NOT Pism_VERSION)
-    set (Pism_VERSION "no-version-control")
-  endif (NOT Pism_VERSION)
+  set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION_LONG}")
 
-  set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION}")
-
-  message(STATUS "Configuring PISM version '${Pism_REVISION_TAG}'")
+  message(STATUS "PISM version: '${Pism_REVISION_TAG}'")
 endmacro(pism_set_revision_tag)
 
 macro(pism_set_install_prefix)

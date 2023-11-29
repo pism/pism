@@ -47,7 +47,6 @@ list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
 set (Pism_BRANCH "development")
 
-# Set Pism_REVISION_TAG
 pism_set_revision_tag()
 
 # Put executables in the build directory:
