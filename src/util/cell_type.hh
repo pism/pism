@@ -28,14 +28,14 @@ class Scalar;
 namespace cell_type {
 
 enum Value : int {
-  UNKNOWN        = -2,          // FIXME: this will be interpreted as "ice free land" by the code below
-  ICE_FREE_LAND = 0, // even means "ice free"
-  ICY_LAND      = 1, // odd means "icy"
+  UNKNOWN        = -1,
+  ICE_FREE_LAND = 0,
+  ICY_LAND      = 1,
   // values associated with "land" are less than ones for "water"
-  ICE_FREE_LAKE  = 2, // even means "ice free"
-  ICY_LAKE       = 3, // odd means "icy"
-  ICE_FREE_OCEAN = 4, // even means "ice free"
-  ICY_OCEAN      = 5  // odd means "icy"
+  ICE_FREE_LAKE  = 2,
+  ICY_LAKE       = 3,
+  ICE_FREE_OCEAN = 4,
+  ICY_OCEAN      = 5
 };
 
 //! An wet cell (floating ice or ice-free).
@@ -50,7 +50,7 @@ inline bool land(int M) {
 
 //! Ice-filled cell (grounded or floating).
 inline bool icy(int M) {
-  return M % 2 == 1; // odd means "icy"
+  return (M == ICY_LAND) or (M == ICY_LAKE) or (M == ICY_OCEAN);
 }
 
 inline bool grounded_ice(int M) {
@@ -63,7 +63,7 @@ inline bool floating_ice(int M) {
 
 //! Ice-free cell (grounded or ocean).
 inline bool ice_free(int M) {
-  return M % 2 == 0; // even means "ice free"
+  return (M == ICE_FREE_LAND) or (M == ICE_FREE_LAKE) or (M == ICE_FREE_OCEAN);
 }
 
 // inline bool ice_free_ocean(int M) {
