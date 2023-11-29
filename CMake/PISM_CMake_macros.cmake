@@ -166,19 +166,19 @@ macro(pism_find_prerequisites)
   find_package (MPI REQUIRED COMPONENTS C CXX)
 
   # Other required libraries
-  find_package (UDUNITS2 REQUIRED)
-  find_package (GSL REQUIRED)
-  find_package (NetCDF REQUIRED)
+  pism_find_library(NETCDF "netcdf>=4.4")
+  pism_find_library (UDUNITS2 "udunits>=2.2")
+  pism_find_library (GSL "gsl>=1.15")
   find_package (FFTW REQUIRED)
   find_package (HDF5 COMPONENTS C HL)
 
   # Optional libraries
   if (Pism_USE_PNETCDF)
-    find_package (PNetCDF REQUIRED)
+    pism_find_library(PNETCDF "pnetcdf")
   endif()
 
   if (Pism_USE_PROJ)
-    find_package (PROJ REQUIRED)
+    pism_find_library(PROJ "proj>=6.0")
   endif()
 
   if (Pism_USE_PIO)
@@ -188,40 +188,17 @@ macro(pism_find_prerequisites)
   if (Pism_USE_PARALLEL_NETCDF4)
     # Try to find netcdf_par.h. We assume that NetCDF was compiled with
     # parallel I/O if this header is present.
-    find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
+    find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDE_DIRS} NO_DEFAULT_PATH)
 
     # Set default values for build options
     if (NOT NETCDF_PAR_H)
       message(FATAL_ERROR
-        "Selected NetCDF library (include: ${NETCDF_INCLUDES}, lib: ${NETCDF_LIBRARIES}) does not support parallel I/O.")
+        "Selected NetCDF library (include: ${NETCDF_INCLUDE_DIRS}, lib: ${NETCDF_LIBRARIES}) does not support parallel I/O.")
     endif()
   endif()
 
   if (Pism_USE_JANSSON)
-    find_package(Jansson REQUIRED)
-
-    if (NOT JANSSON_FOUND)
-      set(pism_jansson_dir ${Pism_BINARY_DIR}/jansson)
-      include(ExternalProject)
-      ExternalProject_Add(pism_jansson
-        GIT_REPOSITORY https://github.com/akheron/jansson.git
-        GIT_TAG 2.7
-        TIMEOUT 10
-        PREFIX ${Pism_BINARY_DIR} # install with PISM
-        INSTALL_DIR ${pism_jansson_dir}
-        CMAKE_ARGS -DJANSSON_BUILD_DOCS=OFF -DCMAKE_INSTALL_PREFIX=${pism_jansson_dir}
-        LOG_DOWNLOAD ON
-        LOG_BUILD ON
-        LOG_CONFIGURE ON
-        )
-      set(JANSSON_INCLUDE_DIRS ${pism_jansson_dir}/include CACHE STRING "Jansson include directory" FORCE)
-      set(JANSSON_LIBRARIES "-L${pism_jansson_dir}/lib -ljansson" CACHE STRING "Jansson library" FORCE)
-      set(Pism_BUILD_JANSSON ON CACHE BOOL "ON if we are using our own Jansson build." FORCE)
-      message(WARNING "
-Jansson was not found.
-We will try to download and build it automatically. If it does not work, please install it manually and try again.
-")
-    endif()
+    pism_find_library(JANSSON "jansson>=2.7")
   endif()
 
 endmacro()
@@ -236,9 +213,9 @@ macro(pism_set_dependencies)
     ${PETSC_INCLUDE_DIRS}
     ${FFTW_INCLUDES}
     ${GSL_INCLUDE_DIRS}
-    ${UDUNITS2_INCLUDES}
+    ${UDUNITS2_INCLUDE_DIRS}
     ${HDF5_INCLUDE_DIRS}
-    ${NETCDF_INCLUDES}
+    ${NETCDF_INCLUDE_DIRS}
     ${MPI_C_INCLUDE_PATH}
   )
 
@@ -248,10 +225,10 @@ macro(pism_set_dependencies)
   # required libraries
   list (APPEND Pism_EXTERNAL_LIBS
     PkgConfig::PETSC
-    ${UDUNITS2_LIBRARIES}
+    PkgConfig::UDUNITS2
+    PkgConfig::GSL
+    PkgConfig::NETCDF
     ${FFTW_LIBRARIES}
-    ${GSL_LIBRARIES}
-    ${NETCDF_LIBRARIES}
     ${MPI_C_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
     ${HDF5_LIBRARIES}
@@ -265,8 +242,8 @@ macro(pism_set_dependencies)
   endif()
 
   if (Pism_USE_PROJ)
-    include_directories (${PROJ_INCLUDES})
-    list (APPEND Pism_EXTERNAL_LIBS ${PROJ_LIBRARIES})
+    include_directories (${PROJ_INCLUDE_DIRS})
+    list (APPEND Pism_EXTERNAL_LIBS PkgConfig::PROJ)
   endif()
 
   if (Pism_USE_PIO)
@@ -275,8 +252,8 @@ macro(pism_set_dependencies)
   endif()
 
   if (Pism_USE_PNETCDF)
-    include_directories (${PNETCDF_INCLUDES})
-    list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
+    include_directories (${PNETCDF_INCLUDE_DIRS})
+    list (APPEND Pism_EXTERNAL_LIBS PkgConfig::PNETCDF)
   endif()
 
   # Hide distracting CMake variables
