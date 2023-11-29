@@ -169,7 +169,7 @@ macro(pism_find_prerequisites)
   pism_find_library(NETCDF "netcdf>=4.4")
   pism_find_library (UDUNITS2 "udunits>=2.2")
   pism_find_library (GSL "gsl>=1.15")
-  find_package (FFTW REQUIRED)
+  pism_find_library (FFTW "fftw3>=3.1")
   find_package (HDF5 COMPONENTS C HL)
 
   # Optional libraries
@@ -211,7 +211,7 @@ macro(pism_set_dependencies)
   # to record its version.
   include_directories (BEFORE SYSTEM
     ${PETSC_INCLUDE_DIRS}
-    ${FFTW_INCLUDES}
+    ${FFTW_INCLUDE_DIRS}
     ${GSL_INCLUDE_DIRS}
     ${UDUNITS2_INCLUDE_DIRS}
     ${HDF5_INCLUDE_DIRS}
@@ -228,7 +228,7 @@ macro(pism_set_dependencies)
     PkgConfig::UDUNITS2
     PkgConfig::GSL
     PkgConfig::NETCDF
-    ${FFTW_LIBRARIES}
+    PkgConfig::FFTW
     ${MPI_C_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
     ${HDF5_LIBRARIES}
