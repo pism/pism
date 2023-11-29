@@ -37,7 +37,7 @@ jobs:
       PETSC_DIR: << parameters.petsc_dir >>
       BUILD_PYTHON_BINDINGS: << parameters.python >>
       CCACHE_COMPRESS: 1
-      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
+      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf;/home/builder/local/pnetcdf;/home/builder/local/parallelio"
 
     steps:
       - checkout
@@ -67,7 +67,7 @@ jobs:
             -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
+            -DCMAKE_PREFIX_PATH=${LOCAL_LIBRARIES}
             -DCMAKE_C_FLAGS="-Werror"
             -DCMAKE_CXX_FLAGS="-Werror"
             -DPism_USE_PROJ=Yes
@@ -115,7 +115,7 @@ jobs:
       CXX: << parameters.cxx >>
       CCACHE_COMPRESS: 1
       CMAKE_PREFIX: << parameters.cmake_prefix >>
-      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
+      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf;/home/builder/local/pnetcdf;/home/builder/local/parallelio"
 
     steps:
       - checkout
@@ -132,7 +132,7 @@ jobs:
             ${CMAKE_PREFIX}/bin/cmake ..
             -DCMAKE_BUILD_TYPE=Debug
             -DCMAKE_CXX_FLAGS="-Werror"
-            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
+            -DCMAKE_PREFIX_PATH=${LOCAL_LIBRARIES}
       - run:
           name: Reset ccache stats
           command: ccache -z
@@ -249,7 +249,7 @@ jobs:
     environment:
       CC: mpicc
       CXX: mpicxx
-      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
+      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf;/home/builder/local/pnetcdf;/home/builder/local/parallelio"
       PETSC_DIR: /home/builder/local/petsc
 
     steps:
@@ -258,7 +258,7 @@ jobs:
           name: Build the source code browser
           command: |
             mkdir -p build
-            cmake -B build -S . -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
+            cmake -B build -S . -DCMAKE_PREFIX_PATH=${LOCAL_LIBRARIES}
             make -C build browser
             mv build/doc/browser/html ./doxygen
             rm -f doxygen/*.md5
