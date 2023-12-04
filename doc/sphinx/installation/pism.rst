@@ -159,23 +159,27 @@ Building PISM with libraries in non-standard locations
 ======================================================
 
 To build PISM with libraries installed in a non-standard location such as ``~/local/``,
-use CMake's variable ``CMAKE_FIND_ROOT_PATH``. Set it to a semicolon-separated list of
+use CMake's variable ``CMAKE_PREFIX_PATH``. Set it to a semicolon-separated list of
 directories.
 
 For example, if ``netcdf.h`` is located in ``~/local/netcdf/include/`` and
 ``libnetcdf.so`` is in ``~/local/netcdf/lib``, add ``~/local/netcdf`` to
-``CMAKE_FIND_ROOT_PATH``:
+``CMAKE_PREFIX_PATH``:
 
 .. code-block:: bash
 
-   cmake -DCMAKE_FIND_ROOT_PATH=~/local/netcdf [other options] ..
+   cmake -DCMAKE_PREFIX_PATH=$HOME/local/netcdf [other options] ..
+
+.. note::
+
+   Use ``$HOME`` and not "``~``" to indicate the home directory.
 
 To build PISM using parallel I/O libraries installed as described in
 :ref:`sec-install-parallel-io-libs`, do this:
 
 .. code-block:: bash
 
-   cmake -DCMAKE_FIND_ROOT_PATH="~/local/netcdf;~/local/pnetcdf;~/local/parallelio" \
+   cmake -DCMAKE_PREFIX_PATH="$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio" \
          -DPism_USE_PNETCDF \
          -DPism_USE_PARALLEL_NETCDF4 \
          -DPism_USE_PIO \

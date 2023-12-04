@@ -60,7 +60,7 @@ jobs:
           # PROJ, NetCDF built with parallel I/O, and PnetCDF are optional dependencies but
           # we should build and test the code that uses them. The same applies to ICEBIN.
           #
-          # CMAKE_FIND_ROOT_PATH points to HDF5 and NetCDF with support for parallel I/O.
+          # CMAKE_PREFIX_PATH points to HDF5 and NetCDF with support for parallel I/O.
           command: >-
             cd build &&
             ${CMAKE_PREFIX}/bin/cmake ..
