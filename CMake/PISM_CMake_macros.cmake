@@ -48,7 +48,7 @@ macro(pism_strictly_static)
   pism_dont_use_rpath()
 endmacro(pism_strictly_static)
 
-# Set Pism_REVISION_TAG, Pism_VERSION, Pism_VERSION_LONG
+# Set Pism_VERSION, Pism_VERSION_LONG
 macro(pism_set_revision_tag)
   if (EXISTS ${Pism_SOURCE_DIR}/.git)
     # get version information from the repository
@@ -94,9 +94,7 @@ macro(pism_set_revision_tag)
     set (Pism_VERSION "unknown")
   endif (EXISTS ${Pism_SOURCE_DIR}/.git)
 
-  set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION_LONG}")
-
-  message(STATUS "PISM version: '${Pism_REVISION_TAG}'")
+  message(STATUS "PISM version: '${Pism_VERSION_LONG}'")
 endmacro(pism_set_revision_tag)
 
 macro(pism_set_install_prefix)

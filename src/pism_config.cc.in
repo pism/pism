@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@ namespace pism {
 
 const char *config_file = "${Pism_CONFIG_FILE}";
 
-const char *revision = "${Pism_REVISION_TAG}";
+const char *revision = "${Pism_VERSION_LONG}";
 
 const char *petsc_configure_flags = "${Pism_PETSC_CONFIGURE_FLAGS}";
 
