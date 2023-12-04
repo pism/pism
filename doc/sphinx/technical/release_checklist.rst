@@ -11,8 +11,7 @@ Release checklist
 #. Run ``make`` in the ``doc`` directory to update funding sources.
 #. Create a "pre-release" branch starting from the "``dev``" branch and remove code that
    should not be a part of the release.
-#. Set ``Pism_BRANCH`` in ``CMakeLists.txt`` to "``stable``".
-#. Update ``version``, ``release``, and ``copyright`` in ``doc/sphinx/conf.py``.
+#. Update PISM version in ``VERSION``.
 #. Update ``CHANGES.rst``.
 #. Tag.
 

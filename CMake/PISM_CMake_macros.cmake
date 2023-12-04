@@ -54,7 +54,12 @@ macro(pism_set_revision_tag)
     # get version information from the repository
     find_program (GIT_EXECUTABLE git DOC "Git executable")
     mark_as_advanced(GIT_EXECUTABLE)
-    if (${Pism_BRANCH} MATCHES "stable")
+    # Get the current branch
+    execute_process (COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+      WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+      OUTPUT_VARIABLE Pism_BRANCH
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if (${Pism_BRANCH} MATCHES "main")
       # Get the latest tag
       execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v?.?*
         WORKING_DIRECTORY ${Pism_SOURCE_DIR}
@@ -76,7 +81,7 @@ macro(pism_set_revision_tag)
       WORKING_DIRECTORY ${Pism_SOURCE_DIR}
       OUTPUT_VARIABLE Pism_COMMIT_DATE
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if (${Pism_BRANCH} MATCHES "stable")
+    if (${Pism_BRANCH} MATCHES "main")
       set(Pism_VERSION_LONG "${Pism_VERSION}-(${Pism_COMMIT_AUTHOR})")
     else()
       set(Pism_VERSION_LONG "${Pism_COMMIT_DATE}-${Pism_VERSION}-(${Pism_COMMIT_AUTHOR})")
