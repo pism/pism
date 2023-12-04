@@ -36,9 +36,7 @@
 
 {%- block footer %}
     <div class="footer">
-      Git revision {{ git_revision }}
-      committed by {{ git_author }}
-      on {{ git_date }} |
+      Built using PISM {{ release }} |
       {% if show_copyright %}&copy; {{ copyright }}.{% endif %}
       {% if theme_show_powered_by|lower == 'true' %}
       {% if show_copyright %}|{% endif %}
