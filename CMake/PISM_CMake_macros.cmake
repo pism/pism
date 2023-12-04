@@ -82,9 +82,9 @@ macro(pism_set_revision_tag)
       OUTPUT_VARIABLE Pism_COMMIT_DATE
       OUTPUT_STRIP_TRAILING_WHITESPACE)
     if (${Pism_BRANCH} MATCHES "main")
-      set(Pism_VERSION_LONG "${Pism_VERSION}-(${Pism_COMMIT_AUTHOR})")
+      set(Pism_VERSION_LONG "${Pism_VERSION} committed by ${Pism_COMMIT_AUTHOR}")
     else()
-      set(Pism_VERSION_LONG "${Pism_COMMIT_DATE}-${Pism_VERSION}-(${Pism_COMMIT_AUTHOR})")
+      set(Pism_VERSION_LONG "${Pism_COMMIT_DATE}-${Pism_VERSION} committed by ${Pism_COMMIT_AUTHOR}")
     endif()
   elseif(EXISTS ${Pism_SOURCE_DIR}/VERSION)
     # No repository info: we are probably building from a tarball
