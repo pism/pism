@@ -286,6 +286,9 @@ static void relabel(RelabelingType type,
 void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar &result) {
   array::AccessScope list{ &cell_type, &m_tmp };
 
+  int background                 = 0;
+  int floating                   = 1;
+  int reachable_from_domain_edge = 2;
   auto grid = cell_type.grid();
 
   // assume that ocean points (i.e. floating, either icy or ice-free) at the edge of the
@@ -294,18 +297,18 @@ void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar
     const int i = p.i(), j = p.j();
 
     if (cell_type.ocean(i, j)) {
-      m_tmp(i, j) = 1.0;
+      m_tmp(i, j) = floating;
 
       if (grid::domain_edge(*grid, i, j)) {
-        m_tmp(i, j) = 2.0;
+        m_tmp(i, j) = reachable_from_domain_edge;
       }
     } else {
-      m_tmp(i, j) = 0.0;
+      m_tmp(i, j) = background;
     }
   }
 
   // identify "floating" areas that are not connected to the open ocean as defined above
-  label_components(m_tmp, *m_tmp_p0, true, 2);
+  label_components(m_tmp, *m_tmp_p0, true, reachable_from_domain_edge);
 
   result.copy_from(m_tmp);
 }
