@@ -54,7 +54,8 @@ add_library (util OBJECT
   projection.cc
   fftw_utilities.cc
   label_components.cc
-  connected_components.cc
+  connected_components/label_components_parallel.cc
+  connected_components/label_components_serial.cc
   ScalarForcing.cc
 )
 
