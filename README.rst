@@ -1,6 +1,8 @@
 PISM, a Parallel Ice Sheet Model
 ================================
-|doi|_ |gpl|_ |cipism|_
+|doi|_ |gpl|_ |cipism|_ |fairchecklist|_
+
+
 
 The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sheet model:
 
@@ -44,6 +46,8 @@ Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 
 .. URLs
 
+.. |fairchecklist| image:: https://fairsoftwarechecklist.net/badge.svg
+.. _fairchecklist: https://fairsoftwarechecklist.net/v0.2?f=31&a=32113&i=31311&r=123
 .. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1199019.svg
 .. _doi: https://doi.org/10.5281/zenodo.1199019
 .. |gpl| image:: https://img.shields.io/badge/License-GPL-green.svg
