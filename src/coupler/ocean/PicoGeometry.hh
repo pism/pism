@@ -17,10 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef PICOGEOMETRY_H
-#define PICOGEOMETRY_H
+#ifndef PISM_PICOGEOMETRY_H
+#define PISM_PICOGEOMETRY_H
 
-#include <map>
 #include <set>
 
 #include "pism/util/Component.hh"
@@ -113,9 +112,8 @@ private:
   array::Scalar m_lake_mask;
   array::Scalar1 m_ice_rises;
 
-  // temporary storage
-  array::Scalar m_tmp;
-  std::shared_ptr<petsc::Vec> m_tmp_p0;
+  // temporary storage (ghosted to use with the connected component labeling code)
+  array::Scalar1 m_tmp;
 
   int m_n_basins;
   std::vector<std::set<int> > m_basin_neighbors;
@@ -124,4 +122,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* PICOGEOMETRY_H */
+#endif /* PISM_PICOGEOMETRY_H */

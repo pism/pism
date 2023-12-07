@@ -44,10 +44,38 @@ namespace connected_components {
 void label_serial(double *image, int nrows, int ncols, bool mark_isolated_components, int reachable,
                   int min_label);
 
+/*!
+ * Label connected components in a `mask`, modifying it "in place".
+ *
+ * See the comment for the other `label_serial` for meanings of `mark_isolated_components`
+ * and `reachable`.
+ *
+ * Copies data from `mask` to rank 0 and processes it there.
+ */
 void label_serial(array::Scalar &mask, bool mark_isolated_components, int reachable);
 
+/*!
+ * Label connected components in a `mask`, modifying it "in place".
+ *
+ * Each component is assigned a unique ID using consecutive integers starting from 1.
+ *
+ * The argument `mask` has to have ghosts since this algorithm uses a ghosted array:
+ * requiring a ghosted `mask` allows us to use `mask` for temporary storage.
+ *
+ * Note: ghosts of `mask` are not valid upon returning from this function.
+ */
 void label(array::Scalar1 &mask);
 
+/*!
+ * Label connected components *not* connected to areas marked with `reachable`.
+ *
+ * Patches not connected to `reachable` are filled with ones, the rest of the mask is set to zero.
+ *
+ * The argument `mask` has to have ghosts since this algorithm uses a ghosted array:
+ * requiring a ghosted `mask` allows us to use `mask` for temporary storage.
+ *
+ * Note: ghosts of `mask` are not valid upon returning from this function.
+ */
 void label_isolated(array::Scalar1 &mask, int reachable);
 
 } // end of namespace connected_components

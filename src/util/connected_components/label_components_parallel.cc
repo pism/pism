@@ -19,7 +19,7 @@
 
 #include "label_components.hh"
 #include "label_components_impl.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
 
 #include <cmath>  // pow, ceil, log10
@@ -32,26 +32,26 @@ namespace pism {
 namespace details {
 
 //! West boundary of a sub-domain.
-static bool west_boundary(IceGrid::ConstPtr &grid, int i) {
-  int i_first = grid->xs();
+static bool west_boundary(const Grid &grid, int i) {
+  int i_first = grid.xs();
   return (i == i_first) and (i != 0);
 };
 
 //! East boundary of a sub-domain.
-static bool east_boundary(IceGrid::ConstPtr &grid, int i) {
-  int i_last = grid->xs() + grid->xm() - 1;
-  return (i == i_last) and (i != (int)grid->Mx() - 1);
+static bool east_boundary(const Grid &grid, int i) {
+  int i_last = grid.xs() + grid.xm() - 1;
+  return (i == i_last) and (i != (int)grid.Mx() - 1);
 };
 
 //! North boundary of a sub-domain.
-static bool north_boundary(IceGrid::ConstPtr &grid, int j) {
-  int j_last = grid->ys() + grid->ym() - 1;
-  return (j == j_last) and (j != (int)grid->My() - 1);
+static bool north_boundary(const Grid &grid, int j) {
+  int j_last = grid.ys() + grid.ym() - 1;
+  return (j == j_last) and (j != (int)grid.My() - 1);
 };
 
 //! South boundary of a sub-domain.
-static bool south_boundary(IceGrid::ConstPtr &grid, int j) {
-  int j_first = grid->ys();
+static bool south_boundary(const Grid &grid, int j) {
+  int j_first = grid.ys();
   return (j == j_first) and (j != 0);
 };
 
@@ -86,19 +86,19 @@ static std::map<int, std::set<int> > detect_connections(array::Scalar1 &mask) {
     // label_components_parallel()
     maybe_add_edge(M, M);
 
-    if (north_boundary(grid, j)) {
+    if (north_boundary(*grid, j)) {
       maybe_add_edge(M, mask.as_int(i, j + 1));
     }
 
-    if (east_boundary(grid, i)) {
+    if (east_boundary(*grid, i)) {
       maybe_add_edge(M, mask.as_int(i + 1, j));
     }
 
-    if (south_boundary(grid, j)) {
+    if (south_boundary(*grid, j)) {
       maybe_add_edge(M, mask.as_int(i, j - 1));
     }
 
-    if (west_boundary(grid, i)) {
+    if (west_boundary(*grid, i)) {
       maybe_add_edge(M, mask.as_int(i - 1, j));
     }
   } // end of the loop over grid points
@@ -324,7 +324,7 @@ std::map<int, int> final_labels(array::Scalar1 &input, bool subdomain_is_not_emp
 
 //! Compute the first label a particular rank can use. This is supposed to ensure that all
 //! labels are unique (i.e. different ranks do not use the same label).
-int first_label(const IceGrid &grid) {
+int first_label(const Grid &grid) {
 
   // Here we set `first_label` to ensure that all ranks use *different* labels.
   // find the smallest N such that grid.xm()*grid.ym() < 10^N

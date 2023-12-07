@@ -115,7 +115,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_work2d.push_back(
           std::make_shared<array::Scalar2>(m_grid, pism::printf("work_vector_%d", j)));
     }
-    m_work2d_proc0 = m_work2d[0]->allocate_proc0_copy();
   }
 
   auto surface_input_file = m_config->get_string("hydrology.surface_input.file");

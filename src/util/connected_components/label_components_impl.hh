@@ -24,7 +24,7 @@
 namespace pism {
 namespace details {
 
-int first_label(const IceGrid &grid);
+int first_label(const Grid &grid);
 
 void relabel(array::Scalar &mask, const std::map<int, int> &labels);
 

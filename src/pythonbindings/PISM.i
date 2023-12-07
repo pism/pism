@@ -61,7 +61,7 @@
 #include "energy/bootstrapping.hh"
 #include "util/node_types.hh"
 
-#include "util/label_components.hh"
+#include "util/connected_components/label_components.hh"
 %}
 
 // Tell SWIG that the following variables are truly constant
@@ -373,6 +373,6 @@ pism_class(pism::Poisson, "pism/util/Poisson.hh")
 #endif
 
 pism_class(pism::FractureDensity, "pism/fracturedensity/FractureDensity.hh")
-%include "util/label_components.hh"
+%include "util/connected_components/label_components.hh"
 
 pism_class(pism::IceModel, "pism/icemodel/IceModel.hh")

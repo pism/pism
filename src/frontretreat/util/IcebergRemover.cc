@@ -18,7 +18,7 @@
  */
 
 #include "pism/frontretreat/util/IcebergRemover.hh"
-#include "pism/util/connected_components.hh"
+#include "pism/util/connected_components/label_components.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Grid.hh"
@@ -29,10 +29,7 @@ namespace pism {
 namespace calving {
 
 IcebergRemover::IcebergRemover(std::shared_ptr<const Grid> g)
-  : Component(g),
-    m_iceberg_mask(m_grid, "iceberg_mask"){
-
-  m_mask_p0 = m_iceberg_mask.allocate_proc0_copy();
+    : Component(g), m_iceberg_mask(m_grid, "iceberg_mask") {
 }
 
 /**
@@ -81,23 +78,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
     }
   }
 
-  // identify icebergs using serial code on processor 0:
-  {
-    m_iceberg_mask.put_on_proc0(*m_mask_p0);
-
-    ParallelSection rank0(m_grid->com);
-    try {
-      if (m_grid->rank() == 0) {
-        petsc::VecArray mask_p0(*m_mask_p0);
-        label_connected_components(mask_p0.get(), m_grid->My(), m_grid->Mx(), true, mask_grounded_ice);
-      }
-    } catch (...) {
-      rank0.failed();
-    }
-    rank0.check();
-
-    m_iceberg_mask.get_from_proc0(*m_mask_p0);
-  }
+  connected_components::label_isolated(m_iceberg_mask, mask_grounded_ice);
 
   // correct ice thickness and the cell type mask using the resulting
   // "iceberg" mask:

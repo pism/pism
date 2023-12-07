@@ -58,8 +58,9 @@ protected:
                            array::Scalar &ice_thickness);
 
 
-  array::Scalar m_iceberg_mask;
-  std::shared_ptr<petsc::Vec> m_mask_p0;
+  // temporary storage: ghosted to use with the connected component labeling code *and*
+  // because IcebergRemoverFEM uses ghosts
+  array::Scalar1 m_iceberg_mask;
 };
 
 } // end of namespace calving
