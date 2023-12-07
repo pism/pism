@@ -52,17 +52,18 @@ struct Run {
  * Helper class wrapping a C-style 2D array using the row-major storage order. It is used
  * to implement the interface required by connected_components::details::label().
  */
+template<typename T>
 class CArray {
 public:
-  CArray(double *array, int nrows, int ncols) : m_array(array), m_nrows(nrows), m_ncols(ncols) {
+  CArray(T *array, int nrows, int ncols) : m_array(array), m_nrows(nrows), m_ncols(ncols) {
     // empty
   }
 
-  double &operator()(int r, int c) {
+  T &operator()(int r, int c) {
     return m_array[c + m_ncols * r];
   }
 
-  double &operator()(int r, int c) const {
+  T &operator()(int r, int c) const {
     return m_array[c + m_ncols * r];
   }
 
@@ -71,7 +72,7 @@ public:
   }
 
 private:
-  double *m_array;
+  T *m_array;
   int m_nrows;
   int m_ncols;
 };

@@ -179,11 +179,14 @@ static std::map<int, std::set<int> > assemble_graph(MPI_Comm comm,
 }
 
 /*!
- * Traverse the `graph` using a version of the "breadth first search" algorithm" and find
+ * Traverse the `graph` using a version of the "breadth first search" algorithm and find
  * final labels for all of its nodes.
  *
- * Each connected component in the graph gets a unique label starting from `1` and using
- * consecutive integers.
+ * If `mark_isolated_patches` is true, isolated patches get labeled with `1`, the rest
+ * with `0`.
+ *
+ * If `mark_isolated_patches` is false, each connected component in the graph gets a
+ * unique label starting from `1` and using consecutive integers.
  */
 static std::map<int, int> resolve_labels(const std::map<int, std::set<int> > &graph,
                                          bool mark_isolated_patches) {
@@ -330,6 +333,8 @@ int first_label(const Grid &grid) {
   // find the smallest N such that grid.xm()*grid.ym() < 10^N
   int exponent        = static_cast<int>(std::ceil(std::log10(grid.max_patch_size())));
   int labels_per_rank = static_cast<int>(std::pow(10, exponent));
+
+  // FIXME: this is very unlikely, but I should still check for integer overflow.
 
   return grid.rank() * labels_per_rank + 1;
 }

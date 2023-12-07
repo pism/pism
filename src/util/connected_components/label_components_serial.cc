@@ -31,10 +31,12 @@ namespace connected_components {
 void label_serial(double *image, int nrows, int ncols, bool mark_isolated_components, int reachable,
                   int min_label) {
 
-  details::CArray output(image, nrows, ncols);
+  using array = details::CArray<double>;
+
+  array output(image, nrows, ncols);
 
   bool assign_final_labels = true;
-  label(details::Mask<details::CArray>(output, reachable), mark_isolated_components, min_label,
+  label(details::Mask<array>(output, reachable), mark_isolated_components, min_label,
         assign_final_labels, output);
 }
 
