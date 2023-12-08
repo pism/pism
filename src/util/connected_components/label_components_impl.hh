@@ -22,10 +22,12 @@
 #include <map>
 
 namespace pism {
+
 namespace details {
 
 int first_label(const Grid &grid);
 
+//! Assign new labels to elements of `mask`. Does not touch background grid cells.
 void relabel(array::Scalar &mask, const std::map<int, int> &labels);
 
 std::map<int, int> final_labels(array::Scalar1 &input, bool subdomain_is_not_empty,

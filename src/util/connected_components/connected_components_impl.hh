@@ -20,7 +20,6 @@
 #include "pism/util/array/Scalar.hh"
 
 #include <array>
-#include <set>
 #include <vector>
 
 /*!

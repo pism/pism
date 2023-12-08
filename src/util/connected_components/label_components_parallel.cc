@@ -293,6 +293,11 @@ void relabel(array::Scalar &mask, const std::map<int, int> &labels) {
   }
 }
 
+/*!
+ * Compute the map from intermediate to final labels given a ghosted array `input`.
+ *
+ * The value of the flag `subdomain_is_not_empty` varies from one subdomain to the
+ */
 std::map<int, int> final_labels(array::Scalar1 &input, bool subdomain_is_not_empty,
                                 bool mark_isolated_patches) {
   // Iterate over the grid to find connections between patches owned by individual
