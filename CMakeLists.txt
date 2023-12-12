@@ -138,12 +138,6 @@ endif()
 # Set Pism_EXTERNAL_LIBS and include directories.
 pism_set_dependencies()
 
-# Make sure that PetscScalar is double (not complex<double>.)
-pism_check_petsc_scalar_type()
-
-# Get PETSc's configuration flags (they will be written to output files).
-pism_petsc_get_variable("CONFIGURE_OPTIONS" Pism_PETSC_CONFIGURE_FLAGS)
-
 if (Pism_USE_EVERYTRACE)
   find_package(Everytrace REQUIRED)
   list (APPEND Pism_EXTERNAL_LIBS ${EVERYTRACE_LIBRARY})
