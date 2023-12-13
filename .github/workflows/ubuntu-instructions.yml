@@ -1,0 +1,18 @@
+# Test apt-get command from the installation manual
+name: Installation instructions in the manual (dev branch)
+
+on:
+  push:
+    branches: [ "dev" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: sudo apt-get update
+      - run: sudo bash -x doc/sphinx/installation/code/install_libraries.sh
+      - run: |
+          export PETSC_DIR=/usr/lib/petsc
+          cmake -B build -S . -DCMAKE_C_FLAGS="-Werror" -DCMAKE_CXX_FLAGS="-Werror"
+      - run: make -j -C build all
