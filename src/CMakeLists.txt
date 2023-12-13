@@ -16,7 +16,7 @@ unset(directories)
 # Generate the header containing information about PISM's build-time configuration.
 configure_file(pism_config.hh.in ${CMAKE_BINARY_DIR}/pism/pism_config.hh ESCAPE_QUOTES)
 install(FILES ${CMAKE_BINARY_DIR}/pism/pism_config.hh
-  DESTINATION include/pism)
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/pism)
 
 # Generate the source file containing constants defined in pism_config.hh Note that we
 # don't escape quotes here: PETSc's configure flags should have them escaped already (if
@@ -132,17 +132,17 @@ add_custom_target (pism_config DEPENDS pism_config.nc)
 # Install the library
 install (
   TARGETS pism
-  LIBRARY DESTINATION ${Pism_LIB_DIR}
-  ARCHIVE DESTINATION ${Pism_LIB_DIR})
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 # Install executables.
 install (TARGETS
   pismr pismv # executables
-  RUNTIME DESTINATION ${Pism_BIN_DIR})
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install (FILES
   "${PROJECT_BINARY_DIR}/pism_config.nc"
-  DESTINATION ${Pism_SHARE_DIR})
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/pism)
 
 # miscellaneous executables needed by software tests
 if (Pism_BUILD_EXTRA_EXECS)
@@ -152,15 +152,15 @@ if (Pism_BUILD_EXTRA_EXECS)
 
   install (TARGETS
     ${EXTRA_EXECS}
-    RUNTIME DESTINATION ${Pism_BIN_DIR}
-    LIBRARY DESTINATION ${Pism_LIB_DIR}
-    ARCHIVE DESTINATION ${Pism_LIB_DIR})
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif (Pism_BUILD_EXTRA_EXECS)
 
 
 # ------------ Header Files
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
-  DESTINATION include/pism
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/pism
   FILES_MATCHING
   PATTERN "*.hh"
   PATTERN "*.h"
@@ -197,4 +197,4 @@ endif()
 
 # Generate the pkg-config file
 configure_file(pism.pc.in ${CMAKE_CURRENT_BINARY_DIR}/pism.pc @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pism.pc DESTINATION lib/pkgconfig)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pism.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)

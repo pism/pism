@@ -4,7 +4,7 @@ if (Pism_BUILD_EXTRA_EXECS)
       ssa_testi ssa_testj ssa_test_const ssa_test_linear ssa_test_plug ssa_test_cfbc)
     add_executable (${TEST} ${TEST}.cc)
     target_link_libraries (${TEST} pism)
-    install (TARGETS ${TEST} DESTINATION ${Pism_BIN_DIR})
+    install (TARGETS ${TEST} DESTINATION ${CMAKE_INSTALL_BINDIR})
   endforeach()
 
 endif ()

@@ -33,13 +33,11 @@ if (SPHINX_EXECUTABLE)
       DEPENDS pism_config.nc)
   endif()
 
-  if (Pism_DOC_DIR)
-    install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/html"
-      DESTINATION ${Pism_DOC_DIR}
-      PATTERN ".doctrees" EXCLUDE
-      PATTERN ".buildinfo" EXCLUDE
-      PATTERN "objects.inv" EXCLUDE)
-  endif ()                      # if Pism_DOC_DIR
+  install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pism_manual_html"
+    DESTINATION ${CMAKE_INSTALL_DOCDIR}
+    PATTERN ".doctrees" EXCLUDE
+    PATTERN ".buildinfo" EXCLUDE
+    PATTERN "objects.inv" EXCLUDE)
 
 endif()
 
@@ -56,11 +54,9 @@ if (SPHINX_EXECUTABLE AND PDFLATEX_COMPILER)
   add_custom_target(manual_pdf ALL
     DEPENDS pism_config.nc
     DEPENDS pism_manual.pdf
-    )
+  )
 
-  if (Pism_DOC_DIR)
-    install (FILES ${CMAKE_CURRENT_BINARY_DIR}/pism_manual.pdf
-      DESTINATION ${Pism_DOC_DIR})
-  endif ()                      # if Pism_DOC_DIR
+  install (FILES ${CMAKE_CURRENT_BINARY_DIR}/pism_manual.pdf
+    DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 endif()

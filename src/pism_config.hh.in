@@ -32,7 +32,7 @@ extern const char *config_file;
 /* PISM's revision string (${Pism_VERSION_LONG}) */
 extern const char *revision;
 
-/* Configuration flags used to build the PETSc library PISM is linked to (${Pism_PETSC_CONFIGURE_FLAGS}) */
+/* Configuration flags used to build the PETSc library PISM is linked to */
 extern const char *petsc_configure_flags;
 
 /* petsc4py version used to build PISM's Python bindings (${Pism_PETSC4PY_VERSION}) */

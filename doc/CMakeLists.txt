@@ -11,12 +11,13 @@ if (NOT Pism_SOURCE_DIR)
   get_filename_component(Pism_SOURCE_DIR "${PROJECT_SOURCE_DIR}/.." REALPATH)
   message(STATUS "Setting Pism_SOURCE_DIR to ${Pism_SOURCE_DIR}")
 
+  list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
+
   include ("${Pism_SOURCE_DIR}/CMake/PISM_CMake_macros.cmake")
+
   pism_set_revision_tag()
 
-  add_subdirectory(${Pism_SOURCE_DIR}/site-packages ${CMAKE_BINARY_DIR}/site-packages)
-
-  list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
+  include (GNUInstallDirs)
 endif()
 
 # User's Manual, Climate Forcing, Installation:

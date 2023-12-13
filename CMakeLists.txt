@@ -1,6 +1,11 @@
 cmake_minimum_required (VERSION 3.7)
 project (Pism C CXX)
 
+include (GNUInstallDirs)
+# doc directory: override capitalization ("pism" instead of "Pism" from the "project(...)"
+# call above)
+set(CMAKE_INSTALL_DOCDIR ${CMAKE_INSTALL_DATAROOTDIR}/doc/pism)
+
 # Deal with build types
 mark_as_advanced(CLEAR CMAKE_BUILD_TYPE)
 # Set the build type to "Release" so that users get optimized code by default:
@@ -50,13 +55,11 @@ pism_set_revision_tag()
 # Put executables in the build directory:
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 
-# Set the install prefix
-pism_set_install_prefix()
 set(CMAKE_INSTALL_MESSAGE "LAZY")
 
 # Set Pism_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
 pism_check_build_dir_location()
-set (Pism_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_SHARE_DIR}/pism_config.nc" CACHE STRING "" FORCE)
+set (Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc" CACHE STRING "" FORCE)
 mark_as_advanced (Pism_CONFIG_FILE)
 file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
@@ -161,8 +164,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
   file (WRITE "${pism_python_path_py}" "
 # Get module installation path from Python:
-import sysconfig as config
-print(config.get_path('platlib', 'posix_prefix', vars={'platbase': '${CMAKE_INSTALL_PREFIX}'}))
+import sysconfig
+print(sysconfig.get_path('platlib', 'posix_prefix', vars={'platbase': '${CMAKE_INSTALL_PREFIX}'}))
 ")
 
   execute_process(
@@ -194,13 +197,20 @@ add_custom_target (test-python
 )
 
 # Install helper scripts residing in util/
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/util/ DESTINATION ${Pism_BIN_DIR}
-  USE_SOURCE_PERMISSIONS
-  FILES_MATCHING PATTERN "*.py")
-
+install(PROGRAMS
+  util/adjust_timeline.py
+  util/check_stationarity.py
+  util/create_timeline.py
+  util/fill_missing_petsc.py
+  util/fill_missing.py
+  util/flowline.py
+  util/nc2cdo.py
+  util/nccmp.py
+  util/plot_profiling.py
+  DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
-  DESTINATION ${Pism_SHARE_DIR}
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/pism
   USE_SOURCE_PERMISSIONS)
 
 add_subdirectory (src)

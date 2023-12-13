@@ -10,21 +10,21 @@ macro(pism_use_rpath)
   # (but later on when installing)
   set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   # the RPATH to be used when installing
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
+  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
   # add the automatically determined parts of the RPATH
   # which point to directories outside the build tree to the install RPATH
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
   # Mac OS X install_name fix:
   set (CMAKE_MACOSX_RPATH 1)
-  set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
+  set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}")
 endmacro(pism_use_rpath)
 
 # Set CMake variables to disable rpath
 macro(pism_dont_use_rpath)
   set (CMAKE_SKIP_BUILD_RPATH TRUE)
   set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
+  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 endmacro(pism_dont_use_rpath)
 
@@ -97,21 +97,6 @@ macro(pism_set_revision_tag)
   message(STATUS "PISM version: '${Pism_VERSION_LONG}'")
 endmacro(pism_set_revision_tag)
 
-macro(pism_set_install_prefix)
-  # Allow setting a custom install prefix using the PISM_INSTALL_PREFIX environment variable.
-  string (LENGTH "$ENV{PISM_INSTALL_PREFIX}" INSTALL_PREFIX_LENGTH)
-  if (INSTALL_PREFIX_LENGTH)
-    set (CMAKE_INSTALL_PREFIX $ENV{PISM_INSTALL_PREFIX} CACHE PATH "PISM install prefix" FORCE)
-    message (STATUS "Setting PISM install prefix to ${CMAKE_INSTALL_PREFIX}.")
-  endif()
-
-  # Define the directory structure.
-  set (Pism_BIN_DIR "bin")
-  set (Pism_LIB_DIR "lib")
-  set (Pism_SHARE_DIR "share/pism")
-  set (Pism_DOC_DIR "share/doc/pism")
-endmacro()
-
 # Set pedantic compiler flags
 macro(pism_set_pedantic_flags)
   set (DEFAULT_PEDANTIC_FLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wno-cast-align -Wwrite-strings -Wno-conversion -Wsign-compare -Wno-redundant-decls -Wno-inline -Wno-long-long -Wmissing-format-attribute -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -Wno-unknown-pragmas -Wno-system-headers")
@@ -175,9 +160,13 @@ macro(pism_find_prerequisites)
 
   # Other required libraries
   pism_find_library(NETCDF "netcdf>=4.4")
-  pism_find_library (UDUNITS2 "udunits>=2.2")
   pism_find_library (GSL "gsl>=1.15")
   pism_find_library (FFTW "fftw3>=3.1")
+
+  # UDUNITS does not support pkg-config
+  find_package (UDUNITS2)
+
+  # HDF5 does not support pkg-config
   find_package (HDF5 COMPONENTS C HL)
 
   # Optional libraries
@@ -233,7 +222,6 @@ macro(pism_set_dependencies)
   # required libraries
   list (APPEND Pism_EXTERNAL_LIBS
     PkgConfig::PETSC
-    PkgConfig::UDUNITS2
     PkgConfig::GSL
     PkgConfig::NETCDF
     PkgConfig::FFTW
@@ -241,6 +229,7 @@ macro(pism_set_dependencies)
     ${MPI_CXX_LIBRARIES}
     ${HDF5_LIBRARIES}
     ${HDF5_HL_LIBRARIES}
+    ${UDUNITS2_LIBRARIES}
   )
 
   # optional libraries

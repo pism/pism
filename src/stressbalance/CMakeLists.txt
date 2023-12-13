@@ -22,7 +22,7 @@ if (Pism_BUILD_EXTRA_EXECS)
 
   install (TARGETS
     siafd_test
-    DESTINATION ${Pism_BIN_DIR})
+    DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif ()
 
 add_subdirectory (ssa/tests)
