@@ -14,7 +14,8 @@ jobs:
       - uses: actions/checkout@v3
       - run: |
           brew update
+          brew tap pism/pism
           export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
-          brew install cmake pkg-config fftw gsl netcdf open-mpi petsc udunits
+          brew install --only-dependencies pism
       - run: cmake -B build -S . -DCMAKE_C_FLAGS="-Werror" -DCMAKE_CXX_FLAGS="-Werror"
       - run: make -j -C build all
