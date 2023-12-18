@@ -1,5 +1,21 @@
 cmake_minimum_required (VERSION 3.16)
-project (Pism C CXX)
+
+include ("CMake/PISM_CMake_macros.cmake")
+list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
+
+pism_set_revision_tag()
+
+if(EXISTS ${Pism_SOURCE_DIR}/VERSION)
+  # No repository info: we are probably building from a tarball
+  file(STRINGS ${Pism_SOURCE_DIR}/VERSION Pism_VERSION LIMIT_COUNT 1)
+  set(Pism_VERSION_LONG "${Pism_VERSION}")
+endif()
+
+project (Pism
+  VERSION ${Pism_VERSION}
+  DESCRIPTION "Parallel Ice Sheet Model (PISM)"
+  HOMEPAGE_URL "https://www.pism.io"
+  LANGUAGES C CXX)
 
 include (GNUInstallDirs)
 # doc directory: override capitalization ("pism" instead of "Pism" from the "project(...)"
@@ -38,11 +54,6 @@ endif()
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-fstandalone-debug)
 endif()
-
-include ("CMake/PISM_CMake_macros.cmake")
-list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
-
-pism_set_revision_tag()
 
 # Put executables in the build directory:
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
@@ -224,3 +235,25 @@ add_subdirectory (test)
 add_subdirectory (test/regression)
 
 add_subdirectory (docker)
+
+# CPack setup
+
+set (CPACK_PACKAGE_NAME "pism")
+set (CPACK_PACKAGE_CONTACT "uaf-pism@alaska.edu")
+set (CPACK_DEBIAN_PACKAGE_DEPENDS "FIXME")
+
+set (CPACK_GENERATOR "DEB;RPM")
+
+set (CPACK_DEBIAN_PACKAGE_NAME "pism")
+
+set (CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+
+set (CPACK_DEBIAN_PACKAGE_MAINTAINER "PISM developers at UAF <uaf-pism@alaska.edu>")
+
+set (CPACK_DEBIAN_PACKAGE_DESCRIPTION "Parallel Ice Sheet Model (PISM)")
+
+set (CPACK_DEBIAN_PACKAGE_SECTION "science")
+
+set (CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+
+include(CPack)
