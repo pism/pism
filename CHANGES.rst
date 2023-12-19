@@ -1,8 +1,19 @@
 .. default-role:: literal
 
 
-Changes since the last release
-==============================
+Changes since v2.1
+==================
+
+- Add some automatic testing on macOS.
+- Use pkg-config to look for all the dependencies that support it.
+- Add `VERSION` to ensure that tarballs with PISM's sources (e.g. archived by Zenodo)
+  contain appropriate version info.
+- Update some examples in `examples/marine`.
+- Fix an bug reported by Ken Mankoff: scripts in `examples/antarctica/` required PISM
+  built with PROJ.
+
+Changes since v2.0
+==================
 
 - Support 2D precipitation offsets in `-atmosphere ...,delta_P`. If the input file set
   using `atmosphere.delta_P.file` contains a scalar time series `delta_P`, use that as a
