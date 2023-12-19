@@ -26,6 +26,9 @@ log "  Coarse grid, constant-climate spinup script using ALBMAP v1 data"
 log "     and -stress_balance ssa+sia and -pik"
 log "  Run as './${SCRIPTNAME} NN' for NN procs and ~30km grid"
 
+USE_PROJ=${USE_PROJ:-false}
+
+
 # naming files, directories, executables
 RESDIR=
 BOOTDIR=
@@ -72,9 +75,17 @@ RESNAMEONE=${RESDIR}${stage}_${GRIDNAME}.nc
 RUN_LENGTH=1
 echo
 log "bootstrapping on $GRIDNAME grid plus SIA run for $RUN_LENGTH a"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i ${INNAME} -bootstrap $GRID \
-	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -front_retreat_file ${INNAME} \
-	-y $RUN_LENGTH -o $RESNAMEONE"
+cmd="$PISM_MPIDO $NN $PISM_EXEC
+  -grid.recompute_longitude_and_latitude ${USE_PROJ}
+  -skip
+  -skip_max $SKIP
+  -i ${INNAME}
+  -bootstrap
+   $GRID
+   $SIA_ENHANCEMENT
+   $PIKPHYS_COUPLING
+  -front_retreat_file ${INNAME}
+  -y $RUN_LENGTH -o $RESNAMEONE"
 $DO $cmd
 #exit # <-- uncomment to stop here
 
@@ -83,9 +94,16 @@ RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 RUN_LENGTH=100
 echo
 log "short SIA run for $RUN_LENGTH a"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i $RESNAMEONE \
-	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -front_retreat_file ${INNAME} \
-	-y $RUN_LENGTH -o $RESNAME"
+cmd="$PISM_MPIDO $NN $PISM_EXEC
+  -grid.recompute_longitude_and_latitude ${USE_PROJ}
+  -skip
+  -skip_max $SKIP
+  -i $RESNAMEONE
+   $SIA_ENHANCEMENT
+   $PIKPHYS_COUPLING
+  -front_retreat_file ${INNAME}
+  -y $RUN_LENGTH
+  -o $RESNAME"
 $DO $cmd
 
 # #######################################
@@ -97,14 +115,20 @@ RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 NOMASS_RUN_LENGTH=${NOMASS_RUN_LENGTH:-200000}
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
-expackage="-extra_times 0:1000:${NOMASS_RUN_LENGTH} -extra_vars bmelt,tillwat,velsurf_mag,temppabase,diffusivity,hardav"
+expackage="-extra_times 1000 -extra_vars bmelt,tillwat,velsurf_mag,temppabase,diffusivity,hardav"
 echo
 log "SIA only run with fixed geometry for ${NOMASS_RUN_LENGTH} years"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -i $INNAME $PIKPHYS_COUPLING  \
-    $SIA_ENHANCEMENT -no_mass \
-    -ys 0 -y ${NOMASS_RUN_LENGTH} \
-    -extra_file $EXTRANAME $expackage \
-    -o $RESNAME"
+cmd="$PISM_MPIDO $NN $PISM_EXEC
+  -grid.recompute_longitude_and_latitude ${USE_PROJ}
+  -i $INNAME
+   $PIKPHYS_COUPLING
+   $SIA_ENHANCEMENT
+  -no_mass
+  -ys 0
+  -y ${NOMASS_RUN_LENGTH}
+  -extra_file $EXTRANAME
+   $expackage
+  -o $RESNAME"
 $DO $cmd
 #exit # <-- uncomment to stop here
 
@@ -119,16 +143,29 @@ TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 CONSTANT_CLIMATE_RUN_LENGTH=${CONSTANT_CLIMATE_RUN_LENGTH:-100000}
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
 exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,cell_grounded_fraction,ice_area_specific_volume,amount_fluxes,basal_mass_flux_grounded,basal_mass_flux_floating"
-expackage="-extra_times 0:1000:${CONSTANT_CLIMATE_RUN_LENGTH} -extra_vars $exvars"
+expackage="-extra_times 1000 -extra_vars $exvars"
 
 echo
 log "SSA+SIA run \"into steady state\" with constant climate forcing for ${CONSTANT_CLIMATE_RUN_LENGTH} years"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -bootstrap ${GRID} -skip -skip_max $SKIP -i $INNAME \
-    $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
-    -ys 0 -y ${CONSTANT_CLIMATE_RUN_LENGTH} \
-    -ts_file $TSNAME -ts_times 0:1:${CONSTANT_CLIMATE_RUN_LENGTH} \
-    -extra_file $EXTRANAME $expackage \
-    -o $RESNAME -o_size big"
+cmd="$PISM_MPIDO $NN $PISM_EXEC
+  -grid.recompute_longitude_and_latitude ${USE_PROJ}
+  -bootstrap
+   ${GRID}
+  -skip
+  -skip_max $SKIP
+  -i $INNAME
+   $SIA_ENHANCEMENT
+   $PIKPHYS_COUPLING
+   $PIKPHYS
+   $FULLPHYS
+  -ys 0
+  -y ${CONSTANT_CLIMATE_RUN_LENGTH}
+  -ts_file $TSNAME
+  -ts_times yearly
+  -extra_file $EXTRANAME
+   $expackage
+  -o $RESNAME
+  -o_size big"
 $DO $cmd
 
 echo
