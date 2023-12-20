@@ -24,7 +24,7 @@ For ice mass, at every grid point we have
    Click :download:`here <conservation/ice_mass_accounting_error.txt>` to download this
    `ncap2` script.
 
-All names on the right-hand side correspond to valid PISM diagnostic quantities.
+All names on the right-hand side above correspond to valid PISM diagnostic quantities.  They were generated using run-time option `-extra_file` etc.; see :ref:`sec-saving-diagnostics`.
 
 To check that all changes in mass are accounted for, download the script above and run\ [#f2]_
 
@@ -88,6 +88,8 @@ computational domain. The "integrated" mass accounting error can be computed usi
 
    Click :download:`here <conservation/scalar_accounting_error.txt>` to download this
    `ncap2` script.
+
+All names on the right-hand side above correspond to valid PISM diagnostic quantities.  They were generated using run-time option `-ts_file` etc.; see :ref:`sec-saving-time-series`.
 
 .. rubric:: Comments
 
