@@ -1,8 +1,10 @@
 if (Pism_BUILD_PYTHON_BINDINGS)
 
-  if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
-    # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
-    cmake_policy(SET CMP0078 NEW)       #controls names of SWIG targets
+  cmake_policy(SET CMP0078 NEW) #controls names of SWIG targets
+
+  if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.14")
+    # Policy CMP0086 was introduced in 3.14. See "cmake --help-policies" for details.
+    cmake_policy(SET CMP0086 NEW)
   endif()
 
   include(${SWIG_USE_FILE})
@@ -61,13 +63,10 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   # has to be set *before* calling SWIG_ADD_MODULE
   set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps})
 
-  if (${CMAKE_VERSION} VERSION_LESS "3.8.0")
-    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc)
-  else()
-    SWIG_ADD_LIBRARY(cpp
-      LANGUAGE python
-      SOURCES PISM.i pism_python.cc)
-  endif()
+  SWIG_ADD_LIBRARY(cpp
+    LANGUAGE python
+    SOURCES PISM.i pism_python.cc)
+
   SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARIES} ${PISM_PYTHON_BINDING_LIBRARIES})
 
   # Disable compiler warnings:
@@ -88,13 +87,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   # value *before* importing PISM.cpp.
   configure_file(version_info.py.in version_info.py ESCAPE_QUOTES)
 
-  if(${CMAKE_VERSION} VERSION_LESS "3.13")
-    set(TARGET_FILE $<TARGET_FILE:_cpp>)
-    set(CPP_REAL_NAME ${SWIG_MODULE_cpp_REAL_NAME})
-  else()
-    set(TARGET_FILE $<TARGET_FILE:cpp>)
-    set(CPP_REAL_NAME cpp)
-  endif()
+  set(TARGET_FILE $<TARGET_FILE:cpp>)
 
   # Install Python .py files
   install(FILES
@@ -110,7 +103,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/version_info.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
     VERBATIM
-    DEPENDS ${CPP_REAL_NAME} install_site_packages_in_the_build_directory )
+    DEPENDS cpp install_site_packages_in_the_build_directory )
 
   # The Python code snippet below returns 1 if Python can import a PISM
   # and if the directory of said PISM matches the place we are about to

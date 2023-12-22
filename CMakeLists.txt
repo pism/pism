@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.7)
+cmake_minimum_required (VERSION 3.13)
 project (Pism C CXX)
 
 include (GNUInstallDirs)
@@ -19,16 +19,8 @@ if (NOT CMAKE_BUILD_TYPE)
     FORCE)
 endif()
 
-if (NOT (${CMAKE_VERSION} VERSION_LESS "3.12"))
-  # Policy CMP0074 was introduced in 3.12. See "cmake --help-policies" for details.
-  # use PackageName_ROOT variables
-  cmake_policy(SET CMP0074 NEW)
-endif()
-
-if (NOT (${CMAKE_VERSION} VERSION_LESS "3.14"))
-  # Policy CMP0086 was introduced in 3.14. See "cmake --help-policies" for details.
-  cmake_policy(SET CMP0086 NEW)
-endif()
+# Use PackageName_ROOT variables
+cmake_policy(SET CMP0074 NEW)
 
 # Require C++11 compiler support.
 set(CMAKE_CXX_STANDARD 11)
