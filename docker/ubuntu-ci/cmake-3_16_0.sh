@@ -4,9 +4,9 @@ set -e
 set -u
 set -x
 
-# Install CMake 3.13 (the oldest supported version).
+# Install CMake 3.16 (the oldest supported version).
 
-version=3.13.0
+version=3.16.0
 build_dir=${build_dir:-/var/tmp/build/cmake-${version}}
 prefix=${prefix:-~/local/cmake-${version}}
 
@@ -20,7 +20,7 @@ tar xzf cmake-${version}.tar.gz
 
 cd cmake-${version}
 
-./configure --prefix=${prefix}
+./configure --prefix=${prefix} -- -DCMAKE_USE_OPENSSL=NO
 
 make -j all
 make install

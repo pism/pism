@@ -1,11 +1,10 @@
 if (Pism_BUILD_PYTHON_BINDINGS)
 
-  cmake_policy(SET CMP0078 NEW) #controls names of SWIG targets
+  # ``UseSWIG`` generates standard target names.
+  cmake_policy(SET CMP0078 NEW)
 
-  if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.14")
-    # Policy CMP0086 was introduced in 3.14. See "cmake --help-policies" for details.
-    cmake_policy(SET CMP0086 NEW)
-  endif()
+  # ``UseSWIG`` honors ``SWIG_MODULE_NAME`` via ``-module`` flag.
+  cmake_policy(SET CMP0086 NEW)
 
   include(${SWIG_USE_FILE})
 

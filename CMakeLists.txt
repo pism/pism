@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.13)
+cmake_minimum_required (VERSION 3.16)
 project (Pism C CXX)
 
 include (GNUInstallDirs)
@@ -19,7 +19,7 @@ if (NOT CMAKE_BUILD_TYPE)
     FORCE)
 endif()
 
-# Use PackageName_ROOT variables
+# ``find_package()`` uses ``<PackageName>_ROOT`` variables.
 cmake_policy(SET CMP0074 NEW)
 
 # Require C++11 compiler support.
