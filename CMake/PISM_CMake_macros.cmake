@@ -130,6 +130,10 @@ endmacro()
 function(pism_find_library PREFIX SPEC)
   # Find a library using pkgconfig
   find_package(PkgConfig REQUIRED)
+  # Trick pkg-config into using "Libs.private" instead of "Libs" to get the full list of
+  # libraries (e.g. not just PETSc, but PETSc and its dependencies). This is needed to
+  # build PISM on some systems. See also: https://gitlab.kitware.com/cmake/cmake/-/issues/21714
+  list(APPEND PKG_CONFIG_EXECUTABLE "--static")
   pkg_search_module(${PREFIX} REQUIRED IMPORTED_TARGET ${SPEC})
   if (${${PREFIX}_FOUND})
     message(STATUS "Found ${PREFIX}: ${${PREFIX}_PREFIX} (found version \"${${PREFIX}_VERSION}\")")
