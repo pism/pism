@@ -311,7 +311,7 @@ workflows:
           name: old-cmake
           cc: mpicc -cc=clang
           cxx: mpicxx -cxx=clang++
-          cmake_prefix: /home/builder/local/cmake-3.13.0
+          cmake_prefix: /home/builder/local/cmake-3.16.0
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
 
@@ -331,7 +331,7 @@ workflows:
           name: old-cmake-minimal
           cc: mpicc -cc=clang
           cxx: mpicxx -cxx=clang++
-          cmake_prefix: /home/builder/local/cmake-3.13.0
+          cmake_prefix: /home/builder/local/cmake-3.16.0
 
       - manual-html
       - manual-pdf

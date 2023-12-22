@@ -74,7 +74,8 @@ option (Pism_USE_JANSSON "Use Jansson to read configuration files." OFF)
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
 
-option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
+option (Pism_PKG_CONFIG_STATIC "Use the --static pkg-config flag to get linker flags needed by prerequisites" ON)
+option (Pism_ADD_FPIC "Add -fPIC to C & C++ compiler flags. Try turning it off if it does not work." ON)
 option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
@@ -92,7 +93,7 @@ endif ()
 
 # Add -fPIC to C and CXX flags.
 if (Pism_ADD_FPIC)
-  add_compile_options(-fPIC)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif ()
 
 if (Pism_CODE_COVERAGE)

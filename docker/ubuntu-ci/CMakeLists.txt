@@ -4,7 +4,7 @@ foreach(script petsc.sh hdf5.sh netcdf.sh pnetcdf.sh parallelio.sh)
   configure_file(${Pism_SOURCE_DIR}/doc/sphinx/installation/code/${script} . COPYONLY)
 endforeach()
 
-configure_file(cmake-3_13_0.sh . COPYONLY)
+configure_file(cmake-3_16_0.sh . COPYONLY)
 configure_file(old-petsc.sh . COPYONLY)
 
 set(PISM_DOCKER_UBUNTU_VERSION 0.1.8)

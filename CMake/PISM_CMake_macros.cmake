@@ -133,10 +133,12 @@ function(pism_find_library PREFIX SPEC)
   # Trick pkg-config into using "Libs.private" instead of "Libs" to get the full list of
   # libraries (e.g. not just PETSc, but PETSc and its dependencies). This is needed to
   # build PISM on some systems. See also: https://gitlab.kitware.com/cmake/cmake/-/issues/21714
-  if (CMAKE_VERSION VERSION_LESS "3.22")
-    list(APPEND PKG_CONFIG_EXECUTABLE "--static")
-  else()
-    set(PKG_CONFIG_ARGN "--static" CACHE INTERNAL)
+  if (Pism_PKG_CONFIG_STATIC)
+    if (CMAKE_VERSION VERSION_LESS "3.22")
+      list(APPEND PKG_CONFIG_EXECUTABLE "--static")
+    else()
+      set(PKG_CONFIG_ARGN "--static" CACHE INTERNAL "command-line arguments for pkg-config")
+    endif()
   endif()
   pkg_search_module(${PREFIX} REQUIRED IMPORTED_TARGET ${SPEC})
   if (${${PREFIX}_FOUND})
