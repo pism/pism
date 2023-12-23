@@ -74,7 +74,7 @@ option (Pism_USE_JANSSON "Use Jansson to read configuration files." OFF)
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
 
-option (Pism_PKG_CONFIG_STATIC "Use the --static pkg-config flag to get linker flags needed by prerequisites" ON)
+option (Pism_PKG_CONFIG_STATIC "Use the --static pkg-config flag to get linker flags needed by prerequisites" OFF)
 option (Pism_ADD_FPIC "Add -fPIC to C & C++ compiler flags. Try turning it off if it does not work." ON)
 option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
