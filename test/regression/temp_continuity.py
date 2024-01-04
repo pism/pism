@@ -5,7 +5,7 @@ import os
 import subprocess
 import shlex
 import numpy as np
-import netCDF4
+import xarray as xr
 
 def run(cmd):
     sys.stderr.write(cmd + "\n")
@@ -27,7 +27,7 @@ for dt in dts:
 
         run(cmd)
 
-        with netCDF4.Dataset("out-temp-continuity.nc") as f:
+        with xr.open_dataset("out-temp-continuity.nc") as f:
             # note: this file stores 3D variables in the time,y,x,(z|zb) order
             temp = f.variables["temp"][0, :, :, 0]              # pick the bottom layer
             litho_temp = f.variables["litho_temp"][0, :, :, -1] # pick the top layer

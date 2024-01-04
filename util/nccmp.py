@@ -113,22 +113,18 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
 
 
 def compare(file1, file2, variables, exclude, tol, relative):
-    try:
-        from netCDF4 import Dataset as NC
-    except:
-        print("netCDF4 is not installed!")
-        exit(1)
-
+    
+    import xarray as xr
     print("Comparing %s and %s" % (file1, file2))
 
     from numpy import unique, r_
 
     try:
-        nc1 = NC(file1, 'r')
+        nc1 = xr.open_dataset(file1)
     except:
         usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % file1)
     try:
-        nc2 = NC(file2, 'r')
+        nc2 = xr.open_dataset(file2)
     except:
         usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % file2)
 

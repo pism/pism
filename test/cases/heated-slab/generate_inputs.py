@@ -2,7 +2,7 @@
 
 import sys
 import time
-import netCDF4
+import xarray as xr
 import numpy as np
 
 def generate_input(filename):
@@ -21,41 +21,55 @@ def generate_input(filename):
     topg = np.zeros((My, Mx))
     thk = np.zeros((My, Mx)) + 1000.0
 
-    # Write the data:
-    nc = netCDF4.Dataset(filename, "w")
+    coords = {
+        "x": (
+            ["x"],
+            x,
+            {
+                "units": "m",
+                "axis": "X",
+                "standard_name": "projection_x_coordinate",
+                "long_name": "x-coordinate in projected coordinate system",
+            },
+        ),
+        "y": (
+            ["y"],
+            y,
+            {
+                "units": "m",
+                "axis": "Y",
+                "standard_name": "projection_y_coordinate",
+                "long_name": "y-coordinate in projected coordinate system",
+            },
+        ),
+    }
 
-    # Create dimensions x and y
-    nc.createDimension("x", size=Mx)
-    nc.createDimension("y", size=My)
+    ds = xr.Dataset(
+        {
+            "topg": xr.DataArray(
+                data=topg,
+                dims=["y", "x"],
+                coords=coords,
+                attrs={
+                    "standard_name": "bedrock_altitude",
+                    "units": "m",
+                },
+            ),
+            "thk": xr.DataArray(
+                data=thk,
+                dims=["y", "x"],
+                coords=coords,
+                attrs={
+                    "standard_name": "land_ice_thickness",
+                    "units": "m",
+                },
+            ),
+        },
+        attrs={"Conventions": "CF-1.7"},
+    )
+    ds.to_netcdf(filename)
 
-    x_var = nc.createVariable("x", 'f4', dimensions=("x",))
-    x_var.units = "m"
-    x_var.standard_name = "projection_x_coordinate"
-    x_var[:] = x
 
-    y_var = nc.createVariable("y", 'f4', dimensions=("y",))
-    y_var.units = "m"
-    y_var.standard_name = "projection_y_coordinate"
-    y_var[:] = y
-
-    def def_var(nc, name, units, fillvalue):
-        var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
-        var.units = units
-        return var
-
-    bed_var = def_var(nc, "topg", "m", fill_value)
-    bed_var.standard_name = "bedrock_altitude"
-    bed_var[:] = topg
-
-    thk_var = def_var(nc, "thk", "m", fill_value)
-    thk_var.standard_name = "land_ice_thickness"
-    thk_var[:] = thk
-
-    # set global attributes
-    nc.Conventions = 'CF-1.4'
-    setattr(nc, 'history', historystr)
-
-    nc.close()
 
 
 def generate_forcing(filename):
@@ -74,36 +88,32 @@ def generate_forcing(filename):
     delta_T[np.where((time > 100000))] = 25.0
     delta_T[np.where((time >= 150000))] = 0.0
 
-    # Write the data:
-    nc = netCDF4.Dataset(dTfile, "w")
+    coords = {
+        "time": (["time"], time, {"units": "common_years since 0001-1-1",
+                                  "axis": "T",
+                                  "calendar": "365_day",
+                                  "bounds": "time_bounds",
+                                  "_FillValue": False}),
+    }
 
-    # Create dimensions x and y
-    nc.createDimension("time", size=Mt)
 
-    def def_var(nc, name, units, fillvalue):
-        var = nc.createVariable(name, 'f', dimensions=("time"), fill_value=fillvalue)
-        var.units = units
-        return var
+    ds = xr.Dataset(
+        {
+            "delta_T": xr.DataArray(
+                data=delta_T,
+                dims=["time"],
+                coords=coords,
+                attrs={
+                    "standard_name": "land_ice_temperature_at_firn_base",
+                    "units": "K",
+                    "long_name": "Temperature (variation from present)",
+                },
+            ),
+        },
+        attrs={"Conventions": "CF-1.7"},
+    )
+    ds.to_netcdf(filename)
 
-    t_var = def_var(nc, "time", "common_years since 1-1-1", fill_value)
-    t_var[:] = time
-    t_var.bounds = "time_bounds"
-    t_var.calendar = "365_day"
-
-    nc.createDimension("nv", size=2)
-    tb_var = nc.createVariable("time_bounds", 'f', dimensions=("time", "nv"))
-    tb_var[:] = time_bounds
-
-    dT_var = def_var(nc, "delta_T", "K", fill_value)
-    dT_var.standard_name = "land_ice_temperature_at_firn_base"
-    dT_var.long_name = "Temperature (variation from present)"
-    dT_var[:] = delta_T
-
-    # set global attributes
-    nc.Conventions = 'CF-1.4'
-    setattr(nc, 'history', historystr)
-
-    nc.close()
 
 
 if __name__ == "__main__":

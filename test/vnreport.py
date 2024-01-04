@@ -4,12 +4,7 @@ from pylab import close, figure, clf, plot, xlabel, ylabel, xticks, yticks, axis
 from numpy import array, polyfit, polyval, log10, floor, ceil, unique
 import sys
 
-try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
-
+import xarray as xr
 
 class Plotter:
 
@@ -186,7 +181,7 @@ parser.add_argument("--file_format", dest="file_format", default="png",
 
 options = parser.parse_args()
 
-input_file = NC(options.filename, 'r')
+input_file = xr.open_dataset(options.filename)
 available_tests = unique(array(list(map(lambda x: chr(int(x)), input_file.variables['test'][:]))))
 tests_to_plot = options.tests_to_plot
 

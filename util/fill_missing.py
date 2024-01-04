@@ -175,11 +175,7 @@ if __name__ == "__main__":
     from tempfile import mkstemp
     from os import close
     from time import time, asctime
-    try:
-        from netCDF4 import Dataset as NC
-    except:
-        print("netCDF4 is not installed!")
-        sys.exit(1)
+    import xarray as xr
 
     parser = OptionParser()
 
@@ -231,7 +227,7 @@ if __name__ == "__main__":
         print("ERROR: Can't create %s, Exiting..." % tmp_filename)
 
     try:
-        nc = NC(tmp_filename, 'a')
+        nc = xr.open_dataset(tmp_filename)
     except Exception as message:
         print(message)
         print("Note: %s was not modified." % output_filename)
@@ -240,10 +236,10 @@ if __name__ == "__main__":
     # add history global attribute (after checking if present)
     historysep = ' '
     historystr = asctime() + ': ' + historysep.join(argv) + '\n'
-    if 'history' in nc.ncattrs():
-        nc.history = historystr + nc.history  # prepend to history string
+    if 'history' in nc.attrs:
+        nc.attrs["history"] = historystr + nc.history  # prepend to history string
     else:
-        nc.history = historystr
+        nc.attrs["history"] = historystr
 
     t_zero = time()
     for name in variables:
@@ -257,8 +253,8 @@ if __name__ == "__main__":
             print("Reading attributes...")
             for attribute in attributes:
                 print("* %15s -- " % attribute, end=' ')
-                if attribute in var.ncattrs():
-                    adict[attribute] = getattr(var, attribute)
+                if attribute in var.attrs:
+                    adict[attribute] = var.attrs[attribute]
                     print("found")
                 else:
                     print("not found")

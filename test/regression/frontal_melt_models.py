@@ -7,7 +7,7 @@ import PISM
 from PISM.util import convert
 import sys, os, numpy
 from unittest import TestCase
-import netCDF4
+import xarray as xr
 
 config = PISM.Context().config
 
@@ -44,15 +44,31 @@ def sample(vec):
     return vec.numpy()[0,0]
 
 def create_dummy_forcing_file(filename, variable_name, units, value):
-    f = netCDF4.Dataset(filename, "w")
-    f.createDimension("time", 1)
-    t = f.createVariable("time", "d", ("time",))
-    t.units = "seconds"
-    delta_T = f.createVariable(variable_name, "d", ("time",))
-    delta_T.units = units
-    t[0] = 0.0
-    delta_T[0] = value
-    f.close()
+    """
+    Looks like this is not being used
+    """
+    t = [0.0]
+    coords = {
+        "time": (["time"], t, {"units": "seconds",
+                                  "axis": "T",
+                                  "_FillValue": False}),
+    }
+
+
+    ds = xr.Dataset(
+        {
+            variable_name: xr.DataArray(
+                data=value,
+                dims=["time"],
+                coords=coords,
+                attrs={
+                    "units": units,
+                },
+            ),
+        },
+        attrs={"Conventions": "CF-1.7"},
+    )
+    ds.to_netcdf(filename)
 
 def create_grid():
     "Create a dummy grid"

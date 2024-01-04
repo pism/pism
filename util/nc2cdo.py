@@ -27,13 +27,7 @@ from argparse import ArgumentParser
 
 from pyproj import Proj
 
-# try different netCDF modules
-try:
-    from netCDF4 import Dataset as CDF
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
-
+import xarray as xr
 # Set up the option parser
 parser = ArgumentParser()
 parser.description = """Script makes netCDF file ready for Climate Data Operators (CDO). Either a global attribute "projection", a mapping variable, or a command-line proj string or a EPSG code must be given."""
@@ -105,7 +99,7 @@ def get_projection_from_file(nc):
 if __name__ == "__main__":
 
     # open netCDF file in 'append' mode
-    nc = CDF(nc_outfile, "a")
+    nc = xr.open_dataset(nc_outfile)
 
     # a list of possible x-dimensions names
     xdims = ["x", "x1"]

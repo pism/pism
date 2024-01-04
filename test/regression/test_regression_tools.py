@@ -11,7 +11,7 @@ for tool in tools:
         print("ERROR: %s does not seem to be on the PATH!" % tool)
         sys.exit(1)
 
-modules = ["numpy", "sys", "netCDF4"]
+modules = ["numpy", "sys", "xarray"]
 for module in modules:
     try:
         print("Trying to import %s..." % module)

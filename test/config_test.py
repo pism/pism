@@ -15,31 +15,31 @@ def is_special(name):
     return False
 
 
-import netCDF4
+import xarray as xr
 import sys
 import numpy as np
 
-config = netCDF4.Dataset(sys.argv[1])
+config = xr.open_dataset(sys.argv[1])
 
 pism_config = config.variables['pism_config']
 
-attrs = pism_config.ncattrs()
+attrs = pism_config.attrs
 
 for a in attrs:
     if is_special(a):
         continue
 
-    attr_value = getattr(pism_config, a)
+    attr_value = pism_config.attrs[a]
 
     if (a + "_doc") not in attrs:
-        print("Attribute {} is not documented".format(a))
+        print(f"Attribute {a} is not documented")
         sys.exit(1)
 
     if (a + "_type") not in attrs:
-        print("Attribute {} does not have a type".format(a))
+        print(f"Attribute {a} does not have a type")
         sys.exit(1)
 
-    attr_type = getattr(pism_config, a + "_type")
+    attr_type = pism_config.attrs[a + "_type"]
 
     if attr_type in ["number", "integer"] and (a + "_units") not in attrs:
         print("Attribute {} is a number, but it does not have units".format(a))

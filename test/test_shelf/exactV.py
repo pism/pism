@@ -6,7 +6,7 @@ import subprocess
 import shlex
 import sys
 
-from netCDF4 import Dataset as NC
+import xarray as xr
 
 # Setup
 
@@ -59,7 +59,7 @@ def run_pismv(Mx, run_length, options, output):
 
 
 def plot_pism_results(filename, figure_title, color, same_figure=False):
-    nc = NC(filename)
+    nc = xr.open_dataset(filename, decode_times=False)
 
     time = nc.variables['time'][0] / secpera  # convert to years
 

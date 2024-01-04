@@ -5,7 +5,7 @@ import shutil
 import shlex
 import os
 from sys import exit, argv
-from netCDF4 import Dataset as NC
+import xarray as xr
 import numpy as np
 
 
@@ -27,9 +27,6 @@ def generate_config():
     """Generates the config file with custom ice softness and hydraulic conductivity."""
 
     print("generating testPconfig.nc ...")
-
-    nc = NC("testPconfig.nc", 'w')
-    pism_overrides = nc.createVariable("pism_overrides", 'b')
 
     attrs = {
         "constants.standard_gravity": 9.81,
@@ -63,13 +60,21 @@ def generate_config():
         "basal_yield_stress.model_doc": "only the constant yield stress model works without till",
 
         "basal_yield_stress.constant.value": 1e6,
-        "basal_yield_stress.constant.value_doc": "set default to 'high tauc'"
+        "basal_yield_stress.constant.value_doc": "set default to 'high tauc'",
+
+        "_FillValue": False,
     }
 
-    for k, v in list(attrs.items()):
-        pism_overrides.setncattr(k, v)
+    ds = xr.Dataset(
+        {
+            "pism_overrides": xr.DataArray(
+                attrs=attrs,
+            ),
+        },
+        attrs={"Conventions": "CF-1.7"},
+    )
 
-    nc.close()
+    ds.to_netcdf("testPconfig.nc")
 
 
 def run_pism(opts):
@@ -82,8 +87,8 @@ def run_pism(opts):
 
 
 def check_drift(file1, file2):
-    nc1 = NC(file1)
-    nc2 = NC(file2)
+    nc1 = xr.open_dataset(file1, decode_times=False)
+    nc2 = xr.open_dataset(file2, decode_times=False)
 
     stored_drift = {'bwat_max': 0.023524626576411189,
                     'bwp_max':  79552.478734239354,
@@ -92,8 +97,8 @@ def check_drift(file1, file2):
 
     drift = {}
     for name in ("bwat", "bwp"):
-        var1 = nc1.variables[name]
-        var2 = nc2.variables[name]
+        var1 = nc1.variables[name].to_numpy()
+        var2 = nc2.variables[name].to_numpy()
         diff = np.abs(np.squeeze(var1[:]) - np.squeeze(var2[:]))
 
         drift["%s_max" % name] = np.max(diff)

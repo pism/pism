@@ -325,10 +325,10 @@ def add_history(nc):
     # add history global attribute (after checking if present)
     historysep = ' '
     historystr = asctime() + ': ' + historysep.join(sys.argv) + '\n'
-    if 'history' in nc.ncattrs():
-        nc.history = historystr + nc.history  # prepend to history string
+    if 'history' in nc.attrs:
+        nc.attrs["history"] = historystr + nc.history  # prepend to history string
     else:
-        nc.history = historystr
+        nc.attrs["history"] = historystr
 
 
 if __name__ == "__main__":
@@ -338,12 +338,7 @@ if __name__ == "__main__":
     import tempfile
     import shutil
     from time import time, asctime
-
-    try:
-        from netCDF4 import Dataset as NC
-    except:
-        PETSc.Sys.Print("netCDF4 is not installed!")
-        sys.exit(1)
+    import xarray as xr
 
     parser = ArgumentParser()
     parser.description = "Fill missing values by solving the Laplace equation in on the missing values and using present values as Dirichlet B.C."
@@ -361,9 +356,8 @@ if __name__ == "__main__":
     output_filename = options.OUTPUT[0]
 
     if options.all:
-        nc = NC(input_filename)
+        nc = xr.open_dataset(input_filename)
         variables = list(nc.variables.keys())
-        nc.close()
     else:
         try:
             variables = (options.variables).split(',')
@@ -402,9 +396,9 @@ if __name__ == "__main__":
 
     try:
         if rank == 0:
-            nc = NC(tmp_filename, 'a')
+            nc = xr.open_dataset(tmp_filename)
         else:
-            nc = NC(input_filename, 'r')
+            nc = xr.open_dataset(input_filename)
     except Exception as message:
         PETSc.Sys.Print(message)
         PETSc.Sys.Print("Note: %s was not modified." % output_filename)
