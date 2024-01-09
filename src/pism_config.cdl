@@ -2714,7 +2714,7 @@ netcdf pism_config {
     pism_config:time.holocene_start_type = "number";
     pism_config:time.holocene_start_units = "years";
 
-    pism_config:time.reference_date = "1-1-1";
+    pism_config:time.reference_date = "0001-1-1";
     pism_config:time.reference_date_doc = "year-month-day; reference date used for calendar computations and in PISM output files";
     pism_config:time.reference_date_type = "string";
 
