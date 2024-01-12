@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2017, 2021, 2023 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2017, 2021, 2023, 2024 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -174,7 +174,9 @@ We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
 double EnthalpyConverter::temperature(double E, double P) const {
+#if (Pism_DEBUG==1)
   validate_E_P(E, P);
+#endif
 
   if (E < enthalpy_cts(P)) {
     return temperature_cold(E);
@@ -208,7 +210,9 @@ double EnthalpyConverter::pressure_adjusted_temperature(double E, double P) cons
    We do not allow liquid water (i.e. water fraction @f$ \omega=1.0 @f$).
  */
 double EnthalpyConverter::water_fraction(double E, double P) const {
+#if (Pism_DEBUG==1)
   validate_E_P(E, P);
+#endif
 
   double E_s = enthalpy_cts(P);
   if (E <= E_s) {
@@ -235,7 +239,9 @@ Certain cases are not allowed and throw exceptions:
 These inequalities may be violated in the sixth digit or so, however.
  */
 double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
+#if (Pism_DEBUG==1)
   validate_T_omega_P(T, omega, P);
+#endif
 
   const double T_melting = melting_temperature(P);
 
