@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2023 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2024 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -488,7 +488,9 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::assemble_matrix(const Inputs &inputs, bool include_basal_shear, Mat A) {
+void SSAFD::assemble_matrix(const Inputs &inputs,
+                            const array::Vector &vel,
+                            bool include_basal_shear, Mat A) {
   using mask::grounded_ice;
   using mask::ice_free;
   using mask::ice_free_land;
@@ -499,9 +501,6 @@ void SSAFD::assemble_matrix(const Inputs &inputs, bool include_basal_shear, Mat 
   const int diag_v = 13;
 
   PetscErrorCode ierr = 0;
-
-  // shortcut:
-  const array::Vector &vel = m_velocity;
 
   const array::Scalar1 &thickness        = inputs.geometry->ice_thickness,
                        &bed              = inputs.geometry->bed_elevation;
@@ -1072,10 +1071,23 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
     m_nuH_old.copy_from(m_nuH);
 
     // assemble (or re-assemble) matrix, which depends on updated viscosity
-    assemble_matrix(inputs, true, m_A);
+    assemble_matrix(inputs, m_velocity, true, m_A);
+
+    {
+      array::Vector residual(m_grid, "ssa_residual");
+      residual.copy_from(m_b);
+      residual.scale(-1.0);
+
+      ierr = MatMultAdd(m_A, m_velocity_global.vec(), residual.vec(), residual.vec());
+      PISM_CHK(ierr, "MatMultAdd");
+
+      auto filename = pism::printf("ssa_residual_%d.nc", k);
+      residual.dump(filename.c_str());
+
+      m_b.dump("ssa_rhs.nc");
+    }
 
     if (very_verbose) {
-
       m_stdout_ssa += "A:";
     }
 

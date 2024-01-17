@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -78,6 +78,7 @@ protected:
                                 double &norm_change);
 
   virtual void assemble_matrix(const Inputs &inputs,
+                               const array::Vector &vel,
                                bool include_basal_shear, Mat A);
 
   virtual void assemble_rhs(const Inputs &inputs);
