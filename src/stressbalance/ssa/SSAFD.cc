@@ -66,6 +66,7 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
     m_work(grid, "work_vector", array::WITH_GHOSTS,
            2 /* stencil width */),
     m_rhs(grid, "right_hand_side"),
+    m_taud(m_grid, "taud"),
     m_velocity_old(grid, "velocity_old"),
     m_scaling(1e9)  // comparable to typical beta for an ice stream;
 {
@@ -85,6 +86,13 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
   m_nuH_old.metadata(0)
       .long_name("ice thickness times effective viscosity (before an update)")
       .units("Pa s m");
+
+  m_taud.metadata(0)
+      .long_name("X-component of the driving shear stress at the base of ice")
+      .units("Pa");
+  m_taud.metadata(1)
+      .long_name("Y-component of the driving shear stress at the base of ice")
+      .units("Pa");
 
   m_work.metadata(0).long_name("temporary storage used to compute nuH");
 
@@ -116,6 +124,10 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
     ierr = KSPConvergedDefaultSetUIRNorm(m_KSP);
     PISM_CHK(ierr, "KSPConvergedDefaultSetUIRNorm");
   }
+}
+
+const array::Vector& SSAFD::driving_stress() const {
+  return m_taud;
 }
 
 //! @note Uses `PetscErrorCode` *intentionally*.
@@ -1769,9 +1781,68 @@ std::shared_ptr<array::Array> SSAFD_nuH::compute_impl() const {
   return result;
 }
 
-DiagnosticList SSAFD::diagnostics_impl() const {
-  DiagnosticList result = SSA::diagnostics_impl();
 
+//! @brief Computes the driving shear stress at the base of ice
+//! (diagnostically).
+/*! This is *not* a duplicate of SSB_taud: SSAFD_taud::compute() uses
+  SSAFD::compute_driving_stress(), which tries to be smarter near ice margins.
+*/
+class SSAFD_taud : public Diag<SSAFD> {
+public:
+  SSAFD_taud(const SSAFD *m) : Diag<SSAFD>(m) {
+
+    // set metadata:
+    m_vars = { { m_sys, "taud_x" }, { m_sys, "taud_y" } };
+
+    m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
+    m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
+
+    for (auto &v : m_vars) {
+      v.units("Pa");
+      v["comment"] = "this is the driving stress used by the SSAFD solver";
+    }
+  }
+
+protected:
+  std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Vector>("taud");
+
+    result->copy_from(model->driving_stress());
+
+    return result;
+  }
+};
+
+
+//! @brief Computes the magnitude of the driving shear stress at the base of
+//! ice (diagnostically).
+class SSAFD_taud_mag : public Diag<SSAFD> {
+public:
+  SSAFD_taud_mag(const SSAFD *m) : Diag<SSAFD>(m) {
+
+    // set metadata:
+    m_vars = { { m_sys, "taud_mag" } };
+
+    m_vars[0].long_name("magnitude of the driving shear stress at the base of ice").units("Pa");
+    m_vars[0]["comment"] = "this is the magnitude of the driving stress used by the SSAFD solver";
+  }
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Scalar>("taud_mag");
+
+    compute_magnitude(model->driving_stress(), *result);
+
+    return result;
+  }
+};
+
+DiagnosticList SSAFD::diagnostics_impl() const {
+  DiagnosticList result = ShallowStressBalance::diagnostics_impl();
+
+  // replace these diagnostics
+  result["taud"] = Diagnostic::Ptr(new SSAFD_taud(this));
+  result["taud_mag"] = Diagnostic::Ptr(new SSAFD_taud_mag(this));
   result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
 
   return result;

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2020, 2022, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -119,15 +119,11 @@ public:
   void set_initial_guess(const array::Vector &guess);
 
   virtual std::string stdout_report() const;
-
-  const array::Vector& driving_stress() const;
 protected:
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
 
   virtual void init_impl();
-
-  virtual DiagnosticList diagnostics_impl() const;
 
   virtual void compute_driving_stress(const array::Scalar &ice_thickness,
                                       const array::Scalar1 &surface_elevation,
@@ -141,7 +137,6 @@ protected:
                             array::Vector1 &velocity) const;
 
   array::CellType2 m_mask;
-  array::Vector m_taud;
 
   std::string m_stdout_ssa;
 

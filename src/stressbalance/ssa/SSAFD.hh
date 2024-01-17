@@ -38,6 +38,8 @@ public:
   virtual ~SSAFD() = default;
 
   const array::Staggered & integrated_viscosity() const;
+
+  const array::Vector& driving_stress() const;
 protected:
   virtual void init_impl();
 
@@ -114,6 +116,7 @@ protected:
   petsc::KSP m_KSP;
   petsc::Mat m_A;
   array::Vector m_rhs;            // right hand side
+  array::Vector m_taud;
 
   array::Vector1 m_velocity_old;
   const double m_scaling;

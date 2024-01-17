@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021, 2022, 2023 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021, 2022, 2023, 2024 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -25,8 +25,6 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
-
-#include "pism/stressbalance/ssa/SSA_diagnostics.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -71,7 +69,6 @@ double SSAStrengthExtension::get_min_thickness() const {
 SSA::SSA(std::shared_ptr<const Grid> g)
   : ShallowStressBalance(g),
     m_mask(m_grid, "ssa_mask"),
-    m_taud(m_grid, "taud"),
     m_velocity_global(m_grid, "bar")
 {
 
@@ -85,13 +82,6 @@ SSA::SSA(std::shared_ptr<const Grid> g)
   m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
                                          MASK_ICE_FREE_OCEAN };
   m_mask.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
-
-  m_taud.metadata(0)
-      .long_name("X-component of the driving shear stress at the base of ice")
-      .units("Pa");
-  m_taud.metadata(1)
-      .long_name("Y-component of the driving shear stress at the base of ice")
-      .units("Pa");
 
   // override velocity metadata
   m_velocity.metadata(0).set_name("u_ssa");
@@ -386,10 +376,6 @@ void SSA::set_initial_guess(const array::Vector &guess) {
   m_velocity.copy_from(guess);
 }
 
-const array::Vector& SSA::driving_stress() const {
-  return m_taud;
-}
-
 
 void SSA::define_model_state_impl(const File &output) const {
   m_velocity.define(output, io::PISM_DOUBLE);
@@ -397,58 +383,6 @@ void SSA::define_model_state_impl(const File &output) const {
 
 void SSA::write_model_state_impl(const File &output) const {
   m_velocity.write(output);
-}
-
-DiagnosticList SSA::diagnostics_impl() const {
-  DiagnosticList result = ShallowStressBalance::diagnostics_impl();
-
-  // replace these diagnostics
-  result["taud"] = Diagnostic::Ptr(new SSA_taud(this));
-  result["taud_mag"] = Diagnostic::Ptr(new SSA_taud_mag(this));
-
-  return result;
-}
-
-SSA_taud::SSA_taud(const SSA *m)
-  : Diag<SSA>(m) {
-
-  // set metadata:
-  m_vars = { { m_sys, "taud_x" }, { m_sys, "taud_y" } };
-
-  m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
-  m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
-
-  for (auto &v : m_vars) {
-    v.units("Pa");
-    v["comment"] = "this is the driving stress used by the SSA solver";
-  }
-}
-
-std::shared_ptr<array::Array> SSA_taud::compute_impl() const {
-
-  auto result = allocate<array::Vector>("taud");
-
-  result->copy_from(model->driving_stress());
-
-  return result;
-}
-
-SSA_taud_mag::SSA_taud_mag(const SSA *m)
-  : Diag<SSA>(m) {
-
-  // set metadata:
-  m_vars = { { m_sys, "taud_mag" } };
-
-  m_vars[0].long_name("magnitude of the driving shear stress at the base of ice").units("Pa");
-  m_vars[0]["comment"] = "this is the magnitude of the driving stress used by the SSA solver";
-}
-
-std::shared_ptr<array::Array> SSA_taud_mag::compute_impl() const {
-  auto result = allocate<array::Scalar>("taud_mag");
-
-  compute_magnitude(model->driving_stress(), *result);
-
-  return result;
 }
 
 } // end of namespace stressbalance
