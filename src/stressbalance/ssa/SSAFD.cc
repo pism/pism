@@ -946,7 +946,7 @@ void SSAFD::solve(const Inputs &inputs) {
   // be done once.
   {
     assemble_rhs(inputs);
-    compute_hardav_staggered(inputs);
+    compute_hardav_staggered(inputs, m_hardness);
   }
 
   for (unsigned int k = 0; k < 3; ++k) {
@@ -1285,7 +1285,8 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 }
 
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
-void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
+void SSAFD::compute_hardav_staggered(const Inputs &inputs,
+                                     array::Staggered &result) {
   const array::Scalar &thickness = inputs.geometry->ice_thickness;
 
   const array::Array3D &enthalpy = *inputs.enthalpy;
@@ -1295,7 +1296,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
   auto Mz = m_grid->Mz();
   std::vector<double> E(Mz);
 
-  array::AccessScope list{ &thickness, &enthalpy, &m_hardness, &m_mask };
+  array::AccessScope list{ &thickness, &enthalpy, &result, &m_mask };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1316,7 +1317,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
         }
 
         if (H == 0) {
-          m_hardness(i, j, o) = -1e6; // an obviously impossible value
+          result(i, j, o) = -1e6; // an obviously impossible value
           continue;
         }
 
@@ -1326,8 +1327,8 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        m_hardness(i, j, o) = rheology::averaged_hardness(*m_flow_law, H, m_grid->kBelowHeight(H),
-                                                          m_grid->z().data(), E.data());
+        result(i, j, o) = rheology::averaged_hardness(*m_flow_law, H, m_grid->kBelowHeight(H),
+                                                      m_grid->z().data(), E.data());
       } // o
     }   // loop over points
   } catch (...) {

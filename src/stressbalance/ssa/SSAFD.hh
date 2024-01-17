@@ -59,7 +59,7 @@ protected:
 
   virtual void picard_strategy_regularization(const Inputs &inputs);
 
-  virtual void compute_hardav_staggered(const Inputs &inputs);
+  virtual void compute_hardav_staggered(const Inputs &inputs, array::Staggered &result);
 
   virtual void compute_nuH_staggered(const array::Scalar1 &ice_thickness,
                                      const array::Vector1 &velocity,
