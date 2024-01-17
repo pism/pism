@@ -113,7 +113,7 @@ protected:
 
   petsc::KSP m_KSP;
   petsc::Mat m_A;
-  array::Vector m_b;            // right hand side
+  array::Vector m_rhs;            // right hand side
 
   array::Vector1 m_velocity_old;
   const double m_scaling;

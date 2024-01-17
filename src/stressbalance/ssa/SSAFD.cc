@@ -65,7 +65,7 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
     m_nuH_old(grid, "nuH_old"),
     m_work(grid, "work_vector", array::WITH_GHOSTS,
            2 /* stencil width */),
-    m_b(grid, "right_hand_side"),
+    m_rhs(grid, "right_hand_side"),
     m_velocity_old(grid, "velocity_old"),
     m_scaling(1e9)  // comparable to typical beta for an ice stream;
 {
@@ -259,7 +259,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
                          m_mask, inputs.no_model_mask, m_taud);
 
-  array::AccessScope list{ &m_taud, &m_b };
+  array::AccessScope list{ &m_taud, &m_rhs };
 
   if (inputs.bc_values != nullptr and inputs.bc_mask != nullptr) {
     list.add({ inputs.bc_values, inputs.bc_mask });
@@ -273,7 +273,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     list.add(*water_column_pressure);
   }
 
-  m_b.set(0.0);
+  m_rhs.set(0.0);
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -286,8 +286,8 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     }
 
     if ((inputs.bc_values != nullptr) and inputs.bc_mask->as_int(i, j) == 1) {
-      m_b(i, j).u = m_scaling * (*inputs.bc_values)(i, j).u;
-      m_b(i, j).v = m_scaling * (*inputs.bc_values)(i, j).v;
+      m_rhs(i, j).u = m_scaling * (*inputs.bc_values)(i, j).u;
+      m_rhs(i, j).v = m_scaling * (*inputs.bc_values)(i, j).v;
       continue;
     }
 
@@ -301,7 +301,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
       // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
       // to be consistent.
       if (ice_free(M.c)) {
-        m_b(i, j) = m_scaling * ice_free_velocity;
+        m_rhs(i, j) = m_scaling * ice_free_velocity;
         continue;
       }
 
@@ -380,8 +380,8 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         //
         // Note: signs below (+E, -W, etc) are explained by directions of outward
         // normal vectors at corresponding cell faces.
-        m_b(i, j).u = taud.u + (E - W) * delta_p / dx;
-        m_b(i, j).v = taud.v + (N - S) * delta_p / dy;
+        m_rhs(i, j).u = taud.u + (E - W) * delta_p / dx;
+        m_rhs(i, j).v = taud.v + (N - S) * delta_p / dy;
 
         continue;
       } // end of "if (is_marginal(i, j))"
@@ -392,7 +392,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     } // end of "if (use_cfbc)"
 
     // usual case: use already computed driving stress
-    m_b(i, j) = taud;
+    m_rhs(i, j) = taud;
   }
 }
 
@@ -1075,7 +1075,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
 
     {
       array::Vector residual(m_grid, "ssa_residual");
-      residual.copy_from(m_b);
+      residual.copy_from(m_rhs);
       residual.scale(-1.0);
 
       ierr = MatMultAdd(m_A, m_velocity_global.vec(), residual.vec(), residual.vec());
@@ -1084,7 +1084,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
       auto filename = pism::printf("ssa_residual_%d.nc", k);
       residual.dump(filename.c_str());
 
-      m_b.dump("ssa_rhs.nc");
+      m_rhs.dump("ssa_rhs.nc");
     }
 
     if (very_verbose) {
@@ -1095,7 +1095,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
     ierr = KSPSetOperators(m_KSP, m_A, m_A);
     PISM_CHK(ierr, "KSPSetOperator");
 
-    ierr = KSPSolve(m_KSP, m_b.vec(), m_velocity_global.vec());
+    ierr = KSPSolve(m_KSP, m_rhs.vec(), m_velocity_global.vec());
     PISM_CHK(ierr, "KSPSolve");
 
     // Check if diverged; report to standard out about iteration
@@ -1744,7 +1744,7 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
   ierr = MatView(m_A, viewer);
   PISM_CHK(ierr, "MatView");
 
-  ierr = VecView(m_b.vec(), viewer);
+  ierr = VecView(m_rhs.vec(), viewer);
   PISM_CHK(ierr, "VecView");
 }
 
