@@ -1530,20 +1530,19 @@ void SSAFD::compute_nuH_staggered(const array::Scalar1 &ice_thickness,
  * @return 0 on success
  */
 void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
-                                       const array::CellType2 &mask, const array::Vector1 &velocity,
+                                       const array::CellType2 &cell_type,
+                                       const array::Vector2 &velocity,
                                        const array::Staggered &hardness, double nuH_regularization,
                                        array::Staggered &result) {
 
   const auto &thickness = ice_thickness;
-
-  const array::Vector &uv = velocity; // shortcut
 
   double n_glen                 = m_flow_law->exponent(),
          nu_enhancement_scaling = 1.0 / pow(m_e_factor, 1.0 / n_glen);
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  array::AccessScope list{ &mask, &m_work, &uv };
+  array::AccessScope list{ &cell_type, &m_work, &velocity };
 
   assert(uv.stencil_width() >= 2);
   assert(mask.stencil_width() >= 2);
@@ -1554,9 +1553,9 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
 
     // x-derivative, i-offset
     {
-      if (mask.icy(i, j) && mask.icy(i + 1, j)) {
-        m_work(i, j).u_x = (uv(i + 1, j).u - uv(i, j).u) / dx; // u_x
-        m_work(i, j).v_x = (uv(i + 1, j).v - uv(i, j).v) / dx; // v_x
+      if (cell_type.icy(i, j) && cell_type.icy(i + 1, j)) {
+        m_work(i, j).u_x = (velocity(i + 1, j).u - velocity(i, j).u) / dx; // u_x
+        m_work(i, j).v_x = (velocity(i + 1, j).v - velocity(i, j).v) / dx; // v_x
         m_work(i, j).w_i = 1.0;
       } else {
         m_work(i, j).u_x = 0.0;
@@ -1567,9 +1566,9 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
 
     // y-derivative, j-offset
     {
-      if (mask.icy(i, j) && mask.icy(i, j + 1)) {
-        m_work(i, j).u_y = (uv(i, j + 1).u - uv(i, j).u) / dy; // u_y
-        m_work(i, j).v_y = (uv(i, j + 1).v - uv(i, j).v) / dy; // v_y
+      if (cell_type.icy(i, j) && cell_type.icy(i, j + 1)) {
+        m_work(i, j).u_y = (velocity(i, j + 1).u - velocity(i, j).u) / dy; // u_y
+        m_work(i, j).v_y = (velocity(i, j + 1).v - velocity(i, j).v) / dy; // v_y
         m_work(i, j).w_j = 1.0;
       } else {
         m_work(i, j).u_y = 0.0;
@@ -1587,9 +1586,9 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
     double u_x, u_y, v_x, v_y, H, nu, W;
     // i-offset
     {
-      if (mask.icy(i, j) && mask.icy(i + 1, j)) {
+      if (cell_type.icy(i, j) && cell_type.icy(i + 1, j)) {
         H = 0.5 * (thickness(i, j) + thickness(i + 1, j));
-      } else if (mask.icy(i, j)) {
+      } else if (cell_type.icy(i, j)) {
         H = thickness(i, j);
       } else {
         H = thickness(i + 1, j);
@@ -1623,9 +1622,9 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
 
     // j-offset
     {
-      if (mask.icy(i, j) && mask.icy(i, j + 1)) {
+      if (cell_type.icy(i, j) && cell_type.icy(i, j + 1)) {
         H = 0.5 * (thickness(i, j) + thickness(i, j + 1));
-      } else if (mask.icy(i, j)) {
+      } else if (cell_type.icy(i, j)) {
         H = thickness(i, j);
       } else {
         H = thickness(i, j + 1);

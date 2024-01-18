@@ -70,8 +70,8 @@ protected:
                                      array::Staggered &result);
 
   virtual void compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
-                                          const array::CellType2 &mask,
-                                          const array::Vector1 &velocity,
+                                          const array::CellType2 &cell_type,
+                                          const array::Vector2 &velocity,
                                           const array::Staggered &hardness,
                                           double nuH_regularization,
                                           array::Staggered &result);
