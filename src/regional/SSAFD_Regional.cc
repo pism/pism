@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2020, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2020, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -51,9 +51,9 @@ void SSAFD_Regional::update(const Inputs &inputs, bool full_update) {
 
   SSA::update(inputs, full_update);
 
-  m_h_stored      = NULL;
-  m_H_stored      = NULL;
-  m_no_model_mask = NULL;
+  m_h_stored      = nullptr;
+  m_H_stored      = nullptr;
+  m_no_model_mask = nullptr;
 }
 
 static int weight(int M_ij, int M_n, double h_ij, double h_n) {

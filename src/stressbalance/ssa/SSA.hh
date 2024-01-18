@@ -123,12 +123,6 @@ protected:
 
   virtual void init_impl();
 
-  virtual void compute_driving_stress(const array::Scalar &ice_thickness,
-                                      const array::Scalar1 &surface_elevation,
-                                      const array::CellType1 &cell_type,
-                                      const array::Scalar1 *no_model_mask,
-                                      array::Vector &result) const;
-
   virtual void solve(const Inputs &inputs) = 0;
 
   void extrapolate_velocity(const array::CellType1 &cell_type,

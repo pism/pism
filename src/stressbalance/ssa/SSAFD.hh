@@ -81,6 +81,12 @@ protected:
   virtual void compute_nuH_norm(double &norm,
                                 double &norm_change);
 
+  virtual void compute_driving_stress(const array::Scalar &ice_thickness,
+                                      const array::Scalar1 &surface_elevation,
+                                      const array::CellType1 &cell_type,
+                                      const array::Scalar1 *no_model_mask,
+                                      array::Vector &result) const;
+
   virtual void assemble_matrix(const Inputs &inputs,
                                const array::Vector &velocity,
                                const array::CellType1 &cell_type,
@@ -93,7 +99,9 @@ protected:
 
   virtual void update_nuH_viewers();
 
-  virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
+  virtual bool is_marginal(int i, int j,
+                           const array::CellType1 &cell_type,
+                           bool ssa_dirichlet_bc);
 
   virtual void fracture_induced_softening(const array::Scalar *fracture_density);
 
@@ -118,7 +126,7 @@ protected:
   // temprary storage used to compute the nuH term
   array::Array2D<Work> m_work;
 
-  array::CellType2 m_mask;
+  array::CellType2 m_cell_type;
 
   petsc::KSP m_KSP;
   petsc::Mat m_A;

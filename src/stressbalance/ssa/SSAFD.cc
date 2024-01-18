@@ -65,7 +65,7 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
     m_nuH_old(grid, "nuH_old"),
     m_work(grid, "work_vector", array::WITH_GHOSTS,
            1 /* stencil width */),
-    m_mask(m_grid, "ssafd_cell_type"),
+    m_cell_type(m_grid, "ssafd_cell_type"),
     m_rhs(grid, "right_hand_side"),
     m_taud(m_grid, "taud"),
     m_velocity_old(grid, "velocity_old"),
@@ -98,11 +98,11 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
   m_work.metadata(0).long_name("temporary storage used to compute nuH");
 
   // grounded_dragging_floating integer mask
-  m_mask.metadata(0)
+  m_cell_type.metadata(0)
       .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
-  m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+  m_cell_type.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
                                          MASK_ICE_FREE_OCEAN };
-  m_mask.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
+  m_cell_type.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
   // The nuH viewer:
   m_view_nuh        = false;
@@ -325,7 +325,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type
         continue;
       }
 
-      if (is_marginal(i, j, bedrock_boundary)) {
+      if (is_marginal(i, j, cell_type, bedrock_boundary)) {
         // weights at the west, east, south, and north cell faces
         int W = 0, E = 0, S = 0, N = 0;
         // direct neighbors
@@ -658,7 +658,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
           continue;
         }
 
-        if (is_marginal(i, j, bedrock_boundary)) {
+        if (is_marginal(i, j, cell_type, bedrock_boundary)) {
           // If at least one of the following four conditions is "true", we're
           // at a CFBC location.
           // NOLINTBEGIN(readability-braces-around-statements)
@@ -987,14 +987,14 @@ void SSAFD::solve(const Inputs &inputs) {
 
       gc.compute_mask(inputs.geometry->sea_level_elevation, inputs.geometry->bed_elevation,
                       inputs.geometry->ice_thickness, //
-                      m_mask);                        // output
+                      m_cell_type);                        // output
     }
     compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
-                           m_mask, inputs.no_model_mask, //
+                           m_cell_type, inputs.no_model_mask, //
                            m_taud);                      // output
-    assemble_rhs(inputs, m_mask, //
+    assemble_rhs(inputs, m_cell_type, //
                  m_rhs);         // output
-    compute_hardav_staggered(inputs, m_mask, m_hardness);
+    compute_hardav_staggered(inputs, m_cell_type, m_hardness);
   }
 
   for (unsigned int k = 0; k < 3; ++k) {
@@ -1100,7 +1100,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
   bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
   if (use_cfbc) {
-    compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_mask, m_velocity, m_hardness,
+    compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
                                nuH_regularization, m_nuH);
   } else {
     compute_nuH_staggered(inputs.geometry->ice_thickness, m_velocity, m_hardness,
@@ -1119,7 +1119,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
     m_nuH_old.copy_from(m_nuH);
 
     // assemble (or re-assemble) matrix, which depends on updated viscosity
-    assemble_matrix(inputs, m_velocity, m_mask, true, m_A);
+    assemble_matrix(inputs, m_velocity, m_cell_type, true, m_A);
 
     {
       array::Vector residual(m_grid, "ssa_residual");
@@ -1204,7 +1204,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
 
     // update viscosity and check for viscosity convergence
     if (use_cfbc) {
-      compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_mask, m_velocity, m_hardness,
+      compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
                                  nuH_regularization, m_nuH);
     } else {
       compute_nuH_staggered(inputs.geometry->ice_thickness, m_velocity, m_hardness,
@@ -1750,9 +1750,11 @@ void SSAFD::update_nuH_viewers() {
  * This method ensures that checks in assemble_rhs() and assemble_matrix() are
  * consistent.
  */
-bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
+bool SSAFD::is_marginal(int i, int j,
+                        const array::CellType1 &cell_type,
+                        bool ssa_dirichlet_bc) {
 
-  auto M = m_mask.box_int(i, j);
+  auto M = cell_type.box_int(i, j);
 
   using mask::ice_free;
   using mask::ice_free_ocean;
@@ -1789,6 +1791,169 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
 
   ierr = VecView(m_rhs.vec(), viewer);
   PISM_CHK(ierr, "VecView");
+}
+
+/*!
+ * Compute the weight used to determine if the difference between locations `i,j` and `n`
+ * (neighbor) should be used in the computation of the surface gradient in
+ * SSA::compute_driving_stress().
+ *
+ * We avoid differencing across
+ *
+ * - ice margins if stress boundary condition at ice margins (CFBC) is active
+ * - grounding lines
+ * - ice margins next to ice free locations above the surface elevation of the ice (fjord
+ *   walls, nunataks, headwalls)
+ */
+static int weight(bool margin_bc,
+                  int M_ij, int M_n,
+                  double h_ij, double h_n,
+                  int N_ij, int N_n) {
+  using mask::grounded;
+  using mask::icy;
+  using mask::floating_ice;
+  using mask::ice_free;
+  using mask::ice_free_ocean;
+
+  // grounding lines and calving fronts
+  if ((grounded(M_ij) and floating_ice(M_n)) or
+      (floating_ice(M_ij) and grounded(M_n)) or
+      (floating_ice(M_ij) and ice_free_ocean(M_n))) {
+    return 0;
+  }
+
+  // fjord walls, nunataks, headwalls
+  if ((icy(M_ij) and ice_free(M_n) and h_n > h_ij) or
+      (ice_free(M_ij) and icy(M_n) and h_ij > h_n)) {
+    return 0;
+  }
+
+  // This condition has to match the one used to implement the calving front stress
+  // boundary condition in SSAFD::assemble_rhs().
+  if (margin_bc and
+      ((icy(M_ij) and ice_free(M_n)) or
+       (ice_free(M_ij) and icy(M_n)))) {
+    return 0;
+  }
+
+  // boundaries of the "no model" area
+  if ((N_ij == 0 and N_n == 1) or (N_ij == 1 and N_n == 0)) {
+    return 0;
+  }
+
+  return 1;
+}
+
+//! @brief Compute the gravitational driving stress.
+/*!
+Computes the gravitational driving stress at the base of the ice:
+\f[ \tau_d = - \rho g H \nabla h \f]
+ */
+void SSAFD::compute_driving_stress(const array::Scalar &ice_thickness,
+                                   const array::Scalar1 &surface_elevation,
+                                   const array::CellType1 &cell_type,
+                                   const array::Scalar1 *no_model_mask,
+                                   array::Vector &result) const {
+
+  using mask::ice_free_ocean;
+  using mask::floating_ice;
+
+  bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
+  bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
+
+  double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+
+  array::AccessScope list{&surface_elevation, &cell_type, &ice_thickness, &result};
+
+  if (no_model_mask) {
+    list.add(*no_model_mask);
+  }
+
+  for (auto p = m_grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double pressure = m_EC->pressure(ice_thickness(i, j)); // FIXME issue #15
+    if (pressure <= 0.0) {
+      result(i, j) = 0.0;
+      continue;
+    }
+
+    // Special case for verification tests.
+    if (surface_gradient_inward) {
+      double
+        h_x = diff_x_p(surface_elevation, i, j),
+        h_y = diff_y_p(surface_elevation, i, j);
+      result(i, j) = - pressure * Vector2d(h_x, h_y);
+      continue;
+    }
+
+    // To compute the x-derivative we use
+    //
+    // * away from the grounding line, ice margins, and no_model mask transitions -- 2nd
+    //   order centered difference
+    //
+    // * at the grounded cell near the grounding line -- 1st order
+    //   one-sided difference using the grounded neighbor
+    //
+    // * at the floating cell near the grounding line -- 1st order
+    //   one-sided difference using the floating neighbor
+    //
+    // All these cases can be combined by writing h_x as the weighted
+    // average of one-sided differences, with weights of 0 if a finite
+    // difference is not used and 1 if it is.
+    //
+    // The y derivative is handled the same way.
+
+    auto M = cell_type.star(i, j);
+    auto h = surface_elevation.star(i, j);
+    stencils::Star<int> N(0);
+
+    if (no_model_mask) {
+      N = no_model_mask->star_int(i, j);
+    }
+
+    // x-derivative
+    double h_x = 0.0;
+    {
+      double
+        west = weight(cfbc, M.c, M.w, h.c, h.w, N.c, N.w),
+        east = weight(cfbc, M.c, M.e, h.c, h.e, N.c, N.e);
+
+      if (east + west > 0) {
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
+        if (floating_ice(M.c) and (ice_free_ocean(M.e) or ice_free_ocean(M.w)))  {
+          // at the ice front: use constant extrapolation to approximate the value outside
+          // the ice extent (see the notes in the manual)
+          h_x /= 2.0;
+        }
+      } else {
+        h_x = 0.0;
+      }
+    }
+
+    // y-derivative
+    double h_y = 0.0;
+    {
+      double
+        south = weight(cfbc, M.c, M.s, h.c, h.s, N.c, N.s),
+        north = weight(cfbc, M.c, M.n, h.c, h.n, N.c, N.n);
+
+      if (north + south > 0) {
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
+        if (floating_ice(M.c) and (ice_free_ocean(M.s) or ice_free_ocean(M.n)))  {
+          // at the ice front: use constant extrapolation to approximate the value outside
+          // the ice extent
+          h_y /= 2.0;
+        }
+      } else {
+        h_y = 0.0;
+      }
+    }
+
+    result(i, j) = - pressure * Vector2d(h_x, h_y);
+  }
 }
 
 SSAFD_nuH::SSAFD_nuH(const SSAFD *m) : Diag<SSAFD>(m) {
