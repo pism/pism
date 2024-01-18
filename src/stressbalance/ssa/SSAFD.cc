@@ -509,6 +509,7 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
 void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
+                            const array::CellType1 &cell_type,
                             bool include_basal_shear, Mat A) {
   using mask::grounded_ice;
   using mask::ice_free;
@@ -543,7 +544,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  array::AccessScope list{ &m_nuH, &tauc, &velocity, &m_mask, &bed, &surface };
+  array::AccessScope list{ &m_nuH, &tauc, &velocity, &cell_type, &bed, &surface };
 
   if (inputs.bc_values != nullptr && inputs.bc_mask != nullptr) {
     list.add(*inputs.bc_mask);
@@ -595,7 +596,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
         // be prescribed and is a temperature-independent free (user determined) parameter
 
         // direct neighbors
-        auto M   = m_mask.star_int(i, j);
+        auto M   = cell_type.star_int(i, j);
         auto H   = thickness.star(i, j);
         auto b   = bed.star(i, j);
         double h = surface(i, j);
@@ -642,10 +643,10 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
       int NNW = 1, NNE = 1, SSW = 1, SSE = 1;
       int WNW = 1, ENE = 1, WSW = 1, ESE = 1;
 
-      int M_ij = m_mask.as_int(i, j);
+      int M_ij = cell_type.as_int(i, j);
 
       if (use_cfbc) {
-        auto M = m_mask.box_int(i, j);
+        auto M = cell_type.box_int(i, j);
 
         // Note: this sets velocities at both ice-free ocean and ice-free
         // bedrock to zero. This means that we need to set boundary conditions
@@ -828,7 +829,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
         // Set very high basal drag *in the direction along the boundary* at locations
         // bordering "fjord walls".
 
-        auto M   = m_mask.star_int(i, j);
+        auto M   = cell_type.star_int(i, j);
         auto b   = bed.star(i, j);
         double h = surface(i, j);
 
@@ -993,7 +994,7 @@ void SSAFD::solve(const Inputs &inputs) {
                            m_taud);                      // output
     assemble_rhs(inputs, m_mask, //
                  m_rhs);         // output
-    compute_hardav_staggered(inputs, m_hardness);
+    compute_hardav_staggered(inputs, m_mask, m_hardness);
   }
 
   for (unsigned int k = 0; k < 3; ++k) {
@@ -1118,7 +1119,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
     m_nuH_old.copy_from(m_nuH);
 
     // assemble (or re-assemble) matrix, which depends on updated viscosity
-    assemble_matrix(inputs, m_velocity, true, m_A);
+    assemble_matrix(inputs, m_velocity, m_mask, true, m_A);
 
     {
       array::Vector residual(m_grid, "ssa_residual");
@@ -1333,6 +1334,7 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
 void SSAFD::compute_hardav_staggered(const Inputs &inputs,
+                                     const array::CellType1 &cell_type,
                                      array::Staggered &result) {
   const array::Scalar &thickness = inputs.geometry->ice_thickness;
 
@@ -1343,7 +1345,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs,
   auto Mz = m_grid->Mz();
   std::vector<double> E(Mz);
 
-  array::AccessScope list{ &thickness, &enthalpy, &result, &m_mask };
+  array::AccessScope list{ &thickness, &enthalpy, &result, &cell_type };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1355,9 +1357,9 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs,
         const int oi = 1 - o, oj = o;
         double H;
 
-        if (m_mask.icy(i, j) && m_mask.icy(i + oi, j + oj)) {
+        if (cell_type.icy(i, j) && cell_type.icy(i + oi, j + oj)) {
           H = 0.5 * (thickness(i, j) + thickness(i + oi, j + oj));
-        } else if (m_mask.icy(i, j)) {
+        } else if (cell_type.icy(i, j)) {
           H = thickness(i, j);
         } else {
           H = thickness(i + oi, j + oj);

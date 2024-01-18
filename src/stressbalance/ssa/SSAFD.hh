@@ -61,7 +61,9 @@ protected:
 
   virtual void picard_strategy_regularization(const Inputs &inputs);
 
-  virtual void compute_hardav_staggered(const Inputs &inputs, array::Staggered &result);
+  virtual void compute_hardav_staggered(const Inputs &inputs,
+                                        const array::CellType1 &cell_type,
+                                        array::Staggered &result);
 
   virtual void compute_nuH_staggered(const array::Scalar1 &ice_thickness,
                                      const array::Vector1 &velocity,
@@ -80,7 +82,8 @@ protected:
                                 double &norm_change);
 
   virtual void assemble_matrix(const Inputs &inputs,
-                               const array::Vector &vel,
+                               const array::Vector &velocity,
+                               const array::CellType1 &cell_type,
                                bool include_basal_shear, Mat A);
 
   virtual void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
