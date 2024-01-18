@@ -48,7 +48,7 @@ protected:
   virtual void pc_setup_bjacobi();
 
   virtual void pc_setup_asm();
-  
+
   virtual void solve(const Inputs &inputs);
 
   virtual void picard_iteration(const Inputs &inputs,
@@ -83,7 +83,8 @@ protected:
                                const array::Vector &vel,
                                bool include_basal_shear, Mat A);
 
-  virtual void assemble_rhs(const Inputs &inputs);
+  virtual void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
+                            array::Vector &result);
 
   virtual void write_system_petsc(const std::string &namepart);
 
@@ -112,6 +113,8 @@ protected:
     double w_j;
   };
   array::Array2D<Work> m_work;
+
+  array::CellType2 m_mask;
 
   petsc::KSP m_KSP;
   petsc::Mat m_A;

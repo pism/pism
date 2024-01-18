@@ -64,7 +64,8 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
     m_nuH(grid, "nuH"),
     m_nuH_old(grid, "nuH_old"),
     m_work(grid, "work_vector", array::WITH_GHOSTS,
-           2 /* stencil width */),
+           1 /* stencil width */),
+    m_mask(m_grid, "ssafd_cell_type"),
     m_rhs(grid, "right_hand_side"),
     m_taud(m_grid, "taud"),
     m_velocity_old(grid, "velocity_old"),
@@ -95,6 +96,13 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
       .units("Pa");
 
   m_work.metadata(0).long_name("temporary storage used to compute nuH");
+
+  // grounded_dragging_floating integer mask
+  m_mask.metadata(0)
+      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
+  m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+                                         MASK_ICE_FREE_OCEAN };
+  m_mask.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
   // The nuH viewer:
   m_view_nuh        = false;
@@ -242,7 +250,8 @@ In the case of Dirichlet boundary conditions, the entries on the right-hand side
 come from known velocity values.  The fields m_bc_values and m_bc_mask are used for
 this.
  */
-void SSAFD::assemble_rhs(const Inputs &inputs) {
+void SSAFD::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
+                         array::Vector &result) {
   using mask::ice_free;
   using mask::ice_free_land;
   using mask::ice_free_ocean;
@@ -268,24 +277,21 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
-  compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
-                         m_mask, inputs.no_model_mask, m_taud);
-
-  array::AccessScope list{ &m_taud, &m_rhs };
+  array::AccessScope list{ &m_taud, &result };
 
   if (inputs.bc_values != nullptr and inputs.bc_mask != nullptr) {
     list.add({ inputs.bc_values, inputs.bc_mask });
   }
 
   if (use_cfbc) {
-    list.add({ &thickness, &bed, &surface, &m_mask, &sea_level });
+    list.add({ &thickness, &bed, &surface, &cell_type, &sea_level });
   }
 
   if (use_cfbc and (water_column_pressure != nullptr)) {
     list.add(*water_column_pressure);
   }
 
-  m_rhs.set(0.0);
+  result.set(0.0);
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -298,22 +304,22 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     }
 
     if ((inputs.bc_values != nullptr) and inputs.bc_mask->as_int(i, j) == 1) {
-      m_rhs(i, j).u = m_scaling * (*inputs.bc_values)(i, j).u;
-      m_rhs(i, j).v = m_scaling * (*inputs.bc_values)(i, j).v;
+      result(i, j).u = m_scaling * (*inputs.bc_values)(i, j).u;
+      result(i, j).v = m_scaling * (*inputs.bc_values)(i, j).v;
       continue;
     }
 
     if (use_cfbc) {
       double H_ij = thickness(i, j);
 
-      auto M = m_mask.star_int(i, j);
+      auto M = cell_type.star_int(i, j);
 
       // Note: this sets velocities at both ice-free ocean and ice-free
       // bedrock to zero. This means that we need to set boundary conditions
       // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
       // to be consistent.
       if (ice_free(M.c)) {
-        m_rhs(i, j) = m_scaling * ice_free_velocity;
+        result(i, j) = m_scaling * ice_free_velocity;
         continue;
       }
 
@@ -392,8 +398,8 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         //
         // Note: signs below (+E, -W, etc) are explained by directions of outward
         // normal vectors at corresponding cell faces.
-        m_rhs(i, j).u = taud.u + (E - W) * delta_p / dx;
-        m_rhs(i, j).v = taud.v + (N - S) * delta_p / dy;
+        result(i, j).u = taud.u + (E - W) * delta_p / dx;
+        result(i, j).v = taud.v + (N - S) * delta_p / dy;
 
         continue;
       } // end of "if (is_marginal(i, j))"
@@ -404,7 +410,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     } // end of "if (use_cfbc)"
 
     // usual case: use already computed driving stress
-    m_rhs(i, j) = taud;
+    result(i, j) = taud;
   }
 }
 
@@ -500,8 +506,7 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::assemble_matrix(const Inputs &inputs,
-                            const array::Vector &vel,
+void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &vel,
                             bool include_basal_shear, Mat A) {
   using mask::grounded_ice;
   using mask::ice_free;
@@ -718,56 +723,69 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       }   // end of "if (use_cfbc)"
 
       /* begin Maxima-generated code */
-      const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
+      const double dx2 = dx * dx, dy2 = dy * dy, d4 = 4 * dx * dy, d2 = 2 * dx * dy;
 
       /* Coefficients of the discretization of the first equation; u first, then v. */
       double eq1[] = {
-        0,  -c_n*N/dy2,  0,
-        -4*c_w*W/dx2,  (c_n*N+c_s*S)/dy2+(4*c_e*E+4*c_w*W)/dx2,  -4*c_e*E/dx2,
-        0,  -c_s*S/dy2,  0,
-        c_w*W*WNW/d2+c_n*NNW*N/d4,  (c_n*NNE*N-c_n*NNW*N)/d4+(c_w*W*N-c_e*E*N)/d2,  -c_e*E*ENE/d2-c_n*NNE*N/d4,
-        (c_w*W*WSW-c_w*W*WNW)/d2+(c_n*W*N-c_s*W*S)/d4,  (c_n*E*N-c_n*W*N-c_s*E*S+c_s*W*S)/d4+(c_e*E*N-c_w*W*N-c_e*E*S+c_w*W*S)/d2,  (c_e*E*ENE-c_e*E*ESE)/d2+(c_s*E*S-c_n*E*N)/d4,
-        -c_w*W*WSW/d2-c_s*SSW*S/d4,  (c_s*SSW*S-c_s*SSE*S)/d4+(c_e*E*S-c_w*W*S)/d2,  c_e*E*ESE/d2+c_s*SSE*S/d4,
+        0,
+        -c_n * N / dy2,
+        0,
+        -4 * c_w * W / dx2,
+        (c_n * N + c_s * S) / dy2 + (4 * c_e * E + 4 * c_w * W) / dx2,
+        -4 * c_e * E / dx2,
+        0,
+        -c_s * S / dy2,
+        0,
+        c_w * W * WNW / d2 + c_n * NNW * N / d4,
+        (c_n * NNE * N - c_n * NNW * N) / d4 + (c_w * W * N - c_e * E * N) / d2,
+        -c_e * E * ENE / d2 - c_n * NNE * N / d4,
+        (c_w * W * WSW - c_w * W * WNW) / d2 + (c_n * W * N - c_s * W * S) / d4,
+        (c_n * E * N - c_n * W * N - c_s * E * S + c_s * W * S) / d4 +
+            (c_e * E * N - c_w * W * N - c_e * E * S + c_w * W * S) / d2,
+        (c_e * E * ENE - c_e * E * ESE) / d2 + (c_s * E * S - c_n * E * N) / d4,
+        -c_w * W * WSW / d2 - c_s * SSW * S / d4,
+        (c_s * SSW * S - c_s * SSE * S) / d4 + (c_e * E * S - c_w * W * S) / d2,
+        c_e * E * ESE / d2 + c_s * SSE * S / d4,
       };
 
       /* Coefficients of the discretization of the second equation; u first, then v. */
       double eq2[] = {
-        c_w*W*WNW/d4+c_n*NNW*N/d2,  (c_n*NNE*N-c_n*NNW*N)/d2+(c_w*W*N-c_e*E*N)/d4,  -c_e*E*ENE/d4-c_n*NNE*N/d2,
-        (c_w*W*WSW-c_w*W*WNW)/d4+(c_n*W*N-c_s*W*S)/d2,  (c_n*E*N-c_n*W*N-c_s*E*S+c_s*W*S)/d2+(c_e*E*N-c_w*W*N-c_e*E*S+c_w*W*S)/d4,  (c_e*E*ENE-c_e*E*ESE)/d4+(c_s*E*S-c_n*E*N)/d2,
-        -c_w*W*WSW/d4-c_s*SSW*S/d2,  (c_s*SSW*S-c_s*SSE*S)/d2+(c_e*E*S-c_w*W*S)/d4,  c_e*E*ESE/d4+c_s*SSE*S/d2,
-        0,  -4*c_n*N/dy2,  0,
-        -c_w*W/dx2,  (4*c_n*N+4*c_s*S)/dy2+(c_e*E+c_w*W)/dx2,  -c_e*E/dx2,
-        0,  -4*c_s*S/dy2,  0,
+        c_w * W * WNW / d4 + c_n * NNW * N / d2,
+        (c_n * NNE * N - c_n * NNW * N) / d2 + (c_w * W * N - c_e * E * N) / d4,
+        -c_e * E * ENE / d4 - c_n * NNE * N / d2,
+        (c_w * W * WSW - c_w * W * WNW) / d4 + (c_n * W * N - c_s * W * S) / d2,
+        (c_n * E * N - c_n * W * N - c_s * E * S + c_s * W * S) / d2 +
+            (c_e * E * N - c_w * W * N - c_e * E * S + c_w * W * S) / d4,
+        (c_e * E * ENE - c_e * E * ESE) / d4 + (c_s * E * S - c_n * E * N) / d2,
+        -c_w * W * WSW / d4 - c_s * SSW * S / d2,
+        (c_s * SSW * S - c_s * SSE * S) / d2 + (c_e * E * S - c_w * W * S) / d4,
+        c_e * E * ESE / d4 + c_s * SSE * S / d2,
+        0,
+        -4 * c_n * N / dy2,
+        0,
+        -c_w * W / dx2,
+        (4 * c_n * N + 4 * c_s * S) / dy2 + (c_e * E + c_w * W) / dx2,
+        -c_e * E / dx2,
+        0,
+        -4 * c_s * S / dy2,
+        0,
       };
 
       /* i indices */
       const int I[] = {
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
+        i - 1, i, i + 1, i - 1, i, i + 1, i - 1, i, i + 1,
+        i - 1, i, i + 1, i - 1, i, i + 1, i - 1, i, i + 1,
       };
 
       /* j indices */
       const int J[] = {
-        j+1,  j+1,  j+1,
-        j,  j,  j,
-        j-1,  j-1,  j-1,
-        j+1,  j+1,  j+1,
-        j,  j,  j,
-        j-1,  j-1,  j-1,
+        j + 1, j + 1, j + 1, j, j, j, j - 1, j - 1, j - 1,
+        j + 1, j + 1, j + 1, j, j, j, j - 1, j - 1, j - 1,
       };
 
       /* component indices */
       const int C[] = {
-        0,  0,  0,
-        0,  0,  0,
-        0,  0,  0,
-        1,  1,  1,
-        1,  1,  1,
-        1,  1,  1,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       };
       /* end Maxima-generated code */
 
@@ -957,7 +975,22 @@ void SSAFD::solve(const Inputs &inputs) {
   // These computations do not depend on the solution, so they need to
   // be done only once.
   {
-    assemble_rhs(inputs);
+    // update the cell type mask using the ice-free thickness threshold for stress balance
+    // computations
+    {
+      const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
+      GeometryCalculator gc(*m_config);
+      gc.set_icefree_thickness(H_threshold);
+
+      gc.compute_mask(inputs.geometry->sea_level_elevation, inputs.geometry->bed_elevation,
+                      inputs.geometry->ice_thickness, //
+                      m_mask);                        // output
+    }
+    compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
+                           m_mask, inputs.no_model_mask, //
+                           m_taud);                      // output
+    assemble_rhs(inputs, m_mask, //
+                 m_rhs);         // output
     compute_hardav_staggered(inputs, m_hardness);
   }
 
@@ -1535,8 +1568,6 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
                                        const array::Staggered &hardness, double nuH_regularization,
                                        array::Staggered &result) {
 
-  const auto &thickness = ice_thickness;
-
   double n_glen                 = m_flow_law->exponent(),
          nu_enhancement_scaling = 1.0 / pow(m_e_factor, 1.0 / n_glen);
 
@@ -1544,8 +1575,6 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
 
   array::AccessScope list{ &cell_type, &m_work, &velocity };
 
-  assert(uv.stencil_width() >= 2);
-  assert(mask.stencil_width() >= 2);
   assert(m_work.stencil_width() >= 1);
 
   for (auto p = m_grid->points(1); p; p.next()) {
@@ -1578,7 +1607,7 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
     }
   }
 
-  list.add({ &result, &hardness, &thickness });
+  list.add({ &result, &hardness, &ice_thickness });
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1587,11 +1616,11 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
     // i-offset
     {
       if (cell_type.icy(i, j) && cell_type.icy(i + 1, j)) {
-        H = 0.5 * (thickness(i, j) + thickness(i + 1, j));
+        H = 0.5 * (ice_thickness(i, j) + ice_thickness(i + 1, j));
       } else if (cell_type.icy(i, j)) {
-        H = thickness(i, j);
+        H = ice_thickness(i, j);
       } else {
-        H = thickness(i + 1, j);
+        H = ice_thickness(i + 1, j);
       }
 
       if (H >= strength_extension->get_min_thickness()) {
@@ -1612,8 +1641,8 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
           v_y = 0.0;
         }
 
-        m_flow_law->effective_viscosity(hardness(i, j, 0),
-                                        secondInvariant_2D({ u_x, v_x }, { u_y, v_y }), &nu, NULL);
+        m_flow_law->effective_viscosity(
+            hardness(i, j, 0), secondInvariant_2D({ u_x, v_x }, { u_y, v_y }), &nu, nullptr);
         result(i, j, 0) = nu * H;
       } else {
         result(i, j, 0) = strength_extension->get_notional_strength();
@@ -1623,11 +1652,11 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
     // j-offset
     {
       if (cell_type.icy(i, j) && cell_type.icy(i, j + 1)) {
-        H = 0.5 * (thickness(i, j) + thickness(i, j + 1));
+        H = 0.5 * (ice_thickness(i, j) + ice_thickness(i, j + 1));
       } else if (cell_type.icy(i, j)) {
-        H = thickness(i, j);
+        H = ice_thickness(i, j);
       } else {
-        H = thickness(i, j + 1);
+        H = ice_thickness(i, j + 1);
       }
 
       if (H >= strength_extension->get_min_thickness()) {

@@ -68,20 +68,12 @@ double SSAStrengthExtension::get_min_thickness() const {
 
 SSA::SSA(std::shared_ptr<const Grid> g)
   : ShallowStressBalance(g),
-    m_mask(m_grid, "ssa_mask"),
     m_velocity_global(m_grid, "bar")
 {
 
   m_e_factor = m_config->get_number("stress_balance.ssa.enhancement_factor");
 
   strength_extension = new SSAStrengthExtension(*m_config);
-
-  // grounded_dragging_floating integer mask
-  m_mask.metadata(0)
-      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
-  m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
-                                         MASK_ICE_FREE_OCEAN };
-  m_mask.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
   // override velocity metadata
   m_velocity.metadata(0).set_name("u_ssa");
@@ -141,24 +133,11 @@ void SSA::init_impl() {
 //! \brief Update the SSA solution.
 void SSA::update(const Inputs &inputs, bool full_update) {
 
-  // update the cell type mask using the ice-free thickness threshold for stress balance
-  // computations
-  {
-    const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
-    GeometryCalculator gc(*m_config);
-    gc.set_icefree_thickness(H_threshold);
-
-    gc.compute_mask(inputs.geometry->sea_level_elevation,
-                    inputs.geometry->bed_elevation,
-                    inputs.geometry->ice_thickness,
-                    m_mask);
-  }
-
   if (full_update) {
     solve(inputs);
     compute_basal_frictional_heating(m_velocity,
                                      *inputs.basal_yield_stress,
-                                     m_mask,
+                                     inputs.geometry->cell_type,
                                      m_basal_frictional_heating);
   }
 }

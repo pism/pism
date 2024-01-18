@@ -134,16 +134,11 @@ protected:
   void extrapolate_velocity(const array::CellType1 &cell_type,
                             array::Vector1 &velocity) const;
 
-  array::CellType2 m_mask;
-
   std::string m_stdout_ssa;
 
   // objects used by the SSA solver (internally)
   std::shared_ptr<petsc::DM>  m_da;               // dof=2 DA
   array::Vector m_velocity_global; // global vector for solution
-
-  // profiling
-  int m_event_ssa;
 };
 
 } // end of namespace stressbalance
