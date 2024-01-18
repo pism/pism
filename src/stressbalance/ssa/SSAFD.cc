@@ -1859,15 +1859,14 @@ void SSAFD::compute_driving_stress(const array::Scalar &ice_thickness,
   using mask::floating_ice;
 
   bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
-  bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
+  bool surface_gradient_inward =
+      m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
 
-  double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
+  double dx = m_grid->dx(), dy = m_grid->dy();
 
-  array::AccessScope list{&surface_elevation, &cell_type, &ice_thickness, &result};
+  array::AccessScope list{ &surface_elevation, &cell_type, &ice_thickness, &result };
 
-  if (no_model_mask) {
+  if (no_model_mask != nullptr) {
     list.add(*no_model_mask);
   }
 
@@ -1882,10 +1881,8 @@ void SSAFD::compute_driving_stress(const array::Scalar &ice_thickness,
 
     // Special case for verification tests.
     if (surface_gradient_inward) {
-      double
-        h_x = diff_x_p(surface_elevation, i, j),
-        h_y = diff_y_p(surface_elevation, i, j);
-      result(i, j) = - pressure * Vector2d(h_x, h_y);
+      double h_x = diff_x_p(surface_elevation, i, j), h_y = diff_y_p(surface_elevation, i, j);
+      result(i, j) = -pressure * Vector2d(h_x, h_y);
       continue;
     }
 
@@ -1906,11 +1903,11 @@ void SSAFD::compute_driving_stress(const array::Scalar &ice_thickness,
     //
     // The y derivative is handled the same way.
 
-    auto M = cell_type.star(i, j);
+    auto M = cell_type.star_int(i, j);
     auto h = surface_elevation.star(i, j);
     stencils::Star<int> N(0);
 
-    if (no_model_mask) {
+    if (no_model_mask != nullptr) {
       N = no_model_mask->star_int(i, j);
     }
 
