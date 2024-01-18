@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2024 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -72,23 +72,25 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
   PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian.
-  m_callback_data.da  = *m_da;
+  m_callback_data.da  = *m_velocity_global.dm();
   m_callback_data.ssa = this;
 
-  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES, (DMDASNESFunction)function_callback,
+  auto dm = m_velocity_global.dm();
+
+  ierr = DMDASNESSetFunctionLocal(*dm, INSERT_VALUES, (DMDASNESFunction)function_callback,
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
-  ierr = DMDASNESSetJacobianLocal(*m_da, (DMDASNESJacobian)jacobian_callback, &m_callback_data);
+  ierr = DMDASNESSetJacobianLocal(*dm, (DMDASNESJacobian)jacobian_callback, &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 
-  ierr = DMSetMatType(*m_da, "baij");
+  ierr = DMSetMatType(*dm, "baij");
   PISM_CHK(ierr, "DMSetMatType");
 
-  ierr = DMSetApplicationContext(*m_da, &m_callback_data);
+  ierr = DMSetApplicationContext(*dm, &m_callback_data);
   PISM_CHK(ierr, "DMSetApplicationContext");
 
-  ierr = SNESSetDM(m_snes, *m_da);
+  ierr = SNESSetDM(m_snes, *dm);
   PISM_CHK(ierr, "SNESSetDM");
 
   // Default of maximum 200 iterations; possibly overridden by command line options

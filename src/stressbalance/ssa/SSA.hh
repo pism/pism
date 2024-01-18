@@ -136,8 +136,6 @@ protected:
 
   std::string m_stdout_ssa;
 
-  // objects used by the SSA solver (internally)
-  std::shared_ptr<petsc::DM>  m_da;               // dof=2 DA
   array::Vector m_velocity_global; // global vector for solution
 };
 

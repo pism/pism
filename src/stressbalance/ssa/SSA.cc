@@ -82,8 +82,6 @@ SSA::SSA(std::shared_ptr<const Grid> g)
   m_velocity.metadata(1).set_name("v_ssa");
   m_velocity.metadata(1).long_name("SSA model ice velocity in the Y direction");
 
-  m_da = m_velocity_global.dm();
-
   {
     rheology::FlowLawFactory ice_factory("stress_balance.ssa.", m_config, m_EC);
     ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);

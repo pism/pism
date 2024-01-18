@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -55,10 +55,12 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(std::shared_ptr<const Gri
   m_velocity_shared->metadata(0) = m_velocity.metadata(0);
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 
-  ierr = DMSetMatType(*m_da, MATBAIJ);
+  auto dm = m_velocity_global.dm();
+
+  ierr = DMSetMatType(*dm, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");
 
-  ierr = DMCreateMatrix(*m_da, m_J_state.rawptr());
+  ierr = DMCreateMatrix(*dm, m_J_state.rawptr());
   PISM_CHK(ierr, "DMCreateMatrix");
 
   ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
@@ -164,7 +166,7 @@ void IP_SSAHardavForwardProblem::assemble_residual(array::Vector &u, Vec RHS) {
 
   array::AccessScope l{&u};
 
-  petsc::DMDAVecArray rhs_a(m_da, RHS);
+  petsc::DMDAVecArray rhs_a(m_velocity_global.dm(), RHS);
 
   this->compute_local_function(u.array(), (Vector2d**)rhs_a.get());
 }
@@ -202,7 +204,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
                                                        array::Scalar &dzeta,
                                                        Vec du) {
-  petsc::DMDAVecArray du_a(m_da, du);
+  petsc::DMDAVecArray du_a(m_velocity_global.dm(), du);
   this->apply_jacobian_design(u, dzeta, (Vector2d**)du_a.get());
 }
 

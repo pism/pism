@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023  David Maxwell
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2024  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -169,7 +169,7 @@ public:
 
   //! Exposes the DMDA of the underlying grid for the benefit of TAO.
   petsc::DM& get_da() const {
-    return *m_da;
+    return *m_velocity_global.dm();
   }
 
 protected:

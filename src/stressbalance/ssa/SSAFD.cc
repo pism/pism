@@ -110,11 +110,13 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
 
   // PETSc objects and settings
   {
+    auto dm = m_velocity_global.dm();
+
     PetscErrorCode ierr;
-    ierr = DMSetMatType(*m_da, MATAIJ);
+    ierr = DMSetMatType(*dm, MATAIJ);
     PISM_CHK(ierr, "DMSetMatType");
 
-    ierr = DMCreateMatrix(*m_da, m_A.rawptr());
+    ierr = DMCreateMatrix(*dm, m_A.rawptr());
     PISM_CHK(ierr, "DMCreateMatrix");
 
     ierr = KSPCreate(m_grid->com, m_KSP.rawptr());
