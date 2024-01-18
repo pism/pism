@@ -116,8 +116,6 @@ public:
 
   virtual void update(const Inputs &inputs, bool full_update);
 
-  void set_initial_guess(const array::Vector &guess);
-
   virtual std::string stdout_report() const;
 protected:
   virtual void define_model_state_impl(const File &output) const;

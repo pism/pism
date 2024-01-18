@@ -370,13 +370,6 @@ std::string SSA::stdout_report() const {
   return m_stdout_ssa;
 }
 
-
-//! \brief Set the initial guess of the SSA velocity.
-void SSA::set_initial_guess(const array::Vector &guess) {
-  m_velocity.copy_from(guess);
-}
-
-
 void SSA::define_model_state_impl(const File &output) const {
   m_velocity.define(output, io::PISM_DOUBLE);
 }
