@@ -508,7 +508,7 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &vel,
+void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
                             bool include_basal_shear, Mat A) {
   using mask::grounded_ice;
   using mask::ice_free;
@@ -543,7 +543,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &vel,
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  array::AccessScope list{ &m_nuH, &tauc, &vel, &m_mask, &bed, &surface };
+  array::AccessScope list{ &m_nuH, &tauc, &velocity, &m_mask, &bed, &surface };
 
   if (inputs.bc_values != nullptr && inputs.bc_mask != nullptr) {
     list.add(*inputs.bc_mask);
@@ -807,12 +807,12 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &vel,
         }
         case MASK_FLOATING: {
           double scaling = sub_gl ? grounded_fraction(i, j) : 0.0;
-          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), vel(i, j).u, vel(i, j).v);
+          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
           break;
         }
         case MASK_GROUNDED: {
           double scaling = sub_gl ? grounded_fraction(i, j) : 1.0;
-          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), vel(i, j).u, vel(i, j).v);
+          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
           break;
         }
         case MASK_ICE_FREE_OCEAN:

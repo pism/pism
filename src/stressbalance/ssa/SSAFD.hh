@@ -112,6 +112,7 @@ protected:
     // weight for the j offset
     double w_j;
   };
+  // temprary storage used to compute the nuH term
   array::Array2D<Work> m_work;
 
   array::CellType2 m_mask;
