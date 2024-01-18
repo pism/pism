@@ -955,7 +955,7 @@ void SSAFD::solve(const Inputs &inputs) {
   m_velocity_old.copy_from(m_velocity);
 
   // These computations do not depend on the solution, so they need to
-  // be done once.
+  // be done only once.
   {
     assemble_rhs(inputs);
     compute_hardav_staggered(inputs, m_hardness);
@@ -1472,10 +1472,13 @@ void SSAFD::compute_nuH_staggered(const array::Scalar1 &ice_thickness,
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  for (int o = 0; o < 2; ++o) {
-    const int oi = 1 - o, oj = o;
-    for (auto p = m_grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j();
+  for (auto p = m_grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto V = velocity.box(i, j);
+
+    for (int o = 0; o < 2; ++o) {
+      const int oi = 1 - o, oj = o;
 
       const double H = 0.5 * (ice_thickness(i, j) + ice_thickness(i + oi, j + oj));
 
@@ -1487,24 +1490,20 @@ void SSAFD::compute_nuH_staggered(const array::Scalar1 &ice_thickness,
       double u_x, u_y, v_x, v_y;
       // Check the offset to determine how to differentiate velocity
       if (o == 0) {
-        u_x = (uv(i + 1, j).u - uv(i, j).u) / dx;
-        u_y =
-            (uv(i, j + 1).u + uv(i + 1, j + 1).u - uv(i, j - 1).u - uv(i + 1, j - 1).u) / (4 * dy);
-        v_x = (uv(i + 1, j).v - uv(i, j).v) / dx;
-        v_y =
-            (uv(i, j + 1).v + uv(i + 1, j + 1).v - uv(i, j - 1).v - uv(i + 1, j - 1).v) / (4 * dy);
+        u_x = (V.e.u - V.c.u) / dx;
+        v_x = (V.e.v - V.c.v) / dx;
+        u_y = (V.n.u + V.ne.u - V.s.u - V.se.u) / (4 * dy);
+        v_y = (V.n.v + V.ne.v - V.s.v - V.se.v) / (4 * dy);
       } else {
-        u_x =
-            (uv(i + 1, j).u + uv(i + 1, j + 1).u - uv(i - 1, j).u - uv(i - 1, j + 1).u) / (4 * dx);
-        u_y = (uv(i, j + 1).u - uv(i, j).u) / dy;
-        v_x =
-            (uv(i + 1, j).v + uv(i + 1, j + 1).v - uv(i - 1, j).v - uv(i - 1, j + 1).v) / (4 * dx);
-        v_y = (uv(i, j + 1).v - uv(i, j).v) / dy;
+        u_x = (V.e.u + V.ne.u - V.w.u - V.nw.u) / (4 * dx);
+        v_x = (V.e.v + V.ne.v - V.w.v - V.nw.v) / (4 * dx);
+        u_y = (V.n.u - V.c.u) / dy;
+        v_y = (V.n.v - V.c.v) / dy;
       }
 
       double nu = 0.0;
       m_flow_law->effective_viscosity(hardness(i, j, o),
-                                      secondInvariant_2D({ u_x, v_x }, { u_y, v_y }), &nu, NULL);
+                                      secondInvariant_2D({ u_x, v_x }, { u_y, v_y }), &nu, nullptr);
 
       result(i, j, o) = nu * H;
 
@@ -1514,9 +1513,8 @@ void SSAFD::compute_nuH_staggered(const array::Scalar1 &ice_thickness,
       // We ensure that nuH is bounded below by a positive constant.
       result(i, j, o) += nuH_regularization;
 
-    } // i,j-loop
-  }   // o-loop
-
+    } // o-loop
+  }   // i,j-loop
 
   // Some communication
   result.update_ghosts();
