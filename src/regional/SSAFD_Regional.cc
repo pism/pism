@@ -28,9 +28,8 @@ namespace stressbalance {
 SSAFD_Regional::SSAFD_Regional(std::shared_ptr<const Grid> g)
   : SSAFD(g) {
 
-  m_h_stored      = NULL;
-  m_H_stored      = NULL;
-  m_no_model_mask = NULL;
+  m_h_stored      = nullptr;
+  m_H_stored      = nullptr;
 }
 
 void SSAFD_Regional::init() {
@@ -47,13 +46,11 @@ void SSAFD_Regional::init() {
 void SSAFD_Regional::update(const Inputs &inputs, bool full_update) {
   m_h_stored      = inputs.no_model_surface_elevation;
   m_H_stored      = inputs.no_model_ice_thickness;
-  m_no_model_mask = inputs.no_model_mask;
 
   SSA::update(inputs, full_update);
 
   m_h_stored      = nullptr;
   m_H_stored      = nullptr;
-  m_no_model_mask = nullptr;
 }
 
 static int weight(int M_ij, int M_n, double h_ij, double h_n) {
@@ -87,7 +84,7 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto M = no_model_mask->star(i, j);
+    auto M = no_model_mask->star_int(i, j);
 
     if (M.c == 0) {
       // this grid point is in the modeled area so we don't need to modify the driving
@@ -102,14 +99,14 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
     }
 
     auto h = m_h_stored->star(i, j);
-    auto CT = cell_type.star(i, j);
+    auto CT = cell_type.star_int(i, j);
 
     // x-derivative
     double h_x = 0.0;
     {
       double
-        west = M.w == 1 and i > 0,
-        east = M.e == 1 and i < Mx - 1;
+        west = static_cast<double>(M.w == 1 and i > 0),
+        east = static_cast<double>(M.e == 1 and i < Mx - 1);
 
       // don't use differences spanning "cliffs"
       west *= weight(CT.c, CT.w, h.c, h.w);
@@ -126,8 +123,8 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
     double h_y = 0.0;
     {
       double
-        south = M.s == 1 and j > 0,
-        north = M.n == 1 and j < My - 1;
+        south = static_cast<double>(M.s == 1 and j > 0),
+        north = static_cast<double>(M.n == 1 and j < My - 1);
 
       // don't use differences spanning "cliffs"
       south *= weight(CT.c, CT.s, h.c, h.s);

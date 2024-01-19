@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,19 +32,17 @@ class SSAFD_Regional : public SSAFD {
 public:
   SSAFD_Regional(std::shared_ptr<const Grid> g);
   virtual ~SSAFD_Regional() = default;
-  virtual void init();
-  virtual void compute_driving_stress(const array::Scalar &ice_thickness,
-                                      const array::Scalar1 &surface_elevation,
-                                      const array::CellType1 &cell_type,
-                                      const array::Scalar1 *no_model_mask,
-                                      array::Vector &result) const;
+  void init();
+  void compute_driving_stress(const array::Scalar &ice_thickness,
+                              const array::Scalar1 &surface_elevation,
+                              const array::CellType1 &cell_type,
+                              const array::Scalar1 *no_model_mask, array::Vector &result) const;
 
 private:
   void update(const Inputs &inputs, bool full_update);
 
-  const array::Scalar1   *m_h_stored;
-  const array::Scalar   *m_H_stored;
-  const array::Scalar *m_no_model_mask;
+  const array::Scalar1 *m_h_stored;
+  const array::Scalar *m_H_stored;
 };
 
 SSA * SSAFD_RegionalFactory(std::shared_ptr<const Grid> grid);
