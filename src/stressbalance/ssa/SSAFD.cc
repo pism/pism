@@ -60,7 +60,7 @@ where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
 SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
   : SSA(grid),
-    m_hardness(grid, "hardness"),
+    m_hardness(grid, "ice_hardness"),
     m_nuH(grid, "nuH"),
     m_nuH_old(grid, "nuH_old"),
     m_work(grid, "work_vector", array::WITH_GHOSTS,
@@ -253,6 +253,7 @@ come from known velocity values.  The fields m_bc_values and m_bc_mask are used 
 this.
  */
 void SSAFD::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
+                         const array::Vector &driving_stress,
                          array::Vector &result) {
   using mask::ice_free;
   using mask::ice_free_land;
@@ -279,7 +280,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
-  array::AccessScope list{ &m_taud, &result };
+  array::AccessScope list{ &driving_stress, &result };
 
   if (inputs.bc_values != nullptr and inputs.bc_mask != nullptr) {
     list.add({ inputs.bc_values, inputs.bc_mask });
@@ -298,7 +299,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Vector2d taud = m_taud(i, j);
+    Vector2d taud = driving_stress(i, j);
 
     if (flow_line_mode) {
       // no cross-flow driving stress in the flow line mode
@@ -509,6 +510,7 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
 void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
+                            const array::Staggered &nuH,
                             const array::CellType1 &cell_type,
                             bool include_basal_shear, Mat A) {
   using mask::grounded_ice;
@@ -544,7 +546,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  array::AccessScope list{ &m_nuH, &tauc, &velocity, &cell_type, &bed, &surface };
+  array::AccessScope list{ &nuH, &tauc, &velocity, &cell_type, &bed, &surface };
 
   if (inputs.bc_values != nullptr && inputs.bc_mask != nullptr) {
     list.add(*inputs.bc_mask);
@@ -571,13 +573,27 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // Handle the easy case: provided Dirichlet boundary conditions
-      if (inputs.bc_values != nullptr && inputs.bc_mask != nullptr &&
-          inputs.bc_mask->as_int(i, j) == 1) {
-        // set diagonal entry to one (scaled); RHS entry will be known velocity;
-        set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
-        set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
-        continue;
+      // Easy cases:
+      {
+        // Provided Dirichlet boundary conditions
+        if (inputs.bc_mask != nullptr && inputs.bc_mask->as_int(i, j) == 1) {
+          // set diagonal entry to one (scaled); RHS entry will be known velocity;
+          set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
+          set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
+          continue;
+        }
+
+        // Ice-free areas when CFBC are active
+        //
+        // Note: this sets velocities at both ice-free ocean and ice-free
+        // bedrock to zero. This means that we need to set boundary conditions
+        // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
+        // to be consistent.
+        if (use_cfbc and cell_type.ice_free(i, j)) {
+          set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
+          set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
+          continue;
+        }
       }
 
       /* Provide shorthand for the following staggered coefficients  nu H:
@@ -586,10 +602,10 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
        *      c_s
        */
       // const
-      double c_w = m_nuH(i - 1, j, 0);
-      double c_e = m_nuH(i, j, 0);
-      double c_s = m_nuH(i, j - 1, 1);
-      double c_n = m_nuH(i, j, 1);
+      double c_w = nuH(i - 1, j, 0);
+      double c_e = nuH(i, j, 0);
+      double c_s = nuH(i, j - 1, 1);
+      double c_n = nuH(i, j, 1);
 
       if (lateral_drag_enabled) {
         // if option is set, the viscosity at ice-bedrock boundary layer will
@@ -622,7 +638,6 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
       // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
       // because this makes the code easier to understand.
       const int n_nonzeros = 18;
-      MatStencil row, col[n_nonzeros];
 
       // |-----+-----+---+-----+-----|
       // | NW  | NNW | N | NNE | NE  |
@@ -647,16 +662,6 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
 
       if (use_cfbc) {
         auto M = cell_type.box_int(i, j);
-
-        // Note: this sets velocities at both ice-free ocean and ice-free
-        // bedrock to zero. This means that we need to set boundary conditions
-        // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
-        // to be consistent.
-        if (ice_free(M.c)) {
-          set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
-          set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
-          continue;
-        }
 
         if (is_marginal(i, j, cell_type, bedrock_boundary)) {
           // If at least one of the following four conditions is "true", we're
@@ -879,6 +884,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
         }
       }
 
+      MatStencil row, col[n_nonzeros];
       row.i = i;
       row.j = j;
       for (int m = 0; m < n_nonzeros; m++) {
@@ -971,10 +977,6 @@ FIXME: update this doxygen comment
 */
 void SSAFD::solve(const Inputs &inputs) {
 
-  // Store away old SSA velocity (it might be needed in case a solver
-  // fails).
-  m_velocity_old.copy_from(m_velocity);
-
   // These computations do not depend on the solution, so they need to
   // be done only once.
   {
@@ -992,10 +994,14 @@ void SSAFD::solve(const Inputs &inputs) {
     compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
                            m_cell_type, inputs.no_model_mask, //
                            m_taud);                      // output
-    assemble_rhs(inputs, m_cell_type, //
+    assemble_rhs(inputs, m_cell_type, m_taud, //
                  m_rhs);         // output
-    compute_hardav_staggered(inputs, m_cell_type, m_hardness);
+    compute_average_ice_hardness(inputs, m_cell_type, m_hardness);
   }
+
+  // Store away old SSA velocity (it might be needed in case a solver
+  // fails).
+  m_velocity_old.copy_from(m_velocity);
 
   for (unsigned int k = 0; k < 3; ++k) {
     try {
@@ -1080,7 +1086,6 @@ void SSAFD::picard_iteration(const Inputs &inputs, double nuH_regularization,
 void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
                            double nuH_iter_failure_underrelax) {
   PetscErrorCode ierr;
-  double nuH_norm, nuH_norm_change;
   // ksp_iterations should be a PetscInt because it is used in the
   // KSPGetIterationNumber() call below
   PetscInt ksp_iterations, ksp_iterations_total = 0, outer_iterations;
@@ -1106,7 +1111,10 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
     compute_nuH_staggered(inputs.geometry->ice_thickness, m_velocity, m_hardness,
                           nuH_regularization, m_nuH);
   }
-  update_nuH_viewers();
+
+  if (m_view_nuh) {
+    update_nuH_viewers(m_nuH);
+  }
 
   // outer loop
   for (int k = 0; k < max_iterations; ++k) {
@@ -1115,13 +1123,10 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
       m_stdout_ssa += pism::printf("  %2d:", k);
     }
 
-    // in preparation of measuring change of effective viscosity:
-    m_nuH_old.copy_from(m_nuH);
-
     // assemble (or re-assemble) matrix, which depends on updated viscosity
-    assemble_matrix(inputs, m_velocity, m_cell_type, true, m_A);
+    assemble_matrix(inputs, m_velocity, m_nuH, m_cell_type, true, m_A);
 
-    {
+    if (false) {
       array::Vector residual(m_grid, "ssa_residual");
       residual.copy_from(m_rhs);
       residual.scale(-1.0);
@@ -1202,22 +1207,32 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
     // Note that copy_from() updates ghosts of m_velocity.
     m_velocity.copy_from(m_velocity_global);
 
-    // update viscosity and check for viscosity convergence
-    if (use_cfbc) {
-      compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
-                                 nuH_regularization, m_nuH);
-    } else {
-      compute_nuH_staggered(inputs.geometry->ice_thickness, m_velocity, m_hardness,
-                            nuH_regularization, m_nuH);
+    // update viscosity
+    double nuH_norm = 0.0, nuH_norm_change = 0.0;
+    {
+      // in preparation of measuring change of effective viscosity:
+      m_nuH_old.copy_from(m_nuH);
+
+      if (use_cfbc) {
+        compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity,
+                                   m_hardness, nuH_regularization, m_nuH);
+      } else {
+        compute_nuH_staggered(inputs.geometry->ice_thickness, m_velocity, m_hardness,
+                              nuH_regularization, m_nuH);
+      }
+
+      if (nuH_iter_failure_underrelax != 1.0) {
+        m_nuH.scale(nuH_iter_failure_underrelax);
+        m_nuH.add(1.0 - nuH_iter_failure_underrelax, m_nuH_old);
+      }
+      auto norm       = compute_nuH_norm(m_nuH, m_nuH_old);
+      nuH_norm        = norm[0];
+      nuH_norm_change = norm[1];
     }
 
-    if (nuH_iter_failure_underrelax != 1.0) {
-      m_nuH.scale(nuH_iter_failure_underrelax);
-      m_nuH.add(1.0 - nuH_iter_failure_underrelax, m_nuH_old);
+    if (m_view_nuh) {
+      update_nuH_viewers(m_nuH);
     }
-    compute_nuH_norm(nuH_norm, nuH_norm_change);
-
-    update_nuH_viewers();
 
     if (very_verbose) {
       m_stdout_ssa += pism::printf("|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n", nuH_norm,
@@ -1232,10 +1247,10 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
 
     outer_iterations = k + 1;
 
+    // check for viscosity convergence
     if (nuH_norm == 0 || nuH_norm_change / nuH_norm < ssa_relative_tolerance) {
       goto done;
     }
-
   } // outer loop (k)
 
   // If we're here, it means that we exceeded max_iterations and still
@@ -1300,7 +1315,7 @@ void SSAFD::picard_strategy_regularization(const Inputs &inputs) {
   }
 }
 
-//! \brief Compute the norm of nu H and the change in nu H.
+//! \brief Compute the norm of `nu H` and the norm of the change in `nu H`.
 /*!
 Verification and PST experiments
 suggest that an \f$L^1\f$ criterion for convergence is best.  For verification
@@ -1312,30 +1327,34 @@ Presumably that is because rapid (temporal and spatial) variation in
 For the significant (e.g.~in terms of flux) parts of the flow, it is o.k. to ignore
 a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
 \f$L^2\f$ (much less \f$L^\infty\f$, which might not work at all).
+
+Note: clobbers `nuH_old` -- it is used to compute the change in `nu H`.
  */
-void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
+std::array<double, 2> SSAFD::compute_nuH_norm(const array::Staggered &nuH,
+                                              array::Staggered &nuH_old) {
 
   const double area      = m_grid->cell_area();
   const NormType MY_NORM = NORM_1;
 
   // Test for change in nu
-  m_nuH_old.add(-1, m_nuH);
+  nuH_old.add(-1, nuH);
 
-  std::vector<double> nuNorm = m_nuH.norm(MY_NORM), nuChange = m_nuH_old.norm(MY_NORM);
+  std::vector<double> nuNorm = nuH.norm(MY_NORM), nuChange = nuH_old.norm(MY_NORM);
 
   nuChange[0] *= area;
   nuChange[1] *= area;
   nuNorm[0] *= area;
   nuNorm[1] *= area;
 
-  norm_change = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
-  norm        = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));
+  double norm_change = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
+  double norm        = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));
+
+  return {norm, norm_change};
 }
 
-//! \brief Computes vertically-averaged ice hardness on the staggered grid.
-void SSAFD::compute_hardav_staggered(const Inputs &inputs,
-                                     const array::CellType1 &cell_type,
-                                     array::Staggered &result) {
+//! @brief Computes vertically-averaged ice hardness on the staggered grid.
+void SSAFD::compute_average_ice_hardness(const Inputs &inputs, const array::CellType1 &cell_type,
+                                         array::Staggered &result) {
   const array::Scalar &thickness = inputs.geometry->ice_thickness;
 
   const array::Array3D &enthalpy = *inputs.enthalpy;
@@ -1385,7 +1404,9 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs,
   }
   loop.check();
 
-  fracture_induced_softening(inputs.fracture_density);
+  if (inputs.fracture_density != nullptr) {
+    fracture_induced_softening(*inputs.fracture_density, result);
+  }
 }
 
 
@@ -1422,15 +1443,13 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs,
   So scaling the enhancement factor by \f$C\f$ is equivalent to scaling
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
-void SSAFD::fracture_induced_softening(const array::Scalar *fracture_density) {
-  if (fracture_density == nullptr) {
-    return;
-  }
+void SSAFD::fracture_induced_softening(const array::Scalar &fracture_density,
+                                       array::Staggered &ice_hardness) {
 
   const double epsilon = m_config->get_number("fracture_density.softening_lower_limit"),
                n_glen  = m_flow_law->exponent();
 
-  array::AccessScope list{ &m_hardness, fracture_density };
+  array::AccessScope list{ &ice_hardness, &fracture_density };
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1440,11 +1459,11 @@ void SSAFD::fracture_induced_softening(const array::Scalar *fracture_density) {
 
       const double
           // fracture density on the staggered grid:
-          phi = 0.5 * ((*fracture_density)(i, j) + (*fracture_density)(i + oi, j + oj)),
+          phi = 0.5 * (fracture_density(i, j) + fracture_density(i + oi, j + oj)),
           // the line below implements equation (6) in the paper
           softening = pow((1.0 - (1.0 - epsilon) * phi), -n_glen);
 
-      m_hardness(i, j, o) *= pow(softening, -1.0 / n_glen);
+      ice_hardness(i, j, o) *= pow(softening, -1.0 / n_glen);
     }
   }
 }
@@ -1704,23 +1723,19 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
 }
 
 //! Update the nuH viewer, which shows log10(nu H).
-void SSAFD::update_nuH_viewers() {
-
-  if (not m_view_nuh) {
-    return;
-  }
+void SSAFD::update_nuH_viewers(const array::Staggered &nuH) {
 
   array::Scalar tmp(m_grid, "nuH");
   tmp.metadata(0)
       .long_name("log10 of (viscosity * thickness)")
       .units("Pa s m");
 
-  array::AccessScope list{&m_nuH, &tmp};
+  array::AccessScope list{&nuH, &tmp};
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double avg_nuH = 0.5 * (m_nuH(i,j,0) + m_nuH(i,j,1));
+    double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
     if (avg_nuH > 1.0e14) {
       tmp(i,j) = log10(avg_nuH);
     } else {

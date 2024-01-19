@@ -225,7 +225,6 @@ std::shared_ptr<TerminationReason> SSAFEM::solve_nocache() {
 
     // Extract the solution back from SSAX to velocity and communicate.
     m_velocity.copy_from(m_velocity_global);
-    m_velocity.update_ghosts();
 
     bool view_solution = options::Bool("-ssa_view_solution", "view solution of the SSA system");
     if (view_solution) {

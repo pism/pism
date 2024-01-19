@@ -162,7 +162,7 @@ void SSA::extrapolate_velocity(const array::CellType1 &cell_type,
 
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {
 
-      auto M = cell_type.star(i, j);
+      auto M = cell_type.star_int(i, j);
       auto vel = velocity.star(i, j);
 
       Vector2d sum{0.0, 0.0};

@@ -19,6 +19,8 @@
 #ifndef _SSAFD_H_
 #define _SSAFD_H_
 
+#include <array>
+
 #include "pism/stressbalance/ssa/SSA.hh"
 
 #include "pism/util/error_handling.hh"
@@ -61,9 +63,8 @@ protected:
 
   virtual void picard_strategy_regularization(const Inputs &inputs);
 
-  virtual void compute_hardav_staggered(const Inputs &inputs,
-                                        const array::CellType1 &cell_type,
-                                        array::Staggered &result);
+  virtual void compute_average_ice_hardness(const Inputs &inputs, const array::CellType1 &cell_type,
+                                            array::Staggered &result);
 
   virtual void compute_nuH_staggered(const array::Scalar1 &ice_thickness,
                                      const array::Vector1 &velocity,
@@ -78,8 +79,8 @@ protected:
                                           double nuH_regularization,
                                           array::Staggered &result);
 
-  virtual void compute_nuH_norm(double &norm,
-                                double &norm_change);
+  virtual std::array<double, 2> compute_nuH_norm(const array::Staggered &nuH,
+                                                 array::Staggered &nuH_old);
 
   virtual void compute_driving_stress(const array::Scalar &ice_thickness,
                                       const array::Scalar1 &surface_elevation,
@@ -89,21 +90,24 @@ protected:
 
   virtual void assemble_matrix(const Inputs &inputs,
                                const array::Vector &velocity,
+                               const array::Staggered &nuH,
                                const array::CellType1 &cell_type,
                                bool include_basal_shear, Mat A);
 
   virtual void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
+                            const array::Vector &driving_stress,
                             array::Vector &result);
 
   virtual void write_system_petsc(const std::string &namepart);
 
-  virtual void update_nuH_viewers();
+  virtual void update_nuH_viewers(const array::Staggered &nuH);
 
   virtual bool is_marginal(int i, int j,
                            const array::CellType1 &cell_type,
                            bool ssa_dirichlet_bc);
 
-  virtual void fracture_induced_softening(const array::Scalar *fracture_density);
+  virtual void fracture_induced_softening(const array::Scalar &fracture_density,
+                                          array::Staggered &ice_hardness);
 
   // objects used internally
   array::Staggered m_hardness;
