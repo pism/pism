@@ -33,15 +33,17 @@ namespace pism {
 namespace stressbalance {
 
 //! PISM's SSA solver: the finite difference implementation.
-class SSAFD : public SSA
-{
+class SSAFD : public SSA {
 public:
   SSAFD(std::shared_ptr<const Grid> g);
   virtual ~SSAFD() = default;
 
-  const array::Staggered & integrated_viscosity() const;
+  const array::Staggered &integrated_viscosity() const;
 
-  const array::Vector& driving_stress() const;
+  const array::Vector &driving_stress() const;
+
+  void compute_residual(const Inputs &inputs, const array::Vector &velocity, array::Vector &result);
+
 protected:
   virtual void init_impl();
 
@@ -53,12 +55,10 @@ protected:
 
   virtual void solve(const Inputs &inputs);
 
-  virtual void picard_iteration(const Inputs &inputs,
-                                double nuH_regularization,
+  virtual void picard_iteration(const Inputs &inputs, double nuH_regularization,
                                 double nuH_iter_failure_underrelax);
 
-  virtual void picard_manager(const Inputs &inputs,
-                              double nuH_regularization,
+  virtual void picard_manager(const Inputs &inputs, double nuH_regularization,
                               double nuH_iter_failure_underrelax);
 
   virtual void picard_strategy_regularization(const Inputs &inputs);
@@ -68,16 +68,14 @@ protected:
 
   virtual void compute_nuH_staggered(const array::Scalar1 &ice_thickness,
                                      const array::Vector1 &velocity,
-                                     const array::Staggered &hardness,
-                                     double nuH_regularization,
+                                     const array::Staggered &hardness, double nuH_regularization,
                                      array::Staggered &result);
 
   virtual void compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
                                           const array::CellType2 &cell_type,
                                           const array::Vector2 &velocity,
                                           const array::Staggered &hardness,
-                                          double nuH_regularization,
-                                          array::Staggered &result);
+                                          double nuH_regularization, array::Staggered &result);
 
   virtual std::array<double, 2> compute_nuH_norm(const array::Staggered &nuH,
                                                  array::Staggered &nuH_old);
@@ -88,11 +86,9 @@ protected:
                                       const array::Scalar1 *no_model_mask,
                                       array::Vector &result) const;
 
-  virtual void assemble_matrix(const Inputs &inputs,
-                               const array::Vector &velocity,
-                               const array::Staggered &nuH,
-                               const array::CellType1 &cell_type,
-                               bool include_basal_shear, Mat A);
+  virtual void assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
+                               const array::Staggered &nuH, const array::CellType1 &cell_type,
+                               Mat A);
 
   virtual void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
                             const array::Vector &driving_stress,

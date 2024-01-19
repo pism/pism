@@ -510,9 +510,7 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
 void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
-                            const array::Staggered &nuH,
-                            const array::CellType1 &cell_type,
-                            bool include_basal_shear, Mat A) {
+                            const array::Staggered &nuH, const array::CellType1 &cell_type, Mat A) {
   using mask::grounded_ice;
   using mask::ice_free;
   using mask::ice_free_land;
@@ -802,7 +800,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
        *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
        *    (i.e. on left side of SSA eqns).  */
       double beta_u = 0.0, beta_v = 0.0;
-      if (include_basal_shear) {
+      {
         double beta = 0.0;
         switch (M_ij) {
         case MASK_ICE_FREE_BEDROCK: {
@@ -813,12 +811,14 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
         }
         case MASK_FLOATING: {
           double scaling = sub_gl ? grounded_fraction(i, j) : 0.0;
-          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
+          beta =
+              scaling * m_basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
           break;
         }
         case MASK_GROUNDED: {
           double scaling = sub_gl ? grounded_fraction(i, j) : 1.0;
-          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
+          beta =
+              scaling * m_basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
           break;
         }
         case MASK_ICE_FREE_OCEAN:
@@ -989,13 +989,13 @@ void SSAFD::solve(const Inputs &inputs) {
 
       gc.compute_mask(inputs.geometry->sea_level_elevation, inputs.geometry->bed_elevation,
                       inputs.geometry->ice_thickness, //
-                      m_cell_type);                        // output
+                      m_cell_type);                   // output
     }
     compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
                            m_cell_type, inputs.no_model_mask, //
-                           m_taud);                      // output
-    assemble_rhs(inputs, m_cell_type, m_taud, //
-                 m_rhs);         // output
+                           m_taud);                           // output
+    assemble_rhs(inputs, m_cell_type, m_taud,                 //
+                 m_rhs);                                      // output
     compute_average_ice_hardness(inputs, m_cell_type, m_hardness);
   }
 
@@ -1124,21 +1124,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
     }
 
     // assemble (or re-assemble) matrix, which depends on updated viscosity
-    assemble_matrix(inputs, m_velocity, m_nuH, m_cell_type, true, m_A);
-
-    if (false) {
-      array::Vector residual(m_grid, "ssa_residual");
-      residual.copy_from(m_rhs);
-      residual.scale(-1.0);
-
-      ierr = MatMultAdd(m_A, m_velocity_global.vec(), residual.vec(), residual.vec());
-      PISM_CHK(ierr, "MatMultAdd");
-
-      auto filename = pism::printf("ssa_residual_%d.nc", k);
-      residual.dump(filename.c_str());
-
-      m_rhs.dump("ssa_rhs.nc");
-    }
+    assemble_matrix(inputs, m_velocity, m_nuH, m_cell_type, m_A);
 
     if (very_verbose) {
       m_stdout_ssa += "A:";
@@ -1349,7 +1335,7 @@ std::array<double, 2> SSAFD::compute_nuH_norm(const array::Staggered &nuH,
   double norm_change = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
   double norm        = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));
 
-  return {norm, norm_change};
+  return { norm, norm_change };
 }
 
 //! @brief Computes vertically-averaged ice hardness on the staggered grid.
@@ -1406,6 +1392,53 @@ void SSAFD::compute_average_ice_hardness(const Inputs &inputs, const array::Cell
 
   if (inputs.fracture_density != nullptr) {
     fracture_induced_softening(*inputs.fracture_density, result);
+  }
+}
+
+void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity,
+                             array::Vector &result) {
+  bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
+
+  // These computations do not depend on the solution, so they need to
+  // be done only once.
+  {
+    // update the cell type mask using the ice-free thickness threshold for stress balance
+    // computations
+    {
+      const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
+      GeometryCalculator gc(*m_config);
+      gc.set_icefree_thickness(H_threshold);
+
+      gc.compute_mask(inputs.geometry->sea_level_elevation, inputs.geometry->bed_elevation,
+                      inputs.geometry->ice_thickness, //
+                      m_cell_type);                   // output
+    }
+    compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
+                           m_cell_type, inputs.no_model_mask, //
+                           m_taud);                           // output
+    compute_average_ice_hardness(inputs, m_cell_type, m_hardness);
+  }
+
+  double nuH_regularization = m_config->get_number("stress_balance.ssa.epsilon");
+
+  if (use_cfbc) {
+    compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
+                               nuH_regularization, m_nuH);
+  } else {
+    compute_nuH_staggered(inputs.geometry->ice_thickness, m_velocity, m_hardness,
+                          nuH_regularization, m_nuH);
+  }
+
+  assemble_matrix(inputs, velocity, m_nuH, m_cell_type, m_A);
+
+  {
+    assemble_rhs(inputs, m_cell_type, m_taud, result);
+    result.scale(-1.0);
+
+    // MatMultAdd() needs a "global" Vec, so we have to copy from `velocity`:
+    m_velocity_global.copy_from(velocity);
+    PetscErrorCode ierr = MatMultAdd(m_A, m_velocity_global.vec(), result.vec(), result.vec());
+    PISM_CHK(ierr, "MatMultAdd");
   }
 }
 
