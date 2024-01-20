@@ -417,22 +417,6 @@ void SSAFD::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type
   }
 }
 
-static void set_diagonal_matrix_entry(Mat A, int i, int j, int component, double value) {
-  MatStencil row, col;
-
-  row.i = i;
-  row.j = j;
-  row.c = component;
-
-  col.i = i;
-  col.j = j;
-  col.c = component;
-
-  PetscErrorCode ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES);
-  PISM_CHK(ierr, "MatSetValuesStencil");
-}
-
-
 //! \brief Assemble the left-hand side matrix for the KSP-based, Picard iteration,
 //! and finite difference implementation of the SSA equations.
 /*!
@@ -449,7 +433,7 @@ where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the
 \f$y\f$-component of the velocity.
 
 The coefficient \f$\nu\f$ is the vertically-averaged effective viscosity.
-(The product \f$\nu H\f$ is computed by compute_nuH_staggered().)
+(The product \f$\nu H\f$ is computed by compute_nuH().)
 The Picard iteration idea is that, to solve the nonlinear equations in which
 the effective viscosity depends on the velocity, we freeze the effective
 viscosity using its value at the current estimate of the velocity and we solve
@@ -574,22 +558,28 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
       // Easy cases:
       {
         // Provided Dirichlet boundary conditions
-        if (inputs.bc_mask != nullptr && inputs.bc_mask->as_int(i, j) == 1) {
-          // set diagonal entry to one (scaled); RHS entry will be known velocity;
-          set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
-          set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
-          continue;
-        }
-
-        // Ice-free areas when CFBC are active
-        //
+        bool bc_location = inputs.bc_mask != nullptr and inputs.bc_mask->as_int(i, j) == 1;
         // Note: this sets velocities at both ice-free ocean and ice-free
         // bedrock to zero. This means that we need to set boundary conditions
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
-        if (use_cfbc and cell_type.ice_free(i, j)) {
-          set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
-          set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
+        bool ice_free_with_cfbc = use_cfbc and cell_type.ice_free(i, j);
+
+        if (bc_location or ice_free_with_cfbc) {
+          // set diagonal entry to one (scaled); RHS entry will be known velocity;
+          MatStencil row, col;
+          for (int c = 0; c < 2; ++c) {
+            row.i = i;
+            row.j = j;
+            row.c = c;
+
+            col.i = i;
+            col.j = j;
+            col.c = c;
+
+            PetscErrorCode ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &m_scaling, INSERT_VALUES);
+            PISM_CHK(ierr, "MatSetValuesStencil");
+          }
           continue;
         }
       }
@@ -926,7 +916,7 @@ This is the main procedure in the SSAFD.  It manages the nonlinear solve process
 and the Picard iteration.
 
 The outer loop (over index `k`) is the nonlinear iteration.  In this loop the effective
-viscosity is computed by compute_nuH_staggered() and then the linear system is
+viscosity is computed by compute_nuH() and then the linear system is
 set up and solved.
 
 Specifically, we call the PETSc procedure KSPSolve() to solve the linear system.
@@ -980,23 +970,8 @@ void SSAFD::solve(const Inputs &inputs) {
   // These computations do not depend on the solution, so they need to
   // be done only once.
   {
-    // update the cell type mask using the ice-free thickness threshold for stress balance
-    // computations
-    {
-      const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
-      GeometryCalculator gc(*m_config);
-      gc.set_icefree_thickness(H_threshold);
-
-      gc.compute_mask(inputs.geometry->sea_level_elevation, inputs.geometry->bed_elevation,
-                      inputs.geometry->ice_thickness, //
-                      m_cell_type);                   // output
-    }
-    compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
-                           m_cell_type, inputs.no_model_mask, //
-                           m_taud);                           // output
-    assemble_rhs(inputs, m_cell_type, m_taud,                 //
-                 m_rhs);                                      // output
-    compute_average_ice_hardness(inputs, m_cell_type, m_hardness);
+    initialize_iterations(inputs);
+    assemble_rhs(inputs, m_cell_type, m_taud, m_rhs);
   }
 
   // Store away old SSA velocity (it might be needed in case a solver
@@ -1105,11 +1080,10 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
   bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
   if (use_cfbc) {
-    compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
-                               nuH_regularization, m_nuH);
+    compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
+                     nuH_regularization, m_nuH);
   } else {
-    compute_nuH_staggered(inputs.geometry->ice_thickness, m_velocity, m_hardness,
-                          nuH_regularization, m_nuH);
+    compute_nuH(inputs.geometry->ice_thickness, m_velocity, m_hardness, nuH_regularization, m_nuH);
   }
 
   if (m_view_nuh) {
@@ -1200,10 +1174,10 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
       m_nuH_old.copy_from(m_nuH);
 
       if (use_cfbc) {
-        compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity,
+        compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity,
                                    m_hardness, nuH_regularization, m_nuH);
       } else {
-        compute_nuH_staggered(inputs.geometry->ice_thickness, m_velocity, m_hardness,
+        compute_nuH(inputs.geometry->ice_thickness, m_velocity, m_hardness,
                               nuH_regularization, m_nuH);
       }
 
@@ -1395,37 +1369,43 @@ void SSAFD::compute_average_ice_hardness(const Inputs &inputs, const array::Cell
   }
 }
 
+/*!
+ *  These computations do not depend on the solution, so they need to be done only once.
+ *
+ *  Updates m_cell_type, m_taud, m_hardness.
+ */
+void SSAFD::initialize_iterations(const Inputs &inputs) {
+  // update the cell type mask using the ice-free thickness threshold for stress balance
+  // computations
+  {
+    const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
+    GeometryCalculator gc(*m_config);
+    gc.set_icefree_thickness(H_threshold);
+
+    gc.compute_mask(inputs.geometry->sea_level_elevation, inputs.geometry->bed_elevation,
+                    inputs.geometry->ice_thickness, //
+                    m_cell_type);                   // output
+    // note: compute_mask() updates ghosts without communication ("redundantly")
+  }
+  compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
+                         m_cell_type, inputs.no_model_mask, //
+                         m_taud);                           // output
+  compute_average_ice_hardness(inputs, m_cell_type, m_hardness);
+}
+
 void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity,
                              array::Vector &result) {
   bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
-  // These computations do not depend on the solution, so they need to
-  // be done only once.
-  {
-    // update the cell type mask using the ice-free thickness threshold for stress balance
-    // computations
-    {
-      const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
-      GeometryCalculator gc(*m_config);
-      gc.set_icefree_thickness(H_threshold);
-
-      gc.compute_mask(inputs.geometry->sea_level_elevation, inputs.geometry->bed_elevation,
-                      inputs.geometry->ice_thickness, //
-                      m_cell_type);                   // output
-    }
-    compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
-                           m_cell_type, inputs.no_model_mask, //
-                           m_taud);                           // output
-    compute_average_ice_hardness(inputs, m_cell_type, m_hardness);
-  }
+  initialize_iterations(inputs);
 
   double nuH_regularization = m_config->get_number("stress_balance.ssa.epsilon");
 
   if (use_cfbc) {
-    compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
+    compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
                                nuH_regularization, m_nuH);
   } else {
-    compute_nuH_staggered(inputs.geometry->ice_thickness, m_velocity, m_hardness,
+    compute_nuH(inputs.geometry->ice_thickness, m_velocity, m_hardness,
                           nuH_regularization, m_nuH);
   }
 
@@ -1548,7 +1528,7 @@ In this implementation we set \f$\nu H\f$ to a constant anywhere the ice is
 thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
 */
-void SSAFD::compute_nuH_staggered(const array::Scalar1 &ice_thickness,
+void SSAFD::compute_nuH(const array::Scalar1 &ice_thickness,
                                   const array::Vector1 &velocity, const array::Staggered &hardness,
                                   double nuH_regularization, array::Staggered &result) {
 
@@ -1618,11 +1598,9 @@ void SSAFD::compute_nuH_staggered(const array::Scalar1 &ice_thickness,
  *
  * @return 0 on success
  */
-void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
-                                       const array::CellType2 &cell_type,
-                                       const array::Vector2 &velocity,
-                                       const array::Staggered &hardness, double nuH_regularization,
-                                       array::Staggered &result) {
+void SSAFD::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
+                             const array::Vector2 &velocity, const array::Staggered &hardness,
+                             double nuH_regularization, array::Staggered &result) {
 
   double n_glen                 = m_flow_law->exponent(),
          nu_enhancement_scaling = 1.0 / pow(m_e_factor, 1.0 / n_glen);

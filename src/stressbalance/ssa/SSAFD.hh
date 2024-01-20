@@ -66,16 +66,14 @@ protected:
   virtual void compute_average_ice_hardness(const Inputs &inputs, const array::CellType1 &cell_type,
                                             array::Staggered &result);
 
-  virtual void compute_nuH_staggered(const array::Scalar1 &ice_thickness,
-                                     const array::Vector1 &velocity,
-                                     const array::Staggered &hardness, double nuH_regularization,
-                                     array::Staggered &result);
+  virtual void compute_nuH(const array::Scalar1 &ice_thickness, const array::Vector1 &velocity,
+                           const array::Staggered &hardness, double nuH_regularization,
+                           array::Staggered &result);
 
-  virtual void compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
-                                          const array::CellType2 &cell_type,
-                                          const array::Vector2 &velocity,
-                                          const array::Staggered &hardness,
-                                          double nuH_regularization, array::Staggered &result);
+  virtual void compute_nuH_cfbc(const array::Scalar1 &ice_thickness,
+                                const array::CellType2 &cell_type, const array::Vector2 &velocity,
+                                const array::Staggered &hardness, double nuH_regularization,
+                                array::Staggered &result);
 
   virtual std::array<double, 2> compute_nuH_norm(const array::Staggered &nuH,
                                                  array::Staggered &nuH_old);
@@ -85,6 +83,8 @@ protected:
                                       const array::CellType1 &cell_type,
                                       const array::Scalar1 *no_model_mask,
                                       array::Vector &result) const;
+
+  void initialize_iterations(const Inputs &inputs);
 
   virtual void assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
                                const array::Staggered &nuH, const array::CellType1 &cell_type,
