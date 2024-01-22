@@ -42,7 +42,7 @@ public:
 
   const array::Vector &driving_stress() const;
 
-  void compute_residual(const Inputs &inputs, const array::Vector &velocity, array::Vector &result);
+  void compute_residual(const Inputs &inputs, const array::Vector2 &velocity, array::Vector &result);
 
 protected:
   virtual void init_impl();

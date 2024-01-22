@@ -1384,32 +1384,32 @@ void SSAFD::initialize_iterations(const Inputs &inputs) {
   compute_average_ice_hardness(inputs, m_cell_type, m_hardness);
 }
 
-void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity,
+void SSAFD::compute_residual(const Inputs &inputs, const array::Vector2 &velocity,
                              array::Vector &result) {
   bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
+  // update m_cell_type, m_taud, m_hardness
   initialize_iterations(inputs);
 
   double nuH_regularization = m_config->get_number("stress_balance.ssa.epsilon");
 
   if (use_cfbc) {
-    compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
-                               nuH_regularization, m_nuH);
+    compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, velocity, m_hardness,
+                     nuH_regularization, m_nuH);
   } else {
-    compute_nuH(inputs.geometry->ice_thickness, m_velocity, m_hardness,
-                          nuH_regularization, m_nuH);
+    compute_nuH(inputs.geometry->ice_thickness, velocity, m_hardness,
+                nuH_regularization, m_nuH);
   }
 
   assemble_matrix(inputs, velocity, m_nuH, m_cell_type, m_A);
 
   {
-    assemble_rhs(inputs, m_cell_type, m_taud, result);
-    result.scale(-1.0);
+    assemble_rhs(inputs, m_cell_type, m_taud, m_rhs);
 
     // MatMultAdd() needs a "global" Vec, so we have to copy from `velocity`:
     m_velocity_global.copy_from(velocity);
-    PetscErrorCode ierr = MatMultAdd(m_A, m_velocity_global.vec(), result.vec(), result.vec());
-    PISM_CHK(ierr, "MatMultAdd");
+    PetscErrorCode ierr = MatResidual(m_A, m_rhs.vec(), m_velocity_global.vec(), result.vec());
+    PISM_CHK(ierr, "MatResidual");
   }
 }
 
