@@ -567,17 +567,13 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
 
         if (bc_location or ice_free_with_cfbc) {
           // set diagonal entry to one (scaled); RHS entry will be known velocity;
-          MatStencil row, col;
+          MatStencil row;
           for (int c = 0; c < 2; ++c) {
             row.i = i;
             row.j = j;
             row.c = c;
 
-            col.i = i;
-            col.j = j;
-            col.c = c;
-
-            PetscErrorCode ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &m_scaling, INSERT_VALUES);
+            PetscErrorCode ierr = MatSetValuesStencil(A, 1, &row, 1, &row, &m_scaling, INSERT_VALUES);
             PISM_CHK(ierr, "MatSetValuesStencil");
           }
           continue;
