@@ -566,16 +566,11 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
         bool ice_free_with_cfbc = use_cfbc and cell_type.ice_free(i, j);
 
         if (bc_location or ice_free_with_cfbc) {
-          // set diagonal entry to one (scaled); RHS entry will be known velocity;
-          MatStencil row;
-          for (int c = 0; c < 2; ++c) {
-            row.i = i;
-            row.j = j;
-            row.c = c;
-
-            PetscErrorCode ierr = MatSetValuesStencil(A, 1, &row, 1, &row, &m_scaling, INSERT_VALUES);
-            PISM_CHK(ierr, "MatSetValuesStencil");
-          }
+          // set diagonal entries to one (scaled); RHS entry will be known velocity
+          MatStencil row[2] = {{-1, j, i, 0}, {-1, j, i, 1}};
+          double  identity[4] = {m_scaling, 0.0, 0.0, m_scaling};
+          PetscErrorCode ierr = MatSetValuesStencil(A, 2, row, 2, row, identity, INSERT_VALUES);
+          PISM_CHK(ierr, "MatSetValuesStencil");
           continue;
         }
       }
