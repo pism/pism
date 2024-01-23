@@ -492,8 +492,9 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
-                            const array::Staggered &nuH, const array::CellType1 &cell_type, Mat A) {
+void SSAFD::eval_fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
+                             const array::Staggered &nuH, const array::CellType1 &cell_type, Mat *A,
+                             array::Vector *Ax) {
   using mask::grounded_ice;
   using mask::ice_free;
   using mask::ice_free_land;
@@ -524,10 +525,16 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity
       replace_zero_diagonal_entries =
           m_config->get_flag("stress_balance.ssa.fd.replace_zero_diagonal_entries");
 
-  ierr = MatZeroEntries(A);
-  PISM_CHK(ierr, "MatZeroEntries");
+  if (A != nullptr) {
+    ierr = MatZeroEntries(*A);
+    PISM_CHK(ierr, "MatZeroEntries");
+  }
 
-  array::AccessScope list{ &nuH, &tauc, &velocity, &cell_type, &bed, &surface, &m_Ax };
+  array::AccessScope list{ &nuH, &tauc, &velocity, &cell_type, &bed, &surface };
+
+  if (Ax != nullptr) {
+    list.add(*Ax);
+  }
 
   if (inputs.bc_values != nullptr && inputs.bc_mask != nullptr) {
     list.add(*inputs.bc_mask);
@@ -565,13 +572,15 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity
         bool ice_free_with_cfbc = use_cfbc and cell_type.ice_free(i, j);
 
         if (bc_location or ice_free_with_cfbc) {
-          m_Ax(i, j) = m_scaling * velocity(i, j);
+          if (Ax != nullptr) {
+            (*Ax)(i, j) = m_scaling * velocity(i, j);
+          }
 
           // set diagonal entries to one (scaled); RHS entry will be known velocity
-          {
-            MatStencil row[2]   = { { -1, j, i, 0 }, { -1, j, i, 1 } };
-            double identity[4]  = { m_scaling, 0.0, 0.0, m_scaling };
-            PetscErrorCode ierr = MatSetValuesStencil(A, 2, row, 2, row, identity, INSERT_VALUES);
+          if (A != nullptr) {
+            MatStencil row[2]  = { { -1, j, i, 0 }, { -1, j, i, 1 } };
+            double identity[4] = { m_scaling, 0.0, 0.0, m_scaling };
+            ierr               = MatSetValuesStencil(*A, 2, row, 2, row, identity, INSERT_VALUES);
             PISM_CHK(ierr, "MatSetValuesStencil");
           }
           continue;
@@ -868,16 +877,18 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity
         }
       }
 
-      m_Ax(i, j) = 0.0;
-      for (int k = 0; k < n_nonzeros; ++k) {
-        const auto &v = velocity(I[k], J[k]);
-        double u_or_v = v.u * (1 - C[k]) + v.v * C[k];
-        m_Ax(i, j).u += eq1[k] * u_or_v;
-        m_Ax(i, j).v += eq2[k] * u_or_v;
+      if (Ax != nullptr) {
+        Vector2d sum;
+        for (int k = 0; k < n_nonzeros; ++k) {
+          const auto &v = velocity(I[k], J[k]);
+          double u_or_v = v.u * (1 - C[k]) + v.v * C[k];
+          sum += Vector2d{ eq1[k], eq2[k] } * u_or_v;
+        }
+        (*Ax)(i, j) = sum;
       }
 
       // set matrix values
-      {
+      if (A != nullptr) {
         MatStencil row, col[n_nonzeros];
         row.i = i;
         row.j = j;
@@ -889,12 +900,12 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity
 
         // set coefficients of the first equation:
         row.c = 0;
-        ierr  = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq1, INSERT_VALUES);
+        ierr  = MatSetValuesStencil(*A, 1, &row, n_nonzeros, col, eq1, INSERT_VALUES);
         PISM_CHK(ierr, "MatSetValuesStencil");
 
         // set coefficients of the second equation:
         row.c = 1;
-        ierr  = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq2, INSERT_VALUES);
+        ierr  = MatSetValuesStencil(*A, 1, &row, n_nonzeros, col, eq2, INSERT_VALUES);
         PISM_CHK(ierr, "MatSetValuesStencil");
       }
     } // i,j-loop
@@ -903,16 +914,24 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity
   }
   loop.check();
 
-  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  PISM_CHK(ierr, "MatAssemblyBegin");
+  if (A != nullptr) {
+    ierr = MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);
+    PISM_CHK(ierr, "MatAssemblyBegin");
 
-  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-  PISM_CHK(ierr, "MatAssemblyEnd");
+    ierr = MatAssemblyEnd(*A, MAT_FINAL_ASSEMBLY);
+    PISM_CHK(ierr, "MatAssemblyEnd");
 #if (Pism_DEBUG == 1)
-  ierr = MatSetOption(A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
-  PISM_CHK(ierr, "MatSetOption");
+    ierr = MatSetOption(A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+    PISM_CHK(ierr, "MatSetOption");
 #endif
+  }
 }
+
+void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
+                            const array::Staggered &nuH, const array::CellType1 &cell_type, Mat A) {
+  eval_fd_operator(inputs, velocity, nuH, cell_type, &A, nullptr);
+}
+
 
 //! \brief Compute the vertically-averaged horizontal velocity from the shallow
 //! shelf approximation.
