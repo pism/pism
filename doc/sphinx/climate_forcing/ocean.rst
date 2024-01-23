@@ -186,6 +186,74 @@ Prefix: ``ocean.pico.``
 .. pism-parameters::
    :prefix: ocean.pico.
 
+Climate Index in PICO
++++++++++++++++++++++
+
+:|options|:   :opt:`-ocean_climate_snapshots_file`
+:|variables|: :var:`theta_ocean_ref` (potential ocean temperature), [Kelvin],
+
+              :var:`salinity_ocean_ref` (salinity of the adjacent ocean), [g/kg],
+
+              :var:`theta_ocean_anomaly_0` (glacial - present-day), [Kelvin],
+
+              :var:`salinity_ocean_anomaly_0` (glacial - present-day), [g/kg],
+
+              :var:`theta_ocean_anomaly_1` (interglacial - present-day), [Kelvin],
+
+              :var:`salinity_ocean_anomaly_1` (interglacial - present-day), [g/kg],
+
+              optional:
+
+              :var:`theta_ocean_anomaly_1X` (second interglacial - present-day), [Kelvin],
+
+              :var:`salinity_ocean_anomaly_1X` (second interglacial - present-day), [g/kg]
+:|implementation|: ``pism::ocean::ClimateIndex``
+
+The Climate Index module provides timeseries of theta and salinity to the PICO model for glacial-interglacial simulations.
+For this, the module uses reference fields representing the present-day conditions and glacial and interglacial 
+anomaly snapshots. To represent glaciation and deglaciation cycles, the snapshots are scaled as follow:
+
+.. math::
+
+   \texttt{theta_ocean} = \texttt{theta_ocean_pd}
+   + w_0 \times \texttt{theta_ocean_anomaly_0} + w_1 \times \texttt{theta_ocean_anomaly_1}\\
+   + w_{1X} \times (\texttt{theta_ocean_anomaly_1X} - \texttt{theta_ocean_anomaly_1}),
+
+where `\omega_{g}(t)`, `\omega_{ig}(t)` and `\omega_{p}(t)` are index weights calculated from a climate index (from ice-core record) as follow:
+
+.. math::
+
+   \omega_{g}(t) = 1.0 - \frac{\min(\text{CI},\text{CI}_{\text{pd}})}{\text{CI}_{\text{pd}}} \left\{0.0 - \begin{aligned}
+                                                   &1.0 \, \text{for CI} = 0.0 \\ 
+                                                   &1.0 \, \text{for} \, 0.0 < \text{CI} < \text{CI}_{\text{pd}}\\
+                                                   &0.0 \, \text{for CI} \geqslant \text{CI}_{\text{pd}}
+                                                   \end{aligned} \right.,
+   
+   \omega_{ig}(t) = \frac{\max(\text{CI},\text{CI}_{\text{pd}})-\text{CI}_{\text{pd}}}{1.0 - \text{CI}_{\text{pd}}} \left\{0.0 - \begin{aligned}
+                                                   &1.0 \, \text{for CI} = 1 \\ 
+                                                   &1.0 \, \text{for} \, \text{CI}_{\text{pd}} \leqslant \text{CI} \leqslant 1.0\\
+                                                   &0.0 \, \text{for CI} \leqslant \text{CI}_{\text{pd}}
+                                                   \end{aligned} \right.,
+
+   \omega_{p}(t) = \frac{\max(\text{CI},1.0) -1.0}{\text{CI}_{\text{pd}} - 1.0} \left\{0.0 - \begin{aligned}
+                                                   &1.0 \, \text{for CI} = \text{CI}_{\text{max}}\\ 
+                                                   &1.0 \, \text{for} \, 1.0 \leqslant \text{CI} \leqslant \text{CI}_{\text{pd}}\\
+                                                   &0.0 \, \text{for CI} \leqslant 1.0
+                                                   \end{aligned} \right.,
+
+The present-day fields as well as the anomaly snapshots are read from a file selected using the
+command-line option :opt:`-ocean_climate_snapshots_file`. PICO automatically detects the snapshot file 
+and uses it to update the forcing. 
+The climate index is read from a file using the command-line option :opt:`-climate_index_file`
+(to be given once if the atmospheric Climate Index also used).
+
+.. rubric:: Parameters
+
+Prefix: ``ocean.climate_index.``
+
+.. pism-parameters::
+   :prefix: ocean.climate_index.
+
 .. _sec-ocean-delta-sl:
 
 Scalar sea level offsets

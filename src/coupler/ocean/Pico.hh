@@ -23,6 +23,7 @@
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 
 #include "pism/coupler/ocean/PicoGeometry.hh"
+#include "ClimateIndex.hh"
 
 namespace pism {
 
@@ -49,6 +50,8 @@ protected:
   void write_model_state_impl(const File &output) const;
 
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  std::unique_ptr<ClimateIndex> m_climate_index_forcing;
+  bool use_ci;
 
 private:
   array::Scalar m_Soc, m_Soc_box0;

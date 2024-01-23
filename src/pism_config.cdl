@@ -21,6 +21,26 @@ netcdf pism_config {
     pism_config:atmosphere.anomaly.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:atmosphere.anomaly.periodic_type = "flag";
 
+    pism_config:atmosphere.climate_index.climate_snapshots.file = "";
+    pism_config:atmosphere.climate_index.climate_snapshots.file_doc = "Name of the file containing mean annual and mean July temperatures (:var:`air_temp_annual_pd` and :var:`air_temp_summer_pd`) and the :var:`precipitation_pd` field as well as anomaly snapshots of glacial and interglacial states.";
+    pism_config:atmosphere.climate_index.climate_snapshots.file_option = "atmosphere_climate_snapshots_file";
+    pism_config:atmosphere.climate_index.climate_snapshots.file_type = "string";
+
+    pism_config:atmosphere.climate_index.precip_scaling.spatial_linear_factor.file = "";
+    pism_config:atmosphere.climate_index.precip_scaling.spatial_linear_factor.file_doc = "Name of the file containing spatial distribution of precipitation scaling with temperature (:var:`precip_scaling_factor`).";
+    pism_config:atmosphere.climate_index.precip_scaling.spatial_linear_factor.file_option = "spatial_precip_scaling_file";
+    pism_config:atmosphere.climate_index.precip_scaling.spatial_linear_factor.file_type = "string";
+
+    pism_config:atmosphere.climate_index.precip_scaling.uniform_linear_factor = 0.05;
+    pism_config:atmosphere.climate_index.precip_scaling.uniform_linear_factor_doc = "= by default, applies a 5.0\% change of precipitation rate for every one degC of temperature change from present";
+    pism_config:atmosphere.climate_index.precip_scaling.uniform_linear_factor_type = "number";
+    pism_config:atmosphere.climate_index.precip_scaling.uniform_linear_factor_units = "K-1";
+
+    pism_config:atmosphere.climate_index.precip_scaling.use = "no";
+    pism_config:atmosphere.climate_index.precip_scaling.use_doc = "flag to use uniform linear scaling for precipitation with climate index. Otherwise by default it uses snapshots from :opt:`-climate_snapshots.file`";
+    pism_config:atmosphere.climate_index.precip_scaling.use_option = "climate_index_precip_scaling";
+    pism_config:atmosphere.climate_index.precip_scaling.use_type = "flag";
+
     pism_config:atmosphere.delta_P.file = "";
     pism_config:atmosphere.delta_P.file_doc = "Name of the file containing scalar precipitation offsets.";
     pism_config:atmosphere.delta_P.file_option = "atmosphere_delta_P_file";
@@ -694,6 +714,25 @@ netcdf pism_config {
     pism_config:calving.vonmises_calving.use_custom_flow_law_doc = "Use custom flow law in the von Mises stress computation";
     pism_config:calving.vonmises_calving.use_custom_flow_law_option = "vonmises_calving_use_custom_flow_law";
     pism_config:calving.vonmises_calving.use_custom_flow_law_type = "flag";
+
+    pism_config:climate_index.file = "";
+    pism_config:climate_index.file_doc = "Name of the file containing glacial index timeseries (:var:`climate_index`) for the near-surface air temperature index scaling.";
+    pism_config:climate_index.file_option = "climate_index_file";
+    pism_config:climate_index.file_type = "string";
+
+    pism_config:climate_index.max_value = 1.3;
+    pism_config:climate_index.max_value_doc = "maximum value for climate index";
+    pism_config:climate_index.max_value_type = "number";
+    pism_config:climate_index.max_value_units = "1";
+
+    pism_config:climate_index.periodic = "no";
+    pism_config:climate_index.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:climate_index.periodic_type = "flag";
+    
+    pism_config:climate_index.ref_value = 0.7;
+    pism_config:climate_index.ref_value_doc = "reference value for climate index";
+    pism_config:climate_index.ref_value_type = "number";
+    pism_config:climate_index.ref_value_units = "1";
 
     pism_config:constants.fresh_water.density = 1000.0;
     pism_config:constants.fresh_water.density_doc = "density of fresh water";
@@ -1582,6 +1621,11 @@ netcdf pism_config {
     pism_config:ocean.cache.update_interval_option = "ocean_cache_update_interval";
     pism_config:ocean.cache.update_interval_type = "integer";
     pism_config:ocean.cache.update_interval_units = "365days";
+
+    pism_config:ocean.climate_index.climate_snapshots.file = "";
+    pism_config:ocean.climate_index.climate_snapshots.file_doc = "Name of the file containing mean annual (:var:`theta_ocean_ref` and :var:`salinity_ocean_pd`) as well as glacial and interglacial anomaly snapshots.";
+    pism_config:ocean.climate_index.climate_snapshots.file_option = "ocean_climate_snapshots_file";
+    pism_config:ocean.climate_index.climate_snapshots.file_type = "string";
 
     pism_config:ocean.constant.melt_rate = 0.05191419359084029;
     pism_config:ocean.constant.melt_rate_doc = "default melt rate used by the ``constant`` ocean model (computed as `Q / (L \\rho_i)`)";

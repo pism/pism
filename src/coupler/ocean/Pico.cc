@@ -124,6 +124,18 @@ Pico::Pico(std::shared_ptr<const Grid> grid)
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 
   m_n_boxes  = static_cast<int>(m_config->get_number("ocean.pico.number_of_boxes"));
+
+  {
+  auto climate_index_file = m_config->get_string("climate_index.file");
+  auto climate_snapshots = m_config->get_string("ocean.climate_index.climate_snapshots.file");
+    if (not climate_index_file.empty() and not climate_snapshots.empty()) {
+      use_ci = true;
+      m_climate_index_forcing.reset(new ClimateIndex(grid)); 
+      }
+    else {
+      use_ci = false;
+    }
+  }
 }
 
 void Pico::init_impl(const Geometry &geometry) {
@@ -135,6 +147,8 @@ void Pico::init_impl(const Geometry &geometry) {
 
   m_theta_ocean->init(opt.filename, opt.periodic);
   m_salinity_ocean->init(opt.filename, opt.periodic);
+
+  if (use_ci) { m_climate_index_forcing->init_forcing(); }
 
   // This initializes the basin_mask
   m_geometry.init();
@@ -244,11 +258,15 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
 
 void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
-  m_theta_ocean->update(t, dt);
-  m_salinity_ocean->update(t, dt);
-
-  m_theta_ocean->average(t, dt);
-  m_salinity_ocean->average(t, dt);
+  if (use_ci) {
+    m_climate_index_forcing->update_forcing(t, dt, *m_theta_ocean, *m_salinity_ocean);
+  } else {
+    m_theta_ocean->update(t, dt);
+    m_salinity_ocean->update(t, dt);
+    
+    m_theta_ocean->average(t, dt);
+    m_salinity_ocean->average(t, dt);
+  }
 
   // set values that will be used outside of floating ice areas
   {
