@@ -86,13 +86,13 @@ protected:
 
   void initialize_iterations(const Inputs &inputs);
 
+  virtual void fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
+                           const array::Staggered &nuH, const array::CellType1 &cell_type, Mat *A,
+                           array::Vector *Ax);
+
   virtual void assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
                                const array::Staggered &nuH, const array::CellType1 &cell_type,
                                Mat A);
-
-  virtual void eval_fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
-                                const array::Staggered &nuH, const array::CellType1 &cell_type,
-                                Mat *A, array::Vector *Ax);
 
   virtual void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
                             const array::Vector &driving_stress,

@@ -492,9 +492,9 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::eval_fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
-                             const array::Staggered &nuH, const array::CellType1 &cell_type, Mat *A,
-                             array::Vector *Ax) {
+void SSAFD::fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
+                        const array::Staggered &nuH, const array::CellType1 &cell_type, Mat *A,
+                        array::Vector *Ax) {
   using mask::grounded_ice;
   using mask::ice_free;
   using mask::ice_free_land;
@@ -929,7 +929,7 @@ void SSAFD::eval_fd_operator(const Inputs &inputs, const array::Vector1 &velocit
 
 void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
                             const array::Staggered &nuH, const array::CellType1 &cell_type, Mat A) {
-  eval_fd_operator(inputs, velocity, nuH, cell_type, &A, nullptr);
+  fd_operator(inputs, velocity, nuH, cell_type, &A, nullptr);
 }
 
 
@@ -1434,16 +1434,10 @@ void SSAFD::compute_residual(const Inputs &inputs, const array::Vector2 &velocit
                 nuH_regularization, m_nuH);
   }
 
-  assemble_matrix(inputs, velocity, m_nuH, m_cell_type, m_A);
+  fd_operator(inputs, velocity, m_nuH, m_cell_type, nullptr, &result);
+  assemble_rhs(inputs, m_cell_type, m_taud, m_rhs);
 
-  {
-    assemble_rhs(inputs, m_cell_type, m_taud, m_rhs);
-
-    // MatMultAdd() needs a "global" Vec, so we have to copy from `velocity`:
-    m_velocity_global.copy_from(velocity);
-    PetscErrorCode ierr = MatResidual(m_A, m_rhs.vec(), m_velocity_global.vec(), result.vec());
-    PISM_CHK(ierr, "MatResidual");
-  }
+  result.add(-1.0, m_rhs);
 }
 
 
