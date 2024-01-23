@@ -59,7 +59,7 @@ protected:
 protected:
   std::unique_ptr<ScalarForcing> m_A; // amplitude scaling
   std::unique_ptr<ClimateIndexWeights> m_climate_index;
-  
+
   bool use_cos, use_1X;
   double m_w0, m_w1, m_w1X;
   double m_snow_temp_summer_day;
@@ -71,7 +71,7 @@ protected:
   array::Scalar m_air_temp_annual, m_air_temp_annual_ref, m_air_temp_summer, m_air_temp_summer_ref;
   array::Scalar m_air_temp_anomaly_annual_0, m_air_temp_anomaly_annual_1,m_air_temp_anomaly_annual_1X;
   array::Scalar m_air_temp_anomaly_summer_0, m_air_temp_anomaly_summer_1, m_air_temp_anomaly_summer_1X;
-  
+
   array::Scalar m_precipitation, m_precipitation_ref;
   array::Scalar m_precipitation_anomaly_0, m_precipitation_anomaly_1, m_precipitation_anomaly_1X;
   array::Scalar m_spatial_precip_scaling;

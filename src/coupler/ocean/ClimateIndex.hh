@@ -28,7 +28,7 @@ class ClimateIndexWeights;
 
 namespace ocean {
 
-class ClimateIndex : public CompleteOceanModel 
+class ClimateIndex : public CompleteOceanModel
 {
 public:
     ClimateIndex(std::shared_ptr<const Grid> grid);

@@ -171,9 +171,9 @@ grounding line. The basin mask defines regions of similar, large-scale ocean con
 each region is marked with a distinct positive integer. In PICO, ocean input temperature
 and salinity are averaged on the continental shelf within each basins. For each ice shelf,
 the input values of the overturning circulation are calculated as an area-weighted average
-over all basins that intersect the ice shelf. Only those basins are considered in the average, 
-in which the ice shelf has in fact a connection to the ocean. Large ice shelves, that cover 
-across two basins, that do not share an ocean boundary, are considered as two separate ice 
+over all basins that intersect the ice shelf. Only those basins are considered in the average,
+in which the ice shelf has in fact a connection to the ocean. Large ice shelves, that cover
+across two basins, that do not share an ocean boundary, are considered as two separate ice
 shelves with individual ocean inputs. If ocean input parameters cannot be
 identified, standard values are used (**Warning:** this could strongly influence melt
 rates computed by PICO). In regions where the PICO geometry cannot be identified,
@@ -210,7 +210,7 @@ Climate Index in PICO
 :|implementation|: ``pism::ocean::ClimateIndex``
 
 The Climate Index module provides timeseries of theta and salinity to the PICO model for glacial-interglacial simulations.
-For this, the module uses reference fields representing the present-day conditions and glacial and interglacial 
+For this, the module uses reference fields representing the present-day conditions and glacial and interglacial
 anomaly snapshots. To represent glaciation and deglaciation cycles, the snapshots are scaled as follow:
 
 .. math::
@@ -224,26 +224,26 @@ where `\omega_{g}(t)`, `\omega_{ig}(t)` and `\omega_{p}(t)` are index weights ca
 .. math::
 
    \omega_{g}(t) = 1.0 - \frac{\min(\text{CI},\text{CI}_{\text{pd}})}{\text{CI}_{\text{pd}}} \left\{0.0 - \begin{aligned}
-                                                   &1.0 \, \text{for CI} = 0.0 \\ 
+                                                   &1.0 \, \text{for CI} = 0.0 \\
                                                    &1.0 \, \text{for} \, 0.0 < \text{CI} < \text{CI}_{\text{pd}}\\
                                                    &0.0 \, \text{for CI} \geqslant \text{CI}_{\text{pd}}
                                                    \end{aligned} \right.,
-   
+
    \omega_{ig}(t) = \frac{\max(\text{CI},\text{CI}_{\text{pd}})-\text{CI}_{\text{pd}}}{1.0 - \text{CI}_{\text{pd}}} \left\{0.0 - \begin{aligned}
-                                                   &1.0 \, \text{for CI} = 1 \\ 
+                                                   &1.0 \, \text{for CI} = 1 \\
                                                    &1.0 \, \text{for} \, \text{CI}_{\text{pd}} \leqslant \text{CI} \leqslant 1.0\\
                                                    &0.0 \, \text{for CI} \leqslant \text{CI}_{\text{pd}}
                                                    \end{aligned} \right.,
 
    \omega_{p}(t) = \frac{\max(\text{CI},1.0) -1.0}{\text{CI}_{\text{pd}} - 1.0} \left\{0.0 - \begin{aligned}
-                                                   &1.0 \, \text{for CI} = \text{CI}_{\text{max}}\\ 
+                                                   &1.0 \, \text{for CI} = \text{CI}_{\text{max}}\\
                                                    &1.0 \, \text{for} \, 1.0 \leqslant \text{CI} \leqslant \text{CI}_{\text{pd}}\\
                                                    &0.0 \, \text{for CI} \leqslant 1.0
                                                    \end{aligned} \right.,
 
 The present-day fields as well as the anomaly snapshots are read from a file selected using the
-command-line option :opt:`-ocean_climate_snapshots_file`. PICO automatically detects the snapshot file 
-and uses it to update the forcing. 
+command-line option :opt:`-ocean_climate_snapshots_file`. PICO automatically detects the snapshot file
+and uses it to update the forcing.
 The climate index is read from a file using the command-line option :opt:`-climate_index_file`
 (to be given once if the atmospheric Climate Index also used).
 

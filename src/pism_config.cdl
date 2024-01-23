@@ -728,7 +728,7 @@ netcdf pism_config {
     pism_config:climate_index.periodic = "no";
     pism_config:climate_index.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:climate_index.periodic_type = "flag";
-    
+
     pism_config:climate_index.ref_value = 0.7;
     pism_config:climate_index.ref_value_doc = "reference value for climate index";
     pism_config:climate_index.ref_value_type = "number";

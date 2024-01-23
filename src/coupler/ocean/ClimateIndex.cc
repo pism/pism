@@ -27,7 +27,7 @@ ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> grid)
 
     m_theta_ocean_ref(m_grid, "theta_ocean_ref"),
     m_salinity_ocean_ref(m_grid, "salinity_ocean_ref"),
-  
+
     // Anaomaly temperature fields for glacial index 0 (e.g. LGM), interglacial index 1 (e.g. LIG) and interglacial index 1X (e.g. mPWP)
     m_theta_ocean_anomaly_0(m_grid, "theta_ocean_anomaly_0"),
     m_theta_ocean_anomaly_1(m_grid, "theta_ocean_anomaly_1"),
@@ -53,7 +53,7 @@ ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> grid)
             .set_time_independent(true);
     m_theta_ocean_ref.metadata()["source"] = m_reference;
 
-    // Paleo time slice temperature data annual 
+    // Paleo time slice temperature data annual
     m_theta_ocean_anomaly_0.metadata(0)
         .long_name("absolute potential temperature anomaly of the adjacent ocean")
         .units("Kelvin")
@@ -78,13 +78,13 @@ ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> grid)
         .set_time_independent(true);
     m_salinity_ocean_ref.metadata()["source"] = m_reference;
 
-    // Paleo time slice temperature data annual 
+    // Paleo time slice temperature data annual
     m_salinity_ocean_anomaly_0.metadata(0)
         .long_name("salinity of the adjacent ocean")
         .units("g/kg")
         .set_time_independent(true);
     m_salinity_ocean_anomaly_0.metadata()["source"] = m_reference;
-    
+
     m_salinity_ocean_anomaly_1.metadata(0)
         .long_name("salinity of the adjacent ocean")
         .units("g/kg")
@@ -114,7 +114,7 @@ void ClimateIndex::init_forcing() {
                     "  Reading salinity and "
                     "theta fields from '%s'...\n", input_file.c_str());
 
-    // Reference fields 
+    // Reference fields
     m_theta_ocean_ref.regrid(input_file, io::Default::Nil());
     m_salinity_ocean_ref.regrid(input_file, io::Default::Nil());
 
@@ -166,7 +166,7 @@ void ClimateIndex::update_forcing(double t, double dt, array::Scalar &theta_ocea
         } else {
             theta_ocean(i, j) = m_theta_ocean_ref(i, j) + m_w0 * m_theta_ocean_anomaly_0(i, j) + m_w1 * m_theta_ocean_anomaly_1(i, j);
             salinity_ocean(i, j) = m_salinity_ocean_ref(i, j) + m_w0 * m_salinity_ocean_anomaly_0(i, j) + m_w1 * m_salinity_ocean_anomaly_1(i, j);
-        } 
+        }
     }
 
     theta_ocean.end_access();

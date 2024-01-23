@@ -35,12 +35,12 @@ ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> g)
     m_air_temp_anomaly_annual_0(m_grid, "air_temp_anomaly_annual_0"),
     m_air_temp_anomaly_annual_1(m_grid, "air_temp_anomaly_annual_1"),
     m_air_temp_anomaly_annual_1X(m_grid, "air_temp_anomaly_annual_1X"),
-    
+
     m_air_temp_anomaly_summer_0(m_grid, "air_temp_anomaly_summer_0"),
     m_air_temp_anomaly_summer_1(m_grid, "air_temp_anomaly_summer_1"),
     m_air_temp_anomaly_summer_1X(m_grid, "air_temp_anomaly_summer_1X"),
-    
-    //Reference precipitation field 
+
+    //Reference precipitation field
     m_precipitation(m_grid, "precipitation_ref"),
     m_precipitation_ref(m_grid, "precipitation_ref"),
 
@@ -112,7 +112,7 @@ ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> g)
         .units("K")
         .set_time_independent(true);
   m_air_temp_anomaly_annual_0.metadata()["source"] = m_reference;
-  
+
   m_air_temp_anomaly_annual_1.metadata(0)
         .long_name("mean annual near-surface air temperature (without sub-year time-dependence or forcing) for interglacial index 1 (e.g. LIG)")
         .units("K")
@@ -125,7 +125,7 @@ ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> g)
         .set_time_independent(true);
   m_air_temp_anomaly_annual_1X.metadata()["source"] = m_reference;
 
-  // Paleo time slice temperature summer 
+  // Paleo time slice temperature summer
   m_air_temp_anomaly_summer_0.metadata(0)
         .long_name("mean summer (NH: July/ SH: January) near-surface air temperature (without sub-year time-dependence or forcing) for Climate index 0 (e.g. LGM)")
         .units("K")
@@ -164,7 +164,7 @@ ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> g)
       .output_units("kg m-2 year-1")
       .set_time_independent(true);
   m_precipitation_anomaly_1X.metadata()["source"] = m_reference;
-  
+
   use_precip_scaling = m_config->get_flag("atmosphere.climate_index.precip_scaling.use");
 
   // Spatial precip scaling factor
@@ -180,7 +180,7 @@ void ClimateIndex::init_impl(const Geometry &geometry) {
   m_log->message(2,
             "**** Initializing the 'Climate Index' atmosphere model...\n");
 
-  m_w0 = m_w1 = m_w1X = 0.0; // initialise the weights 
+  m_w0 = m_w1 = m_w1X = 0.0; // initialise the weights
 
   auto input_file = m_config->get_string("atmosphere.climate_index.climate_snapshots.file");
 
@@ -194,7 +194,7 @@ void ClimateIndex::init_impl(const Geometry &geometry) {
                 "  Reading mean annual air temperature, mean July air temperature, and\n"
                 "  precipitation fields from '%s'...\n", input_file.c_str());
 
-  // Reference fields 
+  // Reference fields
   m_precipitation.regrid(input_file, io::Default::Nil());
   m_precipitation_ref.regrid(input_file, io::Default::Nil());
   m_air_temp_annual.regrid(input_file, io::Default::Nil());
@@ -216,7 +216,7 @@ void ClimateIndex::init_impl(const Geometry &geometry) {
   // Annual anomaly for Paleo time slices 0=Glacial, 1=glacial, 1X= Super Interglacial e.g. mPWP
   m_air_temp_anomaly_annual_0.regrid(input_file, io::Default::Nil());
   m_air_temp_anomaly_annual_1.regrid(input_file, io::Default::Nil());
-  // Summer anomaly 
+  // Summer anomaly
   if (use_cos) {
     m_air_temp_anomaly_summer_0.regrid(input_file, io::Default::Nil());
     m_air_temp_anomaly_summer_1.regrid(input_file, io::Default::Nil());
@@ -233,7 +233,7 @@ void ClimateIndex::init_impl(const Geometry &geometry) {
   }
 
   precip_scaling_file = m_config->get_string("atmosphere.climate_index.precip_scaling.spatial_linear_factor.file");
-  // If a file is giving for spatial scaling, then it will use it. Otherwise by default it uses the linear, uniform scaling factor from config 
+  // If a file is giving for spatial scaling, then it will use it. Otherwise by default it uses the linear, uniform scaling factor from config
 
   if (not use_precip_scaling) {
     m_log->message(2,
@@ -253,7 +253,7 @@ void ClimateIndex::init_impl(const Geometry &geometry) {
   } else {
     m_preciplinfactor = m_config->get_number("atmosphere.climate_index.precip_scaling.uniform_linear_factor");
     m_log->message(2,
-                  "*   -climate_index_precip_scaling is set to the default uniform scaling factor,\n" 
+                  "*   -climate_index_precip_scaling is set to the default uniform scaling factor,\n"
                   "    thus precipitation anomalies are calculated using linear scaling\n"
                   "    with air temperature anomalies (%.3f percent per degree).\n",
                   m_preciplinfactor * 100.0);
@@ -274,7 +274,7 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
   m_air_temp_annual_ref.begin_access();
   m_air_temp_anomaly_annual_0.begin_access();
   m_air_temp_anomaly_annual_1.begin_access();
-  
+
   if (use_cos) {
     m_air_temp_summer.begin_access();
     m_air_temp_summer_ref.begin_access();
@@ -288,13 +288,13 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
   if (use_1X) {
     m_air_temp_anomaly_annual_1X.begin_access();
     if (use_cos) { m_air_temp_anomaly_summer_1X.begin_access(); }
-  }  
+  }
 
   if (not use_precip_scaling) {
     m_precipitation_anomaly_0.begin_access();
     m_precipitation_anomaly_1.begin_access();
     if (use_1X) {
-      m_precipitation_anomaly_1X.begin_access(); 
+      m_precipitation_anomaly_1X.begin_access();
     }
   } else if (not precip_scaling_file.empty()) {
     m_spatial_precip_scaling.begin_access();
@@ -302,7 +302,7 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    
+
     double annual_anomaly = 0.0;
     double summer_anomaly = 0.0;
 
@@ -328,7 +328,7 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
         m_precipitation(i, j) = m_precipitation_ref(i, j) + m_w0 * m_precipitation_anomaly_0(i, j) + m_w1 * m_precipitation_anomaly_1(i, j);
       }
     } else if (not precip_scaling_file.empty()) {
-      m_precipitation(i, j) = m_precipitation_ref(i, j) * (1 + annual_anomaly*m_spatial_precip_scaling(i, j));  
+      m_precipitation(i, j) = m_precipitation_ref(i, j) * (1 + annual_anomaly*m_spatial_precip_scaling(i, j));
     } else {
       m_precipitation(i, j) = m_precipitation_ref(i, j) * (1 + annual_anomaly*m_preciplinfactor);
     }
@@ -357,10 +357,10 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
     m_precipitation_anomaly_1.end_access();
     if (use_1X) {
       m_precipitation_anomaly_1X.end_access();
-    } 
+    }
   } else if (not precip_scaling_file.empty()) {
     m_spatial_precip_scaling.end_access();
-  } 
+  }
 
 }
 
@@ -479,4 +479,3 @@ DiagnosticList ClimateIndex::diagnostics_impl() const {
 
 } // end of namespace atmosphere
 } // end of namespace pism
-
