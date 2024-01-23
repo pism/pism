@@ -59,18 +59,17 @@ linear systems
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
 SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
-  : SSA(grid),
-    m_hardness(grid, "ice_hardness"),
-    m_nuH(grid, "nuH"),
-    m_nuH_old(grid, "nuH_old"),
-    m_work(grid, "work_vector", array::WITH_GHOSTS,
-           1 /* stencil width */),
-    m_cell_type(m_grid, "ssafd_cell_type"),
-    m_rhs(grid, "right_hand_side"),
-    m_taud(m_grid, "taud"),
-    m_velocity_old(grid, "velocity_old"),
-    m_scaling(1e9)  // comparable to typical beta for an ice stream;
-{
+    : SSA(grid),
+      m_hardness(grid, "ice_hardness"),
+      m_nuH(grid, "nuH"),
+      m_nuH_old(grid, "nuH_old"),
+      m_work(grid, "work_vector", array::WITH_GHOSTS, 1 /* stencil width */),
+      m_cell_type(m_grid, "ssafd_cell_type"),
+      m_rhs(grid, "right_hand_side"),
+      m_taud(m_grid, "taud"),
+      m_velocity_old(grid, "velocity_old"),
+      m_scaling(1e9), // comparable to typical beta for an ice stream;
+      m_Ax(grid, "matrix_times_solution") {
 
   m_velocity_old.metadata(0)
       .long_name("old SSA velocity field; used for re-trying with a different epsilon")
@@ -493,7 +492,7 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
+void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
                             const array::Staggered &nuH, const array::CellType1 &cell_type, Mat A) {
   using mask::grounded_ice;
   using mask::ice_free;
@@ -528,7 +527,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  array::AccessScope list{ &nuH, &tauc, &velocity, &cell_type, &bed, &surface };
+  array::AccessScope list{ &nuH, &tauc, &velocity, &cell_type, &bed, &surface, &m_Ax };
 
   if (inputs.bc_values != nullptr && inputs.bc_mask != nullptr) {
     list.add(*inputs.bc_mask);
@@ -566,11 +565,15 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
         bool ice_free_with_cfbc = use_cfbc and cell_type.ice_free(i, j);
 
         if (bc_location or ice_free_with_cfbc) {
+          m_Ax(i, j) = m_scaling * velocity(i, j);
+
           // set diagonal entries to one (scaled); RHS entry will be known velocity
-          MatStencil row[2] = {{-1, j, i, 0}, {-1, j, i, 1}};
-          double  identity[4] = {m_scaling, 0.0, 0.0, m_scaling};
-          PetscErrorCode ierr = MatSetValuesStencil(A, 2, row, 2, row, identity, INSERT_VALUES);
-          PISM_CHK(ierr, "MatSetValuesStencil");
+          {
+            MatStencil row[2]   = { { -1, j, i, 0 }, { -1, j, i, 1 } };
+            double identity[4]  = { m_scaling, 0.0, 0.0, m_scaling };
+            PetscErrorCode ierr = MatSetValuesStencil(A, 2, row, 2, row, identity, INSERT_VALUES);
+            PISM_CHK(ierr, "MatSetValuesStencil");
+          }
           continue;
         }
       }
@@ -865,24 +868,35 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
         }
       }
 
-      MatStencil row, col[n_nonzeros];
-      row.i = i;
-      row.j = j;
-      for (int m = 0; m < n_nonzeros; m++) {
-        col[m].i = I[m];
-        col[m].j = J[m];
-        col[m].c = C[m];
+      m_Ax(i, j) = 0.0;
+      for (int k = 0; k < n_nonzeros; ++k) {
+        const auto &v = velocity(I[k], J[k]);
+        double u_or_v = v.u * (1 - C[k]) + v.v * C[k];
+        m_Ax(i, j).u += eq1[k] * u_or_v;
+        m_Ax(i, j).v += eq2[k] * u_or_v;
       }
 
-      // set coefficients of the first equation:
-      row.c = 0;
-      ierr  = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq1, INSERT_VALUES);
-      PISM_CHK(ierr, "MatSetValuesStencil");
+      // set matrix values
+      {
+        MatStencil row, col[n_nonzeros];
+        row.i = i;
+        row.j = j;
+        for (int m = 0; m < n_nonzeros; m++) {
+          col[m].i = I[m];
+          col[m].j = J[m];
+          col[m].c = C[m];
+        }
 
-      // set coefficients of the second equation:
-      row.c = 1;
-      ierr  = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq2, INSERT_VALUES);
-      PISM_CHK(ierr, "MatSetValuesStencil");
+        // set coefficients of the first equation:
+        row.c = 0;
+        ierr  = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq1, INSERT_VALUES);
+        PISM_CHK(ierr, "MatSetValuesStencil");
+
+        // set coefficients of the second equation:
+        row.c = 1;
+        ierr  = MatSetValuesStencil(A, 1, &row, n_nonzeros, col, eq2, INSERT_VALUES);
+        PISM_CHK(ierr, "MatSetValuesStencil");
+      }
     } // i,j-loop
   } catch (...) {
     loop.failed();

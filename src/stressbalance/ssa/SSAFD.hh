@@ -86,7 +86,7 @@ protected:
 
   void initialize_iterations(const Inputs &inputs);
 
-  virtual void assemble_matrix(const Inputs &inputs, const array::Vector &velocity,
+  virtual void assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
                                const array::Staggered &nuH, const array::CellType1 &cell_type,
                                Mat A);
 
@@ -135,6 +135,9 @@ protected:
 
   array::Vector1 m_velocity_old;
   const double m_scaling;
+
+  // product of the FD matrix and the current guess
+  array::Vector m_Ax;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;
