@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2023, 2024 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,6 @@ static char help[] =
 
 #include "pism/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
 #include "pism/stressbalance/ssa/SSAFD.hh"
-#include "pism/stressbalance/ssa/SSAFD_diagnostics.hh"
 #include "pism/stressbalance/ssa/SSATestCase.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/Mask.hh"
@@ -87,10 +86,10 @@ protected:
 };
 
 void SSATestCaseCFBC::write_nuH(const std::string &filename) {
+  auto diagnostics = m_ssa->diagnostics();
 
-  SSAFD *ssafd = dynamic_cast<SSAFD*>(m_ssa);
-  if (ssafd != NULL) {
-    SSAFD_nuH(ssafd).compute()->write(filename);
+  if (diagnostics.find("nuH") != diagnostics.end()) {
+    diagnostics["nuH"]->compute()->write(filename);
   }
 }
 

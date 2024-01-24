@@ -24,7 +24,6 @@
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/ssa/SSAFD.hh"
-#include "pism/stressbalance/ssa/SSAFD_diagnostics.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/array/CellType.hh"
@@ -2000,26 +1999,31 @@ void SSAFD::compute_driving_stress(const array::Scalar &ice_thickness,
   }
 }
 
-SSAFD_nuH::SSAFD_nuH(const SSAFD *m) : Diag<SSAFD>(m) {
-  m_vars = { { m_sys, "nuH[0]" }, { m_sys, "nuH[1]" } };
-  m_vars[0]
-      .long_name("ice thickness times effective viscosity, i-offset")
-      .units("Pa s m")
-      .output_units("kPa s m");
-  m_vars[1]
-      .long_name("ice thickness times effective viscosity, j-offset")
-      .units("Pa s m")
-      .output_units("kPa s m");
-}
+//! @brief Reports the nuH (viscosity times thickness) product on the staggered
+//! grid.
+class SSAFD_nuH : public Diag<SSAFD> {
+public:
+  SSAFD_nuH(const SSAFD *m) : Diag<SSAFD>(m) {
+    m_vars = { { m_sys, "nuH[0]" }, { m_sys, "nuH[1]" } };
+    m_vars[0]
+        .long_name("ice thickness times effective viscosity, i-offset")
+        .units("Pa s m")
+        .output_units("kPa s m");
+    m_vars[1]
+        .long_name("ice thickness times effective viscosity, j-offset")
+        .units("Pa s m")
+        .output_units("kPa s m");
+  }
 
-std::shared_ptr<array::Array> SSAFD_nuH::compute_impl() const {
-  auto result = allocate<array::Staggered>("nuH");
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Staggered>("nuH");
 
-  result->copy_from(model->integrated_viscosity());
+    result->copy_from(model->integrated_viscosity());
 
-  return result;
-}
-
+    return result;
+  }
+};
 
 //! @brief Computes the driving shear stress at the base of ice
 //! (diagnostically).
