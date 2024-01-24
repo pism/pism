@@ -877,6 +877,7 @@ void SSAFD::fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
         }
       }
 
+      // compute the matrix-vector product
       if (Ax != nullptr) {
         Vector2d sum;
         for (int k = 0; k < n_nonzeros; ++k) {
@@ -1659,7 +1660,7 @@ void SSAFD::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::C
         m_work(i, j).w_j = 0.0;
       }
     }
-  }
+  } // end of the loop over grid points and width=1 ghosts
 
   list.add({ &result, &hardness, &ice_thickness });
 
