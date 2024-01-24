@@ -195,12 +195,14 @@ macro(pism_find_prerequisites)
   if (Pism_USE_PARALLEL_NETCDF4)
     # Try to find netcdf_par.h. We assume that NetCDF was compiled with
     # parallel I/O if this header is present.
-    find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDE_DIRS} NO_DEFAULT_PATH)
+    find_file(NETCDF_PAR_H netcdf_par.h
+      HINTS ${NETCDF_INCLUDE_DIRS} ${NETCDF_INCLUDEDIR}
+      NO_DEFAULT_PATH)
 
     # Set default values for build options
     if (NOT NETCDF_PAR_H)
       message(FATAL_ERROR
-        "Selected NetCDF library (include: ${NETCDF_INCLUDE_DIRS}, lib: ${NETCDF_LIBRARIES}) does not support parallel I/O.")
+        "Selected NetCDF library (include: ${NETCDF_INCLUDEDIR}, lib: ${NETCDF_LIBRARIES}) does not support parallel I/O.")
     endif()
   endif()
 
