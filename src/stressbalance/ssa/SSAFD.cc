@@ -492,7 +492,7 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
 void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input_velocity,
-                        const array::Staggered &nuH, const array::CellType1 &cell_type, Mat *A,
+                        const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat *A,
                         array::Vector *Ax) {
   using mask::grounded_ice;
   using mask::ice_free;
@@ -593,11 +593,7 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
        *  c_w     c_e
        *      c_s
        */
-      // const
-      double c_w = nuH(i - 1, j, 0);
-      double c_e = nuH(i, j, 0);
-      double c_s = nuH(i, j - 1, 1);
-      double c_n = nuH(i, j, 1);
+      stencils::Star<double> c = nuH.star(i, j);
 
       if (lateral_drag_enabled) {
         // if option is set, the viscosity at ice-bedrock boundary layer will
@@ -611,16 +607,16 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
 
         if (H.c > HminFrozen) {
           if (b.w > h and ice_free_land(M.w)) {
-            c_w = lateral_drag_viscosity * 0.5 * (H.c + H.w);
+            c.w = lateral_drag_viscosity * 0.5 * (H.c + H.w);
           }
           if (b.e > h and ice_free_land(M.e)) {
-            c_e = lateral_drag_viscosity * 0.5 * (H.c + H.e);
+            c.e = lateral_drag_viscosity * 0.5 * (H.c + H.e);
           }
           if (b.n > h and ice_free_land(M.n)) {
-            c_n = lateral_drag_viscosity * 0.5 * (H.c + H.n);
+            c.n = lateral_drag_viscosity * 0.5 * (H.c + H.n);
           }
           if (b.s > h and ice_free_land(M.s)) {
-            c_s = lateral_drag_viscosity * 0.5 * (H.c + H.s);
+            c.s = lateral_drag_viscosity * 0.5 * (H.c + H.s);
           }
         }
       }
@@ -728,46 +724,46 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
       /* Coefficients of the discretization of the first equation; u first, then v. */
       double eq1[] = {
         0,
-        -c_n * N / dy2,
+        -c.n * N / dy2,
         0,
-        -4 * c_w * W / dx2,
-        (c_n * N + c_s * S) / dy2 + (4 * c_e * E + 4 * c_w * W) / dx2,
-        -4 * c_e * E / dx2,
+        -4 * c.w * W / dx2,
+        (c.n * N + c.s * S) / dy2 + (4 * c.e * E + 4 * c.w * W) / dx2,
+        -4 * c.e * E / dx2,
         0,
-        -c_s * S / dy2,
+        -c.s * S / dy2,
         0,
-        c_w * W * WNW / d2 + c_n * NNW * N / d4,
-        (c_n * NNE * N - c_n * NNW * N) / d4 + (c_w * W * N - c_e * E * N) / d2,
-        -c_e * E * ENE / d2 - c_n * NNE * N / d4,
-        (c_w * W * WSW - c_w * W * WNW) / d2 + (c_n * W * N - c_s * W * S) / d4,
-        (c_n * E * N - c_n * W * N - c_s * E * S + c_s * W * S) / d4 +
-            (c_e * E * N - c_w * W * N - c_e * E * S + c_w * W * S) / d2,
-        (c_e * E * ENE - c_e * E * ESE) / d2 + (c_s * E * S - c_n * E * N) / d4,
-        -c_w * W * WSW / d2 - c_s * SSW * S / d4,
-        (c_s * SSW * S - c_s * SSE * S) / d4 + (c_e * E * S - c_w * W * S) / d2,
-        c_e * E * ESE / d2 + c_s * SSE * S / d4,
+        c.w * W * WNW / d2 + c.n * NNW * N / d4,
+        (c.n * NNE * N - c.n * NNW * N) / d4 + (c.w * W * N - c.e * E * N) / d2,
+        -c.e * E * ENE / d2 - c.n * NNE * N / d4,
+        (c.w * W * WSW - c.w * W * WNW) / d2 + (c.n * W * N - c.s * W * S) / d4,
+        (c.n * E * N - c.n * W * N - c.s * E * S + c.s * W * S) / d4 +
+            (c.e * E * N - c.w * W * N - c.e * E * S + c.w * W * S) / d2,
+        (c.e * E * ENE - c.e * E * ESE) / d2 + (c.s * E * S - c.n * E * N) / d4,
+        -c.w * W * WSW / d2 - c.s * SSW * S / d4,
+        (c.s * SSW * S - c.s * SSE * S) / d4 + (c.e * E * S - c.w * W * S) / d2,
+        c.e * E * ESE / d2 + c.s * SSE * S / d4,
       };
 
       /* Coefficients of the discretization of the second equation; u first, then v. */
       double eq2[] = {
-        c_w * W * WNW / d4 + c_n * NNW * N / d2,
-        (c_n * NNE * N - c_n * NNW * N) / d2 + (c_w * W * N - c_e * E * N) / d4,
-        -c_e * E * ENE / d4 - c_n * NNE * N / d2,
-        (c_w * W * WSW - c_w * W * WNW) / d4 + (c_n * W * N - c_s * W * S) / d2,
-        (c_n * E * N - c_n * W * N - c_s * E * S + c_s * W * S) / d2 +
-            (c_e * E * N - c_w * W * N - c_e * E * S + c_w * W * S) / d4,
-        (c_e * E * ENE - c_e * E * ESE) / d4 + (c_s * E * S - c_n * E * N) / d2,
-        -c_w * W * WSW / d4 - c_s * SSW * S / d2,
-        (c_s * SSW * S - c_s * SSE * S) / d2 + (c_e * E * S - c_w * W * S) / d4,
-        c_e * E * ESE / d4 + c_s * SSE * S / d2,
+        c.w * W * WNW / d4 + c.n * NNW * N / d2,
+        (c.n * NNE * N - c.n * NNW * N) / d2 + (c.w * W * N - c.e * E * N) / d4,
+        -c.e * E * ENE / d4 - c.n * NNE * N / d2,
+        (c.w * W * WSW - c.w * W * WNW) / d4 + (c.n * W * N - c.s * W * S) / d2,
+        (c.n * E * N - c.n * W * N - c.s * E * S + c.s * W * S) / d2 +
+            (c.e * E * N - c.w * W * N - c.e * E * S + c.w * W * S) / d4,
+        (c.e * E * ENE - c.e * E * ESE) / d4 + (c.s * E * S - c.n * E * N) / d2,
+        -c.w * W * WSW / d4 - c.s * SSW * S / d2,
+        (c.s * SSW * S - c.s * SSE * S) / d2 + (c.e * E * S - c.w * W * S) / d4,
+        c.e * E * ESE / d4 + c.s * SSE * S / d2,
         0,
-        -4 * c_n * N / dy2,
+        -4 * c.n * N / dy2,
         0,
-        -c_w * W / dx2,
-        (4 * c_n * N + 4 * c_s * S) / dy2 + (c_e * E + c_w * W) / dx2,
-        -c_e * E / dx2,
+        -c.w * W / dx2,
+        (4 * c.n * N + 4 * c.s * S) / dy2 + (c.e * E + c.w * W) / dx2,
+        -c.e * E / dx2,
         0,
-        -4 * c_s * S / dy2,
+        -4 * c.s * S / dy2,
         0,
       };
 
@@ -882,7 +878,7 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
       if (Ax != nullptr) {
         Vector2d sum;
         for (int k = 0; k < n_nonzeros; ++k) {
-          const auto &v = velocity(I[k], J[k]);
+          const Vector2d &v = velocity(I[k], J[k]);
           double u_or_v = v.u * (1 - C[k]) + v.v * C[k];
           sum += Vector2d{ eq1[k], eq2[k] } * u_or_v;
         }
@@ -930,7 +926,7 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
 }
 
 void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
-                            const array::Staggered &nuH, const array::CellType1 &cell_type, Mat A) {
+                            const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat A) {
   array::AccessScope list{ &velocity };
   fd_operator(inputs, velocity.array(), nuH, cell_type, &A, nullptr);
 }
