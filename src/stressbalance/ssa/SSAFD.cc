@@ -234,6 +234,38 @@ void SSAFD::init_impl() {
   m_default_pc_failure_max_count = 5;
 }
 
+//! \brief Checks if a cell is near or at the ice front.
+/*!
+ * You need to create array::AccessScope object and add `cell_type` to it.
+ *
+ * Note that a cell is a CFBC location of one of four direct neighbors is ice-free.
+ *
+ * If one of the diagonal neighbors is ice-free we don't use the CFBC, but we
+ * do need to compute weights used in the SSA discretization (see
+ * assemble_matrix()) to avoid differencing across interfaces between icy
+ * and ice-free cells.
+ *
+ * This method ensures that checks in assemble_rhs() and assemble_matrix() are
+ * consistent.
+ */
+static bool is_marginal(int i, int j, const array::CellType1 &cell_type, bool ssa_dirichlet_bc) {
+
+  auto M = cell_type.box_int(i, j);
+
+  using mask::ice_free;
+  using mask::ice_free_ocean;
+  using mask::icy;
+
+  if (ssa_dirichlet_bc) {
+    return icy(M.c) && (ice_free(M.e) || ice_free(M.w) || ice_free(M.n) || ice_free(M.s) ||
+                        ice_free(M.ne) || ice_free(M.se) || ice_free(M.nw) || ice_free(M.sw));
+  }
+
+  return icy(M.c) && (ice_free_ocean(M.e) || ice_free_ocean(M.w) || ice_free_ocean(M.n) ||
+                      ice_free_ocean(M.s) || ice_free_ocean(M.ne) || ice_free_ocean(M.se) ||
+                      ice_free_ocean(M.nw) || ice_free_ocean(M.sw));
+}
+
 //! \brief Computes the right-hand side ("rhs") of the linear problem for the
 //! Picard iteration and finite-difference implementation of the SSA equations.
 /*!
@@ -1100,16 +1132,10 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
 
   m_stdout_ssa.clear();
 
-  bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   {
-    array::AccessScope scope{&m_velocity};
-    if (use_cfbc) {
-      compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
-                       nuH_regularization, m_nuH);
-    } else {
-      compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness, nuH_regularization,
-                  m_nuH);
-    }
+    array::AccessScope scope{ &m_velocity };
+    compute_nuH(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
+                nuH_regularization, m_nuH);
   }
   if (m_view_nuh) {
     update_nuH_viewers(m_nuH);
@@ -1200,13 +1226,8 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
 
       {
         array::AccessScope scope{ &m_velocity };
-        if (use_cfbc) {
-          compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(),
-                           m_hardness, nuH_regularization, m_nuH);
-        } else {
-          compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness, nuH_regularization,
-                      m_nuH);
-        }
+        compute_nuH(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
+                    nuH_regularization, m_nuH);
       }
 
       if (nuH_iter_failure_underrelax != 1.0) {
@@ -1423,24 +1444,15 @@ void SSAFD::initialize_iterations(const Inputs &inputs) {
 
 void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity,
                              array::Vector &result) {
-  bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
-
   // update m_cell_type, m_taud, m_hardness
   initialize_iterations(inputs);
-
-  double nuH_regularization = m_config->get_number("stress_balance.ssa.epsilon");
 
   m_velocity.copy_from(velocity);
 
   {
     array::AccessScope list{ &m_velocity };
-    if (use_cfbc) {
-      compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
-                       nuH_regularization, m_nuH);
-    } else {
-      compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness,
-                  nuH_regularization, m_nuH);
-    }
+    compute_nuH(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
+                m_config->get_number("stress_balance.ssa.epsilon"), m_nuH);
 
     fd_operator(inputs, m_velocity.array(), m_nuH, m_cell_type, nullptr, &result);
   }
@@ -1555,10 +1567,10 @@ In this implementation we set \f$\nu H\f$ to a constant anywhere the ice is
 thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
 */
-void SSAFD::compute_nuH(const array::Scalar1 &ice_thickness,
-                        const pism::Vector2d* const* velocity,
-                        const array::Staggered &hardness,
-                        double nuH_regularization, array::Staggered &result) {
+void SSAFD::compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
+                                   const pism::Vector2d *const *velocity,
+                                   const array::Staggered &hardness, double nuH_regularization,
+                                   array::Staggered &result) {
 
   auto uv = [&velocity](int i, int j) { return velocity[j][i]; };
 
@@ -1616,17 +1628,24 @@ void SSAFD::compute_nuH(const array::Scalar1 &ice_thickness,
 
       // We ensure that nuH is bounded below by a positive constant.
       result(i, j, o) += nuH_regularization;
-
     } // o-loop
   }   // i,j-loop
-
-  // Some communication
-  result.update_ghosts();
 }
 
 /**
  * @brief Compute the product of ice viscosity and thickness on the
  * staggered grid. Used when CFBC is enabled.
+ *
+ * 1) Loops over all grid points and width=1 ghosts and estimates u_x and v_x at the
+ *    i-offset staggered grid locations and u_y and v_y at the j-offset staggered grid
+ *    locations. This requires width=2 ghosts of `velocity` and `cell_type`.
+ *
+ * 2) Loops over all grid points (excluding ghost points) and computes weighted averages
+ *    of quantities from step 1 to estimate (u_y, v_y) at i-offset locations and (u_x,
+ *    v_x) and j-offset locations. This uses width=1 ghost values set in step 1.
+ *
+ * 3) In the second loop, ice thickness, ice hardness and (u_x, u_y, v_x, v_y) at
+ *    staggered grid locations from steps 1 and 2 are used to estimate nuH.
  *
  * @param[out] result nu*H product
  * @param[in] nuH_regularization regularization parameter (added to nu*H to keep it away from zero)
@@ -1766,9 +1785,17 @@ void SSAFD::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::C
       // We ensure that nuH is bounded below by a positive constant.
       result(i, j, o) += nuH_regularization;
     }
-  }
+  } // end of the loop over grid points
+}
 
-  // Some communication
+void SSAFD::compute_nuH(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
+                        const pism::Vector2d *const *velocity, const array::Staggered &hardness,
+                        double nuH_regularization, array::Staggered1 &result) {
+  if (m_config->get_flag("stress_balance.calving_front_stress_bc")) {
+    compute_nuH_cfbc(ice_thickness, cell_type, velocity, hardness, nuH_regularization, result);
+  } else {
+    compute_nuH_everywhere(ice_thickness, velocity, m_hardness, nuH_regularization, result);
+  }
   result.update_ghosts();
 }
 
@@ -1799,43 +1826,6 @@ void SSAFD::update_nuH_viewers(const array::Staggered &nuH) {
   }
 
   tmp.view({m_nuh_viewer});
-}
-
-//! \brief Checks if a cell is near or at the ice front.
-/*!
- * You need to create array::AccessScope object and add mask to it.
- *
- * Note that a cell is a CFBC location of one of four direct neighbors is ice-free.
- *
- * If one of the diagonal neighbors is ice-free we don't use the CFBC, but we
- * do need to compute weights used in the SSA discretization (see
- * assemble_matrix()) to avoid differencing across interfaces between icy
- * and ice-free cells.
- *
- * This method ensures that checks in assemble_rhs() and assemble_matrix() are
- * consistent.
- */
-bool SSAFD::is_marginal(int i, int j,
-                        const array::CellType1 &cell_type,
-                        bool ssa_dirichlet_bc) {
-
-  auto M = cell_type.box_int(i, j);
-
-  using mask::ice_free;
-  using mask::ice_free_ocean;
-  using mask::icy;
-
-  if (ssa_dirichlet_bc) {
-    return icy(M.c) &&
-      (ice_free(M.e) || ice_free(M.w) || ice_free(M.n) || ice_free(M.s) ||
-       ice_free(M.ne) || ice_free(M.se) || ice_free(M.nw) || ice_free(M.sw));
-  }
-
-  return icy(M.c) &&
-    (ice_free_ocean(M.e) || ice_free_ocean(M.w) ||
-     ice_free_ocean(M.n) || ice_free_ocean(M.s) ||
-     ice_free_ocean(M.ne) || ice_free_ocean(M.se) ||
-     ice_free_ocean(M.nw) || ice_free_ocean(M.sw));
 }
 
 void SSAFD::write_system_petsc(const std::string &namepart) {

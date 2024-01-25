@@ -45,41 +45,48 @@ public:
   void compute_residual(const Inputs &inputs, const array::Vector &velocity, array::Vector &result);
 
 protected:
+
+  // Re-implemented by SSAFD_Regional
   virtual void init_impl();
 
-  virtual DiagnosticList diagnostics_impl() const;
+  DiagnosticList diagnostics_impl() const;
 
-  virtual void pc_setup_bjacobi();
+  void pc_setup_bjacobi();
 
-  virtual void pc_setup_asm();
+  void pc_setup_asm();
 
+  // Re-implemented by SSAFD_Regional
   virtual void solve(const Inputs &inputs);
 
-  virtual void picard_iteration(const Inputs &inputs, double nuH_regularization,
-                                double nuH_iter_failure_underrelax);
+  void picard_iteration(const Inputs &inputs, double nuH_regularization,
+                        double nuH_iter_failure_underrelax);
 
-  virtual void picard_manager(const Inputs &inputs, double nuH_regularization,
-                              double nuH_iter_failure_underrelax);
+  void picard_manager(const Inputs &inputs, double nuH_regularization,
+                      double nuH_iter_failure_underrelax);
 
-  virtual void picard_strategy_regularization(const Inputs &inputs);
+  void picard_strategy_regularization(const Inputs &inputs);
 
-  virtual void compute_average_ice_hardness(const Inputs &inputs, const array::CellType1 &cell_type,
+  void compute_average_ice_hardness(const Inputs &inputs, const array::CellType1 &cell_type,
                                             array::Staggered &result);
+  void compute_nuH(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
+                   const pism::Vector2d *const *velocity, const array::Staggered &hardness,
+                   double nuH_regularization, array::Staggered1 &result);
 
-  virtual void compute_nuH(const array::Scalar1 &ice_thickness,
-                           const pism::Vector2d* const* velocity,
-                           const array::Staggered &hardness, double nuH_regularization,
-                           array::Staggered &result);
+  void compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
+                              const pism::Vector2d *const *velocity,
+                              const array::Staggered &hardness, double nuH_regularization,
+                              array::Staggered &result);
 
-  virtual void compute_nuH_cfbc(const array::Scalar1 &ice_thickness,
-                                const array::CellType2 &cell_type,
-                                const pism::Vector2d* const* velocity,
-                                const array::Staggered &hardness, double nuH_regularization,
-                                array::Staggered &result);
+  void compute_nuH_cfbc(const array::Scalar1 &ice_thickness,
+                        const array::CellType2 &cell_type,
+                        const pism::Vector2d* const* velocity,
+                        const array::Staggered &hardness, double nuH_regularization,
+                        array::Staggered &result);
 
-  virtual std::array<double, 2> compute_nuH_norm(const array::Staggered &nuH,
-                                                 array::Staggered &nuH_old);
+  std::array<double, 2> compute_nuH_norm(const array::Staggered &nuH,
+                                         array::Staggered &nuH_old);
 
+  // Re-implemented by SSAFD_Regional
   virtual void compute_driving_stress(const array::Scalar &ice_thickness,
                                       const array::Scalar1 &surface_elevation,
                                       const array::CellType1 &cell_type,
@@ -88,28 +95,22 @@ protected:
 
   void initialize_iterations(const Inputs &inputs);
 
-  virtual void fd_operator(const Inputs &inputs, const pism::Vector2d* const* velocity,
-                           const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat *A,
-                           array::Vector *Ax);
+  void fd_operator(const Inputs &inputs, const pism::Vector2d *const *velocity,
+                   const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat *A,
+                   array::Vector *Ax);
 
-  virtual void assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
-                               const array::Staggered1 &nuH, const array::CellType1 &cell_type,
-                               Mat A);
+  void assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
+                       const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat A);
 
-  virtual void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
-                            const array::Vector &driving_stress,
-                            array::Vector &result);
+  void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
+                    const array::Vector &driving_stress, array::Vector &result);
 
-  virtual void write_system_petsc(const std::string &namepart);
+  void write_system_petsc(const std::string &namepart);
 
-  virtual void update_nuH_viewers(const array::Staggered &nuH);
+  void update_nuH_viewers(const array::Staggered &nuH);
 
-  virtual bool is_marginal(int i, int j,
-                           const array::CellType1 &cell_type,
-                           bool ssa_dirichlet_bc);
-
-  virtual void fracture_induced_softening(const array::Scalar &fracture_density,
-                                          array::Staggered &ice_hardness);
+  void fracture_induced_softening(const array::Scalar &fracture_density,
+                                  array::Staggered &ice_hardness);
 
   // objects used internally
   array::Staggered m_hardness;
