@@ -1105,14 +1105,16 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
   m_stdout_ssa.clear();
 
   bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
-
-  if (use_cfbc) {
-    compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
-                     nuH_regularization, m_nuH);
-  } else {
-    compute_nuH(inputs.geometry->ice_thickness, m_velocity, m_hardness, nuH_regularization, m_nuH);
+  {
+    array::AccessScope scope{&m_velocity};
+    if (use_cfbc) {
+      compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
+                       nuH_regularization, m_nuH);
+    } else {
+      compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness, nuH_regularization,
+                  m_nuH);
+    }
   }
-
   if (m_view_nuh) {
     update_nuH_viewers(m_nuH);
   }
@@ -1200,12 +1202,15 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
       // in preparation of measuring change of effective viscosity:
       m_nuH_old.copy_from(m_nuH);
 
-      if (use_cfbc) {
-        compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity,
-                                   m_hardness, nuH_regularization, m_nuH);
-      } else {
-        compute_nuH(inputs.geometry->ice_thickness, m_velocity, m_hardness,
-                              nuH_regularization, m_nuH);
+      {
+        array::AccessScope scope{&m_velocity};
+        if (use_cfbc) {
+          compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
+                           nuH_regularization, m_nuH);
+        } else {
+          compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness, nuH_regularization,
+                      m_nuH);
+        }
       }
 
       if (nuH_iter_failure_underrelax != 1.0) {
@@ -1431,16 +1436,16 @@ void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity
 
   m_velocity.copy_from(velocity);
 
-  if (use_cfbc) {
-    compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
-                     nuH_regularization, m_nuH);
-  } else {
-    compute_nuH(inputs.geometry->ice_thickness, m_velocity, m_hardness,
-                nuH_regularization, m_nuH);
-  }
-
   {
     array::AccessScope list{ &m_velocity };
+    if (use_cfbc) {
+      compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
+                       nuH_regularization, m_nuH);
+    } else {
+      compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness, nuH_regularization,
+                  m_nuH);
+    }
+
     fd_operator(inputs, m_velocity.array(), m_nuH, m_cell_type, nullptr, &result);
   }
   assemble_rhs(inputs, m_cell_type, m_taud, m_rhs);
@@ -1555,12 +1560,13 @@ thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
 */
 void SSAFD::compute_nuH(const array::Scalar1 &ice_thickness,
-                                  const array::Vector1 &velocity, const array::Staggered &hardness,
-                                  double nuH_regularization, array::Staggered &result) {
+                        const pism::Vector2d* const* velocity,
+                        const array::Staggered &hardness,
+                        double nuH_regularization, array::Staggered &result) {
 
-  const array::Vector &uv = velocity; // shortcut
+  auto uv = [&velocity](int i, int j) { return velocity[j][i]; };
 
-  array::AccessScope list{ &result, &uv, &hardness, &ice_thickness };
+  array::AccessScope list{ &result, &hardness, &ice_thickness };
 
   double n_glen                 = m_flow_law->exponent(),
          nu_enhancement_scaling = 1.0 / pow(m_e_factor, 1.0 / n_glen);
@@ -1570,7 +1576,14 @@ void SSAFD::compute_nuH(const array::Scalar1 &ice_thickness,
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto V = velocity.box(i, j);
+    const int
+      E = i + 1,
+      W = i - 1,
+      N = j + 1,
+      S = j - 1;
+
+    stencils::Box<Vector2d> V{ uv(i, j), uv(i, N), uv(W, N), uv(W, j), uv(W, S),
+                               uv(i, S), uv(E, S), uv(E, j), uv(E, N) };
 
     for (int o = 0; o < 2; ++o) {
       const int oi = 1 - o, oj = o;

@@ -66,7 +66,8 @@ protected:
   virtual void compute_average_ice_hardness(const Inputs &inputs, const array::CellType1 &cell_type,
                                             array::Staggered &result);
 
-  virtual void compute_nuH(const array::Scalar1 &ice_thickness, const array::Vector1 &velocity,
+  virtual void compute_nuH(const array::Scalar1 &ice_thickness,
+                           const pism::Vector2d* const* velocity,
                            const array::Staggered &hardness, double nuH_regularization,
                            array::Staggered &result);
 
