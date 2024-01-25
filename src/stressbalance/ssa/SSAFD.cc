@@ -802,15 +802,15 @@ void SSAFD::fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
           break;
         }
         case MASK_FLOATING: {
+          const Vector2d &v = velocity(i, j);
           double scaling = sub_gl ? grounded_fraction(i, j) : 0.0;
-          beta =
-              scaling * m_basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
+          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), v.u, v.v);
           break;
         }
         case MASK_GROUNDED: {
+          const Vector2d &v = velocity(i, j);
           double scaling = sub_gl ? grounded_fraction(i, j) : 1.0;
-          beta =
-              scaling * m_basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
+          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), v.u, v.v);
           break;
         }
         case MASK_ICE_FREE_OCEAN:
