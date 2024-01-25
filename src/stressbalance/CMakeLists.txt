@@ -6,6 +6,7 @@ add_library (stressbalance OBJECT
   SSB_Modifier.cc
   ssa/SSA.cc
   ssa/SSAFD.cc
+  ssa/SSAFD_discretization.cc
   ssa/SSAFEM.cc
   ssa/SSATestCase.cc
   sia/BedSmoother.cc

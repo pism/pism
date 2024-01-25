@@ -66,8 +66,9 @@ protected:
 
   void picard_strategy_regularization(const Inputs &inputs);
 
-  void compute_average_ice_hardness(const Inputs &inputs, const array::CellType1 &cell_type,
-                                            array::Staggered &result);
+  void compute_average_ice_hardness(const array::Scalar1 &thickness, const array::Array3D &enthalpy,
+                                    const array::CellType1 &cell_type, array::Staggered &result);
+
   void compute_nuH(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
                    const pism::Vector2d *const *velocity, const array::Staggered &hardness,
                    double nuH_regularization, array::Staggered1 &result);
