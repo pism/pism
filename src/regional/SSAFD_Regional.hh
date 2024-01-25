@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _SSAFD_REGIONAL_H_
-#define _SSAFD_REGIONAL_H_
+#ifndef PISM_SSAFD_REGIONAL_H
+#define PISM_SSAFD_REGIONAL_H
 
 #include "pism/stressbalance/ssa/SSAFD.hh"
 
@@ -32,14 +32,15 @@ class SSAFD_Regional : public SSAFD {
 public:
   SSAFD_Regional(std::shared_ptr<const Grid> g);
   virtual ~SSAFD_Regional() = default;
-  void init();
+
+private:
+  void init_impl();
   void compute_driving_stress(const array::Scalar &ice_thickness,
                               const array::Scalar1 &surface_elevation,
                               const array::CellType1 &cell_type,
                               const array::Scalar1 *no_model_mask, array::Vector &result) const;
 
-private:
-  void update(const Inputs &inputs, bool full_update);
+  void solve(const Inputs &inputs);
 
   const array::Scalar1 *m_h_stored;
   const array::Scalar *m_H_stored;
@@ -51,4 +52,4 @@ SSA * SSAFD_RegionalFactory(std::shared_ptr<const Grid> grid);
 
 } // end of namespace pism
 
-#endif /* _SSAFD_REGIONAL_H_ */
+#endif /* PISM_SSAFD_REGIONAL_H */

@@ -18,7 +18,6 @@
  */
 
 #include "pism/regional/SSAFD_Regional.hh"
-#include "pism/util/Vars.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
@@ -28,13 +27,13 @@ namespace stressbalance {
 SSAFD_Regional::SSAFD_Regional(std::shared_ptr<const Grid> g)
   : SSAFD(g) {
 
-  m_h_stored      = nullptr;
-  m_H_stored      = nullptr;
+  m_h_stored = nullptr;
+  m_H_stored = nullptr;
 }
 
-void SSAFD_Regional::init() {
+void SSAFD_Regional::init_impl() {
 
-  SSAFD::init();
+  SSAFD::init_impl();
 
   m_log->message(2, "  using the regional version of the SSA solver...\n");
 
@@ -43,14 +42,14 @@ void SSAFD_Regional::init() {
   }
 }
 
-void SSAFD_Regional::update(const Inputs &inputs, bool full_update) {
-  m_h_stored      = inputs.no_model_surface_elevation;
-  m_H_stored      = inputs.no_model_ice_thickness;
+void SSAFD_Regional::solve(const Inputs &inputs) {
+  m_h_stored = inputs.no_model_surface_elevation;
+  m_H_stored = inputs.no_model_ice_thickness;
 
-  SSA::update(inputs, full_update);
+  SSAFD::solve(inputs);
 
-  m_h_stored      = nullptr;
-  m_H_stored      = nullptr;
+  m_h_stored = nullptr;
+  m_H_stored = nullptr;
 }
 
 static int weight(int M_ij, int M_n, double h_ij, double h_n) {
