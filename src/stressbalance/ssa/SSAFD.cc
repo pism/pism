@@ -491,7 +491,7 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
+void SSAFD::fd_operator(const Inputs &inputs, const array::Vector1 &input_velocity,
                         const array::Staggered &nuH, const array::CellType1 &cell_type, Mat *A,
                         array::Vector *Ax) {
   using mask::grounded_ice;
@@ -529,7 +529,10 @@ void SSAFD::fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
     PISM_CHK(ierr, "MatZeroEntries");
   }
 
-  array::AccessScope list{ &nuH, &tauc, &velocity, &cell_type, &bed, &surface };
+  array::AccessScope list{ &nuH, &tauc, &cell_type, &bed, &surface };
+
+  list.add(input_velocity);
+  auto velocity = [&input_velocity](int i, int j) { return input_velocity(i, j); };
 
   if (Ax != nullptr) {
     list.add(*Ax);
