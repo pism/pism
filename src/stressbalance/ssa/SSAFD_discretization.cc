@@ -489,9 +489,10 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input_velocity,
-                        const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat *A,
-                        array::Vector *Ax) {
+void SSAFD::fd_operator(const Geometry &geometry, const array::Scalar *bc_mask,
+                        const array::Scalar &basal_yield_stress,
+                        const pism::Vector2d *const *input_velocity, const array::Staggered1 &nuH,
+                        const array::CellType1 &cell_type, Mat *A, array::Vector *Ax) {
   using mask::grounded_ice;
   using mask::ice_free;
   using mask::ice_free_land;
@@ -503,11 +504,10 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
 
   PetscErrorCode ierr = 0;
 
-  const array::Scalar1 &thickness        = inputs.geometry->ice_thickness,
-                       &bed              = inputs.geometry->bed_elevation;
-  const array::Scalar &surface           = inputs.geometry->ice_surface_elevation,
-                      &grounded_fraction = inputs.geometry->cell_grounded_fraction,
-                      &tauc              = *inputs.basal_yield_stress;
+  const array::Scalar1 &thickness = geometry.ice_thickness, &bed = geometry.bed_elevation;
+
+  const array::Scalar &surface           = geometry.ice_surface_elevation,
+                      &grounded_fraction = geometry.cell_grounded_fraction;
 
   const double dx = m_grid->dx(), dy = m_grid->dy(),
                beta_lateral_margin = m_config->get_number("basal_resistance.beta_lateral_margin"),
@@ -527,7 +527,7 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
     PISM_CHK(ierr, "MatZeroEntries");
   }
 
-  array::AccessScope list{ &nuH, &tauc, &cell_type, &bed, &surface };
+  array::AccessScope list{ &nuH, &basal_yield_stress, &cell_type, &bed, &surface };
 
   auto velocity = [&input_velocity](int i, int j) { return input_velocity[j][i]; };
 
@@ -535,8 +535,8 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
     list.add(*Ax);
   }
 
-  if (inputs.bc_values != nullptr && inputs.bc_mask != nullptr) {
-    list.add(*inputs.bc_mask);
+  if (bc_mask != nullptr) {
+    list.add(*bc_mask);
   }
 
   const bool sub_gl = m_config->get_flag("geometry.grounded_cell_fraction");
@@ -563,7 +563,7 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
       // Easy cases:
       {
         // Provided Dirichlet boundary conditions
-        bool bc_location = inputs.bc_mask != nullptr and inputs.bc_mask->as_int(i, j) == 1;
+        bool bc_location = bc_mask != nullptr and bc_mask->as_int(i, j) == 1;
         // Note: this sets velocities at both ice-free ocean and ice-free
         // bedrock to zero. This means that we need to set boundary conditions
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
@@ -800,13 +800,13 @@ void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input
         case MASK_FLOATING: {
           const Vector2d &v = velocity(i, j);
           double scaling = sub_gl ? grounded_fraction(i, j) : 0.0;
-          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), v.u, v.v);
+          beta = scaling * m_basal_sliding_law->drag(basal_yield_stress(i, j), v.u, v.v);
           break;
         }
         case MASK_GROUNDED: {
           const Vector2d &v = velocity(i, j);
           double scaling = sub_gl ? grounded_fraction(i, j) : 1.0;
-          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), v.u, v.v);
+          beta = scaling * m_basal_sliding_law->drag(basal_yield_stress(i, j), v.u, v.v);
           break;
         }
         case MASK_ICE_FREE_OCEAN:
@@ -1354,7 +1354,10 @@ void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity
     compute_nuH(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
                 m_config->get_number("stress_balance.ssa.epsilon"), m_nuH);
 
-    fd_operator(inputs, m_velocity.array(), m_nuH, m_cell_type, nullptr, &result);
+    fd_operator(*inputs.geometry,
+                inputs.bc_mask,
+                *inputs.basal_yield_stress,
+                m_velocity.array(), m_nuH, m_cell_type, nullptr, &result);
   }
   assemble_rhs(inputs, m_cell_type, m_taud, m_rhs);
 

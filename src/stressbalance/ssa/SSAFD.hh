@@ -96,7 +96,8 @@ protected:
 
   void initialize_iterations(const Inputs &inputs);
 
-  void fd_operator(const Inputs &inputs, const pism::Vector2d *const *velocity,
+  void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask,
+                   const array::Scalar &basal_yield_stress, const pism::Vector2d *const *velocity,
                    const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat *A,
                    array::Vector *Ax);
 

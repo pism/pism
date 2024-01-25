@@ -232,7 +232,8 @@ void SSAFD::init_impl() {
 void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
                             const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat A) {
   array::AccessScope list{ &velocity };
-  fd_operator(inputs, velocity.array(), nuH, cell_type, &A, nullptr);
+  fd_operator(*inputs.geometry, inputs.bc_mask, *inputs.basal_yield_stress, velocity.array(), nuH,
+              cell_type, &A, nullptr);
 }
 
 
