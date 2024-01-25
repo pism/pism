@@ -86,7 +86,7 @@ protected:
 
   void initialize_iterations(const Inputs &inputs);
 
-  virtual void fd_operator(const Inputs &inputs, const array::Vector1 &velocity,
+  virtual void fd_operator(const Inputs &inputs, const pism::Vector2d* const* velocity,
                            const array::Staggered &nuH, const array::CellType1 &cell_type, Mat *A,
                            array::Vector *Ax);
 

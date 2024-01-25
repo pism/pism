@@ -491,7 +491,7 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::fd_operator(const Inputs &inputs, const array::Vector1 &input_velocity,
+void SSAFD::fd_operator(const Inputs &inputs, const pism::Vector2d* const* input_velocity,
                         const array::Staggered &nuH, const array::CellType1 &cell_type, Mat *A,
                         array::Vector *Ax) {
   using mask::grounded_ice;
@@ -531,8 +531,7 @@ void SSAFD::fd_operator(const Inputs &inputs, const array::Vector1 &input_veloci
 
   array::AccessScope list{ &nuH, &tauc, &cell_type, &bed, &surface };
 
-  list.add(input_velocity);
-  auto velocity = [&input_velocity](int i, int j) { return input_velocity(i, j); };
+  auto velocity = [&input_velocity](int i, int j) { return input_velocity[j][i]; };
 
   if (Ax != nullptr) {
     list.add(*Ax);
@@ -932,7 +931,8 @@ void SSAFD::fd_operator(const Inputs &inputs, const array::Vector1 &input_veloci
 
 void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
                             const array::Staggered &nuH, const array::CellType1 &cell_type, Mat A) {
-  fd_operator(inputs, velocity, nuH, cell_type, &A, nullptr);
+  array::AccessScope list{ &velocity };
+  fd_operator(inputs, velocity.array(), nuH, cell_type, &A, nullptr);
 }
 
 
@@ -1439,7 +1439,10 @@ void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity
                 nuH_regularization, m_nuH);
   }
 
-  fd_operator(inputs, m_velocity, m_nuH, m_cell_type, nullptr, &result);
+  {
+    array::AccessScope list{ &m_velocity };
+    fd_operator(inputs, m_velocity.array(), m_nuH, m_cell_type, nullptr, &result);
+  }
   assemble_rhs(inputs, m_cell_type, m_taud, m_rhs);
 
   result.add(-1.0, m_rhs);
