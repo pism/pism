@@ -72,7 +72,8 @@ protected:
                            array::Staggered &result);
 
   virtual void compute_nuH_cfbc(const array::Scalar1 &ice_thickness,
-                                const array::CellType2 &cell_type, const array::Vector2 &velocity,
+                                const array::CellType2 &cell_type,
+                                const pism::Vector2d* const* velocity,
                                 const array::Staggered &hardness, double nuH_regularization,
                                 array::Staggered &result);
 

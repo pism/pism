@@ -1108,7 +1108,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
   {
     array::AccessScope scope{&m_velocity};
     if (use_cfbc) {
-      compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
+      compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
                        nuH_regularization, m_nuH);
     } else {
       compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness, nuH_regularization,
@@ -1203,10 +1203,10 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
       m_nuH_old.copy_from(m_nuH);
 
       {
-        array::AccessScope scope{&m_velocity};
+        array::AccessScope scope{ &m_velocity };
         if (use_cfbc) {
-          compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
-                           nuH_regularization, m_nuH);
+          compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(),
+                           m_hardness, nuH_regularization, m_nuH);
         } else {
           compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness, nuH_regularization,
                       m_nuH);
@@ -1439,11 +1439,11 @@ void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity
   {
     array::AccessScope list{ &m_velocity };
     if (use_cfbc) {
-      compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity, m_hardness,
+      compute_nuH_cfbc(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
                        nuH_regularization, m_nuH);
     } else {
-      compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness, nuH_regularization,
-                  m_nuH);
+      compute_nuH(inputs.geometry->ice_thickness, m_velocity.array(), m_hardness,
+                  nuH_regularization, m_nuH);
     }
 
     fd_operator(inputs, m_velocity.array(), m_nuH, m_cell_type, nullptr, &result);
@@ -1638,7 +1638,8 @@ void SSAFD::compute_nuH(const array::Scalar1 &ice_thickness,
  * @return 0 on success
  */
 void SSAFD::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
-                             const array::Vector2 &velocity, const array::Staggered &hardness,
+                             const pism::Vector2d* const* velocity,
+                             const array::Staggered &hardness,
                              double nuH_regularization, array::Staggered &result) {
 
   double n_glen                 = m_flow_law->exponent(),
@@ -1646,9 +1647,12 @@ void SSAFD::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::C
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  array::AccessScope list{ &cell_type, &m_work, &velocity };
+  array::AccessScope list{ &cell_type, &m_work };
 
   assert(m_work.stencil_width() >= 1);
+
+  auto U = [&velocity](int i, int j) { return velocity[j][i].u; };
+  auto V = [&velocity](int i, int j) { return velocity[j][i].v; };
 
   for (auto p = m_grid->points(1); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1656,8 +1660,8 @@ void SSAFD::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::C
     // x-derivative, i-offset
     {
       if (cell_type.icy(i, j) && cell_type.icy(i + 1, j)) {
-        m_work(i, j).u_x = (velocity(i + 1, j).u - velocity(i, j).u) / dx; // u_x
-        m_work(i, j).v_x = (velocity(i + 1, j).v - velocity(i, j).v) / dx; // v_x
+        m_work(i, j).u_x = (U(i + 1, j) - U(i, j)) / dx; // u_x
+        m_work(i, j).v_x = (V(i + 1, j) - V(i, j)) / dx; // v_x
         m_work(i, j).w_i = 1.0;
       } else {
         m_work(i, j).u_x = 0.0;
@@ -1669,8 +1673,8 @@ void SSAFD::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::C
     // y-derivative, j-offset
     {
       if (cell_type.icy(i, j) && cell_type.icy(i, j + 1)) {
-        m_work(i, j).u_y = (velocity(i, j + 1).u - velocity(i, j).u) / dy; // u_y
-        m_work(i, j).v_y = (velocity(i, j + 1).v - velocity(i, j).v) / dy; // v_y
+        m_work(i, j).u_y = (U(i, j + 1) - U(i, j)) / dy; // u_y
+        m_work(i, j).v_y = (V(i, j + 1) - V(i, j)) / dy; // v_y
         m_work(i, j).w_j = 1.0;
       } else {
         m_work(i, j).u_y = 0.0;
