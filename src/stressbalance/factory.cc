@@ -19,19 +19,18 @@
 
 #include <memory>
 
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/stressbalance/WeertmanSliding.hh"
-#include "pism/stressbalance/SSB_Modifier.hh"
-#include "pism/regional/SSAFD_Regional.hh"
 #include "pism/regional/SIAFD_Regional.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/WeertmanSliding.hh"
 #include "pism/stressbalance/blatter/Blatter.hh"
 #include "pism/stressbalance/blatter/BlatterMod.hh"
-
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Context.hh"
+#include "pism/stressbalance/sia/SIAFD.hh"
+#include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "sia/SIAFD.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {
