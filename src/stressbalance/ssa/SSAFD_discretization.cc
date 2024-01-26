@@ -23,7 +23,7 @@
 #include "pism/geometry/Geometry.hh"              // Geometry
 #include "pism/rheology/FlowLaw.hh"               // rheology::averaged_hardness()
 #include "pism/stressbalance/StressBalance.hh"    // stressbalance::Inputs
-#include "pism/util/Context.hh"
+
 #include "pism/util/Mask.hh"
 
 #include "pism/util/pism_utilities.hh" // average_water_column_pressure()
@@ -63,7 +63,7 @@ static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n, in
   }
 
   // This condition has to match the one used to implement the calving front stress
-  // boundary condition in SSAFD::assemble_rhs().
+  // boundary condition in assemble_rhs().
   if (margin_bc and ((icy(M_ij) and ice_free(M_n)) or (ice_free(M_ij) and icy(M_n)))) {
     return 0;
   }
@@ -81,22 +81,20 @@ static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n, in
 Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
  */
-void compute_driving_stress(const array::Scalar &ice_thickness,
-                            const array::Scalar1 &surface_elevation,
-                            const array::CellType1 &cell_type, const array::Scalar1 *no_model_mask,
-                            const EnthalpyConverter &EC, array::Vector &result) {
+void SSAFDBase::compute_driving_stress(const array::Scalar &ice_thickness,
+                                       const array::Scalar1 &surface_elevation,
+                                       const array::CellType1 &cell_type,
+                                       const array::Scalar1 *no_model_mask,
+                                       const EnthalpyConverter &EC, array::Vector &result) const {
 
   using mask::floating_ice;
   using mask::ice_free_ocean;
 
-  auto grid   = result.grid();
-  auto config = grid->ctx()->config();
-
-  bool cfbc = config->get_flag("stress_balance.calving_front_stress_bc");
+  bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   bool surface_gradient_inward =
-      config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
+      m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
 
-  double dx = grid->dx(), dy = grid->dy();
+  double dx = m_grid->dx(), dy = m_grid->dy();
 
   array::AccessScope list{ &surface_elevation, &cell_type, &ice_thickness, &result };
 
@@ -104,7 +102,7 @@ void compute_driving_stress(const array::Scalar &ice_thickness,
     list.add(*no_model_mask);
   }
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double pressure = EC.pressure(ice_thickness(i, j)); // FIXME issue #15
@@ -233,15 +231,13 @@ In the case of Dirichlet boundary conditions, the entries on the right-hand side
 come from known velocity values.  The fields bc_values and m_bc_mask are used for
 this.
  */
-void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
-                  const array::Vector &driving_stress, double bc_scaling, array::Vector &result) {
+void SSAFDBase::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
+                             const array::Vector &driving_stress, double bc_scaling,
+                             array::Vector &result) const {
 
   using mask::ice_free;
   using mask::ice_free_land;
   using mask::ice_free_ocean;
-
-  auto grid   = result.grid();
-  auto config = grid->ctx()->config();
 
   const array::Scalar1 &bed                  = inputs.geometry->bed_elevation;
   const array::Scalar &thickness             = inputs.geometry->ice_thickness,
@@ -249,20 +245,20 @@ void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
                       &sea_level             = inputs.geometry->sea_level_elevation,
                       *water_column_pressure = inputs.water_column_pressure;
 
-  const double dx = grid->dx(), dy = grid->dy(),
-               standard_gravity = config->get_number("constants.standard_gravity"),
-               rho_ocean        = config->get_number("constants.sea_water.density"),
-               rho_ice          = config->get_number("constants.ice.density");
+  const double dx = m_grid->dx(), dy = m_grid->dy(),
+               standard_gravity = m_config->get_number("constants.standard_gravity"),
+               rho_ocean        = m_config->get_number("constants.sea_water.density"),
+               rho_ice          = m_config->get_number("constants.ice.density");
 
   // This constant is for debugging: simulations should not depend on the choice of
   // velocity used in ice-free areas.
   const Vector2d ice_free_velocity(0.0, 0.0);
 
-  const bool use_cfbc       = config->get_flag("stress_balance.calving_front_stress_bc"),
-             flow_line_mode = config->get_flag("stress_balance.ssa.fd.flow_line_mode");
+  const bool use_cfbc       = m_config->get_flag("stress_balance.calving_front_stress_bc"),
+             flow_line_mode = m_config->get_flag("stress_balance.ssa.fd.flow_line_mode");
 
   // FIXME: bedrock_boundary is a misleading name
-  bool bedrock_boundary = config->get_flag("stress_balance.ssa.dirichlet_bc");
+  bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
   array::AccessScope list{ &driving_stress, &result };
 
@@ -280,7 +276,7 @@ void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
 
   result.set(0.0);
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2d taud = driving_stress(i, j);
@@ -347,7 +343,7 @@ void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
 
         double delta_p = H_ij * (P_ice - P_water);
 
-        if (grid::domain_edge(*grid, i, j) and not(flow_line_mode or mask::grounded(M.c))) {
+        if (grid::domain_edge(*m_grid, i, j) and not(flow_line_mode or mask::grounded(M.c))) {
           // In regional setups grounded ice may extend to the edge of the domain. This
           // condition ensures that at a domain edge the ice behaves as if it extends past
           // the edge without a change in geometry.
@@ -478,20 +474,18 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask, double bc_scaling,
-                 const array::Scalar &basal_yield_stress,
-                 IceBasalResistancePlasticLaw *basal_sliding_law,
-                 const pism::Vector2d *const *input_velocity, const array::Staggered1 &nuH,
-                 const array::CellType1 &cell_type, Mat *A, array::Vector *Ax) {
+void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_mask,
+                            double bc_scaling, const array::Scalar &basal_yield_stress,
+                            IceBasalResistancePlasticLaw *basal_sliding_law,
+                            const pism::Vector2d *const *input_velocity,
+                            const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat *A,
+                            array::Vector *Ax) const {
 
   using mask::grounded_ice;
   using mask::ice_free;
   using mask::ice_free_land;
   using mask::ice_free_ocean;
   using mask::icy;
-
-  auto grid   = basal_yield_stress.grid();
-  auto config = grid->ctx()->config();
 
   const int diag_u = 4;
   const int diag_v = 13;
@@ -503,18 +497,18 @@ void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask, double 
   const array::Scalar &surface           = geometry.ice_surface_elevation,
                       &grounded_fraction = geometry.cell_grounded_fraction;
 
-  const double dx = grid->dx(), dy = grid->dy(),
-               beta_lateral_margin = config->get_number("basal_resistance.beta_lateral_margin"),
+  const double dx = m_grid->dx(), dy = m_grid->dy(),
+               beta_lateral_margin = m_config->get_number("basal_resistance.beta_lateral_margin"),
                beta_ice_free_bedrock =
-                   config->get_number("basal_resistance.beta_ice_free_bedrock");
+                   m_config->get_number("basal_resistance.beta_ice_free_bedrock");
 
   const bool
       // FIXME: bedrock_boundary is a misleading name
-      bedrock_boundary = config->get_flag("stress_balance.ssa.dirichlet_bc"),
-      flow_line_mode   = config->get_flag("stress_balance.ssa.fd.flow_line_mode"),
-      use_cfbc         = config->get_flag("stress_balance.calving_front_stress_bc"),
+      bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc"),
+      flow_line_mode   = m_config->get_flag("stress_balance.ssa.fd.flow_line_mode"),
+      use_cfbc         = m_config->get_flag("stress_balance.calving_front_stress_bc"),
       replace_zero_diagonal_entries =
-          config->get_flag("stress_balance.ssa.fd.replace_zero_diagonal_entries");
+          m_config->get_flag("stress_balance.ssa.fd.replace_zero_diagonal_entries");
 
   if (A != nullptr) {
     ierr = MatZeroEntries(*A);
@@ -533,25 +527,25 @@ void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask, double 
     list.add(*bc_mask);
   }
 
-  const bool sub_gl = config->get_flag("geometry.grounded_cell_fraction");
+  const bool sub_gl = m_config->get_flag("geometry.grounded_cell_fraction");
   if (sub_gl) {
     list.add(grounded_fraction);
   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice
   // surface (in simplified setups)
-  bool lateral_drag_enabled = config->get_flag("stress_balance.ssa.fd.lateral_drag.enabled");
+  bool lateral_drag_enabled = m_config->get_flag("stress_balance.ssa.fd.lateral_drag.enabled");
   if (lateral_drag_enabled) {
     list.add({ &thickness, &bed, &surface });
   }
   double lateral_drag_viscosity =
-      config->get_number("stress_balance.ssa.fd.lateral_drag.viscosity");
+      m_config->get_number("stress_balance.ssa.fd.lateral_drag.viscosity");
   double HminFrozen = 0.0;
 
   /* matrix assembly loop */
-  ParallelSection loop(grid->com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // Easy cases:
@@ -918,10 +912,10 @@ void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask, double 
 }
 
 //! @brief Computes vertically-averaged ice hardness on the staggered grid.
-void SSAFD::compute_average_ice_hardness(const array::Scalar1 &ice_thickness,
-                                         const array::Array3D &enthalpy,
-                                         const array::CellType1 &cell_type,
-                                         array::Staggered &result) {
+void SSAFDBase::compute_average_ice_hardness(const array::Scalar1 &ice_thickness,
+                                             const array::Array3D &enthalpy,
+                                             const array::CellType1 &cell_type,
+                                             array::Staggered &result) const {
 
   const double *E_ij = nullptr, *E_offset = nullptr;
 
@@ -974,7 +968,7 @@ void SSAFD::compute_average_ice_hardness(const array::Scalar1 &ice_thickness,
  *
  *  Updates m_cell_type, m_taud, m_hardness.
  */
-void SSAFD::initialize_iterations(const Inputs &inputs) {
+void SSAFDBase::initialize_iterations(const Inputs &inputs) {
   // update the cell type mask using the ice-free thickness threshold for stress balance
   // computations
   {
@@ -988,7 +982,7 @@ void SSAFD::initialize_iterations(const Inputs &inputs) {
     // note: compute_mask() updates ghosts without communication ("redundantly")
   }
   compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
-                         m_cell_type, inputs.no_model_mask,
+                         m_cell_type, inputs.no_model_mask, *m_EC,
                          m_taud); // output
   compute_average_ice_hardness(inputs.geometry->ice_thickness, *inputs.enthalpy, m_cell_type,
                                m_hardness);
@@ -1031,17 +1025,14 @@ void SSAFD::initialize_iterations(const Inputs &inputs) {
   So scaling the enhancement factor by \f$C\f$ is equivalent to scaling
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
-void SSAFD::fracture_induced_softening(const array::Scalar1 &fracture_density, double n_glen,
-                                       array::Staggered &ice_hardness) {
+void SSAFDBase::fracture_induced_softening(const array::Scalar1 &fracture_density, double n_glen,
+                                           array::Staggered &ice_hardness) {
 
-  auto grid   = fracture_density.grid();
-  auto config = grid->ctx()->config();
-
-  const double epsilon = config->get_number("fracture_density.softening_lower_limit");
+  const double epsilon = m_config->get_number("fracture_density.softening_lower_limit");
 
   array::AccessScope list{ &ice_hardness, &fracture_density };
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o = 0; o < 2; o++) {
@@ -1105,7 +1096,7 @@ In this implementation we set \f$\nu H\f$ to a constant anywhere the ice is
 thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
 */
-void SSAFD::compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
+void SSAFDBase::compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
                                    const pism::Vector2d *const *velocity,
                                    const array::Staggered &hardness, double nuH_regularization,
                                    array::Staggered &result) {
@@ -1190,7 +1181,7 @@ void SSAFD::compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
  *
  * @return 0 on success
  */
-void SSAFD::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
+void SSAFDBase::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
                              const pism::Vector2d* const* velocity,
                              const array::Staggered &hardness,
                              double nuH_regularization, array::Staggered &result) {
@@ -1326,7 +1317,7 @@ void SSAFD::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::C
   } // end of the loop over grid points
 }
 
-void SSAFD::compute_nuH(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
+void SSAFDBase::compute_nuH(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
                         const pism::Vector2d *const *velocity, const array::Staggered &hardness,
                         double nuH_regularization, array::Staggered1 &result) {
   if (m_config->get_flag("stress_balance.calving_front_stress_bc")) {
@@ -1337,7 +1328,7 @@ void SSAFD::compute_nuH(const array::Scalar1 &ice_thickness, const array::CellTy
   result.update_ghosts();
 }
 
-void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity,
+void SSAFDBase::compute_residual(const Inputs &inputs, const array::Vector &velocity,
                              array::Vector &result) {
   // update m_cell_type, m_taud, m_hardness
   initialize_iterations(inputs);
@@ -1351,12 +1342,23 @@ void SSAFD::compute_residual(const Inputs &inputs, const array::Vector &velocity
 
     fd_operator(*inputs.geometry,
                 inputs.bc_mask,
+                m_bc_scaling,
                 *inputs.basal_yield_stress,
+                m_basal_sliding_law,
                 m_velocity.array(), m_nuH, m_cell_type, nullptr, &result);
   }
-  assemble_rhs(inputs, m_cell_type, m_taud, m_rhs);
+
+  assemble_rhs(inputs, m_cell_type, m_taud, m_bc_scaling, m_rhs);
 
   result.add(-1.0, m_rhs);
+}
+
+const array::Staggered &SSAFDBase::integrated_viscosity() const {
+  return m_nuH;
+}
+
+const array::Vector &SSAFDBase::driving_stress() const {
+  return m_taud;
 }
 
 } // namespace stressbalance

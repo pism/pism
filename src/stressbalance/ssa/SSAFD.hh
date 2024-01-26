@@ -32,17 +32,91 @@
 namespace pism {
 namespace stressbalance {
 
-//! PISM's SSA solver: the finite difference implementation.
-class SSAFD : public SSA {
+class SSAFDBase : public SSA {
 public:
-  SSAFD(std::shared_ptr<const Grid> g);
-  virtual ~SSAFD() = default;
+  SSAFDBase(std::shared_ptr<const Grid> g);
 
   const array::Staggered &integrated_viscosity() const;
 
   const array::Vector &driving_stress() const;
 
   void compute_residual(const Inputs &inputs, const array::Vector &velocity, array::Vector &result);
+protected:
+  void initialize_iterations(const Inputs &inputs);
+
+  void compute_nuH(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
+                   const pism::Vector2d *const *velocity, const array::Staggered &hardness,
+                   double nuH_regularization, array::Staggered1 &result);
+
+  void compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
+                              const pism::Vector2d *const *velocity,
+                              const array::Staggered &hardness, double nuH_regularization,
+                              array::Staggered &result);
+
+  void compute_nuH_cfbc(const array::Scalar1 &ice_thickness,
+                        const array::CellType2 &cell_type,
+                        const pism::Vector2d* const* velocity,
+                        const array::Staggered &hardness, double nuH_regularization,
+                        array::Staggered &result);
+
+  void compute_driving_stress(const array::Scalar &ice_thickness,
+                              const array::Scalar1 &surface_elevation,
+                              const array::CellType1 &cell_type,
+                              const array::Scalar1 *no_model_mask, const EnthalpyConverter &EC,
+                              array::Vector &result) const;
+
+  void compute_average_ice_hardness(const array::Scalar1 &thickness, const array::Array3D &enthalpy,
+                                    const array::CellType1 &cell_type, array::Staggered &result) const;
+
+  void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
+                    const array::Vector &driving_stress, double bc_scaling, array::Vector &result) const;
+
+  void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask, double bc_scaling,
+                   const array::Scalar &basal_yield_stress,
+                   IceBasalResistancePlasticLaw *basal_sliding_law,
+                   const pism::Vector2d *const *velocity, const array::Staggered1 &nuH,
+                   const array::CellType1 &cell_type, Mat *A, array::Vector *Ax) const;
+
+  void fracture_induced_softening(const array::Scalar1 &fracture_density,
+                                  double n_glen,
+                                  array::Staggered &ice_hardness);
+
+  struct Work {
+    // u_x on the i offset
+    double u_x;
+    // v_x on the i offset
+    double v_x;
+    // weight for the i offset
+    double w_i;
+    // u_y on the j offset
+    double u_y;
+    // v_y on the j offset
+    double v_y;
+    // weight for the j offset
+    double w_j;
+  };
+
+  // temprary storage used to compute the nuH term (ghosted, but ghost values are computed
+  // "redundantly" and not communicated)
+  array::Array2D<Work> m_work;
+
+  array::Staggered m_hardness;
+
+  array::Staggered1 m_nuH;
+
+  array::CellType2 m_cell_type;
+
+  array::Vector m_rhs;            // right hand side
+  array::Vector m_taud;           // driving stress
+
+  const double m_bc_scaling;
+};
+
+//! PISM's SSA solver: the finite difference implementation.
+class SSAFD : public SSAFDBase {
+public:
+  SSAFD(std::shared_ptr<const Grid> g);
+  virtual ~SSAFD() = default;
 
 protected:
 
@@ -66,24 +140,6 @@ protected:
 
   void picard_strategy_regularization(const Inputs &inputs);
 
-  void compute_average_ice_hardness(const array::Scalar1 &thickness, const array::Array3D &enthalpy,
-                                    const array::CellType1 &cell_type, array::Staggered &result);
-
-  void compute_nuH(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
-                   const pism::Vector2d *const *velocity, const array::Staggered &hardness,
-                   double nuH_regularization, array::Staggered1 &result);
-
-  void compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
-                              const pism::Vector2d *const *velocity,
-                              const array::Staggered &hardness, double nuH_regularization,
-                              array::Staggered &result);
-
-  void compute_nuH_cfbc(const array::Scalar1 &ice_thickness,
-                        const array::CellType2 &cell_type,
-                        const pism::Vector2d* const* velocity,
-                        const array::Staggered &hardness, double nuH_regularization,
-                        array::Staggered &result);
-
   std::array<double, 2> compute_nuH_norm(const array::Staggered &nuH,
                                          array::Staggered &nuH_old);
 
@@ -93,13 +149,6 @@ protected:
                                       const array::CellType1 &cell_type,
                                       const array::Scalar1 *no_model_mask,
                                       array::Vector &result) const;
-
-  void initialize_iterations(const Inputs &inputs);
-
-  void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask,
-                   const array::Scalar &basal_yield_stress, const pism::Vector2d *const *velocity,
-                   const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat *A,
-                   array::Vector *Ax) const;
 
   void assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
                        const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat A);
@@ -111,46 +160,19 @@ protected:
 
   void update_nuH_viewers(const array::Staggered &nuH);
 
-  void fracture_induced_softening(const array::Scalar1 &fracture_density,
-                                  double n_glen,
-                                  array::Staggered &ice_hardness);
-
   // objects used internally
-  array::Staggered m_hardness;
-  array::Staggered1 m_nuH, m_nuH_old;
-
-  struct Work {
-    // u_x on the i offset
-    double u_x;
-    // v_x on the i offset
-    double v_x;
-    // weight for the i offset
-    double w_i;
-    // u_y on the j offset
-    double u_y;
-    // v_y on the j offset
-    double v_y;
-    // weight for the j offset
-    double w_j;
-  };
-  // temprary storage used to compute the nuH term
-  array::Array2D<Work> m_work;
-
-  array::CellType2 m_cell_type;
+  array::Staggered1 m_nuH_old;
 
   petsc::KSP m_KSP;
   petsc::Mat m_A;
-  array::Vector m_rhs;            // right hand side
-  array::Vector m_taud;
 
   array::Vector1 m_velocity_old;
-  const double m_scaling;
 
   // product of the FD matrix and the current guess
   array::Vector m_Ax;
 
-  unsigned int m_default_pc_failure_count,
-    m_default_pc_failure_max_count;
+  unsigned int m_default_pc_failure_count;
+  unsigned int m_default_pc_failure_max_count;
   
   bool m_view_nuh;
   std::shared_ptr<petsc::Viewer> m_nuh_viewer;
@@ -166,21 +188,6 @@ protected:
     PicardFailure(const std::string &message);
   };
 };
-
-void compute_driving_stress(const array::Scalar &ice_thickness,
-                            const array::Scalar1 &surface_elevation,
-                            const array::CellType1 &cell_type, const array::Scalar1 *no_model_mask,
-                            const EnthalpyConverter &EC, array::Vector &result);
-
-void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
-                  const array::Vector &driving_stress, double bc_scaling,
-                  array::Vector &result);
-
-void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask, double bc_scaling,
-                 const array::Scalar &basal_yield_stress,
-                 IceBasalResistancePlasticLaw *basal_sliding_law,
-                 const pism::Vector2d *const *velocity, const array::Staggered1 &nuH,
-                 const array::CellType1 &cell_type, Mat *A, array::Vector *Ax);
 
 //! Constructs a new SSAFD
 SSA * SSAFDFactory(std::shared_ptr<const Grid> grid);

@@ -48,6 +48,18 @@ SSA* SSAFDFactory(std::shared_ptr<const Grid> g) {
   return new SSAFD(g);
 }
 
+SSAFDBase::SSAFDBase(std::shared_ptr<const Grid> grid)
+    : SSA(grid),
+      m_work(grid, "work_vector", array::WITH_GHOSTS, 1 /* stencil width */),
+      m_hardness(grid, "ice_hardness"),
+      m_nuH(grid, "nuH"),
+      m_cell_type(m_grid, "ssafd_cell_type"),
+      m_rhs(grid, "right_hand_side"),
+      m_taud(m_grid, "taud"),
+      m_bc_scaling(1e9) // comparable to typical beta for an ice stream;
+{
+}
+
 /*!
 Because the FD implementation of the SSA uses Picard iteration, a PETSc KSP
 and Mat are used directly.  In particular we set up \f$A\f$
@@ -57,16 +69,9 @@ linear systems
 where \f$x\f$ (= Vec m_velocity_global).  A PETSc SNES object is never created.
  */
 SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
-    : SSA(grid),
-      m_hardness(grid, "ice_hardness"),
-      m_nuH(grid, "nuH"),
+    : SSAFDBase(grid),
       m_nuH_old(grid, "nuH_old"),
-      m_work(grid, "work_vector", array::WITH_GHOSTS, 1 /* stencil width */),
-      m_cell_type(m_grid, "ssafd_cell_type"),
-      m_rhs(grid, "right_hand_side"),
-      m_taud(m_grid, "taud"),
       m_velocity_old(grid, "velocity_old"),
-      m_scaling(1e9), // comparable to typical beta for an ice stream;
       m_Ax(grid, "matrix_times_solution") {
 
   m_velocity_old.metadata(0)
@@ -232,8 +237,8 @@ void SSAFD::init_impl() {
 void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
                             const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat A) {
   array::AccessScope list{ &velocity };
-  fd_operator(*inputs.geometry, inputs.bc_mask, *inputs.basal_yield_stress, velocity.array(), nuH,
-              cell_type, &A, nullptr);
+  fd_operator(*inputs.geometry, inputs.bc_mask, m_bc_scaling, *inputs.basal_yield_stress,
+              m_basal_sliding_law, velocity.array(), nuH, cell_type, &A, nullptr);
 }
 
 void SSAFD::compute_driving_stress(const array::Scalar &ice_thickness,
@@ -241,14 +246,14 @@ void SSAFD::compute_driving_stress(const array::Scalar &ice_thickness,
                                    const array::CellType1 &cell_type,
                                    const array::Scalar1 *no_model_mask,
                                    array::Vector &result) const {
-  stressbalance::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask,
-                                        *m_EC, result);
+  SSAFDBase::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask,
+                                    *m_EC, result);
 }
 
 void SSAFD::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
                          const array::Vector &driving_stress,
                          array::Vector &result) const {
-  stressbalance::assemble_rhs(inputs, cell_type, driving_stress, m_scaling, result);
+  SSAFDBase::assemble_rhs(inputs, cell_type, driving_stress, m_bc_scaling, result);
 }
 
 //! \brief Compute the vertically-averaged horizontal velocity from the shallow
@@ -788,22 +793,6 @@ DiagnosticList SSAFD::diagnostics_impl() const {
   result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
 
   return result;
-}
-
-const array::Staggered &SSAFD::integrated_viscosity() const {
-  return m_nuH;
-}
-
-const array::Vector &SSAFD::driving_stress() const {
-  return m_taud;
-}
-
-void SSAFD::fd_operator(const Geometry &geometry, const array::Scalar *bc_mask,
-                        const array::Scalar &basal_yield_stress,
-                        const pism::Vector2d *const *velocity, const array::Staggered1 &nuH,
-                        const array::CellType1 &cell_type, Mat *A, array::Vector *Ax) const {
-  stressbalance::fd_operator(geometry, bc_mask, m_scaling, basal_yield_stress, m_basal_sliding_law,
-                             velocity, nuH, cell_type, A, Ax);
 }
 
 } // end of namespace stressbalance
