@@ -236,6 +236,20 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity
               cell_type, &A, nullptr);
 }
 
+void SSAFD::compute_driving_stress(const array::Scalar &ice_thickness,
+                                   const array::Scalar1 &surface_elevation,
+                                   const array::CellType1 &cell_type,
+                                   const array::Scalar1 *no_model_mask,
+                                   array::Vector &result) const {
+  stressbalance::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask,
+                                        *m_EC, result);
+}
+
+void SSAFD::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
+                         const array::Vector &driving_stress,
+                         array::Vector &result) const {
+  stressbalance::assemble_rhs(inputs, cell_type, driving_stress, m_scaling, result);
+}
 
 //! \brief Compute the vertically-averaged horizontal velocity from the shallow
 //! shelf approximation.
@@ -774,6 +788,22 @@ DiagnosticList SSAFD::diagnostics_impl() const {
   result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
 
   return result;
+}
+
+const array::Staggered &SSAFD::integrated_viscosity() const {
+  return m_nuH;
+}
+
+const array::Vector &SSAFD::driving_stress() const {
+  return m_taud;
+}
+
+void SSAFD::fd_operator(const Geometry &geometry, const array::Scalar *bc_mask,
+                        const array::Scalar &basal_yield_stress,
+                        const pism::Vector2d *const *velocity, const array::Staggered1 &nuH,
+                        const array::CellType1 &cell_type, Mat *A, array::Vector *Ax) const {
+  stressbalance::fd_operator(geometry, bc_mask, m_scaling, basal_yield_stress, m_basal_sliding_law,
+                             velocity, nuH, cell_type, A, Ax);
 }
 
 } // end of namespace stressbalance

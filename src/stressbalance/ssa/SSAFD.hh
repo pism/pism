@@ -99,19 +99,20 @@ protected:
   void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask,
                    const array::Scalar &basal_yield_stress, const pism::Vector2d *const *velocity,
                    const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat *A,
-                   array::Vector *Ax);
+                   array::Vector *Ax) const;
 
   void assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
                        const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat A);
 
   void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
-                    const array::Vector &driving_stress, array::Vector &result);
+                    const array::Vector &driving_stress, array::Vector &result) const;
 
   void write_system_petsc(const std::string &namepart);
 
   void update_nuH_viewers(const array::Staggered &nuH);
 
-  void fracture_induced_softening(const array::Scalar &fracture_density,
+  void fracture_induced_softening(const array::Scalar1 &fracture_density,
+                                  double n_glen,
                                   array::Staggered &ice_hardness);
 
   // objects used internally
@@ -165,6 +166,21 @@ protected:
     PicardFailure(const std::string &message);
   };
 };
+
+void compute_driving_stress(const array::Scalar &ice_thickness,
+                            const array::Scalar1 &surface_elevation,
+                            const array::CellType1 &cell_type, const array::Scalar1 *no_model_mask,
+                            const EnthalpyConverter &EC, array::Vector &result);
+
+void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
+                  const array::Vector &driving_stress, double bc_scaling,
+                  array::Vector &result);
+
+void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask, double bc_scaling,
+                 const array::Scalar &basal_yield_stress,
+                 IceBasalResistancePlasticLaw *basal_sliding_law,
+                 const pism::Vector2d *const *velocity, const array::Staggered1 &nuH,
+                 const array::CellType1 &cell_type, Mat *A, array::Vector *Ax);
 
 //! Constructs a new SSAFD
 SSA * SSAFDFactory(std::shared_ptr<const Grid> grid);
