@@ -44,41 +44,6 @@ SSAFD::PicardFailure::PicardFailure(const std::string &message)
   // empty
 }
 
-SSAFDBase::SSAFDBase(std::shared_ptr<const Grid> grid)
-    : SSA(grid),
-      m_work(grid, "work_vector", array::WITH_GHOSTS, 1 /* stencil width */),
-      m_hardness(grid, "ice_hardness"),
-      m_nuH(grid, "nuH"),
-      m_cell_type(m_grid, "ssafd_cell_type"),
-      m_rhs(grid, "right_hand_side"),
-      m_taud(m_grid, "taud"),
-      m_bc_scaling(1e9) // comparable to typical beta for an ice stream;
-{
-  m_work.metadata(0).long_name("temporary storage used to compute nuH");
-
-  m_hardness.metadata(0)
-      .long_name("vertically-averaged ice hardness")
-      .set_units_without_validation(pism::printf("Pa s^(1/%f)", m_flow_law->exponent()));
-
-  m_nuH.metadata(0)
-      .long_name("ice thickness times effective viscosity")
-      .units("Pa s m");
-
-  // grounded_dragging_floating integer mask
-  m_cell_type.metadata(0)
-      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
-  m_cell_type.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
-                                         MASK_ICE_FREE_OCEAN };
-  m_cell_type.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
-
-  m_taud.metadata(0)
-      .long_name("X-component of the driving shear stress at the base of ice")
-      .units("Pa");
-  m_taud.metadata(1)
-      .long_name("Y-component of the driving shear stress at the base of ice")
-      .units("Pa");
-}
-
 /*!
 Because the FD implementation of the SSA uses Picard iteration, a PETSc KSP
 and Mat are used directly.  In particular we set up \f$A\f$
@@ -88,10 +53,9 @@ linear systems
 where \f$x\f$ (= Vec m_velocity_global).  A PETSc SNES object is never created.
  */
 SSAFD::SSAFD(std::shared_ptr<const Grid> grid, bool regional_mode)
-    : SSAFDBase(grid),
+    : SSAFDBase(grid, regional_mode),
       m_nuH_old(grid, "nuH_old"),
-      m_velocity_old(grid, "velocity_old"),
-      m_regional_mode(regional_mode) {
+      m_velocity_old(grid, "velocity_old") {
 
   m_velocity_old.metadata(0)
       .long_name("old SSA velocity field; used for re-trying with a different epsilon")
@@ -236,21 +200,6 @@ void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity
               m_basal_sliding_law, velocity.array(), nuH, cell_type, &A, nullptr);
 }
 
-void SSAFD::compute_driving_stress(const array::Scalar &ice_thickness,
-                                   const array::Scalar1 &surface_elevation,
-                                   const array::CellType1 &cell_type,
-                                   const array::Scalar1 *no_model_mask,
-                                   array::Vector &result) const {
-  SSAFDBase::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask,
-                                    *m_EC, result);
-}
-
-void SSAFD::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
-                         const array::Vector &driving_stress,
-                         array::Vector &result) const {
-  SSAFDBase::assemble_rhs(inputs, cell_type, driving_stress, m_bc_scaling, result);
-}
-
 //! \brief Compute the vertically-averaged horizontal velocity from the shallow
 //! shelf approximation.
 /*!
@@ -313,7 +262,7 @@ void SSAFD::solve(const Inputs &inputs) {
   // be done only once.
   {
     initialize_iterations(inputs);
-    assemble_rhs(inputs, m_cell_type, m_taud, m_rhs);
+    assemble_rhs(inputs, m_cell_type, m_taud, m_bc_scaling, m_rhs);
   }
 
   // Store away old SSA velocity (it might be needed in case a solver

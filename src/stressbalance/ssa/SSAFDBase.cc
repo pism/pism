@@ -32,6 +32,42 @@
 namespace pism {
 namespace stressbalance {
 
+SSAFDBase::SSAFDBase(std::shared_ptr<const Grid> grid, bool regional_mode)
+    : SSA(grid),
+      m_work(grid, "work_vector", array::WITH_GHOSTS, 1 /* stencil width */),
+      m_hardness(grid, "ice_hardness"),
+      m_nuH(grid, "nuH"),
+      m_cell_type(m_grid, "ssafd_cell_type"),
+      m_rhs(grid, "right_hand_side"),
+      m_taud(m_grid, "taud"),
+      m_bc_scaling(1e9), // comparable to typical beta for an ice stream;
+      m_regional_mode(regional_mode) {
+
+  m_work.metadata(0).long_name("temporary storage used to compute nuH");
+
+  m_hardness.metadata(0)
+      .long_name("vertically-averaged ice hardness")
+      .set_units_without_validation(pism::printf("Pa s^(1/%f)", m_flow_law->exponent()));
+
+  m_nuH.metadata(0)
+      .long_name("ice thickness times effective viscosity")
+      .units("Pa s m");
+
+  // grounded_dragging_floating integer mask
+  m_cell_type.metadata(0)
+      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
+  m_cell_type.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+                                         MASK_ICE_FREE_OCEAN };
+  m_cell_type.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
+
+  m_taud.metadata(0)
+      .long_name("X-component of the driving shear stress at the base of ice")
+      .units("Pa");
+  m_taud.metadata(1)
+      .long_name("Y-component of the driving shear stress at the base of ice")
+      .units("Pa");
+}
+
 /*!
  * Compute the weight used to determine if the difference between locations `i,j` and `n`
  * (neighbor) should be used in the computation of the surface gradient in
@@ -1076,8 +1112,7 @@ void SSAFDBase::initialize_iterations(const Inputs &inputs) {
                          m_cell_type, inputs.no_model_mask, *m_EC,
                          m_taud); // output
 
-  bool regional_mode = false;
-  if (regional_mode) {
+  if (m_regional_mode) {
     adjust_driving_stress(*inputs.no_model_ice_thickness,
                           *inputs.no_model_surface_elevation,
                           m_cell_type,
