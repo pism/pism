@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2024 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,23 +25,24 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 
+#include "pism/stressbalance/ssa/SSAFD.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
+
 namespace pism {
 namespace stressbalance {
 
-SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My, double Lx, double Ly,
-                         grid::Registration registration, grid::Periodicity periodicity)
-    : m_com(ctx->com()),
-      m_ctx(ctx),
-      m_config(ctx->config()),
-      m_grid(Grid::Shallow(m_ctx, Lx, Ly, 0.0, 0.0, Mx, My, registration, periodicity)),
-      m_sys(ctx->unit_system()),
-      m_stencil_width(m_config->get_number("grid.max_stencil_width")),
-      m_tauc(m_grid, "tauc"),
-      m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), m_stencil_width),
-      m_bc_values(m_grid, "_bc"), // u_bc and v_bc
-      m_bc_mask(m_grid, "bc_mask"),
-      m_geometry(m_grid),
-      m_ssa(NULL) {
+SSATestCase::SSATestCase(std::shared_ptr<SSA> ssa)
+  : m_grid(ssa->grid()),
+    m_ctx(m_grid->ctx()),
+    m_config(m_ctx->config()),
+    m_sys(m_ctx->unit_system()),
+    m_tauc(m_grid, "tauc"),
+    m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), 1),
+    m_bc_values(m_grid, "_bc"), // u_bc and v_bc
+    m_bc_mask(m_grid, "bc_mask"),
+    m_geometry(m_grid),
+    m_ssa(ssa) {
+
   m_bc_mask.set_interpolation_type(NEAREST);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
@@ -64,10 +65,9 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My, double Lx
       .units("m s-1")
       .output_units("m year-1");
 
-  Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys  = m_grid->ctx()->unit_system();
   double fill_value =
-      units::convert(sys, config->get_number("output.fill_value"), "m year-1", "m second-1");
+      units::convert(sys, m_config->get_number("output.fill_value"), "m year-1", "m second-1");
 
   auto large_number = units::convert(m_sys, 1e6, "m year-1", "m second-1");
 
@@ -86,8 +86,11 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My, double Lx
   m_bc_mask.metadata()["flag_meanings"] = "no_data ssa.dirichlet_bc_location";
 }
 
-SSATestCase::~SSATestCase() {
-  delete m_ssa;
+std::shared_ptr<SSA> SSATestCase::solver(std::shared_ptr<Grid> grid, const std::string &method) {
+  if (method == "fem") {
+    return std::make_shared<SSAFEM>(grid);
+  }
+  return std::make_shared<SSAFD>(grid, false);
 }
 
 //! Initialize the test case at the start of a run

@@ -44,10 +44,6 @@ SSAFD::PicardFailure::PicardFailure(const std::string &message)
   // empty
 }
 
-SSA* SSAFDFactory(std::shared_ptr<const Grid> g) {
-  return new SSAFD(g);
-}
-
 SSAFDBase::SSAFDBase(std::shared_ptr<const Grid> grid)
     : SSA(grid),
       m_work(grid, "work_vector", array::WITH_GHOSTS, 1 /* stencil width */),
@@ -58,6 +54,29 @@ SSAFDBase::SSAFDBase(std::shared_ptr<const Grid> grid)
       m_taud(m_grid, "taud"),
       m_bc_scaling(1e9) // comparable to typical beta for an ice stream;
 {
+  m_work.metadata(0).long_name("temporary storage used to compute nuH");
+
+  m_hardness.metadata(0)
+      .long_name("vertically-averaged ice hardness")
+      .set_units_without_validation(pism::printf("Pa s^(1/%f)", m_flow_law->exponent()));
+
+  m_nuH.metadata(0)
+      .long_name("ice thickness times effective viscosity")
+      .units("Pa s m");
+
+  // grounded_dragging_floating integer mask
+  m_cell_type.metadata(0)
+      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
+  m_cell_type.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+                                         MASK_ICE_FREE_OCEAN };
+  m_cell_type.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
+
+  m_taud.metadata(0)
+      .long_name("X-component of the driving shear stress at the base of ice")
+      .units("Pa");
+  m_taud.metadata(1)
+      .long_name("Y-component of the driving shear stress at the base of ice")
+      .units("Pa");
 }
 
 /*!
@@ -68,43 +87,19 @@ linear systems
   \f[ A x = b \f]
 where \f$x\f$ (= Vec m_velocity_global).  A PETSc SNES object is never created.
  */
-SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
+SSAFD::SSAFD(std::shared_ptr<const Grid> grid, bool regional_mode)
     : SSAFDBase(grid),
       m_nuH_old(grid, "nuH_old"),
       m_velocity_old(grid, "velocity_old"),
-      m_Ax(grid, "matrix_times_solution") {
+      m_regional_mode(regional_mode) {
 
   m_velocity_old.metadata(0)
       .long_name("old SSA velocity field; used for re-trying with a different epsilon")
       .units("m s-1");
 
-  m_hardness.metadata(0)
-      .long_name("vertically-averaged ice hardness")
-      .set_units_without_validation(pism::printf("Pa s^(1/%f)", m_flow_law->exponent()));
-
-  m_nuH.metadata(0)
-      .long_name("ice thickness times effective viscosity")
-      .units("Pa s m");
-
   m_nuH_old.metadata(0)
       .long_name("ice thickness times effective viscosity (before an update)")
       .units("Pa s m");
-
-  m_taud.metadata(0)
-      .long_name("X-component of the driving shear stress at the base of ice")
-      .units("Pa");
-  m_taud.metadata(1)
-      .long_name("Y-component of the driving shear stress at the base of ice")
-      .units("Pa");
-
-  m_work.metadata(0).long_name("temporary storage used to compute nuH");
-
-  // grounded_dragging_floating integer mask
-  m_cell_type.metadata(0)
-      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
-  m_cell_type.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
-                                         MASK_ICE_FREE_OCEAN };
-  m_cell_type.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
   // The nuH viewer:
   m_view_nuh        = false;

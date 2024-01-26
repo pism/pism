@@ -65,6 +65,11 @@ protected:
                               const array::Scalar1 *no_model_mask, const EnthalpyConverter &EC,
                               array::Vector &result) const;
 
+  void adjust_driving_stress(const array::Scalar &ice_thickness,
+                             const array::Scalar1 &surface_elevation,
+                             const array::CellType1 &cell_type, const array::Scalar1 *no_model_mask,
+                             array::Vector &driving_stress) const;
+
   void compute_average_ice_hardness(const array::Scalar1 &thickness, const array::Array3D &enthalpy,
                                     const array::CellType1 &cell_type, array::Staggered &result) const;
 
@@ -115,7 +120,7 @@ protected:
 //! PISM's SSA solver: the finite difference implementation.
 class SSAFD : public SSAFDBase {
 public:
-  SSAFD(std::shared_ptr<const Grid> g);
+  SSAFD(std::shared_ptr<const Grid> g, bool regional_mode);
   virtual ~SSAFD() = default;
 
 protected:
@@ -144,7 +149,7 @@ protected:
                                          array::Staggered &nuH_old);
 
   // Re-implemented by SSAFD_Regional
-  virtual void compute_driving_stress(const array::Scalar &ice_thickness,
+  void compute_driving_stress(const array::Scalar &ice_thickness,
                                       const array::Scalar1 &surface_elevation,
                                       const array::CellType1 &cell_type,
                                       const array::Scalar1 *no_model_mask,
@@ -168,15 +173,14 @@ protected:
 
   array::Vector1 m_velocity_old;
 
-  // product of the FD matrix and the current guess
-  array::Vector m_Ax;
-
   unsigned int m_default_pc_failure_count;
   unsigned int m_default_pc_failure_max_count;
   
   bool m_view_nuh;
   std::shared_ptr<petsc::Viewer> m_nuh_viewer;
   int m_nuh_viewer_size;
+
+  bool m_regional_mode;
 
   class KSPFailure : public RuntimeError {
   public:

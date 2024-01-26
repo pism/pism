@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2024 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -28,6 +28,7 @@
    basal shear stress and the driving stress.
  */
 
+#include <memory>
 static char help[] =
   "\nSSA_TEST_CONST\n"
   "  Testing program for the finite element implementation of the SSA.\n"
@@ -54,55 +55,47 @@ static char help[] =
 namespace pism {
 namespace stressbalance {
 
+std::shared_ptr<Grid> ssa_test_const_grid(std::shared_ptr<Context> ctx, int Mx, int My) {
+  return SSATestCase::grid(ctx, Mx, My, 50e3, 50e3, grid::CELL_CORNER, grid::NOT_PERIODIC);
+}
+
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(std::shared_ptr<Context> ctx, int Mx, int My, double q,
-                   SSAFactory ssafactory):
-    SSATestCase(ctx, Mx, My, 50e3, 50e3, grid::CELL_CORNER, grid::NOT_PERIODIC),
-    basal_q(q)
-  {
-    L     = units::convert(ctx->unit_system(), 50.0, "km", "m"); // 50km half-width
-    H0    = 500;                        // m
-    dhdx  = 0.005;                      // pure number
-    nu0   = units::convert(ctx->unit_system(), 30.0, "MPa year", "Pa s");
-    tauc0 = 1.e4;               // Pa
+  SSATestCaseConst(std::shared_ptr<Context> ctx, std::shared_ptr<SSA> ssa) : SSATestCase(ssa) {
+    m_L     = units::convert(m_sys, 50.0, "km", "m"); // 50km half-width
+    m_H0    = 500;                                    // m
+    m_dhdx  = 0.005;                                  // pure number
+    m_nu0   = units::convert(m_sys, 30.0, "MPa year", "Pa s");
+    m_tauc0 = 1.e4; // Pa
 
-    m_config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
-    m_config->set_number("basal_resistance.pseudo_plastic.q", basal_q);
-
-    // Use a pseudo-plastic law with a constant q determined at run time
-    m_config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
-
-    // The following is irrelevant because we will force linear rheology later.
-    m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-
-    m_ssa = ssafactory(m_grid);
+    auto config = ctx->config();
+    m_basal_q = config->get_number("basal_resistance.pseudo_plastic.q");
   };
 
 protected:
-  virtual void initializeSSACoefficients();
+  void initializeSSACoefficients();
 
-  virtual void exactSolution(int i, int j,
-    double x, double y, double *u, double *v);
+  void exactSolution(int i, int j, double x, double y, double *u, double *v);
 
-  double basal_q,
-    L, H0, dhdx, nu0, tauc0;
+  double m_basal_q;
+  double m_L;
+  double m_H0;
+  double m_dhdx;
+  double m_nu0;
+  double m_tauc0;
 };
 
 void SSATestCaseConst::initializeSSACoefficients() {
 
   // Force linear rheology
-  m_ssa->strength_extension->set_notional_strength(nu0 * H0);
-  m_ssa->strength_extension->set_min_thickness(0.5*H0);
-
-  // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
+  m_ssa->strength_extension->set_notional_strength(m_nu0 * m_H0);
+  m_ssa->strength_extension->set_min_thickness(0.5*m_H0);
 
   // Set constant thickness, tauc
   m_bc_mask.set(0);
-  m_geometry.ice_thickness.set(H0);
-  m_tauc.set(tauc0);
+  m_geometry.ice_thickness.set(m_H0);
+  m_tauc.set(m_tauc0);
 
   array::AccessScope list{&m_bc_values, &m_bc_mask,
       &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
@@ -113,8 +106,8 @@ void SSATestCaseConst::initializeSSACoefficients() {
     double u, v;
     const double x = m_grid->x(i), y=m_grid->y(j);
 
-    m_geometry.bed_elevation(i, j) = -x*(dhdx);
-    m_geometry.ice_surface_elevation(i, j) = m_geometry.bed_elevation(i, j) + H0;
+    m_geometry.bed_elevation(i, j) = -x*(m_dhdx);
+    m_geometry.ice_surface_elevation(i, j) = m_geometry.bed_elevation(i, j) + m_H0;
 
     bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
                  (i == 0) || (i == (int)m_grid->Mx() - 1));
@@ -141,7 +134,7 @@ void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
                                                    "m second-1"),
     ice_rho = m_config->get_number("constants.ice.density");
 
-  *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
+  *u = pow(ice_rho * earth_grav * m_H0 * m_dhdx / m_tauc0, 1./m_basal_q)*tauc_threshold_velocity;
   *v = 0;
 }
 
@@ -178,25 +171,24 @@ int main(int argc, char *argv[]) {
     unsigned int Mx = config->get_number("grid.Mx");
     unsigned int My = config->get_number("grid.My");
 
-    config->set_number("basal_resistance.pseudo_plastic.q", 1.0);
-    double basal_q = config->get_number("basal_resistance.pseudo_plastic.q");
+    double basal_q = 1.0;
 
     auto method = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
 
-    // Determine the kind of solver to use.
-    SSAFactory ssafactory = NULL;
-    if (method == "fem") {
-      ssafactory = SSAFEMFactory;
-    } else if (method == "fd") {
-      ssafactory = SSAFDFactory;
-    } else {
-      /* can't happen */
-    }
+    config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
+    config->set_number("basal_resistance.pseudo_plastic.q", basal_q);
 
-    SSATestCaseConst testcase(ctx, Mx, My, basal_q, ssafactory);
+    // Use a pseudo-plastic law with a constant q determined at run time
+    config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
+
+    // The finite difference code uses the following flag to treat the non-periodic grid correctly.
+    config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
+
+    auto grid = ssa_test_const_grid(ctx, Mx, My);
+    SSATestCaseConst testcase(ctx, SSATestCase::solver(grid, method));
     testcase.init();
     testcase.run();
     testcase.report("const");

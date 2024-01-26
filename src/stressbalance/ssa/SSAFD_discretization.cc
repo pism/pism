@@ -27,6 +27,7 @@
 #include "pism/util/Mask.hh"
 
 #include "pism/util/pism_utilities.hh" // average_water_column_pressure()
+#include <cassert>
 
 namespace pism {
 namespace stressbalance {
@@ -917,6 +918,8 @@ void SSAFDBase::compute_average_ice_hardness(const array::Scalar1 &ice_thickness
                                              const array::CellType1 &cell_type,
                                              array::Staggered &result) const {
 
+  assert(enthalpy.stencil_width() >= 1);
+
   const double *E_ij = nullptr, *E_offset = nullptr;
 
   auto Mz = m_grid->Mz();
@@ -963,6 +966,94 @@ void SSAFDBase::compute_average_ice_hardness(const array::Scalar1 &ice_thickness
   loop.check();
 }
 
+void SSAFDBase::adjust_driving_stress(const array::Scalar &ice_thickness,
+                                      const array::Scalar1 &surface_elevation,
+                                      const array::CellType1 &cell_type,
+                                      const array::Scalar1 *no_model_mask,
+                                      array::Vector &driving_stress) const {
+
+  auto weight = [](int M_ij, int M_n, double h_ij, double h_n) {
+    // fjord walls, nunataks, headwalls
+    if ((mask::icy(M_ij) and mask::ice_free(M_n) and h_n > h_ij) or
+        (mask::ice_free(M_ij) and mask::icy(M_n) and h_ij > h_n)) {
+      return 0;
+    }
+
+    return 1;
+  };
+
+
+  double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+
+  int
+    Mx = m_grid->Mx(),
+    My = m_grid->My();
+
+  array::AccessScope list{ &driving_stress, &cell_type, no_model_mask, &surface_elevation,
+                           &ice_thickness };
+
+  for (auto p = m_grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto M = no_model_mask->star_int(i, j);
+
+    if (M.c == 0) {
+      // this grid point is in the modeled area so we don't need to modify the driving
+      // stress
+      continue;
+    }
+
+    double pressure = m_EC->pressure(ice_thickness(i, j));
+    if (pressure <= 0) {
+      driving_stress(i, j) = 0.0;
+      continue;
+    }
+
+    auto h = surface_elevation.star(i, j);
+    auto CT = cell_type.star_int(i, j);
+
+    // x-derivative
+    double h_x = 0.0;
+    {
+      double
+        west = static_cast<double>(M.w == 1 and i > 0),
+        east = static_cast<double>(M.e == 1 and i < Mx - 1);
+
+      // don't use differences spanning "cliffs"
+      west *= weight(CT.c, CT.w, h.c, h.w);
+      east *= weight(CT.c, CT.e, h.c, h.e);
+
+      if (east + west > 0) {
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
+      } else {
+        h_x = 0.0;
+      }
+    }
+
+    // y-derivative
+    double h_y = 0.0;
+    {
+      double
+        south = static_cast<double>(M.s == 1 and j > 0),
+        north = static_cast<double>(M.n == 1 and j < My - 1);
+
+      // don't use differences spanning "cliffs"
+      south *= weight(CT.c, CT.s, h.c, h.s);
+      north *= weight(CT.c, CT.n, h.c, h.n);
+
+      if (north + south > 0) {
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
+      } else {
+        h_y = 0.0;
+      }
+    }
+
+    driving_stress(i, j) = - pressure * Vector2d(h_x, h_y);
+  } // end of the loop over grid points
+}
+
 /*!
  *  These computations do not depend on the solution, so they need to be done only once.
  *
@@ -984,6 +1075,15 @@ void SSAFDBase::initialize_iterations(const Inputs &inputs) {
   compute_driving_stress(inputs.geometry->ice_thickness, inputs.geometry->ice_surface_elevation,
                          m_cell_type, inputs.no_model_mask, *m_EC,
                          m_taud); // output
+
+  bool regional_mode = false;
+  if (regional_mode) {
+    adjust_driving_stress(*inputs.no_model_ice_thickness,
+                          *inputs.no_model_surface_elevation,
+                          m_cell_type,
+                          inputs.no_model_mask, m_taud);
+  }
+
   compute_average_ice_hardness(inputs.geometry->ice_thickness, *inputs.enthalpy, m_cell_type,
                                m_hardness);
 

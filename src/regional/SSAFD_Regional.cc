@@ -25,7 +25,7 @@ namespace pism {
 namespace stressbalance {
 
 SSAFD_Regional::SSAFD_Regional(std::shared_ptr<const Grid> g)
-  : SSAFD(g) {
+  : SSAFD(g, true) {
 
   m_h_stored = nullptr;
   m_H_stored = nullptr;
@@ -52,93 +52,6 @@ void SSAFD_Regional::solve(const Inputs &inputs) {
   m_H_stored = nullptr;
 }
 
-static int weight(int M_ij, int M_n, double h_ij, double h_n) {
-  // fjord walls, nunataks, headwalls
-  if ((mask::icy(M_ij) and mask::ice_free(M_n) and h_n > h_ij) or
-      (mask::ice_free(M_ij) and mask::icy(M_n) and h_ij > h_n)) {
-    return 0;
-  }
-
-  return 1;
-}
-
-void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
-                                            const array::Scalar1 &surface_elevation,
-                                            const array::CellType1 &cell_type,
-                                            const array::Scalar1 *no_model_mask,
-                                            array::Vector &result) const {
-
-  SSAFD::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask, result);
-
-  double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
-
-  int
-    Mx = m_grid->Mx(),
-    My = m_grid->My();
-
-  array::AccessScope list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
-
-  for (auto p = m_grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    auto M = no_model_mask->star_int(i, j);
-
-    if (M.c == 0) {
-      // this grid point is in the modeled area so we don't need to modify the driving
-      // stress
-      continue;
-    }
-
-    double pressure = m_EC->pressure((*m_H_stored)(i, j));
-    if (pressure <= 0) {
-      result(i, j) = 0.0;
-      continue;
-    }
-
-    auto h = m_h_stored->star(i, j);
-    auto CT = cell_type.star_int(i, j);
-
-    // x-derivative
-    double h_x = 0.0;
-    {
-      double
-        west = static_cast<double>(M.w == 1 and i > 0),
-        east = static_cast<double>(M.e == 1 and i < Mx - 1);
-
-      // don't use differences spanning "cliffs"
-      west *= weight(CT.c, CT.w, h.c, h.w);
-      east *= weight(CT.c, CT.e, h.c, h.e);
-
-      if (east + west > 0) {
-        h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
-      } else {
-        h_x = 0.0;
-      }
-    }
-
-    // y-derivative
-    double h_y = 0.0;
-    {
-      double
-        south = static_cast<double>(M.s == 1 and j > 0),
-        north = static_cast<double>(M.n == 1 and j < My - 1);
-
-      // don't use differences spanning "cliffs"
-      south *= weight(CT.c, CT.s, h.c, h.s);
-      north *= weight(CT.c, CT.n, h.c, h.n);
-
-      if (north + south > 0) {
-        h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
-      } else {
-        h_y = 0.0;
-      }
-    }
-
-    result(i, j) = - pressure * Vector2d(h_x, h_y);
-  } // end of the loop over grid points
-}
 
 SSA * SSAFD_RegionalFactory(std::shared_ptr<const Grid> grid) {
   return new SSAFD_Regional(grid);

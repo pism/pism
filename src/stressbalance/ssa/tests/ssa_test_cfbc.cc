@@ -23,18 +23,14 @@ static char help[] =
   "  class thereof. Uses the van der Veen flow-line shelf geometry. Also may be\n"
   "  used in a PISM software (regression) test.\n\n";
 
-#include "pism/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSATestCase.hh"
-#include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
+
+#include "pism/stressbalance/ssa/SSAFD.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -51,38 +47,33 @@ static double u_exact(double V0, double H0, double C, double x) {
   return Q0 / H_exact(V0, H0, C, x);
 }
 
+std::shared_ptr<Grid> ssa_test_cfbc_grid(std::shared_ptr<Context> ctx, int Mx, int My) {
+  return SSATestCase::grid(ctx, Mx, My, 250e3, 250e3, grid::CELL_CENTER, grid::Y_PERIODIC);
+}
+
 class SSATestCaseCFBC: public SSATestCase {
 public:
-  SSATestCaseCFBC(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 250e3, 250e3, grid::CELL_CENTER, grid::Y_PERIODIC) {
-    V0 = units::convert(ctx->unit_system(), 300.0, "m year-1", "m second-1");
-    H0 = 600.0;                 // meters
-    C  = 2.45e-18;
+  SSATestCaseCFBC(std::shared_ptr<SSA> ssa)
+    : SSATestCase(ssa) {
+    m_V0 = units::convert(m_sys, 300.0, "m year-1", "m second-1");
+    m_H0 = 600.0;                 // meters
+    m_C  = 2.45e-18;
 
-    m_config->set_number("flow_law.isothermal_Glen.ice_softness",
-                         pow(1.9e8, -m_config->get_number("stress_balance.ssa.Glen_exponent")));
-    m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", false);
-    m_config->set_flag("stress_balance.calving_front_stress_bc", true);
-    m_config->set_flag("stress_balance.ssa.fd.flow_line_mode", true);
-    m_config->set_flag("stress_balance.ssa.fd.extrapolate_at_margins", false);
-    m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-
-    m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-
-    m_ssa = ssafactory(m_grid);
+    EnthalpyConverter EC(*m_config);
+    // 0.01 water fraction
+    m_ice_enthalpy.set(EC.enthalpy(273.15, 0.01, 0.0));
   }
 
-  virtual void write_nuH(const std::string &filename);
+  void write_nuH(const std::string &filename);
 
 protected:
-  virtual void initializeSSACoefficients();
+  void initializeSSACoefficients();
 
-  virtual void exactSolution(int i, int j,
-    double x, double y, double *u, double *v);
+  void exactSolution(int i, int j, double x, double y, double *u, double *v);
 
-  double V0, //!< grounding line vertically-averaged velocity
-    H0,      //!< grounding line thickness (meters)
-    C;       //!< "typical constant ice parameter"
+  double m_V0, //!< grounding line vertically-averaged velocity
+    m_H0,      //!< grounding line thickness (meters)
+    m_C;       //!< "typical constant ice parameter"
 };
 
 void SSATestCaseCFBC::write_nuH(const std::string &filename) {
@@ -98,9 +89,6 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   m_tauc.set(0.0);    // irrelevant
   m_geometry.bed_elevation.set(-1000.0); // assures shelf is floating
 
-  double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
-  m_ice_enthalpy.set(enth0);
-
   array::AccessScope list{&m_geometry.ice_thickness,
       &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values, &m_geometry.cell_type};
 
@@ -112,14 +100,14 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
     const double x = m_grid->x(i);
 
     if (i != (int)m_grid->Mx() - 1) {
-      m_geometry.ice_thickness(i, j) = H_exact(V0, H0, C, x - x_min);
+      m_geometry.ice_thickness(i, j) = H_exact(m_V0, m_H0, m_C, x - x_min);
     } else {
       m_geometry.ice_thickness(i, j) = 0.0;
     }
 
     if (i == 0) {
       m_bc_mask(i, j)   = 1;
-      m_bc_values(i, j) = {V0, 0.0};
+      m_bc_values(i, j) = {m_V0, 0.0};
     } else {
       m_bc_mask(i, j)   = 0;
       m_bc_values(i, j) = {0.0, 0.0};
@@ -139,7 +127,7 @@ void SSATestCaseCFBC::exactSolution(int i, int /*j*/,
   const double x_min = m_grid->x(0);
 
   if (i != (int)m_grid->Mx() - 1) {
-    *u = u_exact(V0, H0, C, x - x_min);
+    *u = u_exact(m_V0, m_H0, m_C, x - x_min);
   } else {
     *u = 0;
   }
@@ -185,17 +173,17 @@ int main(int argc, char *argv[]) {
 
     bool write_output = config->get_string("output.size") != "none";
 
-    // Determine the kind of solver to use.
-    SSAFactory ssafactory = NULL;
-    if (method == "fem") {
-      ssafactory = SSAFEMFactory;
-    } else if (method == "fd") {
-      ssafactory = SSAFDFactory;
-    } else {
-      /* can't happen */
-    }
+    // we have to set parameters *before* `ssa` is allocated
+    config->set_number("flow_law.isothermal_Glen.ice_softness",
+                       pow(1.9e8, -config->get_number("stress_balance.ssa.Glen_exponent")));
+    config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", false);
+    config->set_flag("stress_balance.calving_front_stress_bc", true);
+    config->set_flag("stress_balance.ssa.fd.flow_line_mode", true);
+    config->set_flag("stress_balance.ssa.fd.extrapolate_at_margins", false);
+    config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
 
-    SSATestCaseCFBC testcase(ctx, Mx, My, ssafactory);
+    auto grid = ssa_test_cfbc_grid(ctx, Mx, My);
+    SSATestCaseCFBC testcase(SSATestCase::solver(grid, method));
     testcase.init();
     testcase.run();
     testcase.report("V");

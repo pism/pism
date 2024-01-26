@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2020, 2021, 2022, 2023 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2020, 2021, 2022, 2023, 2024 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -28,9 +28,6 @@
 namespace pism {
 
 namespace stressbalance {
-
-//! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(std::shared_ptr<const Grid> grid);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!

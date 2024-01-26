@@ -111,10 +111,6 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
       "residual contribution from lateral boundaries"); // no units or standard name
 }
 
-SSA *SSAFEMFactory(std::shared_ptr<const Grid> g) {
-  return new SSAFEM(g);
-}
-
 // Initialize the solver, called once by the client before use.
 void SSAFEM::init_impl() {
 
