@@ -68,7 +68,6 @@ protected:
 
   void update_nuH_viewers(const array::Staggered &nuH);
 
-  // objects used internally
   array::Staggered1 m_nuH_old;
 
   petsc::KSP m_KSP;
@@ -95,9 +94,6 @@ protected:
     PicardFailure(const std::string &message);
   };
 };
-
-//! Constructs a new SSAFD
-SSA * SSAFDFactory(std::shared_ptr<const Grid> grid);
 
 } // end of namespace stressbalance
 } // end of namespace pism

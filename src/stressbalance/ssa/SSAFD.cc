@@ -20,11 +20,9 @@
 #include <stdexcept>
 
 #include "pism/geometry/Geometry.hh"
-#include "pism/rheology/FlowLaw.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
