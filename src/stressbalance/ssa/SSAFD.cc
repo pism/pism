@@ -258,10 +258,7 @@ void SSAFD::solve(const Inputs &inputs) {
 
   // These computations do not depend on the solution, so they need to
   // be done only once.
-  {
-    initialize_iterations(inputs);
-    assemble_rhs(inputs, m_cell_type, m_taud, m_bc_scaling, m_rhs);
-  }
+  initialize_iterations(inputs);
 
   // Store away old SSA velocity (it might be needed in case a solver
   // fails).

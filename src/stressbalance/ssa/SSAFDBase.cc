@@ -1093,7 +1093,7 @@ void SSAFDBase::adjust_driving_stress(const array::Scalar &ice_thickness,
 /*!
  *  These computations do not depend on the solution, so they need to be done only once.
  *
- *  Updates m_cell_type, m_taud, m_hardness.
+ *  Updates m_cell_type, m_taud, m_hardness, m_rhs.
  */
 void SSAFDBase::initialize_iterations(const Inputs &inputs) {
   // update the cell type mask using the ice-free thickness threshold for stress balance
@@ -1125,6 +1125,8 @@ void SSAFDBase::initialize_iterations(const Inputs &inputs) {
   if (inputs.fracture_density != nullptr) {
     fracture_induced_softening(*inputs.fracture_density, m_flow_law->exponent(), m_hardness);
   }
+
+  assemble_rhs(inputs, m_cell_type, m_taud, m_bc_scaling, m_rhs);
 }
 
 /*! @brief Correct vertically-averaged hardness using a
