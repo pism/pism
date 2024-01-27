@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2023 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2024 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -301,11 +301,8 @@ pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
  * PISM's stress balance headers.
  */
 %{
-#include "regional/SSAFD_Regional.hh"
 #include "regional/SIAFD_Regional.hh"
 %}
-%shared_ptr(pism::stressbalance::SSAFD_Regional)
-%include "regional/SSAFD_Regional.hh"
 %shared_ptr(pism::stressbalance::SIAFD_Regional)
 %include "regional/SIAFD_Regional.hh"
 

@@ -26,6 +26,8 @@
 
 %shared_ptr(pism::stressbalance::SSA)
 %include "stressbalance/ssa/SSA.hh"
+%shared_ptr(pism::stressbalance::SSAFDBase)
+%include "stressbalance/ssa/SSAFDBase.hh"
 %shared_ptr(pism::stressbalance::SSAFD)
 %include "stressbalance/ssa/SSAFD.hh"
 %shared_ptr(pism::stressbalance::SSAFEM)
