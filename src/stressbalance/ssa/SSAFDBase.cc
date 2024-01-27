@@ -516,7 +516,7 @@ void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_ma
                             IceBasalResistancePlasticLaw *basal_sliding_law,
                             const pism::Vector2d *const *input_velocity,
                             const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat *A,
-                            array::Vector *Ax) const {
+                            Vector2d **Ax) const {
 
   using mask::grounded_ice;
   using mask::ice_free;
@@ -556,10 +556,6 @@ void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_ma
 
   auto velocity = [&input_velocity](int i, int j) { return input_velocity[j][i]; };
 
-  if (Ax != nullptr) {
-    list.add(*Ax);
-  }
-
   if (bc_mask != nullptr) {
     list.add(*bc_mask);
   }
@@ -597,7 +593,7 @@ void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_ma
 
         if (bc_location or ice_free_with_cfbc) {
           if (Ax != nullptr) {
-            (*Ax)(i, j) = bc_scaling * velocity(i, j);
+            Ax[j][i] = bc_scaling * velocity(i, j); // STORAGE_ORDER
           }
 
           // set diagonal entries to one (scaled); RHS entry will be known velocity
@@ -899,13 +895,13 @@ void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_ma
 
       // compute the matrix-vector product
       if (Ax != nullptr) {
-        Vector2d sum;
+        Vector2d sum{0.0, 0.0};
         for (int k = 0; k < n_nonzeros; ++k) {
           const Vector2d &v = velocity(I[k], J[k]);
           double u_or_v     = v.u * (1 - C[k]) + v.v * C[k];
           sum += Vector2d{ eq1[k], eq2[k] } * u_or_v;
         }
-        (*Ax)(i, j) = sum;
+        Ax[j][i] = sum;         // STORAGE_ORDER
       }
 
       // set matrix values
@@ -1465,16 +1461,16 @@ void SSAFDBase::compute_nuH(const array::Scalar1 &ice_thickness, const array::Ce
   result.update_ghosts();
 }
 
-void SSAFDBase::compute_residual(const Inputs &inputs, const array::Vector &velocity,
-                             array::Vector &result) {
-  // update m_cell_type, m_taud, m_hardness
-  initialize_iterations(inputs);
 
-  m_velocity.copy_from(velocity);
-
+/*!
+ * Compute the residual.
+ *
+ * `velocity` has to have width=2 ghosts
+ */
+void SSAFDBase::compute_residual(const Inputs &inputs, const pism::Vector2d *const *velocity,
+                                 pism::Vector2d **result) {
   {
-    array::AccessScope list{ &m_velocity };
-    compute_nuH(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
+    compute_nuH(inputs.geometry->ice_thickness, m_cell_type, velocity, m_hardness,
                 m_config->get_number("stress_balance.ssa.epsilon"), m_nuH);
 
     fd_operator(*inputs.geometry,
@@ -1482,12 +1478,27 @@ void SSAFDBase::compute_residual(const Inputs &inputs, const array::Vector &velo
                 m_bc_scaling,
                 *inputs.basal_yield_stress,
                 m_basal_sliding_law,
-                m_velocity.array(), m_nuH, m_cell_type, nullptr, &result);
+                velocity, m_nuH, m_cell_type, nullptr, result);
   }
 
-  assemble_rhs(inputs, m_cell_type, m_taud, m_bc_scaling, m_rhs);
+  array::AccessScope scope{&m_rhs};
+  for (auto p = m_grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-  result.add(-1.0, m_rhs);
+    result[j][i] -= m_rhs(i, j); // STORAGE_ORDER
+  }
+}
+
+/*!
+ * Compute the residual (as a diagnostic).
+ */
+void SSAFDBase::compute_residual(const Inputs &inputs, const array::Vector &velocity,
+                                 array::Vector &result) {
+  m_velocity.copy_from(velocity);
+
+  array::AccessScope list{ &m_velocity, &result };
+
+  compute_residual(inputs, m_velocity.array(), result.array());
 }
 
 const array::Staggered &SSAFDBase::integrated_viscosity() const {

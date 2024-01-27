@@ -42,6 +42,9 @@ public:
   const array::Vector &driving_stress() const;
 
   void compute_residual(const Inputs &inputs, const array::Vector &velocity, array::Vector &result);
+
+  void compute_residual(const Inputs &inputs, const pism::Vector2d *const *velocity,
+                        pism::Vector2d **result);
 protected:
   void initialize_iterations(const Inputs &inputs);
 
@@ -81,7 +84,7 @@ protected:
                    const array::Scalar &basal_yield_stress,
                    IceBasalResistancePlasticLaw *basal_sliding_law,
                    const pism::Vector2d *const *velocity, const array::Staggered1 &nuH,
-                   const array::CellType1 &cell_type, Mat *A, array::Vector *Ax) const;
+                   const array::CellType1 &cell_type, Mat *A, Vector2d **Ax) const;
 
   void fracture_induced_softening(const array::Scalar1 &fracture_density,
                                   double n_glen,
