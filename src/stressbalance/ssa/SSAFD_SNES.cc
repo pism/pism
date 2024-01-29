@@ -19,6 +19,7 @@
 
 #include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/StressBalance.hh" // Inputs
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -31,8 +32,8 @@ SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
   int stencil_width=2;
   m_DA = m_grid->get_dm(2, stencil_width);
 
-  ierr = DMCreateGlobalVector(*m_DA, m_X.rawptr());
-  PISM_CHK(ierr, "DMCreateGlobalVector");
+  // ierr = DMCreateGlobalVector(*m_DA, m_X.rawptr());
+  // PISM_CHK(ierr, "DMCreateGlobalVector");
 
   ierr = SNESCreate(m_grid->com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");
@@ -57,7 +58,7 @@ SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
   ierr = DMSetApplicationContext(*m_DA, &m_callback_data);
   PISM_CHK(ierr, "DMSetApplicationContext");
 
-  ierr = SNESSetOptionsPrefix(m_snes, "ssafd_snes");
+  ierr = SNESSetOptionsPrefix(m_snes, "ssafd_");
   PISM_CHK(ierr, "SNESSetOptionsPrefix");
 
   ierr = SNESSetDM(m_snes, *m_DA);
@@ -74,7 +75,8 @@ void SSAFD_SNES::solve(const Inputs &inputs) {
     PetscErrorCode ierr;
 
     // Solve:
-    ierr = SNESSolve(m_snes, NULL, m_X);
+    // ierr = SNESSolve(m_snes, NULL, m_X);
+    ierr = SNESSolve(m_snes, NULL, m_velocity_global.vec());
     PISM_CHK(ierr, "SNESSolve");
 
     // See if it worked.

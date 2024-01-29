@@ -24,7 +24,7 @@
 
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/petscwrappers/DM.hh"
-#include "pism/util/petscwrappers/Vec.hh"
+// #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -37,7 +37,7 @@ public:
 
 private:
 
-  petsc::Vec m_X;
+  // petsc::Vec m_X;
   petsc::SNES m_snes;
   petsc::DM::Ptr m_DA;
 
