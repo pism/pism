@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/stressbalance/ssa/SSAFD.hh"
+#include "pism/stressbalance/ssa/SSAFDBase.hh"
 
 #include "pism/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
 #include "pism/geometry/Geometry.hh"              // Geometry
@@ -1451,8 +1451,8 @@ void SSAFDBase::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const arra
 }
 
 void SSAFDBase::compute_nuH(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
-                        const pism::Vector2d *const *velocity, const array::Staggered &hardness,
-                        double nuH_regularization, array::Staggered1 &result) {
+                            const pism::Vector2d *const *velocity, const array::Staggered &hardness,
+                            double nuH_regularization, array::Staggered1 &result) {
   if (m_config->get_flag("stress_balance.calving_front_stress_bc")) {
     compute_nuH_cfbc(ice_thickness, cell_type, velocity, hardness, nuH_regularization, result);
   } else {
