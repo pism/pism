@@ -53,7 +53,7 @@ private:
 
   static PetscErrorCode function_callback(DMDALocalInfo *info,
                                           Vector2d const *const * velocity,
-                                          Vector2d **f,
+                                          Vector2d **result,
                                           CallbackData *);
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
                                           Vector2d const *const * velocity,

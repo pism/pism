@@ -100,10 +100,11 @@ void SSAFD_SNES::solve(const Inputs &inputs) {
 }
 
 
-PetscErrorCode SSAFD_SNES::function_callback(DMDALocalInfo * /*unused*/, Vector2d const *const *velocity,
-                                             Vector2d **f, CallbackData *data) {
+PetscErrorCode SSAFD_SNES::function_callback(DMDALocalInfo * /*unused*/,
+                                             Vector2d const *const *velocity, Vector2d **result,
+                                             CallbackData *data) {
   try {
-    data->solver->compute_residual(*data->inputs, velocity, f);
+    data->solver->compute_residual(*data->inputs, velocity, result);
   } catch (...) {
     MPI_Comm com        = MPI_COMM_SELF;
     PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com);
@@ -120,7 +121,7 @@ void SSAFD_SNES::compute_jacobian(const Inputs &inputs, Vector2d const *const *c
               m_basal_sliding_law, velocity, m_nuH, m_cell_type, &J, nullptr);
 }
 
-PetscErrorCode SSAFD_SNES::jacobian_callback(DMDALocalInfo * /* info */,
+PetscErrorCode SSAFD_SNES::jacobian_callback(DMDALocalInfo * /*unused*/,
                                              Vector2d const *const *const velocity, Mat /* A */,
                                              Mat J, CallbackData *data) {
   try {
