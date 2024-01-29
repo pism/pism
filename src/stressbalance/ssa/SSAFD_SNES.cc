@@ -95,6 +95,8 @@ void SSAFD_SNES::solve(const Inputs &inputs) {
 
   // copy from m_velocity_global to provide m_velocity with ghosts:
   m_velocity.copy_from(m_velocity_global);
+
+  compute_residual(inputs, m_velocity, m_residual);
 }
 
 
