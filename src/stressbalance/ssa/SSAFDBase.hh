@@ -125,6 +125,9 @@ protected:
   //! driving stress
   array::Vector m_taud;
 
+  //! residual (diagnostic)
+  array::Vector m_residual;
+
   //! scaling used for diagonal matrix elements at Dirichlet BC locations
   const double m_bc_scaling;
 

@@ -40,6 +40,7 @@ SSAFDBase::SSAFDBase(std::shared_ptr<const Grid> grid, bool regional_mode)
       m_cell_type(m_grid, "ssafd_cell_type"),
       m_rhs(grid, "right_hand_side"),
       m_taud(m_grid, "taud"),
+      m_residual(grid, "_ssa_residual"),
       m_bc_scaling(1e9), // comparable to typical beta for an ice stream;
       m_regional_mode(regional_mode) {
 
@@ -1596,6 +1597,7 @@ DiagnosticList SSAFDBase::diagnostics_impl() const {
   result["taud"] = Diagnostic::Ptr(new SSAFD_taud(this));
   result["taud_mag"] = Diagnostic::Ptr(new SSAFD_taud_mag(this));
   result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
+  result["ssa_residual"] = Diagnostic::wrap(m_residual);
 
   return result;
 }
