@@ -317,6 +317,19 @@ void SSATestCase::write(const std::string &filename) {
 
   m_ssa->velocity().write(file);
 
+  // write all diagnostics:
+  {
+    auto diagnostics = m_ssa->diagnostics();
+
+    for (auto &p : diagnostics) {
+      try {
+        p.second->compute()->write(file);
+      } catch (RuntimeError &e) {
+        // ignore errors
+      }
+    }
+  }
+
   array::Vector exact(m_grid, "_exact");
   exact.metadata(0)
       .long_name("X-component of the SSA exact solution")

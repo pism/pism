@@ -64,8 +64,6 @@ public:
     m_ice_enthalpy.set(EC.enthalpy(273.15, 0.01, 0.0));
   }
 
-  void write_nuH(const std::string &filename);
-
 protected:
   void initializeSSACoefficients();
 
@@ -75,14 +73,6 @@ protected:
     m_H0,      //!< grounding line thickness (meters)
     m_C;       //!< "typical constant ice parameter"
 };
-
-void SSATestCaseCFBC::write_nuH(const std::string &filename) {
-  auto diagnostics = m_ssa->diagnostics();
-
-  if (diagnostics.find("nuH") != diagnostics.end()) {
-    diagnostics["nuH"]->compute()->write(filename);
-  }
-}
 
 void SSATestCaseCFBC::initializeSSACoefficients() {
 
@@ -189,7 +179,6 @@ int main(int argc, char *argv[]) {
     testcase.report("V");
     if (write_output) {
       testcase.write(output_file);
-      testcase.write_nuH(output_file);
     }
   }
   catch (...) {
