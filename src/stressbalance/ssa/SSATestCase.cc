@@ -330,22 +330,34 @@ void SSATestCase::write(const std::string &filename) {
     }
   }
 
-  array::Vector exact(m_grid, "_exact");
-  exact.metadata(0)
+  array::Vector tmp(m_grid, "_exact");
+  tmp.metadata(0)
       .long_name("X-component of the SSA exact solution")
       .units("m s-1");
-  exact.metadata(1)
+  tmp.metadata(1)
       .long_name("Y-component of the SSA exact solution")
       .units("m s-1");
 
-  array::AccessScope list(exact);
+  array::AccessScope list(tmp);
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     exactSolution(i, j, m_grid->x(i), m_grid->y(j),
-                  &(exact(i,j).u), &(exact(i,j).v));
+                  &(tmp(i,j).u), &(tmp(i,j).v));
   }
-  exact.write(file);
+  tmp.write(file);
+
+  tmp.metadata(0)
+    .set_name("u_error")
+    .long_name("X-component of the error")
+    .units("m s-1");
+  tmp.metadata(1)
+    .set_name("v_error")
+    .long_name("Y-component of the error")
+    .units("m s-1");
+
+  tmp.add(-1.0, m_ssa->velocity());
+  tmp.write(file);
 
   file.close();
 }
