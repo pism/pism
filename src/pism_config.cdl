@@ -2217,7 +2217,7 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.flow_law_type = "keyword";
 
     pism_config:stress_balance.ssa.method = "fd";
-    pism_config:stress_balance.ssa.method_choices = "fd,fem";
+    pism_config:stress_balance.ssa.method_choices = "fd,fd_snes,fem";
     pism_config:stress_balance.ssa.method_doc = "Algorithm for computing the SSA solution.";
     pism_config:stress_balance.ssa.method_option = "ssa_method";
     pism_config:stress_balance.ssa.method_type = "keyword";

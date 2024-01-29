@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/stressbalance/ssa/SSATestCase.hh"
+#include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/interpolation.hh"
@@ -90,7 +91,10 @@ std::shared_ptr<SSA> SSATestCase::solver(std::shared_ptr<Grid> grid, const std::
   if (method == "fem") {
     return std::make_shared<SSAFEM>(grid);
   }
-  return std::make_shared<SSAFD>(grid, false);
+  if (method == "fd") {
+    return std::make_shared<SSAFD>(grid, false);
+  }
+  return  std::make_shared<SSAFD_SNES>(grid, false);
 }
 
 //! Initialize the test case at the start of a run
