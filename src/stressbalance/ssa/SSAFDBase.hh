@@ -41,11 +41,13 @@ public:
 
   const array::Vector &driving_stress() const;
 
-  void compute_residual(const Inputs &inputs, const array::Vector &velocity, array::Vector &result);
+  void compute_residual(const Inputs &inputs, const array::Vector2 &velocity, array::Vector &result);
 
   void compute_residual(const Inputs &inputs, const pism::Vector2d *const *velocity,
                         pism::Vector2d **result);
 protected:
+  DiagnosticList diagnostics_impl() const;
+
   void initialize_iterations(const Inputs &inputs);
 
   void compute_nuH(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,

@@ -42,8 +42,6 @@ protected:
 
   void init_impl();
 
-  DiagnosticList diagnostics_impl() const;
-
   void pc_setup_bjacobi();
 
   void pc_setup_asm();

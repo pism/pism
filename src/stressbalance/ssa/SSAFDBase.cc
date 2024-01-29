@@ -1492,7 +1492,7 @@ void SSAFDBase::compute_residual(const Inputs &inputs, const pism::Vector2d *con
 /*!
  * Compute the residual (as a diagnostic).
  */
-void SSAFDBase::compute_residual(const Inputs &inputs, const array::Vector &velocity,
+void SSAFDBase::compute_residual(const Inputs &inputs, const array::Vector2 &velocity,
                                  array::Vector &result) {
   m_velocity.copy_from(velocity);
 
@@ -1507,6 +1507,97 @@ const array::Staggered &SSAFDBase::integrated_viscosity() const {
 
 const array::Vector &SSAFDBase::driving_stress() const {
   return m_taud;
+}
+
+//! @brief Reports the nuH (viscosity times thickness) product on the staggered
+//! grid.
+class SSAFD_nuH : public Diag<SSAFDBase> {
+public:
+  SSAFD_nuH(const SSAFDBase *m) : Diag<SSAFDBase>(m) {
+    m_vars = { { m_sys, "nuH[0]" }, { m_sys, "nuH[1]" } };
+    m_vars[0]
+        .long_name("ice thickness times effective viscosity, i-offset")
+        .units("Pa s m")
+        .output_units("kPa s m");
+    m_vars[1]
+        .long_name("ice thickness times effective viscosity, j-offset")
+        .units("Pa s m")
+        .output_units("kPa s m");
+  }
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Staggered>("nuH");
+
+    result->copy_from(model->integrated_viscosity());
+
+    return result;
+  }
+};
+
+//! @brief Computes the driving shear stress at the base of ice
+//! (diagnostically).
+/*! This is *not* a duplicate of SSB_taud: SSAFD_taud::compute() uses
+  SSAFD::compute_driving_stress(), which tries to be smarter near ice margins.
+*/
+class SSAFD_taud : public Diag<SSAFDBase> {
+public:
+  SSAFD_taud(const SSAFDBase *m) : Diag<SSAFDBase>(m) {
+
+    // set metadata:
+    m_vars = { { m_sys, "taud_x" }, { m_sys, "taud_y" } };
+
+    m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
+    m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
+
+    for (auto &v : m_vars) {
+      v.units("Pa");
+      v["comment"] = "this is the driving stress used by the SSAFD solver";
+    }
+  }
+
+protected:
+  std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Vector>("taud");
+
+    result->copy_from(model->driving_stress());
+
+    return result;
+  }
+};
+
+//! @brief Computes the magnitude of the driving shear stress at the base of
+//! ice (diagnostically).
+class SSAFD_taud_mag : public Diag<SSAFDBase> {
+public:
+  SSAFD_taud_mag(const SSAFDBase *m) : Diag<SSAFDBase>(m) {
+
+    // set metadata:
+    m_vars = { { m_sys, "taud_mag" } };
+
+    m_vars[0].long_name("magnitude of the driving shear stress at the base of ice").units("Pa");
+    m_vars[0]["comment"] = "this is the magnitude of the driving stress used by the SSAFD solver";
+  }
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Scalar>("taud_mag");
+
+    compute_magnitude(model->driving_stress(), *result);
+
+    return result;
+  }
+};
+
+DiagnosticList SSAFDBase::diagnostics_impl() const {
+  DiagnosticList result = ShallowStressBalance::diagnostics_impl();
+
+  // replace these diagnostics
+  result["taud"] = Diagnostic::Ptr(new SSAFD_taud(this));
+  result["taud_mag"] = Diagnostic::Ptr(new SSAFD_taud_mag(this));
+  result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
+
+  return result;
 }
 
 } // namespace stressbalance
