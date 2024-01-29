@@ -90,14 +90,16 @@ void SSAFD_SNES::solve(const Inputs &inputs) {
     m_log->message(1, "SSAFD_SNES converged (SNES reason %s)\n", SNESConvergedReasons[reason]);
   }
   m_callback_data.inputs = nullptr;
-  // FIXME: copy from m_X
+
+  // copy from m_velocity_global to provide m_velocity with ghosts:
+  m_velocity.copy_from(m_velocity_global);
 }
 
 
-PetscErrorCode SSAFD_SNES::function_callback(DMDALocalInfo *info, const Vector2d **x, Vector2d **f,
-                                             CallbackData *data) {
+PetscErrorCode SSAFD_SNES::function_callback(DMDALocalInfo * /*unused*/, Vector2d const *const *velocity,
+                                             Vector2d **f, CallbackData *data) {
   try {
-    data->solver->compute_residual(*data->inputs, x, f);
+    data->solver->compute_residual(*data->inputs, velocity, f);
   } catch (...) {
     MPI_Comm com        = MPI_COMM_SELF;
     PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com);
@@ -108,15 +110,17 @@ PetscErrorCode SSAFD_SNES::function_callback(DMDALocalInfo *info, const Vector2d
   return 0;
 }
 
-void SSAFD_SNES::compute_jacobian(const Inputs &inputs, const Vector2d **x, Mat J) {
+void SSAFD_SNES::compute_jacobian(const Inputs &inputs, Vector2d const *const *const velocity,
+                                  Mat J) {
   fd_operator(*inputs.geometry, inputs.bc_mask, m_bc_scaling, *inputs.basal_yield_stress,
-              m_basal_sliding_law, x, m_nuH, m_cell_type, &J, nullptr);
+              m_basal_sliding_law, velocity, m_nuH, m_cell_type, &J, nullptr);
 }
 
-PetscErrorCode SSAFD_SNES::jacobian_callback(DMDALocalInfo *info, const Vector2d **x, Mat J,
-                                             CallbackData *data) {
+PetscErrorCode SSAFD_SNES::jacobian_callback(DMDALocalInfo * /* info */,
+                                             Vector2d const *const *const velocity, Mat /* A */,
+                                             Mat J, CallbackData *data) {
   try {
-    data->solver->compute_jacobian(*data->inputs, x, J);
+    data->solver->compute_jacobian(*data->inputs, velocity, J);
   } catch (...) {
     MPI_Comm com        = MPI_COMM_SELF;
     PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com);

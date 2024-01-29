@@ -49,12 +49,16 @@ private:
 
   CallbackData m_callback_data;
 
-  void compute_jacobian(const Inputs &inputs, const Vector2d **x, Mat J);
+  void compute_jacobian(const Inputs &inputs, Vector2d const *const * velocity, Mat J);
 
-  static PetscErrorCode function_callback(DMDALocalInfo *info, const Vector2d **x, Vector2d **f,
+  static PetscErrorCode function_callback(DMDALocalInfo *info,
+                                          Vector2d const *const * velocity,
+                                          Vector2d **f,
                                           CallbackData *);
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const Vector2d **x, Mat J,
-                                          CallbackData *);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
+                                          Vector2d const *const * velocity,
+                                          Mat A, Mat J,
+                                          CallbackData *data);
 };
 
 } // namespace stressbalance
