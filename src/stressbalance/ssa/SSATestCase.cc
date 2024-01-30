@@ -349,11 +349,11 @@ void SSATestCase::write(const std::string &filename) {
 
   tmp.metadata(0)
     .set_name("u_error")
-    .long_name("X-component of the error")
+    .long_name("X-component of the error (exact - computed)")
     .units("m s-1");
   tmp.metadata(1)
     .set_name("v_error")
-    .long_name("Y-component of the error")
+    .long_name("Y-component of the error (exact - computed)")
     .units("m s-1");
 
   tmp.add(-1.0, m_ssa->velocity());
