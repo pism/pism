@@ -52,8 +52,8 @@ SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 
-  ierr = DMSetMatType(*m_DA, "baij");
-  PISM_CHK(ierr, "DMSetMatType");
+  // ierr = DMSetMatType(*m_DA, "baij");
+  // PISM_CHK(ierr, "DMSetMatType");
 
   ierr = DMSetApplicationContext(*m_DA, &m_callback_data);
   PISM_CHK(ierr, "DMSetApplicationContext");
