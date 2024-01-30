@@ -28,6 +28,7 @@
 #include "pism/stressbalance/blatter/BlatterMod.hh"
 #include "pism/stressbalance/sia/SIAFD.hh"
 #include "pism/stressbalance/ssa/SSAFD.hh"
+#include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/pism_utilities.hh"
@@ -51,6 +52,7 @@ std::shared_ptr<StressBalance> create(const std::string &model,
     return std::make_shared<StressBalance>(grid, blatter, mod);
   }
 
+  auto ssa_method = config->get_string("stress_balance.ssa.method");
   std::shared_ptr<ShallowStressBalance> sliding;
   if (member(model, {"none", "sia"})) {
     sliding = std::make_shared<ZeroSliding>(grid);
@@ -59,8 +61,10 @@ std::shared_ptr<StressBalance> create(const std::string &model,
   } else if (member(model, {"weertman_sliding", "weertman_sliding+sia"})) {
     sliding = std::make_shared<WeertmanSliding>(grid);
   } else if (member(model, {"ssa", "ssa+sia"})) {
-    if (config->get_string("stress_balance.ssa.method") == "fd") {
+    if (ssa_method == "fd") {
       sliding = std::make_shared<SSAFD>(grid, regional);
+    } else if (ssa_method == "fd_snes") {
+      sliding = std::make_shared<SSAFD_SNES>(grid, regional);
     } else {
       sliding = std::make_shared<SSAFEM>(grid);
     }
