@@ -42,9 +42,6 @@ public:
   const array::Vector &driving_stress() const;
 
   void compute_residual(const Inputs &inputs, const array::Vector2 &velocity, array::Vector &result);
-
-  void compute_residual(const Inputs &inputs, const pism::Vector2d *const *velocity,
-                        pism::Vector2d **result);
 protected:
   DiagnosticList diagnostics_impl() const;
 
@@ -91,6 +88,9 @@ protected:
   void fracture_induced_softening(const array::Scalar1 &fracture_density,
                                   double n_glen,
                                   array::Staggered &ice_hardness);
+
+  void compute_residual(const Inputs &inputs, const pism::Vector2d *const *velocity,
+                        pism::Vector2d **result);
 
   struct Work {
     // u_x on the i offset
