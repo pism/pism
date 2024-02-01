@@ -20,9 +20,40 @@
 #include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/StressBalance.hh" // Inputs
 #include "pism/util/petscwrappers/Vec.hh"
+#include <algorithm>            // std::max()
 
 namespace pism {
 namespace stressbalance {
+
+PetscErrorCode SSAFDSNESConvergenceTest(SNES snes, PetscInt it, PetscReal xnorm, PetscReal gnorm,
+                                        PetscReal f, SNESConvergedReason *reason, void *ctx) {
+  PetscErrorCode ierr;
+
+  SSAFD_SNES *solver = reinterpret_cast<SSAFD_SNES *>(ctx);
+  double tolerance = solver->tolerance();
+
+  ierr = SNESConvergedDefault(snes, it, xnorm, gnorm, f, reason, ctx);
+  if (*reason >= 0 and tolerance > 0) {
+    // converged or iterating
+    Vec residual;
+    ierr = SNESGetFunction(snes, &residual, NULL, NULL);
+    CHKERRQ(ierr);
+
+    PetscReal norm;
+    ierr = VecNorm(residual, NORM_INFINITY, &norm);
+    CHKERRQ(ierr);
+
+    if (norm <= tolerance) {
+      *reason = SNES_CONVERGED_FNORM_ABS;
+    }
+  }
+
+  return 0;
+}
+
+double SSAFD_SNES::tolerance() const {
+  return m_config->get_number("stress_balance.ssa.fd.absolute_tolerance");
+}
 
 SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
     : SSAFDBase(grid, regional_mode) {
@@ -64,6 +95,15 @@ SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
   ierr = SNESSetDM(m_snes, *m_DA);
   PISM_CHK(ierr, "SNESSetDM");
 
+  ierr = SNESSetConvergenceTest(m_snes, SSAFDSNESConvergenceTest, this, NULL);
+  PISM_CHK(ierr, "SNESSetConvergenceTest");
+
+  ierr = SNESSetTolerances(m_snes, 0.0, 0.0, 0.0, 500, -1);
+  PISM_CHK(ierr, "SNESSetTolerances");
+
+  ierr = SNESSetForceIteration(m_snes, PETSC_TRUE);
+  PISM_CHK(ierr, "SNESSetForceIteration");
+
   ierr = SNESSetFromOptions(m_snes);
   PISM_CHK(ierr, "SNESSetFromOptions");
 }
@@ -89,7 +129,16 @@ void SSAFD_SNES::solve(const Inputs &inputs) {
                                     SNESConvergedReasons[reason]);
     }
 
-    m_log->message(1, "SSAFD_SNES converged (SNES reason %s)\n", SNESConvergedReasons[reason]);
+    PetscInt snes_iterations = 0;
+    ierr = SNESGetIterationNumber(m_snes, &snes_iterations);
+    PISM_CHK(ierr, "SNESGetIterationNumber");
+
+    PetscInt ksp_iterations = 0;
+    ierr = SNESGetLinearSolveIterations(m_snes, &ksp_iterations);
+    PISM_CHK(ierr, "SNESGetLinearSolveIterations");
+
+    m_log->message(1, "SSAFD_SNES: %s (SNES: %d, KSP: %d each)\n", SNESConvergedReasons[reason],
+                   (int)snes_iterations, (int)(ksp_iterations / std::max(snes_iterations, 1)));
   }
   m_callback_data.inputs = nullptr;
 

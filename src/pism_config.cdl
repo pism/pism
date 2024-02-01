@@ -2153,6 +2153,11 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.epsilon_type = "number";
     pism_config:stress_balance.ssa.epsilon_units = "Pascal second meter";
 
+    pism_config:stress_balance.ssa.fd.absolute_tolerance = 100.0;
+    pism_config:stress_balance.ssa.fd.absolute_tolerance_doc = "Absolute tolerance used by the SNES-based SSAFD solver (converged if the infinity norm of the residual is below this)";
+    pism_config:stress_balance.ssa.fd.absolute_tolerance_type = "number";
+    pism_config:stress_balance.ssa.fd.absolute_tolerance_units = "Pascal";
+
     pism_config:stress_balance.ssa.fd.brutal_sliding = "false";
     pism_config:stress_balance.ssa.fd.brutal_sliding_doc = "Enhance sliding speed brutally.";
     pism_config:stress_balance.ssa.fd.brutal_sliding_option = "brutal_sliding";

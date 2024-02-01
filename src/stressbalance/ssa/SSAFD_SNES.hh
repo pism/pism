@@ -35,6 +35,7 @@ public:
 
   void solve(const Inputs &inputs);
 
+  double tolerance() const;
 private:
 
   // petsc::Vec m_X;
