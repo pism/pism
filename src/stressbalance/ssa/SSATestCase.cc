@@ -359,6 +359,11 @@ void SSATestCase::write(const std::string &filename) {
   tmp.add(-1.0, m_ssa->velocity());
   tmp.write(file);
 
+  array::Scalar error_mag(m_grid, "error_mag");
+  error_mag.metadata(0).long_name("magnitude of the error").units("m s-1");
+  array::compute_magnitude(tmp, error_mag);
+  error_mag.write(file);
+
   file.close();
 }
 
