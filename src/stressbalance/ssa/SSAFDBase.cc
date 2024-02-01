@@ -1510,6 +1510,10 @@ const array::Vector &SSAFDBase::driving_stress() const {
   return m_taud;
 }
 
+const array::Vector &SSAFDBase::residual() const {
+  return m_residual;
+}
+
 //! @brief Reports the nuH (viscosity times thickness) product on the staggered
 //! grid.
 class SSAFD_nuH : public Diag<SSAFDBase> {
@@ -1583,8 +1587,32 @@ public:
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const {
     auto result = allocate<array::Scalar>("taud_mag");
+    result->metadata(0) = m_vars[0];
 
     compute_magnitude(model->driving_stress(), *result);
+
+    return result;
+  }
+};
+
+//! @brief Computes the magnitude of the driving shear stress at the base of
+//! ice (diagnostically).
+class SSAFD_residual_mag : public Diag<SSAFDBase> {
+public:
+  SSAFD_residual_mag(const SSAFDBase *m) : Diag<SSAFDBase>(m) {
+
+    // set metadata:
+    m_vars = { { m_sys, "ssa_residual_mag" } };
+
+    m_vars[0].long_name("magnitude of the SSAFD solver's residual").units("Pa");
+  }
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Scalar>("ssa_residual_mag");
+    result->metadata(0) = m_vars[0];
+
+    compute_magnitude(model->residual(), *result);
 
     return result;
   }
@@ -1598,6 +1626,7 @@ DiagnosticList SSAFDBase::diagnostics_impl() const {
   result["taud_mag"] = Diagnostic::Ptr(new SSAFD_taud_mag(this));
   result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
   result["ssa_residual"] = Diagnostic::wrap(m_residual);
+  result["ssa_residual_mag"] = Diagnostic::Ptr(new SSAFD_residual_mag(this));
 
   return result;
 }
