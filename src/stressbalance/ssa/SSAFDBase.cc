@@ -114,6 +114,24 @@ static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n, in
   return 1;
 }
 
+// Use "upwinded" (-ish) finite difference to approximate the surface elevation
+// difference.
+static double diff_uphill(double L, double C, double R) {
+  double dL = C - L, dR = R - C;
+
+  if (dR * dL > 0) {
+    // dL and dR have the same sign
+    //
+    // If dL < 0 then L > C > R and "dL = C - L" is the "uphill" difference.
+    //
+    // If dL > 0 then L < C < R and "dR = R - C" is the "uphill" difference.
+    return dL < 0.0 ? dL : dR;
+  }
+
+  // centered
+  return 0.5 * (dL + dR);
+}
+
 //! @brief Compute the gravitational driving stress.
 /*!
 Computes the gravitational driving stress at the base of the ice:
@@ -184,10 +202,13 @@ void SSAFDBase::compute_driving_stress(const array::Scalar &ice_thickness,
     // x-derivative
     double h_x = 0.0;
     {
-      double west = weight(cfbc, M.c, M.w, h.c, h.w, N.c, N.w),
-             east = weight(cfbc, M.c, M.e, h.c, h.e, N.c, N.e);
+      int west = weight(cfbc, M.c, M.w, h.c, h.w, N.c, N.w),
+          east = weight(cfbc, M.c, M.e, h.c, h.e, N.c, N.e);
 
-      if (east + west > 0) {
+      if (east + west == 2 and mask::grounded_ice(M.c)) {
+        // interior of the ice blob: use the "uphill-biased" difference
+        h_x = diff_uphill(h.w, h.c, h.e) / dx;
+      } else if (east + west > 0) {
         h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
         if (floating_ice(M.c) and (ice_free_ocean(M.e) or ice_free_ocean(M.w))) {
           // at the ice front: use constant extrapolation to approximate the value outside
@@ -202,10 +223,13 @@ void SSAFDBase::compute_driving_stress(const array::Scalar &ice_thickness,
     // y-derivative
     double h_y = 0.0;
     {
-      double south = weight(cfbc, M.c, M.s, h.c, h.s, N.c, N.s),
-             north = weight(cfbc, M.c, M.n, h.c, h.n, N.c, N.n);
+      int south = weight(cfbc, M.c, M.s, h.c, h.s, N.c, N.s),
+          north = weight(cfbc, M.c, M.n, h.c, h.n, N.c, N.n);
 
-      if (north + south > 0) {
+      if (north + south == 2 and mask::grounded_ice(M.c)) {
+        // interior of the ice blob: use the "uphill-biased" difference
+        h_y = diff_uphill(h.s, h.c, h.n) / dy;
+      } else if (north + south > 0) {
         h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
         if (floating_ice(M.c) and (ice_free_ocean(M.s) or ice_free_ocean(M.n))) {
           // at the ice front: use constant extrapolation to approximate the value outside
