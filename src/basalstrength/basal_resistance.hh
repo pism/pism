@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015, 2017, 2019, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2015, 2017, 2019, 2021, 2024 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,7 +52,7 @@ public:
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
 protected:
-  double m_pseudo_q, m_pseudo_u_threshold, m_sliding_scale_factor_reduces_tauc;
+  double m_q, m_u_threshold, m_sliding_scale_factor_reduces_tauc, m_u_threshold_factor;
 };
 
 class IceBasalResistanceRegularizedLaw : public IceBasalResistancePlasticLaw{
@@ -64,7 +64,7 @@ public:
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
 protected:
-  double m_pseudo_q, m_pseudo_u_threshold, m_sliding_scale_factor_reduces_tauc;
+  double m_q, m_u_threshold, m_sliding_scale_factor_reduces_tauc;
 };
 
 } // end of namespace pism
