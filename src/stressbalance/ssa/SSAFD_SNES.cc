@@ -101,9 +101,6 @@ SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
   ierr = SNESSetTolerances(m_snes, 0.0, 0.0, 0.0, 500, -1);
   PISM_CHK(ierr, "SNESSetTolerances");
 
-  ierr = SNESSetForceIteration(m_snes, PETSC_TRUE);
-  PISM_CHK(ierr, "SNESSetForceIteration");
-
   ierr = SNESSetFromOptions(m_snes);
   PISM_CHK(ierr, "SNESSetFromOptions");
 }
@@ -137,8 +134,9 @@ void SSAFD_SNES::solve(const Inputs &inputs) {
     ierr = SNESGetLinearSolveIterations(m_snes, &ksp_iterations);
     PISM_CHK(ierr, "SNESGetLinearSolveIterations");
 
-    m_log->message(1, "SSAFD_SNES: %s (SNES: %d, KSP: %d each)\n", SNESConvergedReasons[reason],
-                   (int)snes_iterations, (int)(ksp_iterations / std::max(snes_iterations, 1)));
+    m_log->message(1, "SSA: %d*%d its, %s\n", (int)snes_iterations,
+                   (int)(ksp_iterations / std::max(snes_iterations, 1)),
+                   SNESConvergedReasons[reason]);
   }
   m_callback_data.inputs = nullptr;
 
