@@ -566,7 +566,7 @@ void PicoGeometry::compute_isolated_basin_mask(const IceModelVec2S &bed_elevatio
                                                double bed_elevation_threshold,
                                                IceModelVec2Int &result) {
 
-  IceModelVec::AccessList list{ &bed_elevation, &ice_rise_mask, &basin_mask, &m_tmp };
+  IceModelVec::AccessList list{ &bed_elevation, &ice_rise_mask, &basin_mask, &m_tmp, &result };
 
   //n_basins = static_cast<int>(max(basin_mask)) + 1;
 
@@ -616,9 +616,17 @@ void PicoGeometry::compute_isolated_basin_mask(const IceModelVec2S &bed_elevatio
 
       m_tmp.get_from_proc0(*m_tmp_p0);
     }
-  }
 
-  result.copy_from(m_tmp);
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+ 
+      // save isolated regions from previous b step as value 1
+      if (m_tmp(i, j) == 1.0 and basin_mask.as_int(i, j) == b) {
+        result(i, j) = 1.0;
+      }
+    }
+  }
+  //result.copy_from(m_tmp);
 }
 
 /*!
