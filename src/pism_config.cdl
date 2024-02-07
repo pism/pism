@@ -1112,6 +1112,11 @@ netcdf pism_config {
     pism_config:frontal_melt.routing.power_beta_type = "number";
     pism_config:frontal_melt.routing.power_beta_units = "1";
 
+    pism_config:geometry.front_retreat.minimum_time_step = 0.01;
+    pism_config:geometry.front_retreat.minimum_time_step_doc = "Minimum allowed time step length. Increase this to keep calving models from slowing PISM down too much.";
+    pism_config:geometry.front_retreat.minimum_time_step_units = "365day";
+    pism_config:geometry.front_retreat.minimum_time_step_type = "number";
+
     pism_config:geometry.front_retreat.prescribed.file = "";
     pism_config:geometry.front_retreat.prescribed.file_doc = "Name of the file containing the maximum ice extent mask ``land_ice_area_fraction_retreat``";
     pism_config:geometry.front_retreat.prescribed.file_option = "front_retreat_file";

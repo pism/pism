@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -77,8 +77,7 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
 
   using units::convert;
 
-  // About 9 hours which corresponds to 10000 km year-1 on a 10 km grid
-  double dt_min = convert(sys, 0.001, "years", "seconds");
+  double dt_min = m_config->get_number("geometry.front_retreat.minimum_time_step", "seconds");
 
   double
     retreat_rate_max  = 0.0,
