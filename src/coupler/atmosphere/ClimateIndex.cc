@@ -180,8 +180,6 @@ void ClimateIndex::init_impl(const Geometry &geometry) {
   m_log->message(2,
             "**** Initializing the 'Climate Index' atmosphere model...\n");
 
-  m_w0 = m_w1 = m_w1X = 0.0; // initialise the weights
-
   auto input_file = m_config->get_string("atmosphere.climate_index.climate_snapshots.file");
 
   if (input_file.empty()) {
@@ -265,10 +263,11 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  m_climate_index->update_weights(t, dt, m_w0, m_w1, m_w1X);
+  double w0{0.0}, w1{0.0}, w1X{0.0};
+  m_climate_index->update_weights(t, dt, w0, w1, w1X);
 
   m_log->message(3,
-             "**** Updated weigths in atmo: m_w0 = '%f', m_w1 = '%f', m_w1X = '%f' ****\n", m_w0, m_w1, m_w1X);
+             "**** Updated weigths in atmo: m_w0 = '%f', m_w1 = '%f', m_w1X = '%f' ****\n", w0, w1, w1X);
 
   array::AccessScope scope{ &m_air_temp_annual, &m_air_temp_annual_ref, &m_air_temp_anomaly_annual_0,
     &m_air_temp_anomaly_annual_1, &m_precipitation, &m_precipitation_ref };
@@ -301,14 +300,14 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
     double summer_anomaly = 0.0;
 
     if (use_1X) {
-      annual_anomaly = m_w0 * m_air_temp_anomaly_annual_0(i, j) + m_w1 * m_air_temp_anomaly_annual_1(i, j) + m_w1X * (m_air_temp_anomaly_annual_1X(i, j) - m_air_temp_anomaly_annual_1(i, j));
+      annual_anomaly = w0 * m_air_temp_anomaly_annual_0(i, j) + w1 * m_air_temp_anomaly_annual_1(i, j) + w1X * (m_air_temp_anomaly_annual_1X(i, j) - m_air_temp_anomaly_annual_1(i, j));
       if (use_cos) {
-        summer_anomaly = m_w0 * m_air_temp_anomaly_summer_0(i, j) + m_w1 * m_air_temp_anomaly_summer_1(i, j) + m_w1X * (m_air_temp_anomaly_summer_1X(i, j) - m_air_temp_anomaly_summer_1(i, j));
+        summer_anomaly = w0 * m_air_temp_anomaly_summer_0(i, j) + w1 * m_air_temp_anomaly_summer_1(i, j) + w1X * (m_air_temp_anomaly_summer_1X(i, j) - m_air_temp_anomaly_summer_1(i, j));
       }
     } else {
-      annual_anomaly = m_w0 * m_air_temp_anomaly_annual_0(i, j) + m_w1 * m_air_temp_anomaly_annual_1(i, j);
+      annual_anomaly = w0 * m_air_temp_anomaly_annual_0(i, j) + w1 * m_air_temp_anomaly_annual_1(i, j);
       if (use_cos) {
-        summer_anomaly = m_w0 * m_air_temp_anomaly_summer_0(i, j) + m_w1 * m_air_temp_anomaly_summer_1(i, j);
+        summer_anomaly = w0 * m_air_temp_anomaly_summer_0(i, j) + w1 * m_air_temp_anomaly_summer_1(i, j);
       }
     }
     m_air_temp_annual(i, j) = m_air_temp_annual_ref(i, j)  + annual_anomaly;
@@ -317,9 +316,9 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
     }
     if (not use_precip_scaling) {
       if (use_1X) {
-        m_precipitation(i, j) = m_precipitation_ref(i, j) + m_w0 * m_precipitation_anomaly_0(i, j) + m_w1 * m_precipitation_anomaly_1(i, j) + m_w1X * (m_precipitation_anomaly_1X(i, j) - m_precipitation_anomaly_1(i, j));
+        m_precipitation(i, j) = m_precipitation_ref(i, j) + w0 * m_precipitation_anomaly_0(i, j) + w1 * m_precipitation_anomaly_1(i, j) + w1X * (m_precipitation_anomaly_1X(i, j) - m_precipitation_anomaly_1(i, j));
       } else {
-        m_precipitation(i, j) = m_precipitation_ref(i, j) + m_w0 * m_precipitation_anomaly_0(i, j) + m_w1 * m_precipitation_anomaly_1(i, j);
+        m_precipitation(i, j) = m_precipitation_ref(i, j) + w0 * m_precipitation_anomaly_0(i, j) + w1 * m_precipitation_anomaly_1(i, j);
       }
     } else if (not precip_scaling_file.empty()) {
       m_precipitation(i, j) = m_precipitation_ref(i, j) * (1 + annual_anomaly*m_spatial_precip_scaling(i, j));

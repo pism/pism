@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -61,7 +61,6 @@ protected:
   std::unique_ptr<ClimateIndexWeights> m_climate_index;
 
   bool use_cos, use_1X;
-  double m_w0, m_w1, m_w1X;
   double m_snow_temp_summer_day;
   double m_preciplinfactor;
   bool use_precip_scaling;
