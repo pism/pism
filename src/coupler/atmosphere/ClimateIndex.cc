@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -270,34 +270,28 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
   m_log->message(3,
              "**** Updated weigths in atmo: m_w0 = '%f', m_w1 = '%f', m_w1X = '%f' ****\n", m_w0, m_w1, m_w1X);
 
-  m_air_temp_annual.begin_access();
-  m_air_temp_annual_ref.begin_access();
-  m_air_temp_anomaly_annual_0.begin_access();
-  m_air_temp_anomaly_annual_1.begin_access();
+  array::AccessScope scope{ &m_air_temp_annual, &m_air_temp_annual_ref, &m_air_temp_anomaly_annual_0,
+    &m_air_temp_anomaly_annual_1, &m_precipitation, &m_precipitation_ref };
 
   if (use_cos) {
-    m_air_temp_summer.begin_access();
-    m_air_temp_summer_ref.begin_access();
-    m_air_temp_anomaly_summer_0.begin_access();
-    m_air_temp_anomaly_summer_1.begin_access();
+    scope.add({ &m_air_temp_summer, &m_air_temp_summer_ref, &m_air_temp_anomaly_summer_0,
+                &m_air_temp_anomaly_summer_1 });
   }
 
-  m_precipitation.begin_access();
-  m_precipitation_ref.begin_access();
-
   if (use_1X) {
-    m_air_temp_anomaly_annual_1X.begin_access();
-    if (use_cos) { m_air_temp_anomaly_summer_1X.begin_access(); }
+    scope.add(m_air_temp_anomaly_annual_1X);
+    if (use_cos) {
+      scope.add(m_air_temp_anomaly_summer_1X);
+    }
   }
 
   if (not use_precip_scaling) {
-    m_precipitation_anomaly_0.begin_access();
-    m_precipitation_anomaly_1.begin_access();
+    scope.add({&m_precipitation_anomaly_0, &m_precipitation_anomaly_1});
     if (use_1X) {
-      m_precipitation_anomaly_1X.begin_access();
+      scope.add(m_precipitation_anomaly_1X);
     }
   } else if (not precip_scaling_file.empty()) {
-    m_spatial_precip_scaling.begin_access();
+    scope.add(m_spatial_precip_scaling);
   }
 
   for (Points p(*m_grid); p; p.next()) {
@@ -332,36 +326,7 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
     } else {
       m_precipitation(i, j) = m_precipitation_ref(i, j) * (1 + annual_anomaly*m_preciplinfactor);
     }
-  }
-
-  m_air_temp_annual.end_access();
-  m_air_temp_annual_ref.begin_access();
-  m_air_temp_anomaly_annual_0.end_access();
-  m_air_temp_anomaly_annual_1.end_access();
-  if (use_cos) {
-    m_air_temp_summer.end_access();
-    m_air_temp_anomaly_summer_0.end_access();
-    m_air_temp_anomaly_summer_1.end_access();
-  }
-
-  m_precipitation.end_access();
-  m_precipitation_ref.end_access();
-
-  if (use_1X) {
-    m_air_temp_anomaly_annual_1X.end_access();
-    if (use_cos) { m_air_temp_anomaly_summer_1X.end_access(); }
-  }
-
-  if (not use_precip_scaling) {
-    m_precipitation_anomaly_0.end_access();
-    m_precipitation_anomaly_1.end_access();
-    if (use_1X) {
-      m_precipitation_anomaly_1X.end_access();
-    }
-  } else if (not precip_scaling_file.empty()) {
-    m_spatial_precip_scaling.end_access();
-  }
-
+  } // end of the loop over grid points
 }
 
 void ClimateIndex::define_model_state_impl(const File &output) const {
