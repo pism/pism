@@ -136,7 +136,10 @@ void ClimateIndex::init_forcing() {
 
 void ClimateIndex::update_forcing(double t, double dt, array::Scalar &theta_ocean, array::Scalar &salinity_ocean) {
 
-    m_climate_index->update_weights(t, dt, m_w0, m_w1, m_w1X);
+    auto w    = m_climate_index->update_weights(t, dt);
+    m_w0 = w[0];
+    m_w1 = w[1];
+    m_w1X = w[2];
 
     m_log->message(3,
              "**** Updated weights in ocean: m_w0 = '%f', m_w1 = '%f', m_w1X = '%f' ****\n", m_w0, m_w1, m_w1X);

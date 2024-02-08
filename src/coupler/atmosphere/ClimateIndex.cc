@@ -263,8 +263,8 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  double w0{0.0}, w1{0.0}, w1X{0.0};
-  m_climate_index->update_weights(t, dt, w0, w1, w1X);
+  auto w = m_climate_index->update_weights(t, dt);
+  double w0 = w[0], w1 = w[1], w1X = w[2];
 
   m_log->message(3,
              "**** Updated weigths in atmo: m_w0 = '%f', m_w1 = '%f', m_w1X = '%f' ****\n", w0, w1, w1X);

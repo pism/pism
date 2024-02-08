@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,36 +18,33 @@
 
 #include "ClimateIndexWeights.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 
-ClimateIndexWeights::ClimateIndexWeights(const Context &ctx) 
-{
-  m_index.reset(new ScalarForcing(ctx,
-                                "climate_index",
-                                "climate_index",
-                                "1", "1",
-                                "climate index"));
-  
+ClimateIndexWeights::ClimateIndexWeights(const Context &ctx) {
+  m_index.reset(
+      new ScalarForcing(ctx, "climate_index", "climate_index", "1", "1", "climate index"));
+
   const Config &config = *ctx.config();
 
   m_ref_value = config.get_number("climate_index.ref_value");
   m_max_value = config.get_number("climate_index.max_value");
-  
 }
 
-void ClimateIndexWeights::update_weights(double t, double dt, double &m_W0, double &m_W1, double &m_W1X) {
+std::array<double,3> ClimateIndexWeights::update_weights(double t, double dt) {
 
-  m_current = m_index->value(t + 0.5 * dt);
+  double CI = m_index->value(t + 0.5 * dt);
 
   // compute interpolation weights in update
-  m_W1 = (std::max(m_current, m_ref_value) - m_ref_value) / (1.0 - m_ref_value);
-  m_W1 = std::min(m_W1, 1.0);
+  double W0 = 1.0 - std::min(CI, m_ref_value) / m_ref_value;
 
-  m_W0 = 1.0 - std::min(m_current, m_ref_value) / m_ref_value;
+  double W1 = (std::max(CI, m_ref_value) - m_ref_value) / (1.0 - m_ref_value);
+  W1 = std::min(W1, 1.0);
 
-  m_W1X = (std::max(m_current, 1.0) - 1.0) / (m_max_value - 1.0);
+  double W1X = (std::max(CI, 1.0) - 1.0) / (m_max_value - 1.0);
 
+  return {W0, W1, W1X};
 }
 
 } // end of namespace pism
