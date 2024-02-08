@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -138,7 +138,7 @@ void ClimateIndex::update_forcing(double t, double dt, array::Scalar &theta_ocea
 
     m_climate_index->update_weights(t, dt, m_w0, m_w1, m_w1X);
 
-    m_log->message(2,
+    m_log->message(3,
              "**** Updated weights in ocean: m_w0 = '%f', m_w1 = '%f', m_w1X = '%f' ****\n", m_w0, m_w1, m_w1X);
 
     theta_ocean.begin_access();

@@ -267,7 +267,7 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_climate_index->update_weights(t, dt, m_w0, m_w1, m_w1X);
 
-  m_log->message(2,
+  m_log->message(3,
              "**** Updated weigths in atmo: m_w0 = '%f', m_w1 = '%f', m_w1X = '%f' ****\n", m_w0, m_w1, m_w1X);
 
   m_air_temp_annual.begin_access();
