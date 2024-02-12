@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _CLIMATEINDEXOCEAN_H_
-#define _CLIMATEINDEXOCEAN_H_
+#ifndef PISM_OCEAN_CLIMATEINDEX_H
+#define PISM_OCEAN_CLIMATEINDEX_H
 
 #include "CompleteOceanModel.hh"
 #include "pism/coupler/util/ClimateIndexWeights.hh"
@@ -28,32 +28,32 @@ class ClimateIndexWeights;
 
 namespace ocean {
 
-class ClimateIndex : public CompleteOceanModel
-{
+class ClimateIndex : public CompleteOceanModel {
 public:
-    ClimateIndex(std::shared_ptr<const Grid> grid);
-    virtual ~ClimateIndex() = default;
-    virtual void init_forcing();
-    virtual void update_forcing(double t, double dt, array::Scalar &theta_ocean, array::Scalar &salinity_ocean);
+  ClimateIndex(std::shared_ptr<const Grid> grid);
+  virtual ~ClimateIndex() = default;
+  void init_forcing();
+  void update_forcing(double t, double dt, array::Scalar &theta_ocean,
+                      array::Scalar &salinity_ocean);
 
 protected:
-   std::unique_ptr<ClimateIndexWeights> m_climate_index;
-   bool use_1X;
-   double m_w0, m_w1, m_w1X;
-   std::string m_reference;
+  std::unique_ptr<ClimateIndexWeights> m_climate_index;
+  bool m_use_1X;
 
-  // ocean state at glacial index reference value (e.g. Present-Day, PD)
-  array::Scalar m_theta_ocean_ref, m_salinity_ocean_ref;
-  // ocean state anomaly at glacial index zero (Last Glacial Maximum, LGM)
-  array::Scalar m_theta_ocean_anomaly_0, m_salinity_ocean_anomaly_0;
-  // ocean state anomaly at glacial index one (e.g. the Eemian, LIG)
-  array::Scalar m_theta_ocean_anomaly_1, m_salinity_ocean_anomaly_1;
+  // Ocean state at glacial index reference value (e.g. Present-Day, PD)
+  array::Scalar m_theta_ref, m_salinity_ref;
 
-  array::Scalar m_theta_ocean_anomaly_1X, m_salinity_ocean_anomaly_1X;
+  // Ocean state anomaly at glacial index 0 (Last Glacial Maximum, LGM)
+  array::Scalar m_theta_anomaly_0, m_salinity_anomaly_0;
 
+  // Ocean state anomaly at glacial index 1 (e.g. the Eemian, LIG)
+  array::Scalar m_theta_anomaly_1, m_salinity_anomaly_1;
+
+  // Anomaly temperature fields for interglacial index 1X (e.g. mPWP)
+  array::Scalar m_theta_anomaly_1X, m_salinity_anomaly_1X;
 };
 
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _CLIMATEINDEXOCEAN_H_ */
+#endif /* PISM_OCEAN_CLIMATEINDEX_H */

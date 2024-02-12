@@ -23,170 +23,139 @@ namespace pism {
 namespace ocean {
 
 ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> grid)
-: CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
+    : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
 
-    m_theta_ocean_ref(m_grid, "theta_ocean_ref"),
-    m_salinity_ocean_ref(m_grid, "salinity_ocean_ref"),
+      m_theta_ref(m_grid, "theta_ocean_ref"),
+      m_salinity_ref(m_grid, "salinity_ocean_ref"),
 
-    // Anaomaly temperature fields for glacial index 0 (e.g. LGM), interglacial index 1 (e.g. LIG) and interglacial index 1X (e.g. mPWP)
-    m_theta_ocean_anomaly_0(m_grid, "theta_ocean_anomaly_0"),
-    m_theta_ocean_anomaly_1(m_grid, "theta_ocean_anomaly_1"),
-    m_theta_ocean_anomaly_1X(m_grid, "theta_ocean_anomaly_1X"),
+      m_theta_anomaly_0(m_grid, "theta_ocean_anomaly_0"),
+      m_salinity_anomaly_0(m_grid, "salinity_ocean_anomaly_0"),
 
-    m_salinity_ocean_anomaly_0(m_grid, "salinity_ocean_anomaly_0"),
-    m_salinity_ocean_anomaly_1(m_grid, "salinity_ocean_anomaly_1"),
-    m_salinity_ocean_anomaly_1X(m_grid, "salinity_ocean_anomaly_1X") {
+      m_theta_anomaly_1(m_grid, "theta_ocean_anomaly_1"),
+      m_salinity_anomaly_1(m_grid, "salinity_ocean_anomaly_1"),
 
-    auto climate_index_file = m_config->get_string("climate_index.file");
-    if (not climate_index_file.empty()) {
-        m_climate_index.reset(
-            new ClimateIndexWeights(*grid->ctx()));
+      m_theta_anomaly_1X(m_grid, "theta_ocean_anomaly_1X"),
+      m_salinity_anomaly_1X(m_grid, "salinity_ocean_anomaly_1X") {
 
-    } else {
-        m_log->message(2,
-                "* 'Climate Index Weight' Index File not given. Please specify under -climate_index_file \n");
-    }
+  auto climate_index_file = m_config->get_string("climate_index.file");
+  if (climate_index_file.empty()) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "'Climate Index Weight' file `climate_index.file` cannot be empty");
+  }
 
-    m_theta_ocean_ref.metadata(0)
-            .long_name("potential temperature of the adjacent ocean")
-            .units("Kelvin")
-            .set_time_independent(true);
-    m_theta_ocean_ref.metadata()["source"] = m_reference;
+  m_climate_index.reset(new ClimateIndexWeights(*grid->ctx()));
 
-    // Paleo time slice temperature data annual
-    m_theta_ocean_anomaly_0.metadata(0)
-        .long_name("absolute potential temperature anomaly of the adjacent ocean")
-        .units("Kelvin")
-        .set_time_independent(true);
-    m_theta_ocean_anomaly_0.metadata()["source"] = m_reference;
+  m_theta_ref.metadata(0)
+      .long_name("potential temperature of the adjacent ocean")
+      .units("Kelvin")
+      .set_time_independent(true);
 
-    m_theta_ocean_anomaly_1.metadata(0)
-            .long_name("potential temperature of the adjacent ocean")
-            .units("Kelvin")
-            .set_time_independent(true);
-    m_theta_ocean_anomaly_1.metadata()["source"] = m_reference;
+  // Paleo time slice temperature data annual
+  m_theta_anomaly_0.metadata(0)
+      .long_name("absolute potential temperature anomaly of the adjacent ocean")
+      .units("Kelvin")
+      .set_time_independent(true);
 
-    m_theta_ocean_anomaly_1X.metadata(0)
-            .long_name("potential temperature of the adjacent ocean")
-            .units("Kelvin")
-            .set_time_independent(true);
-    m_theta_ocean_anomaly_1X.metadata()["source"] = m_reference;
+  m_theta_anomaly_1.metadata(0)
+      .long_name("potential temperature of the adjacent ocean")
+      .units("Kelvin")
+      .set_time_independent(true);
 
-    m_salinity_ocean_ref.metadata(0)
-        .long_name("salinity of the adjacent ocean")
-        .units("g/kg")
-        .set_time_independent(true);
-    m_salinity_ocean_ref.metadata()["source"] = m_reference;
+  m_theta_anomaly_1X.metadata(0)
+      .long_name("potential temperature of the adjacent ocean")
+      .units("Kelvin")
+      .set_time_independent(true);
 
-    // Paleo time slice temperature data annual
-    m_salinity_ocean_anomaly_0.metadata(0)
-        .long_name("salinity of the adjacent ocean")
-        .units("g/kg")
-        .set_time_independent(true);
-    m_salinity_ocean_anomaly_0.metadata()["source"] = m_reference;
+  m_salinity_ref.metadata(0)
+      .long_name("salinity of the adjacent ocean")
+      .units("g/kg")
+      .set_time_independent(true);
 
-    m_salinity_ocean_anomaly_1.metadata(0)
-        .long_name("salinity of the adjacent ocean")
-        .units("g/kg")
-        .set_time_independent(true);
-    m_salinity_ocean_anomaly_1.metadata()["source"] = m_reference;
+  // Paleo time slice temperature data annual
+  m_salinity_anomaly_0.metadata(0)
+      .long_name("salinity of the adjacent ocean")
+      .units("g/kg")
+      .set_time_independent(true);
 
-    m_salinity_ocean_anomaly_1X.metadata(0)
-        .long_name("salinity of the adjacent ocean")
-        .units("g/kg")
-        .set_time_independent(true);
-    m_salinity_ocean_anomaly_1X.metadata()["source"] = m_reference;
+  m_salinity_anomaly_1.metadata(0)
+      .long_name("salinity of the adjacent ocean")
+      .units("g/kg")
+      .set_time_independent(true);
+
+  m_salinity_anomaly_1X.metadata(0)
+      .long_name("salinity of the adjacent ocean")
+      .units("g/kg")
+      .set_time_independent(true);
 }
 
 void ClimateIndex::init_forcing() {
-    m_log->message(2,
-                "**** Initializing the 'Climate Index' ocean model...\n");
+  m_log->message(2, "**** Initializing the 'Climate Index' ocean model...\n");
 
-    m_w0 = m_w1 = m_w1X = 0.0; // initialise the weights
+  auto input_file = m_config->get_string("ocean.climate_index.climate_snapshots.file");
+  if (input_file.empty()) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "An ocean snapshots input file name\n"
+                       "ocean.climate_index.climate_snapshots.file cannot be empty");
+  }
+  m_log->message(2,
+                 "  Reading salinity and theta fields from '%s'...\n",
+                 input_file.c_str());
 
-    auto input_file = m_config->get_string("ocean.climate_index.climate_snapshots.file");
-    if (input_file.empty()) {
-        throw RuntimeError(PISM_ERROR_LOCATION,
-                        "Please specify an ocean snapshots input file\n"
-                        "using -ocean_climate_snapshots_file or a command-line option.");
-    }
-    m_log->message(2,
-                    "  Reading salinity and "
-                    "theta fields from '%s'...\n", input_file.c_str());
+  File input(m_grid->com, input_file, io::PISM_GUESS, io::PISM_READONLY);
+  auto None = io::Default::Nil();
 
-    // Reference fields
-    m_theta_ocean_ref.regrid(input_file, io::Default::Nil());
-    m_salinity_ocean_ref.regrid(input_file, io::Default::Nil());
+  // Reference fields
+  m_theta_ref.regrid(input, None);
+  m_salinity_ref.regrid(input, None);
 
-    // Annual anomaly for Paleo time slices 0=Glacial, 1=Interglacial, 1X= Super InterGlacial e.g. mPWP
-    m_theta_ocean_anomaly_0.regrid(input_file, io::Default::Nil());
-    m_theta_ocean_anomaly_1.regrid(input_file, io::Default::Nil());
+  // Annual anomaly for Paleo time slices 0=Glacial, 1=Interglacial, 1X= Super InterGlacial e.g. mPWP
+  m_theta_anomaly_0.regrid(input, None);
+  m_theta_anomaly_1.regrid(input, None);
 
-    m_salinity_ocean_anomaly_0.regrid(input_file, io::Default::Nil());
-    m_salinity_ocean_anomaly_1.regrid(input_file, io::Default::Nil());
+  m_salinity_anomaly_0.regrid(input, None);
+  m_salinity_anomaly_1.regrid(input, None);
 
-    try {
-        m_theta_ocean_anomaly_1X.regrid(input_file, io::Default::Nil());
-        m_salinity_ocean_anomaly_1X.regrid(input_file, io::Default::Nil());
-        use_1X = true;
-    } catch (...) {
-        use_1X = false;
-    }
+  try {
+    m_theta_anomaly_1X.regrid(input, None);
+    m_salinity_anomaly_1X.regrid(input, None);
+    m_use_1X = true;
+  } catch (...) {
+    m_use_1X = false;
+  }
 }
 
-void ClimateIndex::update_forcing(double t, double dt, array::Scalar &theta_ocean, array::Scalar &salinity_ocean) {
+void ClimateIndex::update_forcing(double t, double dt, array::Scalar &theta,
+                                  array::Scalar &salinity) {
 
-    auto w    = m_climate_index->update_weights(t, dt);
-    m_w0 = w[0];
-    m_w1 = w[1];
-    m_w1X = w[2];
+  auto weights = m_climate_index->update_weights(t, dt);
+  double w_0   = weights[0];
+  double w_1   = weights[1];
+  double w_1X  = m_use_1X ? weights[2] : 0.0;
 
-    m_log->message(3,
-             "**** Updated weights in ocean: m_w0 = '%f', m_w1 = '%f', m_w1X = '%f' ****\n", m_w0, m_w1, m_w1X);
+  m_log->message(3, "**** Updated weights in ocean: w0 = '%f', w1 = '%f', w1X = '%f' ****\n",
+                 w_0, w_1, w_1X);
 
-    theta_ocean.begin_access();
-    salinity_ocean.begin_access();
+  const auto &T_ref = m_theta_ref;
+  const auto &dT_0  = m_theta_anomaly_0;
+  const auto &dT_1  = m_theta_anomaly_1;
+  const auto &dT_1X = m_theta_anomaly_1X;
 
-    m_theta_ocean_ref.begin_access();
-    m_theta_ocean_anomaly_0.begin_access();
-    m_theta_ocean_anomaly_1.begin_access();
+  const auto &S_ref = m_salinity_ref;
+  const auto &dS_0  = m_salinity_anomaly_0;
+  const auto &dS_1  = m_salinity_anomaly_1;
+  const auto &dS_1X = m_salinity_anomaly_1X;
 
-    m_salinity_ocean_ref.begin_access();
-    m_salinity_ocean_anomaly_0.begin_access();
-    m_salinity_ocean_anomaly_1.begin_access();
+  array::AccessScope scope{ &theta, &salinity, &T_ref, &dT_0,  &dT_1,
+                            &S_ref, &dS_0,     &dS_1,  &dT_1X, &dS_1X };
 
-    if (use_1X) {
-        m_theta_ocean_anomaly_1X.begin_access();
-        m_salinity_ocean_anomaly_1X.begin_access();
-    }
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-    for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        if (use_1X) {
-            theta_ocean(i, j) = m_theta_ocean_ref(i, j) + m_w0 * m_theta_ocean_anomaly_0(i, j) + m_w1 * m_theta_ocean_anomaly_1(i, j) + m_w1X * (m_theta_ocean_anomaly_1X(i, j) - m_theta_ocean_anomaly_1(i, j));
-            salinity_ocean(i, j) = m_salinity_ocean_ref(i, j) + m_w0 * m_salinity_ocean_anomaly_0(i, j) + m_w1 * m_salinity_ocean_anomaly_1(i, j) + m_w1X * (m_salinity_ocean_anomaly_1X(i, j) - m_salinity_ocean_anomaly_1(i, j));
-        } else {
-            theta_ocean(i, j) = m_theta_ocean_ref(i, j) + m_w0 * m_theta_ocean_anomaly_0(i, j) + m_w1 * m_theta_ocean_anomaly_1(i, j);
-            salinity_ocean(i, j) = m_salinity_ocean_ref(i, j) + m_w0 * m_salinity_ocean_anomaly_0(i, j) + m_w1 * m_salinity_ocean_anomaly_1(i, j);
-        }
-    }
-
-    theta_ocean.end_access();
-    salinity_ocean.end_access();
-
-    m_theta_ocean_ref.end_access();
-    m_theta_ocean_anomaly_0.end_access();
-    m_theta_ocean_anomaly_1.end_access();
-
-    m_salinity_ocean_ref.end_access();
-    m_salinity_ocean_anomaly_0.end_access();
-    m_salinity_ocean_anomaly_1.end_access();
-
-    if (use_1X) {
-        m_theta_ocean_anomaly_1X.end_access();
-        m_salinity_ocean_anomaly_1X.end_access();
-    }
+    theta(i, j) =
+        T_ref(i, j) + w_0 * dT_0(i, j) + w_1 * dT_1(i, j) + w_1X * (dT_1X(i, j) - dT_1(i, j));
+    salinity(i, j) =
+        S_ref(i, j) + w_0 * dS_0(i, j) + w_1 * dS_1(i, j) + w_1X * (dS_1X(i, j) - dS_1(i, j));
+  }
 }
 
 } // end of namespace ocean
