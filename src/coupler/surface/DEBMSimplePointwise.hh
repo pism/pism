@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 PISM Authors
+// Copyright (C) 2009--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,14 +32,30 @@ class Time;
 
 namespace surface {
 
-class DEBMSimpleMelt {
-public:
+// The following three could be nested in DEBMSimplePointwise but SWIG does not appear to
+// support nested classes, so we put them here to make them accessible from Python.
+
+struct DEBMSimpleMelt {
   DEBMSimpleMelt();
 
   double temperature_melt;
   double insolation_melt;
   double offset_melt;
   double total_melt;
+};
+
+struct DEBMSimpleChanges {
+  DEBMSimpleChanges();
+
+  double snow_depth;
+  double melt;
+  double runoff;
+  double smb;
+};
+
+struct DEBMSimpleOrbitalParameters {
+  double declination;
+  double distance_factor;
 };
 
 //! A dEBM-simple implementation
@@ -56,12 +72,7 @@ public:
 
   double albedo(double melt_rate, MaskValue cell_type) const;
 
-  struct OrbitalParameters {
-    double declination;
-    double distance_factor;
-  };
-
-  OrbitalParameters orbital_parameters(double time) const;
+  DEBMSimpleOrbitalParameters orbital_parameters(double time) const;
 
   DEBMSimpleMelt melt(double declination,
                       double distance_factor,
@@ -72,20 +83,8 @@ public:
                       double lat,
                       double albedo) const;
 
-  class Changes {
-  public:
-    Changes();
-
-    double snow_depth;
-    double melt;
-    double runoff;
-    double smb;
-  };
-
-  Changes step(double ice_thickness,
-               double max_melt,
-               double snow_depth,
-               double accumulation) const;
+  DEBMSimpleChanges step(double ice_thickness, double max_melt, double snow_depth,
+                         double accumulation) const;
 
   // public because it is a diagnostic field
   double atmosphere_transmissivity(double elevation) const;
@@ -93,6 +92,20 @@ public:
   double insolation(double declination,
                     double distance_factor,
                     double latitude_degrees) const;
+
+  // implementation details (exposed as "public" methods for testing)
+  static double CalovGreveIntegrand(double sigma, double temperature);
+  static double hour_angle(double phi, double latitude, double declination);
+  static double solar_longitude(double year_fraction, double eccentricity,
+                                double perihelion_longitude);
+  static double distance_factor_present_day(double year_fraction);
+  static double distance_factor_paleo(double eccentricity, double perihelion_longitude,
+                                      double solar_longitude);
+  static double solar_declination_present_day(double year_fraction);
+  static double solar_declination_paleo(double obliquity,
+                                        double solar_longitude);
+  static double insolation(double solar_constant, double distance_factor, double hour_angle,
+                           double latitude, double declination);
 
 private:
   double eccentricity(double time) const;

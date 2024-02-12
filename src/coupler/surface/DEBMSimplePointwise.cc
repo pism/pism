@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 PISM Authors
+// Copyright (C) 2009--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -46,7 +46,6 @@
 namespace pism {
 namespace surface {
 
-namespace details {
 // Disable clang-tidy warnings about "magic numbers":
 // NOLINTBEGIN(readability-magic-numbers)
 
@@ -60,7 +59,7 @@ namespace details {
  * @param[in] sigma standard deviation of daily variation of near-surface air temperature (Kelvin)
  * @param[in] temperature near-surface air temperature in "degrees Kelvin above the melting point"
  */
-static double CalovGreveIntegrand(double sigma, double temperature) {
+double DEBMSimplePointwise::CalovGreveIntegrand(double sigma, double temperature) {
 
   if (sigma == 0) {
     return std::max(temperature, 0.0);
@@ -83,7 +82,7 @@ static double CalovGreveIntegrand(double sigma, double temperature) {
  * @param[in] latitude latitude (radians)
  * @param[in] declination solar declination angle (radians)
  */
-static double hour_angle(double phi, double latitude, double declination) {
+double DEBMSimplePointwise::hour_angle(double phi, double latitude, double declination) {
   double cos_h_phi = ((sin(phi) - sin(latitude) * sin(declination)) /
                       (cos(latitude) * cos(declination)));
   return acos(pism::clip(cos_h_phi, -1.0, 1.0));
@@ -98,9 +97,8 @@ static double hour_angle(double phi, double latitude, double declination) {
  *
  * Implements equation A2 in Zeitz et al.
  */
-static double solar_longitude(double year_fraction,
-                              double eccentricity,
-                              double perihelion_longitude) {
+double DEBMSimplePointwise::solar_longitude(double year_fraction, double eccentricity,
+                                            double perihelion_longitude) {
 
   // Shortcuts to make formulas below easier to read:
   double E   = eccentricity;
@@ -136,7 +134,7 @@ static double solar_longitude(double year_fraction,
  * Liou states: "Note that the factor (a/r)^2 never departs from the unity by more than
  * 3.5%." (`a/r` in Liou is equivalent to `d_bar/d` here.)
  */
-static double distance_factor_present_day(double year_fraction) {
+double DEBMSimplePointwise::distance_factor_present_day(double year_fraction) {
   // These coefficients come from Table 2.2 in Liou 2002
   double
     a0 = 1.000110,
@@ -162,9 +160,8 @@ static double distance_factor_present_day(double year_fraction) {
  *
  * See also equation 2.2.5 from Liou (2002).
  */
-static double distance_factor_paleo(double eccentricity,
-                                    double perihelion_longitude,
-                                    double solar_longitude) {
+double DEBMSimplePointwise::distance_factor_paleo(double eccentricity, double perihelion_longitude,
+                                                  double solar_longitude) {
   double E = eccentricity;
 
   if (E == 1.0) {
@@ -181,7 +178,7 @@ static double distance_factor_paleo(double eccentricity,
  *
  * Implements equation 2.2.10 from Liou (2002)
  */
-static double solar_declination_present_day(double year_fraction) {
+double DEBMSimplePointwise::solar_declination_present_day(double year_fraction) {
   // These coefficients come from Table 2.2 in Liou 2002
    double
      a0 = 0.006918,
@@ -211,8 +208,8 @@ static double solar_declination_present_day(double year_fraction) {
  *
  * See also equation 2.2.4 of Liou (2002).
  */
-static double solar_declination_paleo(double obliquity,
-                                      double solar_longitude) {
+double DEBMSimplePointwise::solar_declination_paleo(double obliquity,
+                                                    double solar_longitude) {
   return asin(sin(obliquity * sin(solar_longitude)));
 }
 
@@ -263,11 +260,8 @@ static double solar_declination_paleo(double obliquity,
  * @param[in] declination declination (radians)
  *
  */
-static double insolation(double solar_constant,
-                         double distance_factor,
-                         double hour_angle,
-                         double latitude,
-                         double declination) {
+double DEBMSimplePointwise::insolation(double solar_constant, double distance_factor,
+                                       double hour_angle, double latitude, double declination) {
   if (hour_angle == 0) {
     return 0.0;
   }
@@ -278,9 +272,8 @@ static double insolation(double solar_constant,
 }
 
 // NOLINTEND(readability-magic-numbers)
-} // end of namespace details
 
-DEBMSimplePointwise::Changes::Changes() {
+DEBMSimpleChanges::DEBMSimpleChanges() {
   snow_depth = 0.0;
   melt       = 0.0;
   runoff     = 0.0;
@@ -373,7 +366,7 @@ double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) const {
   return m_transmissivity_intercept + m_transmissivity_slope * elevation;
 }
 
-DEBMSimplePointwise::OrbitalParameters DEBMSimplePointwise::orbital_parameters(double time) const {
+DEBMSimpleOrbitalParameters DEBMSimplePointwise::orbital_parameters(double time) const {
   double declination     = 0.0;
   double distance_factor = 0.0;
 
@@ -383,18 +376,14 @@ DEBMSimplePointwise::OrbitalParameters DEBMSimplePointwise::orbital_parameters(d
     double eccentricity         = this->eccentricity(time);
     double perihelion_longitude = this->perihelion_longitude(time);
 
-    double solar_longitude = details::solar_longitude(year_fraction,
-                                                      eccentricity,
-                                                      perihelion_longitude);
+    double solar_longitude = this->solar_longitude(year_fraction, eccentricity, perihelion_longitude);
 
-    declination = details::solar_declination_paleo(obliquity(time), solar_longitude);
+    declination = solar_declination_paleo(obliquity(time), solar_longitude);
 
-    distance_factor = details::distance_factor_paleo(eccentricity,
-                                                     perihelion_longitude,
-                                                     solar_longitude);
+    distance_factor = distance_factor_paleo(eccentricity, perihelion_longitude, solar_longitude);
   } else {
-    declination     = details::solar_declination_present_day(year_fraction);
-    distance_factor = details::distance_factor_present_day(year_fraction);
+    declination     = solar_declination_present_day(year_fraction);
+    distance_factor = distance_factor_present_day(year_fraction);
   }
 
   return {declination, distance_factor};
@@ -413,13 +402,9 @@ double DEBMSimplePointwise::insolation(double declination,
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude_degrees * degrees_to_radians;
 
-  double h_phi = details::hour_angle(m_phi, latitude_rad, declination);
+  double h_phi = hour_angle(m_phi, latitude_rad, declination);
 
-  return details::insolation(m_solar_constant,
-                             distance_factor,
-                             h_phi,
-                             latitude_rad,
-                             declination);
+  return insolation(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 }
 
 /* Melt amount (in m water equivalent) and its components over the time step `dt`
@@ -450,15 +435,12 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
   double latitude_rad = latitude * degrees_to_radians;
 
   double transmissivity = atmosphere_transmissivity(surface_elevation);
-  double h_phi          = details::hour_angle(m_phi, latitude_rad, declination);
-  double insolation     = details::insolation(m_solar_constant,
-                                              distance_factor,
-                                              h_phi,
-                                              latitude_rad,
-                                              declination);
+  double h_phi          = hour_angle(m_phi, latitude_rad, declination);
+  double insolation =
+      this->insolation(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 
-  double Teff = details::CalovGreveIntegrand(T_std_deviation,
-                                             T - m_positive_threshold_temperature);
+  double Teff = CalovGreveIntegrand(T_std_deviation,
+                                    T - m_positive_threshold_temperature);
   const double eps = 1.0e-4;
   if (Teff < eps) {
     Teff = 0;
@@ -492,11 +474,9 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
  * - a fraction of the melted snow and ice refreezes, conceptualized
  *   as superimposed ice
  */
-DEBMSimplePointwise::Changes DEBMSimplePointwise::step(double ice_thickness,
-                                                       double max_melt,
-                                                       double old_snow_depth,
-                                                       double accumulation) const {
-  Changes result;
+DEBMSimpleChanges DEBMSimplePointwise::step(double ice_thickness, double max_melt,
+                                            double old_snow_depth, double accumulation) const {
+  DEBMSimpleChanges result;
 
   double
     snow_depth      = old_snow_depth,
