@@ -24,6 +24,7 @@
 #include "pism/frontretreat/FrontRetreat.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/Exp5Calving.hh"
 #include "pism/frontretreat/calving/GivenRate.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
@@ -129,6 +130,13 @@ void IceModel::front_retreat_step() {
                                  m_energy_model->enthalpy());
     }
 
+    if (m_exp5_calving) {
+      m_exp5_calving->update(m_geometry.cell_type,
+                             m_stress_balance->shallow()->velocity(),
+                             m_geometry.ice_thickness);
+    }
+
+
     if (m_frontal_melt) {
       array::Scalar &flux_magnitude = *m_work2d[0];
 
@@ -213,6 +221,11 @@ void IceModel::front_retreat_step() {
         retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
       }
 
+      if (m_exp5_calving) {
+        retreat_rate.add(1.0, m_exp5_calving->calving_rate());
+      }
+
+
       if (m_calving_rate_factor) {
         double T = m_time->current() + 0.5 * m_dt;
         retreat_rate.scale(m_calving_rate_factor->value(T));
@@ -241,7 +254,7 @@ void IceModel::front_retreat_step() {
 
       m_geometry.ensure_consistency(thickness_threshold);
 
-      if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_given_calving) {
+      if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_given_calving or m_exp5_calving) {
         remove_narrow_tongues(m_geometry, m_geometry.ice_thickness);
 
         m_geometry.ensure_consistency(thickness_threshold);
