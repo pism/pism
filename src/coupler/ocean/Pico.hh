@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022, 2023 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022, 2023, 2024 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -50,8 +50,6 @@ protected:
   void write_model_state_impl(const File &output) const;
 
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  std::unique_ptr<ClimateIndex> m_climate_index_forcing;
-  bool use_ci;
 
 private:
   array::Scalar m_Soc, m_Soc_box0;
@@ -62,6 +60,8 @@ private:
   PicoGeometry m_geometry;
 
   std::shared_ptr<array::Forcing> m_theta_ocean, m_salinity_ocean;
+
+  std::unique_ptr<ClimateIndex> m_climate_index_forcing;
 
   void compute_ocean_input_per_basin(const PicoPhysics &physics,
                                      const array::Scalar &basin_mask,

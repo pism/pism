@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021, 2022, 2023 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
+// Copyright (C) 2012-2019, 2021, 2022, 2023, 2024 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
 // Albrecht, and Matthias Mengel
 //
 // This file is part of PISM.
@@ -126,14 +126,12 @@ Pico::Pico(std::shared_ptr<const Grid> grid)
   m_n_boxes  = static_cast<int>(m_config->get_number("ocean.pico.number_of_boxes"));
 
   {
-  auto climate_index_file = m_config->get_string("climate_index.file");
-  auto climate_snapshots = m_config->get_string("ocean.climate_index.climate_snapshots.file");
+    auto climate_index_file = m_config->get_string("climate_index.file");
+    auto climate_snapshots  = m_config->get_string("ocean.climate_index.climate_snapshots.file");
     if (not climate_index_file.empty() and not climate_snapshots.empty()) {
-      use_ci = true;
-      m_climate_index_forcing.reset(new ClimateIndex(grid)); 
-      }
-    else {
-      use_ci = false;
+      m_climate_index_forcing.reset(new ClimateIndex(grid));
+    } else {
+      m_climate_index_forcing = nullptr;
     }
   }
 }
@@ -148,7 +146,9 @@ void Pico::init_impl(const Geometry &geometry) {
   m_theta_ocean->init(opt.filename, opt.periodic);
   m_salinity_ocean->init(opt.filename, opt.periodic);
 
-  if (use_ci) { m_climate_index_forcing->init_forcing(); }
+  if ((bool)m_climate_index_forcing) {
+    m_climate_index_forcing->init_forcing();
+  }
 
   // This initializes the basin_mask
   m_geometry.init();
@@ -258,7 +258,7 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
 
 void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
-  if (use_ci) {
+  if ((bool)m_climate_index_forcing) {
     m_climate_index_forcing->update_forcing(t, dt, *m_theta_ocean, *m_salinity_ocean);
   } else {
     m_theta_ocean->update(t, dt);
