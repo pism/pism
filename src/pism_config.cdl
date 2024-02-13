@@ -610,6 +610,12 @@ netcdf pism_config {
     pism_config:calving.eigen_calving.K_type = "number";
     pism_config:calving.eigen_calving.K_units = "meter second";
 
+    pism_config:calving.exp5_calving.threshold = 275.0;
+    pism_config:calving.exp5_calving.threshold_doc = "Is used as parameter in calving law dependent on terminal ice thickness of floating or grounded ice and termial ice velocity.";
+    pism_config:calving.exp5_calving.threshold_option = "exp5_calving_threshold";
+    pism_config:calving.exp5_calving.threshold_type = "number";
+    pism_config:calving.exp5_calving.threshold_units = "meters";
+
     pism_config:calving.float_kill.calve_near_grounding_line = "yes";
     pism_config:calving.float_kill.calve_near_grounding_line_doc = "Calve floating ice near the grounding line.";
     pism_config:calving.float_kill.calve_near_grounding_line_option = "float_kill_calve_near_grounding_line";
