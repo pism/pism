@@ -16,16 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _CLIMATEINDEX_H_
-#define _CLIMATEINDEX_H_
+#ifndef PISM_ATMOSPHERE_CLIMATEINDEX_H
+#define PISM_ATMOSPHERE_CLIMATEINDEX_H
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/coupler/util/ClimateIndexWeights.hh"
 
 namespace pism {
 
-class ClimateIndexWeights;
 class ScalarForcing;
 
 namespace atmosphere {
@@ -38,47 +36,57 @@ public:
   virtual const array::Scalar& mean_summer_temp() const;
 
 protected:
-  virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual void define_model_state_impl(const File &output) const;
-  virtual void write_model_state_impl(const File &output) const;
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
 
-  virtual const array::Scalar& precipitation_impl() const;
-  virtual const array::Scalar& air_temperature_impl() const;
+  const array::Scalar& precipitation_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
-  virtual void begin_pointwise_access_impl() const;
-  virtual void end_pointwise_access_impl() const;
+  void begin_pointwise_access_impl() const;
+  void end_pointwise_access_impl() const;
 
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
-  virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
+  void init_timeseries_impl(const std::vector<double> &ts) const;
+  void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
+  void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
-protected:
+  DiagnosticList diagnostics_impl() const;
+
   std::unique_ptr<ScalarForcing> m_A; // amplitude scaling
   std::unique_ptr<ClimateIndexWeights> m_climate_index;
 
-  bool use_cos, use_1X;
-  double m_snow_temp_summer_day;
+  bool m_use_cos, m_use_1X;
+  double m_midsummer_year_fraction;
+
+  bool m_use_precip_scaling;
+  bool m_spatially_variable_scaling;
   double m_preciplinfactor;
-  bool use_precip_scaling;
-  std::string m_reference, precip_scaling_file;
+
   mutable std::vector<double> m_cosine_cycle;
 
-  array::Scalar m_air_temp_annual, m_air_temp_annual_ref, m_air_temp_summer, m_air_temp_summer_ref;
-  array::Scalar m_air_temp_anomaly_annual_0, m_air_temp_anomaly_annual_1,m_air_temp_anomaly_annual_1X;
-  array::Scalar m_air_temp_anomaly_summer_0, m_air_temp_anomaly_summer_1, m_air_temp_anomaly_summer_1X;
+  array::Scalar m_air_temp_annual;
+  array::Scalar m_air_temp_annual_ref;
+  array::Scalar m_air_temp_summer;
+  array::Scalar m_air_temp_summer_ref;
+  array::Scalar m_air_temp_anomaly_annual_0;
+  array::Scalar m_air_temp_anomaly_annual_1;
+  array::Scalar m_air_temp_anomaly_annual_1X;
+  array::Scalar m_air_temp_anomaly_summer_0;
+  array::Scalar m_air_temp_anomaly_summer_1;
+  array::Scalar m_air_temp_anomaly_summer_1X;
 
-  array::Scalar m_precipitation, m_precipitation_ref;
-  array::Scalar m_precipitation_anomaly_0, m_precipitation_anomaly_1, m_precipitation_anomaly_1X;
+  array::Scalar m_precipitation;
+  array::Scalar m_precipitation_ref;
+  array::Scalar m_precipitation_anomaly_0;
+  array::Scalar m_precipitation_anomaly_1;
+  array::Scalar m_precipitation_anomaly_1X;
   array::Scalar m_spatial_precip_scaling;
-
 };
 
 } // end of namespace atmosphere
 } // end of namespace pism
 
 
-#endif /* _CLIMATEINDEX_H_ */
+#endif /* PISM_ATMOSPHERE_CLIMATEINDEX_H */
