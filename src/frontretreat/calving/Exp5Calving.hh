@@ -52,7 +52,7 @@ public:
 
 protected:
   DiagnosticList diagnostics_impl() const;
-  double calving_threshold;
+  double m_calving_threshold;
   array::Scalar1 m_calving_rate;
 
 };

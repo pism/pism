@@ -27,6 +27,7 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
 
+#include "pism/util/array/Vector.hh"
 
 
 namespace pism {
@@ -49,7 +50,7 @@ void Exp5Calving::init() {
 
   m_log->message(2, "* Initializing the 'EXP5 calving' mechanism...\n");
 
-  calving_threshold = m_config->get_number("calving.exp5_calving.threshold");
+  m_calving_threshold = m_config->get_number("calving.exp5_calving.threshold");
     
   m_log->message(2, "  Exp5 thickness threshold: %3.3f meters.\n", calving_threshold);
 }
@@ -76,23 +77,20 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
 
   m_calving_rate.set(0.0);
 
-  array::AccessScope list{&cell_type, &ice_thickness, &m_calving_rate}; //&ice_velocity
-  
+  array::AccessScope list{&cell_type, &ice_thickness, &m_calving_rate, &ice_velocity};
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.floating_ice(i, j)           &&
-        cell_type.next_to_ice_free_ocean(i, j)) { 
+    if (cell_type.floating_ice(i, j) && cell_type.next_to_ice_free_ocean(i, j)) {
 
-        //FIXME: replace by ice_velocity
-        double terminal_velocity = 1000.0;
-        double Hcr =  1.0 + (calving_threshold - ice_thickness(i, j)) / calving_threshold;
-        if (Hcr < 0.0) {
-          m_calving_rate(i, j) = 0.0;
-        } else {
-          m_calving_rate(i, j) = Hcr * terminal_velocity;
-        } 
-
+      double terminal_velocity = ice_velocity(i, j).magnitude();
+      double Hcr               = 1.0 + (m_calving_threshold - ice_thickness(i, j)) / m_calving_threshold;
+      if (Hcr < 0.0) {
+        m_calving_rate(i, j) = 0.0;
+      } else {
+        m_calving_rate(i, j) = Hcr * terminal_velocity;
+      }
     }
   }
   m_calving_rate.update_ghosts();
