@@ -21,12 +21,9 @@
 
 #include "pism/util/Mask.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/coupler/util/options.hh"
 
 #include "pism/util/array/CellType.hh"
-#include "pism/geometry/Geometry.hh"
-
 #include "pism/util/array/Vector.hh"
 
 
@@ -51,8 +48,12 @@ void Exp5Calving::init() {
   m_log->message(2, "* Initializing the 'EXP5 calving' mechanism...\n");
 
   m_calving_threshold = m_config->get_number("calving.exp5_calving.threshold");
+
+  if (m_calving_threshold <= 0.0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'calving.exp5_calving.threshold' has to be positive");
+  }
     
-  m_log->message(2, "  Exp5 thickness threshold: %3.3f meters.\n", calving_threshold);
+  m_log->message(2, "  Exp5 thickness threshold: %3.3f meters.\n", m_calving_threshold);
 }
 
 /**
@@ -72,43 +73,39 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
                          const array::Scalar &ice_thickness) {
 
 
-  m_log->message(3,
-                   "    Update Exp5 calving rate.\n");
-
-  m_calving_rate.set(0.0);
+  m_log->message(3, "    Update Exp5 calving rate.\n");
 
   array::AccessScope list{&cell_type, &ice_thickness, &m_calving_rate, &ice_velocity};
+
+  // a shortcut for readability:
+  const auto &Hc = m_calving_threshold;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.floating_ice(i, j) && cell_type.next_to_ice_free_ocean(i, j)) {
-
-      double terminal_velocity = ice_velocity(i, j).magnitude();
-      double Hcr               = 1.0 + (m_calving_threshold - ice_thickness(i, j)) / m_calving_threshold;
-      if (Hcr < 0.0) {
-        m_calving_rate(i, j) = 0.0;
-      } else {
-        m_calving_rate(i, j) = Hcr * terminal_velocity;
-      }
+      double Iv            = ice_velocity(i, j).magnitude();
+      double H             = ice_thickness(i, j);
+      m_calving_rate(i, j) = std::max(0.0, 1.0 + (Hc - H) / Hc) * Iv;
+    } else {
+      m_calving_rate(i, j) = 0.0;
     }
   }
   m_calving_rate.update_ghosts();
 
-  const Direction dirs[] = {North, East, South, West};
+  double C = convert(m_sys, 1.0, "m year-1", "m second-1");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j) ) {
+    if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
 
       auto R = m_calving_rate.star(i, j);
-      auto M = cell_type.star(i, j);
+      auto M = cell_type.star_int(i, j);
 
-      int N = 0;
+      int N        = 0;
       double R_sum = 0.0;
-      for (int n = 0; n < 4; ++n) {
-        Direction direction = dirs[n];
+      for (auto direction : { North, East, South, West }) {
         if (mask::icy(M[direction])) {
           R_sum += R[direction];
           N++;
@@ -119,15 +116,10 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
         m_calving_rate(i, j) = R_sum / N;
       }
 
-    m_calving_rate(i, j) *= convert(m_sys, 1.0, "m year-1", "m second-1");
-    //m_log->message(2,
-    //               "!!!!!!!!!!!!!!!!!! Exp5 cr=%f at %d,%d.\n",m_calving_rate(i, j),i,j);
+      // FIXME: why?
+      m_calving_rate(i, j) *= C;
     }
   }
-
-    //        u_abs = fabs(ice_velocity(i, j).u),
-    //        v_abs = fabs(ice_velocity(i, j).v);
-
 }
 
 

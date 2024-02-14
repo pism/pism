@@ -21,16 +21,9 @@
 #define _PISMEXP5CALVING_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/util/array/Scalar.hh"
 
-#include "pism/util/array/Array2D.hh"
-
-
-
 namespace pism {
-
-class Geometry;
 
 namespace calving {
 
@@ -54,7 +47,6 @@ protected:
   DiagnosticList diagnostics_impl() const;
   double m_calving_threshold;
   array::Scalar1 m_calving_rate;
-
 };
 
 } // end of namespace calving
