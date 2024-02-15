@@ -40,7 +40,6 @@ SSAFDBase::SSAFDBase(std::shared_ptr<const Grid> grid, bool regional_mode)
       m_cell_type(m_grid, "ssafd_cell_type"),
       m_rhs(grid, "right_hand_side"),
       m_taud(m_grid, "taud"),
-      m_residual(grid, "_ssa_residual"),
       m_bc_scaling(1e9), // comparable to typical beta for an ice stream;
       m_regional_mode(regional_mode) {
 
@@ -1532,10 +1531,6 @@ const array::Staggered &SSAFDBase::integrated_viscosity() const {
 
 const array::Vector &SSAFDBase::driving_stress() const {
   return m_taud;
-}
-
-const array::Vector &SSAFDBase::residual() const {
-  return m_residual;
 }
 
 //! @brief Reports the nuH (viscosity times thickness) product on the staggered

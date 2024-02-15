@@ -36,10 +36,14 @@ public:
   void solve(const Inputs &inputs);
 
   double tolerance() const;
+
+  const array::Vector &residual() const;
 private:
   DiagnosticList diagnostics_impl() const;
 
-  // petsc::Vec m_X;
+  //! residual (diagnostic)
+  array::Vector m_residual;
+
   petsc::SNES m_snes;
   petsc::DM::Ptr m_DA;
 

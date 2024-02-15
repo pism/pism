@@ -43,8 +43,6 @@ public:
 
   void compute_residual(const Inputs &inputs, const array::Vector2 &velocity, array::Vector &result);
 
-  const array::Vector &residual() const;
-
 protected:
   DiagnosticList diagnostics_impl() const;
 
@@ -127,9 +125,6 @@ protected:
 
   //! driving stress
   array::Vector m_taud;
-
-  //! residual (diagnostic)
-  array::Vector m_residual;
 
   //! scaling used for diagonal matrix elements at Dirichlet BC locations
   const double m_bc_scaling;

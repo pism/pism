@@ -56,7 +56,7 @@ double SSAFD_SNES::tolerance() const {
 }
 
 SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
-    : SSAFDBase(grid, regional_mode) {
+    : SSAFDBase(grid, regional_mode), m_residual(grid, "_ssa_residual") {
 
   PetscErrorCode ierr;
 
@@ -183,11 +183,15 @@ PetscErrorCode SSAFD_SNES::jacobian_callback(DMDALocalInfo * /*unused*/,
   return 0;
 }
 
+const array::Vector &SSAFD_SNES::residual() const {
+  return m_residual;
+}
+
 //! @brief Computes the magnitude of the driving shear stress at the base of
 //! ice (diagnostically).
-class SSAFD_residual_mag : public Diag<SSAFDBase> {
+class SSAFD_residual_mag : public Diag<SSAFD_SNES> {
 public:
-  SSAFD_residual_mag(const SSAFDBase *m) : Diag<SSAFDBase>(m) {
+  SSAFD_residual_mag(const SSAFD_SNES *m) : Diag<SSAFD_SNES>(m) {
 
     // set metadata:
     m_vars = { { m_sys, "ssa_residual_mag" } };
