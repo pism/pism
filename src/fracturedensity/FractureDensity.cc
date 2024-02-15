@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -485,7 +485,7 @@ DiagnosticList FractureDensity::diagnostics_impl() const {
   };
 }
 
-const array::Scalar& FractureDensity::density() const {
+const array::Scalar1& FractureDensity::density() const {
   return m_density;
 }
 

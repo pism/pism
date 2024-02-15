@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2024 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@
 */
 
 
+#include <memory>
 static char help[] =
   "\nSSA_TEST_EXP\n"
   "  Testing program for the finite element implementation of the SSA.\n"
@@ -33,41 +34,31 @@ static char help[] =
 
 #include <cmath>
 
-#include "pism/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/stressbalance/ssa/SSATestCase.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/verification/tests/exactTestsIJ.h"
 
 namespace pism {
 namespace stressbalance {
 
+std::shared_ptr<Grid> ssa_test_linear_grid(std::shared_ptr<Context> ctx, int Mx, int My) {
+  return SSATestCase::grid(ctx, Mx, My, 50e3, 50e3, grid::CELL_CORNER, grid::NOT_PERIODIC);
+}
+
 class SSATestCaseExp: public SSATestCase
 {
 public:
-  SSATestCaseExp(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 50e3, 50e3, grid::CELL_CORNER, grid::NOT_PERIODIC) {
-    L     = units::convert(ctx->unit_system(), 50, "km", "m"); // 50km half-width
+  SSATestCaseExp(std::shared_ptr<SSA> ssa)
+    : SSATestCase(ssa) {
+    L     = units::convert(m_sys, 50, "km", "m"); // 50km half-width
     H0    = 500;                      // meters
     dhdx  = 0.005;                    // pure number
-    nu0   = units::convert(ctx->unit_system(), 30.0, "MPa year", "Pa s");
+    nu0   = units::convert(m_sys, 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // 1kPa
-
-    // Use a pseudo-plastic law with linear till
-    m_config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
-    m_config->set_number("basal_resistance.pseudo_plastic.q", 1.0);
-
-    // The following is irrelevant because we will force linear rheology later.
-    m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-
-    m_ssa = ssafactory(m_grid);
   }
 
 protected:
@@ -84,9 +75,6 @@ void SSATestCaseExp::initializeSSACoefficients() {
   // Force linear rheology
   m_ssa->strength_extension->set_notional_strength(nu0 * H0);
   m_ssa->strength_extension->set_min_thickness(4000*10);
-
-  // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
 
   // Set constants for most coefficients.
   m_geometry.ice_thickness.set(H0);
@@ -170,17 +158,15 @@ int main(int argc, char *argv[]) {
 
     bool write_output = config->get_string("output.size") != "none";
 
-    // Determine the kind of solver to use.
-    SSAFactory ssafactory = NULL;
-    if (method == "fem") {
-      ssafactory = SSAFEMFactory;
-    } else if (method == "fd") {
-      ssafactory = SSAFDFactory;
-    } else {
-      /* can't happen */
-    }
+    // Use a pseudo-plastic law with linear till
+    config->set_flag("basal_resistance.pseudo_plastic.enabled", true);
+    config->set_number("basal_resistance.pseudo_plastic.q", 1.0);
 
-    SSATestCaseExp testcase(ctx, Mx, My, ssafactory);
+    // The finite difference code uses the following flag to treat the non-periodic grid correctly.
+    config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
+
+    auto grid = ssa_test_linear_grid(ctx, Mx, My);
+    SSATestCaseExp testcase(SSATestCase::solver(grid, method));
     testcase.init();
     testcase.run();
     testcase.report("linear");

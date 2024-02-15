@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2020, 2022, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -116,41 +116,21 @@ public:
 
   virtual void update(const Inputs &inputs, bool full_update);
 
-  void set_initial_guess(const array::Vector &guess);
-
   virtual std::string stdout_report() const;
-
-  const array::Vector& driving_stress() const;
 protected:
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
 
   virtual void init_impl();
 
-  virtual DiagnosticList diagnostics_impl() const;
-
-  virtual void compute_driving_stress(const array::Scalar &ice_thickness,
-                                      const array::Scalar1 &surface_elevation,
-                                      const array::CellType1 &cell_type,
-                                      const array::Scalar1 *no_model_mask,
-                                      array::Vector &result) const;
-
   virtual void solve(const Inputs &inputs) = 0;
 
   void extrapolate_velocity(const array::CellType1 &cell_type,
                             array::Vector1 &velocity) const;
 
-  array::CellType2 m_mask;
-  array::Vector m_taud;
-
   std::string m_stdout_ssa;
 
-  // objects used by the SSA solver (internally)
-  std::shared_ptr<petsc::DM>  m_da;               // dof=2 DA
   array::Vector m_velocity_global; // global vector for solution
-
-  // profiling
-  int m_event_ssa;
 };
 
 } // end of namespace stressbalance

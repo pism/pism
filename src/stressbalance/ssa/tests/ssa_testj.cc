@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2024 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -23,34 +23,31 @@ static char help[] =
   "  class thereof. Uses verification test J. Also may be used in a PISM\n"
   "  software (regression) test.\n\n";
 
-#include "pism/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "pism/stressbalance/ssa/SSAFD.hh"
-#include "pism/stressbalance/ssa/SSAFEM.hh"
+#include <petscsys.h>
+
 #include "pism/stressbalance/ssa/SSATestCase.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/verification/tests/exactTestsIJ.h"
 
 namespace pism {
 namespace stressbalance {
 
+std::shared_ptr<Grid> ssa_test_j_grid(std::shared_ptr<Context> ctx, int Mx, int My) {
+  return SSATestCase::grid(ctx, Mx, My, 300e3, 300e3, grid::CELL_CENTER, grid::XY_PERIODIC);
+}
+
 class SSATestCaseJ: public SSATestCase
 {
 public:
-  SSATestCaseJ(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 300e3, 300e3, grid::CELL_CENTER, grid::XY_PERIODIC) {
-  m_config->set_flag("basal_resistance.pseudo_plastic.enabled", false);
+  SSATestCaseJ(std::shared_ptr<SSA> ssa) : SSATestCase(ssa) {
 
-  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-  m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-
-  m_ssa = ssafactory(m_grid);
+    EnthalpyConverter EC(*m_config);
+    // 0.01 water fraction
+    m_ice_enthalpy.set(EC.enthalpy(273.15, 0.01, 0.0));
   }
 
 protected:
@@ -64,9 +61,6 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_tauc.set(0.0);    // irrelevant for test J
   m_geometry.bed_elevation.set(-1000.0); // assures shelf is floating (maximum ice thickness is 770 m)
   m_geometry.cell_type.set(MASK_FLOATING);
-
-  double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
-  m_ice_enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa year for typical vertically-averaged viscosity */
   double ocean_rho = m_config->get_number("constants.sea_water.density"),
@@ -153,26 +147,20 @@ int main(int argc, char *argv[]) {
     unsigned int My = config->get_number("grid.My");
 
     auto method = config->get_string("stress_balance.ssa.method");
-    auto output = config->get_string("output.file");
+    auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
 
-    // Determine the kind of solver to use.
-    SSAFactory ssafactory = NULL;
-    if (method == "fem") {
-      ssafactory = SSAFEMFactory;
-    } else if (method == "fd") {
-      ssafactory = SSAFDFactory;
-    } else {
-      /* can't happen */
-    }
+    config->set_flag("basal_resistance.pseudo_plastic.enabled", false);
+    config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
 
-    SSATestCaseJ testcase(ctx, Mx, My, ssafactory);
+    auto grid = ssa_test_j_grid(ctx, Mx, My);
+    SSATestCaseJ testcase(SSATestCase::solver(grid, method));
     testcase.init();
     testcase.run();
     testcase.report("J");
     if (write_output) {
-      testcase.write(output);
+      testcase.write(output_file);
     }
   }
   catch (...) {
