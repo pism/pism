@@ -37,6 +37,7 @@ public:
 
   double tolerance() const;
 private:
+  DiagnosticList diagnostics_impl() const;
 
   // petsc::Vec m_X;
   petsc::SNES m_snes;

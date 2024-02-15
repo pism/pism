@@ -182,5 +182,39 @@ PetscErrorCode SSAFD_SNES::jacobian_callback(DMDALocalInfo * /*unused*/,
   }
   return 0;
 }
+
+//! @brief Computes the magnitude of the driving shear stress at the base of
+//! ice (diagnostically).
+class SSAFD_residual_mag : public Diag<SSAFDBase> {
+public:
+  SSAFD_residual_mag(const SSAFDBase *m) : Diag<SSAFDBase>(m) {
+
+    // set metadata:
+    m_vars = { { m_sys, "ssa_residual_mag" } };
+
+    m_vars[0].long_name("magnitude of the SSAFD solver's residual").units("Pa");
+  }
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Scalar>("ssa_residual_mag");
+    result->metadata(0) = m_vars[0];
+
+    compute_magnitude(model->residual(), *result);
+
+    return result;
+  }
+};
+
+DiagnosticList SSAFD_SNES::diagnostics_impl() const {
+  DiagnosticList result = SSAFDBase::diagnostics_impl();
+
+  result["ssa_residual"] = Diagnostic::wrap(m_residual);
+  result["ssa_residual_mag"] = Diagnostic::Ptr(new SSAFD_residual_mag(this));
+
+  return result;
+}
+
+
 } // namespace stressbalance
 } // namespace pism

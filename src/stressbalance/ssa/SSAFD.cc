@@ -310,8 +310,6 @@ void SSAFD::solve(const Inputs &inputs) {
 
     m_velocity.update_ghosts();
   }
-
-  compute_residual(inputs, m_velocity, m_residual);
 }
 
 void SSAFD::picard_iteration(const Inputs &inputs, double nuH_regularization,
