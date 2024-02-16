@@ -135,7 +135,7 @@ void SSAFD_SNES::solve(const Inputs &inputs) {
     PISM_CHK(ierr, "SNESGetLinearSolveIterations");
 
     m_log->message(1, "SSA: %d*%d its, %s\n", (int)snes_iterations,
-                   (int)(ksp_iterations / std::max(snes_iterations, 1)),
+                   (int)(ksp_iterations / std::max((int)snes_iterations, 1)),
                    SNESConvergedReasons[reason]);
   }
   m_callback_data.inputs = nullptr;
