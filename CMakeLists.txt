@@ -240,8 +240,8 @@ add_subdirectory (docker)
 
 set (CPACK_PACKAGE_NAME "pism")
 set (CPACK_PACKAGE_CONTACT "uaf-pism@alaska.edu")
-set (CPACK_DEBIAN_PACKAGE_DEPENDS "FIXME")
 
+set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
 set (CPACK_GENERATOR "DEB")
 
