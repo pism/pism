@@ -215,7 +215,11 @@ install(PROGRAMS
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
   DESTINATION ${CMAKE_INSTALL_DATADIR}/pism
-  USE_SOURCE_PERMISSIONS)
+  USE_SOURCE_PERMISSIONS
+  PATTERN .gitignore EXCLUDE
+  PATTERN __pycache__ EXCLUDE
+  PATTERN "*.pyc" EXCLUDE
+  PATTERN "*~" EXCLUDE)
 
 add_subdirectory (src)
 add_subdirectory (site-packages)
