@@ -219,6 +219,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
   PATTERN .gitignore EXCLUDE
   PATTERN __pycache__ EXCLUDE
   PATTERN "*.pyc" EXCLUDE
+  PATTERN "*.nc" EXCLUDE
   PATTERN "*~" EXCLUDE)
 
 add_subdirectory (src)
