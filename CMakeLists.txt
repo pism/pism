@@ -247,6 +247,7 @@ set (CPACK_PACKAGE_CONTACT "uaf-pism@alaska.edu")
 
 set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set (CPACK_DEBIAN_PACKAGE_DEPENDS "python3:any")
+# "libjs-mathjax"
 set (CPACK_GENERATOR "DEB")
 
 set (CPACK_DEBIAN_PACKAGE_NAME "pism")
