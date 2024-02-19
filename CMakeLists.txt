@@ -261,4 +261,6 @@ set (CPACK_DEBIAN_PACKAGE_SECTION "science")
 
 set (CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 
+set (CPACK_STRIP_FILES YES)
+
 include(CPack)
