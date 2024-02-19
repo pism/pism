@@ -9,6 +9,9 @@ add_library (pismicebin
   VecBundleWriter.cc
   )
 target_link_libraries (pismicebin pism)
+set_target_properties(pismicebin PROPERTIES
+  VERSION ${Pism_VERSION}
+  SOVERSION ${Pism_VERSION})
 
 install (TARGETS pismicebin DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
