@@ -252,6 +252,9 @@ set (CPACK_DEBIAN_PACKAGE_DEPENDS "python3:any")
 # "libjs-mathjax"
 set (CPACK_GENERATOR "DEB")
 
+# use all available CPUs
+set (CPACK_THREADS "0")
+
 set (CPACK_DEBIAN_PACKAGE_NAME "pism")
 
 set (CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
