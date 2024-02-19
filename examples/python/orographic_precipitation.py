@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """This script attempts to reproduce Figure 4c from 'A linear theory of orographic
 precipitation' by Smith and Barstad, 2004.
