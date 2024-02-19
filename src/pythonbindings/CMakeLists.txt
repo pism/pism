@@ -88,9 +88,13 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   set(TARGET_FILE $<TARGET_FILE:cpp>)
 
+  install(TARGETS cpp
+    DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}/PISM
+    COMPONENT RuntimeLibraries
+    )
+
   # Install Python .py files
   install(FILES
-    ${TARGET_FILE}
     ${CMAKE_CURRENT_BINARY_DIR}/cpp.py
     ${CMAKE_CURRENT_BINARY_DIR}/version_info.py
     DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}/PISM
