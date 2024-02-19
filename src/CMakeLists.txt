@@ -96,6 +96,9 @@ add_library (pism
 )
 target_link_libraries (pism ${Pism_EXTERNAL_LIBS})
 add_dependencies (pism pism_config)
+set_target_properties(pism PROPERTIES
+  VERSION ${Pism_VERSION}
+  SOVERSION ${Pism_VERSION})
 
 if (Pism_DEBUG)
   target_sources(pism
