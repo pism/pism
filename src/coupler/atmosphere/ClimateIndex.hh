@@ -39,9 +39,6 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
-
   const array::Scalar& precipitation_impl() const;
   const array::Scalar& air_temperature_impl() const;
 
@@ -57,7 +54,7 @@ protected:
   std::unique_ptr<ScalarForcing> m_A; // amplitude scaling
   std::unique_ptr<ClimateIndexWeights> m_climate_index;
 
-  bool m_use_cos, m_use_1X;
+  bool m_use_cos, m_use_precip_cos, m_use_1X;
   double m_midsummer_year_fraction;
 
   bool m_use_precip_scaling;

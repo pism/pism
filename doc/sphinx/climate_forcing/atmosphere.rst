@@ -135,7 +135,7 @@ where `\omega_{g}(t)`, `\omega_{ig}(t)` and `\omega_{p}(t)` are index weights ca
 
    \omega_{p}(t) = \frac{\max(\text{CI},1.0) -1.0}{\text{CI}_{\text{pd}} - 1.0} \left\{0.0 - \begin{aligned}
                                                    &1.0 \, \text{for CI} = \text{CI}_{\text{max}}\\
-                                                   &1.0 \, \text{for} \, 1.0 \leqslant \text{CI} \leqslant \text{CI}_{\text{pd}}\\
+                                                   &1.0 \, \text{for} \, 1.0 \leqslant \text{CI} \leqslant \text{CI}_{\text{max}}\\
                                                    &0.0 \, \text{for CI} \leqslant 1.0
                                                    \end{aligned} \right.,
 
@@ -143,13 +143,16 @@ The present-day fields as well as the anomaly snapshots are read from a file sel
 command-line option :opt:`-atmosphere_climate_snapshots_file`.
 The climate index is read from a file using the command-line option :opt:`-climate_index_file`.
 
-A yearly cycle can be optionally used to represent seasonal variations in air temperature
-by providing present-day summer mean air temperature as well as anomaly snapshots of mean summer air temp for glacial and interglacial states. The yearly cycle is calculated as in the 'Yearly Cycle' section. These optional fields should be included in
-the :opt:`-atmosphere_climate_snapshots_file`.
+A yearly cycle can be optionally used (:opt:`-use_cosinus_yearly_cycle`) to represent seasonal variations in air temperature
+by providing present-day summer mean air temperature as well as anomaly snapshots of mean summer air temp for glacial and interglacial states. The yearly cycle is calculated as in the 'Yearly Cycle' section. These fields are given in
+the file :opt:`-atmosphere_climate_snapshots_file`.
 
 For precipitation, several options are available. By default, the module looks into the :opt:`-atmosphere_climate_snapshots_file` for :var:`precipitation_anomaly_0` and :var:`precipitation_anomaly_1` to scale the precipitation using the climate index.
 Alternatively, the :opt:`-climate_index_precip_scaling` flag sets a linear scaling for precipitation using air temperature anomalies (:opt:`atmosphere.climate_index.precip_scaling.uniform_linear_factor` = 5% by default).
 Additionally, a file with regional-specific scaling factors can be given with the command-line option :opt:`-spatial_precip_scaling_file`.
+
+Optionally, a third snapshot can be used for scaling temperature and precipitation in super interglacial state (e.g. Pliocene) using :opt:`-use_super_interglacial` flag and :var:`air_temp_anomaly_annual_1X`, :var:`air_temp_anomaly_annual_1X` 
+(:var:`air_temp_anomaly_summer_1X`, :var:`precipitation_anomaly_summer_1X`) in :opt:`-atmosphere_climate_snapshots_file`.
 
 .. rubric:: Parameters
 

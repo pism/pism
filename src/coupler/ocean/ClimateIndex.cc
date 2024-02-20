@@ -86,6 +86,8 @@ ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> grid)
       .long_name("salinity of the adjacent ocean")
       .units("g/kg")
       .set_time_independent(true);
+
+  m_use_1X = m_config->get_flag("climate_index.super_interglacial.use");
 }
 
 void ClimateIndex::init_forcing() {
@@ -110,17 +112,22 @@ void ClimateIndex::init_forcing() {
 
   // Annual anomaly for Paleo time slices 0=Glacial, 1=Interglacial, 1X= Super InterGlacial e.g. mPWP
   m_theta_anomaly_0.regrid(input, None);
+
+    m_log->message(2,
+            " m_theta_ocean_0 loaded ");
   m_theta_anomaly_1.regrid(input, None);
 
+  m_log->message(2,
+            " m_theta_ocean_1 loaded ");
+
   m_salinity_anomaly_0.regrid(input, None);
+    m_log->message(2,
+            " m_salinity_ocean_1 loaded ");
   m_salinity_anomaly_1.regrid(input, None);
 
-  try {
+  if (m_use_1X) {
     m_theta_anomaly_1X.regrid(input, None);
     m_salinity_anomaly_1X.regrid(input, None);
-    m_use_1X = true;
-  } catch (...) {
-    m_use_1X = false;
   }
 }
 

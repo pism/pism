@@ -166,8 +166,9 @@ ClimateIndex::ClimateIndex(std::shared_ptr<const Grid> g)
   m_use_precip_scaling = m_config->get_flag("atmosphere.climate_index.precip_scaling.use");
   m_spatially_variable_scaling = false;
   m_preciplinfactor = 0.0;
-  m_use_cos = false;
-  m_use_1X = false;
+  m_use_cos = m_config->get_flag("atmosphere.climate_index.cosinus_yearly_cycle.use");
+  m_use_precip_cos = m_config->get_flag("atmosphere.climate_index.precip_cosinus_yearly_cycle.use");
+  m_use_1X = m_config->get_flag("climate_index.super_interglacial.use");
 }
 
 void ClimateIndex::init_impl(const Geometry &geometry) {
@@ -199,39 +200,22 @@ void ClimateIndex::init_impl(const Geometry &geometry) {
     return input.find_variable(a.metadata(0).get_name());
   };
 
-  if (user_provided(m_air_temp_summer) and user_provided(m_air_temp_summer_ref)) {
-    m_air_temp_summer.regrid(input, None);
-    m_air_temp_summer_ref.regrid(input, None);
-    m_use_cos = true;
-    m_log->message(2, " * mean summer temperatures are provided, thus will use a cosine function\n"
-                      " for representing yearly cycles \n");
-  } else {
-    m_use_cos = false;
-    m_log->message(
-        2, " * no mean summer temperatures provided: yearly cycle will not be represented \n");
-  }
-
-  // Annual anomaly for Paleo time slices 0=Glacial, 1=glacial, 1X= Super Interglacial e.g. mPWP
-
   m_air_temp_anomaly_annual_0.regrid(input, None);
   m_air_temp_anomaly_annual_1.regrid(input, None);
-  // Summer anomaly
-  if (m_use_cos) {
-    m_air_temp_anomaly_summer_0.regrid(input, None);
-    m_air_temp_anomaly_summer_1.regrid(input, None);
+  if (m_use_1X) {
+    m_air_temp_anomaly_annual_1X.regrid(input, None);
   }
 
-  try {
-    m_air_temp_anomaly_annual_1X.regrid(input, None);
-    if (m_use_cos) {
+  if (m_use_cos) {
+    m_log->message(2, " * -use_cosinus_yearly_cycle, thus will use cosinus function with mean summer anomalies \n"
+                      " for representing seasonal variations \n");
+    m_air_temp_summer.regrid(input, None);
+    m_air_temp_summer_ref.regrid(input, None);
+    m_air_temp_anomaly_summer_0.regrid(input, None);
+    m_air_temp_anomaly_summer_1.regrid(input, None);
+    if (m_use_1X) {
       m_air_temp_anomaly_summer_1X.regrid(input, None);
     }
-    m_use_1X = true;
-    m_log->message(
-        2, "* 1X slice found in input file. Will use it for scaling the atmosphere forcing\n");
-  } catch (...) {
-    // FIXME
-    m_use_1X = false;
   }
 
   auto precip_scaling_file =
@@ -249,11 +233,9 @@ void ClimateIndex::init_impl(const Geometry &geometry) {
         "   thus it will use the precipitation snapshots from atmosphere.climate_index.climate_snapshots.file if exist\n");
     m_precipitation_anomaly_0.regrid(input, None);
     m_precipitation_anomaly_1.regrid(input, None);
-    try {
+    if (m_use_1X) {
       m_precipitation_anomaly_1X.regrid(input, None);
-    } catch (...) {
-      // FIXME
-    }
+    } 
   } else if (m_spatially_variable_scaling) {
     m_spatial_precip_scaling.regrid(precip_scaling_file, None);
     m_log->message(
@@ -343,15 +325,6 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
   } // end of the loop over grid points
 }
 
-void ClimateIndex::define_model_state_impl(const File &output) const {
-  // FIXME: is m_precipitation a part of the model state (required to restart), or is this just convenience?
-  m_precipitation.define(output, io::PISM_DOUBLE);
-}
-
-void ClimateIndex::write_model_state_impl(const File &output) const {
-  m_precipitation.write(output);
-}
-
 //! Copies the stored precipitation field into result.
 const array::Scalar& ClimateIndex::precipitation_impl() const {
   return m_precipitation;
@@ -391,7 +364,14 @@ void ClimateIndex::init_timeseries_impl(const std::vector<double> &ts) const {
 void ClimateIndex::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   result.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    result[k] = m_precipitation(i,j);
+    if (m_use_cos and m_use_precip_cos) {
+      // If use cosinus for yearly cycle of temperature, precipitation anomalies between annual and summer mean are added to the mean precipitation 
+      // Precipitation anomalies between annual and summer are calculated using temperature difference and either the uniform linear precip scaling or spatial from file
+      double F = m_spatially_variable_scaling ? m_spatial_precip_scaling(i, j) : m_preciplinfactor;
+      result[k] = m_precipitation(i,j) + (1 + F * (m_air_temp_summer(i, j) - m_air_temp_annual(i, j)) * m_cosine_cycle[k]);
+    } else {
+      result[k] = m_precipitation(i,j);
+    }
   }
 }
 
@@ -412,6 +392,9 @@ void ClimateIndex::begin_pointwise_access_impl() const {
     m_air_temp_summer.begin_access();
   }
   m_precipitation.begin_access();
+  if (m_use_precip_scaling and m_spatially_variable_scaling) {
+    m_spatial_precip_scaling.begin_access();
+  }
 }
 
 void ClimateIndex::end_pointwise_access_impl() const {
@@ -420,6 +403,9 @@ void ClimateIndex::end_pointwise_access_impl() const {
     m_air_temp_summer.end_access();
   }
   m_precipitation.end_access();
+  if (m_use_precip_scaling and m_spatially_variable_scaling) {
+    m_spatial_precip_scaling.end_access();
+  }
 }
 
 namespace diagnostics {

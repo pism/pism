@@ -247,6 +247,11 @@ and uses it to update the forcing.
 The climate index is read from a file using the command-line option :opt:`-climate_index_file`
 (to be given once if the atmospheric Climate Index also used).
 
+Optionally, a third snapshot can be used for scaling theta and salinity in super interglacial state (e.g. Pliocene) using :opt:`-use_super_interglacial` flag and :var:`theta_ocean_anomaly_1X`, :var:`salinity_ocean_anomaly_1X` in :opt:`-ocean_climate_snapshots_file`.
+
+.. rubric:: Parameters
+
+
 .. rubric:: Parameters
 
 Prefix: ``ocean.climate_index.``

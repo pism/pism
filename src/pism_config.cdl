@@ -26,6 +26,16 @@ netcdf pism_config {
     pism_config:atmosphere.climate_index.climate_snapshots.file_option = "atmosphere_climate_snapshots_file";
     pism_config:atmosphere.climate_index.climate_snapshots.file_type = "string";
 
+    pism_config:atmosphere.climate_index.cosinus_yearly_cycle.use = "no";
+    pism_config:atmosphere.climate_index.cosinus_yearly_cycle.use_doc = "flag to use summer anomalies to represent seasonal variations as a cosinus cycle (read from :opt:`-atmosphere_climate_snapshots_file`)";
+    pism_config:atmosphere.climate_index.cosinus_yearly_cycle.use_option = "use_cosinus_yearly_cycle";
+    pism_config:atmosphere.climate_index.cosinus_yearly_cycle.use_type = "flag";
+
+    pism_config:atmosphere.climate_index.precip_cosinus_yearly_cycle.use = "no";
+    pism_config:atmosphere.climate_index.precip_cosinus_yearly_cycle.use_doc = "flag to use summer anomalies to represent seasonal variations as a cosinus cycle (read from :opt:`-atmosphere_climate_snapshots_file`)";
+    pism_config:atmosphere.climate_index.precip_cosinus_yearly_cycle.use_option = "use_precip_cosinus_yearly_cycle";
+    pism_config:atmosphere.climate_index.precip_cosinus_yearly_cycle.use_type = "flag";
+
     pism_config:atmosphere.climate_index.precip_scaling.spatial_linear_factor.file = "";
     pism_config:atmosphere.climate_index.precip_scaling.spatial_linear_factor.file_doc = "Name of the file containing spatial distribution of precipitation scaling with temperature (:var:`precip_scaling_factor`).";
     pism_config:atmosphere.climate_index.precip_scaling.spatial_linear_factor.file_option = "spatial_precip_scaling_file";
@@ -733,6 +743,11 @@ netcdf pism_config {
     pism_config:climate_index.ref_value_doc = "reference value for climate index";
     pism_config:climate_index.ref_value_type = "number";
     pism_config:climate_index.ref_value_units = "1";
+
+    pism_config:climate_index.super_interglacial.use = "no";
+    pism_config:climate_index.super_interglacial.use_doc = "flag to use super interglacial snapshots to scale temperature when climate index is greater than 1";
+    pism_config:climate_index.super_interglacial.use_option = "use_super_interglacial";
+    pism_config:climate_index.super_interglacial.use_type = "flag";
 
     pism_config:constants.fresh_water.density = 1000.0;
     pism_config:constants.fresh_water.density_doc = "density of fresh water";
