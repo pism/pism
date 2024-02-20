@@ -54,6 +54,13 @@ void Exp5Calving::init() {
   }
     
   m_log->message(2, "  Exp5 thickness threshold: %3.3f meters.\n", m_calving_threshold);
+
+  m_calving_along_flow = m_config->get_flag("calving.exp5_calving.calve_along_flow_direction");
+
+  if (m_calving_along_flow) {
+    m_log->message(2, "  Exp5 calving along terminal ice flow.\n");
+  }
+
 }
 
 /**
@@ -79,46 +86,79 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
 
   // a shortcut for readability:
   const auto &Hc = m_calving_threshold;
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (cell_type.floating_ice(i, j) && cell_type.next_to_ice_free_ocean(i, j)) {
-      double Iv            = ice_velocity(i, j).magnitude();
-      double H             = ice_thickness(i, j);
-      m_calving_rate(i, j) = std::max(0.0, 1.0 + (Hc - H) / Hc) * Iv;
-    } else {
-      m_calving_rate(i, j) = 0.0;
-    }
-  }
-  m_calving_rate.update_ghosts();
-
   double C = convert(m_sys, 1.0, "m year-1", "m second-1");
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
 
-    if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
+  if (m_calving_along_flow) {
 
-      auto R = m_calving_rate.star(i, j);
-      auto M = cell_type.star_int(i, j);
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-      int N        = 0;
-      double R_sum = 0.0;
-      for (auto direction : { North, East, South, West }) {
-        if (mask::icy(M[direction])) {
-          R_sum += R[direction];
-          N++;
+      m_calving_rate(i, j) = 0.0;
+
+      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) {
+
+        //m_log->message(3, "  Exp5 at %d,%d: %3.1f, %3.3f, %3.3f\n",i,j,ice_thickness(i,j),ice_velocity(i, j).u,ice_velocity(i, j).v);
+        if (ice_velocity(i-1, j).u > 0.0 and ice_thickness(i-1,j) > 0.0) {
+          m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - ice_thickness(i-1,j)) / Hc) * ice_velocity(i-1, j).u;
+          //m_log->message(3, "  Exp5 n: %3.1f, %3.3f, %3.3f at %d,%d.\n", ice_thickness(i-1,j),ice_velocity(i-1, j).u/C,m_calving_rate(i, j)/C,i,j);
+        }
+        if (ice_velocity(i+1, j).u < 0.0 and ice_thickness(i+1,j) > 0.0) {
+          m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - ice_thickness(i+1,j)) / Hc) * ice_velocity(i+1, j).u;
+          //m_log->message(3, "  Exp5 s: %3.1f, %3.3f, %3.3f at %d,%d.\n", ice_thickness(i+1,j),ice_velocity(i+1, j).u/C,m_calving_rate(i, j)/C,i,j);
+        }
+        if (ice_velocity(i, j-1).v > 0.0 and ice_thickness(i,j-1) > 0.0) {
+          m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - ice_thickness(i,j-1)) / Hc) * ice_velocity(i, j-1).v;
+          //m_log->message(3, "  Exp5 w: %3.1f, %3.3f, %3.3f at %d,%d.\n", ice_thickness(i,j-1),ice_velocity(i, j-1).v/C,m_calving_rate(i, j)/C,i,j);
+        }
+        if (ice_velocity(i, j+1).v < 0.0 and ice_thickness(i,j+1) > 0.0) {
+          m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - ice_thickness(i,j+1)) / Hc) * ice_velocity(i, j+1).v;
+          //m_log->message(3, "  Exp5 e: %3.1f, %3.3f, %3.3f at %d,%d.\n", ice_thickness(i,j+1),ice_velocity(i, j+1).v/C,m_calving_rate(i, j)/C,i,j);
+        }
+        
+        //m_calving_rate(i, j) /= C;
+      }
+    }
+  } 
+  else { //only magnitudes
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (cell_type.floating_ice(i, j) && cell_type.next_to_ice_free_ocean(i, j)) {
+        double Iv            = ice_velocity(i, j).magnitude();
+        double H             = ice_thickness(i, j);
+        m_calving_rate(i, j) = std::max(0.0, 1.0 + (Hc - H) / Hc) * Iv;
+        //m_calving_rate(i, j) /= C;
+      } else {
+        m_calving_rate(i, j) = 0.0;
+      }
+    }
+    m_calving_rate.update_ghosts();
+
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
+
+        auto R = m_calving_rate.star(i, j);
+        auto M = cell_type.star_int(i, j);
+
+        int N        = 0;
+        double R_sum = 0.0;
+        for (auto direction : { North, East, South, West }) {
+          if (mask::icy(M[direction])) {
+            R_sum += R[direction];
+            N++;
+          }
+        }
+
+        if (N > 0) {
+          m_calving_rate(i, j) = R_sum / N;
         }
       }
-
-      if (N > 0) {
-        m_calving_rate(i, j) = R_sum / N;
-      }
-
-      // FIXME: why?
-      m_calving_rate(i, j) *= C;
-    }
+    } 
   }
 }
 
