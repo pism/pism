@@ -225,8 +225,9 @@ install(PROGRAMS
   DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/pism
-  USE_SOURCE_PERMISSIONS
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/pism
+  DIRECTORY_PERMISSIONS
+  OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ
   PATTERN .gitignore EXCLUDE
   PATTERN __pycache__ EXCLUDE
   PATTERN "*.pyc" EXCLUDE
@@ -253,4 +254,4 @@ add_subdirectory (test/regression)
 
 add_subdirectory (docker)
 
-add_subdirectory (debian-package)
+add_subdirectory (package)
