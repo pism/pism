@@ -616,6 +616,11 @@ netcdf pism_config {
     pism_config:calving.exp5_calving.threshold_type = "number";
     pism_config:calving.exp5_calving.threshold_units = "meters";
 
+    pism_config:calving.exp5_calving.calve_along_flow_direction = "no";
+    pism_config:calving.exp5_calving.calve_along_flow_direction_doc = "Calve in opposite direction of terminal ice flow.";
+    pism_config:calving.exp5_calving.calve_along_flow_direction_option = "calve_along_flow_direction";
+    pism_config:calving.exp5_calving.calve_along_flow_direction_type = "flag";
+
     pism_config:calving.float_kill.calve_near_grounding_line = "yes";
     pism_config:calving.float_kill.calve_near_grounding_line_doc = "Calve floating ice near the grounding line.";
     pism_config:calving.float_kill.calve_near_grounding_line_option = "float_kill_calve_near_grounding_line";

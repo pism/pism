@@ -46,6 +46,7 @@ public:
 protected:
   DiagnosticList diagnostics_impl() const;
   double m_calving_threshold;
+  bool m_calving_along_flow;
   array::Scalar1 m_calving_rate;
 };
 
