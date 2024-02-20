@@ -168,6 +168,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
   file(REAL_PATH ${CMAKE_INSTALL_PREFIX} pism_install_prefix)
   if ((EXISTS "/etc/debian_version") AND ("${pism_install_prefix}" MATCHES "/usr"))
+    message(STATUS "Installing Python modules in a system location on Debian or Ubuntu")
     set (pism_sysconfig_scheme "deb_system")
   else()
     set (pism_sysconfig_scheme "posix_prefix")
@@ -183,6 +184,9 @@ print(sysconfig.get_path('platlib', '${pism_sysconfig_scheme}', vars={'platbase'
     COMMAND ${PYTHON_EXECUTABLE} ${pism_python_path_py}
     OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
+  # convert to a path relative to the install prefix
+  file(RELATIVE_PATH PISM_INSTALL_PYTHON_MODULE_DIR
+    ${CMAKE_INSTALL_PREFIX} ${PISM_INSTALL_PYTHON_MODULE_DIR})
   unset(pism_python_path_py)
   set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
     CACHE PATH "Python extension module installation directory." )
