@@ -9,7 +9,6 @@ endif()
 
 project (Pism
   VERSION ${Pism_VERSION}
-  DESCRIPTION "The Parallel Ice Sheet Model (PISM) is an open-source modeling framework for ice sheets and glaciers jointly developed at the University of Alaska, Fairbanks and the Potsdam Institute for Climate Impact Research. PISM uses distributed memory parallelism based on MPI and PETSc to support high resolution ice sheet simulations. Its features include a hierarchy of stress balance approximations, marine ice sheet physics with dynamic calving fronts, a polythermal, enthalpy-based conservation of energy scheme and extensible coupling to atmospheric and ocean models. It is modular, extensible, and includes comprehensive user documentation."
   HOMEPAGE_URL "https://www.pism.io"
   LANGUAGES C CXX)
 
