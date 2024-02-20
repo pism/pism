@@ -1,14 +1,10 @@
 cmake_minimum_required (VERSION 3.16)
 
-include ("CMake/PISM_CMake_macros.cmake")
-list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
-
-pism_set_revision_tag()
-
-if(EXISTS ${Pism_SOURCE_DIR}/VERSION)
-  # No repository info: we are probably building from a tarball
-  file(STRINGS ${Pism_SOURCE_DIR}/VERSION Pism_VERSION LIMIT_COUNT 1)
-  set(Pism_VERSION_LONG "${Pism_VERSION}")
+# Get PISM's "short" X.Y.Z version from a file
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION)
+  file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION Pism_VERSION LIMIT_COUNT 1)
+else()
+  message(FATAL_ERROR "'VERSION' not found: cannot determine PISM's version")
 endif()
 
 project (Pism
@@ -16,6 +12,10 @@ project (Pism
   DESCRIPTION "The Parallel Ice Sheet Model (PISM) is an open-source modeling framework for ice sheets and glaciers jointly developed at the University of Alaska, Fairbanks and the Potsdam Institute for Climate Impact Research. PISM uses distributed memory parallelism based on MPI and PETSc to support high resolution ice sheet simulations. Its features include a hierarchy of stress balance approximations, marine ice sheet physics with dynamic calving fronts, a polythermal, enthalpy-based conservation of energy scheme and extensible coupling to atmospheric and ocean models. It is modular, extensible, and includes comprehensive user documentation."
   HOMEPAGE_URL "https://www.pism.io"
   LANGUAGES C CXX)
+
+include ("CMake/PISM_CMake_macros.cmake")
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
+pism_set_full_version()
 
 include (GNUInstallDirs)
 # doc directory: override capitalization ("pism" instead of "Pism" from the "project(...)"
@@ -166,16 +166,24 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
   set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
+  file(REAL_PATH ${CMAKE_INSTALL_PREFIX} pism_install_prefix)
+  if ((EXISTS "/etc/debian_version") AND ("${pism_install_prefix}" MATCHES "/usr"))
+    set (pism_sysconfig_scheme "deb_system")
+  else()
+    set (pism_sysconfig_scheme "posix_prefix")
+  endif()
   file (WRITE "${pism_python_path_py}" "
 # Get module installation path from Python:
 import sysconfig
-print(sysconfig.get_path('platlib', 'posix_prefix', vars={'platbase': '${CMAKE_INSTALL_PREFIX}'}))
+print(sysconfig.get_path('platlib', '${pism_sysconfig_scheme}', vars={'platbase': '${CMAKE_INSTALL_PREFIX}'}))
 ")
+  unset(pism_sysconfig_scheme)
 
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${pism_python_path_py}
     OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
+  unset(pism_python_path_py)
   set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
     CACHE PATH "Python extension module installation directory." )
 endif ()
