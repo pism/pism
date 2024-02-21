@@ -222,7 +222,7 @@ install(PROGRAMS
   util/nc2cdo.py
   util/nccmp.py
   util/plot_profiling.py
-  DESTINATION ${CMAKE_INSTALL_BINDIR})
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/pism/bin)
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
   DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/pism
