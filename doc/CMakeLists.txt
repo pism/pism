@@ -15,7 +15,13 @@ if (NOT Pism_SOURCE_DIR)
 
   include ("${Pism_SOURCE_DIR}/CMake/PISM_CMake_macros.cmake")
 
-  pism_set_revision_tag()
+  if(EXISTS ${Pism_SOURCE_DIR}/VERSION)
+    file(STRINGS ${Pism_SOURCE_DIR}/VERSION Pism_VERSION LIMIT_COUNT 1)
+  else()
+    message(FATAL_ERROR "'VERSION' not found: cannot determine PISM's version")
+  endif()
+
+  pism_set_full_version()
 
   include (GNUInstallDirs)
 endif()
