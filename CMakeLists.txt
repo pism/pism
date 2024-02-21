@@ -181,14 +181,17 @@ print(sysconfig.get_path('platlib', '${pism_sysconfig_scheme}', vars={'platbase'
 
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${pism_python_path_py}
-    OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
+    OUTPUT_VARIABLE PISM_FULL_PYTHON_MODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   # convert to a path relative to the install prefix
-  file(RELATIVE_PATH PISM_INSTALL_PYTHON_MODULE_DIR
-    ${CMAKE_INSTALL_PREFIX} ${PISM_INSTALL_PYTHON_MODULE_DIR})
+  file(RELATIVE_PATH PISM_PYTHON_MODULE_DIR
+    ${CMAKE_INSTALL_PREFIX} ${PISM_FULL_PYTHON_MODULE_DIR})
   unset(pism_python_path_py)
-  set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
+  set(PISM_PYTHON_MODULE_DIR ${PISM_PYTHON_MODULE_DIR}
     CACHE PATH "Python extension module installation directory." )
+  set(PISM_FULL_PYTHON_MODULE_DIR ${PISM_FULL_PYTHON_MODULE_DIR}
+    CACHE PATH "Python extension module installation directory (full path)." )
+  mark_as_advanced(PISM_PYTHON_MODULE_DIR PISM_FULL_PYTHON_MODULE_DIR)
 endif ()
 
 add_custom_target (etags

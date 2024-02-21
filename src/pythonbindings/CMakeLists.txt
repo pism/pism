@@ -89,7 +89,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   set(TARGET_FILE $<TARGET_FILE:cpp>)
 
   install(TARGETS cpp
-    DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}/PISM
+    DESTINATION ${PISM_PYTHON_MODULE_DIR}/PISM
     COMPONENT RuntimeLibraries
     )
 
@@ -97,7 +97,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/cpp.py
     ${CMAKE_CURRENT_BINARY_DIR}/version_info.py
-    DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}/PISM
+    DESTINATION ${PISM_PYTHON_MODULE_DIR}/PISM
     COMPONENT RuntimeLibraries
     )
 
@@ -120,13 +120,13 @@ try:
 except:
     exit(0)
 
-if realpath(PISM.__file__) == realpath(join('${PISM_INSTALL_PYTHON_MODULE_DIR}', 'PISM', '__init__.pyc')):
+if realpath(PISM.__file__) == realpath(join('${PISM_PYTHON_MODULE_DIR}', 'PISM', '__init__.pyc')):
     exit(1)
 ")
 
   install(CODE "EXEC_PROGRAM( ${PYTHON_EXECUTABLE} ARGS ${pism_test_py} RETURN_VALUE PISM_PYTHON_MATCHES OUTPUT_VARIABLE PYTHON_OUT )
 if(NOT PISM_PYTHON_MATCHES)
-    MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   export PYTHONPATH=${PISM_INSTALL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")
+    MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   export PYTHONPATH=${PISM_FULL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")
 endif()
 " )
 
