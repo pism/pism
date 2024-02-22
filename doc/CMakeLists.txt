@@ -33,3 +33,5 @@ if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   # Source code browser:
   add_subdirectory (browser EXCLUDE_FROM_ALL)
 endif ()
+
+add_subdirectory(manpages)
