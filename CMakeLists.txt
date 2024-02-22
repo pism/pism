@@ -21,6 +21,14 @@ include (GNUInstallDirs)
 # call above)
 set(CMAKE_INSTALL_DOCDIR ${CMAKE_INSTALL_DATAROOTDIR}/doc/pism)
 
+file(REAL_PATH ${CMAKE_INSTALL_PREFIX} pism_install_prefix)
+if ((EXISTS "/etc/debian_version") AND ("${pism_install_prefix}" MATCHES "/usr"))
+  message(STATUS "Installing in /usr on Debian or Ubuntu (we are probably building a package)")
+  set(Pism_DEBIAN_SYSTEMWIDE YES)
+else()
+  set(Pism_DEBIAN_SYSTEMWIDE NO)
+endif()
+
 # Deal with build types
 mark_as_advanced(CLEAR CMAKE_BUILD_TYPE)
 # Set the build type to "Release" so that users get optimized code by default:
@@ -165,9 +173,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
   set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
-  file(REAL_PATH ${CMAKE_INSTALL_PREFIX} pism_install_prefix)
-  if ((EXISTS "/etc/debian_version") AND ("${pism_install_prefix}" MATCHES "/usr"))
-    message(STATUS "Installing Python modules in a system location on Debian or Ubuntu")
+  if (Pism_DEBIAN_SYSTEMWIDE)
     set (pism_sysconfig_scheme "deb_system")
   else()
     set (pism_sysconfig_scheme "posix_prefix")

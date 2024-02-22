@@ -13,10 +13,17 @@ if (SPHINX_EXECUTABLE)
     COMMAND ${NCGEN_PROGRAM} -o pism_config.nc ${Pism_SOURCE_DIR}/src/pism_config.cdl
     DEPENDS ${Pism_SOURCE_DIR}/src/pism_config.cdl)
 
-  add_custom_target (manual_html ALL
-    COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/manual_html
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS pism_config.nc)
+  if (Pism_DEBIAN_SYSTEMWIDE)
+    configure_file(${Pism_SOURCE_DIR}/package/debian/fix_js_libraries.sh fix_js_libraries.sh COPYONLY)
+    add_custom_target (manual_html ALL
+      COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -D mathjax_path="/usr/share/javascript/mathjax/MathJax.js" -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/manual_html
+      COMMAND ./fix_js_libraries.sh ${CMAKE_CURRENT_BINARY_DIR}/manual_html
+      DEPENDS pism_config.nc)
+  else()
+    add_custom_target (manual_html ALL
+      COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/manual_html
+      DEPENDS pism_config.nc)
+  endif()
 
   add_custom_target (manual_linkcheck
     COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -n -b linkcheck ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}

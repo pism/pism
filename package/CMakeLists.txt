@@ -5,7 +5,7 @@ set (CPACK_PACKAGE_CONTACT "uaf-pism@alaska.edu")
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Parallel Ice Sheet Model (PISM)")
 set (CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/description.txt")
 set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-set (CPACK_DEBIAN_PACKAGE_DEPENDS "python3")
+set (CPACK_DEBIAN_PACKAGE_DEPENDS "python3, libjs-mathjax, libjs-sphinxdoc")
 
 # "libjs-mathjax"
 
