@@ -16,7 +16,7 @@ if (SPHINX_EXECUTABLE)
   if (Pism_DEBIAN_SYSTEMWIDE)
     configure_file(${Pism_SOURCE_DIR}/package/debian/fix_js_libraries.sh fix_js_libraries.sh COPYONLY)
     add_custom_target (manual_html ALL
-      COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -D mathjax_path="/usr/share/javascript/mathjax/MathJax.js" -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/manual_html
+      COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/manual_html
       COMMAND ./fix_js_libraries.sh ${CMAKE_CURRENT_BINARY_DIR}/manual_html
       COMMAND rm -f ${CMAKE_CURRENT_BINARY_DIR}/manual_html/.nojekyll
       DEPENDS pism_config.nc)
