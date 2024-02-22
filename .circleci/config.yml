@@ -131,7 +131,7 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_html
-            mv build/sphinx/html ./manual_html
+            mv build/sphinx/manual_html ./manual_html
       - persist_to_workspace:
           root: .
           paths: manual_html

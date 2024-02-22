@@ -14,7 +14,7 @@ if (SPHINX_EXECUTABLE)
     DEPENDS ${Pism_SOURCE_DIR}/src/pism_config.cdl)
 
   add_custom_target (manual_html ALL
-    COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
+    COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/manual_html
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS pism_config.nc)
 
@@ -33,7 +33,7 @@ if (SPHINX_EXECUTABLE)
       DEPENDS pism_config.nc)
   endif()
 
-  install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pism_manual_html"
+  install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/manual_html"
     DESTINATION ${CMAKE_INSTALL_DOCDIR}
     PATTERN ".doctrees" EXCLUDE
     PATTERN ".buildinfo" EXCLUDE
