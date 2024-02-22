@@ -1,2 +1,1 @@
 libpism ${Pism_VERSION} pism (= ${Pism_VERSION})
-libpismicebin ${Pism_VERSION} pism (= ${Pism_VERSION})
