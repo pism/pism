@@ -22,10 +22,7 @@ endmacro(pism_use_rpath)
 
 # Set CMake variables to disable rpath
 macro(pism_dont_use_rpath)
-  set (CMAKE_SKIP_BUILD_RPATH TRUE)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
-  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+  set (CMAKE_SKIP_INSTALL_RPATH TRUE)
 endmacro(pism_dont_use_rpath)
 
 # Set CMake variables to ensure that everything is static

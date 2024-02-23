@@ -103,7 +103,11 @@ option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings." ON)
 option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF)
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
-pism_use_rpath()
+if (Pism_DEBIAN_SYSTEMWIDE)
+  pism_dont_use_rpath()
+else()
+  pism_use_rpath()
+endif()
 
 if (Pism_LINK_STATICALLY)
   pism_strictly_static()
