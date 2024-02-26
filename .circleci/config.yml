@@ -271,6 +271,32 @@ jobs:
             --message "Update the source code browser"
             --dist doxygen
 
+  build-deb-package:
+    docker:
+      - image: ckhrulev/pism-ubuntu-deb-package:0.1.0
+
+    environment:
+      CC: mpicc
+      CXX: mpicxx
+
+    steps:
+      - checkout
+      - run:
+          name: Configure PISM
+          command: >-
+            cmake -S . -B build
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_INSTALL_PREFIX=/usr
+            -DPism_BUILD_DOCS=YES
+            -DPism_BUILD_EXTRA_EXECS=NO
+            -DPism_BUILD_PYTHON_BINDINGS=NO
+            -DPism_USE_PROJ=YES
+      - run:
+          name: Build PISM
+          command: make --no-print-directory -C build -j ${N:-4} package
+      - store_artifacts:
+          path: build/pism-*.deb
+
 workflows:
   version: 2
   build-and-test:
@@ -336,6 +362,7 @@ workflows:
       - manual-html
       - manual-pdf
       - doxygen
+      - build-deb-package
 
       - deploy-p:
           requires:
