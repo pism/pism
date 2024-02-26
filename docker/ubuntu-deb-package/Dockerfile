@@ -15,6 +15,7 @@ RUN <<EOF
     libproj-dev \
     libudunits2-dev \
     lintian \
+    nco \
     netcdf-bin \
     petsc-dev \
     python3-netcdf4 \

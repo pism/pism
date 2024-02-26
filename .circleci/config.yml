@@ -273,7 +273,7 @@ jobs:
 
   build-and-test-with-ubuntu-libs:
     docker:
-      - image: ckhrulev/pism-ubuntu-deb-package:0.1.0
+      - image: ckhrulev/pism-ubuntu-deb-package:0.1.1
 
     environment:
       CC: mpicc
@@ -299,7 +299,7 @@ jobs:
 
   build-deb-package:
     docker:
-      - image: ckhrulev/pism-ubuntu-deb-package:0.1.0
+      - image: ckhrulev/pism-ubuntu-deb-package:0.1.1
 
     environment:
       CC: mpicc
@@ -323,6 +323,9 @@ jobs:
       - run:
           name: Move the package
           command: mkdir -p /tmp/package && mv build/*.deb /tmp/package/
+      - run:
+          name: Test the package
+          command: lintian /tmp/package/*.deb
       - store_artifacts:
           path: /tmp/package
 
