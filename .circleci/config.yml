@@ -294,8 +294,11 @@ jobs:
       - run:
           name: Build PISM
           command: make --no-print-directory -C build -j ${N:-4} package
+      - run:
+          name: Move the package
+          command: mkdir -p /tmp/package && mv build/*.deb /tmp/package/
       - store_artifacts:
-          path: build/pism-*.deb
+          path: /tmp/package
 
 workflows:
   version: 2
