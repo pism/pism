@@ -1,10 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+from netCDF4 import Dataset as NC
 
 import MISMIP
 
@@ -38,7 +34,6 @@ def bed_topography(x):
     return np.tile(bed, (3, 1))
 
 
-
 def surface_mass_balance(x):
     """Computes the surface mass balance."""
     return np.tile(np.zeros_like(x) + MISMIP.a()*0.0, (3, 1)) * MISMIP.rho_i()
@@ -50,7 +45,6 @@ def ice_surface_temp(x):
 
 
 def x(N=None):
-
     return np.linspace(0, MISMIP.L(), N)
 
 

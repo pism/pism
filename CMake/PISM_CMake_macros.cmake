@@ -22,10 +22,7 @@ endmacro(pism_use_rpath)
 
 # Set CMake variables to disable rpath
 macro(pism_dont_use_rpath)
-  set (CMAKE_SKIP_BUILD_RPATH TRUE)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
-  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+  set (CMAKE_SKIP_INSTALL_RPATH TRUE)
 endmacro(pism_dont_use_rpath)
 
 # Set CMake variables to ensure that everything is static
@@ -48,31 +45,16 @@ macro(pism_strictly_static)
   pism_dont_use_rpath()
 endmacro(pism_strictly_static)
 
-# Set Pism_VERSION, Pism_VERSION_LONG
-macro(pism_set_revision_tag)
+# Set Pism_VERSION_LONG
+macro(pism_set_full_version)
   if (EXISTS ${Pism_SOURCE_DIR}/.git)
     # get version information from the repository
     find_program (GIT_EXECUTABLE git DOC "Git executable")
     mark_as_advanced(GIT_EXECUTABLE)
-    # Get the current branch
-    execute_process (COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+    execute_process (COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
       WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-      OUTPUT_VARIABLE Pism_BRANCH
+      OUTPUT_VARIABLE Pism_COMMIT_HASH
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if (${Pism_BRANCH} MATCHES "main")
-      # Get the latest tag
-      execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v?.?*
-        WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-        OUTPUT_VARIABLE Pism_VERSION
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-      # remove "v" from vX.Y.Z:
-      string(REPLACE "v" "" Pism_VERSION ${Pism_VERSION})
-    else()
-      execute_process (COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-        WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-        OUTPUT_VARIABLE Pism_VERSION
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    endif()
     execute_process (COMMAND ${GIT_EXECUTABLE} --no-pager log -1 "--pretty=format:%an"
       WORKING_DIRECTORY ${Pism_SOURCE_DIR}
       OUTPUT_VARIABLE Pism_COMMIT_AUTHOR
@@ -81,21 +63,13 @@ macro(pism_set_revision_tag)
       WORKING_DIRECTORY ${Pism_SOURCE_DIR}
       OUTPUT_VARIABLE Pism_COMMIT_DATE
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if (${Pism_BRANCH} MATCHES "main")
-      set(Pism_VERSION_LONG "${Pism_VERSION} committed by ${Pism_COMMIT_AUTHOR}")
-    else()
-      set(Pism_VERSION_LONG "${Pism_COMMIT_DATE}-${Pism_VERSION} committed by ${Pism_COMMIT_AUTHOR}")
-    endif()
-  elseif(EXISTS ${Pism_SOURCE_DIR}/VERSION)
-    # No repository info: we are probably building from a tarball
-    file(STRINGS ${Pism_SOURCE_DIR}/VERSION Pism_VERSION LIMIT_COUNT 1)
-    set(Pism_VERSION_LONG "${Pism_VERSION}")
+    set(Pism_VERSION_LONG "${Pism_VERSION}-${Pism_COMMIT_HASH} committed by ${Pism_COMMIT_AUTHOR} on ${Pism_COMMIT_DATE}")
   else()
-    set (Pism_VERSION "unknown")
-  endif (EXISTS ${Pism_SOURCE_DIR}/.git)
+    set(Pism_VERSION_LONG "${Pism_VERSION}")
+  endif()
 
   message(STATUS "PISM version: '${Pism_VERSION_LONG}'")
-endmacro(pism_set_revision_tag)
+endmacro(pism_set_full_version)
 
 # Set pedantic compiler flags
 macro(pism_set_pedantic_flags)

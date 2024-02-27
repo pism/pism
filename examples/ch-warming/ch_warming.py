@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import PISM
 from PISM.util import convert
 import numpy as np

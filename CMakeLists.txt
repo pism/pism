@@ -1,10 +1,32 @@
 cmake_minimum_required (VERSION 3.16)
-project (Pism C CXX)
+
+# Get PISM's "short" X.Y.Z version from a file
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION)
+  file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION Pism_VERSION LIMIT_COUNT 1)
+else()
+  message(FATAL_ERROR "'VERSION' not found: cannot determine PISM's version")
+endif()
+
+project (Pism
+  VERSION ${Pism_VERSION}
+  HOMEPAGE_URL "https://www.pism.io"
+  LANGUAGES C CXX)
+
+include ("CMake/PISM_CMake_macros.cmake")
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
+pism_set_full_version()
 
 include (GNUInstallDirs)
 # doc directory: override capitalization ("pism" instead of "Pism" from the "project(...)"
 # call above)
 set(CMAKE_INSTALL_DOCDIR ${CMAKE_INSTALL_DATAROOTDIR}/doc/pism)
+
+if ((EXISTS "/etc/debian_version") AND ("${CMAKE_INSTALL_PREFIX}" MATCHES "/usr"))
+  message(STATUS "Installing in /usr on Debian or Ubuntu (we are probably building a package)")
+  set(Pism_DEBIAN_SYSTEMWIDE YES)
+else()
+  set(Pism_DEBIAN_SYSTEMWIDE NO)
+endif()
 
 # Deal with build types
 mark_as_advanced(CLEAR CMAKE_BUILD_TYPE)
@@ -38,11 +60,6 @@ endif()
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-fstandalone-debug)
 endif()
-
-include ("CMake/PISM_CMake_macros.cmake")
-list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
-
-pism_set_revision_tag()
 
 # Put executables in the build directory:
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
@@ -85,7 +102,11 @@ option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings." ON)
 option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF)
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
-pism_use_rpath()
+if (Pism_DEBIAN_SYSTEMWIDE)
+  pism_dont_use_rpath()
+else()
+  pism_use_rpath()
+endif()
 
 if (Pism_LINK_STATICALLY)
   pism_strictly_static()
@@ -155,18 +176,31 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
   set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
+  if (Pism_DEBIAN_SYSTEMWIDE)
+    set (pism_sysconfig_scheme "deb_system")
+  else()
+    set (pism_sysconfig_scheme "posix_prefix")
+  endif()
   file (WRITE "${pism_python_path_py}" "
 # Get module installation path from Python:
 import sysconfig
-print(sysconfig.get_path('platlib', 'posix_prefix', vars={'platbase': '${CMAKE_INSTALL_PREFIX}'}))
+print(sysconfig.get_path('platlib', '${pism_sysconfig_scheme}', vars={'platbase': '${CMAKE_INSTALL_PREFIX}'}))
 ")
+  unset(pism_sysconfig_scheme)
 
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${pism_python_path_py}
-    OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
+    OUTPUT_VARIABLE PISM_FULL_PYTHON_MODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
+  # convert to a path relative to the install prefix
+  file(RELATIVE_PATH PISM_PYTHON_MODULE_DIR
+    ${CMAKE_INSTALL_PREFIX} ${PISM_FULL_PYTHON_MODULE_DIR})
+  unset(pism_python_path_py)
+  set(PISM_PYTHON_MODULE_DIR ${PISM_PYTHON_MODULE_DIR}
     CACHE PATH "Python extension module installation directory." )
+  set(PISM_FULL_PYTHON_MODULE_DIR ${PISM_FULL_PYTHON_MODULE_DIR}
+    CACHE PATH "Python extension module installation directory (full path)." )
+  mark_as_advanced(PISM_PYTHON_MODULE_DIR PISM_FULL_PYTHON_MODULE_DIR)
 endif ()
 
 add_custom_target (etags
@@ -200,11 +234,18 @@ install(PROGRAMS
   util/nc2cdo.py
   util/nccmp.py
   util/plot_profiling.py
-  DESTINATION ${CMAKE_INSTALL_BINDIR})
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/pism/bin)
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/pism
-  USE_SOURCE_PERMISSIONS)
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/pism
+  DIRECTORY_PERMISSIONS
+  OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ
+  PATTERN .gitignore EXCLUDE
+  PATTERN __pycache__ EXCLUDE
+  PATTERN "*.pyc" EXCLUDE
+  PATTERN "*.nc" EXCLUDE
+  PATTERN "*.npz" EXCLUDE
+  PATTERN "*~" EXCLUDE)
 
 add_subdirectory (src)
 add_subdirectory (site-packages)
@@ -224,3 +265,5 @@ add_subdirectory (test)
 add_subdirectory (test/regression)
 
 add_subdirectory (docker)
+
+add_subdirectory (package)

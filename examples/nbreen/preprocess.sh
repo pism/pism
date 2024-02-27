@@ -7,6 +7,8 @@ set -e  # exit on error
 DATA=nbreen_input.nc
 PISMDATA=pismnbreen.nc
 
+wget -nc https://github.com/pism/example-inputs/raw/main/nbreen/${DATA}
+
 echo "making PISM-readable file $PISMDATA by copying $DATA and adjusting metadata ..."
 rm -f $PISMDATA
 # copy but skip "outline" which is (thk>0) and thus redundant

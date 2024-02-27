@@ -131,7 +131,7 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_html
-            mv build/sphinx/html ./manual_html
+            mv build/sphinx/manual_html ./manual_html
       - persist_to_workspace:
           root: .
           paths: manual_html
@@ -271,6 +271,64 @@ jobs:
             --message "Update the source code browser"
             --dist doxygen
 
+  build-and-test-with-ubuntu-libs:
+    docker:
+      - image: ckhrulev/pism-ubuntu-deb-package:0.1.1
+
+    environment:
+      CC: mpicc
+      CXX: mpicxx
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+
+    steps:
+      - checkout
+      - run:
+          name: Configure PISM
+          command: >-
+            cmake -S . -B build
+            -DCMAKE_BUILD_TYPE=Debug
+            -DPism_BUILD_EXTRA_EXECS=YES
+            -DPism_USE_PROJ=YES
+      - run:
+          name: Build PISM
+          command: make --no-print-directory -C build -j ${N:-4} package
+      - run:
+          name: Test PISM
+          command: cd build && ctest -j ${N:-4} --output-on-failure
+
+  build-deb-package:
+    docker:
+      - image: ckhrulev/pism-ubuntu-deb-package:0.1.1
+
+    environment:
+      CC: mpicc
+      CXX: mpicxx
+
+    steps:
+      - checkout
+      - run:
+          name: Configure PISM
+          command: >-
+            cmake -S . -B build
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_INSTALL_PREFIX=/usr
+            -DPism_BUILD_DOCS=YES
+            -DPism_BUILD_EXTRA_EXECS=NO
+            -DPism_BUILD_PYTHON_BINDINGS=NO
+            -DPism_USE_PROJ=YES
+      - run:
+          name: Build PISM
+          command: make --no-print-directory -C build -j ${N:-4} package
+      - run:
+          name: Move the package
+          command: mkdir -p /tmp/package && mv build/*.deb /tmp/package/
+      - run:
+          name: Test the package
+          command: lintian /tmp/package/*.deb
+      - store_artifacts:
+          path: /tmp/package
+
 workflows:
   version: 2
   build-and-test:
@@ -336,6 +394,8 @@ workflows:
       - manual-html
       - manual-pdf
       - doxygen
+      - build-and-test-with-ubuntu-libs
+      - build-deb-package
 
       - deploy-p:
           requires:
