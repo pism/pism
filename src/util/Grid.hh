@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -291,6 +291,11 @@ public:
 
   static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx,
                                         const std::string &filename,
+                                        const std::vector<std::string> &var_names,
+                                        grid::Registration r);
+
+  static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx,
+                                        const File &file,
                                         const std::vector<std::string> &var_names,
                                         grid::Registration r);
 

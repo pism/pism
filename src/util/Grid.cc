@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -253,11 +253,9 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
 
 //! Create a grid using one of variables in `var_names` in `file`.
 std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
-                                     const std::string &filename,
+                                     const File &file,
                                      const std::vector<std::string> &var_names,
                                      grid::Registration r) {
-
-  File file(ctx->com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
   for (const auto &name : var_names) {
     if (file.find_variable(name)) {
@@ -268,7 +266,17 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "file %s does not have any of %s."
                                 " Cannot initialize the grid.",
-                                filename.c_str(), join(var_names, ",").c_str());
+                                file.filename().c_str(), join(var_names, ",").c_str());
+}
+
+std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
+                                     const std::string &filename,
+                                     const std::vector<std::string> &var_names,
+                                     grid::Registration r) {
+
+  File file(ctx->com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
+
+  return Grid::FromFile(ctx, file, var_names, r);
 }
 
 Grid::~Grid() {
