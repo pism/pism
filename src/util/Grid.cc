@@ -235,7 +235,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
       log.message(3,
                   "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                   "         Using 2 levels and Lz of %3.3fm\n",
-                  var_name.c_str(), file.filename().c_str(), Lz);
+                  var_name.c_str(), file.name().c_str(), Lz);
 
       p.z = { 0.0, Lz };
     }
@@ -246,7 +246,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
     return std::make_shared<Grid>(ctx, p);
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
-                  var_name.c_str(), file.filename().c_str());
+                  var_name.c_str(), file.name().c_str());
     throw;
   }
 }
@@ -266,7 +266,7 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "file %s does not have any of %s."
                                 " Cannot initialize the grid.",
-                                file.filename().c_str(), join(var_names, ",").c_str());
+                                file.name().c_str(), join(var_names, ",").c_str());
 }
 
 std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
@@ -1052,7 +1052,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
   try {
     reset();
 
-    filename      = file.filename();
+    filename      = file.name();
     variable_name = variable;
 
     // try "variable" as the standard_name first, then as the short name:
@@ -1121,7 +1121,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
     }   // for loop
   } catch (RuntimeError &e) {
     e.add_context("getting grid information using variable '%s' in '%s'", variable.c_str(),
-                  file.filename().c_str());
+                  file.name().c_str());
     throw;
   }
 }

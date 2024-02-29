@@ -354,7 +354,7 @@ void IceModel::model_state_setup() {
  * processes are handled by sub-models.
  */
 void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
-  std::string filename = input_file.filename();
+  std::string filename = input_file.name();
 
   m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
@@ -365,7 +365,7 @@ void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
 
 void IceModel::bootstrap_2d(const File &input_file) {
 
-  m_log->message(2, "bootstrapping from file '%s'...\n", input_file.filename().c_str());
+  m_log->message(2, "bootstrapping from file '%s'...\n", input_file.name().c_str());
 
   auto usurf = input_file.find_variable("usurf", "surface_altitude");
 

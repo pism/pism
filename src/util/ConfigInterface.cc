@@ -73,7 +73,7 @@ void Config::read(MPI_Comm com, const std::string &filename) {
 void Config::read(const File &file) {
   this->read_impl(file);
 
-  m_impl->filename = file.filename();
+  m_impl->filename = file.name();
 }
 
 void Config::write(const File &file) const {

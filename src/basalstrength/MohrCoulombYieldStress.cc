@@ -167,7 +167,7 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
       m_log->message(2,
                      "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
                      "              present in the input file '%s'!\n",
-                     m_till_phi.metadata().get_name().c_str(), input_file.filename().c_str());
+                     m_till_phi.metadata().get_name().c_str(), input_file.name().c_str());
     }
 
     till_friction_angle(inputs.geometry->bed_elevation, m_till_phi);

@@ -374,7 +374,7 @@ void TSDiagnostic::flush() {
 
 void TSDiagnostic::init(const File &output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
-  m_output_filename = output_file.filename();
+  m_output_filename = output_file.name();
 
   m_requested_times = std::move(requested_times);
 

@@ -219,7 +219,7 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
       try {
         check_consistency_epsg(result);
       } catch (RuntimeError &e) {
-        e.add_context("getting projection info from %s", input_file.filename().c_str());
+        e.add_context("getting projection info from %s", input_file.name().c_str());
         throw;
       }
     } else {

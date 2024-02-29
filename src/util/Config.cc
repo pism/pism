@@ -193,7 +193,7 @@ void NetCDFConfig::read_impl(const File &nc) {
 
   io::read_attributes(nc, m_data.get_name(), m_data);
 
-  m_config_filename = nc.filename();
+  m_config_filename = nc.name();
 }
 
 //! Write a config variable to a file (with all its attributes).

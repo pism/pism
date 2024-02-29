@@ -199,7 +199,7 @@ File::File(MPI_Comm com, const std::string &filename, io::Backend backend, io::M
 }
 
 File::~File() {
-  if (m_impl->nc and not filename().empty()) {
+  if (m_impl->nc and not name().empty()) {
     try {
       // a file is still open, so we try to close it
       this->close();
@@ -271,7 +271,7 @@ void File::close() {
   try {
     m_impl->nc->close();
   } catch (RuntimeError &e) {
-    e.add_context("closing \"" + filename() + "\"");
+    e.add_context("closing \"" + name() + "\"");
     throw;
   }
 }
@@ -280,7 +280,7 @@ void File::sync() const {
   try {
     m_impl->nc->sync();
   } catch (RuntimeError &e) {
-    e.add_context("synchronizing \"" + filename() + "\"");
+    e.add_context("synchronizing \"" + name() + "\"");
     throw;
   }
 }
@@ -289,7 +289,7 @@ void File::redef() const {
   try {
     m_impl->nc->redef();
   } catch (RuntimeError &e) {
-    e.add_context("switching to define mode; file \"" + filename() + "\"");
+    e.add_context("switching to define mode; file \"" + name() + "\"");
     throw;
   }
 }
@@ -299,12 +299,12 @@ void File::enddef() const {
   try {
     m_impl->nc->enddef();
   } catch (RuntimeError &e) {
-    e.add_context("switching to data mode; file \"" + filename() + "\"");
+    e.add_context("switching to data mode; file \"" + name() + "\"");
     throw;
   }
 }
 
-std::string File::filename() const {
+std::string File::name() const {
   return m_impl->nc->filename();
 }
 
@@ -321,7 +321,7 @@ unsigned int File::nrecords() const {
 
     return this->dimension_length(dim);
   } catch (RuntimeError &e) {
-    e.add_context("getting the number of records in file \"" + filename() + "\"");
+    e.add_context("getting the number of records in file \"" + name() + "\"");
     throw;
   }
   return 0;                     // LCOV_EXCL_LINE
@@ -329,10 +329,10 @@ unsigned int File::nrecords() const {
 
 //! \brief Get the number of records of a certain variable. Uses the length of
 //! an associated "time" dimension.
-unsigned int File::nrecords(const std::string &name, const std::string &std_name,
+unsigned int File::nrecords(const std::string &variable_name, const std::string &std_name,
                             units::System::Ptr unit_system) const {
   try {
-    auto var = find_variable(name, std_name);
+    auto var = find_variable(variable_name, std_name);
 
     if (not var.exists) {
       return 0;
@@ -347,7 +347,7 @@ unsigned int File::nrecords(const std::string &name, const std::string &std_name
     return 1;                   // one record
   } catch (RuntimeError &e) {
     e.add_context("getting the number of records of variable '%s' ('%s') in '%s'",
-                  name.c_str(), std_name.c_str(), filename().c_str());
+                  variable_name.c_str(), std_name.c_str(), name().c_str());
     throw;
   }
   return 0;                     // LCOV_EXCL_LINE
@@ -368,8 +368,8 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
       int n_variables = nvariables();
 
       for (int j = 0; j < n_variables; ++j) {
-        std::string name      = variable_name(j);
-        std::string attribute = read_text_attribute(name, "standard_name");
+        std::string var_name      = variable_name(j);
+        std::string attribute = read_text_attribute(var_name, "standard_name");
 
         if (attribute.empty()) {
           continue;
@@ -379,12 +379,12 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
           if (not result.exists) {
             result.exists = true;
             result.found_using_standard_name = true;
-            result.name = name;
+            result.name = var_name;
           } else {
             throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistency in '%s': variables '%s' and '%s'\n"
                                           "have the same standard_name (%s)",
-                                          filename().c_str(), result.name.c_str(),
-                                          name.c_str(), attribute.c_str());
+                                          name().c_str(), result.name.c_str(),
+                                          var_name.c_str(), attribute.c_str());
           }
         }
 
@@ -403,7 +403,7 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("searching for variable '%s' ('%s') in '%s'", short_name.c_str(), std_name.c_str(), filename().c_str());
+    e.add_context("searching for variable '%s' ('%s') in '%s'", short_name.c_str(), std_name.c_str(), name().c_str());
     throw;
   }
 
@@ -411,13 +411,14 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
 }
 
 //! \brief Checks if a variable exists.
-bool File::find_variable(const std::string &name) const {
+bool File::find_variable(const std::string &variable_name) const {
   try {
     bool exists = false;
-    m_impl->nc->inq_varid(name, exists);
+    m_impl->nc->inq_varid(variable_name, exists);
     return exists;
   } catch (RuntimeError &e) {
-    e.add_context("searching for variable '%s' in '%s'", name.c_str(), filename().c_str());
+    e.add_context("searching for variable '%s' in '%s'", variable_name.c_str(),
+                  name().c_str());
     throw;
   }
 }
@@ -429,20 +430,21 @@ std::vector<std::string> File::dimensions(const std::string &variable_name) cons
     return result;
   } catch (RuntimeError &e) {
     e.add_context("getting dimensions of variable '%s' in '%s'", variable_name.c_str(),
-                  filename().c_str());
+                  name().c_str());
     throw;
   }
 }
 
 
 //! \brief Checks if a dimension exists.
-bool File::find_dimension(const std::string &name) const {
+bool File::find_dimension(const std::string &dimension_name) const {
   try {
     bool exists = false;
-    m_impl->nc->inq_dimid(name, exists);
+    m_impl->nc->inq_dimid(dimension_name, exists);
     return exists;
   } catch (RuntimeError &e) {
-    e.add_context("searching for dimension '%s' in '%s'", name.c_str(), filename().c_str());
+    e.add_context("searching for dimension '%s' in '%s'", dimension_name.c_str(),
+                  name().c_str());
     throw;
   }
 }
@@ -451,17 +453,18 @@ bool File::find_dimension(const std::string &name) const {
 /*!
  * Sets result to 0 if a dimension does not exist.
  */
-unsigned int File::dimension_length(const std::string &name) const {
+unsigned int File::dimension_length(const std::string &dimension_name) const {
   try {
-    if (find_dimension(name)) {
+    if (find_dimension(dimension_name)) {
       unsigned int result = 0;
-      m_impl->nc->inq_dimlen(name, result);
+      m_impl->nc->inq_dimlen(dimension_name, result);
       return result;
     }
 
     return 0;
   } catch (RuntimeError &e) {
-    e.add_context("getting the length of dimension '%s' in '%s'", name.c_str(), filename().c_str());
+    e.add_context("getting the length of dimension '%s' in '%s'", dimension_name.c_str(),
+                  name().c_str());
     throw;
   }
 }
@@ -490,17 +493,17 @@ AxisType axis_type_from_string(const std::string &input) {
 /*!
  * The "type" is one of X_AXIS, Y_AXIS, Z_AXIS, T_AXIS.
  */
-AxisType File::dimension_type(const std::string &name,
+AxisType File::dimension_type(const std::string &dimension_name,
                               units::System::Ptr unit_system) const {
   try {
-    if (not find_variable(name)) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable " + name + " is missing");
+    if (not find_variable(dimension_name)) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable " + dimension_name + " is missing");
     }
 
     std::string
-      axis          = read_text_attribute(name, "axis"),
-      standard_name = read_text_attribute(name, "standard_name"),
-      units         = read_text_attribute(name, "units");
+      axis          = read_text_attribute(dimension_name, "axis"),
+      standard_name = read_text_attribute(dimension_name, "standard_name"),
+      units         = read_text_attribute(dimension_name, "units");
 
     // check if it has units compatible with "seconds":
 
@@ -530,23 +533,23 @@ AxisType File::dimension_type(const std::string &name,
     }
 
     // check the variable name:
-    if (name == "x" or name == "X" or
-        name.find('x') == 0 or name.find('X') == 0) {
+    if (dimension_name == "x" or dimension_name == "X" or
+        dimension_name.find('x') == 0 or dimension_name.find('X') == 0) {
       return X_AXIS;
     }
 
-    if (name == "y" or name == "Y" or
-        name.find('y') == 0 or name.find('Y') == 0) {
+    if (dimension_name == "y" or dimension_name == "Y" or
+        dimension_name.find('y') == 0 or dimension_name.find('Y') == 0) {
       return Y_AXIS;
     }
 
-    if (name == "z" or name == "Z" or
-        name.find('z') == 0 or name.find('Z') == 0) {
+    if (dimension_name == "z" or dimension_name == "Z" or
+        dimension_name.find('z') == 0 or dimension_name.find('Z') == 0) {
       return Z_AXIS;
     }
 
-    if (name == "t" or name == "T" or name == "time" or
-        name.find('t') == 0 or name.find('T') == 0) {
+    if (dimension_name == "t" or dimension_name == "T" or dimension_name == "time" or
+        dimension_name.find('t') == 0 or dimension_name.find('T') == 0) {
       return T_AXIS;
     }
 
@@ -554,25 +557,27 @@ AxisType File::dimension_type(const std::string &name,
     return UNKNOWN_AXIS;
   } catch (RuntimeError &e) {
     e.add_context("getting the type of dimension '%s' in '%s'",
-                  name.c_str(), filename().c_str());
+                  dimension_name.c_str(), name().c_str());
     throw;
   }
   return UNKNOWN_AXIS;          // LCOV_EXCL_LINE
 }
 
-void File::define_dimension(const std::string &name, size_t length) const {
+void File::define_dimension(const std::string &dimension_name, size_t length) const {
   try {
-    m_impl->nc->def_dim(name, length);
+    m_impl->nc->def_dim(dimension_name, length);
   } catch (RuntimeError &e) {
-    e.add_context("defining dimension '%s' in '%s'", name.c_str(), filename().c_str());
+    e.add_context("defining dimension '%s' in '%s'", dimension_name.c_str(),
+                  name().c_str());
     throw;
   }
 }
 
 //! \brief Define a variable.
-void File::define_variable(const std::string &name, io::Type nctype, const std::vector<std::string> &dims) const {
+void File::define_variable(const std::string &variable_name, io::Type nctype,
+                           const std::vector<std::string> &dims) const {
   try {
-    m_impl->nc->def_var(name, nctype, dims);
+    m_impl->nc->def_var(variable_name, nctype, dims);
 
     // FIXME: I need to write and tune chunk_dimensions that would be called below before we use
     // this.
@@ -594,27 +599,29 @@ void File::define_variable(const std::string &name, io::Type nctype, const std::
     */
 
   } catch (RuntimeError &e) {
-    e.add_context("defining variable '%s' in '%s'", name.c_str(), filename().c_str());
+    e.add_context("defining variable '%s' in '%s'", variable_name.c_str(),
+                  name().c_str());
     throw;
   }
 }
 
 //! \brief Get dimension data (a coordinate variable).
-std::vector<double>  File::read_dimension(const std::string &name) const {
+std::vector<double>  File::read_dimension(const std::string &dimension_name) const {
   try {
-    if (not find_variable(name)) {
+    if (not find_variable(dimension_name)) {
       throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable not found");
     }
 
-    unsigned int length = dimension_length(name);
+    unsigned int length = dimension_length(dimension_name);
 
     std::vector<double> result(length);
 
-    read_variable(name, {0}, {length}, result.data());
+    read_variable(dimension_name, {0}, {length}, result.data());
 
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("reading dimension '%s' from '%s'", name.c_str(), filename().c_str());
+    e.add_context("reading dimension '%s' from '%s'", dimension_name.c_str(),
+                  name().c_str());
     throw;
   }
 }
@@ -629,7 +636,7 @@ void File::append_history(const std::string &history) const {
     redef();
     write_attribute("PISM_GLOBAL", "history", history + old_history);
   } catch (RuntimeError &e) {
-    e.add_context("appending to the history attribute in \"" + filename() + "\"");
+    e.add_context("appending to the history attribute in \"" + name() + "\"");
     throw;
   }
 }
@@ -642,7 +649,7 @@ void File::write_attribute(const std::string &var_name, const std::string &att_n
     m_impl->nc->put_att_double(var_name, att_name, nctype, values);
   } catch (RuntimeError &e) {
     e.add_context("writing double attribute '%s:%s' in '%s'",
-                  var_name.c_str(), att_name.c_str(), filename().c_str());
+                  var_name.c_str(), att_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -656,7 +663,7 @@ void File::write_attribute(const std::string &var_name, const std::string &att_n
     m_impl->nc->put_att_text(var_name, att_name, value + "\0");
   } catch (RuntimeError &e) {
     e.add_context("writing text attribute '%s:%s' in '%s'",
-                  var_name.c_str(), att_name.c_str(), filename().c_str());
+                  var_name.c_str(), att_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -684,7 +691,7 @@ std::vector<double> File::read_double_attribute(const std::string &var_name, con
     return result;
   } catch (RuntimeError &e) {
     e.add_context("reading double attribute '%s:%s' from '%s'",
-                  var_name.c_str(), att_name.c_str(), filename().c_str());
+                  var_name.c_str(), att_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -703,7 +710,7 @@ std::string File::read_text_attribute(const std::string &var_name, const std::st
     m_impl->nc->get_att_text(var_name, att_name, result);
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("reading text attribute '%s:%s' from %s", var_name.c_str(), att_name.c_str(), filename().c_str());
+    e.add_context("reading text attribute '%s:%s' from %s", var_name.c_str(), att_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -714,7 +721,7 @@ unsigned int File::nattributes(const std::string &var_name) const {
     m_impl->nc->inq_varnatts(var_name, result);
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("getting the number of attributes of variable '%s' in '%s'", var_name.c_str(), filename().c_str());
+    e.add_context("getting the number of attributes of variable '%s' in '%s'", var_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -726,7 +733,7 @@ std::string File::attribute_name(const std::string &var_name, unsigned int n) co
     m_impl->nc->inq_attname(var_name, n, result);
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("getting the name of an attribute of variable '%s' in '%s'", var_name.c_str(), filename().c_str());
+    e.add_context("getting the name of an attribute of variable '%s' in '%s'", var_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -738,7 +745,7 @@ io::Type File::attribute_type(const std::string &var_name, const std::string &at
     m_impl->nc->inq_atttype(var_name, att_name, result);
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("getting the type of an attribute of variable '%s' in '%s'", var_name.c_str(), filename().c_str());
+    e.add_context("getting the type of an attribute of variable '%s' in '%s'", var_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -751,7 +758,7 @@ void File::read_variable(const std::string &variable_name,
   try {
     m_impl->nc->get_vara_double(variable_name, start, count, ip);
   } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), filename().c_str());
+    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -764,7 +771,7 @@ void File::write_variable(const std::string &variable_name,
   try {
     m_impl->nc->put_vara_double(variable_name, start, count, op);
   } catch (RuntimeError &e) {
-    e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), filename().c_str());
+    e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -782,7 +789,7 @@ void File::write_distributed_array(const std::string &variable_name,
     m_impl->nc->write_darray(variable_name, grid, z_count, time_dependent, t_length - 1, input);
   } catch (RuntimeError &e) {
     e.add_context("writing distributed array '%s' to '%s'",
-                  variable_name.c_str(), filename().c_str());
+                  variable_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -795,7 +802,7 @@ void File::read_variable_transposed(const std::string &variable_name,
   try {
     m_impl->nc->get_varm_double(variable_name, start, count, imap, ip);
   } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), filename().c_str());
+    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), name().c_str());
     throw;
   }
 }
@@ -806,7 +813,7 @@ unsigned int File::nvariables() const {
   try {
     m_impl->nc->inq_nvars(n_vars);
   } catch (RuntimeError &e) {
-    e.add_context("getting the number of variables in '%s'", filename().c_str());
+    e.add_context("getting the number of variables in '%s'", name().c_str());
     throw;
   }
 
@@ -818,7 +825,7 @@ std::string File::variable_name(unsigned int id) const {
   try {
     m_impl->nc->inq_varname(id, result);
   } catch (RuntimeError &e) {
-    e.add_context("getting the name of %d-th variable in '%s'", id, filename().c_str());
+    e.add_context("getting the name of %d-th variable in '%s'", id, name().c_str());
     throw;
   }
 

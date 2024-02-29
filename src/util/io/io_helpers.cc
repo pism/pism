@@ -203,7 +203,7 @@ void define_dimension(const File &file, unsigned long int length,
     write_attributes(file, metadata, PISM_DOUBLE);
 
   } catch (RuntimeError &e) {
-    e.add_context("defining dimension '%s' in '%s'", name.c_str(), file.filename().c_str());
+    e.add_context("defining dimension '%s' in '%s'", name.c_str(), file.name().c_str());
     throw;
   }
 }
@@ -238,7 +238,7 @@ void define_time(const File &file, const std::string &name, const std::string &c
 
     define_dimension(file, PISM_UNLIMITED, time);
   } catch (RuntimeError &e) {
-    e.add_context("defining the time dimension in \"" + file.filename() + "\"");
+    e.add_context("defining the time dimension in \"" + file.name() + "\"");
     throw;
   }
 }
@@ -258,7 +258,7 @@ void append_time(const File &file, const std::string &name, double value) {
     // PIO's I/O type PnetCDF requires this
     file.sync();
   } catch (RuntimeError &e) {
-    e.add_context("appending to the time dimension in \"" + file.filename() + "\"");
+    e.add_context("appending to the time dimension in \"" + file.name() + "\"");
     throw;
   }
 }
@@ -408,7 +408,7 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' from '%s'", var_name.c_str(), file.filename().c_str());
+    e.add_context("reading variable '%s' from '%s'", var_name.c_str(), file.name().c_str());
     throw;
   }
 }
@@ -449,7 +449,7 @@ static std::vector<double> read_for_interpolation(const File &file,
           if (fabs(value - fill_value) < epsilon) {
             throw RuntimeError::formatted(
                 PISM_ERROR_LOCATION, "Some values of '%s' in '%s' match the _FillValue attribute.",
-                variable_name.c_str(), file.filename().c_str());
+                variable_name.c_str(), file.name().c_str());
           }
         }
       }
@@ -458,7 +458,7 @@ static std::vector<double> read_for_interpolation(const File &file,
     return buffer;
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' from '%s'", variable_name.c_str(),
-                  file.filename().c_str());
+                  file.name().c_str());
     throw;
   }
 }
@@ -536,7 +536,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
   if (not var.exists) {
     throw RuntimeError::formatted(
         PISM_ERROR_LOCATION, "Can't find '%s' (%s) in '%s'.", variable.get_name().c_str(),
-        variable.get_string("standard_name").c_str(), file.filename().c_str());
+        variable.get_string("standard_name").c_str(), file.name().c_str());
   }
 
   // Sanity check: the variable in an input file should have the expected
@@ -572,7 +572,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
           "found the %dD variable %s (%s) in '%s' while trying to read\n"
           "'%s' ('%s'), which is %d-dimensional.",
           input_spatial_dim_count, var.name.c_str(), join(input_dims, ",").c_str(),
-          file.filename().c_str(), variable.get_name().c_str(),
+          file.name().c_str(), variable.get_name().c_str(),
           variable.get_string("long_name").c_str(), static_cast<int>(axes.size()));
     }
   }
@@ -607,7 +607,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
           throw RuntimeError::formatted(
               PISM_ERROR_LOCATION,
               "Some values of the variable '%s' in '%s' match the _FillValue attribute.",
-              var.name.c_str(), file.filename().c_str());
+              var.name.c_str(), file.name().c_str());
         }
       }
     }
@@ -636,7 +636,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
 
   if (not file.find_variable(name)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
-                                  file.filename().c_str());
+                                  file.name().c_str());
   }
 
   write_dimensions(var, grid, file);
@@ -876,7 +876,7 @@ void read_timeseries(const File &file, const VariableMetadata &metadata, const L
     if (dims.size() != 1) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "variable '%s' in '%s' should to have 1 dimension (got %d)",
-                                    name.c_str(), file.filename().c_str(), (int)dims.size());
+                                    name.c_str(), file.name().c_str(), (int)dims.size());
     }
 
     auto dimension_name = dims[0];
@@ -914,7 +914,7 @@ void read_timeseries(const File &file, const VariableMetadata &metadata, const L
 
   } catch (RuntimeError &e) {
     e.add_context("reading time-series variable '%s' from '%s'", name.c_str(),
-                  file.filename().c_str());
+                  file.name().c_str());
     throw;
   }
 }
@@ -943,7 +943,7 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
 
   } catch (RuntimeError &e) {
     e.add_context("writing time-series variable '%s' to '%s'", name.c_str(),
-                  file.filename().c_str());
+                  file.name().c_str());
     throw;
   }
 }
@@ -1049,7 +1049,7 @@ void read_time_bounds(const File &file,
     // variable are contiguous (without gaps) and stop if they are not.
   } catch (RuntimeError &e) {
     e.add_context("reading time bounds variable '%s' from '%s'", name.c_str(),
-                  file.filename().c_str());
+                  file.name().c_str());
     throw;
   }
 }
@@ -1081,7 +1081,7 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
 
   } catch (RuntimeError &e) {
     e.add_context("writing time-bounds variable '%s' to '%s'", name.c_str(),
-                  file.filename().c_str());
+                  file.name().c_str());
     throw;
   }
 }
@@ -1185,7 +1185,7 @@ void read_attributes(const File &file,
     } // end of for (int j = 0; j < nattrs; ++j)
   } catch (RuntimeError &e) {
     e.add_context("reading attributes of variable '%s' from '%s'",
-                  variable_name.c_str(), file.filename().c_str());
+                  variable_name.c_str(), file.name().c_str());
     throw;
   }
 }
@@ -1285,7 +1285,7 @@ void write_attributes(const File &file, const VariableMetadata &variable, io::Ty
 
   } catch (RuntimeError &e) {
     e.add_context("writing attributes of variable '%s' to '%s'",
-                  var_name.c_str(), file.filename().c_str());
+                  var_name.c_str(), file.name().c_str());
     throw;
   }
 }
@@ -1330,7 +1330,7 @@ void read_valid_range(const File &file, const std::string &name, VariableMetadat
     }
   } catch (RuntimeError &e) {
     e.add_context("reading valid range of variable '%s' from '%s'", name.c_str(),
-                  file.filename().c_str());
+                  file.name().c_str());
     throw;
   }
 }

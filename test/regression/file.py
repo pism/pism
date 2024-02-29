@@ -145,12 +145,12 @@ class File(TestCase):
             f.sync()
             f.close()
 
-    def test_filename(self):
-        "File.filename()"
+    def test_name(self):
+        "File.name()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
                           ctx.pio_iosys_id())
-            assert f.filename() == self.file_with_time
+            assert f.name() == self.file_with_time
             f.close()
 
     def test_nrecords(self):

@@ -189,7 +189,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "neither enthalpy nor temperature was found in '%s'.\n",
-                                  input_file.filename().c_str());
+                                  input_file.name().c_str());
   }
 }
 

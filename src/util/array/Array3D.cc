@@ -258,7 +258,7 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
   petsc::TemporaryGlobalVec tmp(dm());
 
   if (not V.exists) {
-    set_default_value_or_stop(file.filename(), variable, default_value, *log, tmp);
+    set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
   } else {
     grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 

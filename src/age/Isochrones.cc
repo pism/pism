@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 PISM Authors
+/* Copyright (C) 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -484,7 +484,7 @@ void Isochrones::initialize(const File &input_file, int record, bool use_interpo
     using namespace details;
 
     m_log->message(2, "* Initializing the isochrone tracking model from '%s'...\n",
-                   input_file.filename().c_str());
+                   input_file.name().c_str());
 
     if (use_interpolation) {
       m_log->message(2, "  [using bilinear interpolation to read layer thicknesses]\n");

@@ -130,7 +130,7 @@ void OptTillphiYieldStress::init_usurf_target(const File &input_file) {
     m_usurf_target.regrid(filename, io::Default::Nil());
   } else {
     m_log->message(2, "* No file set to read target surface elevation from... using '%s'\n",
-                   input_file.filename().c_str());
+                   input_file.name().c_str());
 
     m_usurf_target.regrid(input_file, io::Default::Nil());
   }

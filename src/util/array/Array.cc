@@ -440,7 +440,7 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
     if (not V.exists) {
-      set_default_value_or_stop(file.filename(), variable, default_value, *log, tmp);
+      set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
     } else {
       grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
@@ -472,7 +472,7 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
         }
 
         // Check the range and warn the user if needed:
-        variable.check_range(file.filename(), min, max);
+        variable.check_range(file.name(), min, max);
         if (m_impl->report_range) {
           variable.report_range(*log, min, max, V.found_using_standard_name);
         }
@@ -851,7 +851,7 @@ void Array::regrid(const File &file, io::Default default_value) {
     inc_state_counter();          // mark as modified
   } catch (RuntimeError &e) {
     e.add_context("regridding '%s' from '%s'",
-                  this->get_name().c_str(), file.filename().c_str());
+                  this->get_name().c_str(), file.name().c_str());
     throw;
   }
   m_impl->grid->ctx()->profiling().end("io.regridding");

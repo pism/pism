@@ -48,7 +48,7 @@ const array::Array3D & TemperatureModel::temperature() const {
 void TemperatureModel::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the temperature-based energy balance model from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   m_basal_melt_rate.read(input_file, record);
 
@@ -74,7 +74,7 @@ void TemperatureModel::bootstrap_impl(const File &input_file,
                                       const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   m_basal_melt_rate.regrid(input_file,
                            io::Default(m_config->get_number("bootstrapping.defaults.bmelt")));

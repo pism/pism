@@ -71,7 +71,7 @@ public:
 
   void sync() const;
 
-  std::string filename() const;
+  std::string name() const;
 
   unsigned int nrecords() const;
 
