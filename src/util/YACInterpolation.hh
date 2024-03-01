@@ -6,7 +6,6 @@
 
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/Units.hh"
-#include "pism/util/projection.hh"
 
 namespace pism {
 class Grid;
@@ -47,8 +46,5 @@ private:
 
   std::shared_ptr<pism::array::Scalar> m_buffer;
 };
-
-pism::MappingInfo mapping(const pism::File &file,
-                          pism::units::System::Ptr sys);
 
 #endif /* PISM_YACINTERPOLATION_H */
