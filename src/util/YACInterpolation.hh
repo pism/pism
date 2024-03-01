@@ -14,37 +14,34 @@ class File;
 namespace array {
 class Scalar;
 }
-} // namespace pism
 
 class YACInterpolation {
 public:
-  YACInterpolation(const pism::Grid &grid,
-                   const pism::File &file,
-                   const std::string &variable_name);
+  YACInterpolation(const Grid &grid, const File &file, const std::string &variable_name);
   ~YACInterpolation();
 
-  void regrid(const pism::File &file, pism::io::Default default_value,
-              pism::array::Scalar &target) const;
+  void regrid(const File &file, io::Default default_value, array::Scalar &target) const;
 
-  static std::string grid_name(const pism::File &file, const std::string &variable_name,
-                      pism::units::System::Ptr sys);
+  static std::string grid_name(const File &file, const std::string &variable_name,
+                               units::System::Ptr sys);
+
 private:
-  double interpolate(const pism::array::Scalar &source,
-                     pism::array::Scalar &target) const;
+  double interpolate(const array::Scalar &source, array::Scalar &target) const;
 
   static int interpolation_coarse_to_fine(double missing_value);
   static int interpolation_fine_to_coarse(double missing_value);
 
-  static int define_field(int component_id, const pism::Grid &pism_grid,
-                          const std::string &name);
-  static int define_grid(const pism::Grid &grid, const std::string &grid_name,
+  static int define_field(int component_id, const Grid &pism_grid, const std::string &name);
+  static int define_grid(const Grid &grid, const std::string &grid_name,
                          const std::string &projection);
 
   int m_instance_id;
   int m_source_field_id;
   int m_target_field_id;
 
-  std::shared_ptr<pism::array::Scalar> m_buffer;
+  std::shared_ptr<array::Scalar> m_buffer;
 };
+
+} // namespace pism
 
 #endif /* PISM_YACINTERPOLATION_H */
