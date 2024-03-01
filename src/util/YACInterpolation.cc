@@ -285,8 +285,7 @@ YACInterpolation::YACInterpolation(const pism::Grid &target_grid,
     log->message(2, "Input:\n");
     source_grid->report_parameters();
 
-    m_buffer =
-        std::make_shared<pism::array::Scalar>(source_grid, variable_name);
+    m_buffer = std::make_shared<pism::array::Scalar>(source_grid, variable_name);
 
     std::string target_grid_name = "internal";
     double fill_value = NAN;
