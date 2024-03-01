@@ -79,6 +79,13 @@ struct LonLatGrid {
 int YACInterpolation::define_grid(const pism::Grid &grid,
                                   const std::string &grid_name,
                                   const std::string &projection) {
+
+  if (projection.empty()) {
+    throw pism::RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "grid '%s' has no projection information",
+                                        grid_name.c_str());
+  }
+
   int xs = grid.xs();
   int ys = grid.ys();
   int xm = grid.xm();
