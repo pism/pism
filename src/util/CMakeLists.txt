@@ -56,6 +56,7 @@ add_library (util OBJECT
   label_components.cc
   connected_components.cc
   ScalarForcing.cc
+  YACInterpolation.cc
 )
 
 if(Pism_DEBUG)

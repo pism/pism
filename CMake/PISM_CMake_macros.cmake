@@ -166,6 +166,14 @@ macro(pism_find_prerequisites)
     find_package (ParallelIO REQUIRED)
   endif()
 
+  if (Pism_USE_YAC_INTERPOLATION)
+    if (NOT Pism_USE_PROJ)
+      message(FATAL_ERROR "Please build PISM with PROJ to use YAC for interpolation")
+    endif()
+
+    pism_find_library(YAC "yac>=3.0.3")
+  endif()
+
   if (Pism_USE_PARALLEL_NETCDF4)
     # Try to find netcdf_par.h. We assume that NetCDF was compiled with
     # parallel I/O if this header is present.
@@ -211,6 +219,11 @@ macro(pism_set_dependencies)
 
   if (Pism_USE_PNETCDF)
     include_directories (BEFORE SYSTEM ${PNETCDF_INCLUDE_DIRS})
+  endif()
+
+  if (Pism_USE_YAC_INTERPOLATION)
+    include_directories (${YAC_INCLUDE_DIRS})
+    list (APPEND Pism_EXTERNAL_LIBS PkgConfig::YAC)
   endif()
 
   # Hide distracting CMake variables
