@@ -56,8 +56,11 @@ add_library (util OBJECT
   label_components.cc
   connected_components.cc
   ScalarForcing.cc
-  YACInterpolation.cc
 )
+
+if(Pism_USE_YAC_INTERPOLATION)
+  target_sources(util PRIVATE YACInterpolation.cc)
+endif()
 
 if(Pism_DEBUG)
   target_sources(util PRIVATE Poisson.cc)
