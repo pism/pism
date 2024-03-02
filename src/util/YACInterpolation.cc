@@ -12,20 +12,39 @@
 
 #include "YACInterpolation.hh"
 
+#if (Pism_USE_PROJ==1)
+#include "pism/util/Proj.hh"
+#endif
+
 extern "C" {
 #include "yac_interface.h"
 }
 
 namespace pism {
 
-//! Get projection info from a NetCDF file.
-static pism::MappingInfo mapping(const pism::File &file, pism::units::System::Ptr sys) {
+/*!
+ * Utility class converting `x,y` coordinates in a projection to a `lon,lat` pair.
+ *
+ * Requires the `PROJ` library.
+ */
+class LonLatCalculator {
+public:
+  LonLatCalculator(const std::string &proj_string)
+      : m_coordinate_mapping(proj_string, "EPSG:4326") {
+  }
 
-  pism::MappingInfo result("mapping", sys);
-  result.proj = file.read_text_attribute("PISM_GLOBAL", "proj");
+  std::array<double, 2> lonlat(double x, double y) {
+    PJ_COORD in, out;
 
-  return result;
-}
+    in.xy = { x, y };
+    out   = proj_trans(*m_coordinate_mapping, PJ_FWD, in);
+
+    return { out.lp.phi, out.lp.lam };
+  }
+
+private:
+  Proj m_coordinate_mapping;
+};
 
 /*!
  * Grid definition using coordinates in radians.
@@ -259,7 +278,8 @@ static void pism_yac_error_handler(MPI_Comm comm, const char *msg, const char *s
   throw pism::RuntimeError::formatted(pism::ErrorLocation(source, line), "YAC error: %s", msg);
 }
 
-YACInterpolation::YACInterpolation(const pism::Grid &target_grid, const pism::File &file,
+YACInterpolation::YACInterpolation(const pism::Grid &target_grid,
+                                   const pism::File &input_file,
                                    const std::string &variable_name) {
   auto ctx = target_grid.ctx();
 
@@ -268,11 +288,12 @@ YACInterpolation::YACInterpolation(const pism::Grid &target_grid, const pism::Fi
   try {
     auto log = ctx->log();
 
-    auto source_grid = pism::Grid::FromFile(ctx, file, { variable_name }, pism::grid::CELL_CENTER);
+    auto source_grid = pism::Grid::FromFile(ctx, input_file, { variable_name }, pism::grid::CELL_CENTER);
 
-    std::string source_grid_name = grid_name(file, variable_name, ctx->unit_system());
+    std::string source_grid_name = grid_name(input_file, variable_name, ctx->unit_system());
 
-    source_grid->set_mapping_info(mapping(file, ctx->unit_system()));
+    auto mapping = get_projection_info(input_file, "mapping", ctx->unit_system());
+    source_grid->set_mapping_info(mapping);
 
     log->message(2, "Input:\n");
     source_grid->report_parameters();
@@ -340,7 +361,7 @@ YACInterpolation::YACInterpolation(const pism::Grid &target_grid, const pism::Fi
                    source_grid_name.c_str(), end - start);
     }
   } catch (pism::RuntimeError &e) {
-    e.add_context("initializing interpolation from %s to the internal grid", file.name().c_str());
+    e.add_context("initializing interpolation from %s to the internal grid", input_file.name().c_str());
     throw;
   }
 }

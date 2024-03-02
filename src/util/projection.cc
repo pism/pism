@@ -431,47 +431,4 @@ void compute_lat_bounds(const std::string &projection, array::Array3D &result) {
   compute_lon_lat_bounds(projection, LATITUDE, result);
 }
 
-struct LonLatCalculator::Impl {
-#if (Pism_USE_PROJ==1)
-  Impl(const std::string &proj_string) : coordinate_mapping(proj_string, "EPSG:4326") {
-  }
-  Proj coordinate_mapping;
-#else
-  Impl(const std::string & /*unused*/) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Build PISM with PROJ to use pism::LonLatCalculator");
-  }
-#endif
-};
-
-LonLatCalculator::LonLatCalculator(const std::string &proj_string) : m_impl(new Impl(proj_string)) {
-}
-
-LonLatCalculator::~LonLatCalculator() {
-  delete m_impl;
-}
-
-double LonLatCalculator::lon(double x, double y) const {
-  return lonlat(x, y)[0];
-}
-
-double LonLatCalculator::lat(double x, double y) const {
-  return lonlat(x, y)[1];
-}
-
-std::array<double, 2> LonLatCalculator::lonlat(double x, double y) const {
-#if (Pism_USE_PROJ == 1)
-  PJ_COORD in, out;
-
-  in.xy = { x, y };
-  out   = proj_trans(*(m_impl->coordinate_mapping), PJ_FWD, in);
-
-  return { out.lp.phi, out.lp.lam };
-#else
-  (void) x;
-  (void) y;
-#endif
-  return { 0.0, 0.0 };
-}
-
 } // end of namespace pism

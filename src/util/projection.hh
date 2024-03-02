@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -63,24 +63,6 @@ void compute_latitude(const std::string &projection, array::Scalar &result);
 
 void compute_lon_bounds(const std::string &projection, array::Array3D &result);
 void compute_lat_bounds(const std::string &projection, array::Array3D &result);
-
-/*!
- * Utility class converting `x,y` coordinates in a projection to a `lon,lat` pair.
- *
- * Requires the `PROJ` library.
- */
-class LonLatCalculator {
-public:
-  LonLatCalculator(const std::string &proj_string);
-  ~LonLatCalculator();
-
-  double lon(double x, double y) const;
-  double lat(double x, double y) const;
-  std::array<double, 2> lonlat(double x, double y) const;
-private:
-  struct Impl;
-  Impl *m_impl;
-};
 
 } // end of namespace pism
 
