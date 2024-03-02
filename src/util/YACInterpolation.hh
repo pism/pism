@@ -17,7 +17,8 @@ class Scalar;
 
 class YACInterpolation {
 public:
-  YACInterpolation(const Grid &grid, const File &file, const std::string &variable_name);
+  YACInterpolation(const Grid &target_grid, const File &input_file,
+                   const std::string &variable_name);
   ~YACInterpolation();
 
   void regrid(const File &file, io::Default default_value, array::Scalar &target) const;
