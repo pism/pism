@@ -391,18 +391,72 @@ static std::vector<AxisType> dimension_types(const File &file, const std::string
   return result;
 }
 
+/*!
+ * Transpose data in `input`, putting results in `output`.
+ *
+ * We assume that both `input` and `output` hold prod(`count`) elements.
+ *
+ * The `output` array uses the Y,X,Z order (columns in Z are contiguous).
+ *
+ * The `input` array uses the ordering corresponding to `input_axes` (ordering present in
+ * an input file).
+ *
+ * The array `count` provides the size of a block in `input`, listing axes in the order of
+ * values of AxisType (T,X,Y,Z).
+ */
+static void transpose(const double *input, const std::vector<AxisType> &input_axes,
+                      const std::array<int, 4> &count, double *output) {
+  std::vector<unsigned> delta = {1, 1, 1, 1}; // 4 to store steps for T,Y,X,Z axes
+  {
+    int N = (int)input_axes.size();
+    // compute changes in the linear index corresponding to incrementing one of the
+    // "spatial" indexes, in the order used in `input`:
+    std::vector<unsigned> tmp(N, 1);
+    for (int k = 0; k < N; ++k) {
+      for (int n = k + 1; n < N; ++n) {
+        tmp[k] *= count[input_axes[n]];
+      }
+    }
+    // re-arrange so that they are stored in the `T,X,Y,Z` order:
+    for (int k = 0; k < N; ++k) {
+      delta[input_axes[k]] = tmp[k];
+    }
+  }
+
+  // change in the linear index corresponding to incrementing x (`output` ordering):
+  unsigned delta_x = count[Z_AXIS];
+  // change in the linear index corresponding to incrementing y (`output` ordering):
+  unsigned delta_y = count[X_AXIS] * count[Z_AXIS];
+
+  // traverse in the memory storage order:
+  for (int y = 0; y < count[Y_AXIS]; ++y) {
+    for (int x = 0; x < count[X_AXIS]; ++x) {
+      for (int z = 0; z < count[Z_AXIS]; ++z) {
+        auto OUT = x * delta_x + y * delta_y + z * 1;
+        auto IN =  x * delta[X_AXIS] + y * delta[Y_AXIS] + z * delta[Z_AXIS];
+
+        output[OUT] = input[IN];
+      }
+    }
+  }
+}
+
 //! \brief Read an array distributed according to the grid.
 static void read_distributed_array(const File &file, const Grid &grid, const std::string &var_name,
                                    unsigned int z_count, unsigned int t_start, double *output) {
   try {
     auto dim_types = dimension_types(file, var_name, grid.ctx()->unit_system());
 
+    std::array<int, 4> count = { 1, grid.xm(), grid.ym(), (int)z_count };
     auto sc = compute_start_and_count(dim_types,
                                       { (int)t_start, grid.xs(), grid.ys(), 0 },
-                                      { 1, grid.xm(), grid.ym(), (int)z_count });
+                                      count);
 
     if (use_transposed_io(dim_types)) {
-      file.read_variable_transposed(var_name, sc.start, sc.count, sc.imap, output);
+      auto size = count[X_AXIS] * count[Y_AXIS] * count[Z_AXIS];
+      std::vector<double> tmp(size);
+      file.read_variable(var_name, sc.start, sc.count, tmp.data());
+      transpose(tmp.data(), dim_types, count, output);
     } else {
       file.read_variable(var_name, sc.start, sc.count, output);
     }
@@ -433,7 +487,9 @@ static std::vector<double> read_for_interpolation(const File &file,
     auto sc = compute_start_and_count(dim_types, lic.start, lic.count);
 
     if (use_transposed_io(dim_types)) {
-      file.read_variable_transposed(variable_name, sc.start, sc.count, sc.imap, buffer.data());
+      std::vector<double> tmp(buffer.size());
+      file.read_variable(variable_name, sc.start, sc.count, tmp.data());
+      transpose(tmp.data(), dim_types, lic.count, buffer.data());
     } else {
       file.read_variable(variable_name, sc.start, sc.count, buffer.data());
     }
