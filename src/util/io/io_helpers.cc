@@ -413,11 +413,12 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
   }
 }
 
-/** Regrid `variable_name` from a file, possibly replacing missing values with `default_value`.
+/** Read enough data for interpolation `variable_name` from a file
  *
  * @param file input file
  * @param variable_name variable to regrid
- * @param internal_grid computational grid; used to initialize interpolation
+ * @param[in] unit_system unit system used to determine dimension types
+ * @param[in] lic local interpolation context
  */
 static std::vector<double> read_for_interpolation(const File &file,
                                                   const std::string &variable_name,
