@@ -113,11 +113,6 @@ public:
                        const std::vector<unsigned int> &count,
                        double *ip) const;
 
-  void read_variable_transposed(const std::string &variable_name,
-                                const std::vector<unsigned int> &start,
-                                const std::vector<unsigned int> &count,
-                                const std::vector<unsigned int> &imap, double *ip) const;
-
   void write_variable(const std::string &variable_name,
                       const std::vector<unsigned int> &start,
                       const std::vector<unsigned int> &count,

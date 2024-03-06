@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -72,12 +72,6 @@ protected:
                       const std::vector<unsigned int> &count,
                       const double *op) const;
 
-  void get_varm_double_impl(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      const std::vector<unsigned int> &imap,
-                      double *ip) const;
-
   void inq_nvars_impl(int &result) const;
 
   void inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const;
@@ -117,11 +111,8 @@ protected:
 private:
   std::vector<std::string> m_mpi_io_hints;
 
-  void get_var_double(const std::string &variable_name,
-                     const std::vector<unsigned int> &start,
-                     const std::vector<unsigned int> &count,
-                     const std::vector<unsigned int> &imap, double *ip,
-                     bool transposed) const;
+  void get_var_double(const std::string &variable_name, const std::vector<unsigned int> &start,
+                      const std::vector<unsigned int> &count, double *ip) const;
 
   void init_hints();
 

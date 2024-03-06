@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -101,10 +101,6 @@ public:
   void write_darray(const std::string &variable_name, const Grid &grid, unsigned int z_count,
                     bool time_dependent, unsigned int record, const double *input);
 
-  void get_varm_double(const std::string &variable_name, const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       const std::vector<unsigned int> &imap, double *ip) const;
-
   void inq_nvars(int &result) const;
 
   void inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const;
@@ -184,11 +180,6 @@ protected:
   virtual void write_darray_impl(const std::string &variable_name, const Grid &grid,
                                  unsigned int z_count, bool time_dependent, unsigned int record,
                                  const double *input);
-
-  virtual void get_varm_double_impl(const std::string &variable_name,
-                                    const std::vector<unsigned int> &start,
-                                    const std::vector<unsigned int> &count,
-                                    const std::vector<unsigned int> &imap, double *ip) const = 0;
 
   virtual void inq_nvars_impl(int &result) const = 0;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -62,22 +62,12 @@ void NC4_Par::create_impl(const std::string &fname) {
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4_Par::set_access_mode(int varid, bool transposed) const {
+void NC4_Par::set_access_mode(int varid) const {
   int stat;
 
-  if (transposed) {
-    // Use independent parallel access mode because it works. It would be
-    // better to use collective mode, but I/O performance is ruined by
-    // the transpose anyway.
-    //
-    // See https://bugtracking.unidata.ucar.edu/browse/NCF-152 for the description of the bug we're
-    // avoiding here.
-    stat = nc_var_par_access(m_file_id, varid, NC_INDEPENDENT); check(PISM_ERROR_LOCATION, stat);
-  } else {
-    // Use collective parallel access mode because it is faster (and because it
-    // works in this case).
-    stat = nc_var_par_access(m_file_id, varid, NC_COLLECTIVE); check(PISM_ERROR_LOCATION, stat);
-  }
+  // Use collective parallel access mode because it is faster.
+  stat = nc_var_par_access(m_file_id, varid, NC_COLLECTIVE);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 void NC4_Par::set_compression_level_impl(int level) const {

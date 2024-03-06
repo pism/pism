@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -278,37 +278,24 @@ void NC_Serial::def_var_impl(const std::string &name, io::Type nctype,
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC_Serial::get_varm_double_impl(const std::string &variable_name,
-                                     const std::vector<unsigned int> &start,
-                                     const std::vector<unsigned int> &count,
-                                     const std::vector<unsigned int> &imap, double *op) const {
-  return this->get_var_double(variable_name, start, count, imap, op, true);
-}
-
 void NC_Serial::get_vara_double_impl(const std::string &variable_name,
                                      const std::vector<unsigned int> &start,
                                      const std::vector<unsigned int> &count, double *op) const {
-  std::vector<unsigned int> dummy;
-  return this->get_var_double(variable_name, start, count, dummy, op, false);
+  return this->get_var_double(variable_name, start, count, op);
 }
 
 //! \brief Get variable data.
 void NC_Serial::get_var_double(const std::string &variable_name,
                                const std::vector<unsigned int> &start_input,
                                const std::vector<unsigned int> &count_input,
-                               const std::vector<unsigned int> &imap_input, double *ip,
-                               bool transposed) const {
+                               double *ip) const {
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
-  std::vector<unsigned int> imap  = imap_input;
-  const int start_tag = 1, count_tag = 2, data_tag = 3, imap_tag = 4, chunk_size_tag = 5;
+
+  const int start_tag = 1, count_tag = 2, data_tag = 3, chunk_size_tag = 4;
   int stat = NC_NOERR, com_size, ndims = static_cast<int>(start.size());
   MPI_Status mpi_stat;
   unsigned int local_chunk_size = 1, processor_0_chunk_size = 0;
-
-  if (not transposed) {
-    imap.resize(ndims);
-  }
 
   // get the size of the communicator
   MPI_Comm_size(m_com, &com_size);
@@ -322,7 +309,7 @@ void NC_Serial::get_var_double(const std::string &variable_name,
   // buffer processor 0 will need
   MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_UNSIGNED, MPI_MAX, 0, m_com);
 
-  // now we need to send start, count and imap data to processor 0 and receive data
+  // now we need to send start and count data to processor 0 and receive data
   if (m_rank == 0) {
     std::vector<double> processor_0_buffer;
     // Note: this could be optimized: if processor_0_chunk_size <=
@@ -330,11 +317,10 @@ void NC_Serial::get_var_double(const std::string &variable_name,
     // loop will have to be re-ordered, though.
     processor_0_buffer.resize(processor_0_chunk_size);
 
-    // MPI calls below require C datatypes (so that we don't have to worry
-    // about sizes of size_t and ptrdiff_t), so we make local copies of start,
-    // count, and imap to use in the nc_get_varm_double() call.
+    // MPI calls below require C datatypes (so that we don't have to worry about sizes of
+    // size_t and ptrdiff_t), so we make local copies of start and count to use in the
+    // nc_get_vara_double() call.
     std::vector<size_t> nc_start(ndims), nc_count(ndims);
-    std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
     int varid;
 
     stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid);
@@ -343,32 +329,22 @@ void NC_Serial::get_var_double(const std::string &variable_name,
     for (int r = 0; r < com_size; ++r) {
 
       if (r != 0) {
-        // Note: start, count, imap, and local_chunk_size on processor zero are
+        // Note: start, count, and local_chunk_size on processor zero are
         // used *before* they get overwritten by these calls
         MPI_Recv(start.data(), ndims, MPI_UNSIGNED, r, start_tag, m_com, &mpi_stat);
         MPI_Recv(count.data(), ndims, MPI_UNSIGNED, r, count_tag, m_com, &mpi_stat);
-        MPI_Recv(imap.data(), ndims, MPI_UNSIGNED, r, imap_tag, m_com, &mpi_stat);
         MPI_Recv(&local_chunk_size, 1, MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
       }
 
-      // This for loop uses start, count and imap passed in as arguments when r
-      // == 0. For r > 0 they are overwritten by MPI_Recv calls above.
+      // This for loop uses start and count passed in as arguments when r == 0. For r > 0
+      // they are overwritten by MPI_Recv calls above.
       for (int k = 0; k < ndims; ++k) {
         nc_start[k]  = start[k];
         nc_count[k]  = count[k];
-        nc_imap[k]   = imap[k];
-        nc_stride[k] = 1; // fill with ones; this way it works even with
-                          // NetCDF versions with a bug affecting the
-                          // stride == NULL case.
       }
 
-      if (transposed) {
-        stat = nc_get_varm_double(m_file_id, varid, nc_start.data(), nc_count.data(),
-                                  nc_stride.data(), nc_imap.data(), processor_0_buffer.data());
-      } else {
-        stat = nc_get_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
-                                  processor_0_buffer.data());
-      }
+      stat = nc_get_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
+                                processor_0_buffer.data());
       check(PISM_ERROR_LOCATION, stat);
 
       if (r != 0) {
@@ -383,7 +359,6 @@ void NC_Serial::get_var_double(const std::string &variable_name,
   } else {
     MPI_Send(start.data(), ndims, MPI_UNSIGNED, 0, start_tag, m_com);
     MPI_Send(count.data(), ndims, MPI_UNSIGNED, 0, count_tag, m_com);
-    MPI_Send(imap.data(), ndims, MPI_UNSIGNED, 0, imap_tag, m_com);
     MPI_Send(&local_chunk_size, 1, MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
     MPI_Recv(ip, (int)local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com, &mpi_stat);
@@ -423,7 +398,6 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
     // size_t and ptrdiff_t), so we make local copies of start and count to use in the
     // nc_get_vara_double() call.
     std::vector<size_t> nc_start(ndims), nc_count(ndims);
-    std::vector<ptrdiff_t> nc_stride(ndims);
     int varid;
 
     stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid);
@@ -451,9 +425,6 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
       for (int k = 0; k < ndims; ++k) {
         nc_start[k]  = start[k];
         nc_count[k]  = count[k];
-        nc_stride[k] = 1; // fill with ones; this way it works even with
-                          // NetCDF versions with a bug affecting the
-                          // stride == NULL case.
       }
 
       stat = nc_put_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
