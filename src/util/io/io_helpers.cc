@@ -138,46 +138,47 @@ struct StartCountInfo {
   std::vector<unsigned int> count;
 };
 
+
+/*!
+ * Assemble start and count arrays for use with I/O function calls.
+ *
+ * This function re-arranges provided `start` and `count` (listed in the order T,X,Y,Z) to
+ * get start and count in the order matching the one in `dim_types`.
+ */
 static StartCountInfo compute_start_and_count(std::vector<AxisType> &dim_types,
-                                              std::array<int, 4> start_in,
-                                              std::array<int, 4> count_in) {
-
-  auto x_start = start_in[X_AXIS];
-  auto x_count = count_in[X_AXIS];
-  auto y_start = start_in[Y_AXIS];
-  auto y_count = count_in[Y_AXIS];
-  auto z_start = start_in[Z_AXIS];
-  auto z_count = count_in[Z_AXIS];
-
-  StartCountInfo result;
-
+                                              std::array<int, 4> start,
+                                              std::array<int, 4> count) {
   auto ndims = dim_types.size();
 
   // Resize output vectors:
+  StartCountInfo result;
   result.start.resize(ndims);
   result.count.resize(ndims);
 
   // Assemble start and count:
   for (unsigned int j = 0; j < ndims; j++) {
-    AxisType dimtype = dim_types[j];
-
-    switch (dimtype) {
+    switch (dim_types[j]) {
     case T_AXIS:
-      result.start[j] = start_in[T_AXIS];
-      result.count[j] = count_in[T_AXIS];
+      result.start[j] = start[T_AXIS];
+      result.count[j] = count[T_AXIS];
       break;
     case Y_AXIS:
-      result.start[j] = y_start;
-      result.count[j] = y_count;
+      result.start[j] = start[Y_AXIS];
+      result.count[j] = count[Y_AXIS];
       break;
     case X_AXIS:
-      result.start[j] = x_start;
-      result.count[j] = x_count;
+      result.start[j] = start[X_AXIS];
+      result.count[j] = count[X_AXIS];
       break;
     default:
+      // Note: the "default" case is used to handle "3D" variables where the third axis is
+      // not a "Z" axis, i.e. dim_types[j] == UNKNOWN_AXIS. We use this to write
+      // deposition times in the isochrone tracking model, latitude and longitude bounds,
+      // etc. In all these cases the data for the "unknown" axis is input in the slot for
+      // the "Z" axis. (At least this matches the in-memory storage order.)
     case Z_AXIS:
-      result.start[j] = z_start;
-      result.count[j] = z_count;
+      result.start[j] = start[Z_AXIS];
+      result.count[j] = count[Z_AXIS];
       break;
     }
   }
