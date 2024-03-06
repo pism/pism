@@ -107,6 +107,13 @@ RUN set -eux;\
         version=3.7.0 ./old-petsc.sh && \
         rm -rf ~/local/build
 
+# Build the current PETSc version with 64-bit indices
+COPY petsc-64bit.sh /tmp/
+RUN set -eux;\
+        cd /tmp && \
+        ./petsc-64bit.sh && \
+        rm -rf ~/local/build
+
 # Build the oldest supported CMake version
 COPY cmake-3_16_0.sh /tmp/
 RUN set -eux;\
