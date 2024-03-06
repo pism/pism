@@ -136,7 +136,6 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
 struct StartCountInfo {
   std::vector<unsigned int> start;
   std::vector<unsigned int> count;
-  std::vector<unsigned int> imap;
 };
 
 static StartCountInfo compute_start_and_count(std::vector<AxisType> &dim_types,
@@ -157,9 +156,8 @@ static StartCountInfo compute_start_and_count(std::vector<AxisType> &dim_types,
   // Resize output vectors:
   result.start.resize(ndims);
   result.count.resize(ndims);
-  result.imap.resize(ndims);
 
-  // Assemble start, count and imap:
+  // Assemble start and count:
   for (unsigned int j = 0; j < ndims; j++) {
     AxisType dimtype = dim_types[j];
 
@@ -167,23 +165,19 @@ static StartCountInfo compute_start_and_count(std::vector<AxisType> &dim_types,
     case T_AXIS:
       result.start[j] = start_in[T_AXIS];
       result.count[j] = count_in[T_AXIS];
-      result.imap[j]  = x_count * y_count * z_count;
       break;
     case Y_AXIS:
       result.start[j] = y_start;
       result.count[j] = y_count;
-      result.imap[j]  = x_count * z_count;
       break;
     case X_AXIS:
       result.start[j] = x_start;
       result.count[j] = x_count;
-      result.imap[j]  = z_count;
       break;
     default:
     case Z_AXIS:
       result.start[j] = z_start;
       result.count[j] = z_count;
-      result.imap[j]  = 1;
       break;
     }
   }

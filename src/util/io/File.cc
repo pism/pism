@@ -1,4 +1,4 @@
-// Copyright (C) 2012--2023 PISM Authors
+// Copyright (C) 2012--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -790,19 +790,6 @@ void File::write_distributed_array(const std::string &variable_name,
   } catch (RuntimeError &e) {
     e.add_context("writing distributed array '%s' to '%s'",
                   variable_name.c_str(), name().c_str());
-    throw;
-  }
-}
-
-
-void File::read_variable_transposed(const std::string &variable_name,
-                                    const std::vector<unsigned int> &start,
-                                    const std::vector<unsigned int> &count,
-                                    const std::vector<unsigned int> &imap, double *ip) const {
-  try {
-    m_impl->nc->get_varm_double(variable_name, start, count, imap, ip);
-  } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), name().c_str());
     throw;
   }
 }

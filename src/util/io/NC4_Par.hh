@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@ protected:
 
   virtual void create_impl(const std::string &filename);
 
-  virtual void set_access_mode(int varid, bool mapped) const;
+  virtual void set_access_mode(int varid) const;
 
   virtual void set_compression_level_impl(int level) const;
 };

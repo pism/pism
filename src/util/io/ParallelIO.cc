@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2023 PISM Authors
+/* Copyright (C) 2019, 2020, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -285,20 +285,6 @@ void ParallelIO::write_darray_impl(const std::string &variable_name, const Grid 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "ParallelIO: type conversion is not supported");
   }
-}
-
-
-void ParallelIO::get_varm_double_impl(const std::string &variable_name,
-                                      const std::vector<unsigned int> &start,
-                                      const std::vector<unsigned int> &count,
-                                      const std::vector<unsigned int> &imap, double *input) const {
-  (void)variable_name;
-  (void)start;
-  (void)count;
-  (void)imap;
-  (void)input;
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "ParallelIO does not support transposed access");
 }
 
 void ParallelIO::inq_nvars_impl(int &result) const {

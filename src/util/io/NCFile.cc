@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -184,25 +184,6 @@ void NCFile::write_darray_impl(const std::string &variable_name,
   }
 
   this->put_vara_double(variable_name, start, count, input);
-}
-
-
-void NCFile::get_varm_double(const std::string &variable_name,
-                            const std::vector<unsigned int> &start,
-                            const std::vector<unsigned int> &count,
-                            const std::vector<unsigned int> &imap,
-                            double *ip) const {
-
-#if (Pism_DEBUG==1)
-  if (start.size() != count.size() or
-      start.size() != imap.size()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "start, count and imap arrays have to have the same size");
-  }
-#endif
-
-  enddef();
-  this->get_varm_double_impl(variable_name, start, count, imap, ip);
 }
 
 void NCFile::inq_nvars(int &result) const {
