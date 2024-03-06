@@ -367,6 +367,15 @@ workflows:
 
       - build:
           version: default
+          name: petsc-64bit
+          cc: mpicc -cc=clang
+          cxx: mpicxx -cxx=clang++
+          cmake_prefix: /usr
+          petsc_dir: /home/builder/local/petsc-64bit
+          python: "Yes"
+
+      - build:
+          version: default
           name: old-cmake
           cc: mpicc -cc=clang
           cxx: mpicxx -cxx=clang++
