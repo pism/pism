@@ -26,7 +26,7 @@ for order in y,x,z y,z,x x,y,z x,z,y z,x,y z,y,x;
 do
   echo ${order}
   # Note: this is a no-op the first time through the loop.
-  ncpdq -O -a ${order} input-y,x,z.nc input-${order}.nc
+  ncpdq -4 -L1 -O -a ${order} input-y,x,z.nc input-${order}.nc
 
   # We don't need to regrid all the possible variables: one 2D and one 3D variable is
   # enough.
