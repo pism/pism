@@ -21,13 +21,6 @@ include (GNUInstallDirs)
 # call above)
 set(CMAKE_INSTALL_DOCDIR ${CMAKE_INSTALL_DATAROOTDIR}/doc/pism)
 
-if ((EXISTS "/etc/debian_version") AND ("${CMAKE_INSTALL_PREFIX}" MATCHES "/usr"))
-  message(STATUS "Installing in /usr on Debian or Ubuntu (we are probably building a package)")
-  set(Pism_DEBIAN_SYSTEMWIDE YES)
-else()
-  set(Pism_DEBIAN_SYSTEMWIDE NO)
-endif()
-
 # Deal with build types
 mark_as_advanced(CLEAR CMAKE_BUILD_TYPE)
 # Set the build type to "Release" so that users get optimized code by default:
@@ -75,6 +68,7 @@ file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_c
 # The default options cache
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
+option (Pism_DEBIAN_SYSTEMWIDE "Use settings appropriate when installing in a system-wide location on Debian/Ubuntu or building a package" OFF)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
 option (Pism_BUILD_DOCS "Build PISM's documentation with 'make all'." OFF)
