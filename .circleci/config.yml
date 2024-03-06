@@ -81,7 +81,7 @@ jobs:
           name: Run regression tests
           command: >-
             cd build &&
-            PYTHONPATH=~/project/build/site-packages:$PYTHONPATH
+            PYTHONPATH=~/project/build/site-packages:$PETSC_DIR/lib:$PYTHONPATH
             ${CMAKE_PREFIX}/bin/ctest -j ${N:-4} --output-on-failure
 
   build-minimal:
