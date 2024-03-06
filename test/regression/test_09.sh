@@ -13,9 +13,11 @@ cd $temp_dir
 set -e
 set -x
 
+PISM="$PISM_PATH/pismr -config $PISM_PATH/pism_config.nc"
+
 # Create a file to bootstrap from (with a non-trivial bed topography):
 # Note: Mx, My, and Mz should all be different.
-$MPIEXEC -n 1 $PISM_PATH/pismr -eisII J -Mx 51 -My 60 -Mz 21 -Mbz 21 -Lbz 1000 -y 0 -o input-y,x,z.nc
+$MPIEXEC -n 1 $PISM -eisII J -Mx 51 -My 60 -Mz 21 -Mbz 21 -Lbz 1000 -y 0 -o input-y,x,z.nc
 
 # There are 6 possible variable orders.
 #
@@ -33,7 +35,7 @@ do
   variables="topg,enthalpy"
 
   # Bootstrap from this file and run for 0 years:
-  $MPIEXEC -n 2 $PISM_PATH/pismr \
+  $MPIEXEC -n 2 $PISM \
            -Lz 4000 \
            -Mx 61 \
            -My 51 \
