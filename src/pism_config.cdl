@@ -610,6 +610,11 @@ netcdf pism_config {
     pism_config:calving.eigen_calving.K_type = "number";
     pism_config:calving.eigen_calving.K_units = "meter second";
 
+    pism_config:calving.exp3_calving.calve_along_flow_direction = "no";
+    pism_config:calving.exp3_calving.calve_along_flow_direction_doc = "Calve in opposite direction of terminal ice flow.";
+    pism_config:calving.exp3_calving.calve_along_flow_direction_option = "calve_along_flow_direction";
+    pism_config:calving.exp3_calving.calve_along_flow_direction_type = "flag";
+
     pism_config:calving.exp5_calving.threshold = 275.0;
     pism_config:calving.exp5_calving.threshold_doc = "Is used as parameter in calving law dependent on terminal ice thickness of floating or grounded ice and termial ice velocity.";
     pism_config:calving.exp5_calving.threshold_option = "exp5_calving_threshold";

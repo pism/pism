@@ -30,6 +30,7 @@
 
 #include "pism/frontretreat/calving/GivenRate.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/Exp3Calving.hh"
 #include "pism/frontretreat/calving/Exp5Calving.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
@@ -121,7 +122,8 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   // mechanisms that use a retreat rate
   bool front_retreat = (m_eigen_calving or m_vonmises_calving or
-                        m_hayhurst_calving or m_frontal_melt or m_exp5_calving);
+                        m_hayhurst_calving or m_frontal_melt or 
+                        m_exp3_calving or m_exp5_calving);
   if (front_retreat and m_config->get_flag("geometry.front_retreat.use_cfl")) {
     // at least one of front retreat mechanisms is active *and* PISM is told to use a CFL
     // restriction
@@ -143,6 +145,10 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
     if (m_vonmises_calving) {
       retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
+    }
+
+    if (m_exp3_calving) {
+      retreat_rate.add(1.0, m_exp3_calving->calving_rate());
     }
 
     if (m_exp5_calving) {

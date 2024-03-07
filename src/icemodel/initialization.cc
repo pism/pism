@@ -28,6 +28,7 @@
 #include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/Exp3Calving.hh"
 #include "pism/frontretreat/calving/Exp5Calving.hh"
 #include "pism/frontretreat/calving/GivenRate.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
@@ -941,6 +942,19 @@ void IceModel::init_calving() {
     methods.erase("eigen_calving");
 
     m_submodels["eigen calving"] = m_eigen_calving.get();
+  }
+
+  if (member("exp3_calving", methods)) {
+    allocate_front_retreat = true;
+
+    if (not m_exp3_calving) {
+      m_exp3_calving.reset(new calving::Exp3Calving(m_grid));
+    }
+
+    m_exp3_calving->init();
+    methods.erase("exp3_calving");
+
+    m_submodels["exp3 calving"] = m_exp3_calving.get();
   }
 
   if (member("exp5_calving", methods)) {
