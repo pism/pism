@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 Constantine Khroulev
+// Copyright (C) 2009--2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -547,7 +547,7 @@ void Forcing::update(unsigned int start) {
       lic.count[T_AXIS] = 1;
 
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(variable, *m_impl->grid, lic, file, tmp_array.get());
+      io::regrid_spatial_variable(variable, *grid(), lic, file, tmp_array.get());
 
       log->message(5, " %s: reading entry #%02d, year %s...\n", m_impl->name.c_str(), start + j,
                    t->date(m_data->time[start + j]).c_str());

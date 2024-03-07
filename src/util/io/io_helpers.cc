@@ -1,4 +1,4 @@
-/* Copyright (C) 2015--2023 PISM Authors
+/* Copyright (C) 2015--2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -146,8 +146,8 @@ struct StartCountInfo {
  * get start and count in the order matching the one in `dim_types`.
  */
 static StartCountInfo compute_start_and_count(std::vector<AxisType> &dim_types,
-                                              std::array<int, 4> start,
-                                              std::array<int, 4> count) {
+                                              const std::array<int, 4> &start,
+                                              const std::array<int, 4> &count) {
   auto ndims = dim_types.size();
 
   // Resize output vectors:
@@ -341,7 +341,7 @@ void write_dimensions(const SpatialVariableMetadata &var, const Grid &grid, cons
  * @param var_name name of the variable to check
  * @returns false if storage orders match, true otherwise
  */
-static bool use_transposed_io(std::vector<AxisType> dimension_types) {
+static bool transpose(std::vector<AxisType> dimension_types) {
 
   std::vector<AxisType> storage, memory = { Y_AXIS, X_AXIS };
 
@@ -432,79 +432,59 @@ static void transpose(const double *input, const std::vector<AxisType> &input_ax
   }
 }
 
-//! \brief Read an array distributed according to the grid.
-static void read_distributed_array(const File &file, const Grid &grid, const std::string &var_name,
-                                   unsigned int z_count, unsigned int t_start, double *output) {
-  try {
-    auto dim_types = dimension_types(file, var_name, grid.ctx()->unit_system());
+/*!
+ * Check if some values in `buffer` match the _FillValue attribute and stop with an error
+ * message if such values are found.
+ */
+static void check_for_missing_values(const File &file, const std::string &variable_name, double tolerance,
+                              const double *buffer, size_t buffer_length) {
+  auto attribute = file.read_double_attribute(variable_name, "_FillValue");
+  if (attribute.size() == 1) {
+    double fill_value = attribute[0];
 
-    std::array<int, 4> count = { 1, grid.xm(), grid.ym(), (int)z_count };
-    auto sc = compute_start_and_count(dim_types,
-                                      { (int)t_start, grid.xs(), grid.ys(), 0 },
-                                      count);
-
-    if (use_transposed_io(dim_types)) {
-      auto size = count[X_AXIS] * count[Y_AXIS] * count[Z_AXIS];
-      std::vector<double> tmp(size);
-      file.read_variable(var_name, sc.start, sc.count, tmp.data());
-      transpose(tmp.data(), dim_types, count, output);
-    } else {
-      file.read_variable(var_name, sc.start, sc.count, output);
+    for (size_t k = 0; k < buffer_length; ++k) {
+      if (fabs(buffer[k] - fill_value) < tolerance) {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "Variable '%s' in '%s' contains values matching the _FillValue attribute",
+            variable_name.c_str(), file.name().c_str());
+      }
+      if (not std::isfinite(buffer[k])) {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "Variable '%s' in '%s' contains values that are not finite (NaN or infinity)",
+            variable_name.c_str(), file.name().c_str());
+      }
     }
-
-  } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' from '%s'", var_name.c_str(), file.name().c_str());
-    throw;
   }
 }
 
-/** Read enough data for interpolation `variable_name` from a file
- *
- * @param file input file
- * @param variable_name variable to regrid
- * @param[in] unit_system unit system used to determine dimension types
- * @param[in] lic local interpolation context
- */
-static std::vector<double> read_for_interpolation(const File &file,
-                                                  const std::string &variable_name,
-                                                  std::shared_ptr<units::System> unit_system,
-                                                  const LocalInterpCtx &lic) {
-
+//! \brief Read an array distributed according to the grid.
+static void read_distributed_array(const File &file, const std::string &variable_name,
+                                   std::shared_ptr<units::System> unit_system,
+                                   const std::array<int,4> &start,
+                                   const std::array<int,4> &count,
+                                   double *output) {
   try {
-    std::vector<double> buffer(lic.buffer_size());
-
     auto dim_types = dimension_types(file, variable_name, unit_system);
 
-    auto sc = compute_start_and_count(dim_types, lic.start, lic.count);
+    auto sc = compute_start_and_count(dim_types, start, count);
 
-    if (use_transposed_io(dim_types)) {
-      std::vector<double> tmp(buffer.size());
+    auto size = count[X_AXIS] * count[Y_AXIS] * count[Z_AXIS];
+
+    if (transpose(dim_types)) {
+      std::vector<double> tmp(size);
       file.read_variable(variable_name, sc.start, sc.count, tmp.data());
-      transpose(tmp.data(), dim_types, lic.count, buffer.data());
+      transpose(tmp.data(), dim_types, count, output);
     } else {
-      file.read_variable(variable_name, sc.start, sc.count, buffer.data());
+      file.read_variable(variable_name, sc.start, sc.count, output);
     }
 
     // Stop with an error message if some values match the _FillValue attribute:
-    {
-      auto attribute = file.read_double_attribute(variable_name, "_FillValue");
-      if (attribute.size() == 1) {
-        double fill_value = attribute[0], epsilon = 1e-12;
+    check_for_missing_values(file, variable_name, 1e-12, output, size);
 
-        for (const auto &value : buffer) {
-          if (fabs(value - fill_value) < epsilon) {
-            throw RuntimeError::formatted(
-                PISM_ERROR_LOCATION, "Some values of '%s' in '%s' match the _FillValue attribute.",
-                variable_name.c_str(), file.name().c_str());
-          }
-        }
-      }
-    }
-
-    return buffer;
   } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(),
-                  file.name().c_str());
+    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), file.name().c_str());
     throw;
   }
 }
@@ -560,6 +540,21 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
   if (mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
     file.write_attribute(var.get_name(), "grid_mapping", mapping.get_name());
   }
+}
+
+static std::string check_units(const VariableMetadata &variable, const std::string &input_units,
+                               const Logger &log) {
+  std::string internal_units = variable["units"];
+  if (input_units.empty() and not internal_units.empty()) {
+    log.message(2,
+                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                "              Assuming that it is in '%s'.\n",
+                variable.get_name().c_str(), variable.get_string("long_name").c_str(),
+                internal_units.c_str());
+    return internal_units;
+  }
+
+  return input_units;
 }
 
 //! Read a variable from a file into an array `output`.
@@ -620,38 +615,21 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
   // make sure we have at least one level
   size_t nlevels = std::max(variable.levels().size(), (size_t)1);
 
-  read_distributed_array(file, grid, var.name, nlevels, time, output);
+  read_distributed_array(file, var.name, variable.unit_system(),
+                         {(int)time, grid.xs(), grid.ys(), 0},
+                         {1, grid.xm(), grid.ym(), (int)nlevels},
+                         output);
 
-  std::string input_units           = file.read_text_attribute(var.name, "units");
+  auto input_units           = file.read_text_attribute(var.name, "units");
   const std::string &internal_units = variable["units"];
 
-  if (input_units.empty() and not internal_units.empty()) {
-    const std::string &long_name = variable["long_name"];
-    log.message(2,
-                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                "              Assuming that it is in '%s'.\n",
-                variable.get_name().c_str(), long_name.c_str(), internal_units.c_str());
-    input_units = internal_units;
-  }
+  input_units = check_units(variable, input_units, log);
 
   // Convert data:
   size_t size = grid.xm() * grid.ym() * nlevels;
 
   // stop if some values match the _FillValue attribute
-  {
-    auto att = file.read_double_attribute(var.name, "_FillValue");
-    if (att.size() == 1) {
-      double fill_value = att[0];
-      for (size_t k = 0; k < size; ++k) {
-        if (output[k] == fill_value) {
-          throw RuntimeError::formatted(
-              PISM_ERROR_LOCATION,
-              "Some values of the variable '%s' in '%s' match the _FillValue attribute.",
-              var.name.c_str(), file.name().c_str());
-        }
-      }
-    }
-  }
+  check_for_missing_values(file, var.name, 1e-12, output, size);
 
   units::Converter(variable.unit_system(), input_units, internal_units)
       .convert_doubles(output, size);
@@ -831,13 +809,14 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const LocalInterpCtx &lic, const File &file,
                              double *output) {
 
-  auto var_info = file.find_variable(variable.get_name(), variable["standard_name"]);
-  auto variable_name = var_info.name;
+  auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
   const Profiling &profiling = internal_grid.ctx()->profiling();
 
   profiling.begin("io.regridding.read");
-  auto buffer = read_for_interpolation(file, variable_name, internal_grid.ctx()->unit_system(), lic);
+  std::vector<double> buffer(lic.buffer_size());
+  read_distributed_array(file, var.name, variable.unit_system(), lic.start, lic.count,
+                         buffer.data());
   profiling.end("io.regridding.read");
 
   // interpolate
@@ -847,18 +826,10 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
   // Get the units string from the file and convert the units:
   {
-    std::string input_units    = file.read_text_attribute(variable_name, "units");
+    std::string input_units    = file.read_text_attribute(var.name, "units");
     std::string internal_units = variable["units"];
 
-    if (input_units.empty() and not internal_units.empty()) {
-      const Logger &log = *internal_grid.ctx()->log();
-      log.message(2,
-                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                  "              Assuming that it is in '%s'.\n",
-                  variable.get_name().c_str(), variable.get_string("long_name").c_str(),
-                  internal_units.c_str());
-      input_units = internal_units;
-    }
+    input_units = check_units(variable, input_units, *internal_grid.ctx()->log());
 
     const size_t data_size = internal_grid.xm() * internal_grid.ym() * lic.z->n_output();
 
@@ -866,8 +837,6 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     units::Converter(variable.unit_system(), input_units, internal_units)
         .convert_doubles(output, data_size);
   }
-
-  read_valid_range(file, variable_name, variable);
 }
 
 

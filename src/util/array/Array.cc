@@ -413,9 +413,7 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
 
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-    if (not V.exists) {
-      set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
-    } else {
+    if (V.exists) {
       grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
       input_grid.report(*log, 4, variable.unit_system());
@@ -433,17 +431,11 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
 
       // Check the range and report it if necessary.
       {
+        io::read_valid_range(file, V.name, variable);
         const size_t data_size = grid()->xm() * grid()->ym() * levels().size();
         auto range = compute_range(grid()->com, tmp_array.get(), data_size);
         auto min   = range[0];
         auto max   = range[1];
-
-        if ((not std::isfinite(min)) or (not std::isfinite(max))) {
-          throw RuntimeError::formatted(
-              PISM_ERROR_LOCATION,
-              "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
-              variable.get_name().c_str(), variable.get_string("long_name").c_str());
-        }
 
         // Check the range and warn the user if needed:
         variable.check_range(file.name(), min, max);
@@ -451,6 +443,8 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
           variable.report_range(*log, min, max, V.found_using_standard_name);
         }
       }
+    } else {
+      set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
     }
 
     set_dof(da2, tmp, j);

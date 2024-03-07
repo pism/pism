@@ -257,9 +257,7 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
 
   petsc::TemporaryGlobalVec tmp(dm());
 
-  if (not V.exists) {
-    set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
-  } else {
+  if (V.exists) {
     grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
     input_grid.report(*log, 4, variable.unit_system());
@@ -272,6 +270,8 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
     // info in `input_grid`).
     petsc::VecArray tmp_array(tmp);
     io::regrid_spatial_variable(variable, *grid(), lic, file, tmp_array.get());
+  } else {
+    set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
   }
 
   if (m_impl->ghosted) {
