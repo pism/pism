@@ -615,6 +615,11 @@ netcdf pism_config {
     pism_config:calving.exp3_calving.calve_along_flow_direction_option = "calve_along_flow_direction";
     pism_config:calving.exp3_calving.calve_along_flow_direction_type = "flag";
 
+    pism_config:calving.exp3_calving.retreat_and_advance = "no";
+    pism_config:calving.exp3_calving.retreat_and_advance_doc = "Apply calving rate alternating over time as in EXP2 and EXP4 in CalvingMIP.";
+    pism_config:calving.exp3_calving.retreat_and_advance_option = "do_retreat_and_advance";
+    pism_config:calving.exp3_calving.retreat_and_advance_type = "flag";
+
     pism_config:calving.exp5_calving.threshold = 275.0;
     pism_config:calving.exp5_calving.threshold_doc = "Is used as parameter in calving law dependent on terminal ice thickness of floating or grounded ice and termial ice velocity.";
     pism_config:calving.exp5_calving.threshold_option = "exp5_calving_threshold";

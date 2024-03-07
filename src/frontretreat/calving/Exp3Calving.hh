@@ -27,9 +27,11 @@
 
 namespace pism {
 
+//class Geometry;
+
 namespace calving {
 
-/*! \brief Calving mechanism Exp3 from https://github.com/JRowanJordan/CalvingMIP/wiki/Experiment-3. */
+/*! \brief Calving mechanism Exp1/Exp3 from https://github.com/JRowanJordan/CalvingMIP/wiki/Experiment-3. */
 class Exp3Calving : public Component
 {
 public:
@@ -49,6 +51,7 @@ protected:
   DiagnosticList diagnostics_impl() const;
   double m_calving_threshold;
   bool m_calving_along_flow;
+  bool m_retreat_and_advance;
   array::Scalar1 m_calving_rate;
   array::CellType1 m_cell_type;
 };
