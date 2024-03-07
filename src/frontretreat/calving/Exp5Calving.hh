@@ -22,6 +22,8 @@
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/array/CellType.hh"
+
 
 namespace pism {
 
@@ -48,6 +50,7 @@ protected:
   double m_calving_threshold;
   bool m_calving_along_flow;
   array::Scalar1 m_calving_rate;
+  array::CellType1 m_cell_type;
 };
 
 } // end of namespace calving

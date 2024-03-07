@@ -35,12 +35,14 @@ namespace calving {
 
 Exp5Calving::Exp5Calving(IceGrid::ConstPtr grid)
   : Component(grid),
-    m_calving_rate(grid, "exp5_calving_rate")
+    m_calving_rate(grid, "exp5_calving_rate"),
+    m_cell_type(grid, "cell_type")
 {
   m_calving_rate.metadata().set_name("exp5_calving_rate");
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to Exp5 calving",
                            "m s-1", "m year-1", "", 0);
+  m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
 }
 
 void Exp5Calving::init() {
@@ -82,21 +84,26 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
 
   m_log->message(3, "    Update Exp5 calving rate.\n");
 
-  array::AccessScope list{&cell_type, &ice_thickness, &m_calving_rate, &ice_velocity};
+  // make a copy with a wider stencil
+  m_cell_type.copy_from(cell_type);
+  assert(m_cell_type.stencil_width() >= 2);
+
+  array::AccessScope list{&m_cell_type, &ice_thickness, &m_calving_rate, &ice_velocity};
 
   // a shortcut for readability:
   const auto &Hc = m_calving_threshold;
   double C = convert(m_sys, 1.0, "m year-1", "m second-1");
+  // lower calving rate threshold
+  double Cmin = 1.0e-7;
 
-
-  if (m_calving_along_flow) {
+  if (m_calving_along_flow) { // Here, the marginal ice velocity vectors are considered in calving rate
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      m_calving_rate(i, j) = 0.0;
+      m_calving_rate(i, j) = Cmin;
 
-      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) {
+      if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
 
         //m_log->message(3, "  Exp5 at %d,%d: %3.1f, %3.3f, %3.3f\n",i,j,ice_thickness(i,j),ice_velocity(i, j).u,ice_velocity(i, j).v);
         if (ice_velocity(i-1, j).u > 0.0 and ice_thickness(i-1,j) > 0.0) {
@@ -118,14 +125,46 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
         
         //m_calving_rate(i, j) /= C;
       }
+      m_calving_rate.update_ghosts();
+
+      // This part shall fill up ocean cells next to calving front with mean calving rates, 
+      // for cases, when calving front propagates forward with once cell per adaptive timestep (CFL)
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        //FIXME: fails in first step, when trying to access distance 2 mask values
+        bool next_to_calving_front = (m_cell_type.next_to_floating_ice(i+1, j)   or m_cell_type.next_to_floating_ice(i-1, j) or 
+                                      m_cell_type.next_to_floating_ice(i, j+1)   or m_cell_type.next_to_floating_ice(i, j-1)); // or 
+                                      //m_cell_type.next_to_floating_ice(i+1, j+1) or m_cell_type.next_to_floating_ice(i+1, j-1) or 
+                                      //m_cell_type.next_to_floating_ice(i-1, j+1) or m_cell_type.next_to_floating_ice(i-1, j-1));
+        
+        if (m_cell_type.ice_free_ocean(i, j) and m_calving_rate(i, j) < Cmin and next_to_calving_front) {
+
+          auto R = m_calving_rate.star(i, j);
+
+          int N        = 0;
+          double R_sum = 0.0;
+          for (auto direction : { North, East, South, West }) {
+            if (R[direction] > Cmin) {
+              R_sum += R[direction];
+              N++;
+            }
+          }
+
+          if (N > 0) {
+            m_calving_rate(i, j) = R_sum / N;
+          }
+          //m_log->message(3, "  Exp5 neighbor: %d: %3.1e at %d,%d.\n", N,m_calving_rate(i, j)/C,i,j);
+        }
+      }
     }
   } 
-  else { //only magnitudes
+  else { //only velocity magnitudes are considered in calving rate
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (cell_type.floating_ice(i, j) && cell_type.next_to_ice_free_ocean(i, j)) {
+      if (m_cell_type.floating_ice(i, j) && m_cell_type.next_to_ice_free_ocean(i, j)) {
         double Iv            = ice_velocity(i, j).magnitude();
         double H             = ice_thickness(i, j);
         m_calving_rate(i, j) = std::max(0.0, 1.0 + (Hc - H) / Hc) * Iv;
@@ -140,10 +179,10 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
+      if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_ice(i, j)) {
 
         auto R = m_calving_rate.star(i, j);
-        auto M = cell_type.star_int(i, j);
+        auto M = m_cell_type.star_int(i, j);
 
         int N        = 0;
         double R_sum = 0.0;
