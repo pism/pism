@@ -26,6 +26,10 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
 
+#include "pism/util/Time.hh"
+
+#include <cmath>                // pow, tan, atan
+
 
 namespace pism {
 
@@ -48,6 +52,8 @@ Exp3Calving::Exp3Calving(IceGrid::ConstPtr grid)
 void Exp3Calving::init() {
 
   m_log->message(2, "* Initializing the 'EXP3 calving' mechanism...\n");
+
+  m_retreat_and_advance = m_config->get_flag("calving.exp3_calving.retreat_and_advance");
 
   //m_calving_threshold = m_config->get_number("calving.exp3_calving.threshold");
 
@@ -82,9 +88,19 @@ void Exp3Calving::update(const array::CellType1 &cell_type,
                          const array::Scalar &ice_thickness) {
 
 
-  m_log->message(3, "    Update Exp3 calving rate.\n");
-
   m_cell_type.set(0.0);
+
+  double Wv = 0.0,
+         thistime = m_grid->ctx()->time()->current(),
+         starttime = m_grid->ctx()->time()->start(),
+         thisyear = convert(m_sys, thistime-starttime, "seconds","year");
+
+  if (m_retreat_and_advance) {
+    Wv = -300.0 * sin(2.0*M_PI*thisyear/1000.0);
+    m_log->message(3, "    Update Exp2 calving rate at year %f with Wv=%f m/yr\n",thisyear,Wv);
+  } else {
+    m_log->message(3, "    Update Exp3 calving rate.\n");
+  }
 
   array::AccessScope list{&cell_type, &m_cell_type, &ice_thickness, &m_calving_rate, &ice_velocity};
 
@@ -122,6 +138,7 @@ void Exp3Calving::update(const array::CellType1 &cell_type,
         }
         
         m_cell_type(i, j) = 1.0;
+        m_calving_rate(i, j) -= Wv*C;
       }
       m_calving_rate.update_ghosts();
 
@@ -160,7 +177,7 @@ void Exp3Calving::update(const array::CellType1 &cell_type,
 
       if (cell_type.floating_ice(i, j) && cell_type.next_to_ice_free_ocean(i, j)) {
         double Iv            = ice_velocity(i, j).magnitude();
-        m_calving_rate(i, j) = Iv;
+        m_calving_rate(i, j) = Iv - Wv;
       } else {
         m_calving_rate(i, j) = 0.0;
       }
