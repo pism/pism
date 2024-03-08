@@ -604,32 +604,33 @@ netcdf pism_config {
     pism_config:bootstrapping.temperature_heuristic_option = "boot_temperature_heuristic";
     pism_config:bootstrapping.temperature_heuristic_type = "keyword";
 
+    pism_config:calving.calvingmip_calving.calve_along_flow_direction = "no";
+    pism_config:calving.calvingmip_calving.calve_along_flow_direction_doc = "Calve in opposite direction of terminal ice flow.";
+    pism_config:calving.calvingmip_calving.calve_along_flow_direction_option = "calve_along_flow_direction";
+    pism_config:calving.calvingmip_calving.calve_along_flow_direction_type = "flag";
+
+    pism_config:calving.calvingmip_calving.experiment = 1;
+    pism_config:calving.calvingmip_calving.experiment_doc = "Type of CalvingMIP experiment 1 to 5 as indicated in https://github.com/JRowanJordan/CalvingMIP/wiki/Experiments---Phase-1";
+    pism_config:calving.calvingmip_calving.experiment_type = "integer";
+    pism_config:calving.calvingmip_calving.experiment_option = "calvingmip_experiment";
+    pism_config:calving.calvingmip_calving.experiment_units = "count";
+
+    pism_config:calving.calvingmip_calving.retreat_and_advance = "no";
+    pism_config:calving.calvingmip_calving.retreat_and_advance_doc = "Apply calving rate alternating over time as in EXP2 and EXP4 in CalvingMIP.";
+    pism_config:calving.calvingmip_calving.retreat_and_advance_option = "do_retreat_and_advance";
+    pism_config:calving.calvingmip_calving.retreat_and_advance_type = "flag";
+
+    pism_config:calving.calvingmip_calving.threshold = 275.0;
+    pism_config:calving.calvingmip_calving.threshold_doc = "Is used as parameter in CalvingMIP EXP5 calving law dependent on terminal ice thickness of floating or grounded ice and termial ice velocity.";
+    pism_config:calving.calvingmip_calving.threshold_option = "exp5_calving_threshold";
+    pism_config:calving.calvingmip_calving.threshold_type = "number";
+    pism_config:calving.calvingmip_calving.threshold_units = "meters";
+
     pism_config:calving.eigen_calving.K = 0.0;
     pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \\times 10^{11}` m a, that is, `3 \\times 10^{16}` to `10^{19}` m s.";
     pism_config:calving.eigen_calving.K_option = "eigen_calving_K";
     pism_config:calving.eigen_calving.K_type = "number";
     pism_config:calving.eigen_calving.K_units = "meter second";
-
-    pism_config:calving.exp3_calving.calve_along_flow_direction = "no";
-    pism_config:calving.exp3_calving.calve_along_flow_direction_doc = "Calve in opposite direction of terminal ice flow.";
-    pism_config:calving.exp3_calving.calve_along_flow_direction_option = "calve_along_flow_direction";
-    pism_config:calving.exp3_calving.calve_along_flow_direction_type = "flag";
-
-    pism_config:calving.exp3_calving.retreat_and_advance = "no";
-    pism_config:calving.exp3_calving.retreat_and_advance_doc = "Apply calving rate alternating over time as in EXP2 and EXP4 in CalvingMIP.";
-    pism_config:calving.exp3_calving.retreat_and_advance_option = "do_retreat_and_advance";
-    pism_config:calving.exp3_calving.retreat_and_advance_type = "flag";
-
-    pism_config:calving.exp5_calving.threshold = 275.0;
-    pism_config:calving.exp5_calving.threshold_doc = "Is used as parameter in calving law dependent on terminal ice thickness of floating or grounded ice and termial ice velocity.";
-    pism_config:calving.exp5_calving.threshold_option = "exp5_calving_threshold";
-    pism_config:calving.exp5_calving.threshold_type = "number";
-    pism_config:calving.exp5_calving.threshold_units = "meters";
-
-    pism_config:calving.exp5_calving.calve_along_flow_direction = "no";
-    pism_config:calving.exp5_calving.calve_along_flow_direction_doc = "Calve in opposite direction of terminal ice flow.";
-    pism_config:calving.exp5_calving.calve_along_flow_direction_option = "calve_along_flow_direction";
-    pism_config:calving.exp5_calving.calve_along_flow_direction_type = "flag";
 
     pism_config:calving.float_kill.calve_near_grounding_line = "yes";
     pism_config:calving.float_kill.calve_near_grounding_line_doc = "Calve floating ice near the grounding line.";

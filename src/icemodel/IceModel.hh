@@ -72,8 +72,7 @@ class Hydrology;
 
 namespace calving {
 class EigenCalving;
-class Exp3Calving;
-class Exp5Calving;
+class CalvingMIP;
 class GivenRate;
 class vonMisesCalving;
 class FloatKill;
@@ -270,8 +269,7 @@ protected:
   std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
   std::shared_ptr<calving::GivenRate>          m_given_calving;
   std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
-  std::shared_ptr<calving::Exp3Calving>        m_exp3_calving;
-  std::shared_ptr<calving::Exp5Calving>        m_exp5_calving;
+  std::shared_ptr<calving::CalvingMIP>         m_calvingmip;
   std::shared_ptr<calving::HayhurstCalving>    m_hayhurst_calving;
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
   std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PISMEXP5CALVING_H_
-#define _PISMEXP5CALVING_H_
+#ifndef _PISMCALVINGMIP_H_
+#define _PISMCALVINGMIP_H_
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
@@ -29,12 +29,12 @@ namespace pism {
 
 namespace calving {
 
-/*! \brief Calving mechanism Exp5 from https://github.com/JRowanJordan/CalvingMIP/wiki/Experiment-5. */
-class Exp5Calving : public Component
+/*! \brief Calving mechanism Exp1/Exp3 from https://github.com/JRowanJordan/CalvingMIP/wiki */
+class CalvingMIP : public Component
 {
 public:
-  Exp5Calving(IceGrid::ConstPtr grid);
-  virtual ~Exp5Calving() = default;
+  CalvingMIP(IceGrid::ConstPtr grid);
+  virtual ~CalvingMIP() = default;
 
   void init();
 
@@ -47,8 +47,10 @@ public:
 
 protected:
   DiagnosticList diagnostics_impl() const;
+  int m_experiment;
   double m_calving_threshold;
-  bool m_calving_along_flow;
+  bool m_calving_along_flow,
+       m_retreat_and_advance;
   array::Scalar1 m_calving_rate;
   array::CellType1 m_cell_type;
 };
@@ -56,4 +58,4 @@ protected:
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* _PISMEXP5CALVING_H_ */
+#endif /* _PISMCALVINGMIP_H_ */
