@@ -126,7 +126,7 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
 
       int index = (j * grid.xm() + i) * nlevels + k;
 
-      // index into the new array and interpolate in x direction
+      // index into the new array and interpolate in y direction
       output_array[index] = a_m * (1.0 - y_alpha) + a_p * y_alpha;
       // done with the point at (x,y,z)
     }
