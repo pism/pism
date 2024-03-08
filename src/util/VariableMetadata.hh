@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018, 2020, 2021, 2022, 2023 Constantine Khroulev
+// Copyright (C) 2009--2018, 2020, 2021, 2022, 2023, 2024, 2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __VariableMetadata_hh
-#define __VariableMetadata_hh
+#ifndef PISM_VARIABLEMETADATA_H
+#define PISM_VARIABLEMETADATA_H
 
 #include <set>
 #include <map>
@@ -164,7 +164,7 @@ public:
 
   void report_to_stdout(const Logger &log, int verbosity_threshold) const;
   void check_range(const std::string &filename, double min, double max) const;
-  void report_range(const Logger &log, double min, double max, bool found_by_standard_name);
+  void report_range(const Logger &log, double min, double max, bool found_by_standard_name) const;
 
 protected:
   unsigned int m_n_spatial_dims;
@@ -208,4 +208,4 @@ private:
 
 } // end of namespace pism
 
-#endif  // __VariableMetadata_hh
+#endif  // PISM_VARIABLEMETADATA_H
