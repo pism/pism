@@ -628,9 +628,6 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
   // Convert data:
   size_t size = grid.xm() * grid.ym() * nlevels;
 
-  // stop if some values match the _FillValue attribute
-  check_for_missing_values(file, var.name, 1e-12, output, size);
-
   units::Converter(variable.unit_system(), input_units, internal_units)
       .convert_doubles(output, size);
 }
