@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cstddef>
 #include <vector>
 #include <cmath>
 
@@ -157,13 +158,13 @@ int YACInterpolation::define_grid(const pism::Grid &grid, const std::string &gri
     double dy = y[1] - y[0];
 
     double x_last = x.back() + 0.5 * dx;
-    for (int k = 0; k < x.size(); ++k) {
+    for (size_t k = 0; k < x.size(); ++k) {
       x[k] -= 0.5 * dx;
     }
     x.push_back(x_last);
 
     double y_last = y.back() + 0.5 * dy;
-    for (int k = 0; k < y.size(); ++k) {
+    for (size_t k = 0; k < y.size(); ++k) {
       y[k] -= 0.5 * dy;
     }
     y.push_back(y_last);
@@ -299,7 +300,8 @@ std::string YACInterpolation::grid_name(const pism::File &file, const std::strin
   return result;
 }
 
-static void pism_yac_error_handler(MPI_Comm comm, const char *msg, const char *source, int line) {
+static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const char *source,
+                                   int line) {
   throw pism::RuntimeError::formatted(pism::ErrorLocation(source, line), "YAC error: %s", msg);
 }
 
