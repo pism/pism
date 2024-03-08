@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Exp5Calving.hh"
+#include "CalvingMIP.hh"
 
 #include "pism/util/Mask.hh"
 #include "pism/util/IceGrid.hh"
@@ -26,49 +26,59 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
 
+#include "pism/util/Time.hh"
+
+#include <cmath>                // pow, tan, atan
+
 
 namespace pism {
 
-//! @brief Calving and iceberg removal code as in https://github.com/JRowanJordan/CalvingMIP/wiki/Experiment-5
+//! @brief Calving and iceberg removal code as in https://github.com/JRowanJordan/CalvingMIP/wiki
 namespace calving {
 
 
-Exp5Calving::Exp5Calving(IceGrid::ConstPtr grid)
+CalvingMIP::CalvingMIP(IceGrid::ConstPtr grid)
   : Component(grid),
-    m_calving_rate(grid, "exp5_calving_rate"),
+    m_calving_rate(grid, "calvingmip_calving_rate"),
     m_cell_type(grid, "cell_type")
 {
-  m_calving_rate.metadata().set_name("exp5_calving_rate");
+  m_calving_rate.metadata().set_name("calvingmip_calving_rate");
   m_calving_rate.set_attrs("diagnostic",
-                           "horizontal calving rate due to Exp5 calving",
+                           "horizontal calving rate due to CalvingMIP calving",
                            "m s-1", "m year-1", "", 0);
   m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
 }
 
-void Exp5Calving::init() {
+void CalvingMIP::init() {
 
-  m_log->message(2, "* Initializing the 'EXP5 calving' mechanism...\n");
+  m_log->message(2, "* Initializing the 'CalvingMIP calving' mechanism...\n");
 
-  m_calving_threshold = m_config->get_number("calving.exp5_calving.threshold");
+  m_experiment = m_config->get_number("calving.calvingmip_calving.experiment");
 
-  if (m_calving_threshold <= 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'calving.exp5_calving.threshold' has to be positive");
+  m_retreat_and_advance = false;
+  if (m_experiment == 2 or m_experiment == 4)
+    m_retreat_and_advance = true;
+
+  if (m_experiment == 5) {
+    m_calving_threshold = m_config->get_number("calving.calvingmip_calving.threshold");
+    if (m_calving_threshold <= 0.0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'calving.calvingmip_calving.threshold' has to be positive");
+    }
+    m_log->message(2, "  CalvingMIP thickness threshold: %3.3f meters.\n", m_calving_threshold);
   }
-    
-  m_log->message(2, "  Exp5 thickness threshold: %3.3f meters.\n", m_calving_threshold);
 
-  m_calving_along_flow = m_config->get_flag("calving.exp5_calving.calve_along_flow_direction");
-
+  m_calving_along_flow = m_config->get_flag("calving.calvingmip_calving.calve_along_flow_direction");
   if (m_calving_along_flow) {
-    m_log->message(2, "  Exp5 calving along terminal ice flow.\n");
+    m_log->message(2, "  CalvingMIP calving along terminal ice flow.\n");
   }
 
 }
 
+
 /**
  * Updates calving rate according to the
- * calving rule Exp5 removing ice at the shelf front 
- * Cr = max(0,1+(Hc-H)/Hc) * Iv;.
+ * CalvingMIP calving rules removing ice at the shelf front 
+ * Cr = - Iv;.
  *
  * @param[in] pism_mask ice cover mask
  * @param[in] ice_velocity ice velocity
@@ -77,24 +87,37 @@ void Exp5Calving::init() {
  * @return 0 on success
  */
 
-void Exp5Calving::update(const array::CellType1 &cell_type,
+void CalvingMIP::update(const array::CellType1 &cell_type,
                          const array::Vector1 &ice_velocity,
                          const array::Scalar &ice_thickness) {
 
 
-  m_log->message(3, "    Update Exp5 calving rate.\n");
+  bool exp5 = false;
+  if (m_experiment == 5)
+    exp5 = true;
 
-  // make a copy with a wider stencil
   m_cell_type.set(0.0);
-
-
-  array::AccessScope list{&cell_type, &m_cell_type, &ice_thickness, &m_calving_rate, &ice_velocity};
 
   // a shortcut for readability:
   const auto &Hc = m_calving_threshold;
   double C = convert(m_sys, 1.0, "m year-1", "m second-1");
   // lower calving rate threshold
   double Cmin = 1.0e-7;
+
+  double Wv = 0.0,
+         thistime = m_grid->ctx()->time()->current(),
+         starttime = m_grid->ctx()->time()->start(),
+         thisyear = convert(m_sys, thistime-starttime, "seconds","year");
+
+  if (m_retreat_and_advance) {
+    Wv = -300.0 * sin(2.0*M_PI*thisyear/1000.0);
+    m_log->message(3, "    Update CalvingMIP Exp%d calving rate at year %f with Wv=%f m/yr\n",m_experiment,thisyear,Wv);
+  } else {
+    m_log->message(3, "    Update CalvingMIP Exp%d calving rate.\n",m_experiment);
+  }
+
+  array::AccessScope list{&cell_type, &m_cell_type, &ice_thickness, &m_calving_rate, &ice_velocity};
+
 
   if (m_calving_along_flow) { // Here, the marginal ice velocity vectors are considered in calving rate
 
@@ -105,34 +128,55 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
 
       if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) {
 
-        //m_log->message(3, "  Exp5 at %d,%d: %3.1f, %3.3f, %3.3f\n",i,j,ice_thickness(i,j),ice_velocity(i, j).u,ice_velocity(i, j).v);
+        //m_log->message(3, "  Exp3 at %d,%d: %3.3f, %3.3f\n",i,j,ice_velocity(i, j).u,ice_velocity(i, j).v);
         if (ice_velocity(i-1, j).u > 0.0 and ice_thickness(i-1,j) > 0.0) {
-          m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - ice_thickness(i-1,j)) / Hc) * ice_velocity(i-1, j).u;
-          //m_log->message(3, "  Exp5 n: %3.1f, %3.3f, %3.3f at %d,%d.\n", ice_thickness(i-1,j),ice_velocity(i-1, j).u/C,m_calving_rate(i, j)/C,i,j);
+          if (exp5) {
+            m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - ice_thickness(i-1,j)) / Hc) * ice_velocity(i-1, j).u;
+          } else {
+            m_calving_rate(i, j) += ice_velocity(i-1, j).u;
+            }
+          //m_log->message(3, "  Exp3 n: %3.3f, %3.3f at %d,%d.\n", ice_velocity(i-1, j).u/C,m_calving_rate(i, j)/C,i,j);
         }
         if (ice_velocity(i+1, j).u < 0.0 and ice_thickness(i+1,j) > 0.0) {
-          m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - ice_thickness(i+1,j)) / Hc) * ice_velocity(i+1, j).u;
-          //m_log->message(3, "  Exp5 s: %3.1f, %3.3f, %3.3f at %d,%d.\n", ice_thickness(i+1,j),ice_velocity(i+1, j).u/C,m_calving_rate(i, j)/C,i,j);
+          if (exp5) {
+            m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - ice_thickness(i+1,j)) / Hc) * ice_velocity(i+1, j).u; 
+          } else {
+            m_calving_rate(i, j) -= ice_velocity(i+1, j).u;
+          }
+          //m_log->message(3, "  Exp3 s: %3.3f, %3.3f at %d,%d.\n", ice_velocity(i+1, j).u/C,m_calving_rate(i, j)/C,i,j);
         }
         if (ice_velocity(i, j-1).v > 0.0 and ice_thickness(i,j-1) > 0.0) {
-          m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - ice_thickness(i,j-1)) / Hc) * ice_velocity(i, j-1).v;
-          //m_log->message(3, "  Exp5 w: %3.1f, %3.3f, %3.3f at %d,%d.\n", ice_thickness(i,j-1),ice_velocity(i, j-1).v/C,m_calving_rate(i, j)/C,i,j);
+          if (exp5) {
+            m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - ice_thickness(i,j-1)) / Hc) * ice_velocity(i, j-1).v;
+          } else {
+            m_calving_rate(i, j) += ice_velocity(i, j-1).v;
+          }
+          //m_log->message(3, "  Exp3 w: %3.3f, %3.3f at %d,%d.\n", ice_velocity(i, j-1).v/C,m_calving_rate(i, j)/C,i,j);
         }
         if (ice_velocity(i, j+1).v < 0.0 and ice_thickness(i,j+1) > 0.0) {
-          m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - ice_thickness(i,j+1)) / Hc) * ice_velocity(i, j+1).v;
-          //m_log->message(3, "  Exp5 e: %3.1f, %3.3f, %3.3f at %d,%d.\n", ice_thickness(i,j+1),ice_velocity(i, j+1).v/C,m_calving_rate(i, j)/C,i,j);
+          if (exp5) {
+            m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - ice_thickness(i,j+1)) / Hc) * ice_velocity(i, j+1).v;
+          } else {
+            m_calving_rate(i, j) -= ice_velocity(i, j+1).v;
+          }
+          //m_log->message(3, "  Exp3 e: %3.3f, %3.3f at %d,%d.\n", ice_velocity(i, j+1).v/C,m_calving_rate(i, j)/C,i,j);
         }
         
         m_cell_type(i, j) = 1.0;
+        if (exp5 == false) {
+          m_calving_rate(i, j) -= Wv*C;
+        }
       }
       m_calving_rate.update_ghosts();
+      m_cell_type.update_ghosts();
 
+      
       // This part shall fill up ocean cells next to calving front with mean calving rates, 
       // for cases, when calving front propagates forward with once cell per adaptive timestep (CFL)
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        bool next_to_calving_front = (m_cell_type(i+1, j)==1 or m_cell_type(i-1, j)==1 or m_cell_type(i, j+1)==1 or m_cell_type(i, j-1)==1);
+         bool next_to_calving_front = (m_cell_type(i+1, j)==1 or m_cell_type(i-1, j)==1 or m_cell_type(i, j+1)==1 or m_cell_type(i, j-1)==1);
         
         if (cell_type.ice_free_ocean(i, j) and m_calving_rate(i, j) < Cmin and next_to_calving_front) {
 
@@ -150,7 +194,6 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
           if (N > 0) {
             m_calving_rate(i, j) = R_sum / N;
           }
-          //m_log->message(3, "  Exp5 neighbor: %d: %3.1e at %d,%d.\n", N,m_calving_rate(i, j)/C,i,j);
         }
       }
     }
@@ -163,8 +206,11 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
       if (cell_type.floating_ice(i, j) && cell_type.next_to_ice_free_ocean(i, j)) {
         double Iv            = ice_velocity(i, j).magnitude();
         double H             = ice_thickness(i, j);
-        m_calving_rate(i, j) = std::max(0.0, 1.0 + (Hc - H) / Hc) * Iv;
-        //m_calving_rate(i, j) /= C;
+        if (exp5) {
+          m_calving_rate(i, j) = std::max(0.0, 1.0 + (Hc - H) / Hc) * Iv;
+        } else {
+          m_calving_rate(i, j) = Iv - Wv;
+        }
       } else {
         m_calving_rate(i, j) = 0.0;
       }
@@ -178,7 +224,7 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
       if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
 
         auto R = m_calving_rate.star(i, j);
-        auto M = m_cell_type.star_int(i, j);
+        auto M = cell_type.star_int(i, j);
 
         int N        = 0;
         double R_sum = 0.0;
@@ -198,11 +244,11 @@ void Exp5Calving::update(const array::CellType1 &cell_type,
 }
 
 
-DiagnosticList Exp5Calving::diagnostics_impl() const {
-  return {{"exp5_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+DiagnosticList CalvingMIP::diagnostics_impl() const {
+  return {{"calvingmip_calving_rate", Diagnostic::wrap(m_calving_rate)}};
 }
 
-const array::Scalar &Exp5Calving::calving_rate() const {
+const array::Scalar &CalvingMIP::calving_rate() const {
   return m_calving_rate;
 }
 
