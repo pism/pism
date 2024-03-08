@@ -436,8 +436,8 @@ static void transpose(const double *input, const std::vector<AxisType> &input_ax
  * Check if some values in `buffer` match the _FillValue attribute and stop with an error
  * message if such values are found.
  */
-static void check_for_missing_values(const File &file, const std::string &variable_name, double tolerance,
-                              const double *buffer, size_t buffer_length) {
+static void check_for_missing_values(const File &file, const std::string &variable_name,
+                                     double tolerance, const double *buffer, size_t buffer_length) {
   auto attribute = file.read_double_attribute(variable_name, "_FillValue");
   if (attribute.size() == 1) {
     double fill_value = attribute[0];
