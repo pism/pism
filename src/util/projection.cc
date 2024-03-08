@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -209,7 +209,7 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
     }
   }
 
-  if (input_file.find_variable(mapping_name)) {
+  if (input_file.variable_exists(mapping_name)) {
     // input file has a mapping variable
 
     result.mapping = io::read_attributes(input_file, mapping_name, unit_system);

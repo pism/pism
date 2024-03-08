@@ -110,7 +110,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
 
     auto variable_name = m_salinity_ocean->metadata().get_name();
 
-    if (input.find_variable(variable_name)) {
+    if (input.variable_exists(variable_name)) {
       m_salinity_ocean->init(opt.filename, opt.periodic);
     } else {
       double salinity = m_config->get_number("constants.sea_water.salinity", "g / kg");

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -46,7 +46,7 @@ BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
     // levels and the depth of the bed thermal layer from it:
     File input_file(ctx->com(), opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    if (input_file.find_variable("litho_temp")) {
+    if (input_file.variable_exists("litho_temp")) {
       grid::InputGridInfo info(input_file, "litho_temp", ctx->unit_system(),
                                grid::CELL_CENTER); // grid registration is irrelevant
 

@@ -216,13 +216,13 @@ class File(TestCase):
             assert f.dimensions(variable_name) == ()
             f.close()
 
-    def test_find_dimension(self):
-        "File.find_dimension()"
+    def test_dimension_exists(self):
+        "File.dimension_exists()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
                           ctx.pio_iosys_id())
-            assert f.find_dimension("x")
-            assert not f.find_dimension("z")
+            assert f.dimension_exists("x")
+            assert not f.dimension_exists("z")
             f.close()
 
     def test_dimension_type(self):

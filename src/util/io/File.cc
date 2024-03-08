@@ -408,7 +408,7 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
 }
 
 //! \brief Checks if a variable exists.
-bool File::find_variable(const std::string &variable_name) const {
+bool File::variable_exists(const std::string &variable_name) const {
   try {
     bool exists = false;
     m_impl->nc->inq_varid(variable_name, exists);
@@ -434,7 +434,7 @@ std::vector<std::string> File::dimensions(const std::string &variable_name) cons
 
 
 //! \brief Checks if a dimension exists.
-bool File::find_dimension(const std::string &dimension_name) const {
+bool File::dimension_exists(const std::string &dimension_name) const {
   try {
     bool exists = false;
     m_impl->nc->inq_dimid(dimension_name, exists);
@@ -452,7 +452,7 @@ bool File::find_dimension(const std::string &dimension_name) const {
  */
 unsigned int File::dimension_length(const std::string &dimension_name) const {
   try {
-    if (find_dimension(dimension_name)) {
+    if (dimension_exists(dimension_name)) {
       unsigned int result = 0;
       m_impl->nc->inq_dimlen(dimension_name, result);
       return result;
@@ -493,7 +493,7 @@ AxisType axis_type_from_string(const std::string &input) {
 AxisType File::dimension_type(const std::string &dimension_name,
                               units::System::Ptr unit_system) const {
   try {
-    if (not find_variable(dimension_name)) {
+    if (not variable_exists(dimension_name)) {
       throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable " + dimension_name + " is missing");
     }
 
@@ -605,7 +605,7 @@ void File::define_variable(const std::string &variable_name, io::Type nctype,
 //! \brief Get dimension data (a coordinate variable).
 std::vector<double>  File::read_dimension(const std::string &dimension_name) const {
   try {
-    if (not find_variable(dimension_name)) {
+    if (not variable_exists(dimension_name)) {
       throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable not found");
     }
 

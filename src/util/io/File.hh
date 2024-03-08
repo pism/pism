@@ -88,7 +88,7 @@ public:
 
   std::vector<std::string> dimensions(const std::string &variable_name) const;
 
-  bool find_dimension(const std::string &name) const;
+  bool dimension_exists(const std::string &name) const;
 
   AxisType dimension_type(const std::string &name,
                           units::System::Ptr unit_system) const;
@@ -104,7 +104,7 @@ public:
 
   VariableLookupData find_variable(const std::string &short_name, const std::string &std_name) const;
 
-  bool find_variable(const std::string &short_name) const;
+  bool variable_exists(const std::string &short_name) const;
 
   void read_variable(const std::string &variable_name,
                        const std::vector<unsigned int> &start,

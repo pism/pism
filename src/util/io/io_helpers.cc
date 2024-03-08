@@ -220,7 +220,7 @@ void define_time(const File &file, const Context &ctx) {
 void define_time(const File &file, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system) {
   try {
-    if (file.find_variable(name)) {
+    if (file.variable_exists(name)) {
       return;
     }
 
@@ -264,14 +264,14 @@ static void define_dimensions(const SpatialVariableMetadata &var, const Grid &gr
 
   // x
   std::string x_name = var.x().get_name();
-  if (not file.find_dimension(x_name)) {
+  if (not file.dimension_exists(x_name)) {
     define_dimension(file, grid.Mx(), var.x());
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE, { grid.x(1) - grid.x(0) });
   }
 
   // y
   std::string y_name = var.y().get_name();
-  if (not file.find_dimension(y_name)) {
+  if (not file.dimension_exists(y_name)) {
     define_dimension(file, grid.My(), var.y());
     file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE, { grid.y(1) - grid.y(0) });
   }
@@ -279,7 +279,7 @@ static void define_dimensions(const SpatialVariableMetadata &var, const Grid &gr
   // z
   std::string z_name = var.z().get_name();
   if (not z_name.empty()) {
-    if (not file.find_dimension(z_name)) {
+    if (not file.dimension_exists(z_name)) {
       const std::vector<double> &levels = var.levels();
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
@@ -316,19 +316,19 @@ static void write_dimension_data(const File &file, const std::string &name,
 void write_dimensions(const SpatialVariableMetadata &var, const Grid &grid, const File &file) {
   // x
   std::string x_name = var.x().get_name();
-  if (file.find_dimension(x_name)) {
+  if (file.dimension_exists(x_name)) {
     write_dimension_data(file, x_name, grid.x());
   }
 
   // y
   std::string y_name = var.y().get_name();
-  if (file.find_dimension(y_name)) {
+  if (file.dimension_exists(y_name)) {
     write_dimension_data(file, y_name, grid.y());
   }
 
   // z
   std::string z_name = var.z().get_name();
-  if (file.find_dimension(z_name)) {
+  if (file.dimension_exists(z_name)) {
     write_dimension_data(file, z_name, var.levels());
   }
 }
@@ -504,7 +504,7 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
   std::vector<std::string> dims;
   std::string name = var.get_name();
 
-  if (file.find_variable(name)) {
+  if (file.variable_exists(name)) {
     return;
   }
 
@@ -652,7 +652,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
 
   auto name = var.get_name();
 
-  if (not file.find_variable(name)) {
+  if (not file.variable_exists(name)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
                                   file.name().c_str());
   }
@@ -846,15 +846,15 @@ void define_timeseries(const VariableMetadata &var, const std::string &dimension
 
   std::string name = var.get_name();
 
-  if (file.find_variable(name)) {
+  if (file.variable_exists(name)) {
     return;
   }
 
-  if (not file.find_dimension(dimension_name)) {
+  if (not file.dimension_exists(dimension_name)) {
     define_dimension(file, PISM_UNLIMITED, VariableMetadata(dimension_name, var.unit_system()));
   }
 
-  if (not file.find_variable(name)) {
+  if (not file.variable_exists(name)) {
     file.define_variable(name, nctype, { dimension_name });
   }
 
@@ -933,7 +933,7 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
 
   std::string name = metadata.get_name();
   try {
-    if (not file.find_variable(name)) {
+    if (not file.variable_exists(name)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' not found", name.c_str());
     }
 
@@ -959,15 +959,15 @@ void define_time_bounds(const VariableMetadata& var,
                         const File &file, io::Type nctype) {
   std::string name = var.get_name();
 
-  if (file.find_variable(name)) {
+  if (file.variable_exists(name)) {
     return;
   }
 
-  if (not file.find_dimension(dimension_name)) {
+  if (not file.dimension_exists(dimension_name)) {
     file.define_dimension(dimension_name, PISM_UNLIMITED);
   }
 
-  if (not file.find_dimension(bounds_name)) {
+  if (not file.dimension_exists(bounds_name)) {
     file.define_dimension(bounds_name, 2);
   }
 
@@ -988,7 +988,7 @@ void read_time_bounds(const File &file,
     units::Unit internal_units(system, metadata["units"]);
 
     // Find the variable:
-    if (not file.find_variable(name)) {
+    if (not file.variable_exists(name)) {
       throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " is missing");
     }
 
@@ -1022,7 +1022,7 @@ void read_time_bounds(const File &file,
     // Find the corresponding 'time' variable. (We get units from the 'time'
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
     // may not have metadata set.)
-    if (not file.find_variable(dimension_name)) {
+    if (not file.variable_exists(dimension_name)) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "time coordinate variable " + dimension_name + " is missing");
     }
@@ -1066,7 +1066,7 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
 
   std::string name = var.get_name();
   try {
-    bool variable_exists = file.find_variable(name);
+    bool variable_exists = file.variable_exists(name);
     if (not variable_exists) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' not found",
                                     name.c_str());
@@ -1172,7 +1172,7 @@ VariableMetadata read_attributes(const File &file,
 
   try {
 
-    if (not file.find_variable(variable_name)) {
+    if (not file.variable_exists(variable_name)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' is missing", variable_name.c_str());
     }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,8 +37,8 @@ public:
   ~NetCDFConfig();
 
 protected:
-  void read_impl(const File &nc);
-  void write_impl(const File &nc) const;
+  void read_impl(const File &file);
+  void write_impl(const File &file) const;
 
   bool is_set_impl(const std::string &name) const;
 

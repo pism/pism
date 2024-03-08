@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -63,7 +63,7 @@ void CalvingAtThickness::init() {
   ForcingOptions opt(*m_grid->ctx(), "calving.thickness_calving");
 
   File file(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
-  auto variable_exists = file.find_variable(m_calving_threshold->get_name());
+  auto variable_exists = file.variable_exists(m_calving_threshold->get_name());
   if (variable_exists) {
     m_log->message(2,
                    "  Reading thickness calving threshold from file '%s'...\n",

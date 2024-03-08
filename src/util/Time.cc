@@ -42,7 +42,7 @@ static std::string reference_date_from_file(const File &file,
                                             const std::string &default_value,
                                             bool stop_on_error) {
 
-  if (file.find_variable(time_name)) {
+  if (file.variable_exists(time_name)) {
     std::string time_units = file.read_text_attribute(time_name, "units");
 
     if (not time_units.empty()) {
@@ -81,7 +81,7 @@ static std::string calendar_from_file(const File &file,
                                       const std::string &default_value,
                                       bool stop_on_error) {
 
-  if (file.find_variable(time_name)) {
+  if (file.variable_exists(time_name)) {
     std::string calendar_name = file.read_text_attribute(time_name, "calendar");
 
     if (not calendar_name.empty()) {

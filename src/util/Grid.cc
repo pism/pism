@@ -258,7 +258,7 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
                                      grid::Registration r) {
 
   for (const auto &name : var_names) {
-    if (file.find_variable(name)) {
+    if (file.variable_exists(name)) {
       return Grid_FromFile(ctx, file, name, r);
     }
   }
@@ -1295,7 +1295,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     for (const auto *name : { "land_ice_thickness", "bedrock_altitude", "thk", "topg" }) {
 
-      grid_info_found = file.find_variable(name);
+      grid_info_found = file.variable_exists(name);
       if (not grid_info_found) {
         // Failed to find using a short name. Try using name as a
         // standard name...

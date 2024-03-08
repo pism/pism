@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -467,7 +467,12 @@ def run():
         design_true.regrid(inv_data_filename, True)
         try:
             f = PISM.File(com, inv_data_filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-            PISM.read_attributes(f, design_true.get_name(), design_true.metadata())
+            attrs = PISM.read_attributes(f, design_true.get_name(), context.unit_system)
+
+            for k,v in attrs.all_strings().items():
+                design_true.metadata().set_string(k,v)
+            for k,v in attrs.all_doubles().items():
+                design_true.metadata().set_numbers(k,v)
         finally:
             f.close()
         vecs.add(design_true, writing=saving_inv_data)
