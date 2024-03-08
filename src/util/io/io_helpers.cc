@@ -542,6 +542,9 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
   }
 }
 
+/*!
+ * Check if units are set in an input file and warn if they are not.
+ */
 static std::string check_units(const VariableMetadata &variable, const std::string &input_units,
                                const Logger &log) {
   std::string internal_units = variable["units"];
