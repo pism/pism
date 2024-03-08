@@ -212,7 +212,7 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
   if (input_file.find_variable(mapping_name)) {
     // input file has a mapping variable
 
-    io::read_attributes(input_file, mapping_name, result.mapping);
+    result.mapping = io::read_attributes(input_file, mapping_name, unit_system);
 
     if (proj_is_epsg) {
       // check consistency
