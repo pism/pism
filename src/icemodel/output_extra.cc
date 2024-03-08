@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -157,7 +157,7 @@ void IceModel::init_extras() {
     File file(m_grid->com, m_extra_filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     std::string time_name = m_config->get_string("time.dimension_name");
-    if (file.find_variable(time_name)) {
+    if (file.variable_exists(time_name)) {
       double time_max = vector_max(file.read_dimension(time_name));
 
       while (m_next_extra + 1 < m_extra_times.size() && m_extra_times[m_next_extra + 1] < time_max) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -146,7 +146,7 @@ void write_mapping(const File &file, const pism::MappingInfo &info) {
   const auto &mapping = info.mapping;
   std::string name = mapping.get_name();
   if (mapping.has_attributes()) {
-    if (not file.find_variable(name)) {
+    if (not file.variable_exists(name)) {
       file.define_variable(name, io::PISM_DOUBLE, {});
     }
     io::write_attributes(file, mapping, io::PISM_DOUBLE);
@@ -160,7 +160,7 @@ void write_mapping(const File &file, const pism::MappingInfo &info) {
 }
 
 void write_run_stats(const File &file, const pism::VariableMetadata &stats) {
-  if (not file.find_variable(stats.get_name())) {
+  if (not file.variable_exists(stats.get_name())) {
     file.define_variable(stats.get_name(), io::PISM_DOUBLE, {});
   }
   io::write_attributes(file, stats, io::PISM_DOUBLE);

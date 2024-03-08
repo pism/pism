@@ -54,7 +54,7 @@ void TemperatureModel::restart_impl(const File &input_file, int record) {
 
   const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  if (input_file.find_variable(m_ice_temperature.metadata().get_name())) {
+  if (input_file.variable_exists(m_ice_temperature.metadata().get_name())) {
     m_ice_temperature.read(input_file, record);
   } else {
     init_enthalpy(input_file, false, record);

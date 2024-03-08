@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -110,7 +110,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
 
     auto variable_name = m_salinity_ocean->metadata().get_name();
 
-    if (input.find_variable(variable_name)) {
+    if (input.variable_exists(variable_name)) {
       m_salinity_ocean->init(opt.filename, opt.periodic);
     } else {
       double salinity = m_config->get_number("constants.sea_water.salinity", "g / kg");

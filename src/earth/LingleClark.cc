@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021, 2023 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021, 2023, 2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -231,7 +231,7 @@ void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_t
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
     File input_file(m_grid->com, opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    if (input_file.find_variable(m_time_name)) {
+    if (input_file.variable_exists(m_time_name)) {
       input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
       m_t_last = time().current();
@@ -408,7 +408,7 @@ void LingleClark::define_model_state_impl(const File &output) const {
   m_viscous_displacement->define(output, io::PISM_DOUBLE);
   m_elastic_displacement.define(output, io::PISM_DOUBLE);
 
-  if (not output.find_variable(m_time_name)) {
+  if (not output.variable_exists(m_time_name)) {
     output.define_variable(m_time_name, io::PISM_DOUBLE, {});
 
     output.write_attribute(m_time_name, "long_name",

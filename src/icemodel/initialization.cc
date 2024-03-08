@@ -369,7 +369,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   auto usurf = input_file.find_variable("usurf", "surface_altitude");
 
-  bool mask_found = input_file.find_variable("mask");
+  bool mask_found = input_file.variable_exists("mask");
 
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately

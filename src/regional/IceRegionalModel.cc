@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -217,7 +217,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
 
   // no_model_mask
   {
-    if (input_file.find_variable(m_no_model_mask.metadata().get_name())) {
+    if (input_file.variable_exists(m_no_model_mask.metadata().get_name())) {
       m_no_model_mask.regrid(input_file, io::Default::Nil());
     } else {
       // set using the no_model_strip parameter

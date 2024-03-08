@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -115,7 +115,7 @@ std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
     File file(ctx->com(), options.filename, io::PISM_NETCDF3, io::PISM_READONLY);
     for (const auto& name : names) {
 
-      grid_info_found = file.find_variable(name);
+      grid_info_found = file.variable_exists(name);
       if (not grid_info_found) {
         // Failed to find using a short name. Try using name as a
         // standard name...
