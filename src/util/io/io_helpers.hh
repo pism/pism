@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -118,7 +118,8 @@ std::string time_dimension(units::System::Ptr unit_system,
                            const File &file,
                            const std::string &variable_name);
 
-void read_attributes(const File &file, const std::string &variable_name, VariableMetadata &variable);
+VariableMetadata read_attributes(const File &file, const std::string &variable_name,
+                                 std::shared_ptr<units::System> unit_system);
 
 void write_attributes(const File &file, const VariableMetadata &variable, io::Type nctype);
 

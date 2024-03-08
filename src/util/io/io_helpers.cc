@@ -1164,15 +1164,17 @@ bool file_exists(MPI_Comm com, const std::string &filename) {
   return file_exists_flag == 1;
 }
 
-void read_attributes(const File &file,
-                     const std::string &variable_name,
-                     VariableMetadata &variable) {
+VariableMetadata read_attributes(const File &file,
+                                 const std::string &variable_name,
+                                 std::shared_ptr<units::System> unit_system) {
+
+  VariableMetadata variable(variable_name, unit_system);
+
   try {
+
     if (not file.find_variable(variable_name)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' is missing", variable_name.c_str());
     }
-
-    variable.clear();
 
     unsigned int nattrs = file.nattributes(variable_name);
 
@@ -1193,6 +1195,7 @@ void read_attributes(const File &file,
                   variable_name.c_str(), file.name().c_str());
     throw;
   }
+  return variable;
 }
 
 //! Write variable attributes to a NetCDF file.

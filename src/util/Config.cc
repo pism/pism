@@ -191,7 +191,7 @@ void NetCDFConfig::set_flag_impl(const std::string &name, bool value) {
 */
 void NetCDFConfig::read_impl(const File &nc) {
 
-  io::read_attributes(nc, m_data.get_name(), m_data);
+  m_data = io::read_attributes(nc, m_data.get_name(), m_data.unit_system());
 
   m_config_filename = nc.name();
 }
