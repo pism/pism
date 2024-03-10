@@ -180,6 +180,7 @@ void IceModel::front_retreat_step() {
     // apply the frontal melt rate
     m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
                                      retreat_rate,
+                                     m_stress_balance->shallow()->velocity(),
                                      m_geometry.ice_area_specific_volume,
                                      m_geometry.ice_thickness);
     bool add_values = false;
@@ -247,6 +248,7 @@ void IceModel::front_retreat_step() {
 
       m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
                                        retreat_rate,
+                                       m_stress_balance->shallow()->velocity(),
                                        m_geometry.ice_area_specific_volume,
                                        m_geometry.ice_thickness);
 

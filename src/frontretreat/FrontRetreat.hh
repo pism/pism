@@ -42,6 +42,7 @@ public:
                        const Geometry &geometry,
                        const array::Scalar1 &bc_mask,
                        const array::Scalar &retreat_rate,
+                       const array::Vector1 &ice_velocity,
                        array::Scalar &Href,
                        array::Scalar1 &ice_thickness);
 
@@ -61,6 +62,9 @@ private:
   // Temporary storage for distributing ice loss to "full" (as opposed to "partially
   // filled") cells near the front
   array::Scalar1 m_tmp;
+  array::Scalar1 m_wx;
+  array::Scalar1 m_wy;
+  bool m_calving_along_flow;
 };
 
 } // end of namespace pism
