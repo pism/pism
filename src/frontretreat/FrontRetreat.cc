@@ -24,18 +24,28 @@
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/array/Vector.hh"
+
 
 namespace pism {
 
 FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
   : Component(g),
     m_cell_type(m_grid, "cell_type"),
-    m_tmp(m_grid, "temporary_storage") {
+    m_tmp(m_grid, "temporary_storage"),
+    m_wx(m_grid, "weights_calving_x"),
+    m_wy(m_grid, "weights_calving_y") {
 
   m_tmp.set_attrs("internal", "additional mass loss at points near the front",
                   "m", "m", "", 0);
 
   m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
+
+  m_wx.set_attrs("internal", "weight of mass loss at calving front in x-direction",
+                  "", "", "", 0);
+  m_wy.set_attrs("internal", "weight of mass loss at calving front in y-direction",
+                  "", "", "", 0);
+
 }
 
 /*!
@@ -146,6 +156,7 @@ void FrontRetreat::update_geometry(double dt,
                                    const Geometry &geometry,
                                    const array::Scalar1 &bc_mask,
                                    const array::Scalar &retreat_rate,
+                                   const array::Vector1 &ice_velocity,
                                    array::Scalar &Href,
                                    array::Scalar1 &ice_thickness) {
 
@@ -161,13 +172,24 @@ void FrontRetreat::update_geometry(double dt,
     compute_modified_mask(geometry.cell_type, m_cell_type);
   }
 
+  // calving retreat along terminal ice flow direction, as for calving ratw in calving/CalvinMIP.cc
+  m_calving_along_flow = m_config->get_flag("calving.calvingmip_calving.calve_along_flow_direction");
+  if (m_calving_along_flow) {
+    m_log->message(2, "  CalvingMIP calving along terminal ice flow.\n");
+  }
+
+  //FIXME: Assuming dx=dy
   const double dx = m_grid->dx();
 
   m_tmp.set(0.0);
 
+  m_wx.set(0.0);
+  m_wy.set(0.0);
+  double C = convert(m_sys, 1.0, "m year-1", "m second-1");
+
   array::AccessScope list{&ice_thickness, &bc_mask,
       &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
-      &surface_elevation};
+      &surface_elevation, &ice_velocity, &m_wx, &m_wy};
 
   // Prepare to loop over neighbors: directions
   const Direction dirs[] = {North, East, South, West};
@@ -232,7 +254,49 @@ void FrontRetreat::update_geometry(double dt,
         }
 
         if (N > 0) {
-          m_tmp(i, j) = (Href_old + Href_change) / (double)N;
+          if (m_calving_along_flow) { //weight with velocity vector
+            m_tmp(i, j) = (Href_old + Href_change);
+            //set weights according to inflow vectors
+            int N2 =0 ;
+            double velsum = 0.0,
+                   vs = ice_velocity(i-1, j).u,
+                   vn = ice_velocity(i+1, j).u,
+                   vw = ice_velocity(i, j-1).v,
+                   ve = ice_velocity(i, j+1).v;           
+
+            if (vs > 0.0) {
+              m_wx(i,j) = vs; //ws
+              velsum += vs;
+              N2 += 1; }
+            if (vn < 0.0) {
+              m_wx(i+1,j) = -vn; //wn
+              velsum -= vn;
+              N2 += 1; }
+            if (vw > 0.0) {
+              m_wy(i,j) = vw;  //ww
+              velsum += vw;
+              N2 += 1; }
+            if (ve < 0.0) {
+              m_wy(i,j+1) = -ve; //we
+              velsum -= ve;
+              N2 += 1; }
+
+            if (velsum > 0.0) {
+              m_wx(i,j)   /= velsum;
+              m_wx(i+1,j) /= velsum;
+              m_wy(i,j)   /= velsum;
+              m_wy(i,j+1) /= velsum;
+            }
+
+            if (N2 != N) {
+            //if (i==80 or i==133 or i==134 or i==132) {
+              m_log->message(3, "  !Exp2 at %d,%d: for N=%d and N2=%d with weights ws=%.2f, wn=%.2f, ww=%.2f, we=%.2f and vs=%.2f, vn=%.2f, vw=%.2f, ve=%.2f \n",
+                     i,j,N,N2,m_wx(i,j),m_wx(i+1,j),m_wy(i,j),m_wy(i,j+1),vs/C,vn/C,vw/C,ve/C);
+            }
+
+          } else { //eqal weights to neighbor icy cells
+            m_tmp(i, j) = (Href_old + Href_change) / (double)N;
+          }
         } else {
           // No shelf calving front of grounded terminus to distribute to: retreat stops here.
           m_tmp(i, j) = 0.0;
@@ -244,6 +308,8 @@ void FrontRetreat::update_geometry(double dt,
 
   // Step 2: update ice thickness and Href in neighboring cells if we need to propagate mass losses.
   m_tmp.update_ghosts();
+  m_wx.update_ghosts();
+  m_wy.update_ghosts();
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -253,18 +319,59 @@ void FrontRetreat::update_geometry(double dt,
         (m_cell_type.floating_ice(i, j) or
          (m_cell_type.grounded_ice(i, j) and bed(i, j) < sea_level(i, j)))) {
 
-      const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
-                              m_tmp(i, j + 1) + m_tmp(i, j - 1));
+      double wn = 0.0,
+             we = 0.0,
+             ws = 0.0,
+             ww = 0.0;
 
-      if (delta_H < 0.0) {
-        Href(i, j) = ice_thickness(i, j) + delta_H; // in m
-        ice_thickness(i, j) = 0.0;
-      }
+      const double mass_to_redistribute = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
+                                           m_tmp(i, j + 1) + m_tmp(i, j - 1));
 
-      // Stop retreat if the current cell does not have enough ice to absorb the loss.
-      if (Href(i, j) < 0.0) {
-        Href(i, j) = 0.0;
-      }
+      if (mass_to_redistribute != 0.0) {
+        //if (m_calving_along_flow and m_cell_type.next_to_ice_free_ocean(i, j)) {
+        if (m_calving_along_flow) {
+        //weight with velocity vector
+        double velmag = ice_velocity(i, j).magnitude();
+
+        if (ice_velocity(i, j).u > 0.0) {
+          wn = m_wx(i+1,j);
+        } else {
+          //(ice_velocity(i-1, j).u <= 0.0)
+          ws = m_wx(i,j);
+        }
+
+        if (ice_velocity(i, j).v > 0.0) {
+          we = m_wy(i,j+1);
+        } else {
+          //(ice_velocity(i, j).v <= 0.0)
+          ww = m_wy(i,j);
+        }
+        //if (i==80 or i==133 or i==134 or i==132) {
+          m_log->message(3, "  Exp2 at %d,%d: for vel=%.3f, %.3f with weights ws=%.2f, wn=%.2f, ww=%.2f, we=%.2f\n",
+                     i,j,ice_velocity(i, j).u/C,ice_velocity(i, j).v/C,ws,wn,ww,we);
+
+        
+        } else {
+             wn = 1.0;
+             we = 1.0;
+             ws = 1.0;
+             ww = 1.0;
+        }
+
+        const double delta_H = (wn*m_tmp(i + 1, j) + ws*m_tmp(i - 1, j) +
+                              we*m_tmp(i, j + 1) + ww*m_tmp(i, j - 1));
+
+
+        if (delta_H < 0.0) {
+          Href(i, j) = ice_thickness(i, j) + delta_H; // in m
+          ice_thickness(i, j) = 0.0;
+        }
+
+        // Stop retreat if the current cell does not have enough ice to absorb the loss.
+        if (Href(i, j) < 0.0) {
+          Href(i, j) = 0.0;
+        }
+      } // end of mass_to_redistribute
     }
   }
 }
