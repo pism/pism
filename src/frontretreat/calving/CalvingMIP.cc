@@ -40,12 +40,14 @@ namespace calving {
 CalvingMIP::CalvingMIP(IceGrid::ConstPtr grid)
   : Component(grid),
     m_calving_rate(grid, "calvingmip_calving_rate"),
-    m_cell_type(grid, "cell_type")
+    m_calving_rate_tmp(grid, "calvingmip_calving_rate_temporary"),
+    m_cell_type(grid, "cell_type_where_calving_rate_set")
 {
   m_calving_rate.metadata().set_name("calvingmip_calving_rate");
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to CalvingMIP calving",
                            "m s-1", "m year-1", "", 0);
+
   m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
 }
 
@@ -77,7 +79,7 @@ void CalvingMIP::init() {
 
 /**
  * Updates calving rate according to the
- * CalvingMIP calving rules removing ice at the shelf front 
+ * CalvingMIP calving rules removing ice at the shelf front
  * Cr = - Iv;.
  *
  * @param[in] pism_mask ice cover mask
@@ -96,14 +98,15 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
   if (m_experiment == 5)
     exp5 = true;
 
-  m_cell_type.set(0.0);
+  m_cell_type.set(0);
 
   // a shortcut for readability:
   const auto &Hc = m_calving_threshold;
   double C = convert(m_sys, 1.0, "m year-1", "m second-1");
   // lower calving rate threshold
   double Cmin = 1.0e-7;
-
+  // lower threshold for terminal velocity
+  double vcr = 1e-20;
   double Wv = 0.0,
          thistime = m_grid->ctx()->time()->current(),
          starttime = m_grid->ctx()->time()->start(),
@@ -111,12 +114,12 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
 
   if (m_retreat_and_advance) {
     Wv = -300.0 * sin(2.0*M_PI*thisyear/1000.0);
-    m_log->message(3, "    Update CalvingMIP Exp%d calving rate at year %f with Wv=%f m/yr\n",m_experiment,thisyear,Wv);
+    m_log->message(2, "    Update CalvingMIP Exp%d calving rate at year %f with Wv=%f m/yr\n",m_experiment,thisyear,Wv);
   } else {
     m_log->message(3, "    Update CalvingMIP Exp%d calving rate.\n",m_experiment);
   }
 
-  array::AccessScope list{&cell_type, &m_cell_type, &ice_thickness, &m_calving_rate, &ice_velocity};
+  array::AccessScope list{&cell_type, &m_cell_type, &ice_thickness, &m_calving_rate, &m_calving_rate_tmp, &ice_velocity};
 
 
   if (m_calving_along_flow) { // Here, the marginal ice velocity vectors are considered in calving rate
@@ -124,62 +127,96 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
+      double old_calv_rate = m_calving_rate(i, j);
       m_calving_rate(i, j) = 0.0;
+
+      // This is relevant in case of a propagating ice shelf front, for which no terminal velocities exist yet
+      if (cell_type.floating_ice(i, j) and cell_type.next_to_ice_free_ocean(i, j)) {
+        if (ice_velocity(i, j).magnitude() < vcr) {
+          m_calving_rate(i, j) = old_calv_rate;
+          m_cell_type(i, j) = 1;
+        }
+      }
 
       if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) {
 
-        //m_log->message(3, "  Exp3 at %d,%d: %3.3f, %3.3f\n",i,j,ice_velocity(i, j).u,ice_velocity(i, j).v);
-        if (ice_velocity(i-1, j).u > 0.0 and ice_thickness(i-1,j) > 0.0) {
-          if (exp5) {
-            m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - ice_thickness(i-1,j)) / Hc) * ice_velocity(i-1, j).u;
-          } else {
-            m_calving_rate(i, j) += ice_velocity(i-1, j).u;
-            }
-          //m_log->message(3, "  Exp3 n: %3.3f, %3.3f at %d,%d.\n", ice_velocity(i-1, j).u/C,m_calving_rate(i, j)/C,i,j);
-        }
-        if (ice_velocity(i+1, j).u < 0.0 and ice_thickness(i+1,j) > 0.0) {
-          if (exp5) {
-            m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - ice_thickness(i+1,j)) / Hc) * ice_velocity(i+1, j).u; 
-          } else {
-            m_calving_rate(i, j) -= ice_velocity(i+1, j).u;
-          }
-          //m_log->message(3, "  Exp3 s: %3.3f, %3.3f at %d,%d.\n", ice_velocity(i+1, j).u/C,m_calving_rate(i, j)/C,i,j);
-        }
-        if (ice_velocity(i, j-1).v > 0.0 and ice_thickness(i,j-1) > 0.0) {
-          if (exp5) {
-            m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - ice_thickness(i,j-1)) / Hc) * ice_velocity(i, j-1).v;
-          } else {
-            m_calving_rate(i, j) += ice_velocity(i, j-1).v;
-          }
-          //m_log->message(3, "  Exp3 w: %3.3f, %3.3f at %d,%d.\n", ice_velocity(i, j-1).v/C,m_calving_rate(i, j)/C,i,j);
-        }
-        if (ice_velocity(i, j+1).v < 0.0 and ice_thickness(i,j+1) > 0.0) {
-          if (exp5) {
-            m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - ice_thickness(i,j+1)) / Hc) * ice_velocity(i, j+1).v;
-          } else {
-            m_calving_rate(i, j) -= ice_velocity(i, j+1).v;
-          }
-          //m_log->message(3, "  Exp3 e: %3.3f, %3.3f at %d,%d.\n", ice_velocity(i, j+1).v/C,m_calving_rate(i, j)/C,i,j);
-        }
-        
-        m_cell_type(i, j) = 1.0;
-        if (exp5 == false) {
-          m_calving_rate(i, j) -= Wv*C;
-        }
-      }
-      m_calving_rate.update_ghosts();
-      m_cell_type.update_ghosts();
+        double vw  = ice_velocity(i-1, j).u,
+              vwm = ice_velocity(i-1, j).magnitude(),
+              hw  = ice_thickness(i-1,j),
+              ve  = ice_velocity(i+1, j).u,
+              vem = ice_velocity(i+1, j).magnitude(),
+              he  = ice_thickness(i+1,j),
+              vs  = ice_velocity(i, j-1).v,
+              vsm = ice_velocity(i, j-1).magnitude(),
+              hs  = ice_thickness(i,j-1),
+              vn  = ice_velocity(i, j+1).v,
+              vnm = ice_velocity(i, j+1).magnitude(),
+              hn  = ice_thickness(i,j+1);
 
-      
-      // This part shall fill up ocean cells next to calving front with mean calving rates, 
-      // for cases, when calving front propagates forward with once cell per adaptive timestep (CFL)
-      for (Points p(*m_grid); p; p.next()) {
+
+        bool divide_by_null = false;
+
+        // west
+        if (vw > 0.0 and hw > 0.0) {
+          if (exp5) {
+            m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - hw) / Hc) * vw;
+          } else {
+            m_calving_rate(i, j) += vw * (1.0 - (vwm > 0.0 ? Wv*C/vwm : 0.0));
+          }
+          if (vwm==0.0) divide_by_null=true;
+        }
+        // east
+        if (ve < 0.0 and he > 0.0) {
+          if (exp5) {
+            m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - he) / Hc) * ve;
+          } else {
+            m_calving_rate(i, j) -= ve * (1.0 - (vem > 0.0 ? Wv*C/vem : 0.0));
+          }
+          if (vem==0.0) divide_by_null=true;
+        }
+        // south
+        if (vs > 0.0 and hs > 0.0) {
+          if (exp5) {
+            m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - hs) / Hc) * vs;
+          } else {
+            m_calving_rate(i, j) += vs * (1.0 - (vsm > 0.0 ? Wv*C/vsm : 0.0));
+          }
+          if (vsm==0.0) divide_by_null=true;
+        }
+        // north
+        if (vn < 0.0 and hn > 0.0) {
+          if (exp5) {
+            m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - hn) / Hc) * vn;
+          } else {
+            m_calving_rate(i, j) -= vn * (1.0 - (vnm > 0.0 ? Wv*C/vnm : 0.0));
+          }
+          if (vnm==0.0) divide_by_null=true;
+        }
+
+        m_calving_rate(i, j) = std::max(0.0,m_calving_rate(i, j));
+        m_cell_type(i, j) = 1;
+
+        if (divide_by_null) {
+          m_calving_rate(i, j) = old_calv_rate;
+        }
+      } // end of next to front
+    } //end of i,j loop
+
+    m_calving_rate.update_ghosts();
+    m_cell_type.update_ghosts();
+    m_calving_rate_tmp.copy_from(m_calving_rate);
+
+
+    // This part shall fill up ocean cells next to calving front with mean calving rates,
+    // for cases, when calving front propagates forward with once cell per adaptive timestep (CFL)
+    for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-         bool next_to_calving_front = (m_cell_type(i+1, j)==1 or m_cell_type(i-1, j)==1 or m_cell_type(i, j+1)==1 or m_cell_type(i, j-1)==1);
-        
-        if (cell_type.ice_free_ocean(i, j) and m_calving_rate(i, j) < Cmin and next_to_calving_front) {
+        // where calving rate was defined in previous step
+        bool next_to_calving_front = (m_cell_type(i+1, j)==1 or m_cell_type(i-1, j)==1 or m_cell_type(i, j+1)==1 or m_cell_type(i, j-1)==1);
 
+        // this yields a band of three cell widths around calving front
+        if (m_calving_rate(i, j) < Cmin and next_to_calving_front) {
           auto R = m_calving_rate.star(i, j);
 
           int N        = 0;
@@ -192,12 +229,12 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
           }
 
           if (N > 0) {
-            m_calving_rate(i, j) = R_sum / N;
+            m_calving_rate_tmp(i, j) = R_sum / N;
           }
         }
-      }
     }
-  } 
+    m_calving_rate.copy_from(m_calving_rate_tmp);
+  } // end of calving_along_directions
   else { //only velocity magnitudes are considered in calving rate
 
     for (Points p(*m_grid); p; p.next()) {
@@ -239,7 +276,7 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
           m_calving_rate(i, j) = R_sum / N;
         }
       }
-    } 
+    }
   }
 }
 

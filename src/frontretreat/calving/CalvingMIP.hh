@@ -24,12 +24,11 @@
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/CellType.hh"
 
-
 namespace pism {
 
 namespace calving {
 
-/*! \brief Calving mechanism Exp1/Exp3 from https://github.com/JRowanJordan/CalvingMIP/wiki */
+/*! \brief Calving mechanisms from https://github.com/JRowanJordan/CalvingMIP/wiki */
 class CalvingMIP : public Component
 {
 public:
@@ -52,6 +51,7 @@ protected:
   bool m_calving_along_flow,
        m_retreat_and_advance;
   array::Scalar1 m_calving_rate;
+  array::Scalar1 m_calving_rate_tmp;
   array::CellType1 m_cell_type;
 };
 
