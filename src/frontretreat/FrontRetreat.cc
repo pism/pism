@@ -178,11 +178,12 @@ void FrontRetreat::update_geometry(double dt,
     m_log->message(2, "  CalvingMIP calving along terminal ice flow.\n");
   }
 
-  //FIXME: Assuming dx=dy
+  //FIXME: Assuming dx=dy, add warning as for eigencalving?
   const double dx = m_grid->dx();
 
   m_tmp.set(0.0);
 
+  double vcr = 1e-20; //lower bound to evaluate terminal ice velocities
   m_wx.set(0.0);
   m_wy.set(0.0);
   double C = convert(m_sys, 1.0, "m year-1", "m second-1");
@@ -254,44 +255,46 @@ void FrontRetreat::update_geometry(double dt,
         }
 
         if (N > 0) {
+
           if (m_calving_along_flow) { //weight with velocity vector
             m_tmp(i, j) = (Href_old + Href_change);
             //set weights according to inflow vectors
-            int N2 =0 ;
+            int N2 = 0 ;
             double velsum = 0.0,
-                   vs = ice_velocity(i-1, j).u,
-                   vn = ice_velocity(i+1, j).u,
-                   vw = ice_velocity(i, j-1).v,
-                   ve = ice_velocity(i, j+1).v;           
+                   vw = ice_velocity(i-1, j).u,
+                   ve = ice_velocity(i+1, j).u,
+                   vs = ice_velocity(i, j-1).v,
+                   vn = ice_velocity(i, j+1).v; 
 
-            if (vs > 0.0) {
-              m_wx(i,j) = vs; //ws
-              velsum += vs;
-              N2 += 1; }
-            if (vn < 0.0) {
-              m_wx(i+1,j) = -vn; //wn
-              velsum -= vn;
-              N2 += 1; }
-            if (vw > 0.0) {
-              m_wy(i,j) = vw;  //ww
+            if (vw > vcr) {
+              m_wx(i,j) = vw; //ww
               velsum += vw;
               N2 += 1; }
-            if (ve < 0.0) {
-              m_wy(i,j+1) = -ve; //we
+            if (ve < -vcr) {
+              m_wx(i+1,j) = -ve; //we
               velsum -= ve;
               N2 += 1; }
+            if (vs > vcr) {
+              m_wy(i,j) = vs;  //ws
+              velsum += vs;
+              N2 += 1; }
+            if (vn < -vcr) {
+              m_wy(i,j+1) = -vn; //wn
+              velsum -= vn;
+              N2 += 1; }
 
-            if (velsum > 0.0) {
+            if (velsum > vcr) {
               m_wx(i,j)   /= velsum;
               m_wx(i+1,j) /= velsum;
               m_wy(i,j)   /= velsum;
               m_wy(i,j+1) /= velsum;
-            }
 
-            if (N2 != N) {
-            //if (i==80 or i==133 or i==134 or i==132) {
-              m_log->message(3, "  !Exp2 at %d,%d: for N=%d and N2=%d with weights ws=%.2f, wn=%.2f, ww=%.2f, we=%.2f and vs=%.2f, vn=%.2f, vw=%.2f, ve=%.2f \n",
-                     i,j,N,N2,m_wx(i,j),m_wx(i+1,j),m_wy(i,j),m_wy(i,j+1),vs/C,vn/C,vw/C,ve/C);
+            } else { //N2 != N
+ 
+              if (m_cell_type.floating_ice(i-1, j)) m_wx(i,j)  = 1.0 / (double)N;
+              if (m_cell_type.floating_ice(i+1, j)) m_wx(i+1,j)= 1.0 / (double)N;
+              if (m_cell_type.floating_ice(i, j-1)) m_wy(i,j)  = 1.0 / (double)N;
+              if (m_cell_type.floating_ice(i, j+1)) m_wy(i,j+1)= 1.0 / (double)N;
             }
 
           } else { //eqal weights to neighbor icy cells
@@ -319,48 +322,27 @@ void FrontRetreat::update_geometry(double dt,
         (m_cell_type.floating_ice(i, j) or
          (m_cell_type.grounded_ice(i, j) and bed(i, j) < sea_level(i, j)))) {
 
-      double wn = 0.0,
-             we = 0.0,
-             ws = 0.0,
-             ww = 0.0;
+      double wn = 1.0,
+             we = 1.0,
+             ws = 1.0,
+             ww = 1.0;
 
       const double mass_to_redistribute = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
                                            m_tmp(i, j + 1) + m_tmp(i, j - 1));
 
       if (mass_to_redistribute != 0.0) {
-        //if (m_calving_along_flow and m_cell_type.next_to_ice_free_ocean(i, j)) {
-        if (m_calving_along_flow) {
-        //weight with velocity vector
-        double velmag = ice_velocity(i, j).magnitude();
 
-        if (ice_velocity(i, j).u > 0.0) {
-          wn = m_wx(i+1,j);
-        } else {
-          //(ice_velocity(i-1, j).u <= 0.0)
-          ws = m_wx(i,j);
+        if (m_calving_along_flow) { //weight with velocity vector
+
+          we = m_wx(i+1,j);
+          ww = m_wx(i,j);
+          wn = m_wy(i,j+1);
+          ws = m_wy(i,j);
+
         }
 
-        if (ice_velocity(i, j).v > 0.0) {
-          we = m_wy(i,j+1);
-        } else {
-          //(ice_velocity(i, j).v <= 0.0)
-          ww = m_wy(i,j);
-        }
-        //if (i==80 or i==133 or i==134 or i==132) {
-          m_log->message(3, "  Exp2 at %d,%d: for vel=%.3f, %.3f with weights ws=%.2f, wn=%.2f, ww=%.2f, we=%.2f\n",
-                     i,j,ice_velocity(i, j).u/C,ice_velocity(i, j).v/C,ws,wn,ww,we);
-
-        
-        } else {
-             wn = 1.0;
-             we = 1.0;
-             ws = 1.0;
-             ww = 1.0;
-        }
-
-        const double delta_H = (wn*m_tmp(i + 1, j) + ws*m_tmp(i - 1, j) +
-                              we*m_tmp(i, j + 1) + ww*m_tmp(i, j - 1));
-
+        const double delta_H = (we * m_tmp(i + 1, j) + ww * m_tmp(i - 1, j) +
+                                wn * m_tmp(i, j + 1) + ws * m_tmp(i, j - 1));
 
         if (delta_H < 0.0) {
           Href(i, j) = ice_thickness(i, j) + delta_H; // in m

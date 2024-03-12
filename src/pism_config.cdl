@@ -610,15 +610,10 @@ netcdf pism_config {
     pism_config:calving.calvingmip_calving.calve_along_flow_direction_type = "flag";
 
     pism_config:calving.calvingmip_calving.experiment = 1;
-    pism_config:calving.calvingmip_calving.experiment_doc = "Type of CalvingMIP experiment 1 to 5 as indicated in https://github.com/JRowanJordan/CalvingMIP/wiki/Experiments---Phase-1";
+    pism_config:calving.calvingmip_calving.experiment_doc = "Type of CalvingMIP experiment 1 to 5 as indicated in `https://github.com/JRowanJordan/CalvingMIP/wiki/Experiments---Phase-1`";
     pism_config:calving.calvingmip_calving.experiment_type = "integer";
     pism_config:calving.calvingmip_calving.experiment_option = "calvingmip_experiment";
     pism_config:calving.calvingmip_calving.experiment_units = "count";
-
-    pism_config:calving.calvingmip_calving.retreat_and_advance = "no";
-    pism_config:calving.calvingmip_calving.retreat_and_advance_doc = "Apply calving rate alternating over time as in EXP2 and EXP4 in CalvingMIP.";
-    pism_config:calving.calvingmip_calving.retreat_and_advance_option = "do_retreat_and_advance";
-    pism_config:calving.calvingmip_calving.retreat_and_advance_type = "flag";
 
     pism_config:calving.calvingmip_calving.threshold = 275.0;
     pism_config:calving.calvingmip_calving.threshold_doc = "Is used as parameter in CalvingMIP EXP5 calving law dependent on terminal ice thickness of floating or grounded ice and termial ice velocity.";
