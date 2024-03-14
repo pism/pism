@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 
-# Creates Thule setup fpr CalvingMIP as in https://github.com/JRowanJordan/CalvingMIP/wiki/Thule-domain
+# Creates Thule setup for CalvingMIP as in https://github.com/JRowanJordan/CalvingMIP/wiki/Thule-domain
 # Model parameters, see https://github.com/JRowanJordan/CalvingMIP/wiki/Experimental-parameters
 
-# run as "python setup_thule.py -L 1.6e6 -M 321" for 5km resolution and 1600 x 1600km domain width
+# run as "python setup_thule.py -L 2.0e6 -M 401" for 5km resolution and 2000 x 2000km domain width
 
 from PISMNC import PISMDataset as NC
 from optparse import OptionParser
