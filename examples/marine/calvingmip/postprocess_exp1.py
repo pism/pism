@@ -7,59 +7,53 @@ import numpy as np
 import netCDF4 as nc
 
 secperyear=365*24*3600
-rhoi_bm = 917.0
-rhosw_bm = 1028.0
+#rhoi_bm = 917.0
+#rhosw_bm = 1028.0
 
 resolution=5.0
 dkm=5.0 #km steps
 
+pismpath     = "/p/tmp/albrecht/pism23/calvmip/circular/exp1-05km-dir/"
+pism_outfile = pismpath + "results/extra_exp1.nc"
+pism_tsfile  = pismpath + "results/ts_exp1.nc"
 
-pism_outfile = "/p/tmp/albrecht/pism23/calvmip/circular/exp1-05km-dir/results/extra_exp1_test.nc" 
-pism_tsfile  = "/p/tmp/albrecht/pism23/calvmip/circular/exp1-05km-dir/results/ts_exp1_last.nc"
-pism_infile = "/p/tmp/albrecht/pism23/calvmip/circular/exp1-05km-dir/input/circular_input_5km.nc"
+pism_infile = pismpath + "input/circular_input_5km.nc"
 
 exp1_outfile = "CalvingMIP_EXP1_PISM_PIK.nc"
-#postprocessfile = "/p/tmp/albrecht/pism23/calvmip/circular/exp1-05km-dir/postprocess/CalvingMIP_EXP1_PISM_PIK.nc"
 
 #################################################################################################
 
+tex=-1
 datnc = nc.Dataset(pism_outfile,"r")
 exp1_x = datnc.variables["x"][:]
 exp1_y = datnc.variables["y"][:]
-exp1_t = [datnc.variables["time"][-1]/secperyear-110000.0]
-#exp1_tb = datnc.variables["time_bounds"][:]//secperyear-110000.0
-
-
-exp1_xvm = datnc.variables["xvelmean"][-1,:]*secperyear
-exp1_yvm = datnc.variables["yvelmean"][-1,:]*secperyear
-exp1_thk = datnc.variables["lithk"][-1,:]
-exp1_mask = datnc.variables["mask"][-1,:]-1
-exp1_crate = datnc.variables["calvingmip_calving_rate"][-1:]*secperyear
-exp1_topg = datnc.variables["topg"][-1,:]
-
-#exp1_afl = datnc.variables["sftflf"][:]
-#exp1_agr = datnc.variables["sftgrf"][:]
-
+exp1_t = [datnc.variables["time"][tex]/secperyear-110000.0]
+try:
+    exp1_xvm = datnc.variables["xvelmean"][tex,:]*secperyear
+    exp1_yvm = datnc.variables["yvelmean"][tex,:]*secperyear
+    exp1_thk = datnc.variables["lithk"][tex,:]
+except:
+    exp1_xvm = datnc.variables["u_ssa"][tex,:]*secperyear
+    exp1_yvm = datnc.variables["v_ssa"][tex,:]*secperyear
+    exp1_thk = datnc.variables["thk"][tex,:]
+exp1_mask = datnc.variables["mask"][tex,:]-1
+exp1_crate = datnc.variables["calvingmip_calving_rate"][tex:]*secperyear
+exp1_topg = datnc.variables["topg"][tex,:]
 datnc.close()
-
+print(exp1_t)
 Mx,My = np.shape(exp1_mask)
 
-
-
-
+ti=-6
 datnc = nc.Dataset(pism_tsfile,"r")
-
-exp1_ts_t = datnc.variables["time"][:]/secperyear-110000.0
-#exp1_ts_tb = datnc.variables["time_bounds"][:]/secperyear-110000.0
-
-exp1_ts_afl = datnc.variables["iareafl"][:]
-exp1_ts_agr = datnc.variables["iareagr"][:]
-exp1_ts_lim = datnc.variables["lim"][:]
-exp1_ts_limnsw = datnc.variables["limnsw"][:]
-exp1_ts_tendcf = datnc.variables["tendlicalvf"][:]*secperyear
-exp1_ts_tendgf = datnc.variables["tendligroundf"][:]*secperyear
-
+exp1_ts_t      = [datnc.variables["time"][ti]/secperyear-110000.0]
+exp1_ts_afl    = [datnc.variables["iareafl"][ti]]
+exp1_ts_agr    = [datnc.variables["iareagr"][ti]]
+exp1_ts_lim    = [datnc.variables["lim"][ti]]
+exp1_ts_limnsw = [datnc.variables["limnsw"][ti]]
+exp1_ts_tendcf = [datnc.variables["tendlicalvf"][ti]*secperyear]
+exp1_ts_tendgf = [datnc.variables["tendligroundf"][ti]*secperyear]
 datnc.close()
+print(exp1_ts_t)
 
 ###############################################################################################
 
@@ -74,7 +68,6 @@ def get_troughs(of,trans):
     exit(-1)
   xobs = np.squeeze(compfile.variables["x"][:])
   yobs = np.squeeze(compfile.variables["y"][:])
-  #mobs = np.squeeze(compfile.variables["mask"][:])
   compfile.close()
 
   trans_points=[]
@@ -232,12 +225,10 @@ if True:
   wrtfile = nc.Dataset(exp1_outfile, 'w', format='NETCDF4_CLASSIC')
   wrtfile.createDimension('X', size=len(exp1_x))
   wrtfile.createDimension('Y', size=len(exp1_y))
-  #wrtfile.createDimension('Time', size=None)
   wrtfile.createDimension('Time', size=1)
   wrtfile.createDimension('nv', size=2)
 
   nct     = wrtfile.createVariable('Time', 'f8', ('Time',))
-  #nctb    = wrtfile.createVariable('Time_bnds', 'f8', ('Time','nv'))
   ncx     = wrtfile.createVariable('X', 'f8', ('X',))
   ncy     = wrtfile.createVariable('Y', 'f8', ('Y',))
     
@@ -328,12 +319,11 @@ if True:
   nct[:] = exp1_t[:]
   ncx[:] = exp1_x[:]
   ncy[:] = exp1_y[:]
-  #nctb[:] = exp1_tb[:]
     
   ncxvm[:]  = exp1_xvm[:]
   ncyvm[:]  = exp1_yvm[:] 
   ncthk[:]  = exp1_thk[:]
-  ncmask[:] = exp1_mask[:] #mask		Ice mask	grounded=1, floating=2, open ocean=3
+  ncmask[:] = exp1_mask[:]
   nccrate[:]= exp1_crate[:]
   nctopg[:] = exp1_topg[:]
     
@@ -412,7 +402,6 @@ if True:
   #####################################################################################
 
   nct.units = 'a'
-  #nctb.units = 'a'
   ncx.units = 'm'
   ncy.units = 'm'
     
@@ -420,7 +409,6 @@ if True:
   ncyvm.units = 'm/a'  
   ncthk.units = 'm'
   nctopg.units = 'm'
-  #ncmask.units = ''
   nccrate.units = 'm/a'
     
   ncafl.units = 'm^2'
@@ -433,72 +421,59 @@ if True:
   ncxa.units = 'm'
   ncsa.units = 'm'
   ncthka.units = 'm'
-  #ncmaska.units = ''
   ncxvma.units = 'm/a'
   ncyvma.units = 'm/a'
     
   ncxb.units = 'm'
   ncsb.units = 'm'
   ncthkb.units = 'm'
-  #ncmaskb.units = ''
   ncxvmb.units = 'm/a'
   ncyvmb.units = 'm/a'
     
   ncxc.units = 'm'
   ncsc.units = 'm'
   ncthkc.units = 'm'
-  #ncmaskc.units = ''
   ncxvmc.units = 'm/a'
   ncyvmc.units = 'm/a'
     
   ncxd.units = 'm'
   ncsd.units = 'm'
   ncthkd.units = 'm'
-  #ncmaskd.units = ''
   ncxvmd.units = 'm/a'
   ncyvmd.units = 'm/a'
     
   ncxe.units = 'm'
   ncse.units = 'm'
   ncthke.units = 'm'
-  #ncmaske.units = ''
   ncxvme.units = 'm/a'
   ncyvme.units = 'm/a'
     
   ncxf.units = 'm'
   ncsf.units = 'm'
   ncthkf.units = 'm'
-  #ncmaskf.units = ''
   ncxvmf.units = 'm/a'
   ncyvmf.units = 'm/a'
     
   ncxg.units = 'm'
   ncsg.units = 'm'
   ncthkg.units = 'm'
-  #ncmaskg.units = ''
   ncxvmg.units = 'm/a'
   ncyvmg.units = 'm/a'
     
   ncxh.units = 'm'
   ncsh.units = 'm'
   ncthkh.units = 'm'
-  #ncmaskh.units = ''
   ncxvmh.units = 'm/a'
   ncyvmh.units = 'm/a'
 
     
   #####################################################################################
 
-  #nct.Standard_name = 'a'
-  #nctb.Standard_name = 'a'
-  #ncx.Standard_name = "projection_x_coordinate"
-  #ncy.Standard_name = "projection_y_coordinate"
     
   ncxvm.Standard_name   = 'land_ice_vertical_mean_x_velocity'
   ncyvm.Standard_name   = 'land_ice_vertical_mean_y_velocity'
   ncthk.Standard_name   = 'land_ice_thickness'
   nctopg.Standard_name  = 'bedrock_altitude'
-  #ncmask.Standard_name = ''
   nccrate.Standard_name = 'calving_rate'
     
   ncafl.Standard_name  = 'floating_ice_shelf_area'

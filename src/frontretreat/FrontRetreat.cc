@@ -186,7 +186,6 @@ void FrontRetreat::update_geometry(double dt,
   double vcr = 1e-20; //lower bound to evaluate terminal ice velocities
   m_wx.set(0.0);
   m_wy.set(0.0);
-  double C = convert(m_sys, 1.0, "m year-1", "m second-1");
 
   array::AccessScope list{&ice_thickness, &bc_mask,
       &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
