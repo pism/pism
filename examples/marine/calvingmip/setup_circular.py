@@ -4,8 +4,9 @@
 # Creates circular setup fpr CalvingMIP as in https://github.com/JRowanJordan/CalvingMIP/wiki/Circular-domain
 # Model parameters, see https://github.com/JRowanJordan/CalvingMIP/wiki/Experimental-parameters
 
-# run as "python setup_circular.py -L 1.6e6 -M 401" for 4km resolution and 1600 x 1600 km domain width
+# run as "python setup_circular.py -L 1.6e6 -M 321" for 5km resolution and 1600 x 1600 km domain width
 
+# set path to ../../preprocessing/PISMNC.py
 from PISMNC import PISMDataset as NC
 from optparse import OptionParser
 import numpy as np
@@ -51,6 +52,7 @@ topg = Bc-(Bc-Bl)*(r-rc)**2./(R-rc)**2
 
 zeros = np.zeros((options.Mx, options.Mx))
 thk = zeros.copy() + h0
+thk[r>=cd]=0.0
 
 v = zeros.copy()
 u = zeros.copy()

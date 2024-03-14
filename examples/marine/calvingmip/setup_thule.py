@@ -4,7 +4,7 @@
 # Creates Thule setup fpr CalvingMIP as in https://github.com/JRowanJordan/CalvingMIP/wiki/Thule-domain
 # Model parameters, see https://github.com/JRowanJordan/CalvingMIP/wiki/Experimental-parameters
 
-# run as "python setup_thule.py -L 1.6e6 -M 401" for 4km resolution and 1600 x 1600km domain width
+# run as "python setup_thule.py -L 1.6e6 -M 321" for 5km resolution and 1600 x 1600km domain width
 
 from PISMNC import PISMDataset as NC
 from optparse import OptionParser
@@ -53,6 +53,7 @@ topg=Ba*np.cos(3*np.pi*r/l)+a
 
 zeros = np.zeros((options.Mx, options.Mx))
 thk = zeros.copy() + h0
+thk[r>=cd]=0.0
 
 v = zeros.copy()
 u = zeros.copy()
