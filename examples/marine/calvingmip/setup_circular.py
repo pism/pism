@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 
-# Creates circular setup fpr CalvingMIP as in https://github.com/JRowanJordan/CalvingMIP/wiki/Circular-domain
+# Creates circular setup for CalvingMIP as in https://github.com/JRowanJordan/CalvingMIP/wiki/Circular-domain
 # Model parameters, see https://github.com/JRowanJordan/CalvingMIP/wiki/Experimental-parameters
 
 # run as "python setup_circular.py -L 1.6e6 -M 321" for 5km resolution and 1600 x 1600 km domain width
