@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022, 2023 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022, 2023, 2024 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -23,6 +23,7 @@
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 
 #include "pism/coupler/ocean/PicoGeometry.hh"
+#include "ClimateIndex.hh"
 
 namespace pism {
 
@@ -59,6 +60,8 @@ private:
   PicoGeometry m_geometry;
 
   std::shared_ptr<array::Forcing> m_theta_ocean, m_salinity_ocean;
+
+  std::unique_ptr<ClimateIndex> m_climate_index_forcing;
 
   void compute_ocean_input_per_basin(const PicoPhysics &physics,
                                      const array::Scalar &basin_mask,

@@ -33,6 +33,7 @@
 #include "pism/coupler/atmosphere/WeatherStation.hh"
 #include "pism/coupler/atmosphere/Uniform.hh"
 #include "pism/coupler/atmosphere/OrographicPrecipitation.hh"
+#include "pism/coupler/atmosphere/ClimateIndex.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -48,6 +49,7 @@ Factory::Factory(std::shared_ptr<const Grid> g)
   add_model<CosineYearlyCycle>("yearly_cycle");
   add_model<WeatherStation>("one_station");
   add_model<Uniform>("uniform");
+  add_model<ClimateIndex>("climate_index");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<PrecipitationScaling>("precip_scaling");
