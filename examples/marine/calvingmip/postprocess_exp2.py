@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# Creates output file from PISM EXP1 result to upload for CalvinMIP, 
-# as instructed from https://github.com/JRowanJordan/CalvingMIP/wiki/Experiment-1
+# Creates output file from PISM EXP2 result to upload for CalvinMIP, 
+# as instructed from https://github.com/JRowanJordan/CalvingMIP/wiki/Experiment-2
 
 import numpy as np
 import netCDF4 as nc
@@ -13,47 +13,48 @@ secperyear=365*24*3600
 resolution=5.0
 dkm=5.0 #km steps
 
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/circular/exp1-05km-dir/"
-pism_outfile = pismpath + "results/extra_exp1.nc"
-pism_tsfile  = pismpath + "results/ts_exp1.nc"
+pismpath     = "/p/tmp/albrecht/pism23/calvmip/circular/exp2-05km-dir/"
+pism_outfile = pismpath + "results/extra_exp2.nc"
+pism_tsfile  = pismpath + "results/ts_exp2.nc"
 
 pism_infile = pismpath + "input/circular_input_5km.nc"
 
-exp_outfile = "CalvingMIP_EXP1_PISM_PIK.nc"
+exp_outfile = "CalvingMIP_EXP2_PISM_PIK.nc"
 
 #################################################################################################
 
-tex=-1
+print('Load PISM data...')
 datnc = nc.Dataset(pism_outfile,"r")
-exp1_x = datnc.variables["x"][:]
-exp1_y = datnc.variables["y"][:]
-exp1_t = [datnc.variables["time"][tex]/secperyear-110000.0]
+exp_x = datnc.variables["x"][:]
+exp_y = datnc.variables["y"][:]
+exp_t = datnc.variables["time"][:]/secperyear-120000.0
 try:
-    exp1_xvm = datnc.variables["xvelmean"][tex,:]*secperyear
-    exp1_yvm = datnc.variables["yvelmean"][tex,:]*secperyear
-    exp1_thk = datnc.variables["lithk"][tex,:]
+    exp_xvm = datnc.variables["xvelmean"][:]*secperyear
+    exp_yvm = datnc.variables["yvelmean"][:]*secperyear
+    exp_thk = datnc.variables["lithk"][:]
 except:
-    exp1_xvm = datnc.variables["u_ssa"][tex,:]*secperyear
-    exp1_yvm = datnc.variables["v_ssa"][tex,:]*secperyear
-    exp1_thk = datnc.variables["thk"][tex,:]
-exp1_mask = datnc.variables["mask"][tex,:]-1
-exp1_crate = datnc.variables["calvingmip_calving_rate"][tex:]*secperyear
-exp1_topg = datnc.variables["topg"][tex,:]
+    exp_xvm = datnc.variables["u_ssa"][:]*secperyear
+    exp_yvm = datnc.variables["v_ssa"][:]*secperyear
+    exp_thk = datnc.variables["thk"][:]
+exp_mask = datnc.variables["mask"][:]-1
+exp_crate = datnc.variables["calvingmip_calving_rate"][:]*secperyear
+exp_topg = datnc.variables["topg"][:]
 datnc.close()
-print(exp1_t)
-Mx,My = np.shape(exp1_mask)
 
-ti=-6
+#print(exp_t)
+Mt,Mx,My = np.shape(exp_mask)
+
+
 datnc = nc.Dataset(pism_tsfile,"r")
-exp1_ts_t      = [datnc.variables["time"][ti]/secperyear-110000.0]
-exp1_ts_afl    = [datnc.variables["iareafl"][ti]]
-exp1_ts_agr    = [datnc.variables["iareagr"][ti]]
-exp1_ts_lim    = [datnc.variables["lim"][ti]]
-exp1_ts_limnsw = [datnc.variables["limnsw"][ti]]
-exp1_ts_tendcf = [datnc.variables["tendlicalvf"][ti]*secperyear]
-exp1_ts_tendgf = [datnc.variables["tendligroundf"][ti]*secperyear]
+exp_ts_t      = [datnc.variables["time"][:]/secperyear-120000.0]
+exp_ts_afl    = [datnc.variables["iareafl"][:]]
+exp_ts_agr    = [datnc.variables["iareagr"][:]]
+exp_ts_lim    = [datnc.variables["lim"][:]]
+exp_ts_limnsw = [datnc.variables["limnsw"][:]]
+exp_ts_tendcf = [datnc.variables["tendlicalvf"][:]*secperyear]
+exp_ts_tendgf = [datnc.variables["tendligroundf"][:]*secperyear]
 datnc.close()
-print(exp1_ts_t)
+#print(exp_ts_t)
 
 ###############################################################################################
 
@@ -76,45 +77,32 @@ point_names=['A','B','C','D','E','F','G','H']
 dp=np.float(dkm)/np.float(resolution)
 trans = ph.get_troughs(pism_infile,transects,dp)
 
-# plot profiles
-if False:
-    fig = plt.figure(4,figsize=(8,8))
-    ax = fig.add_subplot(1,1,1)
-
-    for cnt,p in enumerate(transects):
-        p1=p[0]
-        p2=p[1]
-    
-        print(p,np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2))
-        ax.plot([p1[0],p2[0]],[p1[1],p2[1]],label=point_names[cnt])
-      
-    ax.set_xlim([0,Mx])
-    ax.set_ylim([0,My])
-    ax.legend()
 
 
+################################################################################################
 # average along profiles
 profiles = {}
 
 xav=np.zeros([len(trans),300])
 yav=np.zeros([len(trans),300])
-
-Hav=np.zeros([len(trans),300])
-mav=np.zeros([len(trans),300])
-uav=np.zeros([len(trans),300])
-vav=np.zeros([len(trans),300])
 sav=np.zeros([len(trans),300])
 
-exp1_xm = np.zeros([Mx,My])
-exp1_ym = np.zeros([Mx,My])
+Hav=np.zeros([Mt,len(trans),300])
+mav=np.zeros([Mt,len(trans),300])
+uav=np.zeros([Mt,len(trans),300])
+vav=np.zeros([Mt,len(trans),300])
+
+exp_xm = np.zeros([Mx,My])
+exp_ym = np.zeros([Mx,My])
 
 for i in range(Mx):
-    exp1_xm[i,:]=exp1_x[i]
+    exp_xm[i,:]=exp_x[i]
 for j in range(My):
-    exp1_ym[:,j]=exp1_y[j]
-    
+    exp_ym[:,j]=exp_y[j]
 
-for l,po in enumerate(trans):
+print('Interpolate data along profiles...')
+for ti in range(Mt):
+  for l,po in enumerate(trans):
     profile=[]
     for k,p in enumerate(po):
         
@@ -122,206 +110,218 @@ for l,po in enumerate(trans):
         j=int(np.floor(p[0]))
         di=p[0]-np.floor(p[0])
         dj=p[1]-np.floor(p[1])
+
+        if ti==0:
+            xav[l,k]=ph.interpolate_along_transect(exp_ym,i,j,di,dj)
+            yav[l,k]=ph.interpolate_along_transect(exp_xm,i,j,di,dj) 
+            sav[l,k]=np.sqrt(xav[l,k]**2+yav[l,k]**2)
+            pair = [xav[l,k],yav[l,k],sav[l,k]]
+            profile.append(pair)
         
-        xav[l,k]=ph.interpolate_along_transect(exp1_ym,i,j,di,dj)
-        yav[l,k]=ph.interpolate_along_transect(exp1_xm,i,j,di,dj) 
-        sav[l,k]=np.sqrt(xav[l,k]**2+yav[l,k]**2)
+        Hav[ti,l,k]=ph.interpolate_along_transect(exp_thk[ti],i,j,di,dj)
+        uav[ti,l,k]=ph.interpolate_along_transect(exp_xvm[ti],i,j,di,dj)
+        vav[ti,l,k]=ph.interpolate_along_transect(exp_yvm[ti],i,j,di,dj)
         
-        Hav[l,k]=ph.interpolate_along_transect(exp1_thk,i,j,di,dj)
-        uav[l,k]=ph.interpolate_along_transect(exp1_xvm,i,j,di,dj)
-        vav[l,k]=ph.interpolate_along_transect(exp1_yvm,i,j,di,dj)
         #nearest neighbors
-        mav[l,k]=ph.nearest_along_transect(exp1_mask,i,j,di,dj)
-     
-        pair = [xav[l,k],yav[l,k],sav[l,k]]
-        profile.append(pair)
+        mav[ti,l,k]=ph.nearest_along_transect(exp_mask[ti],i,j,di,dj)
+
     
-    profiles[point_names[l]]=profile
+    if ti==0:
+        profiles[point_names[l]]=profile
     
 ########################################################################################################
 
 if True:
-  print("Write to netcdf file "+exp_outfile)
+  print("Write data to netCDF file "+exp_outfile)
   wrtfile = nc.Dataset(exp_outfile, 'w', format='NETCDF4_CLASSIC')
-  wrtfile.createDimension('X', size=len(exp1_x))
-  wrtfile.createDimension('Y', size=len(exp1_y))
-  wrtfile.createDimension('Time', size=1)
-  wrtfile.createDimension('nv', size=2)
 
-  nct     = wrtfile.createVariable('Time', 'f8', ('Time',))
+  wrtfile.createDimension('X', size=len(exp_x))
+  wrtfile.createDimension('Y', size=len(exp_y))
+
+  wrtfile.createDimension('Time1', size=Mt)
+  wrtfile.createDimension('Time100', size=len(exp_t[::100]))
+
+
+  nct     = wrtfile.createVariable('Time1', 'f8', ('Time1',))
+  nct2    = wrtfile.createVariable('Time100', 'f8', ('Time100',))
   ncx     = wrtfile.createVariable('X', 'f8', ('X',))
   ncy     = wrtfile.createVariable('Y', 'f8', ('Y',))
     
-  ncxvm   = wrtfile.createVariable('xvelmean', 'f8', ('Time','Y', 'X'),fill_value=np.nan)
-  ncyvm   = wrtfile.createVariable('yvelmean', 'f8', ('Time','Y', 'X'),fill_value=np.nan)
-  ncthk   = wrtfile.createVariable('lithk', 'f8', ('Time','Y', 'X'),fill_value=np.nan)
-  ncmask  = wrtfile.createVariable('mask', 'f8', ('Time','Y', 'X'))
-  nccrate = wrtfile.createVariable('calverate', 'f8', ('Time','Y', 'X'),fill_value=np.nan)
-  nctopg  = wrtfile.createVariable('topg', 'f8', ('Time','Y', 'X'))
+  ncxvm   = wrtfile.createVariable('xvelmean', 'f8', ('Time100','Y', 'X'),fill_value=np.nan)
+  ncyvm   = wrtfile.createVariable('yvelmean', 'f8', ('Time100','Y', 'X'),fill_value=np.nan)
+  ncthk   = wrtfile.createVariable('lithk', 'f8', ('Time100','Y', 'X'),fill_value=np.nan)
+  ncmask  = wrtfile.createVariable('mask', 'f8', ('Time100','Y', 'X'))
+  nccrate = wrtfile.createVariable('calverate', 'f8', ('Time100','Y', 'X'),fill_value=np.nan)
+  nctopg  = wrtfile.createVariable('topg', 'f8', ('Time100','Y', 'X'))
     
-  ncafl  = wrtfile.createVariable('iareafl', 'f8', ('Time'))
-  ncagr  = wrtfile.createVariable('iareagr', 'f8', ('Time'))
-  nclim  = wrtfile.createVariable('lim', 'f8', ('Time'))
-  nclimw  = wrtfile.createVariable('limnsw', 'f8', ('Time'))
-  nctcf  = wrtfile.createVariable('tendlicalvf', 'f8', ('Time'))
-  nctgf  = wrtfile.createVariable('tendligroundf', 'f8', ('Time'))
+  ncafl  = wrtfile.createVariable('iareafl', 'f8', ('Time1'))
+  ncagr  = wrtfile.createVariable('iareagr', 'f8', ('Time1'))
+  nclim  = wrtfile.createVariable('lim', 'f8', ('Time1'))
+  nclimw  = wrtfile.createVariable('limnsw', 'f8', ('Time1'))
+  nctcf  = wrtfile.createVariable('tendlicalvf', 'f8', ('Time1'))
+  nctgf  = wrtfile.createVariable('tendligroundf', 'f8', ('Time1'))
     
-  exp1_thk[exp1_thk == 0.0] = np.nan
-  exp1_xvm[exp1_xvm == 0.0] = np.nan
-  exp1_yvm[exp1_yvm == 0.0] = np.nan
+  exp_thk[exp_thk == 0.0] = np.nan
+  exp_xvm[exp_xvm == 0.0] = np.nan
+  exp_yvm[exp_yvm == 0.0] = np.nan
 
   wrtfile.createDimension('Profile A', size=np.shape(trans[0])[0])
   ncxa     = wrtfile.createVariable('Profile A', 'f8', ('Profile A',))
   ncsa    = wrtfile.createVariable('sA', 'f8', ('Profile A'))
-  ncthka  = wrtfile.createVariable('lithkA', 'f8', ('Profile A'),fill_value=np.nan)
-  ncxvma  = wrtfile.createVariable('xvelmeanA', 'f8', ('Profile A'),fill_value=np.nan)
-  ncyvma  = wrtfile.createVariable('yvelmeanA', 'f8', ('Profile A'),fill_value=np.nan)
-  ncmaska  = wrtfile.createVariable('maskA', 'f8', ('Profile A'))
+  ncthka  = wrtfile.createVariable('lithkA', 'f8', ('Time1','Profile A'),fill_value=np.nan)
+  ncxvma  = wrtfile.createVariable('xvelmeanA', 'f8', ('Time1','Profile A'),fill_value=np.nan)
+  ncyvma  = wrtfile.createVariable('yvelmeanA', 'f8', ('Time1','Profile A'),fill_value=np.nan)
+  ncmaska  = wrtfile.createVariable('maskA', 'f8', ('Time1','Profile A'))
     
   wrtfile.createDimension('Profile B', size=np.shape(trans[1])[0])
   ncxb     = wrtfile.createVariable('Profile B', 'f8', ('Profile B',))
   ncsb    = wrtfile.createVariable('sB', 'f8', ('Profile B'))
-  ncthkb  = wrtfile.createVariable('lithkB', 'f8', ('Profile B'),fill_value=np.nan)
-  ncxvmb  = wrtfile.createVariable('xvelmeanB', 'f8', ('Profile B'),fill_value=np.nan)
-  ncyvmb  = wrtfile.createVariable('yvelmeanB', 'f8', ('Profile B'),fill_value=np.nan)
-  ncmaskb  = wrtfile.createVariable('maskB', 'f8', ('Profile B'))
+  ncthkb  = wrtfile.createVariable('lithkB', 'f8', ('Time1','Profile B'),fill_value=np.nan)
+  ncxvmb  = wrtfile.createVariable('xvelmeanB', 'f8', ('Time1','Profile B'),fill_value=np.nan)
+  ncyvmb  = wrtfile.createVariable('yvelmeanB', 'f8', ('Time1','Profile B'),fill_value=np.nan)
+  ncmaskb  = wrtfile.createVariable('maskB', 'f8', ('Time1','Profile B'))
 
   wrtfile.createDimension('Profile C', size=np.shape(trans[2])[0])
   ncxc     = wrtfile.createVariable('Profile C', 'f8', ('Profile C',))
   ncsc    = wrtfile.createVariable('sC', 'f8', ('Profile C'))
-  ncthkc  = wrtfile.createVariable('lithkC', 'f8', ('Profile C'),fill_value=np.nan)
-  ncxvmc  = wrtfile.createVariable('xvelmeanC', 'f8', ('Profile C'),fill_value=np.nan)
-  ncyvmc  = wrtfile.createVariable('yvelmeanC', 'f8', ('Profile C'),fill_value=np.nan)
-  ncmaskc  = wrtfile.createVariable('maskC', 'f8', ('Profile C'))
+  ncthkc  = wrtfile.createVariable('lithkC', 'f8', ('Time1','Profile C'),fill_value=np.nan)
+  ncxvmc  = wrtfile.createVariable('xvelmeanC', 'f8', ('Time1','Profile C'),fill_value=np.nan)
+  ncyvmc  = wrtfile.createVariable('yvelmeanC', 'f8', ('Time1','Profile C'),fill_value=np.nan)
+  ncmaskc  = wrtfile.createVariable('maskC', 'f8', ('Time1','Profile C'))
     
   wrtfile.createDimension('Profile D', size=np.shape(trans[3])[0])
   ncxd     = wrtfile.createVariable('Profile D', 'f8', ('Profile D',))
   ncsd    = wrtfile.createVariable('sD', 'f8', ('Profile D'))
-  ncthkd  = wrtfile.createVariable('lithkD', 'f8', ('Profile D'),fill_value=np.nan)
-  ncxvmd  = wrtfile.createVariable('xvelmeanD', 'f8', ('Profile D'),fill_value=np.nan)
-  ncyvmd  = wrtfile.createVariable('yvelmeanD', 'f8', ('Profile D'),fill_value=np.nan)
-  ncmaskd  = wrtfile.createVariable('maskD', 'f8', ('Profile D'))
+  ncthkd  = wrtfile.createVariable('lithkD', 'f8', ('Time1','Profile D'),fill_value=np.nan)
+  ncxvmd  = wrtfile.createVariable('xvelmeanD', 'f8', ('Time1','Profile D'),fill_value=np.nan)
+  ncyvmd  = wrtfile.createVariable('yvelmeanD', 'f8', ('Time1','Profile D'),fill_value=np.nan)
+  ncmaskd  = wrtfile.createVariable('maskD', 'f8', ('Time1','Profile D'))
 
   wrtfile.createDimension('Profile E', size=np.shape(trans[4])[0])
   ncxe     = wrtfile.createVariable('Profile E', 'f8', ('Profile E',))
   ncse    = wrtfile.createVariable('sE', 'f8', ('Profile E'))
-  ncthke  = wrtfile.createVariable('lithkE', 'f8', ('Profile E'),fill_value=np.nan)
-  ncxvme  = wrtfile.createVariable('xvelmeanE', 'f8', ('Profile E'),fill_value=np.nan)
-  ncyvme  = wrtfile.createVariable('yvelmeanE', 'f8', ('Profile E'),fill_value=np.nan)
-  ncmaske  = wrtfile.createVariable('maskE', 'f8', ('Profile E'))
+  ncthke  = wrtfile.createVariable('lithkE', 'f8', ('Time1','Profile E'),fill_value=np.nan)
+  ncxvme  = wrtfile.createVariable('xvelmeanE', 'f8', ('Time1','Profile E'),fill_value=np.nan)
+  ncyvme  = wrtfile.createVariable('yvelmeanE', 'f8', ('Time1','Profile E'),fill_value=np.nan)
+  ncmaske  = wrtfile.createVariable('maskE', 'f8', ('Time1','Profile E'))
     
   wrtfile.createDimension('Profile F', size=np.shape(trans[5])[0])
   ncxf     = wrtfile.createVariable('Profile F', 'f8', ('Profile F',))
   ncsf    = wrtfile.createVariable('sF', 'f8', ('Profile F'))
-  ncthkf  = wrtfile.createVariable('lithkF', 'f8', ('Profile F'),fill_value=np.nan)
-  ncxvmf  = wrtfile.createVariable('xvelmeanF', 'f8', ('Profile F'),fill_value=np.nan)
-  ncyvmf  = wrtfile.createVariable('yvelmeanF', 'f8', ('Profile F'),fill_value=np.nan)
-  ncmaskf  = wrtfile.createVariable('maskF', 'f8', ('Profile F'))
+  ncthkf  = wrtfile.createVariable('lithkF', 'f8', ('Time1','Profile F'),fill_value=np.nan)
+  ncxvmf  = wrtfile.createVariable('xvelmeanF', 'f8', ('Time1','Profile F'),fill_value=np.nan)
+  ncyvmf  = wrtfile.createVariable('yvelmeanF', 'f8', ('Time1','Profile F'),fill_value=np.nan)
+  ncmaskf  = wrtfile.createVariable('maskF', 'f8', ('Time1','Profile F'))
 
   wrtfile.createDimension('Profile G', size=np.shape(trans[6])[0])
   ncxg     = wrtfile.createVariable('Profile G', 'f8', ('Profile G',))
   ncsg    = wrtfile.createVariable('sG', 'f8', ('Profile G'))
-  ncthkg  = wrtfile.createVariable('lithkG', 'f8', ('Profile G'),fill_value=np.nan)
-  ncxvmg  = wrtfile.createVariable('xvelmeanG', 'f8', ('Profile G'),fill_value=np.nan)
-  ncyvmg  = wrtfile.createVariable('yvelmeanG', 'f8', ('Profile G'),fill_value=np.nan)
-  ncmaskg  = wrtfile.createVariable('maskG', 'f8', ('Profile G'))
+  ncthkg  = wrtfile.createVariable('lithkG', 'f8', ('Time1','Profile G'),fill_value=np.nan)
+  ncxvmg  = wrtfile.createVariable('xvelmeanG', 'f8', ('Time1','Profile G'),fill_value=np.nan)
+  ncyvmg  = wrtfile.createVariable('yvelmeanG', 'f8', ('Time1','Profile G'),fill_value=np.nan)
+  ncmaskg  = wrtfile.createVariable('maskG', 'f8', ('Time1','Profile G'))
     
   wrtfile.createDimension('Profile H', size=np.shape(trans[7])[0])
   ncxh     = wrtfile.createVariable('Profile H', 'f8', ('Profile H',))
   ncsh    = wrtfile.createVariable('sH', 'f8', ('Profile H'))
-  ncthkh  = wrtfile.createVariable('lithkH', 'f8', ('Profile H'),fill_value=np.nan)
-  ncxvmh  = wrtfile.createVariable('xvelmeanH', 'f8', ('Profile H'),fill_value=np.nan)
-  ncyvmh  = wrtfile.createVariable('yvelmeanH', 'f8', ('Profile H'),fill_value=np.nan)
-  ncmaskh  = wrtfile.createVariable('maskH', 'f8', ('Profile H'))
+  ncthkh  = wrtfile.createVariable('lithkH', 'f8', ('Time1','Profile H'),fill_value=np.nan)
+  ncxvmh  = wrtfile.createVariable('xvelmeanH', 'f8', ('Time1','Profile H'),fill_value=np.nan)
+  ncyvmh  = wrtfile.createVariable('yvelmeanH', 'f8', ('Time1','Profile H'),fill_value=np.nan)
+  ncmaskh  = wrtfile.createVariable('maskH', 'f8', ('Time1','Profile H'))
     
   #####################################################################################
     
-  nct[:] = exp1_t[:]
-  ncx[:] = exp1_x[:]
-  ncy[:] = exp1_y[:]
+  nct[:] = exp_t[:]
+  nct2[:]= exp_t[::100]
+  ncx[:] = exp_x[:]
+  ncy[:] = exp_y[:]
     
-  ncxvm[:]  = exp1_xvm[:]
-  ncyvm[:]  = exp1_yvm[:] 
-  ncthk[:]  = exp1_thk[:]
-  ncmask[:] = exp1_mask[:]
-  nccrate[:]= exp1_crate[:]
-  nctopg[:] = exp1_topg[:]
+
+  ncxvm[:]  = exp_xvm[::100]
+  ncyvm[:]  = exp_yvm[::100] 
+  ncthk[:]  = exp_thk[::100]
+  ncmask[:] = exp_mask[::100]
+  nccrate[:]= exp_crate[::100]
+  nctopg[:] = exp_topg[::100]
     
-  ncafl[:]  = exp1_ts_afl[:]
-  ncagr[:]  = exp1_ts_agr[:]
-  nclim[:]  = exp1_ts_lim[:]
-  nclimw[:] = exp1_ts_limnsw[:]
-  nctcf[:] = exp1_ts_tendcf[:]
-  nctgf[:] = exp1_ts_tendgf[:]
+
+  ncafl[1:]  = exp_ts_afl[:]
+  ncagr[1:]  = exp_ts_agr[:]
+  nclim[1:]  = exp_ts_lim[:]
+  nclimw[1:] = exp_ts_limnsw[:]
+  nctcf[1:] = exp_ts_tendcf[:]
+  nctgf[1:] = exp_ts_tendgf[:]
     
+
   cuta = np.shape(trans[0])[0]
   ncxa[:] = sav[0][0:cuta] 
   ncsa[:] = sav[0][0:cuta]
-  ncthka[:] = Hav[0][0:cuta]
-  ncmaska[:] = mav[0][0:cuta]
-  ncxvma[:] = uav[0][0:cuta]
-  ncyvma[:] = vav[0][0:cuta]
+  ncthka[:] = Hav[:,0,0:cuta]
+  ncmaska[:] = mav[:,0,0:cuta]
+  ncxvma[:] = uav[:,0,0:cuta]
+  ncyvma[:] = vav[:,0,0:cuta]
     
   cutb = np.shape(trans[1])[0]
   ncxb[:] = sav[1][0:cutb] 
   ncsb[:] = sav[1][0:cutb]
-  ncthkb[:] = Hav[1][0:cutb]
-  ncmaskb[:] = mav[1][0:cutb]
-  ncxvmb[:] = uav[1][0:cutb]
-  ncyvmb[:] = vav[1][0:cutb]
+  ncthkb[:] = Hav[:,1,0:cutb]
+  ncmaskb[:] = mav[:,1,0:cutb]
+  ncxvmb[:] = uav[:,1,0:cutb]
+  ncyvmb[:] = vav[:,1,0:cutb]
     
   cutc = np.shape(trans[2])[0]
   ncxc[:] = sav[2][0:cutc] 
   ncsc[:] = sav[2][0:cutc]
-  ncthkc[:] = Hav[2][0:cutc]
-  ncmaskc[:] = mav[2][0:cutc]
-  ncxvmc[:] = uav[2][0:cutc]
-  ncyvmc[:] = vav[2][0:cutc]
+  ncthkc[:] = Hav[:,2,0:cutc]
+  ncmaskc[:] = mav[:,2,0:cutc]
+  ncxvmc[:] = uav[:,2,0:cutc]
+  ncyvmc[:] = vav[:,2,0:cutc]
 
   cutd = np.shape(trans[3])[0]
   ncxd[:] = sav[3][0:cutd] 
   ncsd[:] = sav[3][0:cutd]
-  ncthkd[:] = Hav[3][0:cutd]
-  ncmaskd[:] = mav[3][0:cutd]
-  ncxvmd[:] = uav[3][0:cutd]
-  ncyvmd[:] = vav[3][0:cutd]
+  ncthkd[:] = Hav[:,3,0:cutd]
+  ncmaskd[:] = mav[:,3,0:cutd]
+  ncxvmd[:] = uav[:,3,0:cutd]
+  ncyvmd[:] = vav[:,3,0:cutd]
     
   cute = np.shape(trans[4])[0]
   ncxe[:] = sav[4][0:cute] 
   ncse[:] = sav[4][0:cute]
-  ncthke[:] = Hav[4][0:cute]
-  ncmaske[:] = mav[4][0:cute]
-  ncxvme[:] = uav[4][0:cute]
-  ncyvme[:] = vav[4][0:cute]
+  ncthke[:] = Hav[:,4,0:cute]
+  ncmaske[:] = mav[:,4,0:cute]
+  ncxvme[:] = uav[:,4,0:cute]
+  ncyvme[:] = vav[:,4,0:cute]
 
   cutf = np.shape(trans[5])[0]
   ncxf[:] = sav[5][0:cutf] 
   ncsf[:] = sav[5][0:cutf]
-  ncthkf[:] = Hav[5][0:cutf]
-  ncmaskf[:] = mav[5][0:cutf]
-  ncxvmf[:] = uav[5][0:cutf]
-  ncyvmf[:] = vav[5][0:cutf]
+  ncthkf[:] = Hav[:,5,0:cutf]
+  ncmaskf[:] = mav[:,5,0:cutf]
+  ncxvmf[:] = uav[:,5,0:cutf]
+  ncyvmf[:] = vav[:,5,0:cutf]
     
   cutg = np.shape(trans[6])[0]
   ncxg[:] = sav[6][0:cutg] 
   ncsg[:] = sav[6][0:cutg]
-  ncthkg[:] = Hav[6][0:cutg]
-  ncmaskg[:] = mav[6][0:cutg]
-  ncxvmg[:] = uav[6][0:cutg]
-  ncyvmg[:] = vav[6][0:cutg]
+  ncthkg[:] = Hav[:,6,0:cutg]
+  ncmaskg[:] = mav[:,6,0:cutg]
+  ncxvmg[:] = uav[:,6,0:cutg]
+  ncyvmg[:] = vav[:,6,0:cutg]
 
   cuth = np.shape(trans[7])[0]
   ncxh[:] = sav[7][0:cuth] 
   ncsh[:] = sav[7][0:cuth]
-  ncthkh[:] = Hav[7][0:cuth]
-  ncmaskh[:] = mav[7][0:cuth]
-  ncxvmh[:] = uav[7][0:cuth]
-  ncyvmh[:] = vav[7][0:cuth]
+  ncthkh[:] = Hav[:,7,0:cuth]
+  ncmaskh[:] = mav[:,7,0:cuth]
+  ncxvmh[:] = uav[:,7,0:cuth]
+  ncyvmh[:] = vav[:,7,0:cuth]
 
  
   #####################################################################################
 
   nct.units = 'a'
+  nct2.units = 'a'
   ncx.units = 'm'
   ncy.units = 'm'
     
@@ -389,7 +389,7 @@ if True:
     
   #####################################################################################
 
-    
+
   ncxvm.Standard_name   = 'land_ice_vertical_mean_x_velocity'
   ncyvm.Standard_name   = 'land_ice_vertical_mean_y_velocity'
   ncthk.Standard_name   = 'land_ice_thickness'
@@ -479,6 +479,7 @@ if True:
   wrtfile.inputdata = 'PISM code from https://github.com/pism/pism/tree/pik/calving_rate_given'
     
   wrtfile.close()
+
 
   print('Data successfully saved to', exp_outfile)
 
