@@ -44,6 +44,9 @@ datnc.close()
 #print(exp_t)
 Mt,Mx,My = np.shape(exp_mask)
 
+exp_thk[exp_thk == 0.0] = np.nan
+exp_xvm[exp_xvm == 0.0] = np.nan
+exp_yvm[exp_yvm == 0.0] = np.nan
 
 datnc = nc.Dataset(pism_tsfile,"r")
 exp_ts_t      = [datnc.variables["time"][:]/secperyear-120000.0]
@@ -161,10 +164,6 @@ if True:
   nctcf  = wrtfile.createVariable('tendlicalvf', 'f8', ('Time1'))
   nctgf  = wrtfile.createVariable('tendligroundf', 'f8', ('Time1'))
     
-  exp_thk[exp_thk == 0.0] = np.nan
-  exp_xvm[exp_xvm == 0.0] = np.nan
-  exp_yvm[exp_yvm == 0.0] = np.nan
-
   wrtfile.createDimension('Profile A', size=np.shape(trans[0])[0])
   ncxa     = wrtfile.createVariable('Profile A', 'f8', ('Profile A',))
   ncsa    = wrtfile.createVariable('sA', 'f8', ('Profile A'))
