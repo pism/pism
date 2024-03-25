@@ -9,6 +9,7 @@ src/base/bedroughplay. Also used in PISM software (regression) test.
 
 import PISM
 from math import sin, pi
+import numpy
 
 ctx = PISM.Context()
 config = ctx.config
@@ -115,16 +116,8 @@ def bed_smoother_test():
     stored_range["topg_smoothed"] = [-372.9924735817933, 372.9924735817933]
     stored_range["theta"] = [0.7147300652935706, 0.9884843647808601]
 
-    computed_range = {}
     for f in [topg, topg_smoothed, theta]:
-        computed_range[f.get_name()] = f.range()
-
-    for name in list(stored_range.keys()):
-        computed = computed_range[name]
-        stored = stored_range[name]
-
-        for k in range(2):
-            assert abs(computed[k] - stored[k]) < 1e-16
+        numpy.testing.assert_almost_equal([PISM.min(f), PISM.max(f)], stored_range[f.get_name()])
 
 
 if __name__ == "__main__":

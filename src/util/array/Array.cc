@@ -184,32 +184,6 @@ void Array::set_interpolation_type(InterpolationType type) {
   m_impl->interpolation_type = type;
 }
 
-//! Result: min <- min(v[j]), max <- max(v[j]).
-/*!
-PETSc manual correctly says "VecMin and VecMax are collective on Vec" but
-GlobalMax,GlobalMin \e are needed, when m_impl->ghosted==true, to get correct
-values because Vecs created with DACreateLocalVector() are of type
-VECSEQ and not VECMPI.  See src/trypetsc/localVecMax.c.
- */
-std::array<double,2> Array::range() const {
-  PetscErrorCode ierr;
-
-  double min{0.0};
-  ierr = VecMin(vec(), NULL, &min);
-  PISM_CHK(ierr, "VecMin");
-
-  double max{0.0};
-  ierr = VecMax(vec(), NULL, &max);
-  PISM_CHK(ierr, "VecMax");
-
-  if (m_impl->ghosted) {
-    // needs a reduce operation; use GlobalMin and GlobalMax;
-    min = GlobalMin(m_impl->grid->com, min);
-    max = GlobalMax(m_impl->grid->com, max);
-  }
-  return {min, max};
-}
-
 /** Convert from `int` to PETSc's `NormType`.
  *
  *

@@ -22,7 +22,6 @@
 #include <initializer_list>
 #include <memory>               // shared_ptr, dynamic_pointer_cast
 #include <cstdint>              // uint64_t
-#include <array>
 
 #include "pism/util/error_handling.hh" // RuntimeError
 
@@ -218,7 +217,6 @@ public:
 
   const std::vector<double>& levels() const;
 
-  std::array<double,2> range() const;
   std::vector<double> norm(int n) const;
 
   void add(double alpha, const Array &x);
