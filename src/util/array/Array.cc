@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2023 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2024 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <petscdraw.h>
 #include <string>
+#include <vector>
 
 #include "pism/util/array/Array.hh"
 #include "pism/util/array/Array_impl.hh"
@@ -394,6 +395,26 @@ static std::array<double, 2> compute_range(MPI_Comm com, const double *data, siz
   return { GlobalMin(com, min_result), GlobalMax(com, max_result) };
 }
 
+static void read_and_interpolate(const File &file, const std::string &variable_name,
+                                 SpatialVariableMetadata &variable, const Grid &grid,
+                                 const std::vector<double> &levels,
+                                 InterpolationType interpolation_type, petsc::Vec &output) {
+  auto log = grid.ctx()->log();
+
+  grid::InputGridInfo input_grid(file, variable_name, variable.unit_system(), grid.registration());
+
+  input_grid.report(*log, 4, variable.unit_system());
+
+  io::check_input_grid(input_grid, grid, levels);
+
+  LocalInterpCtx interp_context(input_grid, grid, levels, interpolation_type);
+
+  // Note: this call will read the last time record (the index is set in `interp_context`
+  // based on info in `input_grid`).
+  petsc::VecArray output_array(output);
+  io::regrid_spatial_variable(variable, grid, interp_context, file, output_array.get());
+}
+
 //! Gets an Array from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
@@ -403,10 +424,10 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  auto da2 = grid()->get_dm(1, 0);
+  auto dm_for_io = ndof() == 1 ? dm() : grid()->get_dm(1, 0);
 
   // a temporary one-component vector that uses a compatible domain decomposition
-  petsc::TemporaryGlobalVec tmp(da2);
+  petsc::TemporaryGlobalVec tmp(dm_for_io);
 
   for (unsigned int j = 0; j < ndof(); ++j) {
     auto variable = metadata(j);
@@ -414,25 +435,15 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
     if (V.exists) {
-      grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
-      input_grid.report(*log, 4, variable.unit_system());
-
-      // Note: this implementation is used for 2D fields, so we don't need to use the
-      // internal vertical (Z) grid.
-      io::check_input_grid(input_grid, *grid(), {0.0});
-
-      LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
-
-      // Note: this call will read the last time record (the index is set in `lic` based on
-      // info in `input_grid`).
-      petsc::VecArray tmp_array(tmp);
-      io::regrid_spatial_variable(metadata(j), *grid(), lic, file, tmp_array.get());
+      read_and_interpolate(file, V.name, variable, *grid(), levels(), m_impl->interpolation_type,
+                           tmp);
 
       // Check the range and report it if necessary.
       {
         io::read_valid_range(file, V.name, variable);
         const size_t data_size = grid()->xm() * grid()->ym() * levels().size();
+        petsc::VecArray tmp_array(tmp);
         auto range = compute_range(grid()->com, tmp_array.get(), data_size);
         auto min   = range[0];
         auto max   = range[1];
@@ -447,8 +458,8 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
       set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
     }
 
-    set_dof(da2, tmp, j);
-  }
+    set_dof(dm_for_io, tmp, j);
+  } // end of the loop over degrees of freedom
 
   // The calls above only set the values owned by a processor, so we need to
   // communicate if m_has_ghosts == true:

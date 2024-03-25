@@ -64,13 +64,14 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
-  const int X = X_AXIS,
-            Z = Z_AXIS; // indices, just for clarity
-
   unsigned int nlevels = lic.z->n_output();
 
-  // array sizes for mapping from logical to "flat" indices
-  int x_count = lic.count[X], z_count = lic.count[Z];
+  int x_count = lic.count[X_AXIS], z_count = lic.count[Z_AXIS];
+  auto input = [input_array, x_count, z_count](int X, int Y, int Z) {
+    // the map from logical to linear indices for the input array
+    int index = (Y * x_count + X) * z_count + Z;
+    return input_array[index];
+  };
 
   for (auto p = grid.points(); p; p.next()) {
     const int i_global = p.i(), j_global = p.j();
@@ -78,8 +79,8 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
     const int i = i_global - grid.xs(), j = j_global - grid.ys();
 
     // Indices of neighboring points.
-    const int X_m = lic.x->left(i), X_p = lic.x->right(i), Y_m = lic.y->left(j),
-              Y_p = lic.y->right(j);
+    const int X_m = lic.x->left(i), X_p = lic.x->right(i);
+    const int Y_m = lic.y->left(j), Y_p = lic.y->right(j);
 
     for (unsigned int k = 0; k < nlevels; k++) {
 
@@ -93,26 +94,27 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
         // We pretend that there are always 8 neighbors (4 in the map plane,
         // 2 vertical levels). And compute the indices into the input_array for
         // those neighbors.
-        const int mmm = (Y_m * x_count + X_m) * z_count + Z_m,
-                  mmp = (Y_m * x_count + X_m) * z_count + Z_p,
-                  mpm = (Y_m * x_count + X_p) * z_count + Z_m,
-                  mpp = (Y_m * x_count + X_p) * z_count + Z_p,
-                  pmm = (Y_p * x_count + X_m) * z_count + Z_m,
-                  pmp = (Y_p * x_count + X_m) * z_count + Z_p,
-                  ppm = (Y_p * x_count + X_p) * z_count + Z_m,
-                  ppp = (Y_p * x_count + X_p) * z_count + Z_p;
+        const double
+          mmm = input(X_m, Y_m, Z_m),
+          mmp = input(X_m, Y_m, Z_p),
+          pmm = input(X_p, Y_m, Z_m),
+          pmp = input(X_p, Y_m, Z_p),
+          mpm = input(X_m, Y_p, Z_m),
+          mpp = input(X_m, Y_p, Z_p),
+          ppm = input(X_p, Y_p, Z_m),
+          ppp = input(X_p, Y_p, Z_p);
 
         // linear interpolation in the z-direction
-        a_mm = input_array[mmm] * (1.0 - alpha_z) + input_array[mmp] * alpha_z;
-        a_mp = input_array[mpm] * (1.0 - alpha_z) + input_array[mpp] * alpha_z;
-        a_pm = input_array[pmm] * (1.0 - alpha_z) + input_array[pmp] * alpha_z;
-        a_pp = input_array[ppm] * (1.0 - alpha_z) + input_array[ppp] * alpha_z;
+        a_mm = mmm * (1.0 - alpha_z) + mmp * alpha_z;
+        a_mp = pmm * (1.0 - alpha_z) + pmp * alpha_z;
+        a_pm = mpm * (1.0 - alpha_z) + mpp * alpha_z;
+        a_pp = ppm * (1.0 - alpha_z) + ppp * alpha_z;
       } else {
-        // we don't need to interpolate vertically for the 2-D case
-        a_mm = input_array[Y_m * x_count + X_m];
-        a_mp = input_array[Y_m * x_count + X_p];
-        a_pm = input_array[Y_p * x_count + X_m];
-        a_pp = input_array[Y_p * x_count + X_p];
+        // no interpolation in Z in the 2-D case
+        a_mm = input(X_m, Y_m, 0);
+        a_mp = input(X_p, Y_m, 0);
+        a_pm = input(X_m, Y_p, 0);
+        a_pp = input(X_p, Y_p, 0);
       }
 
       // interpolation coefficient in the x direction
@@ -129,7 +131,7 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
       // index into the new array and interpolate in y direction
       output_array[index] = a_m * (1.0 - y_alpha) + a_p * y_alpha;
       // done with the point at (x,y,z)
-    }
+    } // end of the loop over vertical levels
   }
 }
 
