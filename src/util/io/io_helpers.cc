@@ -1300,51 +1300,6 @@ void write_attributes(const File &file, const VariableMetadata &variable, io::Ty
   }
 }
 
-//! Read the valid range information from a file.
-/*! Reads `valid_min`, `valid_max` and `valid_range` attributes; if \c
-  valid_range is found, sets the pair `valid_min` and `valid_max` instead.
-*/
-void read_valid_range(const File &file, const std::string &name, VariableMetadata &variable) {
-  try {
-    // Never reset valid_min/max if they were set internally
-    if (variable.has_attribute("valid_min") or
-        variable.has_attribute("valid_max")) {
-      return;
-    }
-
-    // Read the units.
-    std::string file_units = file.read_text_attribute(name, "units");
-
-    if (file_units.empty()) {
-      // If the variable in the file does not have the units attribute we assume that
-      // units in the file match internal (PISM) units.
-      file_units = variable.get_string("units");
-    }
-
-    units::Converter c(variable.unit_system(), file_units, variable["units"]);
-
-    std::vector<double> bounds = file.read_double_attribute(name, "valid_range");
-    if (bounds.size() == 2) {             // valid_range is present
-      variable["valid_min"] = {c(bounds[0])};
-      variable["valid_max"] = {c(bounds[1])};
-    } else {                      // valid_range has the wrong length or is missing
-      bounds = file.read_double_attribute(name, "valid_min");
-      if (bounds.size() == 1) {           // valid_min is present
-        variable["valid_min"] = {c(bounds[0])};
-      }
-
-      bounds = file.read_double_attribute(name, "valid_max");
-      if (bounds.size() == 1) {           // valid_max is present
-        variable["valid_max"] = {c(bounds[0])};
-      }
-    }
-  } catch (RuntimeError &e) {
-    e.add_context("reading valid range of variable '%s' from '%s'", name.c_str(),
-                  file.name().c_str());
-    throw;
-  }
-}
-
 /*!
  * Return the name of the time dimension corresponding to a NetCDF variable.
  *

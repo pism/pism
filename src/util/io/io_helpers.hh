@@ -123,8 +123,6 @@ VariableMetadata read_attributes(const File &file, const std::string &variable_n
 
 void write_attributes(const File &file, const VariableMetadata &variable, io::Type nctype);
 
-void read_valid_range(const File &file, const std::string &name, VariableMetadata &variable);
-
 bool file_exists(MPI_Comm com, const std::string &filename);
 
 void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
