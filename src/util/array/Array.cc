@@ -441,7 +441,6 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
 
       // Check the range and report it if necessary.
       {
-        io::read_valid_range(file, V.name, variable);
         const size_t data_size = grid()->xm() * grid()->ym() * levels().size();
         petsc::VecArray tmp_array(tmp);
         auto range = compute_range(grid()->com, tmp_array.get(), data_size);
