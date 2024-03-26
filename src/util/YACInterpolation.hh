@@ -29,9 +29,14 @@
 namespace pism {
 class Grid;
 class File;
+class SpatialVariableMetadata;
 
 namespace array {
 class Scalar;
+}
+
+namespace petsc {
+class Vec;
 }
 
 class YACInterpolation {
@@ -42,11 +47,14 @@ public:
 
   void regrid(const File &file, io::Default default_value, array::Scalar &target) const;
 
+  double regrid(const pism::File &file, pism::io::Default default_value,
+                const SpatialVariableMetadata &metadata, petsc::Vec &target) const;
+
   static std::string grid_name(const File &file, const std::string &variable_name,
                                units::System::Ptr sys);
 
 private:
-  double interpolate(const array::Scalar &source, array::Scalar &target) const;
+  double interpolate(const array::Scalar &source, petsc::Vec &target) const;
 
   static int interpolation_coarse_to_fine(double missing_value);
   static int interpolation_fine_to_coarse(double missing_value);
