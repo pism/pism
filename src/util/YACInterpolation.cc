@@ -21,6 +21,7 @@
 #include <vector>
 #include <cmath>
 
+#include "VariableMetadata.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
@@ -398,10 +399,10 @@ YACInterpolation::~YACInterpolation() {
 }
 
 double YACInterpolation::interpolate(const pism::array::Scalar &source,
-                                     pism::array::Scalar &target) const {
+                                     pism::petsc::Vec &target) const {
 
   pism::petsc::VecArray input_array(source.vec());
-  pism::petsc::VecArray output_array(target.vec());
+  pism::petsc::VecArray output_array(target);
 
   double *send_field_    = input_array.get();
   double **send_field[1] = { &send_field_ };
@@ -420,19 +421,29 @@ double YACInterpolation::interpolate(const pism::array::Scalar &source,
   return end - start;
 }
 
+
 void YACInterpolation::regrid(const pism::File &file, pism::io::Default default_value,
                               pism::array::Scalar &target) const {
 
-  m_buffer->metadata(0) = target.metadata(0);
+  double time_spent = regrid(file, default_value, target.metadata(0), target.vec());
+
+  auto log = target.grid()->ctx()->log();
+
+  log->message(2, "Interpolation took %f seconds.\n", time_spent);
+}
+
+double YACInterpolation::regrid(const pism::File &file, pism::io::Default default_value,
+                              const SpatialVariableMetadata &metadata,
+                              petsc::Vec &target) const {
+
+  m_buffer->metadata(0) = metadata;
 
   // FIXME: could be m_buffer->read(...)
   m_buffer->regrid(file, default_value);
 
   double time_spent = interpolate(*m_buffer, target);
 
-  auto log = target.grid()->ctx()->log();
-
-  log->message(2, "Interpolation took %f seconds.\n", time_spent);
+  return time_spent;
 }
 
 } // namespace pism
