@@ -59,8 +59,8 @@ namespace io {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *input_array,
-                   double *output_array) {
+static void interpolate(const Grid &grid, const LocalInterpCtx &lic, double const *input_array,
+                        double *output_array) {
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
@@ -807,23 +807,23 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
 */
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
-                             const Grid &internal_grid,
-                             const LocalInterpCtx &lic, const File &file,
+                             const Grid &target_grid,
+                             const LocalInterpCtx &interp_context, const File &file,
                              double *output) {
 
   auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-  const Profiling &profiling = internal_grid.ctx()->profiling();
+  const Profiling &profiling = target_grid.ctx()->profiling();
 
   profiling.begin("io.regridding.read");
-  std::vector<double> buffer(lic.buffer_size());
-  read_distributed_array(file, var.name, variable.unit_system(), lic.start, lic.count,
-                         buffer.data());
+  std::vector<double> buffer(interp_context.buffer_size());
+  read_distributed_array(file, var.name, variable.unit_system(), interp_context.start,
+                         interp_context.count, buffer.data());
   profiling.end("io.regridding.read");
 
   // interpolate
   profiling.begin("io.regridding.interpolate");
-  regrid(internal_grid, lic, buffer.data(), output);
+  interpolate(target_grid, interp_context, buffer.data(), output);
   profiling.end("io.regridding.interpolate");
 
   // Get the units string from the file and convert the units:
@@ -831,9 +831,9 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     std::string input_units    = file.read_text_attribute(var.name, "units");
     std::string internal_units = variable["units"];
 
-    input_units = check_units(variable, input_units, *internal_grid.ctx()->log());
+    input_units = check_units(variable, input_units, *target_grid.ctx()->log());
 
-    const size_t data_size = internal_grid.xm() * internal_grid.ym() * lic.z->n_output();
+    const size_t data_size = target_grid.xm() * target_grid.ym() * interp_context.z->n_output();
 
     // Convert data:
     units::Converter(variable.unit_system(), input_units, internal_units)

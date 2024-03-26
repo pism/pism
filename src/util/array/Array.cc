@@ -378,6 +378,9 @@ void set_default_value_or_stop(const VariableMetadata &variable,
   }
 }
 
+/*!
+ * "Old" bi- and trilinear interpolation code.
+ */
 static void read_and_interpolate(const File &file, const std::string &variable_name,
                                  SpatialVariableMetadata &variable, const Grid &grid,
                                  const std::vector<double> &levels,
@@ -402,6 +405,8 @@ static void read_and_interpolate(const File &file, const std::string &variable_n
 /*! Stops if the variable was not found and `critical` == true.
  */
 void Array::regrid_impl(const File &file, io::Default default_value) {
+
+  assert(ndims() == 2);
 
   auto log = grid()->ctx()->log();
 
