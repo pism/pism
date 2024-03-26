@@ -44,7 +44,6 @@ io::Backend string_to_backend(const std::string &backend);
 
 struct VariableLookupData {
   bool exists;
-  bool found_using_standard_name;
   std::string name;
 };
 

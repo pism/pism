@@ -325,10 +325,7 @@ class File(TestCase):
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
                           ctx.pio_iosys_id())
             assert f.find_variable("v", "standard_name").exists
-            assert f.find_variable("v", "standard_name").found_using_standard_name
-            assert f.find_variable("other_name", "standard_name").found_using_standard_name
             assert f.find_variable("other_name", "standard_name").name == "v"
-            assert not f.find_variable("v", "").found_using_standard_name
             assert f.find_variable("missing", "other_standard_name").exists == False
             assert f.find_variable("missing", "other_standard_name").name == ""
             f.close()

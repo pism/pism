@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 Constantine Khrulev
+// Copyright (C) 2009--2024 Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -54,7 +54,7 @@ public:
   static std::shared_ptr<Forcing>
   Constant(std::shared_ptr<const Grid> grid, const std::string &short_name, double value);
 
-  unsigned int buffer_size();
+  unsigned int buffer_size() const;
 
   void init(const std::string &filename, bool periodic);
 

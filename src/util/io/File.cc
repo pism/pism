@@ -375,7 +375,6 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
         if (attribute == std_name) {
           if (not result.exists) {
             result.exists = true;
-            result.found_using_standard_name = true;
             result.name = var_name;
           } else {
             throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistency in '%s': variables '%s' and '%s'\n"
@@ -395,8 +394,6 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
       } else {
         result.name = "";
       }
-
-      result.found_using_standard_name = false;
     }
 
   } catch (RuntimeError &e) {

@@ -164,7 +164,7 @@ public:
 
   void report_to_stdout(const Logger &log, int verbosity_threshold) const;
   void check_range(const std::string &filename, double min, double max) const;
-  void report_range(const Logger &log, double min, double max, bool found_by_standard_name) const;
+  void report_range(const Logger &log, double min, double max) const;
 
 protected:
   unsigned int m_n_spatial_dims;
