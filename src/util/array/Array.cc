@@ -21,6 +21,7 @@
 #include <cmath>
 #include <cstddef>
 #include <petscdraw.h>
+#include <petscsystypes.h>
 #include <string>
 #include <vector>
 
@@ -359,40 +360,22 @@ const std::string &Array::get_name() const {
   return m_impl->name;
 }
 
-void set_default_value_or_stop(const std::string &filename, const VariableMetadata &variable,
+void set_default_value_or_stop(const VariableMetadata &variable,
                                io::Default default_value, const Logger &log,
                                Vec output) {
 
-  if (not default_value.exists()) {
+  if (default_value.exists()) {
+    // If it is optional, fill with the provided default value.
+    log.message(2, "  variable %s (%s) is not found: using the default constant\n",
+                variable.get_name().c_str(), variable.get_string("long_name").c_str());
+
+    PetscErrorCode ierr = VecSet(output, default_value);
+    PISM_CHK(ierr, "VecSet");
+  } else {
     // if it's critical, print an error message and stop
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't find '%s' in the regridding file '%s'.",
-                                  variable.get_name().c_str(), filename.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find variable '%s'",
+                                  variable.get_name().c_str());
   }
-
-  // If it is optional, fill with the provided default value.
-  // units::Converter constructor will make sure that units are compatible.
-  units::Converter c(variable.unit_system(), variable["units"], variable["output_units"]);
-
-  std::string spacer(variable.get_name().size(), ' ');
-  log.message(2,
-              "  absent %s / %-10s\n"
-              "         %s \\ not found; using default constant %7.2f (%s)\n",
-              variable.get_name().c_str(), variable.get_string("long_name").c_str(), spacer.c_str(),
-              c(default_value), variable.get_string("output_units").c_str());
-
-  PetscErrorCode ierr = VecSet(output, default_value);
-  PISM_CHK(ierr, "VecSet");
-}
-
-static std::array<double, 2> compute_range(MPI_Comm com, const double *data, size_t data_size) {
-  double min_result = data[0], max_result = data[0];
-  for (size_t k = 0; k < data_size; ++k) {
-    min_result = std::min(min_result, data[k]);
-    max_result = std::max(max_result, data[k]);
-  }
-
-  return { GlobalMin(com, min_result), GlobalMax(com, max_result) };
 }
 
 static void read_and_interpolate(const File &file, const std::string &variable_name,
@@ -435,26 +418,10 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
     if (V.exists) {
-
       read_and_interpolate(file, V.name, variable, *grid(), levels(), m_impl->interpolation_type,
                            tmp);
-
-      // Check the range and report it if necessary.
-      {
-        const size_t data_size = grid()->xm() * grid()->ym() * levels().size();
-        petsc::VecArray tmp_array(tmp);
-        auto range = compute_range(grid()->com, tmp_array.get(), data_size);
-        auto min   = range[0];
-        auto max   = range[1];
-
-        // Check the range and warn the user if needed:
-        variable.check_range(file.name(), min, max);
-        if (m_impl->report_range) {
-          variable.report_range(*log, min, max, V.found_using_standard_name);
-        }
-      }
     } else {
-      set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
+      set_default_value_or_stop(variable, default_value, *log, tmp);
     }
 
     set_dof(dm_for_io, tmp, j);
@@ -794,6 +761,29 @@ void Array::regrid(const std::string &filename, io::Default default_value) {
   this->regrid(file, default_value);
 }
 
+static void check_range(petsc::Vec &v,
+                        const SpatialVariableMetadata &metadata,
+                        const std::string &filename,
+                        const Logger &log,
+                        bool report_range) {
+  PetscErrorCode ierr = 0;
+
+  double min = 0.0;
+  double max = 0.0;
+
+  ierr = VecMin(v, NULL, &min);
+  PISM_CHK(ierr, "VecMin");
+  ierr = VecMax(v, NULL, &max);
+  PISM_CHK(ierr, "VecMax");
+
+  // Check the range and warn the user if needed:
+  metadata.check_range(filename, min, max);
+  if (report_range) {
+    metadata.report_range(log, min, max);
+  }
+}
+
+
 /** Read a field from a file, interpolating onto the current grid.
  *
  * When `flag` is set to `CRITICAL`, stop if could not find the variable
@@ -820,13 +810,31 @@ void Array::regrid(const std::string &filename, io::Default default_value) {
  * @return 0 on success
  */
 void Array::regrid(const File &file, io::Default default_value) {
-  m_impl->grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
-                                      timestamp(m_impl->grid->com).c_str(), m_impl->name.c_str());
+  auto log = m_impl->grid->ctx()->log();
+
+  log->message(3, "  [%s] Regridding %s...\n", timestamp(m_impl->grid->com).c_str(),
+               m_impl->name.c_str());
   double start_time = get_time(m_impl->grid->com);
   m_impl->grid->ctx()->profiling().begin("io.regridding");
   try {
     this->regrid_impl(file, default_value);
     inc_state_counter();          // mark as modified
+
+    if (ndims() == 2) {
+      for (unsigned k = 0; k < ndof(); ++k) {
+        auto dm = grid()->get_dm(1, 0);
+
+        petsc::TemporaryGlobalVec v(dm);
+
+        get_dof(dm, v, k);
+
+        check_range(v, metadata(k), file.name(), *log, m_impl->report_range);
+      }
+    } else {
+      check_range(vec(), metadata(0), file.name(), *log, m_impl->report_range);
+    }
+
+
   } catch (RuntimeError &e) {
     e.add_context("regridding '%s' from '%s'",
                   this->get_name().c_str(), file.name().c_str());
@@ -838,9 +846,9 @@ void Array::regrid(const File &file, io::Default default_value) {
     time_spent = end_time - start_time;
 
   if (time_spent > 1.0) {
-    m_impl->grid->ctx()->log()->message(3, "  done in %f seconds.\n", time_spent);
+    log->message(3, "  done in %f seconds.\n", time_spent);
   } else {
-    m_impl->grid->ctx()->log()->message(3, "  done.\n");
+    log->message(3, "  done.\n");
   }
 }
 

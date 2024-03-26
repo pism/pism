@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,6 @@ io::Backend string_to_backend(const std::string &backend);
 
 struct VariableLookupData {
   bool exists;
-  bool found_using_standard_name;
   std::string name;
 };
 

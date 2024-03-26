@@ -176,7 +176,10 @@ Forcing::Forcing(std::shared_ptr<const Grid> grid, const std::string &short_name
 }
 
 void Forcing::allocate(unsigned int buffer_size, InterpolationType interpolation_type) {
-  m_impl->report_range = false;
+
+  if (buffer_size > 1) {
+    m_impl->report_range = false;
+  }
 
   m_data->interp_type = interpolation_type;
   m_data->buffer_size = buffer_size;
@@ -202,7 +205,7 @@ Forcing::~Forcing() {
   delete m_data;
 }
 
-unsigned int Forcing::buffer_size() {
+unsigned int Forcing::buffer_size() const {
   return m_data->buffer_size;
 }
 
@@ -321,7 +324,7 @@ void Forcing::init_periodic_data(const File &file) {
 
   auto buffer_required = n_records + 2 * static_cast<int>(m_data->interp_type == LINEAR);
 
-  if (m_data->buffer_size < buffer_required) {
+  if (buffer_size() < buffer_required) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "the buffer is too small to contain periodic data");
   }
@@ -390,7 +393,7 @@ void Forcing::init_periodic_data(const File &file) {
   }
 
   set_record(0);
-  set_record(m_data->buffer_size - 1);
+  set_record(buffer_size() - 1);
 
   // add two more records to m_data->time
   {
@@ -468,10 +471,10 @@ void Forcing::update(double t, double dt) {
 
   // check if all the records necessary to cover this interval fit in the
   // buffer:
-  if (N > m_data->buffer_size) {
+  if (N > buffer_size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "cannot read %d records of %s (buffer size: %d)", N,
-                                  m_impl->name.c_str(), m_data->buffer_size);
+                                  m_impl->name.c_str(), buffer_size());
   }
 
   update(first);
@@ -487,7 +490,7 @@ void Forcing::update(unsigned int start) {
                                   "Forcing::update(int start): start = %d is invalid", start);
   }
 
-  unsigned int missing = std::min(m_data->buffer_size, time_size - start);
+  unsigned int missing = std::min(buffer_size(), time_size - start);
 
   if (start == static_cast<unsigned int>(m_data->first)) {
     // nothing to do
@@ -520,16 +523,13 @@ void Forcing::update(unsigned int start) {
   auto t = m_impl->grid->ctx()->time();
 
   auto log = m_impl->grid->ctx()->log();
-  if (this->buffer_size() > 1) {
+  if (buffer_size() > 1) {
     log->message(4,
                  "  reading \"%s\" into buffer\n"
                  "          (short_name = %s): %d records, time %s through %s...\n",
                  metadata().get_string("long_name").c_str(), m_impl->name.c_str(), missing,
                  t->date(m_data->time[start]).c_str(),
                  t->date(m_data->time[start + missing - 1]).c_str());
-    m_impl->report_range = false;
-  } else {
-    m_impl->report_range = true;
   }
 
   File file(m_impl->grid->com, m_data->filename, io::PISM_GUESS, io::PISM_READONLY);
@@ -615,7 +615,7 @@ MaxTimestep Forcing::max_timestep(double t) const {
   size_t L = gsl_interp_bsearch(m_data->time.data(), t, 0, time_size - 1);
 
   // find the index of the last record we could read in given the size of the buffer
-  size_t R = L + m_data->buffer_size - 1;
+  size_t R = L + buffer_size() - 1;
 
   if (R >= time_size - 1) {
     // We can read all the remaining records: no time step restriction from now on

@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023, 2024 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -271,7 +271,7 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
     petsc::VecArray tmp_array(tmp);
     io::regrid_spatial_variable(variable, *grid(), lic, file, tmp_array.get());
   } else {
-    set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
+    set_default_value_or_stop(variable, default_value, *log, tmp);
   }
 
   if (m_impl->ghosted) {
