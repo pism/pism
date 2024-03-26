@@ -23,8 +23,8 @@
 #include <memory>
 #include <string>
 
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/Units.hh"
+#include "pism/util/Interpolation2D.hh"
 
 namespace pism {
 class Grid;
@@ -39,21 +39,19 @@ namespace petsc {
 class Vec;
 }
 
-class YACInterpolation {
+class YACInterpolation : public Interpolation2D {
 public:
   YACInterpolation(const Grid &target_grid, const File &input_file,
                    const std::string &variable_name);
-  ~YACInterpolation();
+  virtual ~YACInterpolation();
 
-  void regrid(const File &file, io::Default default_value, array::Scalar &target) const;
-
-  double regrid(const pism::File &file, pism::io::Default default_value,
-                const SpatialVariableMetadata &metadata, petsc::Vec &target) const;
-
-  static std::string grid_name(const File &file, const std::string &variable_name,
-                               units::System::Ptr sys);
+  void regrid(const File &file, array::Scalar &target) const;
 
 private:
+
+  double regrid_impl(const pism::File &file,
+                     const SpatialVariableMetadata &metadata, petsc::Vec &target) const;
+
   double interpolate(const array::Scalar &source, petsc::Vec &target) const;
 
   static int interpolation_coarse_to_fine(double missing_value);

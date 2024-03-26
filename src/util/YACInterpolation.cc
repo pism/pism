@@ -21,26 +21,24 @@
 #include <vector>
 #include <cmath>
 
-#include "VariableMetadata.hh"
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
-
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/array/Scalar.hh"
-
-#include "YACInterpolation.hh"
+#include "pism/util/YACInterpolation.hh"
 
 #if (Pism_USE_PROJ == 0)
-#error "This file requires PROJ"
+#error "This code requires PROJ"
 #endif
 
 #include "pism/util/Proj.hh"
 
 #if (Pism_USE_YAC_INTERPOLATION == 0)
-#error "This file requires YAC"
+#error "This code requires YAC"
 #endif
 
 extern "C" {
@@ -139,7 +137,7 @@ int YACInterpolation::define_grid(const pism::Grid &grid, const std::string &gri
   std::vector<double> x(xm);
   std::vector<double> y(ym);
 
-  // Set x and y to coordinates of cell centers:
+  // Set x and y to coordinates of centers of cells in the local sub-domain:
   {
     for (int k = 0; k < xm; ++k) {
       x[k] = grid.x(xs + k);
@@ -152,8 +150,8 @@ int YACInterpolation::define_grid(const pism::Grid &grid, const std::string &gri
   // Compute lon,lat coordinates of cell centers:
   LonLatGrid cells(x, y, projection);
 
-  // Shift x and y by half a grid spacing and add one more row and
-  // column to get coordinates of cell corners:
+  // Shift x and y by half a grid spacing and add one more row and column to get
+  // coordinates of corners of cells in the local sub-domain:
   {
     double dx = x[1] - x[0];
     double dy = y[1] - y[0];
@@ -213,10 +211,10 @@ int YACInterpolation::define_grid(const pism::Grid &grid, const std::string &gri
  * @param[in] pism_grid PISM's grid
  * @param[in] name string describing this grid and field
  */
-int YACInterpolation::define_field(int component_id, const pism::Grid &pism_grid,
+int YACInterpolation::define_field(int component_id, const pism::Grid &grid,
                                    const std::string &name) {
 
-  int point_id = define_grid(pism_grid, name, pism_grid.get_mapping_info().proj);
+  int point_id = define_grid(grid, name, grid.get_mapping_info().proj);
 
   const char *time_step_length = "1";
   const int point_set_size     = 1;
@@ -274,31 +272,6 @@ int YACInterpolation::interpolation_fine_to_coarse(double missing_value) {
   yac_cadd_interp_stack_config_fixed(id, missing_value);
 
   return id;
-}
-
-/*!
- * Return the string that describes a 2D grid present in a NetCDF file.
- *
- * Here `variable_name` is the name of a 2D variable used to extract
- * grid information.
- *
- * We assume that a file may contain more than one grid, so the file
- * name alone is not sufficient.
- *
- * The output has the form "input_file.nc:y:x".
- */
-std::string YACInterpolation::grid_name(const pism::File &file, const std::string &variable_name,
-                                        pism::units::System::Ptr sys) {
-  std::string result = file.name();
-  for (const auto &d : file.dimensions(variable_name)) {
-    auto type = file.dimension_type(d, sys);
-
-    if (type == pism::X_AXIS or type == pism::Y_AXIS) {
-      result += ":";
-      result += d;
-    }
-  }
-  return result;
 }
 
 static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const char *source,
@@ -422,24 +395,27 @@ double YACInterpolation::interpolate(const pism::array::Scalar &source,
 }
 
 
-void YACInterpolation::regrid(const pism::File &file, pism::io::Default default_value,
+void YACInterpolation::regrid(const pism::File &file,
                               pism::array::Scalar &target) const {
 
-  double time_spent = regrid(file, default_value, target.metadata(0), target.vec());
+  double time_spent = regrid_impl(file, target.metadata(0), target.vec());
 
   auto log = target.grid()->ctx()->log();
 
   log->message(2, "Interpolation took %f seconds.\n", time_spent);
 }
 
-double YACInterpolation::regrid(const pism::File &file, pism::io::Default default_value,
-                              const SpatialVariableMetadata &metadata,
-                              petsc::Vec &target) const {
 
+double YACInterpolation::regrid_impl(const pism::File &file,
+                                     const SpatialVariableMetadata &metadata,
+                                     petsc::Vec &target) const {
+
+  auto nrecords =
+      file.nrecords(metadata.get_name(), metadata["standard_name"], metadata.unit_system());
+
+  // set metadata to help the following call find the variable, convert units, etc
   m_buffer->metadata(0) = metadata;
-
-  // FIXME: could be m_buffer->read(...)
-  m_buffer->regrid(file, default_value);
+  m_buffer->read(file, nrecords);
 
   double time_spent = interpolate(*m_buffer, target);
 
