@@ -56,8 +56,7 @@ add_library (util OBJECT
   connected_components.cc
   ScalarForcing.cc
   Interpolation1D.cc
-  Interpolation2D.cc
-  Interpolation2DRegular.cc
+  InputInterpolation.cc
 )
 
 if(Pism_USE_YAC_INTERPOLATION)
