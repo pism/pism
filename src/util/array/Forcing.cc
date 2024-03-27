@@ -36,6 +36,7 @@
 #include "pism/util/array/Array_impl.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/InputInterpolation.hh"
 
 namespace pism {
 namespace array {
@@ -336,18 +337,11 @@ void Forcing::init_periodic_data(const File &file) {
   auto variable = m_impl->metadata[0];
   auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-  grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
-
-  LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
+  InputInterpolation3D interp(grid(), {0.0}, file, V.name, m_impl->interpolation_type);
 
   for (unsigned int j = 0; j < n_records; ++j) {
-    {
-      lic.start[T_AXIS] = (int)j;
-      lic.count[T_AXIS] = 1;
 
-      petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(variable, *grid(), lic, file, tmp_array.get());
-    }
+    interp.regrid(variable, file, (int)j, vec());
 
     auto time = ctx->time();
     auto log  = ctx->log();
@@ -538,16 +532,11 @@ void Forcing::update(unsigned int start) {
 
   try {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
-    grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
-    LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
+    InputInterpolation3D interp(grid(), {0.0}, file, V.name, m_impl->interpolation_type);
 
     for (unsigned int j = 0; j < missing; ++j) {
-      lic.start[T_AXIS] = (int)(start + j);
-      lic.count[T_AXIS] = 1;
-
-      petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(variable, *grid(), lic, file, tmp_array.get());
+      interp.regrid(variable, file, (int)(start + j), vec());
 
       log->message(5, " %s: reading entry #%02d, year %s...\n", m_impl->name.c_str(), start + j,
                    t->date(m_data->time[start + j]).c_str());
