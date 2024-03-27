@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <memory>
 #include <petscdraw.h>
 #include <petscsystypes.h>
 #include <string>
@@ -43,6 +44,8 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
+
+#include "pism/util/Interpolation2DRegular.hh"
 
 namespace pism {
 
@@ -378,29 +381,6 @@ void set_default_value_or_stop(const VariableMetadata &variable,
   }
 }
 
-/*!
- * "Old" bi- and trilinear interpolation code.
- */
-static void read_and_interpolate(const File &file, const std::string &variable_name,
-                                 SpatialVariableMetadata &variable, const Grid &grid,
-                                 const std::vector<double> &levels,
-                                 InterpolationType interpolation_type, petsc::Vec &output) {
-  auto log = grid.ctx()->log();
-
-  grid::InputGridInfo input_grid(file, variable_name, variable.unit_system(), grid.registration());
-
-  input_grid.report(*log, 4, variable.unit_system());
-
-  io::check_input_grid(input_grid, grid, levels);
-
-  LocalInterpCtx interp_context(input_grid, grid, levels, interpolation_type);
-
-  // Note: this call will read the last time record (the index is set in `interp_context`
-  // based on info in `input_grid`).
-  petsc::VecArray output_array(output);
-  io::regrid_spatial_variable(variable, grid, interp_context, file, output_array.get());
-}
-
 //! Gets an Array from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
@@ -423,8 +403,9 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
     if (V.exists) {
-      read_and_interpolate(file, V.name, variable, *grid(), levels(), m_impl->interpolation_type,
-                           tmp);
+      Interpolation2DRegular interp(grid(), levels(), file, V.name, m_impl->interpolation_type);
+
+      interp.regrid(file, variable, tmp);
     } else {
       set_default_value_or_stop(variable, default_value, *log, tmp);
     }

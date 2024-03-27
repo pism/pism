@@ -18,6 +18,7 @@
  */
 
 #include <memory>
+#include <vector>
 
 #include "pism/util/Interpolation2DRegular.hh"
 #include "pism/util/Context.hh"
@@ -28,6 +29,7 @@
 namespace pism {
 
 Interpolation2DRegular::Interpolation2DRegular(std::shared_ptr<const Grid> target_grid,
+                                               const std::vector<double> &levels,
                                                const File &input_file,
                                                const std::string &variable_name,
                                                InterpolationType type)
@@ -40,9 +42,9 @@ Interpolation2DRegular::Interpolation2DRegular(std::shared_ptr<const Grid> targe
 
   input_grid.report(*log, 4, unit_system);
 
-  io::check_input_grid(input_grid, *target_grid, {0.0});
+  io::check_input_grid(input_grid, *target_grid, levels);
 
-  m_interp_context = std::make_shared<LocalInterpCtx>(input_grid, *target_grid, type);
+  m_interp_context = std::make_shared<LocalInterpCtx>(input_grid, *target_grid, levels, type);
 }
 
 
