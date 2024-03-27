@@ -33,7 +33,7 @@
 // draws in all the other needed includes as well. See the end of this file for the list
 // of PISM headers being wrapped.
 
-#include "util/interpolation.hh"
+#include "util/Interpolation1D.hh"
 
 #include "util/pism_utilities.hh"
 
@@ -190,7 +190,7 @@
 /* PISM header with no dependence on other PISM headers. */
 %ignore print_vector;
 %include "util/pism_utilities.hh"
-%include "util/interpolation.hh"
+%include "util/Interpolation1D.hh"
 
 %shared_ptr(pism::StringLogger);
 pism_class(pism::Logger, "pism/util/Logger.hh");

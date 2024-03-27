@@ -32,7 +32,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
@@ -264,7 +264,7 @@ static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<co
     }
 
     // note matching input and output grids below:
-    lic.z = std::make_shared<Interpolation>(NEAREST, Z, Z);
+    lic.z = std::make_shared<Interpolation1D>(NEAREST, Z, Z);
   }
 
   petsc::VecArray tmp(result->vec());

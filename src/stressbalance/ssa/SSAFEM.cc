@@ -30,7 +30,7 @@
 
 #include "pism/util/node_types.hh"
 #include "pism/util/pism_utilities.hh" // average_water_column_pressure()
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/petscwrappers/Viewer.hh"

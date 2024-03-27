@@ -548,7 +548,7 @@ def linear_interpolation_test(plot=False):
 
     values = F(x_input)
 
-    i = PISM.Interpolation(PISM.LINEAR, x_input, x_output)
+    i = PISM.Interpolation1D(PISM.LINEAR, x_input, x_output)
 
     F_interpolated = i.interpolate(values)
 
@@ -1058,7 +1058,7 @@ def test_interpolation_other():
     x = [0.0, 10.0]
 
     try:
-        PISM.Interpolation(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
+        PISM.Interpolation1D(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
         assert False, "failed to detect non-increasing times"
     except RuntimeError as e:
         print(e)
@@ -1078,7 +1078,7 @@ def test_interpolation_other():
         print(e)
         pass
 
-    I = PISM.Interpolation(PISM.LINEAR, [0, 1, 2], [0.5, 1.5])
+    I = PISM.Interpolation1D(PISM.LINEAR, [0, 1, 2], [0.5, 1.5])
     np.testing.assert_almost_equal(I.left(), [0, 1])
     np.testing.assert_almost_equal(I.right(), [1, 2])
     np.testing.assert_almost_equal(I.alpha(), [0.5, 0.5])
@@ -1091,7 +1091,7 @@ def test_nearest_neighbor():
     xx = np.linspace(-0.9, 0.9, 10)
     yy = np.ones_like(xx) * (xx > 0)
 
-    zz = PISM.Interpolation(PISM.NEAREST, x, xx).interpolate(y)
+    zz = PISM.Interpolation1D(PISM.NEAREST, x, xx).interpolate(y)
 
     np.testing.assert_almost_equal(yy, zz)
 
