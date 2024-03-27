@@ -20,6 +20,8 @@
 #ifndef PISM_STAGGERED_H
 #define PISM_STAGGERED_H
 
+#include <array>
+
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/stencils.hh"
 
