@@ -55,7 +55,7 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
                       const Grid& internal_grid,
                       const std::vector<double> &internal_z_levels);
 
-void regrid_spatial_variable(SpatialVariableMetadata &variable,
+void regrid_spatial_variable(const SpatialVariableMetadata &variable,
                              const Grid& internal_grid,
                              const LocalInterpCtx &lic,
                              const File &file,

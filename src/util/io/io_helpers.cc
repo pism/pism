@@ -806,7 +806,7 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
   - uses the last record in the file
 */
 
-void regrid_spatial_variable(SpatialVariableMetadata &variable,
+void regrid_spatial_variable(const SpatialVariableMetadata &variable,
                              const Grid &target_grid,
                              const LocalInterpCtx &interp_context, const File &file,
                              double *output) {
