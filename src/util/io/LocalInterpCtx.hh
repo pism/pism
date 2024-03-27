@@ -60,9 +60,9 @@ public:
 
   int buffer_size() const;
 
-  // Indices in netCDF file.
+  // Indices in netCDF file
   std::array<int, 4> start, count;
-  // indexes and coefficients for 1D linear interpolation
+  // indexes and coefficients for 1D interpolation
   std::shared_ptr<Interpolation1D> x, y, z;
 };
 

@@ -38,7 +38,7 @@ class Vec;
 }
 
 /*!
- * Interpolation from a 2grid corresponding to a variable in an input file to a PISM's
+ * Interpolation from a grid corresponding to a variable in an input file to a PISM's
  * internal grid.
  */
 class InputInterpolation {
