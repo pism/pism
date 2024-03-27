@@ -31,7 +31,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/array/Array_impl.hh"
 #include "pism/util/VariableMetadata.hh"
@@ -81,7 +81,7 @@ struct Forcing::Data {
   InterpolationType interp_type;
 
   //! temporal interpolation code
-  std::shared_ptr<Interpolation> interp;
+  std::shared_ptr<Interpolation1D> interp;
 
   //! forcing period, in seconds
   double period;
@@ -465,7 +465,7 @@ void Forcing::update(double t, double dt) {
     }
   }
 
-  Interpolation I(m_data->interp_type, m_data->time, { t, t + dt });
+  Interpolation1D I(m_data->interp_type, m_data->time, { t, t + dt });
 
   unsigned int first = I.left(0), last = I.right(1), N = last - first + 1;
 
@@ -792,7 +792,7 @@ void Forcing::init_interpolation(const std::vector<double> &ts) {
     times_requested = ts;
   }
 
-  m_data->interp.reset(new Interpolation(m_data->interp_type,
+  m_data->interp.reset(new Interpolation1D(m_data->interp_type,
                                          &m_data->time[m_data->first],
                                          m_data->n_records,
                                          times_requested.data(),

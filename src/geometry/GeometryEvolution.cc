@@ -1,4 +1,4 @@
-/* Copyright (C) 2016--2023 PISM Authors
+/* Copyright (C) 2016--2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/geometry/flux_limiter.hh"

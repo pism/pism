@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017, 2018, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017, 2018, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -26,7 +26,7 @@
 namespace pism {
 
 enum InterpolationType : int;
-class Interpolation;
+class Interpolation1D;
 
 class Grid;
 
@@ -63,7 +63,7 @@ public:
   // Indices in netCDF file.
   std::array<int, 4> start, count;
   // indexes and coefficients for 1D linear interpolation
-  std::shared_ptr<Interpolation> x, y, z;
+  std::shared_ptr<Interpolation1D> x, y, z;
 };
 
 } // end of namespace pism

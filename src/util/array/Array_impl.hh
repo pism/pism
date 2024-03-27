@@ -29,7 +29,7 @@
 #include <gsl/gsl_interp.h>
 
 #include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/VariableMetadata.hh"
 
 namespace pism {

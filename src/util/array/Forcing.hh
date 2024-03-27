@@ -21,7 +21,7 @@
 
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/interpolation.hh"     // InterpolationType
+#include "pism/util/Interpolation1D.hh"     // InterpolationType
 
 namespace pism {
 namespace array {

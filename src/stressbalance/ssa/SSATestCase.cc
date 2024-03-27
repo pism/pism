@@ -20,7 +20,7 @@
 #include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_options.hh"

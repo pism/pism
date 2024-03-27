@@ -29,7 +29,6 @@ add_library (util OBJECT
   array/Array3D.cc
   array/Scalar.cc
   array/Staggered.cc
-  interpolation.cc
   io/LocalInterpCtx.cc
   io/File.cc
   io/NC_Serial.cc
@@ -56,6 +55,7 @@ add_library (util OBJECT
   label_components.cc
   connected_components.cc
   ScalarForcing.cc
+  Interpolation1D.cc
   Interpolation2D.cc
   Interpolation2DRegular.cc
 )

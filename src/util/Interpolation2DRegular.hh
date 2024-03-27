@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/Interpolation2D.hh"
 #include <memory>
