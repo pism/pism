@@ -122,7 +122,7 @@ struct LonLatGrid {
  *
  * Returns the point ID that can be used to define a "field".
  */
-int YACInterpolation::define_grid(const pism::Grid &grid, const std::string &grid_name,
+int InputInterpolationYAC::define_grid(const pism::Grid &grid, const std::string &grid_name,
                                   const std::string &projection) {
 
   if (projection.empty()) {
@@ -212,7 +212,7 @@ int YACInterpolation::define_grid(const pism::Grid &grid, const std::string &gri
  * @param[in] pism_grid PISM's grid
  * @param[in] name string describing this grid and field
  */
-int YACInterpolation::define_field(int component_id, const pism::Grid &grid,
+int InputInterpolationYAC::define_field(int component_id, const pism::Grid &grid,
                                    const std::string &name) {
 
   int point_id = define_grid(grid, name, grid.get_mapping_info().proj);
@@ -227,7 +227,7 @@ int YACInterpolation::define_field(int component_id, const pism::Grid &grid,
   return field_id;
 }
 
-int YACInterpolation::interpolation_coarse_to_fine(double missing_value) {
+int InputInterpolationYAC::interpolation_coarse_to_fine(double missing_value) {
   int id = 0;
   yac_cget_interp_stack_config(&id);
 
@@ -248,7 +248,7 @@ int YACInterpolation::interpolation_coarse_to_fine(double missing_value) {
   return id;
 }
 
-int YACInterpolation::interpolation_fine_to_coarse(double missing_value) {
+int InputInterpolationYAC::interpolation_fine_to_coarse(double missing_value) {
   int id = 0;
   yac_cget_interp_stack_config(&id);
 
@@ -280,7 +280,7 @@ static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const
   throw pism::RuntimeError::formatted(pism::ErrorLocation(source, line), "YAC error: %s", msg);
 }
 
-YACInterpolation::YACInterpolation(const pism::Grid &target_grid,
+InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                    const pism::File &input_file,
                                    const std::string &variable_name) {
   auto ctx = target_grid.ctx();
@@ -368,11 +368,11 @@ YACInterpolation::YACInterpolation(const pism::Grid &target_grid,
   }
 }
 
-YACInterpolation::~YACInterpolation() {
+InputInterpolationYAC::~InputInterpolationYAC() {
   yac_ccleanup_instance(m_instance_id);
 }
 
-double YACInterpolation::interpolate(const pism::array::Scalar &source,
+double InputInterpolationYAC::interpolate(const pism::array::Scalar &source,
                                      pism::petsc::Vec &target) const {
 
   pism::petsc::VecArray input_array(source.vec());
@@ -396,7 +396,7 @@ double YACInterpolation::interpolate(const pism::array::Scalar &source,
 }
 
 
-void YACInterpolation::regrid(const pism::File &file,
+void InputInterpolationYAC::regrid(const pism::File &file,
                               pism::array::Scalar &target) const {
 
   double time_spent = InputInterpolation::regrid(target.metadata(0), file, -1, target.vec());
@@ -407,7 +407,7 @@ void YACInterpolation::regrid(const pism::File &file,
 }
 
 
-double YACInterpolation::regrid_impl(const SpatialVariableMetadata &metadata,
+double InputInterpolationYAC::regrid_impl(const SpatialVariableMetadata &metadata,
                                      const pism::File &file, int record_index,
                                      petsc::Vec &target) const {
 
