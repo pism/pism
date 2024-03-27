@@ -38,14 +38,21 @@ class Vec;
 }
 
 /*!
- * Interpolation from a 2D grid corresponding to a variable in an input file to a PISM's
- * internal 2D grid.
+ * Interpolation from a 2grid corresponding to a variable in an input file to a PISM's
+ * internal grid.
  */
 class InputInterpolation {
 public:
   virtual ~InputInterpolation() = default;
 
-  double regrid(const pism::File &file, const SpatialVariableMetadata &metadata,
+  /*!
+   * Read a record `record_index` of the variable corresponding to the provided `metadata`
+   * from a `file` and interpolate onto the target grid. Store results in `output`.
+   *
+   * Set `record_index` to -1 to read the last record available in `file`.
+   *
+   */
+  double regrid(const SpatialVariableMetadata &metadata, const pism::File &file, int record_index,
                 petsc::Vec &output) const;
 
   static std::string grid_name(const File &file, const std::string &variable_name,
@@ -53,8 +60,8 @@ public:
 
 protected:
   InputInterpolation();
-  virtual double regrid_impl(const pism::File &file, const SpatialVariableMetadata &metadata,
-                             petsc::Vec &output) const = 0;
+  virtual double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
+                             int record_index, petsc::Vec &output) const = 0;
 };
 
 /*!
@@ -68,8 +75,8 @@ public:
                        InterpolationType type);
 
 private:
-  double regrid_impl(const pism::File &file, const SpatialVariableMetadata &metadata,
-                     petsc::Vec &output) const;
+  double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
+                     int record_index, petsc::Vec &output) const;
 
   std::shared_ptr<const Grid> m_target_grid;
   std::shared_ptr<LocalInterpCtx> m_interp_context;
