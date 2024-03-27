@@ -24,7 +24,7 @@
 #include <string>
 
 #include "pism/util/Units.hh"
-#include "pism/util/Interpolation2D.hh"
+#include "pism/util/InputInterpolation.hh"
 
 namespace pism {
 class Grid;
@@ -39,7 +39,7 @@ namespace petsc {
 class Vec;
 }
 
-class YACInterpolation : public Interpolation2D {
+class YACInterpolation : public InputInterpolation {
 public:
   YACInterpolation(const Grid &target_grid, const File &input_file,
                    const std::string &variable_name);

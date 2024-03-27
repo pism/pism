@@ -45,7 +45,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
 
-#include "pism/util/Interpolation2DRegular.hh"
+#include "pism/util/InputInterpolation.hh"
 
 namespace pism {
 
@@ -403,7 +403,7 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
     if (V.exists) {
-      Interpolation2DRegular interp(grid(), levels(), file, V.name, m_impl->interpolation_type);
+      InputInterpolation3D interp(grid(), levels(), file, V.name, m_impl->interpolation_type);
 
       interp.regrid(file, variable, tmp);
     } else {
