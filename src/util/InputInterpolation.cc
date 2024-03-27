@@ -18,6 +18,7 @@
  */
 
 #include "pism/util/InputInterpolation.hh"
+#include "VariableMetadata.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
@@ -53,9 +54,16 @@ std::string InputInterpolation::grid_name(const pism::File &file, const std::str
   return result;
 }
 
-double InputInterpolation::regrid(const pism::File &file, const SpatialVariableMetadata &metadata,
-                                  petsc::Vec &output) const {
-  return regrid_impl(file, metadata, output);
+double InputInterpolation::regrid(const SpatialVariableMetadata &metadata, const pism::File &file,
+                                  int record_index, petsc::Vec &output) const {
+  if (record_index == -1) {
+    auto nrecords =
+      file.nrecords(metadata.get_name(), metadata["standard_name"], metadata.unit_system());
+
+    record_index = (int)nrecords - 1;
+  }
+
+  return regrid_impl(metadata, file, record_index, output);
 }
 
 InputInterpolation::InputInterpolation() {
@@ -81,16 +89,23 @@ InputInterpolation3D::InputInterpolation3D(std::shared_ptr<const Grid> target_gr
 }
 
 
-double InputInterpolation3D::regrid_impl(const pism::File &file,
-                                           const SpatialVariableMetadata &metadata,
-                                           petsc::Vec &output) const {
+double InputInterpolation3D::regrid_impl(const SpatialVariableMetadata &metadata,
+                                         const pism::File &file,
+                                         int record_index,
+                                         petsc::Vec &output) const {
 
   petsc::VecArray output_array(output);
 
-
   double start = get_time(m_target_grid->com);
-  io::regrid_spatial_variable(metadata, *m_target_grid, *m_interp_context, file,
-                              output_array.get());
+  {
+    int old_t_start                 = m_interp_context->start[T_AXIS];
+    m_interp_context->start[T_AXIS] = record_index;
+
+    io::regrid_spatial_variable(metadata, *m_target_grid, *m_interp_context, file,
+                                output_array.get());
+
+    m_interp_context->start[T_AXIS] = old_t_start;
+  }
   double end = get_time(m_target_grid->com);
 
   return end - start;

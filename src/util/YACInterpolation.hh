@@ -23,7 +23,6 @@
 #include <memory>
 #include <string>
 
-#include "pism/util/Units.hh"
 #include "pism/util/InputInterpolation.hh"
 
 namespace pism {
@@ -48,9 +47,8 @@ public:
   void regrid(const File &file, array::Scalar &target) const;
 
 private:
-
-  double regrid_impl(const pism::File &file,
-                     const SpatialVariableMetadata &metadata, petsc::Vec &target) const;
+  double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
+                     int record_index, petsc::Vec &target) const;
 
   double interpolate(const array::Scalar &source, petsc::Vec &target) const;
 

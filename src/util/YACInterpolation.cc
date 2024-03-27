@@ -21,6 +21,7 @@
 #include <vector>
 #include <cmath>
 
+#include "InputInterpolation.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/Grid.hh"
@@ -398,7 +399,7 @@ double YACInterpolation::interpolate(const pism::array::Scalar &source,
 void YACInterpolation::regrid(const pism::File &file,
                               pism::array::Scalar &target) const {
 
-  double time_spent = regrid_impl(file, target.metadata(0), target.vec());
+  double time_spent = InputInterpolation::regrid(target.metadata(0), file, -1, target.vec());
 
   auto log = target.grid()->ctx()->log();
 
@@ -406,16 +407,13 @@ void YACInterpolation::regrid(const pism::File &file,
 }
 
 
-double YACInterpolation::regrid_impl(const pism::File &file,
-                                     const SpatialVariableMetadata &metadata,
+double YACInterpolation::regrid_impl(const SpatialVariableMetadata &metadata,
+                                     const pism::File &file, int record_index,
                                      petsc::Vec &target) const {
-
-  auto nrecords =
-      file.nrecords(metadata.get_name(), metadata["standard_name"], metadata.unit_system());
 
   // set metadata to help the following call find the variable, convert units, etc
   m_buffer->metadata(0) = metadata;
-  m_buffer->read(file, nrecords);
+  m_buffer->read(file, record_index);
 
   double time_spent = interpolate(*m_buffer, target);
 
