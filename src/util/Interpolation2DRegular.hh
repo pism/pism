@@ -21,12 +21,15 @@
 #include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/Interpolation2D.hh"
 #include <memory>
+#include <vector>
 
 namespace pism {
 
 class Interpolation2DRegular : public Interpolation2D {
 public:
-  Interpolation2DRegular(std::shared_ptr<const Grid> target_grid, const File &input_file,
+  Interpolation2DRegular(std::shared_ptr<const Grid> target_grid,
+                         const std::vector<double> &levels,
+                         const File &input_file,
                          const std::string &variable_name, InterpolationType type);
 
 private:
