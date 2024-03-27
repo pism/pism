@@ -60,7 +60,7 @@ add_library (util OBJECT
 )
 
 if(Pism_USE_YAC_INTERPOLATION)
-  target_sources(util PRIVATE YACInterpolation.cc)
+  target_sources(util PRIVATE InputInterpolationYAC.cc)
 endif()
 
 if(Pism_DEBUG)
