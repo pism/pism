@@ -38,11 +38,17 @@ namespace petsc {
 class Vec;
 }
 
-class YACInterpolation : public InputInterpolation {
+/*!
+ * Interpolation from a Cartesian projected grid in an `input_file`.
+ *
+ * An `input_file` has to contain the global attribute "proj" containing a string defining
+ * the projection.
+ */
+class InputInterpolationYAC : public InputInterpolation {
 public:
-  YACInterpolation(const Grid &target_grid, const File &input_file,
+  InputInterpolationYAC(const Grid &target_grid, const File &input_file,
                    const std::string &variable_name);
-  virtual ~YACInterpolation();
+  virtual ~InputInterpolationYAC();
 
   void regrid(const File &file, array::Scalar &target) const;
 
