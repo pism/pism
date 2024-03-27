@@ -30,7 +30,7 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/YACInterpolation.hh"
+#include "pism/util/InputInterpolationYAC.hh"
 
 #if (Pism_USE_PROJ == 0)
 #error "This code requires PROJ"
