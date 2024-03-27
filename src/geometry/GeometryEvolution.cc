@@ -584,7 +584,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
   try {
     // compute advective fluxes and put them in output
     for (auto p = m_grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j(), M = cell_type(i, j);
+      const int i = p.i(), j = p.j(), M = cell_type.as_int(i, j);
 
       const double H   = ice_thickness(i, j);
       const Vector2d V = velocity(i, j);
@@ -595,7 +595,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
             i_n      = i + oi, // i index of a neighbor
             j_n      = j + oj; // j index of a neighbor
 
-        const int M_n = cell_type(i_n, j_n);
+        const int M_n = cell_type.as_int(i_n, j_n);
 
         // advective velocity at the current interface
         double v = 0.0;
@@ -617,7 +617,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
 
     // limit the advective flux and add the diffusive flux to it to get the total
     for (auto p = m_grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j(), M = cell_type(i, j);
+      const int i = p.i(), j = p.j(), M = cell_type.as_int(i, j);
 
       for (int n = 0; n < 2; ++n) {
         const int oi = 1 - n,  // offset in the i direction
@@ -625,7 +625,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
             i_n      = i + oi, // i index of a neighbor
             j_n      = j + oj; // j index of a neighbor
 
-        const int M_n = cell_type(i_n, j_n);
+        const int M_n = cell_type.as_int(i_n, j_n);
 
         // diffusive flux
         const double Q_diffusive = limit_diffusive_flux(M, M_n, diffusive_flux(i, j, n)),
@@ -780,7 +780,7 @@ void GeometryEvolution::update_in_place(double dt, const array::Scalar &bed_topo
     See [@ref Albrechtetal2011].
   */
   if (m_impl->use_part_grid) {
-    const int max_n_iterations = m_config->get_number("geometry.part_grid.max_iterations");
+    const int max_n_iterations = (int)m_config->get_number("geometry.part_grid.max_iterations");
 
     bool done = false;
     for (int i = 0; i < max_n_iterations and not done; ++i) {
@@ -844,7 +844,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
         continue;
       }
 
-      auto m = cell_type.star(i, j);
+      auto m = cell_type.star_int(i, j);
 
       int N = 0; // number of empty or partially filled neighbors
       for (auto d : { North, East, South, West }) {
@@ -1256,7 +1256,7 @@ void grounding_line_flux(const array::CellType1 &cell_type,
       double result = 0.0;
 
       if (cell_type.ocean(i ,j)) {
-        auto M = cell_type.star(i, j);
+        auto M = cell_type.star_int(i, j);
         auto Q = flux.star(i, j);
 
         if (grounded(M.n)) {
@@ -1319,7 +1319,7 @@ double total_grounding_line_flux(const array::CellType1 &cell_type,
       double volume_flux = 0.0;
 
       if (cell_type.ocean(i ,j)) {
-        auto M = cell_type.star(i, j);
+        auto M = cell_type.star_int(i, j);
         auto Q = flux.star(i, j); // m^2 / s
 
         if (grounded(M.n)) {

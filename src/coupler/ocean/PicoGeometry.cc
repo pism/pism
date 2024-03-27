@@ -514,7 +514,7 @@ std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto B = basin_mask.star(i, j);
+    auto B = basin_mask.star_int(i, j);
 
     bool next_to_icefront = (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i,j));
 
