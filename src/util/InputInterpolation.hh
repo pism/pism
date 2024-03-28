@@ -45,6 +45,10 @@ class InputInterpolation {
 public:
   virtual ~InputInterpolation() = default;
 
+  static std::shared_ptr<InputInterpolation>
+  create(std::shared_ptr<const Grid> target_grid, const std::vector<double> &levels,
+         const File &input_file, const std::string &variable_name, InterpolationType type);
+
   /*!
    * Read a record `record_index` of the variable corresponding to the provided `metadata`
    * from a `file` and interpolate onto the target grid. Store results in `output`.
@@ -81,12 +85,6 @@ private:
   std::shared_ptr<const Grid> m_target_grid;
   std::shared_ptr<LocalInterpCtx> m_interp_context;
 };
-
-std::shared_ptr<InputInterpolation> allocate_interpolation(std::shared_ptr<const Grid> target_grid,
-                                                           const std::vector<double> &levels,
-                                                           const File &input_file,
-                                                           const std::string &variable_name,
-                                                           InterpolationType type);
 
 } // namespace pism
 
