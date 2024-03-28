@@ -22,7 +22,6 @@
 #include <cstddef>
 #include <memory>
 #include <petscdraw.h>
-#include <petscsystypes.h>
 #include <string>
 #include <vector>
 
