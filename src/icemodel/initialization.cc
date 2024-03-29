@@ -133,25 +133,8 @@ void IceModel::model_state_setup() {
     input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
   }
 
-  // Initialize 2D fields owned by IceModel (ice geometry, etc)
-  {
-    switch (input.type) {
-    case INIT_RESTART:
-      restart_2d(*input_file, input.record);
-      break;
-    case INIT_BOOTSTRAP:
-      bootstrap_2d(*input_file);
-      break;
-    case INIT_OTHER:
-    default:
-      initialize_2d();
-    }
-
-    regrid();
-  }
-
-  // Get projection information and compute latitudes and longitudes *before* a component
-  // decides to use them...
+  // Get projection information and compute latitudes and longitudes *before* they are
+  // needed.
   {
     if (use_input_file) {
       std::string mapping_name = m_grid->get_mapping_info().mapping.get_name();
@@ -172,6 +155,23 @@ void IceModel::model_state_setup() {
     }
 
     compute_lat_lon();
+  }
+
+  // Initialize 2D fields owned by IceModel (ice geometry, etc)
+  {
+    switch (input.type) {
+    case INIT_RESTART:
+      restart_2d(*input_file, input.record);
+      break;
+    case INIT_BOOTSTRAP:
+      bootstrap_2d(*input_file);
+      break;
+    case INIT_OTHER:
+    default:
+      initialize_2d();
+    }
+
+    regrid();
   }
 
   m_sea_level->init(m_geometry);
