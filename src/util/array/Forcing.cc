@@ -303,7 +303,7 @@ void Forcing::init(const std::string &filename, bool periodic) {
       init_periodic_data(file);
     }
   } catch (RuntimeError &e) {
-    e.add_context("reading %s (%s) from '%s'",
+    e.add_context("reading '%s' (%s) from '%s'",
                   m_impl->metadata[0].get_string("long_name").c_str(),
                   m_impl->metadata[0].get_name().c_str(),
                   m_data->filename.c_str());

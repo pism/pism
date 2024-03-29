@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -196,7 +196,7 @@ void ScalarForcing::initialize(const Context &ctx,
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("reading %s (%s) from '%s'",
+    e.add_context("reading '%s' (%s) from '%s'",
                   long_name.c_str(), variable_name.c_str(), filename.c_str());
     throw;
   }
