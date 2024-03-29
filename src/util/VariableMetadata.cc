@@ -179,8 +179,8 @@ void VariableMetadata::report_range(const Logger &log, double min, double max) c
   }
 
   log.message(2,
-              " %s / %s\n"
-              " %s \\ %s\n",
+              "  %s / %s\n"
+              "  %s \\ %s\n",
               name.c_str(), info.c_str(), spacer.c_str(), range.c_str());
 }
 
