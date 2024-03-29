@@ -62,7 +62,7 @@ std::string InputInterpolation::grid_name(const pism::File &file, const std::str
 }
 
 double InputInterpolation::regrid(const SpatialVariableMetadata &metadata, const pism::File &file,
-                                  int record_index, petsc::Vec &output) const {
+                                  int record_index, const Grid &grid, petsc::Vec &output) const {
   if (record_index == -1) {
     auto nrecords =
       file.nrecords(metadata.get_name(), metadata["standard_name"], metadata.unit_system());
@@ -70,64 +70,65 @@ double InputInterpolation::regrid(const SpatialVariableMetadata &metadata, const
     record_index = (int)nrecords - 1;
   }
 
-  return regrid_impl(metadata, file, record_index, output);
+  return regrid_impl(metadata, file, record_index, grid, output);
 }
 
 InputInterpolation::InputInterpolation() {
   // empty
 }
 
-InputInterpolation3D::InputInterpolation3D(std::shared_ptr<const Grid> target_grid,
-                                 const std::vector<double> &levels, const File &input_file,
-                                 const std::string &variable_name, InterpolationType type)
-    : m_target_grid(target_grid) {
+InputInterpolation3D::InputInterpolation3D(const Grid &target_grid,
+                                           const std::vector<double> &levels,
+                                           const File &input_file, const std::string &variable_name,
+                                           InterpolationType type) {
 
-  auto log         = target_grid->ctx()->log();
-  auto unit_system = target_grid->ctx()->unit_system();
+  auto log         = target_grid.ctx()->log();
+  auto unit_system = target_grid.ctx()->unit_system();
 
   grid::InputGridInfo input_grid(input_file, variable_name, unit_system,
-                                 target_grid->registration());
+                                 target_grid.registration());
 
   input_grid.report(*log, 4, unit_system);
 
-  io::check_input_grid(input_grid, *target_grid, levels);
+  io::check_input_grid(input_grid, target_grid, levels);
 
-  m_interp_context = std::make_shared<LocalInterpCtx>(input_grid, *target_grid, levels, type);
+  m_interp_context = std::make_shared<LocalInterpCtx>(input_grid, target_grid, levels, type);
 }
 
 
 double InputInterpolation3D::regrid_impl(const SpatialVariableMetadata &metadata,
                                          const pism::File &file,
                                          int record_index,
+                                         const Grid &target_grid,
                                          petsc::Vec &output) const {
 
   petsc::VecArray output_array(output);
 
-  double start = get_time(m_target_grid->com);
+  double start = get_time(target_grid.com);
   {
     int old_t_start                 = m_interp_context->start[T_AXIS];
     m_interp_context->start[T_AXIS] = record_index;
 
-    io::regrid_spatial_variable(metadata, *m_target_grid, *m_interp_context, file,
+    io::regrid_spatial_variable(metadata, target_grid, *m_interp_context, file,
                                 output_array.get());
 
     m_interp_context->start[T_AXIS] = old_t_start;
   }
-  double end = get_time(m_target_grid->com);
+  double end = get_time(target_grid.com);
 
   return end - start;
 }
 
 
 std::shared_ptr<InputInterpolation>
-InputInterpolation::create(std::shared_ptr<const Grid> target_grid,
+InputInterpolation::create(const Grid &target_grid,
                            const std::vector<double> &levels, const File &input_file,
                            const std::string &variable_name, InterpolationType type) {
   auto projection = input_file.read_text_attribute("PISM_GLOBAL", "proj");
 
 #if (Pism_USE_YAC_INTERPOLATION == 1)
   if (levels.size() < 2 and (not projection.empty())) {
-    return std::make_shared<InputInterpolationYAC>(*target_grid, input_file, variable_name);
+    return std::make_shared<InputInterpolationYAC>(target_grid, input_file, variable_name);
   }
 #endif
 

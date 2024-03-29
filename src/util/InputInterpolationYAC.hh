@@ -54,7 +54,7 @@ public:
 
 private:
   double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
-                     int record_index, petsc::Vec &target) const;
+                     int record_index, const Grid &target_grid, petsc::Vec &output) const;
 
   double interpolate(const array::Scalar &source, petsc::Vec &target) const;
 

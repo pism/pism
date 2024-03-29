@@ -123,7 +123,7 @@ struct LonLatGrid {
  * Returns the point ID that can be used to define a "field".
  */
 int InputInterpolationYAC::define_grid(const pism::Grid &grid, const std::string &grid_name,
-                                  const std::string &projection) {
+                                       const std::string &projection) {
 
   if (projection.empty()) {
     throw pism::RuntimeError::formatted(
@@ -213,7 +213,7 @@ int InputInterpolationYAC::define_grid(const pism::Grid &grid, const std::string
  * @param[in] name string describing this grid and field
  */
 int InputInterpolationYAC::define_field(int component_id, const pism::Grid &grid,
-                                   const std::string &name) {
+                                        const std::string &name) {
 
   int point_id = define_grid(grid, name, grid.get_mapping_info().proj);
 
@@ -281,8 +281,8 @@ static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const
 }
 
 InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
-                                   const pism::File &input_file,
-                                   const std::string &variable_name) {
+                                             const pism::File &input_file,
+                                             const std::string &variable_name) {
   auto ctx = target_grid.ctx();
 
   yac_set_abort_handler((yac_abort_func)pism_yac_error_handler);
@@ -290,7 +290,8 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
   try {
     auto log = ctx->log();
 
-    auto source_grid = pism::Grid::FromFile(ctx, input_file, { variable_name }, pism::grid::CELL_CENTER);
+    auto source_grid =
+        pism::Grid::FromFile(ctx, input_file, { variable_name }, pism::grid::CELL_CENTER);
 
     std::string source_grid_name = grid_name(input_file, variable_name, ctx->unit_system());
 
@@ -363,7 +364,8 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                    source_grid_name.c_str(), end - start);
     }
   } catch (pism::RuntimeError &e) {
-    e.add_context("initializing interpolation from %s to the internal grid", input_file.name().c_str());
+    e.add_context("initializing interpolation from %s to the internal grid",
+                  input_file.name().c_str());
     throw;
   }
 }
@@ -373,7 +375,7 @@ InputInterpolationYAC::~InputInterpolationYAC() {
 }
 
 double InputInterpolationYAC::interpolate(const pism::array::Scalar &source,
-                                     pism::petsc::Vec &target) const {
+                                          pism::petsc::Vec &target) const {
 
   pism::petsc::VecArray input_array(source.vec());
   pism::petsc::VecArray output_array(target);
@@ -396,12 +398,12 @@ double InputInterpolationYAC::interpolate(const pism::array::Scalar &source,
 }
 
 
-void InputInterpolationYAC::regrid(const pism::File &file,
-                              pism::array::Scalar &target) const {
+void InputInterpolationYAC::regrid(const pism::File &file, pism::array::Scalar &output) const {
 
-  double time_spent = InputInterpolation::regrid(target.metadata(0), file, -1, target.vec());
+  double time_spent =
+      InputInterpolation::regrid(output.metadata(0), file, -1, *output.grid(), output.vec());
 
-  auto log = target.grid()->ctx()->log();
+  auto log = output.grid()->ctx()->log();
 
   log->message(2, "Interpolation took %f seconds.\n", time_spent);
 }
@@ -409,13 +411,14 @@ void InputInterpolationYAC::regrid(const pism::File &file,
 
 double InputInterpolationYAC::regrid_impl(const SpatialVariableMetadata &metadata,
                                      const pism::File &file, int record_index,
-                                     petsc::Vec &target) const {
+                                          const Grid &/* target_grid (unused) */,
+                                          petsc::Vec &output) const {
 
   // set metadata to help the following call find the variable, convert units, etc
   m_buffer->metadata(0) = metadata;
   m_buffer->read(file, record_index);
 
-  double time_spent = interpolate(*m_buffer, target);
+  double time_spent = interpolate(*m_buffer, output);
 
   return time_spent;
 }

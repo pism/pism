@@ -46,8 +46,8 @@ public:
   virtual ~InputInterpolation() = default;
 
   static std::shared_ptr<InputInterpolation>
-  create(std::shared_ptr<const Grid> target_grid, const std::vector<double> &levels,
-         const File &input_file, const std::string &variable_name, InterpolationType type);
+  create(const Grid &target_grid, const std::vector<double> &levels, const File &input_file,
+         const std::string &variable_name, InterpolationType type);
 
   /*!
    * Read a record `record_index` of the variable corresponding to the provided `metadata`
@@ -57,7 +57,7 @@ public:
    *
    */
   double regrid(const SpatialVariableMetadata &metadata, const pism::File &file, int record_index,
-                petsc::Vec &output) const;
+                const Grid &grid, petsc::Vec &output) const;
 
   static std::string grid_name(const File &file, const std::string &variable_name,
                                units::System::Ptr sys);
@@ -65,7 +65,7 @@ public:
 protected:
   InputInterpolation();
   virtual double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
-                             int record_index, petsc::Vec &output) const = 0;
+                             int record_index, const Grid &grid, petsc::Vec &output) const = 0;
 };
 
 /*!
@@ -74,15 +74,14 @@ protected:
  */
 class InputInterpolation3D : public InputInterpolation {
 public:
-  InputInterpolation3D(std::shared_ptr<const Grid> target_grid, const std::vector<double> &levels,
+  InputInterpolation3D(const Grid &target_grid, const std::vector<double> &levels,
                        const File &input_file, const std::string &variable_name,
                        InterpolationType type);
 
 private:
   double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
-                     int record_index, petsc::Vec &output) const;
+                     int record_index, const Grid &grid, petsc::Vec &output) const;
 
-  std::shared_ptr<const Grid> m_target_grid;
   std::shared_ptr<LocalInterpCtx> m_interp_context;
 };
 
