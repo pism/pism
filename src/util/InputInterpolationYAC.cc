@@ -321,7 +321,10 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
       int comp_ids[n_comps]           = { 0, 0 };
       yac_cdef_comps_instance(m_instance_id, comp_names, n_comps, comp_ids);
 
+      log->message(2, "Defining the source grid (%s)...\n", source_grid_name.c_str());
       m_source_field_id = define_field(comp_ids[0], *source_grid, source_grid_name);
+
+      log->message(2, "Defining the target grid (%s)...\n", target_grid_name.c_str());
       m_target_field_id = define_field(comp_ids[1], target_grid, target_grid_name);
 
       // Define the interpolation stack:
