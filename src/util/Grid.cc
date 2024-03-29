@@ -21,8 +21,10 @@
 #include <array>
 #include <gsl/gsl_interp.h>
 #include <map>
+#include <memory>
 #include <numeric>
 #include <petscsys.h>
+#include <string>
 
 #include "pism/util/InputInterpolation.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -122,6 +124,8 @@ struct Grid::Impl {
 
   //! ParallelIO I/O decompositions.
   std::map<std::array<int, 2>, int> io_decompositions;
+
+  std::map<std::string, std::shared_ptr<InputInterpolation>> regridding_2d;
 };
 
 Grid::Impl::Impl(std::shared_ptr<const Context> context)
@@ -1402,6 +1406,18 @@ std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<do
                                                             const File &input_file,
                                                             const std::string &variable_name,
                                                             InterpolationType type) const {
+
+  auto grid_name = InputInterpolation::grid_name(input_file, variable_name, ctx()->unit_system());
+
+  if (levels.size() < 2) {
+    if (m_impl->regridding_2d[grid_name] == nullptr) {
+      m_impl->regridding_2d[grid_name] =
+        InputInterpolation::create(*this, levels, input_file, variable_name, type);
+    }
+
+    return m_impl->regridding_2d[grid_name];
+  }
+
   return InputInterpolation::create(*this, levels, input_file, variable_name, type);
 }
 
