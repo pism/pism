@@ -201,6 +201,11 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
 
   result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj");
 
+  if (result.proj.empty()) {
+    // try the "proj4" attribute
+    result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj4");
+  }
+
   bool proj_is_epsg = false;
   for (const auto &auth : {"epsg:", "EPSG:"}) {
     if (result.proj.find(auth) != std::string::npos) {
