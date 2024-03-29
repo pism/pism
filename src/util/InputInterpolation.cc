@@ -26,7 +26,8 @@
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/petscwrappers/Vec.hh"
-#include "pism_utilities.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/projection.hh"
 
 #if (Pism_USE_YAC_INTERPOLATION == 1)
 #include "InputInterpolationYAC.hh"
@@ -124,7 +125,9 @@ std::shared_ptr<InputInterpolation>
 InputInterpolation::create(const Grid &target_grid,
                            const std::vector<double> &levels, const File &input_file,
                            const std::string &variable_name, InterpolationType type) {
-  auto projection = input_file.read_text_attribute("PISM_GLOBAL", "proj");
+
+  auto projection =
+      get_projection_info(input_file, "mapping", target_grid.ctx()->unit_system()).proj;
 
 #if (Pism_USE_YAC_INTERPOLATION == 1)
   if (levels.size() < 2 and (not projection.empty())) {
