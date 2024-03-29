@@ -259,10 +259,10 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
   petsc::TemporaryGlobalVec tmp(dm());
 
   if (V.exists) {
-    InputInterpolation3D interp(*grid(), levels(), file, V.name, m_impl->interpolation_type);
+    auto interp = grid()->get_interpolation(levels(), file, V.name, m_impl->interpolation_type);
 
     int last_record = -1;
-    interp.regrid(variable, file, last_record, *grid(), tmp);
+    interp->regrid(variable, file, last_record, *grid(), tmp);
   } else {
     set_default_value_or_stop(variable, default_value, *log, tmp);
   }

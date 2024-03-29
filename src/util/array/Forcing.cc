@@ -337,11 +337,11 @@ void Forcing::init_periodic_data(const File &file) {
   auto variable = m_impl->metadata[0];
   auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-  InputInterpolation3D interp(*grid(), {0.0}, file, V.name, m_impl->interpolation_type);
+  auto interp = grid()->get_interpolation({0.0}, file, V.name, m_impl->interpolation_type);
 
   for (unsigned int j = 0; j < n_records; ++j) {
 
-    interp.regrid(variable, file, (int)j, *grid(), vec());
+    interp->regrid(variable, file, (int)j, *grid(), vec());
 
     auto time = ctx->time();
     auto log  = ctx->log();
@@ -533,10 +533,10 @@ void Forcing::update(unsigned int start) {
   try {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-    InputInterpolation3D interp(*grid(), {0.0}, file, V.name, m_impl->interpolation_type);
+    auto interp = grid()->get_interpolation({0.0}, file, V.name, m_impl->interpolation_type);
 
     for (unsigned int j = 0; j < missing; ++j) {
-      interp.regrid(variable, file, (int)(start + j), *grid(), vec());
+      interp->regrid(variable, file, (int)(start + j), *grid(), vec());
 
       log->message(5, " %s: reading entry #%02d, year %s...\n", m_impl->name.c_str(), start + j,
                    t->date(m_data->time[start + j]).c_str());

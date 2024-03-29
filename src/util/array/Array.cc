@@ -28,21 +28,21 @@
 #include "pism/util/array/Array.hh"
 #include "pism/util/array/Array_impl.hh"
 
-#include "pism/util/Time.hh"
-#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Time.hh"
 
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/petscwrappers/VecScatter.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/io/IO_Flags.hh"
 
 #include "pism/util/InputInterpolation.hh"
 
@@ -60,19 +60,15 @@ void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
   PISM_CHK(ierr, "DMGlobalToLocalEnd");
 }
 
-Array::Array(std::shared_ptr<const Grid> grid,
-             const std::string &name,
-             Kind ghostedp,
-             size_t dof,
-             size_t stencil_width,
-             const std::vector<double> &zlevels) {
-  m_impl = new Impl();
+Array::Array(std::shared_ptr<const Grid> grid, const std::string &name, Kind ghostedp, size_t dof,
+             size_t stencil_width, const std::vector<double> &zlevels) {
+  m_impl  = new Impl();
   m_array = nullptr;
 
-  m_impl->name = name;
-  m_impl->grid = grid;
+  m_impl->name    = name;
+  m_impl->grid    = grid;
   m_impl->ghosted = (ghostedp == WITH_GHOSTS);
-  m_impl->dof = dof;
+  m_impl->dof     = dof;
   m_impl->zlevels = zlevels;
 
   const auto &config = grid->ctx()->config();
@@ -90,18 +86,17 @@ Array::Array(std::shared_ptr<const Grid> grid,
   if (m_impl->dof > 1) {
     // dof > 1: this is a 2D vector
     for (unsigned int j = 0; j < m_impl->dof; ++j) {
-      m_impl->metadata.push_back({system, pism::printf("%s[%d]", name.c_str(), j)});
+      m_impl->metadata.push_back({ system, pism::printf("%s[%d]", name.c_str(), j) });
     }
   } else {
     // both 2D and 3D vectors
-    m_impl->metadata = {{system, name, zlevels}};
+    m_impl->metadata = { { system, name, zlevels } };
   }
 
   if (zlevels.size() > 1) {
     m_impl->bsearch_accel = gsl_interp_accel_alloc();
     if (m_impl->bsearch_accel == NULL) {
-      throw RuntimeError(PISM_ERROR_LOCATION,
-                         "Failed to allocate a GSL interpolation accelerator");
+      throw RuntimeError(PISM_ERROR_LOCATION, "Failed to allocate a GSL interpolation accelerator");
     }
   }
 }
@@ -141,7 +136,7 @@ unsigned int Array::ndof() const {
   return m_impl->dof;
 }
 
-const std::vector<double>& Array::levels() const {
+const std::vector<double> &Array::levels() const {
   return m_impl->zlevels;
 }
 
@@ -166,14 +161,14 @@ std::vector<int> Array::shape() const {
   auto grid = m_impl->grid;
 
   if (ndims() == 3) {
-    return {(int)grid->My(), (int)grid->Mx(), (int)levels().size()};
+    return { (int)grid->My(), (int)grid->Mx(), (int)levels().size() };
   }
 
   if (ndof() == 1) {
-    return {(int)grid->My(), (int)grid->Mx()};
+    return { (int)grid->My(), (int)grid->Mx() };
   }
 
-  return {(int)grid->My(), (int)grid->Mx(), (int)ndof()};
+  return { (int)grid->My(), (int)grid->Mx(), (int)ndof() };
 }
 
 void Array::set_begin_access_use_dof(bool flag) {
@@ -181,9 +176,8 @@ void Array::set_begin_access_use_dof(bool flag) {
 }
 
 void Array::set_interpolation_type(InterpolationType type) {
-  if (not (type == LINEAR or type == NEAREST)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid interpolation type: %d", (int)type);
+  if (not(type == LINEAR or type == NEAREST)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid interpolation type: %d", (int)type);
   }
   m_impl->interpolation_type = type;
 }
@@ -204,8 +198,7 @@ static NormType int_to_normtype(int input) {
   case NORM_INFINITY:
     return NORM_INFINITY;
   default:
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid norm type: %d",
-                                  input);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid norm type: %d", input);
   }
 }
 
@@ -216,7 +209,7 @@ void Array::add(double alpha, const Array &x) {
   PetscErrorCode ierr = VecAXPY(vec(), alpha, x.vec());
   PISM_CHK(ierr, "VecAXPY");
 
-  inc_state_counter();          // mark as modified
+  inc_state_counter(); // mark as modified
 }
 
 //! Result: v[j] <- v[j] + alpha for all j. Calls VecShift.
@@ -224,7 +217,7 @@ void Array::shift(double alpha) {
   PetscErrorCode ierr = VecShift(vec(), alpha);
   PISM_CHK(ierr, "VecShift");
 
-  inc_state_counter();          // mark as modified
+  inc_state_counter(); // mark as modified
 }
 
 //! Result: v <- v * alpha. Calls VecScale.
@@ -362,9 +355,8 @@ const std::string &Array::get_name() const {
   return m_impl->name;
 }
 
-void set_default_value_or_stop(const VariableMetadata &variable,
-                               io::Default default_value, const Logger &log,
-                               Vec output) {
+void set_default_value_or_stop(const VariableMetadata &variable, io::Default default_value,
+                               const Logger &log, Vec output) {
 
   if (default_value.exists()) {
     // If it is optional, fill with the provided default value.
@@ -402,10 +394,10 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
     if (V.exists) {
-      InputInterpolation3D interp(*grid(), levels(), file, V.name, m_impl->interpolation_type);
+      auto interp = grid()->get_interpolation(levels(), file, V.name, m_impl->interpolation_type);
 
       int last_record = -1;
-      interp.regrid(variable, file, last_record, *grid(), tmp);
+      interp->regrid(variable, file, last_record, *grid(), tmp);
     } else {
       set_default_value_or_stop(variable, default_value, *log, tmp);
     }
