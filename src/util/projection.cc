@@ -19,6 +19,7 @@
 
 #include <cstdlib>              // strtol
 #include <cmath>                // std::pow, std::sqrt, std::fabs
+#include <string>
 
 #include "pism/util/projection.hh"
 #include "pism/util/VariableMetadata.hh"
@@ -30,6 +31,7 @@
 #include "pism/util/array/Array3D.hh"
 
 #include "pism/pism_config.hh"
+#include "pism/util/pism_utilities.hh"
 
 #if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"
@@ -42,37 +44,35 @@ MappingInfo::MappingInfo(const std::string &mapping_name, units::System::Ptr uni
   // empty
 }
 
+int parse_epsg(const std::string &proj_string) {
+  try {
+    int auth_len                    = 5; // length of "epsg:"
+    std::string::size_type position = std::string::npos;
+    for (const auto &auth : { "epsg:", "EPSG:" }) {
+      position = proj_string.find(auth);
+      if (position != std::string::npos) {
+        break;
+      }
+    }
+
+    if (position == std::string::npos) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "could not find 'epsg:' or 'EPSG:'");
+    }
+
+    return (int)parse_integer(proj_string.substr(position + auth_len));
+  } catch (RuntimeError &e) {
+    e.add_context("parsing the EPSG code in the PROJ string '%s'",
+                  proj_string.c_str());
+    throw;
+  }
+}
+
 //! @brief Return CF-Convention "mapping" variable corresponding to an EPSG code specified in a
 //! PROJ string.
 VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_string) {
   VariableMetadata mapping("mapping", system);
 
-  int auth_len = 5;             // length of "epsg:"
-  std::string::size_type position = std::string::npos;
-  for (const auto &auth : {"epsg:", "EPSG:"}) {
-    position = proj_string.find(auth);
-    if (position != std::string::npos) {
-      break;
-    }
-  }
-
-  if (position == std::string::npos) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "could not parse EPSG code '%s'", proj_string.c_str());
-  }
-
-  long int epsg = 0;
-  {
-    std::string epsg_code = proj_string.substr(position + auth_len);
-    const char *str = epsg_code.c_str();
-    char *endptr = NULL;
-    epsg = strtol(str, &endptr, 10);
-    if (endptr == str) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "failed to parse EPSG code at '%s' in PROJ string '%s'",
-                                    epsg_code.c_str(), proj_string.c_str());
-    }
-  }
+  int epsg = parse_epsg(proj_string);
 
   switch (epsg) {
   case 3413:
@@ -212,6 +212,11 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
       proj_is_epsg = true;
       break;
     }
+  }
+
+  if (proj_is_epsg) {
+    // re-create the PROJ string to make sure it does not contain "+init="
+    result.proj = pism::printf("EPSG:%d", parse_epsg(result.proj));
   }
 
   if (input_file.variable_exists(mapping_name)) {

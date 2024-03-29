@@ -47,6 +47,12 @@ public:
   std::string proj;
 };
 
+/*!
+ * Parse a string "EPSG:XXXX", "epsg:XXXX", "+init=epsg:XXXX" and return the EPSG code
+ * (XXXX).
+ */
+int parse_epsg(const std::string &proj_string);
+
 /*! @brief Check consistency of the "mapping" variable with the EPSG code in the proj string. */
 /*!
  * If the consistency check fails, throws RuntimeError explaining the failure. Fails if `info.proj`
