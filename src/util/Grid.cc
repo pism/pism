@@ -24,6 +24,7 @@
 #include <numeric>
 #include <petscsys.h>
 
+#include "pism/util/InputInterpolation.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
@@ -1398,6 +1399,14 @@ int Grid::pio_io_decomposition(int dof, int output_datatype) const {
 #endif
   return result;
 }
+
+std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<double> &levels,
+                                                            const File &input_file,
+                                                            const std::string &variable_name,
+                                                            InterpolationType type) const {
+  return InputInterpolation::create(*this, levels, input_file, variable_name, type);
+}
+
 
 PointsWithGhosts::PointsWithGhosts(const Grid &grid, unsigned int stencil_width) {
   m_i_first = grid.xs() - stencil_width;

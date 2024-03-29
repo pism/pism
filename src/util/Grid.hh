@@ -28,11 +28,14 @@
 
 #include <mpi.h>                // MPI_Comm
 
+#include "pism/util/Interpolation1D.hh"
+
 namespace pism {
 
 class Config;
 class Context;
 class File;
+class InputInterpolation;
 class Logger;
 class MappingInfo;
 class Vars;
@@ -302,6 +305,11 @@ public:
   static std::shared_ptr<Grid> FromOptions(std::shared_ptr<const Context> ctx);
 
   std::shared_ptr<petsc::DM> get_dm(unsigned int dm_dof, unsigned int stencil_width) const;
+
+  std::shared_ptr<InputInterpolation> get_interpolation(const std::vector<double> &levels,
+                                                        const File &input_file,
+                                                        const std::string &variable_name,
+                                                        InterpolationType type) const;
 
   void report_parameters() const;
 
