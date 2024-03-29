@@ -535,8 +535,6 @@ void Grid::report_parameters() const {
   const Logger &log      = *this->ctx()->log();
   units::System::Ptr sys = this->ctx()->unit_system();
 
-  log.message(2, "computational domain and grid:\n");
-
   units::Converter km(sys, "m", "km");
 
   // report on grid

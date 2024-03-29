@@ -298,7 +298,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     auto mapping = get_projection_info(input_file, "mapping", ctx->unit_system());
     source_grid->set_mapping_info(mapping);
 
-    log->message(2, "Input:\n");
+    log->message(2, "Input grid:\n");
     source_grid->report_parameters();
 
     m_buffer = std::make_shared<pism::array::Scalar>(source_grid, variable_name);
