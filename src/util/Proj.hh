@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,11 +34,15 @@ public:
   Proj(const std::string &input, const std::string &output) {
     m_pj = proj_create_crs_to_crs(PJ_DEFAULT_CTX, input.c_str(), output.c_str(), 0);
     if (m_pj == 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Failed to initialize projection transformation '%s' to '%s' (errno: %d, %s).",
-                                    input.c_str(), output.c_str(),
-                                    proj_errno(0),
-                                    proj_errno_string(proj_errno(0)));
+      std::string input_with_crs = input + " +type=crs";
+      m_pj = proj_create_crs_to_crs(PJ_DEFAULT_CTX, input_with_crs.c_str(), output.c_str(), 0);
+
+      if (m_pj == 0) {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "Failed to initialize projection transformation '%s' to '%s' (errno: %d, %s).",
+            input.c_str(), output.c_str(), proj_errno(0), proj_errno_string(proj_errno(0)));
+      }
     }
   }
 
