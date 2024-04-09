@@ -59,7 +59,18 @@ int parse_epsg(const std::string &proj_string) {
       throw RuntimeError(PISM_ERROR_LOCATION, "could not find 'epsg:' or 'EPSG:'");
     }
 
-    return (int)parse_integer(proj_string.substr(position + auth_len));
+
+    {
+      auto epsg_string = proj_string.substr(position + auth_len);
+      char *endptr     = NULL;
+      long int result  = strtol(epsg_string.c_str(), &endptr, 10);
+      if (endptr == epsg_string.c_str()) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't parse %s (expected an integer)",
+                                      epsg_string.c_str());
+      }
+      return (int)result;
+    }
+
   } catch (RuntimeError &e) {
     e.add_context("parsing the EPSG code in the PROJ string '%s'",
                   proj_string.c_str());
