@@ -61,6 +61,9 @@ add_library (util OBJECT
 
 if(Pism_USE_YAC_INTERPOLATION)
   target_sources(util PRIVATE InputInterpolationYAC.cc)
+
+  target_sources(util PRIVATE yaxt_wrapper.c)
+  set_source_files_properties(yaxt_wrapper.c INCLUDE_DIRECTORIES ${YAXT_INCLUDE_DIRS})
 endif()
 
 if(Pism_DEBUG)

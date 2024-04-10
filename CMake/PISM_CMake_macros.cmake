@@ -172,6 +172,7 @@ macro(pism_find_prerequisites)
     endif()
 
     pism_find_library(YAC "yac>=3.0.3")
+    pism_find_library(YAXT "yaxt>=0.10.0")
   endif()
 
   if (Pism_USE_PARALLEL_NETCDF4)
