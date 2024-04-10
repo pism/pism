@@ -303,7 +303,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
     m_buffer = std::make_shared<pism::array::Scalar>(source_grid, variable_name);
 
-    std::string target_grid_name = "internal";
+    std::string target_grid_name = source_grid_name + "->internal";
     double fill_value            = NAN;
     {
       // Initialize YAC:
