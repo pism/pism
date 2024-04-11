@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2022, 2023  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2022, 2023, 2024  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -230,7 +230,11 @@ template<class Problem>
 class TaoMonitorCallback {
 public:
   static void connect(Tao tao, Problem &p) {
+#if PETSC_VERSION_LT(3,21,0)
     PetscErrorCode ierr = TaoSetMonitor(tao,
+#else
+    PetscErrorCode ierr = TaoMonitorSet(tao,
+#endif
                                         TaoMonitorCallback<Problem>::callback,
                                         &p, NULL);
     PISM_CHK(ierr, "TaoSetMonitor");

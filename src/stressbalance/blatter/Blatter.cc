@@ -500,11 +500,19 @@ PetscErrorCode Blatter::setup(DM pism_da, grid::Periodicity periodicity, int Mz,
     ierr = SNESSetDM(m_snes, m_da); CHKERRQ(ierr);
 
     ierr = DMDASNESSetFunctionLocal(m_da, INSERT_VALUES,
+#if PETSC_VERSION_LT(3,21,0)
                                     (DMDASNESFunction)function_callback,
+#else
+                                    (DMDASNESFunctionFn*)function_callback,
+#endif
                                     this); CHKERRQ(ierr);
 
     ierr = DMDASNESSetJacobianLocal(m_da,
+#if PETSC_VERSION_LT(3,21,0)
                                     (DMDASNESJacobian)jacobian_callback,
+#else
+                                    (DMDASNESJacobianFn*)jacobian_callback,
+#endif
                                     this); CHKERRQ(ierr);
 
     ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
