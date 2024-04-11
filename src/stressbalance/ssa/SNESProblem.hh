@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2022 David Maxwell
+// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2022, 2024 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -121,11 +121,20 @@ SNESProblem<DOF, U>::SNESProblem(std::shared_ptr<const Grid> g)
   m_callbackData.solver = this;
 
   ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
+#if PETSC_VERSION_LT(3,21,0)
                                   (DMDASNESFunction)SNESProblem<DOF, U>::function_callback,
+#else
+                                  (DMDASNESFunctionFn*)SNESProblem<DOF, U>::function_callback,
+#endif
                                   &m_callbackData);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
-  ierr = DMDASNESSetJacobianLocal(*m_DA, (DMDASNESJacobian)SNESProblem<DOF, U>::jacobian_callback,
+  ierr = DMDASNESSetJacobianLocal(*m_DA,
+#if PETSC_VERSION_LT(3,21,0)
+                                  (DMDASNESJacobian)SNESProblem<DOF, U>::jacobian_callback,
+#else
+                                  (DMDASNESJacobianFn*)SNESProblem<DOF, U>::jacobian_callback,
+#endif
                                   &m_callbackData);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 

@@ -77,11 +77,22 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
 
   auto dm = m_velocity_global.dm();
 
-  ierr = DMDASNESSetFunctionLocal(*dm, INSERT_VALUES, (DMDASNESFunction)function_callback,
+  ierr = DMDASNESSetFunctionLocal(*dm, INSERT_VALUES,
+#if PETSC_VERSION_LT(3,21,0)
+                                  (DMDASNESFunction)function_callback,
+#else
+                                  (DMDASNESFunctionFn*)function_callback,
+#endif
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
-  ierr = DMDASNESSetJacobianLocal(*dm, (DMDASNESJacobian)jacobian_callback, &m_callback_data);
+  ierr = DMDASNESSetJacobianLocal(*dm,
+#if PETSC_VERSION_LT(3,21,0)
+                                  (DMDASNESJacobian)jacobian_callback,
+#else
+                                  (DMDASNESJacobianFn*)jacobian_callback,
+#endif
+                                  &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 
   ierr = DMSetMatType(*dm, "baij");

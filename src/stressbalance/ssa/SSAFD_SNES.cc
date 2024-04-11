@@ -75,11 +75,20 @@ SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
   m_callback_data.inputs = nullptr;
 
   ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
+#if PETSC_VERSION_LT(3,21,0)
                                   (DMDASNESFunction)SSAFD_SNES::function_callback,
+#else
+                                  (DMDASNESFunctionFn*)SSAFD_SNES::function_callback,
+#endif
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
-  ierr = DMDASNESSetJacobianLocal(*m_DA, (DMDASNESJacobian)SSAFD_SNES::jacobian_callback,
+  ierr = DMDASNESSetJacobianLocal(*m_DA,
+#if PETSC_VERSION_LT(3,21,0)
+                                  (DMDASNESJacobian)SSAFD_SNES::jacobian_callback,
+#else
+                                  (DMDASNESJacobianFn*)SSAFD_SNES::jacobian_callback,
+#endif
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 
