@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2022 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2024 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -27,7 +27,7 @@ import os
 import math
 
 import PISM
-
+import PISM.invert.ssa
 
 def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
