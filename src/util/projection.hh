@@ -70,6 +70,12 @@ void compute_latitude(const std::string &projection, array::Scalar &result);
 void compute_lon_bounds(const std::string &projection, array::Array3D &result);
 void compute_lat_bounds(const std::string &projection, array::Array3D &result);
 
+/*!
+ * Convert Climate and Forecasting (CF) convention metadata to a PROJ.4 style projection
+ * definition.
+ */
+std::string cf_to_proj(const VariableMetadata &mapping);
+
 } // end of namespace pism
 
 #endif /* PISM_PROJECTION_H */
