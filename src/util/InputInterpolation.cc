@@ -126,8 +126,10 @@ InputInterpolation::create(const Grid &target_grid,
                            const std::vector<double> &levels, const File &input_file,
                            const std::string &variable_name, InterpolationType type) {
 
+  auto mapping_variable_name = input_file.read_text_attribute(variable_name, "grid_mapping");
+
   auto projection =
-      get_projection_info(input_file, "mapping", target_grid.ctx()->unit_system()).proj;
+      get_projection_info(input_file, mapping_variable_name, target_grid.ctx()->unit_system()).proj;
 
 #if (Pism_USE_YAC_INTERPOLATION == 1)
   if (levels.size() < 2 and (not projection.empty())) {

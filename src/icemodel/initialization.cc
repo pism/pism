@@ -133,28 +133,13 @@ void IceModel::model_state_setup() {
     input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
   }
 
-  // Get projection information and compute latitudes and longitudes *before* they are
-  // needed.
-  {
-    if (use_input_file) {
-      std::string mapping_name = m_grid->get_mapping_info().mapping.get_name();
-      MappingInfo info = get_projection_info(*input_file, mapping_name,
-                                             m_ctx->unit_system());
+  // Compute latitudes and longitudes *before* they might be needed.
+  compute_lat_lon();
 
-      if (not info.proj.empty()) {
-        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
-                       info.proj.c_str(), input.filename.c_str());
-      }
-
-      m_output_global_attributes["proj"] = info.proj;
-      m_grid->set_mapping_info(info);
-
-      std::string history = input_file->read_text_attribute("PISM_GLOBAL", "history");
-      m_output_global_attributes["history"] = history + m_output_global_attributes.get_string("history");
-
-    }
-
-    compute_lat_lon();
+  if (use_input_file) {
+    std::string history = input_file->read_text_attribute("PISM_GLOBAL", "history");
+    m_output_global_attributes["history"] =
+        history + m_output_global_attributes.get_string("history");
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)

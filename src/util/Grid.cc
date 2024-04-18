@@ -25,6 +25,7 @@
 #include <numeric>
 #include <petscsys.h>
 #include <string>
+#include <vector>
 
 #include "pism/util/InputInterpolation.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -1281,60 +1282,76 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
   auto log = ctx->log();
 
-  if (not input_file.empty() and (not bootstrap)) {
-    // get grid from a PISM input file
-    return Grid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
-  }
-
-  if (not input_file.empty() and bootstrap) {
-    // bootstrapping; get domain size defaults from an input file, allow overriding all grid
-    // parameters using command-line options
-
-    grid::Parameters input_grid(*config);
-
-    bool grid_info_found = false;
-
+  if (not input_file.empty()) {
     File file(ctx->com(), input_file, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    for (const auto *name : { "land_ice_thickness", "bedrock_altitude", "thk", "topg" }) {
+    // list of variables to try getting grid information from
+    std::vector<std::string> candidates;
+    if (bootstrap) {
+      candidates = { "land_ice_thickness", "bedrock_altitude", "thk", "topg" };
+    } else {
+      candidates = { "enthalpy", "temp" };
+    }
 
-      grid_info_found = file.variable_exists(name);
-      if (not grid_info_found) {
-        // Failed to find using a short name. Try using name as a
-        // standard name...
-        grid_info_found = file.find_variable("unlikely_name", name).exists;
-      }
-
-      if (grid_info_found) {
-        input_grid = grid::Parameters(*ctx, file, name, r);
+    // loop over candidates and save the name of the first variable we found
+    std::string variable_name;
+    for (const auto &name : candidates) {
+      auto V = file.find_variable(name, name);
+      if (V.exists) {
+        variable_name = V.name;
         break;
       }
     }
 
-    if (not grid_info_found) {
+    // stop with an error message if we could not find anything
+    if (variable_name.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no geometry information found in '%s'",
                                     input_file.c_str());
     }
 
-    // process all possible options controlling grid parameters, overriding values read
-    // from a file
-    input_grid.horizontal_size_from_options();
-    input_grid.horizontal_extent_from_options(ctx->unit_system());
-    input_grid.vertical_grid_from_options(config);
-    input_grid.ownership_ranges_from_options(ctx->size());
+    // get grid projection info
+    MappingInfo grid_mapping("mapping", ctx->unit_system());
+    {
+      auto mapping_variable = file.read_text_attribute(variable_name, "grid_mapping");
 
-    auto result = std::make_shared<Grid>(ctx, input_grid);
+      if (not mapping_variable.empty()) {
+        grid_mapping = get_projection_info(file, mapping_variable, ctx->unit_system());
+      }
+    }
 
-    units::System::Ptr sys = ctx->unit_system();
-    units::Converter km(sys, "m", "km");
+    std::shared_ptr<Grid> result;
+    if (bootstrap) {
+      // bootstrapping; get domain size defaults from an input file, allow overriding all grid
+      // parameters using command-line options
 
-    // report on resulting computational box
-    log->message(2,
-                 "  setting computational box for ice from '%s' and\n"
-                 "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-                 input_file.c_str(), km(result->x0() - result->Lx()),
-                 km(result->x0() + result->Lx()), km(result->y0() - result->Ly()),
-                 km(result->y0() + result->Ly()), result->Lz());
+      grid::Parameters input_grid(*ctx, file, variable_name, r);
+
+      // process all possible options controlling grid parameters, overriding values read
+      // from a file
+      input_grid.horizontal_size_from_options();
+      input_grid.horizontal_extent_from_options(ctx->unit_system());
+      input_grid.vertical_grid_from_options(config);
+      input_grid.ownership_ranges_from_options(ctx->size());
+
+      result = std::make_shared<Grid>(ctx, input_grid);
+
+      units::System::Ptr sys = ctx->unit_system();
+      units::Converter km(sys, "m", "km");
+
+      // report on resulting computational box
+      log->message(
+          2,
+          "  setting computational box for ice from variable '%s' in '%s' and\n"
+          "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+          variable_name.c_str(), input_file.c_str(), km(result->x0() - result->Lx()),
+          km(result->x0() + result->Lx()), km(result->y0() - result->Ly()),
+          km(result->y0() + result->Ly()), result->Lz());
+    } else {
+      // get grid from a PISM input file
+      result = Grid::FromFile(ctx, input_file, candidates, r);
+    }
+
+    result->set_mapping_info(grid_mapping);
 
     return result;
   }
