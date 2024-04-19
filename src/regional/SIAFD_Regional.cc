@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,6 +44,11 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
                                               array::Staggered1 &h_y) {
 
   SIAFD::compute_surface_gradient(inputs, h_x, h_y);
+
+  if (inputs.no_model_surface_elevation == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "no_model surface elevation was not provided to SIAFD_Regional");
+  }
 
   // this call updates ghosts of h_x_no_model and h_y_no_model
   surface_gradient_haseloff(*inputs.no_model_surface_elevation,
