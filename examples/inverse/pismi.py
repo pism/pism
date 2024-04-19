@@ -44,14 +44,16 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
     def write(self, filename, append=False):
         if not append:
             PISM.invert.ssa.SSAForwardRunFromInputFile.write(self, filename)
-        else:
-            grid = self.grid
-            vecs = self.modeldata.vecs
 
-            pio = PISM.File(grid.com, filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE)
+        grid = self.grid
+        vecs = self.modeldata.vecs
 
-            self.modeldata.vecs.write(filename)
-            pio.close()
+        output = PISM.File(grid.com, filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE)
+
+        for name in grid.variables().keys():
+            grid.variables().get(name).write(output)
+
+        output.close()
 
 
 class InvSSAPlotListener(PISM.invert.listener.PlotListener):
