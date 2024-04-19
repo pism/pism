@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2013, 2014, 2015, 2016, 2017, 2022, 2024 Constantine Khroulev
+// Copyright (C) 2009--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __Vars_hh
-#define __Vars_hh
+#ifndef PISM_VARS_H
+#define PISM_VARS_H
 
 #include <map>
 #include <set>
@@ -57,24 +57,18 @@ public:
 
   std::set<std::string> keys() const;
 
-  typedef std::shared_ptr<array::Array> VecPtr;
-  typedef std::shared_ptr<array::Scalar> Vec2SPtr;
-  typedef std::shared_ptr<array::Scalar> Vec2IntPtr;
-  typedef std::shared_ptr<array::Vector> Vec2VPtr;
-  typedef std::shared_ptr<array::CellType> Vec2CellTypePtr;
-  typedef std::shared_ptr<array::Array3D> Vec3Ptr;
-
-  void add_shared(VecPtr);
-  void add_shared(VecPtr, const std::string &name);
+  void add_shared(std::shared_ptr<array::Array>);
+  void add_shared(std::shared_ptr<array::Array>, const std::string &name);
 
   bool is_available_shared(const std::string &name) const;
 
-  VecPtr get_shared(const std::string &name) const;
-  Vec2SPtr get_2d_scalar_shared(const std::string &name) const;
-  Vec2VPtr get_2d_vector_shared(const std::string &name) const;
-  Vec2IntPtr get_2d_mask_shared(const std::string &name) const;
-  Vec2CellTypePtr get_2d_cell_type_shared(const std::string &name) const;
-  Vec3Ptr get_3d_scalar_shared(const std::string &name) const;
+  std::shared_ptr<array::Array> get_shared(const std::string &name) const;
+  std::shared_ptr<array::Scalar> get_2d_scalar_shared(const std::string &name) const;
+  std::shared_ptr<array::Scalar1> get_2d_scalar1_shared(const std::string &name) const;
+  std::shared_ptr<array::Scalar2> get_2d_scalar2_shared(const std::string &name) const;
+  std::shared_ptr<array::Vector> get_2d_vector_shared(const std::string &name) const;
+  std::shared_ptr<array::CellType> get_2d_cell_type_shared(const std::string &name) const;
+  std::shared_ptr<array::Array3D> get_3d_scalar_shared(const std::string &name) const;
 
   std::set<std::string> keys_shared() const;
 private:
@@ -89,9 +83,9 @@ private:
   mutable std::map<std::string, std::string> m_standard_names;
 
   //! variables in *shared ownership*
-  mutable std::map<std::string, VecPtr> m_variables_shared;
+  mutable std::map<std::string, std::shared_ptr<array::Array>> m_variables_shared;
 
-  VecPtr get_internal_shared(const std::string &name) const;
+  std::shared_ptr<array::Array> get_internal_shared(const std::string &name) const;
 
   // Hide copy constructor / assignment operator.
   Vars(Vars const &);
@@ -100,4 +94,4 @@ private:
 
 } // end of namespace pism
 
-#endif // __Vars_hh
+#endif // PISM_VARS_H

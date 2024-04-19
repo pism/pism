@@ -1,5 +1,7 @@
 def get(self, key):
     methods = [self.get_2d_cell_type,
+               self.get_2d_scalar2,
+               self.get_2d_scalar1,
                self.get_2d_scalar,
                self.get_2d_vector,
                self.get_3d_scalar]
