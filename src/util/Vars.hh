@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2013, 2014, 2015, 2016, 2017, 2022 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2013, 2014, 2015, 2016, 2017, 2022, 2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,6 @@ public:
 
   const array::Array* get(const std::string &name) const;
   const array::Scalar* get_2d_scalar(const std::string &name) const;
-  const array::Scalar* get_2d_mask(const std::string &name) const;
   const array::Vector* get_2d_vector(const std::string &name) const;
   const array::CellType* get_2d_cell_type(const std::string &name) const;
   const array::Array3D* get_3d_scalar(const std::string &name) const;

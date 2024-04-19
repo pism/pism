@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -152,45 +152,32 @@ const array::Array* Vars::get_internal(const std::string &name) const {
   return NULL;
 }
 
-const array::Scalar* Vars::get_2d_scalar(const std::string &name) const {
-  const array::Scalar *tmp = dynamic_cast<const array::Scalar*>(this->get_internal(name));
+template<class A>
+const A* get_(const Vars &vars, const std::string &name, const std::string &kind) {
+  auto tmp = dynamic_cast<const A*>(vars.get(name));
+
   if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D scalar variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s variable '%s' is not available",
+                                  kind.c_str(), name.c_str());
   }
+
   return tmp;
+}
+
+const array::Scalar* Vars::get_2d_scalar(const std::string &name) const {
+  return get_<array::Scalar>(*this, name, "2D scalar");
 }
 
 const array::Vector* Vars::get_2d_vector(const std::string &name) const {
-  const array::Vector *tmp = dynamic_cast<const array::Vector*>(this->get_internal(name));
-  if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D vector variable '%s' is not available", name.c_str());
-  }
-  return tmp;
-}
-
-const array::Scalar* Vars::get_2d_mask(const std::string &name) const {
-  const array::Scalar *tmp = dynamic_cast<const array::Scalar*>(this->get_internal(name));
-  if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D mask variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_<array::Vector>(*this, name, "2D vector");
 }
 
 const array::CellType* Vars::get_2d_cell_type(const std::string &name) const {
-  const auto *tmp = dynamic_cast<const array::CellType*>(this->get_internal(name));
-  if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "2D cell type variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_<array::CellType>(*this, name, "2D cell type");
 }
 
 const array::Array3D* Vars::get_3d_scalar(const std::string &name) const {
-  const array::Array3D* tmp = dynamic_cast<const array::Array3D*>(this->get_internal(name));
-  if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "3D scalar variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_<array::Array3D>(*this, name, "3D scalar");
 }
 
 //! \brief Returns the set of keys (variable names) in the dictionary.
