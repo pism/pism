@@ -168,6 +168,14 @@ const array::Scalar* Vars::get_2d_scalar(const std::string &name) const {
   return get_<array::Scalar>(*this, name, "2D scalar");
 }
 
+const array::Scalar1* Vars::get_2d_scalar1(const std::string &name) const {
+  return get_<array::Scalar1>(*this, name, "2D scalar (ghosted)");
+}
+
+const array::Scalar2* Vars::get_2d_scalar2(const std::string &name) const {
+  return get_<array::Scalar2>(*this, name, "2D scalar (ghosted, stencil width=2)");
+}
+
 const array::Vector* Vars::get_2d_vector(const std::string &name) const {
   return get_<array::Vector>(*this, name, "2D vector");
 }

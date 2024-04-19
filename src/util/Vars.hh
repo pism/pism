@@ -32,6 +32,8 @@ class Array3D;
 class Array;
 class CellType;
 class Scalar;
+class Scalar1;
+class Scalar2;
 class Vector;
 } // end of namespace array
 
@@ -47,6 +49,8 @@ public:
 
   const array::Array* get(const std::string &name) const;
   const array::Scalar* get_2d_scalar(const std::string &name) const;
+  const array::Scalar1* get_2d_scalar1(const std::string &name) const;
+  const array::Scalar2* get_2d_scalar2(const std::string &name) const;
   const array::Vector* get_2d_vector(const std::string &name) const;
   const array::CellType* get_2d_cell_type(const std::string &name) const;
   const array::Array3D* get_3d_scalar(const std::string &name) const;
