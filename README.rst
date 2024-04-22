@@ -4,23 +4,23 @@ PISM, a Parallel Ice Sheet Model
 
 
 
-The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sheet model:
+The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sheet model that includes:
 
-- hierarchy of available stress balances
-- marine ice sheet physics, dynamic calving fronts
-- polythermal, enthalpy-based conservation of energy scheme
-- extensible coupling to atmospheric and ocean models
-- verification and validation tools
-- `documentation <pism-manual_>`_ for users and developers
-- uses MPI_ and PETSc_ for parallel simulations
-- reads and writes `CF-compliant <cf_>`_  NetCDF_ files
+- A hierarchy of available stress balances
+- Marine ice sheet physics, dynamic calving fronts
+- A polythermal, enthalpy-based conservation of energy scheme
+- Extensible coupling to atmospheric and ocean models
+- Verification and validation tools
+- `Documentation <pism-manual_>`_ for users and developers
+- Links to MPI_ and PETSc_ for parallel simulations
+- Use of `CF-compliant <cf_>`_  NetCDF_ files for input and output
 
 PISM is jointly developed at the `University of Alaska, Fairbanks (UAF) <uaf_>`_ and the
 `Potsdam Institute for Climate Impact Research (PIK) <pik_>`_. UAF developers are based in
 the `Glaciers Group <glaciers_>`_ at the `Geophysical Institute <gi_>`_.
 
-Please see ``ACKNOWLEDGE.rst`` and ``doc/funding.csv`` for a list of grants supporting
-PISM development.
+Please see ``ACKNOWLEDGE.rst`` and ``doc/funding.csv`` for how to acknowledge the use of PISM
+and a list of grants supporting PISM development.
 
 Homepage
 --------
@@ -30,7 +30,7 @@ Homepage
 Download and Install
 --------------------
 
-See the `Installing PISM <pism-installation_>`_ on ``pism.io``.
+See the section `Installing PISM <pism-installation_>`_ on ``pism.io``.
 
 Support
 -------

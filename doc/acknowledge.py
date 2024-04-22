@@ -24,7 +24,10 @@ Citing
 ------
 
 To cite PISM please use at least one of Bueler and Brown (2009) or Winkelmann et al.
-(2011), below, as appropriate to the application.
+(2011), below, as appropriate to the application. Also cite PISM as a software as
+specified in the file `CITATION.cff <https://github.com/pism/pism/blob/main/CITATION.cff>`_,
+or check the 'Cite this repository' link in the sidebar of PISM's `github
+repository <https://github.com/pism/pism>`_.
 
 Do not forget to specify the PISM *version* you use. If your results came from source code
 modifications to PISM then we request that your publication say so explicitly.
