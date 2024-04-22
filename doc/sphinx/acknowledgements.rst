@@ -4,8 +4,8 @@
 
 .. include:: <isonum.txt>
 
-Acknowledgements
-================
+Acknowledgments
+===============
 
 .. include:: funding.txt
 
