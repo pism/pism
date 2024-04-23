@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2023 Constantine Khroulev
+// Copyright (C) 2010--2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -3071,12 +3071,17 @@ public:
 
 protected:
   void update_impl(double dt) {
-    bool add_values = true;
-    grounding_line_flux(model->geometry().cell_type,
-                        model->geometry_evolution().flux_staggered(),
-                        dt,
-                        add_values,
-                        m_accumulator);
+    auto grid      = m_accumulator.grid();
+    auto cell_area = grid->cell_area(); // units: m^2
+    auto ice_density =
+        grid->ctx()->config()->get_number("constants.ice.density"); // units: kg / m^3
+
+    // factor used to convert from m^3/s to kg/m^2
+    double unit_conversion_factor = dt * (ice_density / cell_area); // units: kg * s / m^5
+
+    ice_flow_rate_across_grounding_line(model->geometry().cell_type,
+                                        model->geometry_evolution().flux_staggered(),
+                                        unit_conversion_factor, m_accumulator);
 
     m_interval_length += dt;
   }

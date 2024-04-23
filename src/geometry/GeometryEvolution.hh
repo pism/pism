@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -154,20 +154,23 @@ private:
 };
 
 /*!
- * Compute the grounding line flux.
+ * Compute the ice flow rate across the grounding line over a time step, adding to
+ * `output` to accumulate contributions from multiple time steps.
  *
- * The units of `result` are "kg m-2". Negative flux corresponds to ice moving into
- * the ocean, i.e. from grounded to floating areas.
+ * The units of `output` are "kg".
  *
- * This convention makes it easier to compare this quantity to the surface mass balance or
- * calving fluxes.
+ * Negative flux corresponds to ice moving into the ocean, i.e. from grounded to floating
+ * areas. (This convention makes it easier to compare this quantity to the surface mass
+ * balance or calving fluxes.)
  */
-void grounding_line_flux(const array::CellType1 &cell_type,
-                         const array::Staggered1 &flux,
-                         double dt,
-                         bool add_values,
-                         array::Scalar &result);
+void ice_flow_rate_across_grounding_line(const array::CellType1 &cell_type,
+                                         const array::Staggered1 &flux,
+                                         double unit_conversion_factor, array::Scalar &output);
 
+
+/*!
+ * Compute the total grounding line flux over a time step, in kg.
+ */
 double total_grounding_line_flux(const array::CellType1 &cell_type,
                                  const array::Staggered1 &flux,
                                  double dt);

@@ -1562,12 +1562,12 @@ def grounding_line_flux_test():
     geometry_evolution.flow_step(geometry, dt, velocity, sia_flux, thk_bc_mask)
 
     gl_flux = PISM.Scalar(grid, "grounding_line_flux")
+    gl_flux.set(0.0)
 
-    PISM.grounding_line_flux(geometry.cell_type,
-                             geometry_evolution.flux_staggered(),
-                             dt,
-                             False, # replace values instead of adding
-                             gl_flux)
+    PISM.ice_flow_rate_across_grounding_line(geometry.cell_type,
+                                             geometry_evolution.flux_staggered(),
+                                             dt,
+                                             gl_flux)
 
     NORM_INFINITY = 3
     np.testing.assert_almost_equal(gl_flux.norm(NORM_INFINITY), 0.0)
