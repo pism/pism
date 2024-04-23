@@ -1,4 +1,7 @@
-# Run "make all" to update lists of diagnostics and configuration parameters.
+# Run "make all" to update
+# - the list of diagnostics
+# - the list of authors
+# - the shell script installing prerequisites (for the manual)
 
 all: update_diagnostics update_authorship installation/code/install_libraries.sh
 
