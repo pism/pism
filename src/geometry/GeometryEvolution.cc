@@ -1227,26 +1227,69 @@ void GeometryEvolution::set_no_model_mask_impl(const array::Scalar &mask) {
   (void) mask;
   // the default implementation is a no-op
 }
-
-void grounding_line_flux(const array::CellType1 &cell_type,
-                         const array::Staggered1 &flux,
-                         double dt,
-                         bool add_values,
-                         array::Scalar &output) {
-
+/*!
+ * Return the volumetric ice flow rate from land to water (across the grounding line), in
+ * m^3 / s. Positive values correspond to ice moving from the grounded side to the
+ * floating (ocean) side.
+ *
+ * Mass continuity equation without source terms:
+ *
+ * dH/dt = - div(Q)
+ *
+ * Approximating the flux divergence, we get
+ *
+ * - div(Q) ~= - ((Q.e - Q.w) / dx + (Q.n - Q.s) / dy)
+ *
+ * Multiplying by the cell area we get the volume flow rate
+ *
+ * dV/dt = - dx *dy * div(Q)
+ *
+ * which can be approximated by
+ *
+ * - (dy * (Q.e - Q.w) + dx * (Q.n - Q.s)) = dy * (Q.w - Q.e) + dx * (Q.s - Q.n)
+ */
+static double volume_flow_rate_from_land_to_water(const stencils::Star<int> &cell_type,
+                                                  const stencils::Star<double> &flux, double dx,
+                                                  double dy) {
   using mask::grounded;
 
+  auto Q = flux; // units: m^2 / s
+
+  // zero out fluxes between the current (floating or ocean) cell and other (floating or
+  // ocean) cells
+  Q.n *= (int)grounded(cell_type.n);
+  Q.e *= (int)grounded(cell_type.e);
+  Q.s *= (int)grounded(cell_type.s);
+  Q.w *= (int)grounded(cell_type.w);
+
+  return dy * (Q.w - Q.e) + dx * (Q.s - Q.n); // units: m^3 / s
+}
+
+/*!
+ * Compute the ice flow rate across the grounding line, adding to `output` to accumulate
+ * contributions from multiple time steps.
+ *
+ * When `unit_conversion_factor` is 1 the units of `output` are "m^3 / s".
+ *
+ * Negative flux corresponds to ice moving into the ocean, i.e. from grounded to floating
+ * areas. (This convention makes it easier to compare this quantity to the surface mass
+ * balance or calving fluxes.)
+ *
+ * Different choices of the `unit_conversion_factor` make it possible to use this in
+ *
+ * - the grounding line flux diagnostic (in kg / (m^2 s)),
+ * - the volume flow rate diagnostic (in m^3 / s),
+ * - or the mass flow rate diagnostic (in kg / s).
+ */
+void ice_flow_rate_across_grounding_line(const array::CellType1 &cell_type,
+                                         const array::Staggered1 &flux,
+                                         double unit_conversion_factor, array::Scalar &output) {
   auto grid = output.grid();
 
-  const double
-    dx = grid->dx(),
-    dy = grid->dy();
+  const double dx = grid->dx(), // units: m
+      dy          = grid->dy(); // units: m
 
-  auto cell_area = grid->cell_area();
-
-  auto ice_density = grid->ctx()->config()->get_number("constants.ice.density");
-
-  array::AccessScope list{&cell_type, &flux, &output};
+  array::AccessScope list{ &cell_type, &flux, &output };
 
   ParallelSection loop(grid->com);
   try {
@@ -1255,35 +1298,19 @@ void grounding_line_flux(const array::CellType1 &cell_type,
 
       double result = 0.0;
 
-      if (cell_type.ocean(i ,j)) {
+      if (cell_type.ocean(i, j)) {
         auto M = cell_type.star_int(i, j);
-        auto Q = flux.star(i, j);
+        auto Q = flux.star(i, j); // units: m^2 / s
 
-        if (grounded(M.n)) {
-          result += Q.n * dx;
-        }
+        // note the sign change: here *negative* values correspond to ice moving from
+        // grounded to floating areas since it can sometimes be interpreted as "mass loss"
+        result = -volume_flow_rate_from_land_to_water(M, Q, dx, dy); // units: m^3 / s
 
-        if (grounded(M.e)) {
-          result += Q.e * dy;
-        }
-
-        if (grounded(M.s)) {
-          result -= Q.s * dx;
-        }
-
-        if (grounded(M.w)) {
-          result -= Q.w * dy;
-        }
-
-        // convert from "m^3 / s" to "kg / m^2"
-        result *= dt * (ice_density / cell_area);
+        // convert from "m^3 / s" to "kg"
+        result *= unit_conversion_factor;
       }
 
-      if (add_values) {
-        output(i, j) += result;
-      } else {
-        output(i, j) = result;
-      }
+      output(i, j) += result;
     }
   } catch (...) {
     loop.failed();
@@ -1291,21 +1318,18 @@ void grounding_line_flux(const array::CellType1 &cell_type,
   loop.check();
 }
 
-/*!
- * Compute the total grounding line flux over a time step, in kg.
- */
 double total_grounding_line_flux(const array::CellType1 &cell_type,
                                  const array::Staggered1 &flux,
                                  double dt) {
-  using mask::grounded;
-
   auto grid = cell_type.grid();
 
   const double
-    dx = grid->dx(),
-    dy = grid->dy();
+    dx = grid->dx(),            // units: m
+    dy = grid->dy();            // units: m
 
-  auto ice_density = grid->ctx()->config()->get_number("constants.ice.density");
+  auto ice_density = grid->ctx()->config()->get_number("constants.ice.density"); // units: kg / m^3
+
+  double conversion_factor = dt * ice_density;
 
   double total_flux = 0.0;
 
@@ -1316,31 +1340,16 @@ double total_grounding_line_flux(const array::CellType1 &cell_type,
     for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double volume_flux = 0.0;
-
-      if (cell_type.ocean(i ,j)) {
+      if (cell_type.ocean(i, j)) {
         auto M = cell_type.star_int(i, j);
-        auto Q = flux.star(i, j); // m^2 / s
+        auto Q = flux.star(i, j); // units: m^2 / s
 
-        if (grounded(M.n)) {
-          volume_flux += Q.n * dx;
-        }
-
-        if (grounded(M.e)) {
-          volume_flux += Q.e * dy;
-        }
-
-        if (grounded(M.s)) {
-          volume_flux -= Q.s * dx;
-        }
-
-        if (grounded(M.w)) {
-          volume_flux -= Q.w * dy;
-        }
+        // note the sign change: here *negative* values correspond to ice moving from
+        // grounded to floating areas since it can sometimes be interpreted as "mass loss"
+        double volume_flux = -volume_flow_rate_from_land_to_water(M, Q, dx, dy); // units: m^3 / s
+        // convert from "m^3 / s" to "kg" and sum up
+        total_flux += volume_flux * conversion_factor;
       }
-
-      // convert from "m^3 / s" to "kg" and sum up
-      total_flux += volume_flux * dt * ice_density;
     }
   } catch (...) {
     loop.failed();

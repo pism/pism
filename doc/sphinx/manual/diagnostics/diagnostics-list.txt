@@ -392,6 +392,12 @@ Spatially-variable fields
    :Units: kg
    :Description: ice mass per cell
 
+#. ``ice_mass_transport_across_grounding_line``
+
+   :Units: Gt year-1
+   :Description: ice mass flow rate across the grounding line
+   :Comment: Negative values correspond to mass moving from an icy grounded area into a lake or ocean. This convention makes it easier to compare to calving, frontal melt, and discharge fluxes.
+
 #. ``ice_surface_liquid_water_fraction``
 
    :Units: 1
@@ -623,19 +629,19 @@ Spatially-variable fields
 
      :Units: Pa
      :Description: X-component of the driving shear stress at the base of ice
-     :Comment: this is the driving stress used by the SSA solver
+     :Comment: this is the driving stress used by the SSAFD solver
 
    - ``taud_y``
 
      :Units: Pa
      :Description: Y-component of the driving shear stress at the base of ice
-     :Comment: this is the driving stress used by the SSA solver
+     :Comment: this is the driving stress used by the SSAFD solver
 
 #. ``taud_mag``
 
    :Units: Pa
    :Description: magnitude of the driving shear stress at the base of ice
-   :Comment: this is the magnitude of the driving stress used by the SSA solver
+   :Comment: this is the magnitude of the driving stress used by the SSAFD solver
 
 #. ``tauxz``
 
