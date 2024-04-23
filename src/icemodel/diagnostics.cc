@@ -3087,6 +3087,44 @@ protected:
   }
 };
 
+class MassTransportAcrossGroundingLine : public DiagAverageRate<IceModel> {
+public:
+  MassTransportAcrossGroundingLine(const IceModel *m)
+      : DiagAverageRate<IceModel>(m, "ice_mass_transport_across_grounding_line", RATE) {
+
+    m_accumulator.metadata()["units"] = "kg";
+
+    m_vars = { { m_sys, "ice_mass_transport_across_grounding_line" } };
+
+    m_vars[0]
+        .long_name("ice mass flow rate across the grounding line")
+        .units("kg s-1")
+        .output_units("Gt year-1");
+    m_vars[0]["cell_methods"] = "time: mean";
+
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"] =
+        "Negative values correspond to mass moving from an icy grounded area into a lake or ocean."
+        " This convention makes it easier to compare to calving, frontal melt, and discharge fluxes.";
+  }
+
+protected:
+  void update_impl(double dt) {
+    auto grid = model->grid();
+    double ice_density =
+        grid->ctx()->config()->get_number("constants.ice.density"); // units: kg / m^3
+
+    // factor used to convert from m^3/s to kg
+    double unit_conversion_factor = dt * ice_density; // units: kg * s / m^3
+
+    ice_flow_rate_across_grounding_line(model->geometry().cell_type,
+                                        model->geometry_evolution().flux_staggered(),
+                                        unit_conversion_factor, m_accumulator);
+
+    m_interval_length += dt;
+  }
+};
+
 
 } // end of namespace diagnostics
 
@@ -3186,6 +3224,7 @@ void IceModel::init_diagnostics() {
     {"dHdt",                     f(new ThicknessRateOfChange(this))},
     {"bmelt",                    d::wrap(m_basal_melt_rate)},
     {"grounding_line_flux",      f(new GroundingLineFlux(this))},
+    {"ice_mass_transport_across_grounding_line", f(new MassTransportAcrossGroundingLine(this))},
 
     // misc
     {"rank", f(new Rank(this))},
