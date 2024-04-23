@@ -131,6 +131,10 @@ static double diff_uphill(double L, double C, double R) {
   return 0.5 * (dL + dR);
 }
 
+static double diff_centered(double L, double /* unused */, double R) {
+  return 0.5 * (R - L);
+}
+
 //! @brief Compute the gravitational driving stress.
 /*!
 Computes the gravitational driving stress at the base of the ice:
@@ -148,6 +152,11 @@ void SSAFDBase::compute_driving_stress(const array::Scalar &ice_thickness,
   bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   bool surface_gradient_inward =
       m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
+
+  auto diff_grounded = diff_centered;
+  if (m_config->get_flag("stress_balance.ssa.fd.upstream_surface_slope_approximation")) {
+    diff_grounded = diff_uphill;
+  }
 
   double dx = m_grid->dx(), dy = m_grid->dy();
 
@@ -206,7 +215,7 @@ void SSAFDBase::compute_driving_stress(const array::Scalar &ice_thickness,
 
       if (east + west == 2 and mask::grounded_ice(M.c)) {
         // interior of the ice blob: use the "uphill-biased" difference
-        h_x = diff_uphill(h.w, h.c, h.e) / dx;
+        h_x = diff_grounded(h.w, h.c, h.e) / dx;
       } else if (east + west > 0) {
         h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
         if (floating_ice(M.c) and (ice_free_ocean(M.e) or ice_free_ocean(M.w))) {
@@ -227,7 +236,7 @@ void SSAFDBase::compute_driving_stress(const array::Scalar &ice_thickness,
 
       if (north + south == 2 and mask::grounded_ice(M.c)) {
         // interior of the ice blob: use the "uphill-biased" difference
-        h_y = diff_uphill(h.s, h.c, h.n) / dy;
+        h_y = diff_grounded(h.s, h.c, h.n) / dy;
       } else if (north + south > 0) {
         h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
         if (floating_ice(M.c) and (ice_free_ocean(M.s) or ice_free_ocean(M.n))) {

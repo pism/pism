@@ -2220,6 +2220,10 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the ``SSAFD`` matrix with :config:'basal_resistance.beta_ice_free_bedrock' to avoid solver failures.";
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_type = "flag";
 
+    pism_config:stress_balance.ssa.fd.upstream_surface_slope_approximation = "yes";
+    pism_config:stress_balance.ssa.fd.upstream_surface_slope_approximation_doc = "Use an upstream-biased finite difference to estimate the surface slope in the driving stress computation";
+    pism_config:stress_balance.ssa.fd.upstream_surface_slope_approximation_type = "flag";
+
     pism_config:stress_balance.ssa.flow_law = "gpbld";
     pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:stress_balance.ssa.flow_law_doc = "The SSA flow law.";
