@@ -7,11 +7,11 @@ header = """
    Edit doc/acknowledge.py, doc/funding.csv, and doc/citing-pism.bib
 """
 
-acknowledgement = """
+acknowledgment = """
 Acknowledging PISM funding sources
 ----------------------------------
 
-If you use PISM in a publication then we ask for an acknowledgement of funding and a
+If you use PISM in a publication then we ask for an acknowledgment of funding and a
 citation. However, unless PISM developers are involved in the preparation of the
 publication at the usual co-author level, we do not expect co-authorship on PISM-using
 papers.
@@ -103,7 +103,7 @@ if options.manual:
 Development of PISM is supported by {grants}.""".format(grants=join(grants)))
 else:
     print(header)
-    print(acknowledgement)
+    print(acknowledgment)
     print("""
     Development of PISM is supported by {grants}.
 """.format(grants=join(grants)))

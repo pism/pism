@@ -6,7 +6,7 @@ PISM |version| documentation
 .. toctree::
    :maxdepth: 3
 
-   acknowledgements.rst
+   acknowledgments.rst
 
    installation/index.rst
 

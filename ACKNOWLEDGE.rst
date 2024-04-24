@@ -8,7 +8,7 @@
 Acknowledging PISM funding sources
 ----------------------------------
 
-If you use PISM in a publication then we ask for an acknowledgement of funding and a
+If you use PISM in a publication then we ask for an acknowledgment of funding and a
 citation. However, unless PISM developers are involved in the preparation of the
 publication at the usual co-author level, we do not expect co-authorship on PISM-using
 papers.
