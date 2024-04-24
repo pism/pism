@@ -207,6 +207,20 @@ void check_consistency_epsg(const MappingInfo &info) {
   }
 }
 
+std::string grid_name(const pism::File &file, const std::string &variable_name,
+                      pism::units::System::Ptr sys) {
+  std::string result = file.name();
+  for (const auto &d : file.dimensions(variable_name)) {
+    auto type = file.dimension_type(d, sys);
+
+    if (type == pism::X_AXIS or type == pism::Y_AXIS) {
+      result += ":";
+      result += d;
+    }
+  }
+  return result;
+}
+
 MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
                                 units::System::Ptr unit_system) {
   MappingInfo result(mapping_name, unit_system);
@@ -555,7 +569,7 @@ static std::string lambert_cylindrical_equal_area_to_proj(const VariableMetadata
   return result;
 }
 
-static std::string latitude_longitude_to_proj(const VariableMetadata &mapping) {
+static std::string latitude_longitude_to_proj(const VariableMetadata &/* unused */) {
   // No parameters
   return "+proj=lonlat +type=crs";
 }

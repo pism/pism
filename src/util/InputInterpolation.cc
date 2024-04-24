@@ -37,31 +37,6 @@
 
 namespace pism {
 
-/*!
- * Return the string that describes a 2D grid present in a NetCDF file.
- *
- * Here `variable_name` is the name of a 2D variable used to extract
- * grid information.
- *
- * We assume that a file may contain more than one grid, so the file
- * name alone is not sufficient.
- *
- * The output has the form "input_file.nc:y:x".
- */
-std::string InputInterpolation::grid_name(const pism::File &file, const std::string &variable_name,
-                                          pism::units::System::Ptr sys) {
-  std::string result = file.name();
-  for (const auto &d : file.dimensions(variable_name)) {
-    auto type = file.dimension_type(d, sys);
-
-    if (type == pism::X_AXIS or type == pism::Y_AXIS) {
-      result += ":";
-      result += d;
-    }
-  }
-  return result;
-}
-
 double InputInterpolation::regrid(const SpatialVariableMetadata &metadata, const pism::File &file,
                                   int record_index, const Grid &grid, petsc::Vec &output) const {
   if (record_index == -1) {

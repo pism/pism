@@ -59,9 +59,6 @@ public:
   double regrid(const SpatialVariableMetadata &metadata, const pism::File &file, int record_index,
                 const Grid &grid, petsc::Vec &output) const;
 
-  static std::string grid_name(const File &file, const std::string &variable_name,
-                               units::System::Ptr sys);
-
 protected:
   InputInterpolation();
   virtual double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,

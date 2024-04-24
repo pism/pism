@@ -1424,15 +1424,15 @@ std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<do
                                                             const std::string &variable_name,
                                                             InterpolationType type) const {
 
-  auto grid_name = InputInterpolation::grid_name(input_file, variable_name, ctx()->unit_system());
+  auto name = grid_name(input_file, variable_name, ctx()->unit_system());
 
   if (levels.size() < 2) {
-    if (m_impl->regridding_2d[grid_name] == nullptr) {
-      m_impl->regridding_2d[grid_name] =
+    if (m_impl->regridding_2d[name] == nullptr) {
+      m_impl->regridding_2d[name] =
         InputInterpolation::create(*this, levels, input_file, variable_name, type);
     }
 
-    return m_impl->regridding_2d[grid_name];
+    return m_impl->regridding_2d[name];
   }
 
   return InputInterpolation::create(*this, levels, input_file, variable_name, type);

@@ -47,7 +47,7 @@ class Vec;
 class InputInterpolationYAC : public InputInterpolation {
 public:
   InputInterpolationYAC(const Grid &target_grid, const File &input_file,
-                   const std::string &variable_name);
+                        const std::string &variable_name);
   virtual ~InputInterpolationYAC();
 
   void regrid(const File &file, array::Scalar &target) const;
