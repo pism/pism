@@ -10,17 +10,17 @@ Spatially-variable fields
 
 #. ``air_temp_mean_summer``
 
-   :Units: Kelvin
+   :Units: kelvin
    :Description: mean summer near-surface air temperature used in the cosine yearly cycle
 
 #. ``air_temp_sd``
 
-   :Units: Kelvin
+   :Units: kelvin
    :Description: standard deviation of near-surface air temperature
 
 #. ``air_temp_snapshot``
 
-   :Units: Kelvin
+   :Units: kelvin
    :Description: instantaneous value of the near-surface air temperature
 
 #. ``atmosphere_transmissivity``
@@ -30,25 +30,25 @@ Spatially-variable fields
 
 #. ``basal_mass_flux_floating``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: average basal mass flux over the reporting interval (floating areas)
    :Comment: positive flux corresponds to ice gain
 
 #. ``basal_mass_flux_grounded``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: average basal mass flux over the reporting interval (grounded areas)
    :Comment: positive flux corresponds to ice gain
 
 #. ``basal_melt_rate_grounded``
 
-   :Units: m s-1
+   :Units: m s^-1
    :Description: ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)
    :Comment: positive basal melt rate corresponds to ice loss
 
 #. ``bedtoptemp``
 
-   :Units: Kelvin
+   :Units: kelvin
    :Description: temperature at the top surface of the bedrock thermal layer
 
 #. ``beta``
@@ -58,18 +58,18 @@ Spatially-variable fields
 
 #. ``bfrict``
 
-   :Units: W m-2
+   :Units: W m^-2
    :Description: basal frictional heating
 
 #. ``bheatflx``
 
-   :Units: W m-2
+   :Units: W m^-2
    :Description: upward geothermal flux at the bottom bedrock surface
    :Comment: positive values correspond to an upward flux
 
 #. ``bmelt``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time
    :Standard name: ``land_ice_basal_melt_rate``
    :Comment: positive basal melt rate corresponds to ice loss
@@ -83,12 +83,12 @@ Spatially-variable fields
 
    - ``bwatvel[0]``
 
-     :Units: m s-1
+     :Units: m s^-1
      :Description: velocity of water in subglacial layer, i-offset
 
    - ``bwatvel[1]``
 
-     :Units: m s-1
+     :Units: m s^-1
      :Description: velocity of water in subglacial layer, j-offset
 
 #. ``bwp``
@@ -108,7 +108,7 @@ Spatially-variable fields
 
 #. ``climatic_mass_balance``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: surface mass balance (accumulation/ablation) rate
    :Standard name: ``land_ice_surface_specific_mass_balance_flux``
 
@@ -119,44 +119,44 @@ Spatially-variable fields
 
 #. ``dHdt``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: ice thickness rate of change
    :Standard name: ``tendency_of_land_ice_thickness``
 
 #. ``dbdt``
 
-   :Units: m s-1
+   :Units: m s^-1
    :Description: bedrock uplift rate
    :Standard name: ``tendency_of_bedrock_altitude``
 
 #. ``debm_insolation_driven_melt_flux``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: surface insolation melt, averaged over the reporting interval
 
 #. ``debm_insolation_driven_melt_rate``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: surface insolation melt, averaged over the reporting interval
 
 #. ``debm_offset_melt_flux``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: offset melt, averaged over the reporting interval
 
 #. ``debm_offset_melt_rate``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: offset melt, averaged over the reporting interval
 
 #. ``debm_temperature_driven_melt_flux``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: temperature-driven melt, averaged over the reporting interval
 
 #. ``debm_temperature_driven_melt_rate``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: temperature-driven melt, averaged over the reporting interval
 
 #. ``deviatoric_stresses``
@@ -178,19 +178,19 @@ Spatially-variable fields
 
 #. ``diffusivity``
 
-   :Units: m2 s-1
+   :Units: m^2 s^-1
    :Description: diffusivity of SIA mass continuity equation
 
 #. ``diffusivity_staggered``
 
    - ``diffusivity_i``
 
-     :Units: m2 s-1
+     :Units: m^2 s^-1
      :Description: diffusivity of SIA mass continuity equation on the staggered grid (i-offset)
 
    - ``diffusivity_j``
 
-     :Units: m2 s-1
+     :Units: m^2 s^-1
      :Description: diffusivity of SIA mass continuity equation on the staggered grid (j-offset)
 
 #. ``effbwp``
@@ -200,12 +200,12 @@ Spatially-variable fields
 
 #. ``effective_air_temp``
 
-   :Units: Kelvin
+   :Units: kelvin
    :Description: effective mean-annual near-surface air temperature
 
 #. ``effective_precipitation``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: effective precipitation rate
    :Standard name: ``precipitation_flux``
 
@@ -218,17 +218,17 @@ Spatially-variable fields
 
    - ``u_effective_water_velocity``
 
-     :Units: m day-1
+     :Units: m day^-1
      :Description: x-component of the effective water velocity in the steady-state hydrology model
 
    - ``v_effective_water_velocity``
 
-     :Units: m day-1
+     :Units: m day^-1
      :Description: y-component of the effective water velocity in the steady-state hydrology model
 
 #. ``eigen_calving_rate``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: horizontal calving rate due to eigen-calving
 
 #. ``elastic_bed_displacement``
@@ -238,17 +238,17 @@ Spatially-variable fields
 
 #. ``enthalpy``
 
-   :Units: J kg-1
+   :Units: J kg^-1
    :Description: ice enthalpy (includes sensible heat, latent heat, pressure)
 
 #. ``enthalpybase``
 
-   :Units: J kg-1
+   :Units: J kg^-1
    :Description: ice enthalpy at the base of ice
 
 #. ``enthalpysurf``
 
-   :Units: J kg-1
+   :Units: J kg^-1
    :Description: ice enthalpy at 1m below the ice surface
 
 #. ``firn_depth``
@@ -260,50 +260,50 @@ Spatially-variable fields
 
    - ``uflux``
 
-     :Units: m2 year-1
+     :Units: m^2 year^-1
      :Description: Vertically integrated horizontal flux of ice in the X direction
 
    - ``vflux``
 
-     :Units: m2 year-1
+     :Units: m^2 year^-1
      :Description: Vertically integrated horizontal flux of ice in the Y direction
 
 #. ``flux_divergence``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: flux divergence
 
 #. ``flux_mag``
 
-   :Units: m2 year-1
+   :Units: m^2 year^-1
    :Description: magnitude of vertically-integrated horizontal flux of ice
 
 #. ``flux_staggered``
 
    - ``flux_staggered[0]``
 
-     :Units: m2 year-1
+     :Units: m^2 year^-1
      :Description: fluxes through cell interfaces (sides) on the staggered grid (x-offset)
 
    - ``flux_staggered[1]``
 
-     :Units: m2 year-1
+     :Units: m^2 year^-1
      :Description: fluxes through cell interfaces (sides) on the staggered grid (y-offset)
 
 #. ``frontal_melt_rate``
 
-   :Units: m day-1
+   :Units: m day^-1
    :Description: frontal melt rate
 
 #. ``frontal_melt_retreat_rate``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: retreat rate due to frontal melt
    :Comment: takes into account what part of the front is submerged
 
 #. ``grounding_line_flux``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: grounding line flux
    :Comment: Positive flux corresponds to mass moving from the ocean to an icy grounded area. This convention makes it easier to compare grounding line flux to the total discharge into the ocean
 
@@ -345,7 +345,7 @@ Spatially-variable fields
 
 #. ``heat_flux_from_bedrock``
 
-   :Units: mW m-2
+   :Units: mW m^-2
    :Description: upward geothermal flux at the top bedrock surface
    :Standard name: ``upward_geothermal_heat_flux_at_ground_level_in_land_ice``
    :Comment: positive values correspond to an upward flux
@@ -373,7 +373,7 @@ Spatially-variable fields
 
 #. ``ice_area_specific_volume``
 
-   :Units: m3/m2
+   :Units: m^3/m^2
    :Description: ice-volume-per-area in partially-filled grid cells
    :Comment: this variable represents the amount of ice in a partially-filled cell and not the corresponding geometry, so thinking about it as 'thickness' is not helpful
 
@@ -394,7 +394,7 @@ Spatially-variable fields
 
 #. ``ice_mass_transport_across_grounding_line``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: ice mass flow rate across the grounding line
    :Comment: Negative values correspond to mass moving from an icy grounded area into a lake or ocean. This convention makes it easier to compare to calving, frontal melt, and discharge fluxes.
 
@@ -405,13 +405,13 @@ Spatially-variable fields
 
 #. ``ice_surface_temp``
 
-   :Units: K
+   :Units: kelvin
    :Description: ice temperature at the top ice surface
    :Standard name: ``temperature_at_top_of_ice_sheet_model``
 
 #. ``insolation``
 
-   :Units: W m-2
+   :Units: W m^-2
    :Description: mean top of atmosphere insolation during the period when the sun is above the critical angle Phi
 
 #. ``isochronal_layer_thickness``
@@ -503,12 +503,12 @@ Spatially-variable fields
 
 #. ``shelfbmassflux``
 
-   :Units: kg m-2 s-1
+   :Units: kg m^-2 s^-1
    :Description: mass flux at the basal surface of ice shelves
 
 #. ``shelfbtemp``
 
-   :Units: Kelvin
+   :Units: kelvin
    :Description: ice temperature at the basal surface of ice shelves
 
 #. ``snow_depth``
@@ -525,38 +525,38 @@ Spatially-variable fields
 
    - ``eigen1``
 
-     :Units: s-1
+     :Units: s^-1
      :Description: first eigenvalue of the horizontal, vertically-integrated strain rate tensor
 
    - ``eigen2``
 
-     :Units: s-1
+     :Units: s^-1
      :Description: second eigenvalue of the horizontal, vertically-integrated strain rate tensor
 
 #. ``strainheat``
 
-   :Units: mW m-3
+   :Units: mW m^-3
    :Description: rate of strain heating in ice (dissipation heating)
 
 #. ``subglacial_water_flux_mag``
 
-   :Units: m2 year-1
+   :Units: m^2 year^-1
    :Description: magnitude of the subglacial water flux
 
 #. ``subglacial_water_input_rate``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: water input rate from the ice surface into the subglacial water system
    :Comment: positive flux corresponds to water gain
 
 #. ``surface_accumulation_flux``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: accumulation (precipitation minus rain), averaged over the reporting interval
 
 #. ``surface_accumulation_rate``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: accumulation (precipitation minus rain), averaged over the reporting interval
 
 #. ``surface_albedo``
@@ -577,24 +577,24 @@ Spatially-variable fields
 
 #. ``surface_melt_flux``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: surface melt, averaged over the reporting interval
    :Standard name: ``surface_snow_and_ice_melt_flux``
 
 #. ``surface_melt_rate``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: surface melt, averaged over the reporting interval
 
 #. ``surface_runoff_flux``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: surface runoff, averaged over the reporting interval
    :Standard name: ``surface_runoff_flux``
 
 #. ``surface_runoff_rate``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: surface runoff, averaged over the reporting interval
 
 #. ``taub``
@@ -655,7 +655,7 @@ Spatially-variable fields
 
 #. ``temp``
 
-   :Units: K
+   :Units: kelvin
    :Description: ice temperature
    :Standard name: ``land_ice_temperature``
 
@@ -666,7 +666,7 @@ Spatially-variable fields
 
 #. ``tempbase``
 
-   :Units: K
+   :Units: kelvin
    :Description: ice temperature at the base of ice
    :Standard name: ``land_ice_basal_temperature``
 
@@ -682,164 +682,164 @@ Spatially-variable fields
 
 #. ``temppabase``
 
-   :Units: Celsius
+   :Units: degree_Celsius
    :Description: pressure-adjusted ice temperature at the base of ice
 
 #. ``tempsurf``
 
-   :Units: K
+   :Units: kelvin
    :Description: ice temperature at 1m below the ice surface
    :Standard name: ``temperature_at_ground_level_in_snow_or_firn``
 
 #. ``tendency_of_ice_amount``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: rate of change of the ice amount
 
 #. ``tendency_of_ice_amount_due_to_basal_mass_flux``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: average basal mass flux over reporting interval
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_amount_due_to_calving``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: calving flux
    :Standard name: ``land_ice_specific_mass_flux_due_to_calving``
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_amount_due_to_conservation_error``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: average mass conservation error flux over reporting interval
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_amount_due_to_discharge``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: discharge flux (calving, frontal melt, forced retreat)
    :Standard name: ``land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting``
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_amount_due_to_flow``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: rate of change of ice amount due to flow
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_amount_due_to_forced_retreat``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: forced (prescribed) retreat flux
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_amount_due_to_frontal_melt``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: frontal melt flux
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_amount_due_to_surface_mass_flux``
 
-   :Units: kg m-2 year-1
+   :Units: kg m^-2 year^-1
    :Description: average surface mass flux over reporting interval
    :Standard name: ``land_ice_surface_specific_mass_balance_flux``
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: rate of change of the ice mass
 
 #. ``tendency_of_ice_mass_due_to_basal_mass_flux``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: average basal mass flux over reporting interval
    :Standard name: ``tendency_of_land_ice_mass_due_to_basal_mass_balance``
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass_due_to_calving``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: calving flux
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass_due_to_conservation_error``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: average mass conservation error flux over reporting interval
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass_due_to_discharge``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: discharge flux (calving, frontal melt, forced retreat)
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass_due_to_flow``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: rate of change of ice mass due to flow
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass_due_to_forced_retreat``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: forced (prescribed) retreat flux
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass_due_to_frontal_melt``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: frontal melt flux
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_ice_mass_due_to_surface_mass_flux``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: average surface mass flux over reporting interval
    :Comment: positive flux corresponds to ice gain
 
 #. ``tendency_of_subglacial_water_mass``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: rate of change of the total mass of subglacial water
    :Comment: positive flux corresponds to water gain
 
 #. ``tendency_of_subglacial_water_mass_at_domain_boundary``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: subglacial water flux at domain boundary (in regional model configurations)
    :Comment: positive flux corresponds to water gain
 
 #. ``tendency_of_subglacial_water_mass_at_grounded_margins``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: subglacial water flux at grounded ice margins
    :Comment: positive flux corresponds to water gain
 
 #. ``tendency_of_subglacial_water_mass_at_grounding_line``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: subglacial water flux at grounding lines
    :Comment: positive flux corresponds to water gain
 
 #. ``tendency_of_subglacial_water_mass_due_to_conservation_error``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: subglacial water flux due to conservation error (mass added to preserve non-negativity)
    :Comment: positive flux corresponds to water gain
 
 #. ``tendency_of_subglacial_water_mass_due_to_flow``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: rate of change subglacial water mass due to lateral flow
    :Comment: positive flux corresponds to water gain
 
 #. ``tendency_of_subglacial_water_mass_due_to_input``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: subglacial water flux due to input
    :Comment: positive flux corresponds to water gain
 
@@ -898,7 +898,7 @@ Spatially-variable fields
 
 #. ``uvel``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: horizontal velocity of ice in the X direction
    :Standard name: ``land_ice_x_velocity``
 
@@ -911,69 +911,69 @@ Spatially-variable fields
 
    - ``u_bc``
 
-     :Units: m s-1
+     :Units: m s^-1
      :Description: X-component of the SSA velocity boundary conditions
 
    - ``v_bc``
 
-     :Units: m s-1
+     :Units: m s^-1
      :Description: Y-component of the SSA velocity boundary conditions
 
 #. ``velbar``
 
    - ``ubar``
 
-     :Units: m year-1
+     :Units: m year^-1
      :Description: vertical mean of horizontal ice velocity in the X direction
      :Standard name: ``land_ice_vertical_mean_x_velocity``
 
    - ``vbar``
 
-     :Units: m year-1
+     :Units: m year^-1
      :Description: vertical mean of horizontal ice velocity in the Y direction
      :Standard name: ``land_ice_vertical_mean_y_velocity``
 
 #. ``velbar_mag``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: magnitude of vertically-integrated horizontal velocity of ice
 
 #. ``velbase``
 
    - ``uvelbase``
 
-     :Units: m year-1
+     :Units: m year^-1
      :Description: x-component of the horizontal velocity of ice at the base of ice
      :Standard name: ``land_ice_basal_x_velocity``
 
    - ``vvelbase``
 
-     :Units: m year-1
+     :Units: m year^-1
      :Description: y-component of the horizontal velocity of ice at the base of ice
      :Standard name: ``land_ice_basal_y_velocity``
 
 #. ``velbase_mag``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: magnitude of horizontal velocity of ice at base of ice
 
 #. ``velsurf``
 
    - ``uvelsurf``
 
-     :Units: m year-1
+     :Units: m year^-1
      :Description: x-component of the horizontal velocity of ice at ice surface
      :Standard name: ``land_ice_surface_x_velocity``
 
    - ``vvelsurf``
 
-     :Units: m year-1
+     :Units: m year^-1
      :Description: y-component of the horizontal velocity of ice at ice surface
      :Standard name: ``land_ice_surface_y_velocity``
 
 #. ``velsurf_mag``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: magnitude of horizontal velocity of ice at ice surface
 
 #. ``viscous_bed_displacement``
@@ -983,7 +983,7 @@ Spatially-variable fields
 
 #. ``vonmises_calving_rate``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: horizontal calving rate due to von Mises calving
 
 #. ``vonmises_calving_threshold``
@@ -998,34 +998,34 @@ Spatially-variable fields
 
 #. ``vvel``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: horizontal velocity of ice in the Y direction
    :Standard name: ``land_ice_y_velocity``
 
 #. ``wallmelt``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: wall melt into subglacial hydrology layer from (turbulent) dissipation of energy in transportable water
 
 #. ``wvel``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: vertical velocity of ice, relative to geoid
 
 #. ``wvel_rel``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: vertical velocity of ice, relative to base of ice directly below
 
 #. ``wvelbase``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: vertical velocity of ice at the base of ice, relative to the geoid
    :Standard name: ``land_ice_basal_upward_velocity``
 
 #. ``wvelsurf``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: vertical velocity of ice at ice surface, relative to the geoid
    :Standard name: ``land_ice_surface_upward_velocity``
 
@@ -1036,14 +1036,14 @@ Scalar time-series
 
 #. ``basal_mass_flux_floating``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: total sub-shelf ice flux
    :Standard name: ``tendency_of_land_ice_mass_due_to_basal_mass_balance``
    :Comment: positive means ice gain
 
 #. ``basal_mass_flux_grounded``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: total over grounded ice domain of basal mass flux
    :Standard name: ``tendency_of_land_ice_mass_due_to_basal_mass_balance``
    :Comment: positive means ice gain
@@ -1060,35 +1060,35 @@ Scalar time-series
 
 #. ``grounding_line_flux``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: total ice flux across the grounding line
    :Comment: negative flux corresponds to ice loss into the ocean
 
 #. ``ice_area_glacierized``
 
-   :Units: m2
+   :Units: m^2
    :Description: glacierized area
 
 #. ``ice_area_glacierized_cold_base``
 
-   :Units: m2
+   :Units: m^2
    :Description: glacierized area where basal ice is cold
 
 #. ``ice_area_glacierized_floating``
 
-   :Units: m2
+   :Units: m^2
    :Description: area of ice shelves in glacierized areas
    :Standard name: ``floating_ice_shelf_area``
 
 #. ``ice_area_glacierized_grounded``
 
-   :Units: m2
+   :Units: m^2
    :Description: area of grounded ice in glacierized areas
    :Standard name: ``grounded_ice_sheet_area``
 
 #. ``ice_area_glacierized_temperate_base``
 
-   :Units: m2
+   :Units: m^2
    :Description: glacierized area where basal ice is temperate
 
 #. ``ice_enthalpy``
@@ -1114,42 +1114,42 @@ Scalar time-series
 
 #. ``ice_volume``
 
-   :Units: m3
+   :Units: m^3
    :Description: volume of the ice, including seasonal cover
 
 #. ``ice_volume_cold``
 
-   :Units: m3
+   :Units: m^3
    :Description: volume of cold ice, including seasonal cover
 
 #. ``ice_volume_glacierized``
 
-   :Units: m3
+   :Units: m^3
    :Description: volume of the ice in glacierized areas
 
 #. ``ice_volume_glacierized_cold``
 
-   :Units: m3
+   :Units: m^3
    :Description: volume of cold ice in glacierized areas
 
 #. ``ice_volume_glacierized_floating``
 
-   :Units: m3
+   :Units: m^3
    :Description: volume of ice shelves in glacierized areas
 
 #. ``ice_volume_glacierized_grounded``
 
-   :Units: m3
+   :Units: m^3
    :Description: volume of grounded ice in glacierized areas
 
 #. ``ice_volume_glacierized_temperate``
 
-   :Units: m3
+   :Units: m^3
    :Description: volume of temperate ice in glacierized areas
 
 #. ``ice_volume_temperate``
 
-   :Units: m3
+   :Units: m^3
    :Description: volume of temperate ice, including seasonal cover
 
 #. ``limnsw``
@@ -1160,18 +1160,18 @@ Scalar time-series
 
 #. ``liquified_ice_flux``
 
-   :Units: m3 / year
+   :Units: m^3 / year
    :Description: rate of ice loss due to liquefaction, averaged over the reporting interval
    :Comment: positive means ice loss
 
 #. ``max_diffusivity``
 
-   :Units: m2 s-1
+   :Units: m^2 s^-1
    :Description: maximum diffusivity of the flow (usually from the SIA model)
 
 #. ``max_horizontal_vel``
 
-   :Units: m year-1
+   :Units: m year^-1
    :Description: max(max(abs(u)), max(abs(v))) for the horizontal velocity of ice over volume of the ice in last time step during time-series reporting interval
 
 #. ``sea_level_rise_potential``
@@ -1181,74 +1181,74 @@ Scalar time-series
 
 #. ``surface_accumulation_rate``
 
-   :Units: kg year-1
+   :Units: kg year^-1
    :Description: surface accumulation rate (PDD model)
 
 #. ``surface_melt_rate``
 
-   :Units: kg year-1
+   :Units: kg year^-1
    :Description: surface melt rate (PDD model)
 
 #. ``surface_runoff_rate``
 
-   :Units: kg year-1
+   :Units: kg year^-1
    :Description: surface runoff rate (PDD model)
 
 #. ``tendency_of_ice_mass``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: rate of change of the mass of ice, including seasonal cover
 
 #. ``tendency_of_ice_mass_due_to_basal_mass_flux``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: total over ice domain of bottom surface ice mass flux
    :Standard name: ``tendency_of_land_ice_mass_due_to_basal_mass_balance``
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_due_to_calving``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: calving flux
    :Standard name: ``tendency_of_land_ice_mass_due_to_calving``
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_due_to_conservation_error``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: total numerical flux needed to preserve non-negativity of ice thickness
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_due_to_discharge``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: discharge flux (frontal melt, calving, forced retreat)
    :Standard name: ``tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting``
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_due_to_flow``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: rate of change of the mass of ice due to flow (i.e. prescribed ice thickness)
 
 #. ``tendency_of_ice_mass_due_to_surface_mass_flux``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: total over ice domain of top surface ice mass flux
    :Standard name: ``tendency_of_land_ice_mass_due_to_surface_mass_balance``
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_glacierized``
 
-   :Units: Gt year-1
+   :Units: Gt year^-1
    :Description: rate of change of the ice mass in glacierized areas
 
 #. ``tendency_of_ice_volume``
 
-   :Units: m3 year-1
+   :Units: m^3 year^-1
    :Description: rate of change of the ice volume, including seasonal cover
 
 #. ``tendency_of_ice_volume_glacierized``
 
-   :Units: m3 year-1
+   :Units: m^3 year^-1
    :Description: rate of change of the ice volume in glacierized areas
