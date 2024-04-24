@@ -285,6 +285,11 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                              const std::string &variable_name) {
   auto ctx = target_grid.ctx();
 
+  if (target_grid.get_mapping_info().proj.empty()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "internal grid projection is not known");
+  }
+
+
   yac_set_abort_handler((yac_abort_func)pism_yac_error_handler);
 
   try {
@@ -299,6 +304,12 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     auto mapping = get_projection_info(input_file, mapping_variable_name, ctx->unit_system());
 
     source_grid->set_mapping_info(mapping);
+
+    if (source_grid->get_mapping_info().proj.empty()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "unsupported or missing projection info for the grid '%s'",
+                                    source_grid_name.c_str());
+    }
 
     log->message(2, "Input grid:\n");
     source_grid->report_parameters();

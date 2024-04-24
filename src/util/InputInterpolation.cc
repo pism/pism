@@ -103,11 +103,13 @@ InputInterpolation::create(const Grid &target_grid,
 
   auto mapping_variable_name = input_file.read_text_attribute(variable_name, "grid_mapping");
 
-  auto projection =
+  auto source_projection =
       get_projection_info(input_file, mapping_variable_name, target_grid.ctx()->unit_system()).proj;
 
+  auto target_projection = target_grid.get_mapping_info().proj;
+
 #if (Pism_USE_YAC_INTERPOLATION == 1)
-  if (levels.size() < 2 and (not projection.empty())) {
+  if (levels.size() < 2 and (not source_projection.empty()) and (not target_projection.empty())) {
     return std::make_shared<InputInterpolationYAC>(target_grid, input_file, variable_name);
   }
 #endif
