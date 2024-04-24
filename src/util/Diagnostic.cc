@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -158,10 +158,9 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
 
   m_variable["ancillary_variables"] = name + "_aux";
 
+  m_dimension.long_name("time").units(m_grid->ctx()->time()->units_string());
   m_dimension["calendar"] = m_grid->ctx()->time()->calendar();
-  m_dimension["long_name"] = "time";
   m_dimension["axis"] = "T";
-  m_dimension["units"] = m_grid->ctx()->time()->units_string();
 }
 
 TSDiagnostic::~TSDiagnostic() {
@@ -170,10 +169,10 @@ TSDiagnostic::~TSDiagnostic() {
 
 void TSDiagnostic::set_units(const std::string &units,
                              const std::string &output_units) {
-  m_variable["units"] = units;
+  m_variable.units(units);
 
   if (not m_config->get_flag("output.use_MKS")) {
-    m_variable["output_units"] = output_units;
+    m_variable.output_units(output_units);
   }
 }
 
