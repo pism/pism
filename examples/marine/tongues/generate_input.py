@@ -64,7 +64,7 @@ try:
                                      "long_name": "ice thickness"})
 
     nc.define_2d_field("climatic_mass_balance", attrs={"units": "kg m-2 year-1"})
-    nc.define_2d_field("ice_surface_temp", attrs={"units": "Celsius"})
+    nc.define_2d_field("ice_surface_temp", attrs={"units": "degree_Celsius"})
 
     nc.define_2d_field("u_bc", attrs={"units": "m/year"})
     nc.define_2d_field("v_bc", attrs={"units": "m/year"})

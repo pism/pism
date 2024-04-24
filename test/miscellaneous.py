@@ -1232,36 +1232,36 @@ class ScalarForcing(TestCase):
 
         # good input
         PISM.testing.create_scalar_forcing(self.filename,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            self.values, self.times, time_bounds)
 
         # non-increasing times
         PISM.testing.create_scalar_forcing(self.filename_decreasing,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            [0, 1], [1, 0], time_bounds=[1, 2, 0, 1])
 
         # wrong time bounds
         PISM.testing.create_scalar_forcing(self.filename_wrong_bounds,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            [0, 1], [0, 1], time_bounds=[0, 2, 2, 3])
         # invalid number of dimensions
         grid = create_dummy_grid()
         PISM.testing.create_forcing(grid,
                                     self.filename_2d,
                                     "delta_T",
-                                    "Kelvin",
+                                    "kelvin",
                                     [0, 1],
                                     "seconds since 1-1-1",
                                     times=[0, 1])
 
         # only one value
         PISM.testing.create_scalar_forcing(self.filename_1,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            [1], [0], time_bounds=[0, 4])
 
         # no time bounds
         PISM.testing.create_scalar_forcing(self.filename_no_bounds,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            [1], [0], time_bounds=None)
 
     def tearDown(self):
@@ -1280,15 +1280,15 @@ class ScalarForcing(TestCase):
             return PISM.ScalarForcing(ctx.ctx,
                                       filename,
                                       "delta_T",
-                                      "K",
-                                      "K",
+                                      "kelvin",
+                                      "kelvin",
                                       "temperature offsets", periodic)
 
         return PISM.ScalarForcing(ctx.ctx,
                                   "surface.delta_T",
                                   "delta_T",
-                                  "K",
-                                  "K",
+                                  "kelvin",
+                                  "kelvin",
                                   "temperature offsets")
 
     def test_file_not_set(self):
@@ -1380,7 +1380,7 @@ class ScalarForcing(TestCase):
         def compute_average(times, time_bounds, values, t, dt, periodic=False):
             filename = PISM.testing.filename("forcing-")
             try:
-                PISM.testing.create_scalar_forcing(filename, "delta_T", "Kelvin",
+                PISM.testing.create_scalar_forcing(filename, "delta_T", "kelvin",
                                                    values, times, time_bounds)
 
                 F = self.create(filename, periodic)

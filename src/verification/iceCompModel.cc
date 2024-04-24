@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -779,10 +779,10 @@ void IceCompModel::reportErrors() {
     }
 
     if ((m_testname == 'F') || (m_testname == 'G')) {
-      write(m_sys, file, start, "maximum_temperature", "Kelvin", "maximum ice temperature error", maxTerr);
-      write(m_sys, file, start, "average_temperature", "Kelvin", "average ice temperature error", avTerr);
-      write(m_sys, file, start, "maximum_basal_temperature", "Kelvin", "maximum basal temperature error", basemaxTerr);
-      write(m_sys, file, start, "average_basal_temperature", "Kelvin", "average basal temperature error", baseavTerr);
+      write(m_sys, file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
+      write(m_sys, file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
+      write(m_sys, file, start, "maximum_basal_temperature", "kelvin", "maximum basal temperature error", basemaxTerr);
+      write(m_sys, file, start, "average_basal_temperature", "kelvin", "average basal temperature error", baseavTerr);
 
       {
         units::Converter c(m_sys, "J s-1 m-3", "1e6 J s-1 m-3");
@@ -800,10 +800,10 @@ void IceCompModel::reportErrors() {
     }
 
     if ((m_testname == 'K') || (m_testname == 'O')) {
-      write(m_sys, file, start, "maximum_temperature", "Kelvin", "maximum ice temperature error", maxTerr);
-      write(m_sys, file, start, "average_temperature", "Kelvin", "average ice temperature error", avTerr);
-      write(m_sys, file, start, "maximum_bedrock_temperature", "Kelvin", "maximum bedrock temperature error", maxTberr);
-      write(m_sys, file, start, "average_bedrock_temperature", "Kelvin", "average bedrock temperature error", avTberr);
+      write(m_sys, file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
+      write(m_sys, file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
+      write(m_sys, file, start, "maximum_bedrock_temperature", "kelvin", "maximum bedrock temperature error", maxTberr);
+      write(m_sys, file, start, "average_bedrock_temperature", "kelvin", "average bedrock temperature error", avTberr);
     }
 
     if (m_testname == 'O') {

@@ -123,7 +123,7 @@ def climatic_mass_balance(grid, value):
 
 def ice_surface_temp(grid, value):
     temperature = PISM.Scalar(grid, "ice_surface_temp")
-    temperature.metadata(0).long_name("ice temperature at the top surface").units("Kelvin")
+    temperature.metadata(0).long_name("ice temperature at the top surface").units("kelvin")
     temperature.set(value)
     return temperature
 
@@ -172,7 +172,7 @@ class DeltaT(TestCase):
         self.dT = -5.0
         self.geometry = PISM.Geometry(self.grid)
 
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin",
+        create_scalar_forcing(self.filename, "delta_T", "kelvin",
                               [self.dT], [0], time_bounds=[0, 1])
 
     def test_surface_delta_t(self):
@@ -329,7 +329,7 @@ class Elevation(TestCase):
         options.setValue("-climatic_mass_balance",
                          "{},{},{},{},{}".format(M_min, M_max, z_min, z_ela, z_max))
 
-        T = PISM.util.convert(0.5 * (T_min + T_max), "Celsius", "Kelvin")
+        T = PISM.util.convert(0.5 * (T_min + T_max), "degree_Celsius", "kelvin")
         SMB = PISM.util.convert(1.87504, "m/year", "m/s") * config.get_number("constants.ice.density")
 
         model = PISM.SurfaceElevation(self.grid, PISM.AtmosphereUniform(self.grid))
@@ -357,7 +357,7 @@ class TemperatureIndex1(TestCase):
 
         model.update(self.geometry, 0, 1)
 
-        T = config.get_number("atmosphere.uniform.temperature", "Kelvin")
+        T = config.get_number("atmosphere.uniform.temperature", "kelvin")
         omega = 0.0
 
         accumulation = config.get_number("atmosphere.uniform.precipitation", "kg m-2 second-1")
@@ -502,7 +502,7 @@ class Anomaly(TestCase):
         delta_SMB.write(self.filename)
 
         delta_T = PISM.Scalar(self.grid, "ice_surface_temp_anomaly")
-        delta_T.metadata(0).long_name("2D surface temperature anomaly").units("Kelvin").output_units("Kelvin")
+        delta_T.metadata(0).long_name("2D surface temperature anomaly").units("kelvin").output_units("kelvin")
         delta_T.set(self.dT)
 
         delta_T.write(self.filename)
@@ -542,7 +542,7 @@ class Cache(TestCase):
         self.simple = surface_simple(self.grid)
 
         time_bounds = np.array([0, 1, 1, 2, 2, 3, 3, 4]) * seconds_per_year
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin", [1, 2, 3, 4],
+        create_scalar_forcing(self.filename, "delta_T", "kelvin", [1, 2, 3, 4],
                               times=None, time_bounds=time_bounds)
 
         config.set_string("surface.delta_T.file", self.filename)
@@ -739,7 +739,7 @@ class ISMIP6(TestCase):
 
         SMB_ref.metadata(0).long_name("reference SMB").units("kg m-2 s-1").output_units("kg m-2 s-1").standard_name("land_ice_surface_specific_mass_balance_flux")
 
-        T_ref.metadata(0).set_string("units", "K")
+        T_ref.metadata(0).set_string("units", "kelvin")
 
         out = PISM.util.prepare_output(filename, append_time=True)
 
@@ -763,7 +763,7 @@ class ISMIP6(TestCase):
         dSMBdz.metadata(0).long_name("SMB gradient").units("kg m-2 s-1 m-1").output_units("kg m-2 s-1 m-1")
 
         aT = PISM.Scalar(grid, "ice_surface_temp_anomaly")
-        aT.metadata(0).long_name("temperature anomaly").units("Kelvin").output_units("Kelvin")
+        aT.metadata(0).long_name("temperature anomaly").units("kelvin").output_units("kelvin")
 
         dTdz = PISM.Scalar(grid, "ice_surface_temp_gradient")
         dTdz.metadata(0).long_name("surface temperature gradient").units("K m-1").output_units("K m-1")

@@ -183,7 +183,7 @@ def generate_pism_input(x, y, xx, yy):
                               "standard_name": "land_ice_surface_specific_mass_balance"})
     nc.define_2d_field("ice_surface_temp", time_dependent=False,
                        attrs={"long_name": "ice surface temp (K) for -surface given",
-                              "units": "Kelvin",
+                              "units": "kelvin",
                               "valid_min": 0.0})
     nc.define_2d_field("bmelt", time_dependent=False,
                        attrs={"long_name": "basal melt rate",

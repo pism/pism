@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,7 +36,7 @@ TemperatureModel::TemperatureModel(
 
   m_ice_temperature.metadata(0)
       .long_name("ice temperature")
-      .units("K")
+      .units("kelvin")
       .standard_name("land_ice_temperature");
   m_ice_temperature.metadata()["valid_min"] = {0.0};
 }

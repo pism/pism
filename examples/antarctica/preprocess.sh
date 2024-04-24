@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) 2009-2018, 2020, 2023 PISM authors
+# Copyright (C) 2009-2018, 2020, 2023, 2024 PISM authors
 #
 # downloads the ALBMAPv1 dataset and prepares it for PISM
 #
@@ -71,7 +71,7 @@ precipitation@long_name = "precipitation";
 
 air_temp[$y, $x] = 0.0f;
 air_temp(0:Ny-1,0:Nx-1) = temp;
-air_temp@units="Celsius";
+air_temp@units="degree_Celsius";
 air_temp@long_name = temp@long_name;
 
 bed[$y, $x] = fill;

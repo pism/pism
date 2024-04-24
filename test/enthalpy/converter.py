@@ -248,7 +248,7 @@ def plot_converter(name, EC):
     plt.plot(Z, T_melting, label="melting temperature", lw=2)
     plt.plot(Z, T, label="temperature corresponding to constant E", lw=2)
     plt.legend(loc='best')
-    plt.ylabel("Kelvin")
+    plt.ylabel("kelvin")
     plt.grid()
     plt.xlabel("height above the base of the ice, m")
 

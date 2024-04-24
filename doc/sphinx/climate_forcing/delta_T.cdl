@@ -12,7 +12,7 @@ variables:
     time:long_name = "time" ;
   double time_bounds(time, nv) ;
   double delta_T(time) ;
-    delta_T:units = "Kelvin" ;
+    delta_T:units = "kelvin" ;
     delta_T:long_name = "temperature offsets" ;
 data:
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023, 2024 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -388,7 +388,7 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(std::shared_ptr<const Grid> grid)
 
   m_temp_mj.metadata(0)
       .long_name("mean July air temp from Fausto et al (2009) parameterization")
-      .units("K");
+      .units("kelvin");
 }
 
 LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int i, int j,

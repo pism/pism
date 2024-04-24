@@ -63,7 +63,7 @@ b.long_name = "bed elevation"
 b[:] = b0
 
 T_s = f.createVariable("ice_surface_temp", np.float64, ("y", "x"))
-T_s.units = "Kelvin"
+T_s.units = "kelvin"
 T_s[:] = T_mean_annual
 
 M = f.createVariable("climatic_mass_balance", np.float64, ("y", "x"))
@@ -71,7 +71,7 @@ M.units = "kg m-2 s-1"
 M[:] = M0
 
 dT = f.createVariable("delta_T", np.float64, ("time",))
-dT.units = "Kelvin"
+dT.units = "kelvin"
 dT[:] = T_surface(time, 0.0, T_amplitude, summer_peak_day)
 
 f.close()

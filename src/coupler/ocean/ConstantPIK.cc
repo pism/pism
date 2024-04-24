@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019, 2021, 2022, 2023, 2024 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -106,7 +106,7 @@ void PIK::mass_flux(const array::Scalar &ice_thickness, array::Scalar &result) c
     c_p_ocean         = 3974.0, // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T           = 1e-4,   // m/s, thermal exchange velocity
     ocean_salinity    = 35.0,   // g/kg
-    T_ocean           = units::convert(m_sys, -1.7, "Celsius", "Kelvin"); //Default in PISM-PIK
+    T_ocean           = units::convert(m_sys, -1.7, "degree_Celsius", "kelvin"); //Default in PISM-PIK
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 

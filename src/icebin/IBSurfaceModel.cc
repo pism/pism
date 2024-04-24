@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016, 2023 PISM Authors
+// Copyright (C) 2008-2016, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,7 @@ IBSurfaceModel::IBSurfaceModel(std::shared_ptr<const pism::Grid> grid)
       .units("W m-2");
 
   // ------- Dirichlet Bondary condition derived from deltah
-  ice_top_bc_temp.metadata(0).long_name("Temperature of the Dirichlet B.C.").units("K");
+  ice_top_bc_temp.metadata(0).long_name("Temperature of the Dirichlet B.C.").units("kelvin");
   ice_top_bc_wc.metadata(0).long_name("Water content of the Dirichlet B.C.").units("1");
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2019, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -61,7 +61,7 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
 
     m_temperature_reference.metadata(0)
         .long_name("reference temperature")
-        .units("Kelvin")
+        .units("kelvin")
         .set_time_independent(true);
 
     m_temperature_reference.metadata()["valid_range"] = { 0.0, 373.15 };
@@ -107,7 +107,7 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
 
       m_temperature_anomaly->metadata(0)
           .long_name("ice surface temperature anomaly")
-          .units("Kelvin");
+          .units("kelvin");
     }
 
     {

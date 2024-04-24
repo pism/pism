@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -356,7 +356,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
     K           = ice_k / (ice_density * ice_c),
     T_min       = config->get_number("energy.minimum_allowed_temperature"),
     T_melting   = config->get_number("constants.fresh_water.melting_point_temperature",
-                                     "Kelvin");
+                                     "kelvin");
 
   array::AccessScope list{&ice_surface_temp, &surface_mass_balance,
       &ice_thickness, &basal_heat_flux, &result};

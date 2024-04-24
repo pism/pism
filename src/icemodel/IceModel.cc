@@ -213,7 +213,7 @@ void IceModel::allocate_storage() {
   {
     m_bedtoptemp.metadata(0)
         .long_name("temperature at the top surface of the bedrock thermal layer")
-        .units("Kelvin");
+        .units("kelvin");
   }
 
   // basal melt rate

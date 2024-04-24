@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -72,7 +72,7 @@ void EISMINTII::init_impl(const Geometry &geometry) {
   }
 
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
-  m_T_min = options::Real(m_sys, "-Tmin", "T min, Kelvin", "Kelvin", m_T_min);
+  m_T_min = options::Real(m_sys, "-Tmin", "T min, Kelvin", "kelvin", m_T_min);
 
   options::Real Mmax(m_sys, "-Mmax", "Maximum accumulation, m year-1",
                      "m year-1",

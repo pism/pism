@@ -85,12 +85,12 @@ netcdf pism_config {
     pism_config:atmosphere.fausto_air_temp.d_ma = 314.98;
     pism_config:atmosphere.fausto_air_temp.d_ma_doc = "41.83+273.15; base temperature for formula (1) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.d_ma_type = "number";
-    pism_config:atmosphere.fausto_air_temp.d_ma_units = "Kelvin";
+    pism_config:atmosphere.fausto_air_temp.d_ma_units = "kelvin";
 
     pism_config:atmosphere.fausto_air_temp.d_mj = 287.85;
     pism_config:atmosphere.fausto_air_temp.d_mj_doc = "= 14.70+273.15; base temperature for formula (2) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.d_mj_type = "number";
-    pism_config:atmosphere.fausto_air_temp.d_mj_units = "Kelvin";
+    pism_config:atmosphere.fausto_air_temp.d_mj_units = "kelvin";
 
     pism_config:atmosphere.fausto_air_temp.gamma_ma = -0.006309;
     pism_config:atmosphere.fausto_air_temp.gamma_ma_doc = "= -6.309 / 1km; mean slope lapse rate for formula (1) in :cite:`Faustoetal2009`";
@@ -281,7 +281,7 @@ netcdf pism_config {
     pism_config:atmosphere.uniform.temperature = 273.15;
     pism_config:atmosphere.uniform.temperature_doc = "Air temperature used by the ``uniform`` atmosphere model.";
     pism_config:atmosphere.uniform.temperature_type = "number";
-    pism_config:atmosphere.uniform.temperature_units = "Kelvin";
+    pism_config:atmosphere.uniform.temperature_units = "kelvin";
 
     pism_config:atmosphere.yearly_cycle.file = "";
     pism_config:atmosphere.yearly_cycle.file_doc = "Name of the file containing mean annual and mean July temperatures (:var:`air_temp_mean_annual` and :var:`air_temp_mean_summer`) and the :var:`precipitation` field.";
@@ -708,7 +708,7 @@ netcdf pism_config {
     pism_config:constants.fresh_water.melting_point_temperature = 273.15;
     pism_config:constants.fresh_water.melting_point_temperature_doc = "melting point of pure water";
     pism_config:constants.fresh_water.melting_point_temperature_type = "number";
-    pism_config:constants.fresh_water.melting_point_temperature_units = "Kelvin";
+    pism_config:constants.fresh_water.melting_point_temperature_units = "kelvin";
 
     pism_config:constants.fresh_water.specific_heat_capacity = 4170.0;
     pism_config:constants.fresh_water.specific_heat_capacity_doc = "at melting point T_0 :cite:`AschwandenBlatter`";
@@ -869,7 +869,7 @@ netcdf pism_config {
     pism_config:energy.minimum_allowed_temperature_doc = "Minimum allowed ice temperature";
     pism_config:energy.minimum_allowed_temperature_option = "low_temp";
     pism_config:energy.minimum_allowed_temperature_type = "number";
-    pism_config:energy.minimum_allowed_temperature_units = "Kelvin";
+    pism_config:energy.minimum_allowed_temperature_units = "kelvin";
 
     pism_config:energy.temperature_based = "no";
     pism_config:energy.temperature_based_doc = "Use cold ice (i.e. not polythermal) methods.";
@@ -883,12 +883,12 @@ netcdf pism_config {
     pism_config:enthalpy_converter.T_reference = 223.15;
     pism_config:enthalpy_converter.T_reference_doc = "= T_0 in enthalpy formulas in :cite:`AschwandenBuelerKhroulevBlatter`";
     pism_config:enthalpy_converter.T_reference_type = "number";
-    pism_config:enthalpy_converter.T_reference_units = "Kelvin";
+    pism_config:enthalpy_converter.T_reference_units = "kelvin";
 
     pism_config:enthalpy_converter.relaxed_is_temperate_tolerance = 0.001;
     pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_doc = "Tolerance within which ice is treated as temperate (cold-ice mode and diagnostics).";
     pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_type = "number";
-    pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_units = "Kelvin";
+    pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_units = "kelvin";
 
     pism_config:flow_law.Hooke.A = 4.42165e-9;
     pism_config:flow_law.Hooke.A_doc = "`A_{\\text{Hooke}} = (1/B_0)^n` where n=3 and `B_0` = 1.928 `a^{1/3}` Pa. See :cite:`Hooke`";
@@ -908,7 +908,7 @@ netcdf pism_config {
     pism_config:flow_law.Hooke.Tr = 273.39;
     pism_config:flow_law.Hooke.Tr_doc = "See :cite:`Hooke`";
     pism_config:flow_law.Hooke.Tr_type = "number";
-    pism_config:flow_law.Hooke.Tr_units = "Kelvin";
+    pism_config:flow_law.Hooke.Tr_units = "kelvin";
 
     pism_config:flow_law.Hooke.k = 1.17;
     pism_config:flow_law.Hooke.k_doc = "See :cite:`Hooke`";
@@ -938,7 +938,7 @@ netcdf pism_config {
     pism_config:flow_law.Paterson_Budd.T_critical = 263.15;
     pism_config:flow_law.Paterson_Budd.T_critical_doc = "Paterson-Budd critical temperature, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.T_critical_type = "number";
-    pism_config:flow_law.Paterson_Budd.T_critical_units = "Kelvin";
+    pism_config:flow_law.Paterson_Budd.T_critical_units = "kelvin";
 
     pism_config:flow_law.Schoof_regularizing_length = 1000.0;
     pism_config:flow_law.Schoof_regularizing_length_doc = "Regularizing length (Schoof definition)";
@@ -2284,12 +2284,12 @@ netcdf pism_config {
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "Threshold temperature above which all precipitation is interpreted as rain; must exceed :config:`surface.debm_simple.air_temp_all_precip_as_snow`";
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_type = "number";
-    pism_config:surface.debm_simple.air_temp_all_precip_as_rain_units = "Kelvin";
+    pism_config:surface.debm_simple.air_temp_all_precip_as_rain_units = "kelvin";
 
     pism_config:surface.debm_simple.air_temp_all_precip_as_snow = 273.15;
     pism_config:surface.debm_simple.air_temp_all_precip_as_snow_doc = "Threshold temperature below which all precipitation is interpreted as snow";
     pism_config:surface.debm_simple.air_temp_all_precip_as_snow_type = "number";
-    pism_config:surface.debm_simple.air_temp_all_precip_as_snow_units = "Kelvin";
+    pism_config:surface.debm_simple.air_temp_all_precip_as_snow_units = "kelvin";
 
     pism_config:surface.debm_simple.albedo_input.file = "";
     pism_config:surface.debm_simple.albedo_input.file_doc = "Name of the file containing the variable :var:`albedo` to use instead of parameterizing it";
@@ -2341,7 +2341,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.melting_threshold_temp = 266.65;
     pism_config:surface.debm_simple.melting_threshold_temp_doc = "Threshold temperature below which no melting occurs";
     pism_config:surface.debm_simple.melting_threshold_temp_type = "number";
-    pism_config:surface.debm_simple.melting_threshold_temp_units = "Kelvin";
+    pism_config:surface.debm_simple.melting_threshold_temp_units = "kelvin";
 
     pism_config:surface.debm_simple.paleo.eccentricity =  0.0167;
     pism_config:surface.debm_simple.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";
@@ -2380,7 +2380,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.positive_threshold_temp = 273.15;
     pism_config:surface.debm_simple.positive_threshold_temp_doc = "Temperature threshold used to define the \"positive\" temperature";
     pism_config:surface.debm_simple.positive_threshold_temp_type = "number";
-    pism_config:surface.debm_simple.positive_threshold_temp_units = "Kelvin";
+    pism_config:surface.debm_simple.positive_threshold_temp_units = "kelvin";
 
     pism_config:surface.debm_simple.refreeze = 0.6;
     pism_config:surface.debm_simple.refreeze_doc = "Refreeze fraction: this fraction of snow melt is assumed to re-freeze. See also :config:`surface.debm_simple.refreeze_ice_melt`.";
@@ -2399,7 +2399,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.std_dev = 5.0;
     pism_config:surface.debm_simple.std_dev_doc = "Standard deviation of daily near-surface air temperature variation";
     pism_config:surface.debm_simple.std_dev_type = "number";
-    pism_config:surface.debm_simple.std_dev_units = "Kelvin";
+    pism_config:surface.debm_simple.std_dev_units = "kelvin";
 
     pism_config:surface.debm_simple.std_dev.file = "";
     pism_config:surface.debm_simple.std_dev.file_doc = "The file to read :var:`air_temp_sd` (standard deviation of air temperature) from";
@@ -2414,7 +2414,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.std_dev.param.b = 0.66;
     pism_config:surface.debm_simple.std_dev.param.b_doc = "Parameter `b` in `\\sigma = \\max(a\\, (T - T_{\\text{melting}}) + b, 0)`. Used only if :config:`surface.debm_simple.std_dev.param.enabled` is set to yes.";
     pism_config:surface.debm_simple.std_dev.param.b_type = "number";
-    pism_config:surface.debm_simple.std_dev.param.b_units = "Kelvin";
+    pism_config:surface.debm_simple.std_dev.param.b_units = "kelvin";
 
     pism_config:surface.debm_simple.std_dev.param.enabled = "no";
     pism_config:surface.debm_simple.std_dev.param.enabled_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by :config:`geometry.ice_free_thickness_standard`.";
@@ -2545,12 +2545,12 @@ netcdf pism_config {
     pism_config:surface.pdd.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.pdd.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed :config:`surface.pdd.air_temp_all_precip_as_snow` to avoid division by zero, because difference is in a denominator";
     pism_config:surface.pdd.air_temp_all_precip_as_rain_type = "number";
-    pism_config:surface.pdd.air_temp_all_precip_as_rain_units = "Kelvin";
+    pism_config:surface.pdd.air_temp_all_precip_as_rain_units = "kelvin";
 
     pism_config:surface.pdd.air_temp_all_precip_as_snow = 273.15;
     pism_config:surface.pdd.air_temp_all_precip_as_snow_doc = "threshold temperature below which all precipitation is snow";
     pism_config:surface.pdd.air_temp_all_precip_as_snow_type = "number";
-    pism_config:surface.pdd.air_temp_all_precip_as_snow_units = "Kelvin";
+    pism_config:surface.pdd.air_temp_all_precip_as_snow_units = "kelvin";
 
     pism_config:surface.pdd.factor_ice = 0.00879120879120879;
     pism_config:surface.pdd.factor_ice_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`; = (8 mm liquid-water-equivalent) / (pos degree day)";
@@ -2565,12 +2565,12 @@ netcdf pism_config {
     pism_config:surface.pdd.fausto.T_c = 272.15;
     pism_config:surface.pdd.fausto.T_c_doc = "= -1 + 273.15; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.T_c_type = "number";
-    pism_config:surface.pdd.fausto.T_c_units = "Kelvin";
+    pism_config:surface.pdd.fausto.T_c_units = "kelvin";
 
     pism_config:surface.pdd.fausto.T_w = 283.15;
     pism_config:surface.pdd.fausto.T_w_doc = "= 10 + 273.15; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.T_w_type = "number";
-    pism_config:surface.pdd.fausto.T_w_units = "Kelvin";
+    pism_config:surface.pdd.fausto.T_w_units = "kelvin";
 
     pism_config:surface.pdd.fausto.beta_ice_c = 0.015;
     pism_config:surface.pdd.fausto.beta_ice_c_doc = "water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`";
@@ -2630,7 +2630,7 @@ netcdf pism_config {
     pism_config:surface.pdd.positive_threshold_temp = 273.15;
     pism_config:surface.pdd.positive_threshold_temp_doc = "temperature used to determine meaning of \"positive\" degree day";
     pism_config:surface.pdd.positive_threshold_temp_type = "number";
-    pism_config:surface.pdd.positive_threshold_temp_units = "Kelvin";
+    pism_config:surface.pdd.positive_threshold_temp_units = "kelvin";
 
     pism_config:surface.pdd.refreeze = 0.6;
     pism_config:surface.pdd.refreeze_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`";
@@ -2664,7 +2664,7 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev.param_b = 0.66;
     pism_config:surface.pdd.std_dev.param_b_doc = "Parameter `b` in `\\Sigma = aT + b`, with `T` in degrees C. Used only if :config:`surface.pdd.std_dev.use_param` is set to yes.";
     pism_config:surface.pdd.std_dev.param_b_type = "number";
-    pism_config:surface.pdd.std_dev.param_b_units = "Kelvin";
+    pism_config:surface.pdd.std_dev.param_b_units = "kelvin";
 
     pism_config:surface.pdd.std_dev.periodic = "no";
     pism_config:surface.pdd.std_dev.periodic_doc = "If true, interpret ``air_temp_sd`` read from :config:`surface.pdd.std_dev.file` as periodic in time";
@@ -2677,7 +2677,7 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev.value = 5.0;
     pism_config:surface.pdd.std_dev.value_doc = "standard deviation of daily temp variation; = EISMINT-Greenland value :cite:`RitzEISMINT`";
     pism_config:surface.pdd.std_dev.value_type = "number";
-    pism_config:surface.pdd.std_dev.value_units = "Kelvin";
+    pism_config:surface.pdd.std_dev.value_units = "kelvin";
 
     pism_config:surface.pressure = 0.0;
     pism_config:surface.pressure_doc = "atmospheric pressure; = pressure at ice surface";

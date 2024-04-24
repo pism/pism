@@ -910,7 +910,7 @@ Temperature::Temperature(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]
       .long_name("ice temperature")
       .standard_name("land_ice_temperature")
-      .units("K");
+      .units("kelvin");
   m_vars[0]["valid_min"] = { 0.0 };
 }
 
@@ -1030,7 +1030,7 @@ protected:
 TemperaturePABasal::TemperaturePABasal(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = { { m_sys, "temppabase" } };
-  m_vars[0].long_name("pressure-adjusted ice temperature at the base of ice").units("Celsius");
+  m_vars[0].long_name("pressure-adjusted ice temperature at the base of ice").units("degree_Celsius");
 }
 
 std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
@@ -1185,7 +1185,7 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
   }
 
   m_vars = { { m_sys, name } };
-  m_vars[0].long_name(long_name).standard_name(standard_name).units("K");
+  m_vars[0].long_name(long_name).standard_name(standard_name).units("kelvin");
   m_vars[0]["_FillValue"] = { m_fill_value };
 }
 
@@ -1242,7 +1242,7 @@ TemperatureSurface::TemperatureSurface(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]
       .long_name("ice temperature at 1m below the ice surface")
       .standard_name("temperature_at_ground_level_in_snow_or_firn") // InitMIP "standard" name
-      .units("K");
+      .units("kelvin");
   m_vars[0]["_FillValue"] = { m_fill_value };
 }
 

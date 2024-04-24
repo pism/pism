@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ StuffAsAnomaly::StuffAsAnomaly(std::shared_ptr<const Grid> g, std::shared_ptr<Su
   m_mass_flux.metadata()["output_units"] = "kg m-2 year-1";
 
   m_temp.set_attrs("climate_state", "ice temperature at the ice surface",
-                   "K", "");
+                   "kelvin", "");
 
   // create special variables
   m_mass_flux_0.set_attrs("internal", "surface mass flux at the beginning of a run",
@@ -50,11 +50,11 @@ StuffAsAnomaly::StuffAsAnomaly(std::shared_ptr<const Grid> g, std::shared_ptr<Su
   m_mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
                             "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
 
-  m_temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
+  m_temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "kelvin",
                    "");
 
   m_temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
-                       "K", "");
+                       "kelvin", "");
 }
 
 void StuffAsAnomaly::init_impl(const Geometry &geometry) {

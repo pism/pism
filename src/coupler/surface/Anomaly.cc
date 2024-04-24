@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -53,7 +53,7 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in
   m_ice_surface_temp_anomaly->metadata(0)
       .long_name(
           "anomaly of the temperature of the ice at the ice surface but below firn processes")
-      .units("Kelvin");
+      .units("kelvin");
 
   m_climatic_mass_balance_anomaly->metadata(0)
       .long_name("anomaly of the surface mass balance (accumulation/ablation) rate")

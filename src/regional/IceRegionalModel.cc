@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -315,7 +315,7 @@ public:
     : Diag<IceRegionalModel>(m) {
 
     m_vars = { { m_sys, "ch_temp", m_grid->z() } };
-    m_vars[0].long_name("temperature of the cryo-hydrologic system").units("Kelvin");
+    m_vars[0].long_name("temperature of the cryo-hydrologic system").units("kelvin");
   }
 
 protected:

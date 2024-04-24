@@ -70,7 +70,7 @@ def prepare_output_file(nc, x, y, include_vel_bc=True):
     nc.define_2d_field("topg", attrs=attrs)
 
     attrs = {'long_name': "mean annual temperature at ice surface",
-             "units": "Kelvin",
+             "units": "kelvin",
              "_FillValue": 248.0}
     nc.define_2d_field("ice_surface_temp", attrs=attrs)
 

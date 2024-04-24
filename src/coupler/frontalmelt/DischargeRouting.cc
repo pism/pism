@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021, 2022, 2023 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2024 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -60,7 +60,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
 
   m_theta_ocean->metadata(0)
       .long_name("potential temperature of the adjacent ocean")
-      .units("Celsius");
+      .units("degree_Celsius");
 
   m_theta_ocean->init(opt.filename, opt.periodic);
 }

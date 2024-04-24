@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -58,7 +58,7 @@ Given::Given(std::shared_ptr<const Grid> g)
 
   m_shelfbtemp->metadata(0)
       .long_name("absolute temperature at ice shelf base")
-      .units("Kelvin");
+      .units("kelvin");
 
   m_shelfbmassflux->metadata(0)
       .long_name("ice mass flux from ice shelf base (positive flux is loss from ice shelf)")

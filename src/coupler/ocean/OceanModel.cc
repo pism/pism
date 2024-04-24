@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@ std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_temperature(std::
   auto result = std::make_shared<array::Scalar>(g, "shelfbtemp");
   result->metadata(0)
       .long_name("ice temperature at the bottom of floating ice")
-      .units("Kelvin");
+      .units("kelvin");
   return result;
 }
 
@@ -161,7 +161,7 @@ class PO_shelf_base_temperature : public Diag<OceanModel> {
 public:
   PO_shelf_base_temperature(const OceanModel *m) : Diag<OceanModel>(m) {
     m_vars = { { m_sys, "shelfbtemp" } };
-    m_vars[0].long_name("ice temperature at the basal surface of ice shelves").units("Kelvin");
+    m_vars[0].long_name("ice temperature at the basal surface of ice shelves").units("kelvin");
   }
 
 protected:

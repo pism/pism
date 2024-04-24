@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2020, 2023, 2024 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -44,13 +44,13 @@ YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
   m_air_temp_mean_annual.metadata(0)
       .long_name(
           "mean annual near-surface air temperature (without sub-year time-dependence or forcing)")
-      .units("K");
+      .units("kelvin");
   m_air_temp_mean_annual.metadata()["source"] = m_reference;
 
   m_air_temp_mean_summer.metadata(0)
       .long_name(
           "mean summer (NH: July/ SH: January) near-surface air temperature (without sub-year time-dependence or forcing)")
-      .units("Kelvin");
+      .units("kelvin");
   m_air_temp_mean_summer.metadata()["source"] = m_reference;
 
   m_precipitation.metadata(0)
@@ -160,7 +160,7 @@ public:
     m_vars = { { m_sys, "air_temp_mean_summer" } };
     m_vars[0]
         .long_name("mean summer near-surface air temperature used in the cosine yearly cycle")
-        .units("Kelvin");
+        .units("kelvin");
   }
 
 private:

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,8 +32,8 @@ PrecipitationScaling::PrecipitationScaling(std::shared_ptr<const Grid> grid,
   m_forcing.reset(new ScalarForcing(*grid->ctx(),
                                     "atmosphere.precip_scaling",
                                     "delta_T",
-                                    "Kelvin",
-                                    "Kelvin",
+                                    "kelvin",
+                                    "kelvin",
                                     "air temperature offsets"));
 
   m_exp_factor = m_config->get_number("atmosphere.precip_exponential_factor_for_temperature");

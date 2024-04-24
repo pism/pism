@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2024 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -95,7 +95,7 @@ SurfaceModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
 
   result->metadata(0)
       .long_name("temperature of the ice at the ice surface but below firn processes")
-      .units("Kelvin");
+      .units("kelvin");
 
   result->metadata()["valid_range"] = { 0.0, 323.15 }; // [0C, 50C]
 
@@ -477,7 +477,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m) : Diag<SurfaceMo
   m_vars[0]
       .long_name("ice temperature at the top ice surface")
       .standard_name("temperature_at_top_of_ice_sheet_model")
-      .units("K");
+      .units("kelvin");
 }
 
 std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() const {

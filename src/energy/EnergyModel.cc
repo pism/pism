@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -148,7 +148,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
       temp.metadata(0).set_name("temp");
       temp.metadata(0)
           .long_name("ice temperature")
-          .units("Kelvin")
+          .units("kelvin")
           .standard_name("land_ice_temperature");
 
       if (do_regrid) {

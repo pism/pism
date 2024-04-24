@@ -65,7 +65,7 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
     T = PISM.Scalar(grid, "shelfbtemp")
-    T.set_attrs("climate", "shelf base temperature", "Kelvin", "Kelvin", "", 0)
+    T.set_attrs("climate", "shelf base temperature", "kelvin", "kelvin", "", 0)
     T.set(temperature)
     T.write(filename)
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -56,7 +56,7 @@ Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atmos
 
   m_temperature->metadata(0)
       .long_name("temperature of the ice at the ice surface but below firn processes")
-      .units("Kelvin");
+      .units("kelvin");
   m_temperature->metadata()["valid_range"] = { 0.0, 323.15 }; // [0C, 50C]
 
   const double smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");

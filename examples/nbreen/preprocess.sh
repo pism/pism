@@ -19,7 +19,7 @@ ncap2 -O -s "climatic_mass_balance=0.0*topg" $PISMDATA $PISMDATA
 ncatted -O -a units,climatic_mass_balance,o,c,"kg m-2 year-1" $PISMDATA
 ncatted -O -a standard_name,climatic_mass_balance,o,c,"land_ice_surface_specific_mass_balance_flux" $PISMDATA
 ncap2 -O -s "ice_surface_temp=0.0*topg+260.0" $PISMDATA $PISMDATA
-ncatted -O -a units,ice_surface_temp,o,c,"K" $PISMDATA
+ncatted -O -a units,ice_surface_temp,o,c,"kelvin" $PISMDATA
 ncatted -O -a standard_name,ice_surface_temp,d,c, $PISMDATA
 
 # edit mask name

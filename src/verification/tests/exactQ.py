@@ -167,7 +167,7 @@ climatic_mass_balance_var = def_var(nc, "climatic_mass_balance", "kg m-2 s-1", f
 climatic_mass_balance_var.standard_name = "land_ice_surface_specific_mass_balance"
 climatic_mass_balance_var[:] = climatic_mass_balance
 
-ice_surface_temp_var = def_var(nc, "ice_surface_temp", "K", fill_value)
+ice_surface_temp_var = def_var(nc, "ice_surface_temp", "kelvin", fill_value)
 ice_surface_temp_var[:] = ice_surface_temp
 
 u_bc_var = def_var(nc, "u_bc", "m s-1", fill_value)

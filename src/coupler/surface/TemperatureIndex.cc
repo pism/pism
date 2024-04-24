@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2023 PISM Authors
+// Copyright (C) 2011--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -88,7 +88,7 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
 
   m_air_temp_sd->metadata(0)
       .long_name("standard deviation of near-surface air temperature")
-      .units("Kelvin");
+      .units("kelvin");
 
   m_mass_flux.metadata(0)
       .long_name("instantaneous surface mass balance (accumulation/ablation) rate")

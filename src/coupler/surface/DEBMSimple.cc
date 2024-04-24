@@ -113,7 +113,7 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
 
   m_air_temp_sd->metadata(0)
       .long_name("standard deviation of near-surface air temperature")
-      .units("Kelvin");
+      .units("kelvin");
 
   m_mass_flux.metadata(0)
       .long_name("instantaneous surface mass balance (accumulation/ablation) rate")
