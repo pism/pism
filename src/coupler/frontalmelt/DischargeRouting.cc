@@ -33,8 +33,8 @@ DischargeRouting::DischargeRouting(std::shared_ptr<const Grid> grid)
 
   m_frontal_melt_rate.metadata(0)
       .long_name("frontal melt rate")
-      .units("m s-1")
-      .output_units("m day-1");
+      .units("m s^-1")
+      .output_units("m day^-1");
 
   m_log->message(2, "* Initializing the frontal melt model\n"
                     "  using the Rignot/Xu parameterization\n"

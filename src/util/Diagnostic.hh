@@ -231,7 +231,7 @@ protected:
   }
 
   virtual void update_impl(double dt) {
-    // Here the "factor" is used to convert units (from m to kg m-2, for example) and (possibly)
+    // Here the "factor" is used to convert units (from m to kg m^-2, for example) and (possibly)
     // integrate over the time interval using the rectangle method.
 
     double factor = m_factor * (m_input_kind == TOTAL_CHANGE ? 1.0 : dt);

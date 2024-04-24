@@ -74,8 +74,8 @@ void ForceThickness::init_impl(const Geometry &geometry) {
       2,
       "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
       "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
-      units::convert(m_sys, m_alpha, "s-1", "year-1"),
-      m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "year-1"),
+      units::convert(m_sys, m_alpha, "s^-1", "year^-1"),
+      m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s^-1", "year^-1"),
       m_ice_free_thickness_threshold);
 
   // check of the input file is really there and regrid the target thickness

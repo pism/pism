@@ -43,7 +43,7 @@ public:
   //! @brief Sets result to the mean precipitation, in "kg m-2 second-1".
   const array::Scalar& precipitation() const;
 
-  //! @brief Sets result to the mean near-surface air temperature, in degrees Kelvin.
+  //! @brief Sets result to the mean near-surface air temperature, in kelvin.
   const array::Scalar& air_temperature() const;
 
   void begin_pointwise_access() const;
@@ -56,7 +56,7 @@ public:
   void precip_time_series(int i, int j, std::vector<double> &result) const;
 
   //! \brief Sets a pre-allocated N-element array "result" to the time-series
-  //! of near-surface air temperature (degrees Kelvin) at the point i,j on the
+  //! of near-surface air temperature (kelvin) at the point i,j on the
   //! grid. Times (in years) are specified in ts. NB! Has to be surrounded by
   //! begin_pointwise_access() and end_pointwise_access()
   void temp_time_series(int i, int j, std::vector<double> &result) const;

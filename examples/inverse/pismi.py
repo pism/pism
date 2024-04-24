@@ -565,7 +565,7 @@ def run():
 
     r_mag = PISM.Scalar(grid, "inv_ssa_residual")
 
-    r_mag.metadata(0).long_name("magnitude of mismatch between observed surface velocities and their reconstrution by inversion").units("m s-1").output_units("m year-1")
+    r_mag.metadata(0).long_name("magnitude of mismatch between observed surface velocities and their reconstrution by inversion").units("m s^-1").output_units("m year^-1")
     r_mag.metadata().set_number("_FillValue", convert(-0.01, 'm/year', 'm/s'))
     r_mag.metadata().set_number("valid_min", 0.0)
 

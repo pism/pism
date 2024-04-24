@@ -44,7 +44,7 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid)
 
   m_uplift.metadata(0)
       .long_name("bedrock uplift rate")
-      .units("m s-1")
+      .units("m s^-1")
       .standard_name("tendency_of_bedrock_altitude");
 }
 

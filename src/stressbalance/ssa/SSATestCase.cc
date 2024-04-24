@@ -54,23 +54,23 @@ SSATestCase::SSATestCase(std::shared_ptr<SSA> ssa)
   // enthalpy
   m_ice_enthalpy.metadata(0)
       .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
-      .units("J kg-1");
+      .units("J kg^-1");
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
   m_bc_values.metadata(0)
       .long_name("X-component of the SSA velocity boundary conditions")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
   m_bc_values.metadata(1)
       .long_name("Y-component of the SSA velocity boundary conditions")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 
   units::System::Ptr sys  = m_grid->ctx()->unit_system();
   double fill_value =
-      units::convert(sys, m_config->get_number("output.fill_value"), "m year-1", "m second-1");
+      units::convert(sys, m_config->get_number("output.fill_value"), "m year^-1", "m second^-1");
 
-  auto large_number = units::convert(m_sys, 1e6, "m year-1", "m second-1");
+  auto large_number = units::convert(m_sys, 1e6, "m year^-1", "m second^-1");
 
   m_bc_values.metadata(0)["valid_range"] = { -large_number, large_number };
   m_bc_values.metadata(0)["_FillValue"]  = { fill_value };
@@ -256,7 +256,7 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
   }
   {
     VariableMetadata max_velocity{ "max_velocity", sys };
-    max_velocity.long_name("maximum ice velocity magnitude error").units("m year-1");
+    max_velocity.long_name("maximum ice velocity magnitude error").units("m year^-1");
     io::define_timeseries(max_velocity, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, max_velocity, start, { max_vector });
   }
@@ -268,25 +268,25 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
   }
   {
     VariableMetadata maximum_u{ "maximum_u", sys };
-    maximum_u.long_name("maximum error in the X-component of the ice velocity").units("m year-1");
+    maximum_u.long_name("maximum error in the X-component of the ice velocity").units("m year^-1");
     io::define_timeseries(maximum_u, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, maximum_u, start, { max_u });
   }
   {
     VariableMetadata maximum_v{ "maximum_v", sys };
-    maximum_v.long_name("maximum error in the Y-component of the ice velocity").units("m year-1");
+    maximum_v.long_name("maximum error in the Y-component of the ice velocity").units("m year^-1");
     io::define_timeseries(maximum_v, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, maximum_v, start, { max_v });
   }
   {
     VariableMetadata average_u{ "average_u", sys };
-    average_u.long_name("average error in the X-component of the ice velocity").units("m year-1");
+    average_u.long_name("average error in the X-component of the ice velocity").units("m year^-1");
     io::define_timeseries(average_u, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, average_u, start, { avg_u });
   }
   {
     VariableMetadata average_v{ "average_v", sys };
-    average_v.long_name("average error in the Y-component of the ice velocity").units("m year-1");
+    average_v.long_name("average error in the Y-component of the ice velocity").units("m year^-1");
     io::define_timeseries(average_v, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, average_v, start, { avg_v });
   }
@@ -333,10 +333,10 @@ void SSATestCase::write(const std::string &filename) {
   array::Vector tmp(m_grid, "_exact");
   tmp.metadata(0)
       .long_name("X-component of the SSA exact solution")
-      .units("m s-1");
+      .units("m s^-1");
   tmp.metadata(1)
       .long_name("Y-component of the SSA exact solution")
-      .units("m s-1");
+      .units("m s^-1");
 
   array::AccessScope list(tmp);
   for (auto p = m_grid->points(); p; p.next()) {
@@ -350,17 +350,17 @@ void SSATestCase::write(const std::string &filename) {
   tmp.metadata(0)
     .set_name("u_error")
     .long_name("X-component of the error (exact - computed)")
-    .units("m s-1");
+    .units("m s^-1");
   tmp.metadata(1)
     .set_name("v_error")
     .long_name("Y-component of the error (exact - computed)")
-    .units("m s-1");
+    .units("m s^-1");
 
   tmp.add(-1.0, m_ssa->velocity());
   tmp.write(file);
 
   array::Scalar error_mag(m_grid, "error_mag");
-  error_mag.metadata(0).long_name("magnitude of the error").units("m s-1");
+  error_mag.metadata(0).long_name("magnitude of the error").units("m s^-1");
   array::compute_magnitude(tmp, error_mag);
   error_mag.write(file);
 

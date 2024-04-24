@@ -46,7 +46,7 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     T.write(filename)
 
     M = PISM.Scalar(grid, "shelfbmassflux")
-    M.metadata(0).long_name("shelf base mass flux").units("kg m-2 s-1")
+    M.metadata(0).long_name("shelf base mass flux").units("kg m^-2 s^-1")
     M.set(mass_flux)
     M.write(filename)
 
@@ -292,7 +292,7 @@ class AnomalyBMB(TestCase):
         self.dBMB = -5.0
 
         delta_BMB = PISM.Scalar(self.grid, "shelf_base_mass_flux_anomaly")
-        delta_BMB.metadata(0).long_name("2D shelf base mass flux anomaly").units("kg m-2 s-1")
+        delta_BMB.metadata(0).long_name("2D shelf base mass flux anomaly").units("kg m^-2 s^-1")
         delta_BMB.set(self.dBMB)
 
         delta_BMB.dump(self.filename)

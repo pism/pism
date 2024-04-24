@@ -112,13 +112,13 @@ Pico::Pico(std::shared_ptr<const Grid> grid)
   m_T_star.metadata(0).long_name("T_star field").units("degree_Celsius");
   m_T_star.metadata()["_FillValue"] = { 0.0 };
 
-  m_overturning.metadata(0).long_name("cavity overturning").units("m^3 s-1");
+  m_overturning.metadata(0).long_name("cavity overturning").units("m^3 s^-1");
   m_overturning.metadata()["_FillValue"] = { 0.0 };
 
   m_basal_melt_rate.metadata(0)
       .long_name("PICO sub-shelf melt rate")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
   m_basal_melt_rate.metadata()["_FillValue"] = {0.0};
 
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
@@ -611,7 +611,7 @@ void Pico::beckmann_goosse(const PicoPhysics &physics,
         basal_temperature(i, j) = physics.T_pm(Soc_box0(i, j), pressure);
 
         // diagnostic outputs
-        Toc(i, j) = Toc_box0(i, j); // in Kelvin
+        Toc(i, j) = Toc_box0(i, j); // in kelvin
         Soc(i, j) = Soc_box0(i, j); // in psu
       } else {
         // Floating ice cells not connected to the ocean.

@@ -170,6 +170,6 @@ Final technical notes
 - PISM also uses attributes ``grid_mapping = "mapping" ;`` and ``coordinates = "lat lon";``
   on output variables that depend on ``y,x``.
 - Because PISM uses UDUNITS, it will write some variables in "human-friendly" units
-  instead of the SI units listed above, for instance velocities in ``m year-1`` instead of
+  instead of the SI units listed above, for instance velocities in ``m year^-1`` instead of
   ``m s-1``. This is allowed under CF. When PISM reads such a field from a NetCDF file,
   the conversion is handled automatically by UDUNITS_.

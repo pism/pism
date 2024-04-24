@@ -56,7 +56,7 @@ netcdf.putAtt(ncid, topg_id, 'units', 'm');
 netcdf.putAtt(ncid, topg_id, 'standard_name', 'bedrock_altitude');
 netcdf.putAtt(ncid, thk_id, 'units', 'm');
 netcdf.putAtt(ncid, thk_id, 'standard_name', 'land_ice_thickness');
-netcdf.putAtt(ncid, acab_id, 'units', 'm year-1');
+netcdf.putAtt(ncid, acab_id, 'units', 'm year^-1');
 netcdf.putAtt(ncid, acab_id, 'standard_name', 'land_ice_surface_specific_mass_balance');
 netcdf.putAtt(ncid, artm_id, 'units', 'K');
 

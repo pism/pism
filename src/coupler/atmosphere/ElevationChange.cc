@@ -90,7 +90,7 @@ void ElevationChange::init_impl(const Geometry &geometry) {
                    convert(m_sys, m_precip_lapse_rate, "(kg m-2 / s) / m", "(kg m-2 / year) / km"));
   } else {
     m_log->message(2,
-                   "   precipitation scaling factor with temperature: %3.3f Kelvin-1\n"
+                   "   precipitation scaling factor with temperature: %3.3f kelvin^-1\n"
                    "   temperature lapse rate: %3.3f K per km\n",
                    m_precip_exp_factor,
                    convert(m_sys, m_precip_temp_lapse_rate, "K / m", "K / km"));

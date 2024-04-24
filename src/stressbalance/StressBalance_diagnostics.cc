@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -92,13 +92,13 @@ PSB_velbar::PSB_velbar(const StressBalance *m)
   m_vars[0]
       .long_name("vertical mean of horizontal ice velocity in the X direction")
       .standard_name("land_ice_vertical_mean_x_velocity")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
   m_vars[1]
       .long_name("vertical mean of horizontal ice velocity in the Y direction")
       .standard_name("land_ice_vertical_mean_y_velocity")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 }
 
 std::shared_ptr<array::Array> PSB_velbar::compute_impl() const {
@@ -138,8 +138,8 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
 
   m_vars[0]
       .long_name("magnitude of vertically-integrated horizontal velocity of ice")
-      .units("m second-1")
-      .output_units("m year-1");
+      .units("m second^-1")
+      .output_units("m year^-1");
 
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   m_vars[0]["valid_min"] = {0.0};
@@ -170,12 +170,12 @@ PSB_flux::PSB_flux(const StressBalance *m)
   m_vars = {{m_sys, "uflux"}, {m_sys, "vflux"}};
   m_vars[0]
       .long_name("Vertically integrated horizontal flux of ice in the X direction")
-      .units("m2 s-1")
-      .output_units("m2 year-1");
+      .units("m^2 s^-1")
+      .output_units("m^2 year^-1");
   m_vars[1]
       .long_name("Vertically integrated horizontal flux of ice in the Y direction")
-      .units("m2 s-1")
-      .output_units("m2 year-1");
+      .units("m^2 s^-1")
+      .output_units("m^2 year^-1");
 }
 
 std::shared_ptr<array::Array> PSB_flux::compute_impl() const {
@@ -252,8 +252,8 @@ PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
   m_vars = { { m_sys, "flux_mag" } };
   m_vars[0]
       .long_name("magnitude of vertically-integrated horizontal flux of ice")
-      .units("m2 s-1")
-      .output_units("m2 year-1");
+      .units("m^2 s^-1")
+      .output_units("m^2 year^-1");
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   m_vars[0]["valid_min"] = {0.0};
 }
@@ -285,8 +285,8 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
   m_vars = { { m_sys, "velbase_mag" } };
   m_vars[0]
       .long_name("magnitude of horizontal velocity of ice at base of ice")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   m_vars[0]["valid_min"] = {0.0};
 }
@@ -318,8 +318,8 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
   m_vars = { { m_sys, "velsurf_mag" } };
   m_vars[0]
       .long_name("magnitude of horizontal velocity of ice at ice surface")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   m_vars[0]["valid_min"] = {0.0};
 }
@@ -362,7 +362,7 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
 
   auto large_number = to_internal(1e6);
   for (auto &v : m_vars) {
-    v.units("m s-1").output_units("m year-1");
+    v.units("m s^-1").output_units("m year^-1");
     v["valid_range"] = {-large_number, large_number};
     v["_FillValue"] = {to_internal(m_fill_value)};
   }
@@ -406,8 +406,8 @@ PSB_wvel::PSB_wvel(const StressBalance *m) : Diag<StressBalance>(m) {
   m_vars = { { m_sys, "wvel", m_grid->z() } };
   m_vars[0]
       .long_name("vertical velocity of ice, relative to geoid")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 
   auto large_number        = to_internal(1e6);
   m_vars[0]["valid_range"] = { -large_number, large_number };
@@ -495,8 +495,8 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m) : Diag<StressBalance>(m) {
   m_vars[0]
       .long_name("vertical velocity of ice at ice surface, relative to the geoid")
       .standard_name("land_ice_surface_upward_velocity") // InitMIP "standard" name
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 
   auto large_number = to_internal(1e6);
   m_vars[0]["valid_range"] = { -large_number, large_number };
@@ -538,8 +538,8 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m) : Diag<StressBalance>(m) {
   m_vars[0]
       .long_name("vertical velocity of ice at the base of ice, relative to the geoid")
       .standard_name("land_ice_basal_upward_velocity") // InitMIP "standard" name
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 
   auto large_number = to_internal(1e6);
 
@@ -590,7 +590,7 @@ PSB_velbase::PSB_velbase(const StressBalance *m) : Diag<StressBalance>(m) {
   auto large_number = to_internal(1e6);
 
   for (auto &v : m_vars) {
-    v.units("m s-1").output_units("m year-1");
+    v.units("m s^-1").output_units("m year^-1");
     v["valid_range"] = { -large_number, large_number };
     v["_FillValue"]  = { fill_value };
   }
@@ -629,7 +629,7 @@ std::shared_ptr<array::Array> PSB_velbase::compute_impl() const {
 
 PSB_bfrict::PSB_bfrict(const StressBalance *m) : Diag<StressBalance>(m) {
   m_vars = { { m_sys, "bfrict" } };
-  m_vars[0].long_name("basal frictional heating").units("W m-2");
+  m_vars[0].long_name("basal frictional heating").units("W m^-2");
 }
 
 std::shared_ptr<array::Array> PSB_bfrict::compute_impl() const {
@@ -647,8 +647,8 @@ PSB_uvel::PSB_uvel(const StressBalance *m) : Diag<StressBalance>(m) {
   m_vars[0]
       .long_name("horizontal velocity of ice in the X direction")
       .standard_name("land_ice_x_velocity")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 }
 
 /*!
@@ -705,8 +705,8 @@ PSB_vvel::PSB_vvel(const StressBalance *m) : Diag<StressBalance>(m) {
   m_vars[0]
       .long_name("horizontal velocity of ice in the Y direction")
       .standard_name("land_ice_y_velocity")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 }
 
 std::shared_ptr<array::Array> PSB_vvel::compute_impl() const {
@@ -725,8 +725,8 @@ PSB_wvel_rel::PSB_wvel_rel(const StressBalance *m) : Diag<StressBalance>(m) {
   m_vars = { { m_sys, "wvel_rel", m_grid->z() } };
   m_vars[0]
       .long_name("vertical velocity of ice, relative to base of ice directly below")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 }
 
 std::shared_ptr<array::Array> PSB_wvel_rel::compute_impl() const {
@@ -746,8 +746,8 @@ PSB_strainheat::PSB_strainheat(const StressBalance *m) : Diag<StressBalance>(m) 
   m_vars = { { m_sys, "strainheat", m_grid->z() } };
   m_vars[0]
       .long_name("rate of strain heating in ice (dissipation heating)")
-      .units("W m-3")
-      .output_units("mW m-3");
+      .units("W m^-3")
+      .output_units("mW m^-3");
 }
 
 std::shared_ptr<array::Array> PSB_strainheat::compute_impl() const {
@@ -766,10 +766,10 @@ PSB_strain_rates::PSB_strain_rates(const StressBalance *m) : Diag<StressBalance>
   m_vars = { { m_sys, "eigen1" }, { m_sys, "eigen2" } };
   m_vars[0]
       .long_name("first eigenvalue of the horizontal, vertically-integrated strain rate tensor")
-      .units("s-1");
+      .units("s^-1");
   m_vars[1]
       .long_name("second eigenvalue of the horizontal, vertically-integrated strain rate tensor")
-      .units("s-1");
+      .units("s^-1");
 }
 
 std::shared_ptr<array::Array> PSB_strain_rates::compute_impl() const {

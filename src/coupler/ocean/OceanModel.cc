@@ -41,8 +41,8 @@ std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_mass_flux(std::sh
 
   result->metadata(0)
       .long_name("shelf base mass flux")
-      .units("kg m-2 s-1")
-      .output_units("kg m-2 year-1");
+      .units("kg m^-2 s^-1")
+      .output_units("kg m^-2 year^-1");
   return result;
 }
 
@@ -180,7 +180,7 @@ class PO_shelf_base_mass_flux : public Diag<OceanModel> {
 public:
   PO_shelf_base_mass_flux(const OceanModel *m) : Diag<OceanModel>(m) {
     m_vars = { { m_sys, "shelfbmassflux" } };
-    m_vars[0].long_name("mass flux at the basal surface of ice shelves").units("kg m-2 s-1");
+    m_vars[0].long_name("mass flux at the basal surface of ice shelves").units("kg m^-2 s^-1");
   }
 
 protected:

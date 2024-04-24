@@ -366,7 +366,7 @@ public:
     : Diag<IceRegionalModel>(m) {
 
     m_vars = { { m_sys, "ch_heat_flux", m_grid->z() } };
-    m_vars[0].long_name("rate of cryo-hydrologic warming").units("W m-3");
+    m_vars[0].long_name("rate of cryo-hydrologic warming").units("W m^-3");
   }
 
 protected:

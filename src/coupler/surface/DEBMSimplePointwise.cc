@@ -56,8 +56,8 @@ namespace surface {
  * with stochastic temperature variations,” Journal of Glaciology, vol. 51, Art. no. 172,
  * 2005.
  *
- * @param[in] sigma standard deviation of daily variation of near-surface air temperature (Kelvin)
- * @param[in] temperature near-surface air temperature in "degrees Kelvin above the melting point"
+ * @param[in] sigma standard deviation of daily variation of near-surface air temperature (kelvin)
+ * @param[in] temperature near-surface air temperature in "kelvin above the melting point"
  */
 double DEBMSimplePointwise::CalovGreveIntegrand(double sigma, double temperature) {
 
@@ -415,8 +415,8 @@ double DEBMSimplePointwise::insolation(double declination,
  *
  * @param[in] time current time (seconds)
  * @param[in] dt time step length (seconds)
- * @param[in] T_std_deviation standard deviation of the near-surface air temperature (Kelvin)
- * @param[in] T near-surface air temperature (Kelvin)
+ * @param[in] T_std_deviation standard deviation of the near-surface air temperature (kelvin)
+ * @param[in] T near-surface air temperature (kelvin)
  * @param[in] surface_elevation surface elevation (meters)
  * @param[in] latitude latitude (degrees north)
  * @param[in] albedo current albedo (fraction)

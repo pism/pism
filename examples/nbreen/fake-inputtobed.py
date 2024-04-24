@@ -38,7 +38,7 @@ for a in range(1, 366):
     nc.write("water_input_rate", inputthisday, True)
 
 # Set attributes
-nc.variables["water_input_rate"].units = "kg m-2 year-1"
+nc.variables["water_input_rate"].units = "kg m^-2 year^-1"
 
 nc.close()
 innc.close()

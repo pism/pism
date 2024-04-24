@@ -33,8 +33,8 @@ Delta_P::Delta_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
     prefix         = "atmosphere.delta_P",
     variable_name  = "delta_P",
     long_name      = "precipitation offsets",
-    units          = "kg m-2 second-1",
-    external_units = "kg m-2 year-1";
+    units          = "kg m^-2 second^-1",
+    external_units = "kg m^-2 year^-1";
 
   ForcingOptions opt(*m_grid->ctx(), prefix);
 

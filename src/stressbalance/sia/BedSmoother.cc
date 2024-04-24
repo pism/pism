@@ -54,13 +54,13 @@ BedSmoother::BedSmoother(std::shared_ptr<const Grid> g)
         .units("m");
     m_C2.metadata(0)
         .long_name("polynomial coeff of H^-2, in bed roughness parameterization")
-        .units("m2");
+        .units("m^2");
     m_C3.metadata(0)
         .long_name("polynomial coeff of H^-3, in bed roughness parameterization")
-        .units("m3");
+        .units("m^3");
     m_C4.metadata(0)
         .long_name("polynomial coeff of H^-4, in bed roughness parameterization")
-        .units("m4");
+        .units("m^4");
 
     // allocate Vecs that live on processor 0:
     m_topgp0 = m_topgsmooth.allocate_proc0_copy();

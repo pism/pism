@@ -107,7 +107,7 @@ void Verification::update_L() {
 
   const double
     ice_density = m_config->get_number("constants.ice.density"),
-    a0          = units::convert(m_sys, 0.3, "m year-1", "m second-1"),
+    a0          = units::convert(m_sys, 0.3, "m year^-1", "m second^-1"),
     L           = 750e3,
     Lsqr        = L * L;
 

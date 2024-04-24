@@ -49,12 +49,12 @@ FractureDensity::FractureDensity(std::shared_ptr<const Grid> grid,
 
   m_growth_rate.metadata(0)
       .long_name("fracture growth rate")
-      .units("second-1");
+      .units("second^-1");
   m_growth_rate.metadata()["valid_min"] = { 0.0 };
 
   m_healing_rate.metadata(0)
       .long_name("fracture healing rate")
-      .units("second-1");
+      .units("second^-1");
 
   m_flow_enhancement.metadata(0)
       .long_name("fracture-induced flow enhancement");
@@ -70,12 +70,12 @@ FractureDensity::FractureDensity(std::shared_ptr<const Grid> grid,
   m_strain_rates.metadata(0).set_name("eigen1");
   m_strain_rates.metadata(0)
       .long_name("major principal component of horizontal strain-rate")
-      .units("second-1");
+      .units("second^-1");
 
   m_strain_rates.metadata(1).set_name("eigen2");
   m_strain_rates.metadata(1)
       .long_name("minor principal component of horizontal strain-rate")
-      .units("second-1");
+      .units("second^-1");
 
   m_deviatoric_stresses.metadata(0).set_name("sigma_xx");
   m_deviatoric_stresses.metadata(0).long_name("deviatoric stress in x direction").units("Pa");

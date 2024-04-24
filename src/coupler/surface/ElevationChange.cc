@@ -87,7 +87,7 @@ void ElevationChange::init_impl(const Geometry &geometry) {
                    convert(m_sys, m_smb_lapse_rate, "kg / (m2 second)", "kg / (m2 year)") / ice_density);
   } else {
     m_log->message(2,
-                   "   surface mass balance scaling factor with temperature: %3.3f Kelvin-1\n",
+                   "   surface mass balance scaling factor with temperature: %3.3f kelvin^-1\n",
                    m_smb_exp_factor);
   }
 

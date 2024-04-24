@@ -183,7 +183,7 @@ void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
       for (unsigned int k = 0; k < m_Mbz; ++k) {
         if (T[k] <= 0.0) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "invalid bedrock temperature: %f Kelvin at %d,%d,%d",
+                                        "invalid bedrock temperature: %f kelvin at %d,%d,%d",
                                         T[k], i, j, k);
         }
       }

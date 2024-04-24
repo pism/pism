@@ -123,7 +123,7 @@ void PIK::mass_flux(const array::Scalar &ice_thickness, array::Scalar &result) c
     double
       shelfbaseelev = - (ice_density / sea_water_density) * ice_thickness(i,j),
       T_f           = 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
-    // add 273.15 to convert from Celsius to Kelvin
+    // add 273.15 to convert from Celsius to kelvin
 
     // compute ocean_heat_flux according to beckmann_goosse03
     // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice

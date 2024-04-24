@@ -704,7 +704,7 @@ Energy conservation
 -------------------
 
 - ``BedThermalUnit`` ensures that computed bedrock temperatures exceed
-  zero Kelvin. See `issue 313`_.
+  zero kelvin. See `issue 313`_.
 
 - PISM no longer ignores horizontal enthalpy advection and strain
   heating near ice margins. See `issue 292`_.
@@ -731,7 +731,7 @@ Energy conservation
 
 - To allow for better code optimization, ``EnthalpyConverter`` no longer uses virtual
   methods. ``ColdEnthalpyConverter`` used in temperature-based verification tests sets ice
-  melting temperature to 1e6 Kelvin to ensure that all ice is considered "cold."
+  melting temperature to 1e6 kelvin to ensure that all ice is considered "cold."
   ``varcEnthalpyConverter``, which implemented linear-in-temperature specific heat
   capacity of ice, is removed.
 

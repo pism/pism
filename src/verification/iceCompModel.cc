@@ -158,7 +158,7 @@ void IceCompModel::allocate_storage() {
 
   m_strain_heating3_comp.metadata(0)
       .long_name("rate of compensatory strain heating in ice")
-      .units("W m-3");
+      .units("W m^-3");
 }
 
 void IceCompModel::allocate_bedrock_thermal_unit() {
@@ -785,13 +785,13 @@ void IceCompModel::reportErrors() {
       write(m_sys, file, start, "average_basal_temperature", "kelvin", "average basal temperature error", baseavTerr);
 
       {
-        units::Converter c(m_sys, "J s-1 m-3", "1e6 J s-1 m-3");
+        units::Converter c(m_sys, "J s^-1 m^-3", "1e6 J s^-1 m^-3");
         write(m_sys, file, start, "maximum_sigma", "1e6 J s-1 m-3", "maximum strain heating error", c(max_strain_heating_error));
         write(m_sys, file, start, "average_sigma", "1e6 J s-1 m-3", "average strain heating error", c(av_strain_heating_error));
       }
 
       {
-        units::Converter c(m_sys, "m second-1", "m year-1");
+        units::Converter c(m_sys, "m second^-1", "m year^-1");
         write(m_sys, file, start, "maximum_surface_velocity", "m year-1", "maximum ice surface horizontal velocity error", c(maxUerr));
         write(m_sys, file, start, "average_surface_velocity", "m year-1", "average ice surface horizontal velocity error", c(avUerr));
         write(m_sys, file, start, "maximum_surface_w", "m year-1", "maximum ice surface vertical velocity error", c(maxWerr));
@@ -807,7 +807,7 @@ void IceCompModel::reportErrors() {
     }
 
     if (m_testname == 'O') {
-      units::Converter c(m_sys, "m second-1", "m year-1");
+      units::Converter c(m_sys, "m second^-1", "m year^-1");
       write(m_sys, file, start, "maximum_basal_melt_rate", "m year -1", "maximum basal melt rate error", c(maxbmelterr));
     }
   }

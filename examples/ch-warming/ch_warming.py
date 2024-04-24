@@ -110,8 +110,8 @@ def run(T_final_years=10.0, dt_days=1, Lz=1000, Mz=101, R=20, omega=0.005):
     z_coarse = np.array(ice.grid.z())
     P_coarse = pressure(H - z_coarse)
 
-    T_mean_annual = 268.15    # mean annual temperature, Kelvin
-    T_amplitude = 6         # surface temperature aplitude, Kelvin
+    T_mean_annual = 268.15    # mean annual temperature, kelvin
+    T_amplitude = 6         # surface temperature aplitude, kelvin
     summer_peak_day = 365/2
     G = 0.0       # geothermal flux, W/m^2
 

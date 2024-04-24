@@ -166,7 +166,7 @@ One weather station
 
 :|options|: :opt:`-atmosphere one_station`
             :opt:`-atmosphere_one_station_file`
-:|variables|: :var:`air_temp` [Kelvin],
+:|variables|: :var:`air_temp` [kelvin],
               :var:`precipitation` |flux|
 :|implementation|: ``pism::atmosphere::WeatherStation``
 
@@ -191,7 +191,7 @@ Scalar temperature offsets
 This modifier applies scalar time-dependent air temperature offsets to the output of an
 atmosphere model.
 
-Please make sure that :var:`delta_T` has the units of "``Kelvin``".
+Please make sure that :var:`delta_T` has the units of "``kelvin``".
 
 .. rubric:: Parameters
 
@@ -251,7 +251,7 @@ Precipitation correction using scalar temperature offsets
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: ``-atmosphere ...,precip_scaling``
-:|variables|: :var:`delta_T` [degrees Kelvin]
+:|variables|: :var:`delta_T` [kelvin]
 :|implementation|: ``pism::atmosphere::PrecipitationScaling``
 
 This modifier implements the SeaRISE-Greenland formula for a precipitation correction from

@@ -32,7 +32,7 @@ ncks -O -v mapping,lat,lon,bheatflx,topg,thk,presprcp,smb,airtemp2m $DATANAME $P
 # convert from water equivalent thickness rate ("m year-1") to "kg m-2 year-1".
 # Assumes water density of 1000.0 kg m-3
 ncap2 -O -s "precipitation=presprcp*1000.0" $PISMVERSION $PISMVERSION
-ncatted -O -a units,precipitation,m,c,"kg m-2 year-1" $PISMVERSION
+ncatted -O -a units,precipitation,m,c,"kg m^-2 year^-1" $PISMVERSION
 ncatted -O -a long_name,precipitation,c,c,"mean annual precipitation rate" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION
@@ -47,7 +47,7 @@ ncap2 -O -s "climatic_mass_balance=1000.0*smb" $PISMVERSION $PISMVERSION
 # This is a *choice* of the model of surface mass balance in thk==0 areas.
 ncap2 -O -s "where(thk <= 0.0){climatic_mass_balance=-1000.0;}" $PISMVERSION $PISMVERSION
 ncatted -O -a standard_name,climatic_mass_balance,m,c,"land_ice_surface_specific_mass_balance_flux" $PISMVERSION
-ncatted -O -a units,climatic_mass_balance,m,c,"kg m-2 year-1" $PISMVERSION
+ncatted -O -a units,climatic_mass_balance,m,c,"kg m^-2 year^-1" $PISMVERSION
 # de-clutter by only keeping vars we want
 ncks -O -v mapping,lat,lon,bheatflx,topg,thk,precipitation,ice_surface_temp,climatic_mass_balance \
   $PISMVERSION $PISMVERSION

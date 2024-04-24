@@ -64,7 +64,7 @@ void Elevation::init_impl(const Geometry &geometry) {
     }
 
     // climatic mass balance
-    units::Converter meter_per_second(m_sys, "m year-1", "m second-1");
+    units::Converter meter_per_second(m_sys, "m year^-1", "m second^-1");
     {
       options::RealList CMB("-climatic_mass_balance",
                             "climatic mass balance parameterization",
@@ -99,7 +99,7 @@ void Elevation::init_impl(const Geometry &geometry) {
     }
   }
 
-  units::Converter meter_per_year(m_sys, "m second-1", "m year-1");
+  units::Converter meter_per_year(m_sys, "m second^-1", "m year^-1");
   m_log->message(3,
                  "     temperature at %.0f m a.s.l. = %.2f deg C\n"
                  "     temperature at %.0f m a.s.l. = %.2f deg C\n"

@@ -36,7 +36,7 @@ Reading forcing data from a file
 ++++++++++++++++++++++++++++++++
 
 :|options|: ``-ocean given``
-:|variables|: :var:`shelfbtemp` Kelvin,
+:|variables|: :var:`shelfbtemp` kelvin,
               :var:`shelfbmassflux`  |flux|
 :|implementation|: ``pism::ocean::Given``
 
@@ -79,7 +79,7 @@ Basal melt rate and temperature from thermodynamics in boundary layer
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: ``-ocean th``
-:|variables|: :var:`theta_ocean` (absolute potential ocean temperature), [Kelvin],
+:|variables|: :var:`theta_ocean` (absolute potential ocean temperature), [kelvin],
               :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg]
 :|implementation|: ``pism::ocean::GivenTH``
 
@@ -128,7 +128,7 @@ PICO
 ++++
 
 :|options|: ``-ocean pico``
-:|variables|: :var:`theta_ocean` (potential ocean temperature), [Kelvin],
+:|variables|: :var:`theta_ocean` (potential ocean temperature), [kelvin],
 
               :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg],
 
@@ -230,7 +230,7 @@ Scalar sub-shelf temperature offsets
 
 
 :|options|: :opt:`-ocean ...,delta_T`
-:|variables|: :var:`delta_T` (Kelvin)
+:|variables|: :var:`delta_T` (kelvin)
 :|implementation|: ``pism::ocean::Delta_T``
 
 This modifier implements forcing using sub-shelf ice temperature offsets.

@@ -110,7 +110,7 @@ protected:
 
 //! An EnthalpyConverter for use in verification tests.
 
-/*! Treats ice at any temperature below 10^6 Kelvin as cold (= zero liquid fraction).
+/*! Treats ice at any temperature below 10^6 kelvin as cold (= zero liquid fraction).
 
   The pressure dependence of the pressure-melting temperature is neglected.c;
 

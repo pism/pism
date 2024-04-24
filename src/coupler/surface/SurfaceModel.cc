@@ -76,8 +76,8 @@ std::shared_ptr<array::Scalar> SurfaceModel::allocate_mass_flux(std::shared_ptr<
 
   result->metadata(0)
       .long_name("surface mass balance (accumulation/ablation) rate")
-      .units("kg m-2 second-1")
-      .output_units("kg m-2 year-1")
+      .units("kg m^-2 second^-1")
+      .output_units("kg m^-2 year^-1")
       .standard_name("land_ice_surface_specific_mass_balance_flux");
 
   auto config = grid->ctx()->config();
@@ -107,7 +107,7 @@ SurfaceModel::allocate_accumulation(std::shared_ptr<const Grid> grid) {
 
   auto result = std::make_shared<array::Scalar>(grid, "surface_accumulation_flux");
 
-  result->metadata(0).long_name("surface accumulation (precipitation minus rain)").units("kg m-2");
+  result->metadata(0).long_name("surface accumulation (precipitation minus rain)").units("kg m^-2");
 
   return result;
 }
@@ -116,7 +116,7 @@ std::shared_ptr<array::Scalar> SurfaceModel::allocate_melt(std::shared_ptr<const
 
   auto result = std::make_shared<array::Scalar>(grid, "surface_melt_flux");
 
-  result->metadata(0).long_name("surface melt").units("kg m-2");
+  result->metadata(0).long_name("surface melt").units("kg m^-2");
 
   return result;
 }
@@ -125,7 +125,7 @@ std::shared_ptr<array::Scalar> SurfaceModel::allocate_runoff(std::shared_ptr<con
 
   auto result = std::make_shared<array::Scalar>(grid, "surface_runoff_flux");
 
-  result->metadata(0).long_name("surface meltwater runoff").units("kg m-2");
+  result->metadata(0).long_name("surface meltwater runoff").units("kg m^-2");
 
   return result;
 }
@@ -457,8 +457,8 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
   m_vars[0]
       .long_name("surface mass balance (accumulation/ablation) rate")
       .standard_name("land_ice_surface_specific_mass_balance_flux")
-      .units("kg m-2 second-1")
-      .output_units("kg m-2 year-1");
+      .units("kg m^-2 second^-1")
+      .output_units("kg m^-2 year^-1");
 }
 
 std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() const {
@@ -550,15 +550,15 @@ public:
       name              = "surface_melt_flux",
       long_name         = "surface melt, averaged over the reporting interval",
       standard_name     = "surface_snow_and_ice_melt_flux",
-      accumulator_units = "kg m-2",
-      internal_units    = "kg m-2 second-1",
-      external_units    = "kg m-2 year-1";
+      accumulator_units = "kg m^-2",
+      internal_units    = "kg m^-2 second^-1",
+      external_units    = "kg m^-2 year^-1";
     if (kind == MASS) {
       name              = "surface_melt_rate";
       standard_name     = "";
       accumulator_units = "kg",
-      internal_units    = "kg second-1";
-      external_units    = "Gt year-1" ;
+      internal_units    = "kg second^-1";
+      external_units    = "Gt year^-1" ;
     }
 
     m_accumulator.metadata()["units"] = accumulator_units;
@@ -613,15 +613,15 @@ public:
       name              = "surface_runoff_flux",
       long_name         = "surface runoff, averaged over the reporting interval",
       standard_name     = "surface_runoff_flux",
-      accumulator_units = "kg m-2",
-      internal_units    = "kg m-2 second-1",
-      external_units    = "kg m-2 year-1";
+      accumulator_units = "kg m^-2",
+      internal_units    = "kg m^-2 second^-1",
+      external_units    = "kg m^-2 year^-1";
     if (kind == MASS) {
       name              = "surface_runoff_rate";
       standard_name     = "",
       accumulator_units = "kg",
-      internal_units    = "kg second-1";
-      external_units    = "Gt year-1" ;
+      internal_units    = "kg second^-1";
+      external_units    = "Gt year^-1" ;
     }
 
     m_accumulator.metadata()["units"] = accumulator_units;
@@ -676,14 +676,14 @@ public:
     std::string
       name              = "surface_accumulation_flux",
       long_name         = "accumulation (precipitation minus rain), averaged over the reporting interval",
-      accumulator_units = "kg m-2",
-      internal_units    = "kg m-2 second-1",
-      external_units    = "kg m-2 year-1";
+      accumulator_units = "kg m^-2",
+      internal_units    = "kg m^-2 second^-1",
+      external_units    = "kg m^-2 year^-1";
     if (kind == MASS) {
       name              = "surface_accumulation_rate";
       accumulator_units = "kg",
-      internal_units    = "kg second-1";
-      external_units    = "Gt year-1" ;
+      internal_units    = "kg second^-1";
+      external_units    = "Gt year^-1" ;
     }
 
     m_accumulator.metadata()["units"] = accumulator_units;
@@ -751,7 +751,7 @@ public:
   TotalSurfaceAccumulation(const SurfaceModel *m)
     : TSDiag<TSFluxDiagnostic, SurfaceModel>(m, "surface_accumulation_rate") {
 
-    set_units("kg s-1", "kg year-1");
+    set_units("kg s^-1", "kg year^-1");
     m_variable["long_name"] = "surface accumulation rate (PDD model)";
   }
 
@@ -768,7 +768,7 @@ public:
   TotalSurfaceMelt(const SurfaceModel *m)
     : TSDiag<TSFluxDiagnostic, SurfaceModel>(m, "surface_melt_rate") {
 
-    set_units("kg s-1", "kg year-1");
+    set_units("kg s^-1", "kg year^-1");
     m_variable["long_name"] = "surface melt rate (PDD model)";
   }
 
@@ -785,7 +785,7 @@ public:
   TotalSurfaceRunoff(const SurfaceModel *m)
     : TSDiag<TSFluxDiagnostic, SurfaceModel>(m, "surface_runoff_rate") {
 
-    set_units("kg s-1", "kg year-1");
+    set_units("kg s^-1", "kg year^-1");
     m_variable["long_name"] = "surface runoff rate (PDD model)";
   }
 

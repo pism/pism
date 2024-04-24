@@ -41,7 +41,7 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
     m_mass_flux.metadata(0)
         .long_name(
             "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)")
-        .units("kg m-2 s-1")
+        .units("kg m^-2 s^-1")
         .set_time_independent(false);
 
     m_temperature.metadata(0)

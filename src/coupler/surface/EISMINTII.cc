@@ -72,7 +72,7 @@ void EISMINTII::init_impl(const Geometry &geometry) {
   }
 
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
-  m_T_min = options::Real(m_sys, "-Tmin", "T min, Kelvin", "kelvin", m_T_min);
+  m_T_min = options::Real(m_sys, "-Tmin", "T min, kelvin", "kelvin", m_T_min);
 
   options::Real Mmax(m_sys, "-Mmax", "Maximum accumulation, m year-1",
                      "m year-1",

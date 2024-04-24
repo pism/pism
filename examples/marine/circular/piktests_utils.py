@@ -16,7 +16,7 @@ class Parameters:
 
     vel_bc = 300     # m/year
     accumulation_rate = 0.3     # m/year
-    air_temperature = 247.0   # Kelvin
+    air_temperature = 247.0   # kelvin
     domain_size = 1000.0  # km
     topg_min = -3000.0  # m
 
@@ -76,7 +76,7 @@ def prepare_output_file(nc, x, y, include_vel_bc=True):
 
     ice_density = 910.0
     attrs = {'long_name': "mean annual net ice equivalent accumulation rate",
-             "units": "kg m-2 year-1",
+             "units": "kg m^-2 year^-1",
              "standard_name": "land_ice_surface_specific_mass_balance_flux",
              "_FillValue": 0.2 * ice_density}  # 0.2 m/year
     nc.define_2d_field("climatic_mass_balance", attrs=attrs)

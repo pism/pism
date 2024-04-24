@@ -55,7 +55,7 @@ class SSATestCaseCFBC: public SSATestCase {
 public:
   SSATestCaseCFBC(std::shared_ptr<SSA> ssa)
     : SSATestCase(ssa) {
-    m_V0 = units::convert(m_sys, 300.0, "m year-1", "m second-1");
+    m_V0 = units::convert(m_sys, 300.0, "m year^-1", "m second^-1");
     m_H0 = 600.0;                 // meters
     m_C  = 2.45e-18;
 

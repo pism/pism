@@ -69,7 +69,7 @@ ncatted -O -a units,ice_surface_temp,a,c,"degree_Celsius" $CLIMATEFILE
 # assume water density of 1000.0 [kg m-3]
 ncap2 -O -s "climatic_mass_balance=1000.0*smb" \
       -s 'climatic_mass_balance@standard_name="land_ice_surface_specific_mass_balance_flux"' \
-      -s 'climatic_mass_balance@units="kg m-2 year-1"' \
+      -s 'climatic_mass_balance@units="kg m^-2 year^-1"' \
       $CLIMATEFILE $CLIMATEFILE
 ncks -O -x -v smb $CLIMATEFILE $CLIMATEFILE
 echo "... done"

@@ -131,8 +131,8 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
                                          buffer_size, surface_input.periodic);
     m_surface_input_for_hydrology->metadata(0)
         .long_name("water input rate for the subglacial hydrology model")
-        .units("kg m-2 s-1")
-        .output_units("kg m-2 year-1");
+        .units("kg m^-2 s^-1")
+        .output_units("kg m^-2 year^-1");
     m_surface_input_for_hydrology->metadata()["valid_min"] = { 0.0 };
   }
 }
@@ -220,8 +220,8 @@ void IceModel::allocate_storage() {
   m_basal_melt_rate.metadata(0)
       .long_name(
           "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time")
-      .units("m s-1")
-      .output_units("m year-1")
+      .units("m s^-1")
+      .output_units("m year^-1")
       .standard_name("land_ice_basal_melt_rate");
   m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   m_grid->variables().add(m_basal_melt_rate);
@@ -249,7 +249,7 @@ void IceModel::allocate_storage() {
     for (int j : { 0, 1 }) {
       m_velocity_bc_values.metadata(j)["valid_range"] = { -huge_value, huge_value };
       m_velocity_bc_values.metadata(j)["_FillValue"]  = { fill_value };
-      m_velocity_bc_values.metadata(j).units("m s-1");
+      m_velocity_bc_values.metadata(j).units("m s^-1");
     }
   }
 

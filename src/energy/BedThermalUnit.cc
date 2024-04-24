@@ -97,8 +97,8 @@ BedThermalUnit::BedThermalUnit(std::shared_ptr<const Grid> g)
   {
     m_top_surface_flux.metadata(0)
         .long_name("upward geothermal flux at the top bedrock surface")
-        .units("W m-2")
-        .output_units("mW m-2")
+        .units("W m^-2")
+        .output_units("mW m^-2")
         .standard_name("upward_geothermal_heat_flux_at_ground_level_in_land_ice");
     m_top_surface_flux.metadata()["comment"] = "positive values correspond to an upward flux";
   }
@@ -106,7 +106,7 @@ BedThermalUnit::BedThermalUnit(std::shared_ptr<const Grid> g)
     // PROPOSED standard_name = lithosphere_upward_heat_flux
     m_bottom_surface_flux.metadata(0)
         .long_name("upward geothermal flux at the bottom bedrock surface")
-        .units("W m-2") // note: don't convert to "mW m-2" when saving
+        .units("W m^-2") // note: don't convert to "mW m^-2" when saving
         .set_time_independent(true);
 
     m_bottom_surface_flux.metadata()["comment"] = "positive values correspond to an upward flux";
@@ -220,8 +220,8 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
       .long_name("upward geothermal flux at the top bedrock surface")
       .standard_name((ismip6 ? "upward_geothermal_heat_flux_in_land_ice" :
                                "upward_geothermal_heat_flux_at_ground_level_in_land_ice"))
-      .units("W m-2")
-      .output_units("mW m-2");
+      .units("W m^-2")
+      .output_units("mW m^-2");
   m_vars[0]["comment"] = "positive values correspond to an upward flux";
 }
 

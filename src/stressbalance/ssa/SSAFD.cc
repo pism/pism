@@ -57,7 +57,7 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid, bool regional_mode)
 
   m_velocity_old.metadata(0)
       .long_name("old SSA velocity field; used for re-trying with a different epsilon")
-      .units("m s-1");
+      .units("m s^-1");
 
   m_nuH_old.metadata(0)
       .long_name("ice thickness times effective viscosity (before an update)")

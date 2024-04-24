@@ -44,8 +44,8 @@ std::shared_ptr<array::Scalar> AtmosphereModel::allocate_precipitation(std::shar
 
   result->metadata(0)
       .long_name("precipitation rate")
-      .units("kg m-2 second-1")
-      .output_units("kg m-2 year-1")
+      .units("kg m^-2 second^-1")
+      .output_units("kg m^-2 year^-1")
       .standard_name("precipitation_flux");
 
   return result;
@@ -169,8 +169,8 @@ public:
     m_vars[0]
         .long_name("effective precipitation rate")
         .standard_name("precipitation_flux")
-        .units("kg m-2 second-1")
-        .output_units("kg m-2 year-1");
+        .units("kg m^-2 second^-1")
+        .output_units("kg m^-2 year^-1");
   }
 
 protected:

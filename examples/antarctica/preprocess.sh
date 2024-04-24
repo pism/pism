@@ -66,7 +66,7 @@ where(precipitation > fill)
   precipitation = precipitation * ice_density;
 elsewhere
   precipitation = 0;
-precipitation@units="kg m-2 year-1";
+precipitation@units="kg m^-2 year^-1";
 precipitation@long_name = "precipitation";
 
 air_temp[$y, $x] = 0.0f;
@@ -83,7 +83,7 @@ where(bed == fill) bed = -5300;
 // Use the Shapiro & Ritzwoller geothermal flux
 bheatflx[$y, $x] = 60f;
 bheatflx(0:Ny-1,0:Nx-1) = ghfsr;
-bheatflx@units = "mW m-2";
+bheatflx@units = "mW m^-2";
 bheatflx@long_name = ghfsr@long_name;
 
 land_ice_area_fraction_retreat[$y, $x]=0;

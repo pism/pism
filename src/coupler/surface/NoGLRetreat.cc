@@ -1,4 +1,4 @@
-/* Copyright (C) 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@ NoGLRetreat::NoGLRetreat(std::shared_ptr<const Grid> grid,
     m_smb_adjustment(grid, "smb_adjustment"),
     m_min_ice_thickness(grid, "minimum_ice_thickness") {
 
-  m_smb_adjustment.metadata()["units"] = "kg m-2 s-1";
+  m_smb_adjustment.metadata()["units"] = "kg m^-2 s^-1";
 
   m_mass_flux    = allocate_mass_flux(grid);
   m_accumulation = allocate_accumulation(grid);
@@ -147,13 +147,13 @@ public:
                                    "no_gl_retreat_smb_adjustment",
                                    RATE)
   {
-    m_accumulator.metadata()["units"] = "kg m-2";
+    m_accumulator.metadata()["units"] = "kg m^-2";
 
     m_vars = { { m_sys, "no_gl_retreat_smb_adjustment" } };
     m_vars[0]
         .long_name("SMB adjustment needed to maintain grounded ice extent")
-        .units("kg m-2 s-1")
-        .output_units("kg m-2 year-1");
+        .units("kg m^-2 s^-1")
+        .output_units("kg m^-2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }

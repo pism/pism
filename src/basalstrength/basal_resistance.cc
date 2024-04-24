@@ -39,7 +39,7 @@ void IceBasalResistancePlasticLaw::print_info(const Logger &log,
                                               int threshold,
                                               units::System::Ptr system) const {
   log.message(threshold, "Using purely plastic till with eps = %10.5e m year-1.\n",
-              units::convert(system, m_plastic_regularize, "m second-1", "m year-1"));
+              units::convert(system, m_plastic_regularize, "m second^-1", "m year^-1"));
 }
 
 
@@ -86,14 +86,14 @@ void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
   if (m_q == 1.0) {
     log.message(threshold,
                  "Using linearly viscous till with u_threshold = %.2f m year-1.\n",
-                 units::convert(system, m_u_threshold, "m second-1", "m year-1"));
+                 units::convert(system, m_u_threshold, "m second^-1", "m year^-1"));
   } else {
     log.message(threshold,
                  "Using pseudo-plastic till with eps = %10.5e m year-1, q = %.4f,"
                  " and u_threshold = %.2f m year-1.\n",
-                 units::convert(system, m_plastic_regularize, "m second-1", "m year-1"),
+                 units::convert(system, m_plastic_regularize, "m second^-1", "m year^-1"),
                  m_q,
-                 units::convert(system, m_u_threshold, "m second-1", "m year-1"));
+                 units::convert(system, m_u_threshold, "m second^-1", "m year^-1"));
   }
 }
 
@@ -204,9 +204,9 @@ void IceBasalResistanceRegularizedLaw::print_info(const Logger &log,
   log.message(threshold,
               "Using regularized Coulomb till with eps = %10.5e m year-1, q = %.4f,"
               " and u_threshold = %.2f m year-1.\n",
-              units::convert(system, m_plastic_regularize, "m second-1", "m year-1"),
+              units::convert(system, m_plastic_regularize, "m second^-1", "m year^-1"),
               m_q,
-              units::convert(system, m_u_threshold, "m second-1", "m year-1"));
+              units::convert(system, m_u_threshold, "m second^-1", "m year^-1"));
 }
 
 double IceBasalResistanceRegularizedLaw::drag(double tauc, double vx, double vy) const {

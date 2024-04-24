@@ -46,7 +46,7 @@ def generate_input(N):
 
     nc.create_dimensions(x, x)
     nc.write("topg", topg, attrs={"units": "m", "long_name": "bed_topography"})
-    nc.write("climatic_mass_balance", zeros, attrs={"units": "kg m-2 year-1"})
+    nc.write("climatic_mass_balance", zeros, attrs={"units": "kg m^-2 year^-1"})
     nc.write("ice_surface_temp", zeros, attrs={"units": "degree_Celsius"})
     nc.write("thk", thk.reshape(M, M),
              attrs={"units": "m", "long_name": "land_ice_thickness"})

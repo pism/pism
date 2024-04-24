@@ -72,7 +72,7 @@ void Distributed::bootstrap_impl(const File &input_file, const array::Scalar &ic
     compute_overburden_pressure(ice_thickness, m_Pover);
 
     array::Scalar sliding_speed(m_grid, "velbase_mag");
-    sliding_speed.metadata(0).long_name("basal sliding speed").units("m s-1");
+    sliding_speed.metadata(0).long_name("basal sliding speed").units("m s^-1");
 
     std::string filename = m_config->get_string("hydrology.distributed.sliding_speed_file");
 

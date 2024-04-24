@@ -284,12 +284,12 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
     m_u_sigma = std::make_shared<array::Array3D>(grid, "uvel_sigma", array::WITHOUT_GHOSTS, sigma);
     m_u_sigma->metadata(0)
         .long_name("u velocity component on the sigma grid")
-        .units("m s-1");
+        .units("m s^-1");
 
     m_v_sigma = std::make_shared<array::Array3D>(grid, "vvel_sigma", array::WITHOUT_GHOSTS, sigma);
     m_v_sigma->metadata(0)
         .long_name("v velocity component on the sigma grid")
-        .units("m s-1");
+        .units("m s^-1");
 
     std::map<std::string,std::string> z_attrs =
       {{"axis", "Z"},

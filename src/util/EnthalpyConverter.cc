@@ -186,7 +186,7 @@ double EnthalpyConverter::temperature(double E, double P) const {
 }
 
 
-//! Get pressure-adjusted ice temperature, in Kelvin, from enthalpy and pressure.
+//! Get pressure-adjusted ice temperature, in kelvin, from enthalpy and pressure.
 /*!
 The pressure-adjusted temperature is:
      \f[ T_{pa}(E,p) = T(E,p) - T_m(p) + T_{melting}. \f]
@@ -291,7 +291,7 @@ ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
   : EnthalpyConverter(config) {
   // turn on the "cold" enthalpy converter mode
   m_do_cold_ice_methods = true;
-  // set melting temperature to one million Kelvin so that all ice is cold
+  // set melting temperature to one million kelvin so that all ice is cold
   m_T_melting = 1e6;
   // disable pressure-dependence of the melting temperature by setting Clausius-Clapeyron beta to
   // zero

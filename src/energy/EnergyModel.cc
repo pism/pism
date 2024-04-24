@@ -115,14 +115,14 @@ EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
   // POSSIBLE standard name = land_ice_enthalpy
   m_ice_enthalpy.metadata(0)
       .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
-      .units("J kg-1");
+      .units("J kg^-1");
 
   {
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.metadata(0)
         .long_name(
             "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)")
-        .units("m s-1");
+        .units("m s^-1");
     // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
     // have this standard name.
     m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
@@ -314,7 +314,7 @@ public:
   LiquifiedIceFlux(const EnergyModel *m)
     : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
 
-    set_units("m3 / second", "m3 / year");
+    set_units("m^3 / second", "m^3 / year");
     m_variable["long_name"] =
       "rate of ice loss due to liquefaction, averaged over the reporting interval";
     m_variable["comment"]      = "positive means ice loss";

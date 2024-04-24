@@ -106,7 +106,7 @@ def check_modifier(model, modifier, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
 
 def precipitation(grid, value):
     precip = PISM.Scalar(grid, "precipitation")
-    precip.metadata(0).long_name("precipitation").units("kg m-2 s-1").standard_name("precipitation_flux")
+    precip.metadata(0).long_name("precipitation").units("kg m^-2 s^-1").standard_name("precipitation_flux")
     precip.set(value)
     return precip
 
@@ -263,7 +263,7 @@ class DeltaP2D(TestCase):
         self.delta_P = 5.0
 
         delta_P = PISM.Scalar(self.grid, "delta_P")
-        delta_P.metadata(0).long_name("precipitation offset").units("kg m-2 s-1").output_units("kg m-2 s-1").standard_name("")
+        delta_P.metadata(0).long_name("precipitation offset").units("kg m^-2 s^-1").output_units("kg m^-2 s^-1").standard_name("")
         delta_P.set(self.delta_P)
 
         try:
@@ -417,7 +417,7 @@ class OneStation(TestCase):
         output.write_attribute(time_name, "bounds", "time_bounds")
 
         output.define_variable("precipitation", PISM.PISM_DOUBLE, [time_name])
-        output.write_attribute("precipitation", "units", "kg m-2 s-1")
+        output.write_attribute("precipitation", "units", "kg m^-2 s^-1")
 
         output.define_variable("air_temp", PISM.PISM_DOUBLE, [time_name])
         output.write_attribute("air_temp", "units", "kelvin")
@@ -480,7 +480,7 @@ class Anomaly(TestCase):
         dT.set(self.dT)
 
         dP = PISM.Scalar(self.grid, "precipitation_anomaly")
-        dP.metadata(0).long_name("precipitation anomaly").units("kg m-2 s-1").output_units("kg m-2 s-1").standard_name("")
+        dP.metadata(0).long_name("precipitation anomaly").units("kg m^-2 s^-1").output_units("kg m^-2 s^-1").standard_name("")
         dP.set(self.dP)
 
         output = PISM.util.prepare_output(self.filename)
@@ -609,12 +609,12 @@ class ElevationChange(TestCase):
     def setUp(self):
         self.filename = tmp_name("atmosphere_reference_surface")
         self.grid = shallow_grid()
-        self.dTdz = 1.0         # Kelvin per km
+        self.dTdz = 1.0         # kelvin per km
         self.dPdz = 1000.0      # (kg/m^2)/year per km
         self.dz = 1000.0        # m
         self.dT = -self.dTdz * self.dz / 1000.0
         self.dP = -PISM.util.convert(self.dPdz * self.dz / 1000.0, "kg m-2 year-1", "kg m-2 s-1")
-        self.precip_dTdz = 2.0  # Kelvin per km
+        self.precip_dTdz = 2.0  # kelvin per km
 
         self.geometry = PISM.Geometry(self.grid)
 

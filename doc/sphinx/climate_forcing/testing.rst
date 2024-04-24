@@ -133,7 +133,7 @@ Here are two things to notice:
 #. Lows of the surface mass balance rate :var:`climatic_mass_balance` correspond to
    positive degree-days in the given period, because of highs of the air temperature.
    Recall the air temperature graph does not show random daily variations. Even though it
-   has the maximum of about `266` Kelvin, the parameterized instantaneous air
+   has the maximum of about `266` kelvin, the parameterized instantaneous air
    temperature can be above freezing. A positive value for positive degree-days is
    expected :cite:`CalovGreve05`.
 

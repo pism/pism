@@ -105,7 +105,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   m_vars = { { m_sys, "diffusivity" } };
-  m_vars[0].long_name("diffusivity of SIA mass continuity equation").units("m2 s-1");
+  m_vars[0].long_name("diffusivity of SIA mass continuity equation").units("m^2 s^-1");
 }
 
 std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
@@ -128,10 +128,10 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
   m_vars = { { m_sys, "diffusivity_i" }, { m_sys, "diffusivity_j" } };
   m_vars[0]
       .long_name("diffusivity of SIA mass continuity equation on the staggered grid (i-offset)")
-      .units("m2 s-1");
+      .units("m^2 s^-1");
   m_vars[1]
       .long_name("diffusivity of SIA mass continuity equation on the staggered grid (j-offset)")
-      .units("m2 s-1");
+      .units("m^2 s^-1");
 }
 
 static void copy_staggered_vec(const array::Staggered &input, array::Staggered &output) {

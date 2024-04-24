@@ -62,8 +62,8 @@ Given::Given(std::shared_ptr<const Grid> g)
 
   m_shelfbmassflux->metadata(0)
       .long_name("ice mass flux from ice shelf base (positive flux is loss from ice shelf)")
-      .units("kg m-2 s-1")
-      .output_units("kg m-2 year-1");
+      .units("kg m^-2 s^-1")
+      .output_units("kg m^-2 year^-1");
 }
 
 void Given::init_impl(const Geometry &geometry) {

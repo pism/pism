@@ -32,8 +32,8 @@ HayhurstCalving::HayhurstCalving(std::shared_ptr<const Grid> grid)
 {
   m_calving_rate.metadata(0)
       .long_name("horizontal calving rate due to Hayhurst calving")
-      .units("m s-1")
-      .output_units("m day-1");
+      .units("m s^-1")
+      .output_units("m day^-1");
 }
 
 void HayhurstCalving::init() {

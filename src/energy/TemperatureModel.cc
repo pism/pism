@@ -281,7 +281,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
                       "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
                       " proc %d; mask=%d; w=%f m year-1]]\n",
                       Tnew[k], i, j, k, m_grid->rank(), mask,
-                      units::convert(m_sys, system.w(k), "m second-1", "m year-1"));
+                      units::convert(m_sys, system.w(k), "m second^-1", "m year^-1"));
 
           m_stats.low_temperature_counter++;
         }
@@ -315,7 +315,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
                       "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                       " proc %d; mask=%d; w=%f]]\n",
                       Tnew[0],i,j,m_grid->rank(), mask,
-                      units::convert(m_sys, system.w(0), "m second-1", "m year-1"));
+                      units::convert(m_sys, system.w(0), "m second^-1", "m year^-1"));
 
           m_stats.low_temperature_counter++;
         }

@@ -126,17 +126,17 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
     // This is the only reported field that is ghosted (we need ghosts to compute flux divergence).
     flux_staggered.metadata(0)
         .long_name("fluxes through cell interfaces (sides) on the staggered grid (x-offset)")
-        .units("m2 s-1")
-        .output_units("m2 year-1");
+        .units("m^2 s^-1")
+        .output_units("m^2 year^-1");
     flux_staggered.metadata(1)
         .long_name("fluxes through cell interfaces (sides) on the staggered grid (y-offset)")
-        .units("m2 s-1")
-        .output_units("m2 year-1");
+        .units("m^2 s^-1")
+        .output_units("m^2 year^-1");
 
     flux_divergence.metadata(0)
         .long_name("flux divergence")
-        .units("m s-1")
-        .output_units("m year-1");
+        .units("m s^-1")
+        .output_units("m year^-1");
 
     conservation_error.metadata(0)
         .long_name(
@@ -155,7 +155,7 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
 
     ice_area_specific_volume_change.metadata(0)
         .long_name("change in area-specific volume due to flow")
-        .units("meters3 / meters2");
+        .units("meters^3 / meters^2");
   }
 
   // internal storage
@@ -174,7 +174,7 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
 
     area_specific_volume.metadata(0)
         .long_name("working (ghosted) copy of the area specific volume")
-        .units("meters3 / meters2");
+        .units("meters^3 / meters^2");
 
     surface_elevation.metadata(0)
         .long_name("working (ghosted) copy of the surface elevation")
@@ -182,7 +182,7 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
 
     cell_type.metadata(0).long_name("working (ghosted) copy of the cell type mask");
 
-    residual.metadata(0).long_name("residual area specific volume").units("meters3 / meters2");
+    residual.metadata(0).long_name("residual area specific volume").units("meters^3 / meters^2");
 
     thickness.metadata(0).long_name("thickness (temporary storage)").units("meters");
   }

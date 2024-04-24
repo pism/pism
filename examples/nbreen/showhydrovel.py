@@ -83,7 +83,7 @@ else:
     args.d = -1
     print("  reading last frame of %d frames" % (shape(velx)[0]))
 
-units = "m hr-1"  # FIXME: make this merely the default scale?
+units = "m hr^-1"  # FIXME: make this merely the default scale?
 scale = 3.1556926e7 / 3600.0
 velx = asarray(squeeze(velx[args.d, :, :])).transpose() / scale
 vely = asarray(squeeze(vely[args.d, :, :])).transpose() / scale
@@ -92,7 +92,7 @@ if args.q:
     bwat = asarray(squeeze(bwat[args.d, :, :])).transpose()
     velx = velx * bwat
     vely = vely * bwat
-    units = "m2 hr-1"  # FIXME: adjust units?
+    units = "m^2 hr^-1"  # FIXME: adjust units?
 
 nc.close()
 
@@ -152,7 +152,7 @@ if args.q:
     titlestr = "water flux in %s" % units
 else:
     print("  maximum water speed = %8.3f %s = %6.3f %s" %
-          (speed.max(), units, speed.max() / 3600.0, 'm s-1'))  # assumes units is m hr-1
+          (speed.max(), units, speed.max() / 3600.0, 'm s^-1'))  # assumes units is m hr^-1
     titlestr = "water velocity in %s" % units
 title(titlestr)
 

@@ -142,20 +142,20 @@ EmptyingProblem::EmptyingProblem(std::shared_ptr<const Grid> grid)
 
   m_Vstag.metadata(0)
       .long_name("water velocity on the staggered grid")
-      .units("m s-1");
+      .units("m s^-1");
 
   m_domain_mask.metadata(0).long_name("mask defining the domain");
 
-  m_Q.metadata(0).long_name("steady state water flux").units("m2 s-1");
+  m_Q.metadata(0).long_name("steady state water flux").units("m^2 s^-1");
 
   m_q_sg.metadata(0)
       .long_name("x-component of the effective water velocity in the steady-state hydrology model")
-      .units("m s-1")
-      .output_units("m day-1");
+      .units("m s^-1")
+      .output_units("m day^-1");
   m_q_sg.metadata(1)
       .long_name("y-component of the effective water velocity in the steady-state hydrology model")
-      .units("m s-1")
-      .output_units("m day-1");
+      .units("m s^-1")
+      .output_units("m day^-1");
 
   m_sinks.metadata(0)
       .long_name("map of sinks in the domain (for debugging)");

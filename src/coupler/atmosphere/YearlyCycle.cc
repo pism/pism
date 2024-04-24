@@ -55,8 +55,8 @@ YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
 
   m_precipitation.metadata(0)
       .long_name("precipitation rate")
-      .units("kg m-2 second-1")
-      .output_units("kg m-2 year-1")
+      .units("kg m^-2 second^-1")
+      .output_units("kg m^-2 year^-1")
       .standard_name("precipitation_flux")
       .set_time_independent(true);
 }

@@ -78,7 +78,7 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
 
   ice_area_specific_volume.metadata(0)
       .long_name("ice-volume-per-area in partially-filled grid cells")
-      .units("m3/m2");
+      .units("m^3/m^2");
   ice_area_specific_volume.metadata()["comment"] =
       "this variable represents the amount of ice in a partially-filled cell and not "
       "the corresponding geometry, so thinking about it as 'thickness' is not helpful";

@@ -23,14 +23,14 @@ Use the ``ismip6`` surface model to implement ISMIP6 surface mass balance forcin
 Here ``climate_forcing.nc`` should contain time-dependent variables
 
 - :var:`climatic_mass_balance_anomaly` (units: `kg / (m^2 s)`) and
-- :var:`ice_surface_temp_anomaly` (units: *Kelvin*).
+- :var:`ice_surface_temp_anomaly` (units: *kelvin*).
 
 The file ``climate_forcing_reference.nc`` should contain time-independent (2D) variables
 
 - :var:`climatic_mass_balance_reference` (units: `kg / (m^2 s)`),
 - :var:`climatic_mass_balance_gradient` (units: `(kg / (m^2 s)) / m`),
-- :var:`ice_surface_temp_reference` (units: *Kelvin*),
-- :var:`ice_surface_temp_gradient` (units: *Kelvin / m*),
+- :var:`ice_surface_temp_reference` (units: *kelvin*),
+- :var:`ice_surface_temp_gradient` (units: *kelvin / m*),
 - :var:`surface_elevation` (units: *m*)
 
 The surface mass balance is computed using the following formula:

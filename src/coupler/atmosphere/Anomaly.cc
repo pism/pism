@@ -58,8 +58,8 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel>
 
   m_precipitation_anomaly->metadata(0)
       .long_name("anomaly of the ice-equivalent precipitation rate")
-      .units("kg m-2 second-1")
-      .output_units("kg m-2 year-1");
+      .units("kg m^-2 second^-1")
+      .output_units("kg m^-2 year^-1");
 
   m_precipitation = allocate_precipitation(g);
   m_temperature   = allocate_temperature(g);

@@ -16,7 +16,7 @@ print("The melt season is {} weeks long.".format(melt_season_length / 7))
 plt.figure(figsize=(10, 5))
 plt.plot(t / 86400, Ts)
 plt.xlabel("time, days")
-plt.ylabel("Air temperature, Kelvin")
+plt.ylabel("Air temperature, kelvin")
 plt.grid()
 plt.savefig("air-temperature.png")
 
@@ -56,7 +56,7 @@ for k in np.r_[N:z.size]:
     plt.plot(times/year_length, T_ice[:, k])
 
 plt.xlabel("time, years")
-plt.ylabel("temperature, Kelvin")
+plt.ylabel("temperature, kelvin")
 plt.title("Ice temperature at different depths")
 plt.grid()
 plt.savefig("ice-temperature-curves.png")

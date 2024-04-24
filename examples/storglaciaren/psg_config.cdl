@@ -5,7 +5,7 @@ netcdf pism_overrides {
     pism_overrides:surface.force_to_thickness.alpha = 1.0;
     pism_overrides:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";
     pism_overrides:surface.force_to_thickness.alpha_type = "number";
-    pism_overrides:surface.force_to_thickness.alpha_units = "year-1";
+    pism_overrides:surface.force_to_thickness.alpha_units = "year^-1";
     pism_overrides:surface.force_to_thickness.alpha_option = "force_to_thickness_alpha";
 
     pism_overrides:surface.force_to_thickness.ice_free_alpha_factor = 1.0;

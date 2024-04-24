@@ -643,10 +643,10 @@ Here `\sigma` can be
 
 - constant in time and space (the default; set using :config:`surface.debm_simple.std_dev`),
 - read from a file containing the two dimensional variable :var:`air_temp_sd` that can be
-  constant in time or time-dependent (units: *Kelvin*; specify the file name using
+  constant in time or time-dependent (units: *kelvin*; specify the file name using
   :config:`surface.debm_simple.std_dev.file`), or
 - parameterized as a function of air temperature `T`: `\sigma = \max(a\, (T -
-  T_{\text{melting}}) + b, 0)` with `T_{\text{melting}} = 273.15` Kelvin.
+  T_{\text{melting}}) + b, 0)` with `T_{\text{melting}} = 273.15` kelvin.
 
 These mechanisms are controlled by parameters with the prefix ``surface.debm_simple.std_dev.``:
 
@@ -741,7 +741,7 @@ Scalar temperature offsets
 The time-dependent scalar offsets :var:`delta_T` are added to :var:`ice_surface_temp`
 computed by a surface model.
 
-Please make sure that :var:`delta_T` has the units of "``Kelvin``".
+Please make sure that :var:`delta_T` has the units of "``kelvin``".
 
 This modifier is identical to the corresponding atmosphere modifier, but applies offsets
 at a different stage in the computation of top-surface boundary conditions needed by the

@@ -169,7 +169,7 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
                      &shelf_base_temp_celsius,
                      &shelf_base_massflux);
 
-    // Convert from Celsius to Kelvin:
+    // Convert from Celsius to kelvin:
     temperature(i,j) = shelf_base_temp_celsius + 273.15;
     mass_flux(i,j)   = shelf_base_massflux;
   }

@@ -63,8 +63,8 @@ Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atmos
 
   m_mass_flux->metadata(0)
       .long_name("surface mass balance (accumulation/ablation) rate")
-      .units("kg m-2 s-1")
-      .output_units("kg m-2 year-1")
+      .units("kg m^-2 s^-1")
+      .output_units("kg m^-2 year^-1")
       .standard_name("land_ice_surface_specific_mass_balance_flux");
 
   m_mass_flux->metadata()["valid_range"] = {-smb_max, smb_max};

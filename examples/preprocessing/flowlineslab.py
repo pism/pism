@@ -36,7 +36,7 @@ thk[:] = maximum(minimum(5e3 - abs(x[:]) * 0.01, thk_0), 0)
 thk.units = "m"
 
 climatic_mass_balance[:] = climatic_mass_balance_0
-climatic_mass_balance.units = "kg m-2 s-1"
+climatic_mass_balance.units = "kg m^-2 s^-1"
 ice_surface_temp[:] = ice_surface_temp_0
 ice_surface_temp.units = "degree_Celsius"
 

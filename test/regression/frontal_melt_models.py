@@ -133,7 +133,7 @@ class DischargeRoutingTest(TestCase):
         self.theta.set(self.potential_temperature)
 
         self.Qsg = PISM.Scalar(self.grid, "subglacial_water_flux")
-        self.Qsg.metadata(0).long_name("subglacial water flux").units("m2 / s")
+        self.Qsg.metadata(0).long_name("subglacial water flux").units("m^2 / s")
 
         grid_spacing = 0.5 * (self.grid.dx() + self.grid.dy())
         cross_section_area = self.depth * grid_spacing

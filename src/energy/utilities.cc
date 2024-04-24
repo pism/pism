@@ -210,7 +210,7 @@ void compute_cts(const array::Array3D &ice_enthalpy, const array::Scalar &ice_th
 
 //! Computes the total ice enthalpy in J.
 /*!
-  Units of the specific enthalpy field are J kg-1.  We integrate
+  Units of the specific enthalpy field are J kg^-1.  We integrate
   \f$E(t,x,y,z)\f$ over the entire ice fluid region \f$\Omega(t)\f$, multiplying
   by the density to get units of energy:
   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
@@ -388,7 +388,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
 
       if (T_surface < T_min) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "T_surface(%d,%d) = %f < T_min = %f Kelvin",
+                                      "T_surface(%d,%d) = %f < T_min = %f kelvin",
                                       i, j, T_surface, T_min);
       }
 
@@ -418,7 +418,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
       for (unsigned int k = 0; k < ks; k++) {
         if (T[k] < T_min) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "T(%d,%d,%d) = %f < T_min = %f Kelvin",
+                                        "T(%d,%d,%d) = %f < T_min = %f kelvin",
                                         i, j, k, T[k], T_min);
         }
       }

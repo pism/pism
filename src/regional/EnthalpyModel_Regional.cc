@@ -30,7 +30,7 @@ EnthalpyModel_Regional::EnthalpyModel_Regional(
   // *never* read or written. We make a copy of basal_melt_rate_grounded instead.
   m_basal_melt_rate_stored.metadata(0)
       .long_name("time-independent basal melt rate in the no-model-strip")
-      .units("m s-1");
+      .units("m s^-1");
 }
 
 void EnthalpyModel_Regional::restart_impl(const File &input_file, int record) {
