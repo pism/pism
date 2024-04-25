@@ -311,6 +311,10 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                     source_grid_name.c_str());
     }
 
+    log->message(
+        2, "* Initializing 2D interpolation on the sphere from '%s' to the internal grid...\n",
+        source_grid_name.c_str());
+
     log->message(2, "Input grid:\n");
     source_grid->report_parameters();
 

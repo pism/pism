@@ -28,6 +28,7 @@
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
+#include "pism/util/Logger.hh"
 
 #if (Pism_USE_YAC_INTERPOLATION == 1)
 #include "InputInterpolationYAC.hh"
@@ -60,6 +61,11 @@ InputInterpolation3D::InputInterpolation3D(const Grid &target_grid,
 
   auto log         = target_grid.ctx()->log();
   auto unit_system = target_grid.ctx()->unit_system();
+
+  auto name = grid_name(input_file, variable_name, unit_system);
+
+  log->message(2, "* Initializing bi- or tri-linear interpolation from '%s' to the internal grid...\n",
+               name.c_str());
 
   grid::InputGridInfo input_grid(input_file, variable_name, unit_system,
                                  target_grid.registration());
