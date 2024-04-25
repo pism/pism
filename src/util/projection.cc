@@ -221,9 +221,12 @@ std::string grid_name(const pism::File &file, const std::string &variable_name,
   return result;
 }
 
-MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
+MappingInfo get_projection_info(const File &input_file, const std::string &variable_name,
                                 units::System::Ptr unit_system) {
-  MappingInfo result(mapping_name, unit_system);
+
+  auto mapping_variable_name = input_file.read_text_attribute(variable_name, "grid_mapping");
+
+  MappingInfo result(mapping_variable_name, unit_system);
 
   result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj");
 
@@ -245,10 +248,10 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
     result.proj = pism::printf("EPSG:%d", parse_epsg(result.proj));
   }
 
-  if (input_file.variable_exists(mapping_name)) {
+  if (input_file.variable_exists(mapping_variable_name)) {
     // input file has a mapping variable
 
-    result.mapping = io::read_attributes(input_file, mapping_name, unit_system);
+    result.mapping = io::read_attributes(input_file, mapping_variable_name, unit_system);
 
     if (proj_is_epsg) {
       // check consistency

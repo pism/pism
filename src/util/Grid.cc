@@ -1310,14 +1310,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     }
 
     // get grid projection info
-    MappingInfo grid_mapping("mapping", ctx->unit_system());
-    {
-      auto mapping_variable = file.read_text_attribute(variable_name, "grid_mapping");
-
-      if (not mapping_variable.empty()) {
-        grid_mapping = get_projection_info(file, mapping_variable, ctx->unit_system());
-      }
-    }
+    auto grid_mapping = get_projection_info(file, variable_name, ctx->unit_system());
 
     std::shared_ptr<Grid> result;
     if (bootstrap) {

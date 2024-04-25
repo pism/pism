@@ -75,7 +75,7 @@ int parse_epsg(const std::string &proj_string);
 void check_consistency_epsg(const MappingInfo &info);
 
 /*! @brief Get projection info from a file. */
-MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
+MappingInfo get_projection_info(const File &input_file, const std::string &variable_name,
                                 units::System::Ptr unit_system);
 
 void compute_longitude(const std::string &projection, array::Scalar &result);
