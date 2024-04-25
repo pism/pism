@@ -215,7 +215,7 @@ int InputInterpolationYAC::define_grid(const pism::Grid &grid, const std::string
 int InputInterpolationYAC::define_field(int component_id, const pism::Grid &grid,
                                         const std::string &name) {
 
-  int point_id = define_grid(grid, name, grid.get_mapping_info().proj);
+  int point_id = define_grid(grid, name, grid.get_mapping_info().proj_string);
 
   const char *time_step_length = "1";
   const int point_set_size     = 1;
@@ -285,7 +285,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                              const std::string &variable_name) {
   auto ctx = target_grid.ctx();
 
-  if (target_grid.get_mapping_info().proj.empty()) {
+  if (target_grid.get_mapping_info().proj_string.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "internal grid projection is not known");
   }
 
@@ -304,7 +304,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
     source_grid->set_mapping_info(mapping);
 
-    if (source_grid->get_mapping_info().proj.empty()) {
+    if (source_grid->get_mapping_info().proj_string.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unsupported or missing projection info for the grid '%s'",
                                     source_grid_name.c_str());

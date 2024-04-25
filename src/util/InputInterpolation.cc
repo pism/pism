@@ -108,9 +108,9 @@ InputInterpolation::create(const Grid &target_grid,
                            const std::string &variable_name, InterpolationType type) {
 
   auto source_projection =
-      get_projection_info(input_file, variable_name, target_grid.ctx()->unit_system()).proj;
+      get_projection_info(input_file, variable_name, target_grid.ctx()->unit_system()).proj_string;
 
-  auto target_projection = target_grid.get_mapping_info().proj;
+  auto target_projection = target_grid.get_mapping_info().proj_string;
 
 #if (Pism_USE_YAC_INTERPOLATION == 1)
   if (levels.size() < 2 and (not source_projection.empty()) and (not target_projection.empty())) {

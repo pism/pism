@@ -538,7 +538,7 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
   // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat, lon,
   // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
   // #384).
-  const VariableMetadata &mapping = grid.get_mapping_info().mapping;
+  const VariableMetadata &mapping = grid.get_mapping_info().cf_mapping;
   if (mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
     file.write_attribute(var.get_name(), "grid_mapping", mapping.get_name());
   }

@@ -56,9 +56,13 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
 
 class MappingInfo {
 public:
-  MappingInfo(const std::string &mapping_name, units::System::Ptr unit_system);
-  VariableMetadata mapping;
-  std::string proj;
+  MappingInfo(const std::string &mapping_variable_name, units::System::Ptr unit_system);
+
+  //! grid mapping description following CF conventions
+  VariableMetadata cf_mapping;
+
+  //! a projection definition string in a format recognized by PROJ 6.x+
+  std::string proj_string;
 };
 
 /*!

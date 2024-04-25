@@ -41,7 +41,7 @@
 namespace pism {
 
 MappingInfo::MappingInfo(const std::string &mapping_name, units::System::Ptr unit_system)
-  : mapping(mapping_name, unit_system) {
+  : cf_mapping(mapping_name, unit_system) {
   // empty
 }
 
@@ -147,62 +147,60 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
 
 void check_consistency_epsg(const MappingInfo &info) {
 
-  VariableMetadata epsg_mapping = epsg_to_cf(info.mapping.unit_system(), info.proj);
+  VariableMetadata epsg_mapping = epsg_to_cf(info.cf_mapping.unit_system(), info.proj_string);
 
-  bool mapping_is_empty      = not info.mapping.has_attributes();
+  bool mapping_is_empty      = not info.cf_mapping.has_attributes();
   bool epsg_mapping_is_empty = not epsg_mapping.has_attributes();
 
   if (mapping_is_empty and epsg_mapping_is_empty) {
     // empty mapping variables are equivalent
     return;
-  } else {
-    // Check if the "info.mapping" variable in the input file matches the EPSG code.
-    // Check strings.
-    for (const auto &s : epsg_mapping.all_strings()) {
-      if (not info.mapping.has_attribute(s.first)) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
-                                      "PROJ string \"%s\" requires %s = \"%s\",\n"
-                                      "but the mapping variable has no %s.",
-                                      info.proj.c_str(),
-                                      s.first.c_str(), s.second.c_str(),
-                                      s.first.c_str());
-      }
+  }
 
-      std::string string = info.mapping[s.first];
-
-      if (not (string == s.second)) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
-                                      "%s requires %s = \"%s\",\n"
-                                      "but the mapping variable has %s = \"%s\".",
-                                      info.proj.c_str(),
-                                      s.first.c_str(), s.second.c_str(),
-                                      s.first.c_str(),
-                                      string.c_str());
-      }
+  // Check if the "info.mapping" variable in the input file matches the EPSG code.
+  // Check strings.
+  for (const auto &s : epsg_mapping.all_strings()) {
+    if (not info.cf_mapping.has_attribute(s.first)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "inconsistent metadata:\n"
+                                    "PROJ string \"%s\" requires %s = \"%s\",\n"
+                                    "but the mapping variable has no %s.",
+                                    info.proj_string.c_str(), s.first.c_str(), s.second.c_str(),
+                                    s.first.c_str());
     }
 
-    // Check doubles
-    for (auto d : epsg_mapping.all_doubles()) {
-      if (not info.mapping.has_attribute(d.first)) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
-                                      "%s requires %s = %f,\n"
-                                      "but the mapping variable has no %s.",
-                                      info.proj.c_str(),
-                                      d.first.c_str(), d.second[0],
-                                      d.first.c_str());
-      }
+    std::string string = info.cf_mapping[s.first];
 
-      double value = info.mapping.get_number(d.first);
+    if (not(string == s.second)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "inconsistent metadata:\n"
+                                    "%s requires %s = \"%s\",\n"
+                                    "but the mapping variable has %s = \"%s\".",
+                                    info.proj_string.c_str(), s.first.c_str(), s.second.c_str(),
+                                    s.first.c_str(), string.c_str());
+    }
+  }
 
-      if (std::fabs(value - d.second[0]) > 1e-12) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
-                                      "%s requires %s = %f,\n"
-                                      "but the mapping variable has %s = %f.",
-                                      info.proj.c_str(),
-                                      d.first.c_str(), d.second[0],
-                                      d.first.c_str(),
-                                      value);
-      }
+  // Check doubles
+  for (auto d : epsg_mapping.all_doubles()) {
+    if (not info.cf_mapping.has_attribute(d.first)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "inconsistent metadata:\n"
+                                    "%s requires %s = %f,\n"
+                                    "but the mapping variable has no %s.",
+                                    info.proj_string.c_str(), d.first.c_str(), d.second[0],
+                                    d.first.c_str());
+    }
+
+    double value = info.cf_mapping.get_number(d.first);
+
+    if (std::fabs(value - d.second[0]) > 1e-12) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "inconsistent metadata:\n"
+                                    "%s requires %s = %f,\n"
+                                    "but the mapping variable has %s = %f.",
+                                    info.proj_string.c_str(), d.first.c_str(), d.second[0],
+                                    d.first.c_str(), value);
     }
   }
 }
@@ -228,16 +226,29 @@ MappingInfo get_projection_info(const File &input_file, const std::string &varia
 
   MappingInfo result(mapping_variable_name, unit_system);
 
-  result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj");
+  if (not mapping_variable_name.empty()) {
+    // try the crs_wkt attribute
+    result.proj_string = input_file.read_text_attribute(mapping_variable_name, "crs_wkt");
 
-  if (result.proj.empty()) {
-    // try the "proj4" attribute
-    result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj4");
+    // if failed, try the "proj_params" attribute used by CDO:
+    if (result.proj_string.empty()) {
+      result.proj_string = input_file.read_text_attribute(mapping_variable_name, "proj_params");
+    }
+  }
+
+  // if failed, try the global attribute "proj"
+  if (result.proj_string.empty()) {
+    result.proj_string = input_file.read_text_attribute("PISM_GLOBAL", "proj");
+  }
+
+  // if failed, try the global attribute "proj4"
+  if (result.proj_string.empty()) {
+    result.proj_string = input_file.read_text_attribute("PISM_GLOBAL", "proj4");
   }
 
   bool proj_is_epsg = false;
   for (const auto &auth : {"epsg:", "EPSG:"}) {
-    if (result.proj.find(auth) != std::string::npos) {
+    if (result.proj_string.find(auth) != std::string::npos) {
       proj_is_epsg = true;
       break;
     }
@@ -245,30 +256,36 @@ MappingInfo get_projection_info(const File &input_file, const std::string &varia
 
   if (proj_is_epsg) {
     // re-create the PROJ string to make sure it does not contain "+init="
-    result.proj = pism::printf("EPSG:%d", parse_epsg(result.proj));
+    result.proj_string = pism::printf("EPSG:%d", parse_epsg(result.proj_string));
   }
 
   if (input_file.variable_exists(mapping_variable_name)) {
     // input file has a mapping variable
 
-    result.mapping = io::read_attributes(input_file, mapping_variable_name, unit_system);
+    result.cf_mapping = io::read_attributes(input_file, mapping_variable_name, unit_system);
 
-    if (proj_is_epsg) {
-      // check consistency
-      try {
-        check_consistency_epsg(result);
-      } catch (RuntimeError &e) {
-        e.add_context("getting projection info from %s", input_file.name().c_str());
-        throw;
+    if (result.cf_mapping.has_attributes()) {
+      if (proj_is_epsg) {
+        // check consistency
+        try {
+          check_consistency_epsg(result);
+        } catch (RuntimeError &e) {
+          e.add_context("getting projection info from variable '%s' in '%s'", variable_name.c_str(),
+                        input_file.name().c_str());
+          throw;
+        }
       }
-    } else {
-      // use mapping read from input_file (can't check consistency here)
+
+      if (result.proj_string.empty()) {
+        result.proj_string = cf_to_proj(result.cf_mapping);
+      }
     }
+
   } else {
     // no mapping variable in the input file
 
     if (proj_is_epsg) {
-      result.mapping = epsg_to_cf(unit_system, result.proj);
+      result.cf_mapping = epsg_to_cf(unit_system, result.proj_string);
     } else {
       // leave mapping empty
     }

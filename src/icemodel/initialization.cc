@@ -790,7 +790,7 @@ void IceModel::misc_setup() {
 
 #if (Pism_USE_PROJ==1)
   {
-    std::string proj_string = m_grid->get_mapping_info().proj;
+    std::string proj_string = m_grid->get_mapping_info().proj_string;
     if (not proj_string.empty()) {
       m_output_vars.insert("lon_bnds");
       m_output_vars.insert("lat_bnds");
@@ -1078,7 +1078,7 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
 
 void IceModel::compute_lat_lon() {
 
-  std::string projection = m_grid->get_mapping_info().proj;
+  std::string projection = m_grid->get_mapping_info().proj_string;
 
   if (m_config->get_flag("grid.recompute_longitude_and_latitude") and
       not projection.empty()) {

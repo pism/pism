@@ -143,7 +143,7 @@ void IceModel::save_results() {
 
 void write_mapping(const File &file, const pism::MappingInfo &info) {
 
-  const auto &mapping = info.mapping;
+  const auto &mapping = info.cf_mapping;
   if (mapping.has_attributes()) {
     auto name = mapping.get_name();
     if (not file.variable_exists(name)) {
@@ -152,8 +152,8 @@ void write_mapping(const File &file, const pism::MappingInfo &info) {
     io::write_attributes(file, mapping, io::PISM_DOUBLE);
 
     // Write the PROJ string to mapping:proj_params (for CDO).
-    if (not info.proj.empty()) {
-      file.write_attribute(name, "proj_params", info.proj);
+    if (not info.proj_string.empty()) {
+      file.write_attribute(name, "proj_params", info.proj_string);
     }
   }
 }
@@ -212,7 +212,7 @@ void IceModel::save_variables(const File &file,
       var_names.insert(file.variable_name(k));
     }
 
-    auto grid_mapping_name = m_grid->get_mapping_info().mapping.get_name();
+    auto grid_mapping_name = m_grid->get_mapping_info().cf_mapping.get_name();
     bool set_grid_mapping = member(grid_mapping_name, var_names);
 
     // If this output file contains variables lat and lon...
