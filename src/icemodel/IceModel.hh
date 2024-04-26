@@ -425,7 +425,8 @@ protected:
 
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
-  bool m_save_snapshots, m_snapshots_file_is_ready, m_split_snapshots;
+  std::shared_ptr<File> m_snapshot_file;
+  bool m_split_snapshots;
   std::vector<double> m_snapshot_times;
   std::set<std::string> m_snapshot_vars;
   unsigned int m_current_snapshot;

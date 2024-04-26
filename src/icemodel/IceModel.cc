@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -99,8 +99,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_output_global_attributes["Conventions"] = "CF-1.6";
   m_output_global_attributes["source"] = pism::version();
 
-  // Do not save snapshots by default:
-  m_save_snapshots = false;
   // Do not save time-series by default:
   m_save_extra     = false;
 
