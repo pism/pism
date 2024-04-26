@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021, 2023 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -145,7 +145,7 @@ void IceModel::write_snapshot() {
                             m_snapshots_filename.c_str(),
                             date_without_spaces.c_str());
   } else {
-    filename = m_snapshots_filename.c_str();
+    filename = m_snapshots_filename;
   }
 
   m_log->message(2,
