@@ -69,6 +69,8 @@ bool IceModel::write_checkpoint() {
   double checkpoint_start_time = get_time(m_grid->com);
   profiling.begin("io.checkpoint");
   {
+    // Note: we open a new file every time we write a checkpoint, moving the old file
+    // aside if it exists.
     File file(m_grid->com,
               m_checkpoint_filename,
               string_to_backend(m_config->get_string("output.format")),
