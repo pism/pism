@@ -99,13 +99,25 @@ void IP_SSAHardavForwardProblem::init() {
 
     stressbalance::Inputs inputs;
 
+    const auto &variables = m_grid->variables();
+
+    const array::Scalar *vel_bc_mask = nullptr;
+    if (variables.is_available("vel_bc_mask")) {
+      vel_bc_mask = variables.get_2d_scalar("vel_bc_mask");
+    }
+
+    const array::Vector *vel_bc = nullptr;
+    if (variables.is_available("vel_bc")) {
+      vel_bc = variables.get_2d_vector("vel_bc");
+    }
+
     inputs.geometry           = &geometry;
     inputs.basal_melt_rate    = NULL;
-    inputs.basal_yield_stress = m_grid->variables().get_2d_scalar("tauc");
-    inputs.enthalpy           = m_grid->variables().get_3d_scalar("enthalpy");
+    inputs.basal_yield_stress = variables.get_2d_scalar("tauc");
+    inputs.enthalpy           = variables.get_3d_scalar("enthalpy");
     inputs.age                = NULL;
-    inputs.bc_mask            = m_grid->variables().get_2d_scalar("vel_bc_mask");
-    inputs.bc_values          = m_grid->variables().get_2d_vector("vel_bc");
+    inputs.bc_mask            = vel_bc_mask;
+    inputs.bc_values          = vel_bc;
 
     inputs.water_column_pressure = NULL;
 
