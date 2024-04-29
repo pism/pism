@@ -267,7 +267,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
 
   // Make copies of BC mask and BC values: they are needed in SNES callbacks and
   // inputs.bc_{mask,values} are not available there.
-  if (inputs.bc_mask and inputs.bc_values) {
+  if ((inputs.bc_mask != nullptr) and (inputs.bc_values != nullptr)) {
     m_bc_mask.copy_from(*inputs.bc_mask);
     m_bc_values.copy_from(*inputs.bc_values);
   } else {
