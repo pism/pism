@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "label_components.hh"
-#include "label_components_impl.hh"
+#include "pism/util/connected_components/label_components.hh"
+#include "pism/util/connected_components/label_components_impl.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
 
