@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 PISM Authors
+/* Copyright (C) 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,6 +26,7 @@
 #include <map>
 #include <mpi.h>
 #include <queue>
+#include <set>
 
 namespace pism {
 
