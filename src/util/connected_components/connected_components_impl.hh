@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 PISM Authors
+/* Copyright (C) 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -79,6 +79,9 @@ private:
 /*!
  * Helper class wrapping `pism::array::Scalar` to implement the interface required to use
  * connected_components::details::label().
+ *
+ * Does *not* own the wrapped array: make sure that the wrapped array outlives the wrapper
+ * to avoid a dangling reference.
  */
 class PISMArray {
 public:

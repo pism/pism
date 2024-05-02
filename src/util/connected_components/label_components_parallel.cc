@@ -297,7 +297,8 @@ void relabel(array::Scalar &mask, const std::map<int, int> &labels) {
 /*!
  * Compute the map from intermediate to final labels given a ghosted array `input`.
  *
- * The value of the flag `subdomain_is_not_empty` varies from one subdomain to the
+ * The value of the flag `subdomain_is_not_empty` varies from one subdomain to the next
+ * depending on whether it has any foreground pixels.
  */
 std::map<int, int> final_labels(array::Scalar1 &input, bool subdomain_is_not_empty,
                                 bool mark_isolated_patches) {
@@ -314,6 +315,10 @@ std::map<int, int> final_labels(array::Scalar1 &input, bool subdomain_is_not_emp
   //
   // This optimization *is* an option if `mark_isolated_patches` is set since in that case
   // the only values used are `1` for isolated patches and `0` for the rest of the domain.
+  //
+  // Note: depending on the cost of MPI_Comm_split() it may be more efficient to use the
+  // original communicator instead of creating a sub-communicator. We need to do some
+  // profiling...
   std::map<int, int> labels;
   {
     MPI_Comm comm = MPI_COMM_NULL;
