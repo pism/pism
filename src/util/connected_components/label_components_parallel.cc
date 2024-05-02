@@ -36,25 +36,25 @@ namespace details {
 static bool west_boundary(const Grid &grid, int i) {
   int i_first = grid.xs();
   return (i == i_first) and (i != 0);
-};
+}
 
 //! East boundary of a sub-domain.
 static bool east_boundary(const Grid &grid, int i) {
   int i_last = grid.xs() + grid.xm() - 1;
   return (i == i_last) and (i != (int)grid.Mx() - 1);
-};
+}
 
 //! North boundary of a sub-domain.
 static bool north_boundary(const Grid &grid, int j) {
   int j_last = grid.ys() + grid.ym() - 1;
   return (j == j_last) and (j != (int)grid.My() - 1);
-};
+}
 
 //! South boundary of a sub-domain.
 static bool south_boundary(const Grid &grid, int j) {
   int j_first = grid.ys();
   return (j == j_first) and (j != 0);
-};
+}
 
 /*!
  * Inspect sub-domain edges to detect connections between patches owned by individual
