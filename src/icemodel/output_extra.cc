@@ -30,7 +30,7 @@
 namespace pism {
 
 //! Computes the maximum time-step we can take and still hit all `-extra_times`.
-MaxTimestep IceModel::extras_max_timestep(double my_t) {
+MaxTimestep IceModel::extras_max_timestep(double t) {
 
   if (m_extra_filename.empty() or
       (not m_config->get_flag("time_stepping.hit_extra_times"))) {
@@ -39,7 +39,7 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   double eps = m_config->get_number("time_stepping.resolution");
 
-  return reporting_max_timestep(m_extra_times, my_t, eps,
+  return reporting_max_timestep(m_extra_times, t, eps,
                                 "reporting (-extra_times)");
 }
 
@@ -144,7 +144,7 @@ void IceModel::init_extras() {
     throw;
   }
 
-  if (m_extra_times.size() == 0) {
+  if (m_extra_times.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "output.extra.times cannot be empty");
   }
 
@@ -181,14 +181,12 @@ void IceModel::init_extras() {
     }
   }
 
-  m_extra_file_is_ready = false;
-  m_split_extra         = false;
-
   if (split) {
     m_split_extra = true;
     m_log->message(2, "saving spatial time-series to '%s+year.nc'; ",
                m_extra_filename.c_str());
   } else {
+    m_split_extra = false;
     if (not ends_with(m_extra_filename, ".nc")) {
       m_log->message(2,
                  "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
@@ -237,7 +235,6 @@ void IceModel::write_extras() {
                                  // is only used if save_now == true, and in
                                  // this case saving_after is guaranteed to be
                                  // initialized. See the code below.
-  std::string filename;
   unsigned int current_extra;
   // determine if the user set the -save_at and -save_to options
   if (m_extra_filename.empty()) {
@@ -296,49 +293,39 @@ void IceModel::write_extras() {
     return;
   }
 
-  if (m_split_extra) {
-    m_extra_file_is_ready = false;        // each time-series record is written to a separate file
-    auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
-    filename = pism::printf("%s_%s.nc",
-                            m_extra_filename.c_str(),
-                            date_without_spaces.c_str());
-  } else {
-    filename = m_extra_filename;
-  }
-
-  m_log->message(3,
-                 "saving spatial time-series to %s at %s\n",
-                 filename.c_str(), m_time->date(m_time->current()).c_str());
-
-  // default behavior is to move the file aside if it exists already; option allows appending
-  bool append = m_config->get_flag("output.extra.append");
-  auto mode = m_extra_file_is_ready or append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
-
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
   {
-    if (not m_extra_file) {
-      m_extra_file.reset(new File(m_grid->com,
-                                  filename,
-                                  string_to_backend(m_config->get_string("output.format")),
-                                  mode,
-                                  m_ctx->pio_iosys_id()));
-    }
-
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    if (not m_extra_file_is_ready) {
+    if (m_extra_file == nullptr) {
+
+      // default behavior is to move the file aside if it exists already; option allows appending
+      auto mode =
+          m_config->get_flag("output.extra.append") ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
+
+      std::string filename = m_extra_filename;
+      if (m_split_extra) {
+        // each time-series record is written to a separate file
+        auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
+        filename = pism::printf("%s_%s.nc", m_extra_filename.c_str(), date_without_spaces.c_str());
+      }
+
+      m_extra_file.reset(new File(m_grid->com, filename,
+                                  string_to_backend(m_config->get_string("output.format")), mode,
+                                  m_ctx->pio_iosys_id()));
+
       // Prepare the file:
       io::define_time(*m_extra_file, *m_ctx);
       m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
-      io::define_time_bounds(m_extra_bounds,
-                             time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
+      io::define_time_bounds(m_extra_bounds, time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
 
       write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
-
-      m_extra_file_is_ready = true;
     }
+
+    m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
+                   m_time->date(m_time->current()).c_str());
 
     write_run_stats(*m_extra_file, run_stats());
 
