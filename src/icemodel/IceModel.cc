@@ -60,7 +60,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_sys(context->unit_system()),
       m_log(context->log()),
       m_time(context->time()),
-      m_wide_stencil(static_cast<int>(m_config->get_number("grid.max_stencil_width"))),
       m_output_global_attributes("PISM_GLOBAL", m_sys),
       m_geometry(m_grid),
       m_new_bed_elevation(true),
@@ -72,14 +71,10 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
       m_step_counter(0),
       m_thickness_change(grid),
-      m_ts_times(new std::vector<double>()),
-      m_timestamp("timestamp", m_sys) {
+      m_ts_times(new std::vector<double>()) {
 
   m_velocity_bc_mask.set_interpolation_type(NEAREST);
   m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
-
-  m_timestamp["units"] = "hours";
-  m_timestamp["long_name"] = "wall-clock time since the beginning of the run";
 
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);

@@ -250,8 +250,6 @@ protected:
   //! Time manager
   const Time::Ptr m_time;
 
-  const int m_wide_stencil;
-
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
 
@@ -473,7 +471,6 @@ protected:
            std::vector<std::shared_ptr<petsc::Viewer> > > m_viewers;
 
 private:
-  VariableMetadata m_timestamp;
   double m_start_time;    // this is used in the wall-clock-time checkpoint code
 };
 
