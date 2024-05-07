@@ -444,7 +444,7 @@ protected:
   MaxTimestep ts_max_timestep(double my_t);
 
   // spatially-varying time-series
-  bool m_save_extra, m_extra_file_is_ready, m_split_extra;
+  bool m_extra_file_is_ready, m_split_extra;
   std::string m_extra_filename;
   std::vector<double> m_extra_times;
   unsigned int m_next_extra;

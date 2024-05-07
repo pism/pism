@@ -99,9 +99,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_output_global_attributes["Conventions"] = "CF-1.6";
   m_output_global_attributes["source"] = pism::version();
 
-  // Do not save time-series by default:
-  m_save_extra     = false;
-
   m_fracture = nullptr;
 
   reset_counters();

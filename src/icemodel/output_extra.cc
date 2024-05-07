@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@ namespace pism {
 //! Computes the maximum time-step we can take and still hit all `-extra_times`.
 MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
-  if ((not m_save_extra) or
+  if (m_extra_filename.empty() or
       (not m_config->get_flag("time_stepping.hit_extra_times"))) {
     return MaxTimestep("reporting (-extra_times)");
   }
@@ -133,7 +133,7 @@ void IceModel::init_extras() {
   }
 
   if (not extra_file_set and not times_set) {
-    m_save_extra = false;
+    m_extra_filename.clear();
     return;
   }
 
@@ -181,7 +181,6 @@ void IceModel::init_extras() {
     }
   }
 
-  m_save_extra          = true;
   m_extra_file_is_ready = false;
   m_split_extra         = false;
 
@@ -241,7 +240,7 @@ void IceModel::write_extras() {
   std::string filename;
   unsigned int current_extra;
   // determine if the user set the -save_at and -save_to options
-  if (not m_save_extra) {
+  if (m_extra_filename.empty()) {
     return;
   }
 
