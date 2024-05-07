@@ -620,6 +620,120 @@ protected:
 
 namespace pism {
 
+namespace details {
+enum IceKind {ICE_COLD, ICE_TEMPERATE};
+
+static double ice_volume(const array::Scalar &ice_thickness,
+                         const array::Array3D &ice_enthalpy,
+                         IceKind kind,
+                         double thickness_threshold) {
+
+  auto grid = ice_thickness.grid();
+  auto ctx = grid->ctx();
+  auto EC = ctx->enthalpy_converter();
+
+  auto cell_area = grid->cell_area();
+  const auto& z = grid->z();
+
+  double volume = 0.0;
+
+  // count the volume of a 3D grid cell if
+  //
+  // - it is temperate and we're asked for the temperate ice volume
+  // - it is cold and we're asked for the cold ice volume
+  //
+  // return zero otherwise
+  //
+  // uses the depth at the *bottom* of a cell to compute pressure
+  auto volume_counter = [EC, kind, cell_area](double z_min, double z_max, double H, double E) {
+    double depth = H - z_min;
+    double P = EC->pressure(depth);
+    double V = cell_area * (z_max - z_min);
+    bool temperate = EC->is_temperate_relaxed(E, P); // FIXME issue #15
+
+    switch (kind) {
+    case ICE_TEMPERATE:
+      return temperate ? V : 0.0;
+    default:
+    case ICE_COLD:
+      return (not temperate) ? V : 0.0;
+    }
+  };
+
+  array::AccessScope list{&ice_thickness, &ice_enthalpy};
+  ParallelSection loop(grid->com);
+  try {
+    for (auto p = grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double H = ice_thickness(i, j);
+
+      if (H >= thickness_threshold) {
+        const int ks = grid->kBelowHeight(H);
+        const double *E = ice_enthalpy.get_column(i, j);
+
+        for (int k = 0; k < ks; ++k) {
+          volume += volume_counter(z[k], z[k + 1], H, E[k]);
+        }
+
+        volume += volume_counter(z[ks], H, H, E[ks]);
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return GlobalSum(grid->com, volume);
+}
+
+static double base_area(const array::Scalar &ice_thickness,
+                        const array::Array3D &ice_enthalpy,
+                        IceKind kind,
+                        double thickness_threshold) {
+
+  auto grid = ice_thickness.grid();
+  auto ctx = grid->ctx();
+  auto EC = ctx->enthalpy_converter();
+
+  auto cell_area = grid->cell_area();
+
+  double area = 0.0;
+
+  array::AccessScope list{&ice_thickness, &ice_enthalpy};
+  ParallelSection loop(grid->com);
+  try {
+    for (auto p = grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double thickness = ice_thickness(i, j);
+
+      if (thickness >= thickness_threshold) {
+        double basal_enthalpy = ice_enthalpy.get_column(i, j)[0];
+
+        bool temperate = EC->is_temperate_relaxed(basal_enthalpy,
+                                                  EC->pressure(thickness)); // FIXME issue #15
+
+        switch (kind) {
+        case ICE_TEMPERATE:
+          area += temperate ? cell_area : 0.0;
+          break;
+        default:
+        case ICE_COLD:
+          area += (not temperate) ? cell_area : 0.0;
+        }
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return GlobalSum(grid->com, area);
+}
+
+} // end of namespace details
+
 // Horrendous names used by InitMIP (and ISMIP6, and CMIP5). Ugh.
 static const char* land_ice_area_fraction_name           = "sftgif";
 static const char* grounded_ice_sheet_area_fraction_name = "sftgrf";
@@ -1724,7 +1838,10 @@ public:
   }
 
   double compute() {
-    return model->ice_volume_temperate(m_config->get_number("output.ice_free_thickness_standard"));
+    auto thickness_threshold = m_config->get_number("output.ice_free_thickness_standard");
+    return details::ice_volume(model->geometry().ice_thickness,
+                               model->energy_balance_model()->enthalpy(), details::ICE_TEMPERATE,
+                               thickness_threshold);
   }
 };
 
@@ -1740,7 +1857,9 @@ public:
   }
 
   double compute() {
-    return model->ice_volume_temperate(0.0);
+    return details::ice_volume(model->geometry().ice_thickness,
+                               model->energy_balance_model()->enthalpy(), details::ICE_TEMPERATE,
+                               0.0);
   }
 };
 
@@ -1756,7 +1875,10 @@ public:
   }
 
   double compute() {
-    return model->ice_volume_cold(m_config->get_number("output.ice_free_thickness_standard"));
+    auto thickness_threshold = m_config->get_number("output.ice_free_thickness_standard");
+    return details::ice_volume(model->geometry().ice_thickness,
+                               model->energy_balance_model()->enthalpy(), details::ICE_COLD,
+                               thickness_threshold);
   }
 };
 
@@ -1771,7 +1893,9 @@ public:
   }
 
   double compute() {
-    return model->ice_volume_cold(0.0);
+    return details::ice_volume(model->geometry().ice_thickness,
+                               model->energy_balance_model()->enthalpy(), details::ICE_COLD,
+                               0.0);
   }
 };
 
@@ -1787,7 +1911,10 @@ public:
   }
 
   double compute() {
-    return model->temperate_base_area(m_config->get_number("output.ice_free_thickness_standard"));
+    auto thickness_threshold = m_config->get_number("output.ice_free_thickness_standard");
+    return details::base_area(model->geometry().ice_thickness,
+                              model->energy_balance_model()->enthalpy(), details::ICE_TEMPERATE,
+                              thickness_threshold);
   }
 };
 
@@ -1803,7 +1930,10 @@ public:
   }
 
   double compute() {
-    return model->cold_base_area(m_config->get_number("output.ice_free_thickness_standard"));
+    auto thickness_threshold = m_config->get_number("output.ice_free_thickness_standard");
+    return details::base_area(model->geometry().ice_thickness,
+                              model->energy_balance_model()->enthalpy(), details::ICE_COLD,
+                              thickness_threshold);
   }
 };
 
@@ -3564,144 +3694,6 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
     result = 0.0;
   }
   return result;
-}
-
-namespace details {
-enum IceKind {ICE_COLD, ICE_TEMPERATE};
-
-static double ice_volume(const array::Scalar &ice_thickness,
-                         const array::Array3D &ice_enthalpy,
-                         IceKind kind,
-                         double thickness_threshold) {
-
-  auto grid = ice_thickness.grid();
-  auto ctx = grid->ctx();
-  auto EC = ctx->enthalpy_converter();
-
-  auto cell_area = grid->cell_area();
-  const auto& z = grid->z();
-
-  double volume = 0.0;
-
-  // count the volume of a 3D grid cell if
-  //
-  // - it is temperate and we're asked for the temperate ice volume
-  // - it is cold and we're asked for the cold ice volume
-  //
-  // return zero otherwise
-  //
-  // uses the depth at the *bottom* of a cell to compute pressure
-  auto volume_counter = [EC, kind, cell_area](double z_min, double z_max, double H, double E) {
-    double depth = H - z_min;
-    double P = EC->pressure(depth);
-    double V = cell_area * (z_max - z_min);
-    bool temperate = EC->is_temperate_relaxed(E, P); // FIXME issue #15
-
-    switch (kind) {
-    case ICE_TEMPERATE:
-      return temperate ? V : 0.0;
-    default:
-    case ICE_COLD:
-      return (not temperate) ? V : 0.0;
-    }
-  };
-
-  array::AccessScope list{&ice_thickness, &ice_enthalpy};
-  ParallelSection loop(grid->com);
-  try {
-    for (auto p = grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double H = ice_thickness(i, j);
-
-      if (H >= thickness_threshold) {
-        const int ks = grid->kBelowHeight(H);
-        const double *E = ice_enthalpy.get_column(i, j);
-
-        for (int k = 0; k < ks; ++k) {
-          volume += volume_counter(z[k], z[k + 1], H, E[k]);
-        }
-
-        volume += volume_counter(z[ks], H, H, E[ks]);
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  return GlobalSum(grid->com, volume);
-}
-
-static double base_area(const array::Scalar &ice_thickness,
-                        const array::Array3D &ice_enthalpy,
-                        IceKind kind,
-                        double thickness_threshold) {
-
-  auto grid = ice_thickness.grid();
-  auto ctx = grid->ctx();
-  auto EC = ctx->enthalpy_converter();
-
-  auto cell_area = grid->cell_area();
-
-  double area = 0.0;
-
-  array::AccessScope list{&ice_thickness, &ice_enthalpy};
-  ParallelSection loop(grid->com);
-  try {
-    for (auto p = grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double thickness = ice_thickness(i, j);
-
-      if (thickness >= thickness_threshold) {
-        double basal_enthalpy = ice_enthalpy.get_column(i, j)[0];
-
-        bool temperate = EC->is_temperate_relaxed(basal_enthalpy,
-                                                  EC->pressure(thickness)); // FIXME issue #15
-
-        switch (kind) {
-        case ICE_TEMPERATE:
-          area += temperate ? cell_area : 0.0;
-          break;
-        default:
-        case ICE_COLD:
-          area += (not temperate) ? cell_area : 0.0;
-        }
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  return GlobalSum(grid->com, area);
-}
-
-} // end of namespace details
-
-//! Computes the temperate ice volume, in m^3.
-double IceModel::ice_volume_temperate(double thickness_threshold) const {
-  return details::ice_volume(m_geometry.ice_thickness, m_energy_model->enthalpy(),
-                             details::ICE_TEMPERATE, thickness_threshold);
-}
-
-//! Computes the cold ice volume, in m^3.
-double IceModel::ice_volume_cold(double thickness_threshold) const {
-  return details::ice_volume(m_geometry.ice_thickness, m_energy_model->enthalpy(),
-                             details::ICE_COLD, thickness_threshold);
-}
-
-//! Computes area of basal ice which is temperate, in m^2.
-double IceModel::temperate_base_area(double thickness_threshold) const {
-  return details::base_area(m_geometry.ice_thickness, m_energy_model->enthalpy(),
-                            details::ICE_TEMPERATE, thickness_threshold);
-}
-
-//! Computes area of basal ice which is cold, in m^2.
-double IceModel::cold_base_area(double thickness_threshold) const {
-  return details::base_area(m_geometry.ice_thickness, m_energy_model->enthalpy(),
-                            details::ICE_COLD, thickness_threshold);
 }
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -140,11 +140,6 @@ public:
   const array::Scalar &calving() const;
   const array::Scalar &frontal_melt() const;
   const array::Scalar &forced_retreat() const;
-
-  double ice_volume_temperate(double thickness_threshold) const;
-  double ice_volume_cold(double thickness_threshold) const;
-  double temperate_base_area(double thickness_threshold) const;
-  double cold_base_area(double thickness_threshold) const;
 
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
