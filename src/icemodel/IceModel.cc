@@ -73,13 +73,10 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_step_counter(0),
       m_thickness_change(grid),
       m_ts_times(new std::vector<double>()),
-      m_extra_bounds("time_bounds", m_sys),
       m_timestamp("timestamp", m_sys) {
 
   m_velocity_bc_mask.set_interpolation_type(NEAREST);
   m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
-
-  m_extra_bounds["units"] = m_time->units_string();
 
   m_timestamp["units"] = "hours";
   m_timestamp["long_name"] = "wall-clock time since the beginning of the run";

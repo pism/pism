@@ -298,6 +298,9 @@ void IceModel::write_extras() {
   {
     std::string time_name = m_config->get_string("time.dimension_name");
 
+    VariableMetadata time_bounds("time_bounds", m_sys);
+    time_bounds.units(m_time->units_string());
+
     if (m_extra_file == nullptr) {
 
       // default behavior is to move the file aside if it exists already; option allows appending
@@ -319,7 +322,7 @@ void IceModel::write_extras() {
       io::define_time(*m_extra_file, *m_ctx);
       m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
-      io::define_time_bounds(m_extra_bounds, time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
+      io::define_time_bounds(time_bounds, time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
 
       write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
     }
@@ -340,7 +343,7 @@ void IceModel::write_extras() {
     unsigned int time_length = m_extra_file->dimension_length(time_name);
     size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
-    io::write_time_bounds(*m_extra_file, m_extra_bounds,
+    io::write_time_bounds(*m_extra_file, time_bounds,
                           time_start, {m_last_extra, current_time});
     // make sure all changes are written
     m_extra_file->sync();

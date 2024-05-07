@@ -450,7 +450,6 @@ protected:
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
-  VariableMetadata m_extra_bounds;
   std::unique_ptr<File> m_extra_file;
   void init_extras();
   void write_extras();
