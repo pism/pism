@@ -235,9 +235,9 @@ protected:
   //! Computational grid
   const std::shared_ptr<Grid> m_grid;
   //! Configuration flags and parameters
-  const Config::Ptr m_config;
+  Config::Ptr m_config;
   //! Execution context
-  const std::shared_ptr<Context> m_ctx;
+  std::shared_ptr<Context> m_ctx;
   //! Unit system
   const units::System::Ptr m_sys;
   //! Logger
