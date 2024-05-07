@@ -22,6 +22,7 @@
 #include <map>
 
 #include <petscvec.h>
+#include <set>
 
 #include "pism/util/io/File.hh"
 #include "pism/util/Grid.hh"
@@ -45,6 +46,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -52,6 +54,8 @@ struct File::Impl {
   MPI_Comm com;
   io::Backend backend;
   io::NCFile::Ptr nc;
+
+  std::set<std::string> written_variables;
 };
 
 io::Backend string_to_backend(const std::string &backend) {
@@ -819,5 +823,12 @@ std::string File::variable_name(unsigned int id) const {
   return result;
 }
 
+void File::set_variable_was_written(const std::string &name) const {
+  m_impl->written_variables.insert(name);
+}
+
+bool File::get_variable_was_written(const std::string &name) const {
+  return member(name, m_impl->written_variables);
+}
 
 } // end of namespace pism

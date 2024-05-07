@@ -267,7 +267,6 @@ static void define_dimensions(const SpatialVariableMetadata &var, const Grid &gr
   if (not file.find_dimension(x_name)) {
     define_dimension(file, grid.Mx(), var.x());
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE, { grid.x(1) - grid.x(0) });
-    file.write_attribute(x_name, "not_written", PISM_INT, { 1.0 });
   }
 
   // y
@@ -275,7 +274,6 @@ static void define_dimensions(const SpatialVariableMetadata &var, const Grid &gr
   if (not file.find_dimension(y_name)) {
     define_dimension(file, grid.My(), var.y());
     file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE, { grid.y(1) - grid.y(0) });
-    file.write_attribute(y_name, "not_written", PISM_INT, { 1.0 });
   }
 
   // z
@@ -286,7 +284,6 @@ static void define_dimensions(const SpatialVariableMetadata &var, const Grid &gr
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
       define_dimension(file, nlevels, var.z());
-      file.write_attribute(z_name, "not_written", PISM_INT, { 1.0 });
 
       bool spatial_dim = not var.z().get_string("axis").empty();
 
@@ -309,11 +306,10 @@ static void define_dimensions(const SpatialVariableMetadata &var, const Grid &gr
 
 static void write_dimension_data(const File &file, const std::string &name,
                                  const std::vector<double> &data) {
-  bool written = file.attribute_type(name, "not_written") == PISM_NAT;
+  bool written = file.get_variable_was_written(name);
   if (not written) {
     file.write_variable(name, { 0 }, { (unsigned int)data.size() }, data.data());
-    file.redef();
-    file.remove_attribute(name, "not_written");
+    file.set_variable_was_written(name);
   }
 }
 
@@ -564,12 +560,6 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
   if (mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
     file.write_attribute(var.get_name(), "grid_mapping", mapping.get_name());
   }
-
-  if (var.get_time_independent()) {
-    // mark this variable as "not written" so that write_spatial_variable can avoid
-    // writing it more than once.
-    file.write_attribute(var.get_name(), "not_written", PISM_INT, { 1.0 });
-  }
 }
 
 //! Read a variable from a file into an array `output`.
@@ -691,18 +681,13 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
 
   write_dimensions(var, grid, file);
 
-  bool time_dependent = not var.get_time_independent();
+  bool time_independent = var.get_time_independent();
+  bool written = file.get_variable_was_written(var.get_name());
 
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
-  if (not time_dependent) {
-    bool written = file.attribute_type(var.get_name(), "not_written") == PISM_NAT;
-    if (written) {
-      return;
-    }
-
-    file.redef();
-    file.remove_attribute(var.get_name(), "not_written");
+  if (written and time_independent) {
+    return;
   }
 
   // make sure we have at least one level
@@ -723,10 +708,11 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
     units::Converter(var.unit_system(), units, output_units)
         .convert_doubles(tmp.data(), tmp.size());
 
-    file.write_distributed_array(name, grid, nlevels, time_dependent, tmp.data());
+    file.write_distributed_array(name, grid, nlevels, not time_independent, tmp.data());
   } else {
-    file.write_distributed_array(name, grid, nlevels, time_dependent, input);
+    file.write_distributed_array(name, grid, nlevels, not time_independent, input);
   }
+  file.set_variable_was_written(var.get_name());
 }
 
 /*!
