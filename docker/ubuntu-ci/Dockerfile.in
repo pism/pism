@@ -10,12 +10,11 @@ RUN set -eux; \
         rm -rf /var/lib/apt/lists/*
 
 # Install tools:
-# - ccache and lld to speed up builds,
 # - Cython to build PETSc
 # - wget to download sources of I/O libraries
 # - NumPy is used by petsc4py and PISM's scripts
 # - SciPy is used by at least one regression test
-# - python-netcdf4 is use by many regression tests
+# - python-netcdf4 is used by many regression tests
 # - NCO is used by many regression tests
 # - PROJ is used by PISM's code computing lon,lat coordinates
 # - python3-dev is needed to build Python bindings
@@ -24,11 +23,12 @@ RUN set -eux; \
 # - MPICH is needed to build PETSc and PISM
 # - doxygen and graphviz are needed to build the source code browser
 # - python2 is needed to install old PETSc
-# - gcc-10 and g++-10 are needed to build old CMake and for testing
+# - various versions of GCC and Clang are used to catch compilation issues
+# - latexmk is needed to build the PDF version of the manual
+# - Sphinx and sphinxcontrib-bibtex are needed to build the manual
 RUN set -eux; \
     apt-get update && apt-get install -y \
     apt-utils \
-    ccache \
     clang \
     clang-11 \
     clang-12 \
@@ -83,13 +83,15 @@ COPY netcdf.sh /tmp/
 COPY pnetcdf.sh /tmp/
 COPY parallelio.sh /tmp/
 
-RUN set -eux; \
-        cd /tmp && \
-        ./hdf5.sh && \
-        ./netcdf.sh && \
-        ./pnetcdf.sh && \
-        ./parallelio.sh && \
-        rm -rf ~/local/build
+RUN <<EOF
+    set -eux
+    cd /tmp
+    ./hdf5.sh
+    ./netcdf.sh
+    ./pnetcdf.sh
+    ./parallelio.sh
+    rm -rf ~/local/build
+EOF
 
 # Build the current PETSc version
 COPY petsc.sh /tmp/
