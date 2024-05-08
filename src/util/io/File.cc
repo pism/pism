@@ -53,7 +53,7 @@ namespace pism {
 struct File::Impl {
   MPI_Comm com;
   io::Backend backend;
-  io::NCFile::Ptr nc;
+  std::shared_ptr<io::NCFile> nc;
 
   std::set<std::string> written_variables;
 };
@@ -127,7 +127,7 @@ static io::Backend choose_backend(MPI_Comm com, const std::string &filename) {
   return io::PISM_NETCDF3;
 }
 
-static io::NCFile::Ptr create_backend(MPI_Comm com, io::Backend backend, int iosysid) {
+static std::shared_ptr<io::NCFile> create_backend(MPI_Comm com, io::Backend backend, int iosysid) {
   // disable a compiler warning
   (void) iosysid;
 
@@ -136,19 +136,19 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, io::Backend backend, int ios
 
   switch (backend) {
   case io::PISM_NETCDF3:
-    return io::NCFile::Ptr(new io::NC_Serial(com));
+    return std::make_shared<io::NC_Serial>(com);
   case io::PISM_NETCDF4_SERIAL:
-    return io::NCFile::Ptr(new io::NC4_Serial(com));
+    return std::make_shared<io::NC4_Serial>(com);
   case io::PISM_NETCDF4_PARALLEL:
 #if (Pism_USE_PARALLEL_NETCDF4==1)
-    return io::NCFile::Ptr(new io::NC4_Par(com));
+    return std::make_shared<io::NC4_Par>(com);
 #else
     break;
 #endif
 
   case io::PISM_PNETCDF:
 #if (Pism_USE_PNETCDF==1)
-    return io::NCFile::Ptr(new io::PNCFile(com));
+    return std::make_shared<io::PNCFile>(com);
 #else
     break;
 #endif
@@ -163,7 +163,7 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, io::Backend backend, int ios
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "To use ParallelIO you have to pass iosysid to File");
       }
-      return io::NCFile::Ptr(new io::ParallelIO(com, iosysid, backend));
+      return std::make_shared<io::ParallelIO>(com, iosysid, backend);
     }
 #else
     break;

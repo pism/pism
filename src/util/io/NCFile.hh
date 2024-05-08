@@ -58,8 +58,6 @@ namespace io {
  */
 class NCFile {
 public:
-  typedef std::shared_ptr<NCFile> Ptr;
-
   NCFile(MPI_Comm com);
   virtual ~NCFile() = default;
 
