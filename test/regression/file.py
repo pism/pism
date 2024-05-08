@@ -91,14 +91,6 @@ class File(TestCase):
             except:
                 pass
 
-    def test_backend(self):
-        "File.backend()"
-        for backend in backends:
-            f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
-                          ctx.pio_iosys_id())
-            assert f.backend() == backend
-            f.close()
-
     def test_com(self):
         "File.com()"
         for backend in backends:

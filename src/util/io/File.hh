@@ -59,8 +59,6 @@ public:
        int iosysid = -1);
   ~File();
 
-  io::Backend backend() const;
-
   MPI_Comm com() const;
 
   void close();

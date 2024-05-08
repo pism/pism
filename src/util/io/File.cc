@@ -52,7 +52,6 @@ namespace pism {
 
 struct File::Impl {
   MPI_Comm com;
-  io::Backend backend;
   std::shared_ptr<io::NCFile> nc;
 
   std::set<std::string> written_variables;
@@ -191,13 +190,11 @@ File::File(MPI_Comm com, const std::string &filename, io::Backend backend, io::M
   }
 
   if (backend == io::PISM_GUESS) {
-    m_impl->backend = choose_backend(com, filename);
-  } else {
-    m_impl->backend = backend;
+    backend = choose_backend(com, filename);
   }
 
   m_impl->com = com;
-  m_impl->nc  = create_backend(m_impl->com, m_impl->backend, iosysid);
+  m_impl->nc  = create_backend(m_impl->com, backend, iosysid);
 
   this->open(filename, mode);
 }
@@ -217,10 +214,6 @@ File::~File() {
 
 MPI_Comm File::com() const {
   return m_impl->com;
-}
-
-io::Backend File::backend() const {
-  return m_impl->backend;
 }
 
 void File::set_compression_level(int level) const {
