@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install required packages listed in the manual. This is done separately so that we can
 # re-use this fs layer.
 RUN set -eux; \
-        apt-get update && apt-get install -y \
+        apt-get update && apt-get install -y --no-install-recommends \
         ${PISM_DEBIAN_PACKAGE_LIST} \
         ; \
         rm -rf /var/lib/apt/lists/*
@@ -27,7 +27,7 @@ RUN set -eux; \
 # - latexmk is needed to build the PDF version of the manual
 # - Sphinx and sphinxcontrib-bibtex are needed to build the manual
 RUN set -eux; \
-    apt-get update && apt-get install -y \
+    apt-get update && apt-get install -y --no-install-recommends \
     apt-utils \
     clang \
     clang-11 \
