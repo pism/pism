@@ -33,10 +33,10 @@ OPTIONS
 -o          output file name
 -help       prints PISM and PETSc command-line option help; use with **grep**
 -verbose    selects stdout verbosity level, 1 -- minimal output, 2 -- normal, 3 -- more debugging info, ...
+-eisII X    run an EISMINT II experiment X
+-test X     run a verification test X
 
 SEE ALSO
 ========
 
 - The *User's Manual* and other documentation online at https://www.pism.io/docs/manual
-
-- **pismv** to run some verification tests

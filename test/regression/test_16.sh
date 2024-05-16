@@ -13,8 +13,8 @@ set -e
 
 # run test L
 OPTS="-test L -Mbz 1 -Mz 31 -y 1000years -max_dt 60years -o_size none -verbose 1"
-$MPIEXEC -n 2 $PISM_PATH/pismv -Mx 21 -My 21 $OPTS   > ${output}
-$MPIEXEC -n 2 $PISM_PATH/pismv -Mx 31 -My 31 $OPTS  >> ${output}
+$MPIEXEC -n 2 $PISM_PATH/pismr -Mx 21 -My 21 $OPTS   > ${output}
+$MPIEXEC -n 2 $PISM_PATH/pismr -Mx 31 -My 31 $OPTS  >> ${output}
 
 # compare results
 diff ${output} -  <<END-OF-OUTPUT

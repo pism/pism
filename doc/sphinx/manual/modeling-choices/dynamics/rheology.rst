@@ -133,8 +133,8 @@ respectively. Allowed arguments are listed below.
 
 #. ``arr``: *Cold* part of Paterson-Budd. Regardless of temperature, the `A` and `Q` values
    for `T^* < T_{\text{critical}}` in the Paterson-Budd law apply. This is the flow law
-   used in the thermomechanically-coupled exact solutions run by ``pismv -test F`` and
-   ``pismv -test G`` :cite:`BBL`, :cite:`BB`.
+   used in the thermomechanically-coupled exact solutions run by ``pismr -test F`` and
+   ``pismr -test G`` :cite:`BBL`, :cite:`BB`.
 
 #. ``arrwarm``: *Warm* part of Paterson-Budd. Regardless of temperature, the `A` and `Q`
    values for `T^* > T_{\text{critical}}` in Paterson-Budd apply.

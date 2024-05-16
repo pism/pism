@@ -11,8 +11,8 @@ output=`mktemp pism-test-k.XXXX` || exit 1
 
 # run test K
 OPTS="-test K -Mx 4 -My 4 -y 13000.0years -Lbz 1000 -z_spacing equal -verbose 1 -o_size none -time_stepping.resolution 0"
-$PISM_PATH/pismv -Mz 41 -Mbz 11 -max_dt 60.0years $OPTS  > ${output}
-$PISM_PATH/pismv -Mz 81 -Mbz 21 -max_dt 30.0years $OPTS >> ${output}
+$PISM_PATH/pismr -Mz 41 -Mbz 11 -max_dt 60.0years $OPTS  > ${output}
+$PISM_PATH/pismr -Mz 81 -Mbz 21 -max_dt 30.0years $OPTS >> ${output}
 
 # compare results
 diff ${output} -  <<END-OF-OUTPUT

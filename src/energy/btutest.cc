@@ -39,7 +39,7 @@ static char help[] =
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
 
-//! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
+//! Allocate the verification context. Uses ColdEnthalpyConverter.
 std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &prefix) {
   using namespace pism;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@ static char help[] =
 
 #include "pism/icemodel/IceModel.hh"
 #include "pism/icemodel/IceEISModel.hh"
+#include "pism/verification/iceCompModel.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 
@@ -33,13 +34,16 @@ static char help[] =
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_options.hh"
+#include "pism/util/EnthalpyConverter.hh"
 
 #include "pism/regional/Grid_Regional.hh"
 #include "pism/regional/IceRegionalModel.hh"
 
 using namespace pism;
 
-static void set_eismint2_config_defaults(Config &config) {
+namespace eismint2 {
+
+static void set_config_defaults(Config &config) {
   config.set_number("grid.Lx", 750e3);
   config.set_number("grid.Ly", 750e3);
   config.set_string("grid.periodicity", "none");
@@ -74,6 +78,130 @@ static void set_eismint2_config_defaults(Config &config) {
   // no sliding + SIA
   config.set_string("stress_balance.model", "sia");
 }
+} // namespace eismint2
+
+namespace verification {
+
+//! Allocate the verification mode context. Uses ColdEnthalpyConverter.
+std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix) {
+  // unit system
+  auto sys = std::make_shared<units::System>();
+
+  // logger
+  auto logger = logger_from_options(com);
+
+  // configuration parameters
+  auto config = config_from_options(com, *logger, sys);
+
+  config->set_string("grid.periodicity", "none");
+  config->set_string("grid.registration", "corner");
+
+  set_config_from_options(sys, *config);
+  config->resolve_filenames();
+
+  print_config(*logger, 3, *config);
+
+  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
+
+  auto EC = std::make_shared<ColdEnthalpyConverter>(*config);
+
+  return std::make_shared<Context>(com, sys, config, EC, time, logger, prefix);
+}
+
+grid::Parameters grid_defaults(Config::Ptr config, char testname) {
+  // This sets the defaults for each test; command-line options can override this.
+
+  grid::Parameters P(*config);
+
+  // use the cell corner grid registration
+  P.registration = pism::grid::CELL_CORNER;
+  // use the non-periodic grid:
+  P.periodicity = pism::grid::NOT_PERIODIC;
+  // equal spacing is the default for all the tests except K
+  P.Lx = config->get_number("grid.Lx");
+  P.Ly = config->get_number("grid.Ly");
+
+  P.Mx = config->get_number("grid.Mx");
+  P.My = config->get_number("grid.My");
+
+  auto spacing    = pism::grid::EQUAL;
+  double Lz       = config->get_number("grid.Lz");
+  unsigned int Mz = config->get_number("grid.Mz");
+
+  switch (testname) {
+  case 'A':
+  case 'B':
+  case 'H':
+    // use 2400km by 2400km by 4000m rectangular domain
+    P.Lx = 1200e3;
+    P.Ly = P.Lx;
+    Lz   = 4000;
+    break;
+  case 'C':
+  case 'D':
+    // use 2000km by 2000km by 4000m rectangular domain
+    P.Lx = 1000e3;
+    P.Ly = P.Lx;
+    Lz   = 4000;
+    break;
+  case 'F':
+  case 'G':
+  case 'L':
+    // use 1800km by 1800km by 4000m rectangular domain
+    P.Lx = 900e3;
+    P.Ly = P.Lx;
+    Lz   = 4000;
+    break;
+  case 'K':
+  case 'O':
+    // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
+    config->set_number("grid.Mbz", 2);
+    config->set_number("grid.Lbz", 1000);
+    P.Lx          = 1000e3;
+    P.Ly          = P.Lx;
+    Lz            = 4000;
+    P.periodicity = pism::grid::XY_PERIODIC;
+    spacing       = pism::grid::QUADRATIC;
+    break;
+  case 'V':
+    P.My          = 3;     // it's a flow-line setup
+    P.Lx          = 500e3; // 500 km long
+    P.periodicity = pism::grid::Y_PERIODIC;
+    break;
+  default:
+    throw RuntimeError(PISM_ERROR_LOCATION, "desired test not implemented\n");
+  }
+
+  P.z = grid::compute_vertical_levels(Lz, Mz, spacing, config->get_number("grid.lambda"));
+  return P;
+}
+
+std::shared_ptr<Grid> grid(std::shared_ptr<Context> ctx, char testname) {
+  auto config = ctx->config();
+
+  auto input_file = config->get_string("input.file");
+
+  if (config->get_flag("input.bootstrap")) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "PISM does not support bootstrapping in verification mode");
+  }
+
+  if (not input_file.empty()) {
+    auto r = grid::string_to_registration(ctx->config()->get_string("grid.registration"));
+
+    // get grid from a PISM input file
+    return Grid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
+  }
+
+  // use defaults set by grid_defaults()
+  auto P = grid_defaults(ctx->config(), testname);
+  P.horizontal_size_from_options();
+  P.horizontal_extent_from_options(ctx->unit_system());
+  P.vertical_grid_from_options(ctx->config());
+  P.ownership_ranges_from_options(ctx->size());
+
+  return std::make_shared<Grid>(ctx, P);
+}
+} // namespace verification
 
 int main(int argc, char *argv[]) {
 
@@ -89,7 +217,19 @@ int main(int argc, char *argv[]) {
                                   "EISMINT II experiment name",
                                   "A,B,C,D,E,F,I,J,K,L", "A");
 
-    std::shared_ptr<Context> ctx = context_from_options(com, "pismr", false);
+    auto verification_test =
+        options::Keyword("-test", "Specifies PISM verification test", "A,B,C,D,F,G,H,K,L,V", "A");
+
+    if (eisII.is_set() and verification_test.is_set()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "please set -test or -eisII (not both)");
+    }
+
+    std::shared_ptr<Context> ctx;
+    if (verification_test.is_set()) {
+      ctx = verification::context(com, "pism");
+    } else {
+      ctx = context_from_options(com, "pism", false);
+    }
 
     Logger::Ptr log = ctx->log();
     Config::Ptr config = ctx->config();
@@ -97,7 +237,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> required_options{};
     if (eisII.is_set()) {
       // set defaults:
-      set_eismint2_config_defaults(*config);
+      eismint2::set_config_defaults(*config);
 
       // process -config_override
       DefaultConfig::Ptr overrides(new DefaultConfig(com,
@@ -109,7 +249,7 @@ int main(int argc, char *argv[]) {
       // process command-line options
       set_config_from_options(ctx->unit_system(), *config);
       config->resolve_filenames();
-    } else {
+    } else if (not verification_test.is_set()) {
       required_options.emplace_back("-i");
     }
 
@@ -118,10 +258,11 @@ int main(int argc, char *argv[]) {
     std::string usage =
       "  pismr -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
-      "  -i                   IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -bootstrap           enable heuristics to produce an initial state from an incomplete input\n"
-      "  -regional            enable \"regional mode\"\n"
-      "  -eisII [experiment]  enable EISMINT II mode\n"
+      "  -i                         IN.nc is input file in NetCDF format: contains PISM-written model state\n"
+      "  -bootstrap                 enable heuristics to produce an initial state from an incomplete input\n"
+      "  -regional                  enable \"regional mode\"\n"
+      "  -eisII [experiment]        enable EISMINT II mode\n"
+      "  -test  [verification_test] enable verification mode\n"
       "notes:\n"
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
@@ -141,19 +282,27 @@ int main(int argc, char *argv[]) {
     }
 
     std::shared_ptr<Grid> grid;
-    std::unique_ptr<IceModel> model;
+    std::shared_ptr<IceModel> model;
+    std::shared_ptr<IceCompModel> verification_model;
 
-    if (options::Bool("-regional", "enable regional (outlet glacier) mode")) {
+    if (verification_test.is_set()) {
+      char test = verification_test.value()[0];
+      grid = verification::grid(ctx, test);
+
+      verification_model = std::make_shared<IceCompModel>(grid, ctx, test);
+      model = verification_model;
+    } else if (options::Bool("-regional", "enable regional (outlet glacier) mode")) {
       grid = regional_grid_from_options(ctx);
-      model.reset(new IceRegionalModel(grid, ctx));
+      model = std::make_shared<IceRegionalModel>(grid, ctx);
     } else {
       grid = Grid::FromOptions(ctx);
 
       if (eisII.is_set()) {
         char experiment = eisII.value()[0];
-        model.reset(new IceEISModel(grid, ctx, experiment));
+
+        model = std::make_shared<IceEISModel>(grid, ctx, experiment);
       } else {
-        model.reset(new IceModel(grid, ctx));
+        model = std::make_shared<IceModel>(grid, ctx);
       }
     }
 
@@ -187,6 +336,11 @@ int main(int argc, char *argv[]) {
           log->message(2, "... done with the run\n");
           model->save_results();
           exit_code = 0;
+
+          if (verification_model and
+              not options::Bool("-no_report", "do not print the error report")) {
+            verification_model->reportErrors();
+          }
           break;
         }
       }

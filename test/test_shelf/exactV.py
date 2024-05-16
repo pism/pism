@@ -52,8 +52,8 @@ def plot_xc(t_years):
     plot([x, x], [y_min, y_max], '--g')
 
 
-def run_pismv(Mx, run_length, options, output):
-    command = "pismv -test V -y %f -Mx %d %s -o %s" % (run_length, Mx, options, output)
+def run_pism(Mx, run_length, options, output):
+    command = "pismr -test V -y %f -Mx %d %s -o %s" % (run_length, Mx, options, output)
     print("Running %s" % command)
     subprocess.call(shlex.split(command))
 
@@ -136,27 +136,27 @@ else:
     plotter = plot
 
 if options.variant == 0:
-    run_pismv(Mx, run_length, opt, "out.nc")
+    run_pism(Mx, run_length, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'blue')
 
     opt = opt + extras
-    run_pismv(Mx, run_length, opt + " -max_dt 1", "out.nc")
+    run_pism(Mx, run_length, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'green', same_figure=True)
 elif options.variant == 1:
     opt += " -part_grid -cfbc"
-    run_pismv(Mx, run_length, opt, "out.nc")
+    run_pism(Mx, run_length, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'blue')
 
     opt = opt + extras
-    run_pismv(Mx, run_length, opt + " -max_dt 1", "out.nc")
+    run_pism(Mx, run_length, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'green', same_figure=True)
 elif options.variant == 2:
     opt += " -cfbc -part_grid -part_grid_reduce_frontal_thickness"
-    run_pismv(Mx, run_length, opt, "out.nc")
+    run_pism(Mx, run_length, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid, reduce frontal thickness)", 'blue')
 
     opt = opt + extras
-    run_pismv(Mx, run_length, opt + " -max_dt 1", "out.nc")
+    run_pism(Mx, run_length, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid)", 'green', same_figure=True)
 else:
     print("Wrong variant number. Choose one of 0, 1, 2.")

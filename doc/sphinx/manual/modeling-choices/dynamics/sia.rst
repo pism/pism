@@ -99,7 +99,7 @@ There are two associated parameters:
 - :config:`stress_balance.sia.bed_smoother.theta_min` is the minimum value of `\theta` in
   the parameterization.
 
-This mechanism is turned off by default in ``pismv``.
+This mechanism is turned off by default in verification tests (``pismr -test ...``).
 
 Under the default :config:`output.size` (``medium``), PISM writes fields :var:`topgsmooth`
 and :var:`schoofs_theta` from this mechanism. The thickness relative to the smoothed

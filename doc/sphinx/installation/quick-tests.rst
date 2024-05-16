@@ -12,7 +12,7 @@ correctly.
 
    .. code-block:: bash
 
-      mpiexec -n 4 pismv -test G -y 200
+      mpiexec -n 4 pismr -test G -y 200
 
    If you see some output and a final ``Writing model state to file ’unnamed.nc’``
    then PISM completed successfully. At the end of this run you get measurements of the

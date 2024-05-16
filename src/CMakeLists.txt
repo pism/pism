@@ -119,10 +119,6 @@ endif()
 add_executable (pismr pismr.cc)
 target_link_libraries (pismr pism)
 
-# Verification mode "driver":
-add_executable (pismv pismv.cc)
-target_link_libraries (pismv pism)
-
 find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
 mark_as_advanced(NCGEN_PROGRAM)
 
@@ -140,7 +136,7 @@ install (
 
 # Install executables.
 install (TARGETS
-  pismr pismv # executables
+  pismr # executables
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install (FILES

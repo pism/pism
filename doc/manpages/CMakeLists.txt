@@ -20,7 +20,7 @@ if (RST2MAN_EXECUTABLE)
     endforeach(name)
   endmacro(add_manpages)
 
-  add_manpages("pismr;pismv")
+  add_manpages("pismr")
 
-  add_custom_target(manpages ALL DEPENDS pismr.1.gz pismv.1.gz)
+  add_custom_target(manpages ALL DEPENDS pismr.1.gz)
 endif()

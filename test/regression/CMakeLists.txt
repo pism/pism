@@ -49,7 +49,7 @@ pism_test (pism_testing_tools test_regression_tools.py)
 
 pism_test (pismr_exact_restartability_SIA_only test_01.sh)
 
-pism_test (pismv_processor_independence test_02.sh)
+pism_test (pismr_processor_independence test_02.sh)
 
 pism_test (pismr_zero_length_run test_03.sh)
 

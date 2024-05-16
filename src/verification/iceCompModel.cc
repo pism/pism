@@ -258,9 +258,9 @@ void IceCompModel::allocate_couplers() {
   m_submodels["sea level forcing"] = m_sea_level.get();
 }
 
-void IceCompModel::bootstrap_2d(const File &input_file) {
-  (void) input_file;
-  throw RuntimeError(PISM_ERROR_LOCATION, "pismv (IceCompModel) does not support bootstrapping.");
+void IceCompModel::bootstrap_2d(const File &/*input_file*/) {
+  throw RuntimeError(PISM_ERROR_LOCATION,
+                     "PISM does not support bootstrapping in verification mode.");
 }
 
 void IceCompModel::initialize_2d() {
@@ -664,7 +664,7 @@ void IceCompModel::reportErrors() {
   if ((m_testname == 'F' or m_testname == 'G') and m_testname != 'V' and
       not FlowLawIsPatersonBuddCold(flow_law, *m_config, EC)) {
     m_log->message(1,
-                   "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
+                   "WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
                    "   for reported errors in test %c to be meaningful!\n",
                    m_testname);
   }
@@ -818,26 +818,26 @@ void IceCompModel::reportErrors() {
 /*
  Try
 
- pismv -test V -y 1000 -part_grid -ssa_method fd -cfbc -o fig4-blue.nc
- pismv -test V -y 1000 -part_grid -ssa_method fd -o fig4-green.nc
+ pismr -test V -y 1000 -part_grid -ssa_method fd -cfbc -o fig4-blue.nc
+ pismr -test V -y 1000 -part_grid -ssa_method fd -o fig4-green.nc
 
  to try to reproduce Figure 4.
 
  Try
 
- pismv -test V -y 3000 -ssa_method fd -cfbc -o fig5.nc -thickness_calving_threshold 250 -part_grid
+ pismr -test V -y 3000 -ssa_method fd -cfbc -o fig5.nc -thickness_calving_threshold 250 -part_grid
 
  with -Mx 51, -Mx 101, -Mx 201 for figure 5,
 
- pismv -test V -y 300 -ssa_method fd -o fig6-ab.nc
+ pismr -test V -y 300 -ssa_method fd -o fig6-ab.nc
 
  for 6a and 6b,
 
- pismv -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-cd.nc
+ pismr -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-cd.nc
 
  for 6c and 6d,
 
- pismv -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-ef.nc
+ pismr -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-ef.nc
 
  for 6e and 6f.
 
