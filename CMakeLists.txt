@@ -58,6 +58,7 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 
 set(CMAKE_INSTALL_MESSAGE "LAZY")
+set(CMAKE_COLOR_MAKEFILE OFF)
 
 # Set Pism_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
 pism_check_build_dir_location()
@@ -146,12 +147,11 @@ if (Pism_LOOK_FOR_LIBRARIES)
   pism_find_prerequisites()
 endif()
 
-# Set Pism_EXTERNAL_LIBS and include directories.
+# Set include directories.
 pism_set_dependencies()
 
 if (Pism_USE_EVERYTRACE)
   find_package(Everytrace REQUIRED)
-  list (APPEND Pism_EXTERNAL_LIBS ${EVERYTRACE_LIBRARY})
 endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
@@ -196,12 +196,6 @@ print(sysconfig.get_path('platlib', '${pism_sysconfig_scheme}', vars={'platbase'
     CACHE PATH "Python extension module installation directory (full path)." )
   mark_as_advanced(PISM_PYTHON_MODULE_DIR PISM_FULL_PYTHON_MODULE_DIR)
 endif ()
-
-add_custom_target (etags
-  COMMAND find . -iname *.cc -o -iname *.hh -o -iname *.c -o -iname *.h | xargs etags --no-defines
-  WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-  VERBATIM
-)
 
 # re-run tests that failed
 add_custom_target (retest

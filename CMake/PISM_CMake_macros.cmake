@@ -143,7 +143,7 @@ macro(pism_find_prerequisites)
   find_package (MPI REQUIRED COMPONENTS C CXX)
 
   # Other required libraries
-  pism_find_library(NETCDF "netcdf>=4.4")
+  pism_find_library (NETCDF "netcdf>=4.4")
   pism_find_library (GSL "gsl>=1.15")
   pism_find_library (FFTW "fftw3>=3.1")
 
@@ -173,7 +173,6 @@ macro(pism_find_prerequisites)
       HINTS ${NETCDF_INCLUDE_DIRS} ${NETCDF_INCLUDEDIR}
       NO_DEFAULT_PATH)
 
-    # Set default values for build options
     if (NOT NETCDF_PAR_H)
       message(FATAL_ERROR
         "Selected NetCDF library (include: ${NETCDF_INCLUDEDIR}, lib: ${NETCDF_LIBRARIES}) does not support parallel I/O.")
@@ -202,41 +201,16 @@ macro(pism_set_dependencies)
     ${MPI_C_INCLUDE_PATH}
   )
 
-  # Use option values to set compiler and linker flags
-  set (Pism_EXTERNAL_LIBS "")
-
-  # required libraries
-  list (APPEND Pism_EXTERNAL_LIBS
-    PkgConfig::PETSC
-    PkgConfig::GSL
-    PkgConfig::NETCDF
-    PkgConfig::FFTW
-    ${MPI_C_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${HDF5_LIBRARIES}
-    ${HDF5_HL_LIBRARIES}
-    ${UDUNITS2_LIBRARIES}
-  )
-
-  # optional libraries
-  if (Pism_USE_JANSSON)
-    include_directories (${JANSSON_INCLUDE_DIRS})
-    list (APPEND Pism_EXTERNAL_LIBS ${JANSSON_LIBRARIES})
-  endif()
-
   if (Pism_USE_PROJ)
     include_directories (${PROJ_INCLUDE_DIRS})
-    list (APPEND Pism_EXTERNAL_LIBS PkgConfig::PROJ)
   endif()
 
   if (Pism_USE_PIO)
     include_directories (${ParallelIO_INCLUDES})
-    list (APPEND Pism_EXTERNAL_LIBS ${ParallelIO_LIBRARIES})
   endif()
 
   if (Pism_USE_PNETCDF)
     include_directories (${PNETCDF_INCLUDE_DIRS})
-    list (APPEND Pism_EXTERNAL_LIBS PkgConfig::PNETCDF)
   endif()
 
   # Hide distracting CMake variables

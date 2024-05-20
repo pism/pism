@@ -94,11 +94,24 @@ add_library (pism
   $<TARGET_OBJECTS:calcalcs>
   $<TARGET_OBJECTS:cubature>
 )
-target_link_libraries (pism ${Pism_EXTERNAL_LIBS})
-add_dependencies (pism pism_config)
+
 set_target_properties(pism PROPERTIES
   VERSION ${Pism_VERSION}
   SOVERSION ${Pism_VERSION})
+
+target_link_libraries (pism
+  PkgConfig::PETSC
+  PkgConfig::GSL
+  PkgConfig::NETCDF
+  PkgConfig::FFTW
+  ${MPI_C_LIBRARIES}
+  ${MPI_CXX_LIBRARIES}
+  ${HDF5_LIBRARIES}
+  ${HDF5_HL_LIBRARIES}
+  ${UDUNITS2_LIBRARIES}
+)
+
+add_dependencies (pism pism_config)
 
 if (Pism_DEBUG)
   target_sources(pism
@@ -108,11 +121,24 @@ if (Pism_DEBUG)
   )
 endif()
 
-
 if (Pism_USE_JANSSON)
-  if (Pism_BUILD_JANSSON)
-    add_dependencies (pism pism_jansson)
-  endif()
+  target_link_libraries(pism ${JANSSON_LIBRARIES})
+endif()
+
+if (Pism_USE_PROJ)
+  target_link_libraries(pism PkgConfig::PROJ)
+endif()
+
+if (Pism_USE_PIO)
+  target_link_libraries(pism ${ParallelIO_LIBRARIES})
+endif()
+
+if (Pism_USE_PNETCDF)
+  target_link_libraries(pism PkgConfig::PNETCDF)
+endif()
+
+if (Pism_USE_EVERYTRACE)
+  target_link_libraries(pism ${EVERYTRACE_LIBRARY})
 endif()
 
 # Main executable:
