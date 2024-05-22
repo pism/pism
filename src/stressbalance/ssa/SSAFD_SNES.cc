@@ -32,7 +32,7 @@ PetscErrorCode SSAFDSNESConvergenceTest(SNES snes, PetscInt it, PetscReal xnorm,
   SSAFD_SNES *solver = reinterpret_cast<SSAFD_SNES *>(ctx);
   double tolerance = solver->tolerance();
 
-  ierr = SNESConvergedDefault(snes, it, xnorm, gnorm, f, reason, ctx);
+  ierr = SNESConvergedDefault(snes, it, xnorm, gnorm, f, reason, ctx); CHKERRQ(ierr);
   if (*reason >= 0 and tolerance > 0) {
     // converged or iterating
     Vec residual;

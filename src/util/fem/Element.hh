@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -155,9 +155,9 @@ protected:
   std::vector<double> m_weights;
 private:
   Element()
-    : m_n_chi(0),
-      m_Nq(0),
-      m_block_size(0) {
+    : m_n_chi(1),
+      m_Nq(1),
+      m_block_size(1) {
     // empty
   }
 };

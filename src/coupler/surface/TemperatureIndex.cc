@@ -267,10 +267,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
-  const array::Scalar *latitude = nullptr;
+  const array::Scalar *latitude = &geometry.latitude;
   if ((fausto_greve != nullptr) or sigmalapserate != 0.0) {
-    latitude = &geometry.latitude;
-
     list.add(*latitude);
   }
 

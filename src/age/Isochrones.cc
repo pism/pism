@@ -613,8 +613,11 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
 
     array::AccessScope scope{ &u, &v, m_layer_thickness.get(), m_tmp.get(), &ice_thickness };
 
-    double dx = m_grid->dx(), dy = m_grid->dy(),
-           H_min = m_config->get_number("geometry.ice_free_thickness_standard");
+    double dx = m_grid->dx(), dy = m_grid->dy();
+
+#ifndef NDEBUG
+    double H_min = m_config->get_number("geometry.ice_free_thickness_standard");
+#endif
 
     // flux estimated using first-order upwinding
     auto Q = [](double U, double f_n, double f_p) { return U * (U >= 0 ? f_n : f_p); };
@@ -679,14 +682,14 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
         z.w += d_w[k];
       }
 
-      assert(ice_thickness(i, j) < H_min or d_total > 0.0);
-
       // re-scale so that the sum of layer thicknesses is equal to the ice_thickness
       if (d_total > 0.0) {
         double S = ice_thickness(i, j) / d_total;
         for (size_t k = 0; k <= m_top_layer_index; ++k) {
           d[k] *= S;
         }
+      } else {
+        assert(ice_thickness(i, j) < H_min);
       }
     }
   }

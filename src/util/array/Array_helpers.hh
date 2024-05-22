@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,8 @@
 #define PISM_ARRAY_HELPERS_H
 
 #include "pism/util/Grid.hh"
+
+#include "pism/util/array/Array.hh"
 
 namespace pism {
 

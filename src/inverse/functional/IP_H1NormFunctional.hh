@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2020  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2020, 2024  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define IP_H1NORMFUNCTIONAL_HH_TF8AKRNQ
 
 #include "pism/inverse/functional/IPFunctional.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 namespace inverse {

@@ -332,7 +332,9 @@ void SSAFDBase::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_
 
   array::AccessScope list{ &driving_stress, &result };
 
-  if (inputs.bc_values != nullptr and inputs.bc_mask != nullptr) {
+  bool use_bc = inputs.bc_values != nullptr and inputs.bc_mask != nullptr;
+
+  if (use_bc) {
     list.add({ inputs.bc_values, inputs.bc_mask });
   }
 
@@ -356,7 +358,7 @@ void SSAFDBase::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_
       taud.v = 0.0;
     }
 
-    if ((inputs.bc_values != nullptr) and inputs.bc_mask->as_int(i, j) == 1) {
+    if (use_bc and inputs.bc_mask->as_int(i, j) == 1) {
       result(i, j).u = bc_scaling * (*inputs.bc_values)(i, j).u;
       result(i, j).v = bc_scaling * (*inputs.bc_values)(i, j).v;
       continue;

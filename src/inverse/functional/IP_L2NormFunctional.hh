@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2022  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2022, 2024  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,9 @@
 
 #ifndef IP_L2NORMFUNCTIONAL_HH_BSVF8BMQ
 #define IP_L2NORMFUNCTIONAL_HH_BSVF8BMQ
+
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
 
 #include "pism/inverse/functional/IPFunctional.hh"
 

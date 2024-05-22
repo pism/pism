@@ -258,6 +258,7 @@ void ParallelIO::write_darray_impl(const std::string &variable_name, const Grid 
 
   int type = 0;
   stat     = PIOc_inq_vartype(m_file_id, varid, &type);
+  check(PISM_ERROR_LOCATION, stat);
 
   int decompid = grid.pio_io_decomposition(z_count, type);
 
