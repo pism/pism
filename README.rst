@@ -1,6 +1,6 @@
 PISM, a Parallel Ice Sheet Model
 ================================
-|doi|_ |gpl|_ |cipism|_ |fairchecklist|_
+|doi| |gpl| |cipism| |fairchecklist|
 
 
 
@@ -17,7 +17,7 @@ The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sh
 
 PISM is jointly developed at the `University of Alaska, Fairbanks (UAF) <uaf_>`_ and the
 `Potsdam Institute for Climate Impact Research (PIK) <pik_>`_. UAF developers are based in
-the `Glaciers Group <glaciers_>`_ at the `Geophysical Institute <gi_>`_.
+the `Snow, Ice, and Permafrost Group <sip_>`_ at the `Geophysical Institute <gi_>`_.
 
 Please see ``ACKNOWLEDGE.rst`` and ``doc/funding.csv`` for how to acknowledge the use of PISM
 and a list of grants supporting PISM development.
@@ -63,7 +63,7 @@ Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 .. _petsc: http://www.mcs.anl.gov/petsc/
 .. _cf: http://cf-pcmdi.llnl.gov/
 .. _netcdf: http://www.unidata.ucar.edu/software/netcdf/
-.. _glaciers: http://www.gi.alaska.edu/snowice/glaciers/
+.. _sip: https://www.gi.alaska.edu/research/snow-ice-and-permafrost
 .. _gi: http://www.gi.alaska.edu
 .. _NASA-MAP: http://map.nasa.gov/
 .. _NASA-Cryosphere: http://ice.nasa.gov/
