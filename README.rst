@@ -3,6 +3,8 @@ PISM, a Parallel Ice Sheet Model
 |doi| |gpl| |cipism| |fairchecklist|
 
 
+.. image:: https://github.com/pism/pism/blob/main/images/Greenland_RCP_85_2008_2300_comp_1080p30.gif
+
 
 The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sheet model that includes:
 
