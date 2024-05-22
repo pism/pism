@@ -306,7 +306,7 @@ def run():
 
     if (output_filename is not None) and (append_filename is not None):
         PISM.verbPrintf(1, com, "\nError: Only one of -a/-o is allowed.\n")
-        sys.edit(0)
+        sys.exit(0)
 
     if append_filename is not None:
         input_filename = append_filename
