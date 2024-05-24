@@ -96,6 +96,7 @@ void IP_SSATaucForwardProblem::init() {
     geometry.bed_elevation.copy_from(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
     geometry.sea_level_elevation.set(0.0);
     geometry.ice_area_specific_volume.copy_from(*m_grid->variables().get_2d_scalar("ice_area_specific_volume"));
+    geometry.ice_area_specific_volume.set(0.0);
 
     geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
