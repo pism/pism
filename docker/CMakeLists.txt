@@ -28,5 +28,6 @@ set(DOCKER_USERNAME "ckhrulev" CACHE STRING "Docker user name to use when buildi
 mark_as_advanced(DOCKER_USERNAME)
 
 add_subdirectory(ubuntu-ci)
+add_subdirectory(ubuntu-ci-intel)
 add_subdirectory(ubuntu-deb-package)
 add_subdirectory(archlinux)
