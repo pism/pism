@@ -11,12 +11,13 @@ This table lists required dependencies for PISM alphabetically.
    :header: Required Library, Comment
 
    pkg-config_, any recent version
-   CMake_,       version `\ge` 3.16
-   FFTW_,        version `\ge` 3.1
-   GSL_,         version `\ge` 1.15
+   CMake_,       version 3.16 or newer
+   Make_,        any version
+   FFTW_,        version 3.1 or newer
+   GSL_,         version 1.15 or newer
    MPI_,         any recent version
-   NetCDF_ [#]_, version `\ge` 4.4
-   PETSc_ [#]_,  version `\ge` |petsc-min-version|
+   NetCDF_ [#]_, version 4.4 or newer
+   PETSc_ [#]_,  version |petsc-min-version| or newer
    UDUNITS_,     any recent version
 
 Before installing these "by hand", check sections :ref:`sec-install-debian` and
