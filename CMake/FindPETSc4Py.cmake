@@ -11,14 +11,16 @@ endif(PETSC4PY_INCLUDES)
 
 if (NOT PETSC4PY_INCLUDES)
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; from sys import stdout; stdout.write(petsc4py.get_include())"
+  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
+  OUTPUT_STRIP_TRAILING_WHITESPACE
   OUTPUT_VARIABLE PETSC4PY_INCLUDES
   RESULT_VARIABLE PETSC4PY_NOT_FOUND)
 
 set(PETSC4PY_INCLUDES ${PETSC4PY_INCLUDES} CACHE PATH "petsc4py include directory")
 
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; from sys import stdout; stdout.write(petsc4py.__version__)"
+  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.__version__)"
+  OUTPUT_STRIP_TRAILING_WHITESPACE
   OUTPUT_VARIABLE PETSC4PY_VERSION
   RESULT_VARIABLE PETSC4PY_NOT_FOUND)
 
