@@ -10,7 +10,8 @@ rm -rf yac
 version=3.2.0_a_p2
 prefix=$HOME/local/yac
 
-git clone -b release-${version} https://gitlab.dkrz.de/dkrz-sw/yac.git
+git clone -b release-${version} \
+    https://gitlab.dkrz.de/dkrz-sw/yac.git
 
 cd yac
 

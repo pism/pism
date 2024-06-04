@@ -17,6 +17,8 @@ derivatives, follow the instructions in subsection :ref:`sec-install-arch`.
 
    parallel-io-libraries.rst
 
+   interpolation.rst
+
    cookbook.rst
 
    quick-tests.rst

@@ -64,6 +64,7 @@
 .. _Enthought: https://www.enthought.com/
 .. _FFTW: http://www.fftw.org/
 .. _Fink: https://www.finkproject.org/
+.. _GDAL: https://gdal.org/index.html
 .. _GSL: http://www.gnu.org/software/gsl/
 .. _Git: https://git-scm.com/
 .. _Git documentation: https://git-scm.com/doc
@@ -142,6 +143,7 @@
 
 .. _YAXT: https://dkrz-sw.gitlab-pages.dkrz.de/yaxt/
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/
+
 .. PISM-related external links
 
 .. _pism-releases: https://github.com/pism/pism/releases

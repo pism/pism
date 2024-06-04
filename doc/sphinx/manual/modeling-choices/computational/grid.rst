@@ -188,11 +188,25 @@ set the configuration parameter :config:`grid.registration`.
 Grid projections
 ^^^^^^^^^^^^^^^^
 
-PISM can use the PROJ_ library (see :ref:`sec-install-prerequisites`) and projection
-information to compute
+.. admonition:: Limitations
 
-- latitudes and longitudes of grid points (variables :var:`lat` and :var:`lon`), and
-- latitudes and longitudes of cell corners (variables :var:`lat_bnds` and :var:`lon_bnds`).
+   PISM's supports most projections defined in the Appendix F of the
+   `CF Conventions`_ document.
+
+   - *Longitude, latitude grids containing a pole* are not supported yet.
+   - The "Vertical perspective" grid mapping is not supported.
+
+
+PISM can use the PROJ_ library (see :ref:`sec-install-prerequisites`) and projection
+information to
+
+- compute latitudes and longitudes of grid points (used by some parameterizations and
+  saved to output files as variables :var:`lat` and :var:`lon`),
+- compute latitudes and longitudes of cell corners (saved to output files as variables
+  :var:`lat_bnds` and :var:`lon_bnds` to simplify post-processing),
+- interpolate inputs (climate forcing, etc) from a grid present in an input file to PISM's
+  computational grid. (This requires YAC_; see :ref:`sec-install-yac` and
+  :ref:`sec-interpolation`)
 
 To use this feature, compile PISM with PROJ and add the global attribute ``proj``
 containing the parameter string describing the projection to the input file.
