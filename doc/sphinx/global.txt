@@ -140,6 +140,8 @@
 .. _Zenodo: https://zenodo.org/
 .. _geodynamics-publishing-guidelines: https://geodynamics.org/software/software-bp/software-publishing
 
+.. _YAXT: https://dkrz-sw.gitlab-pages.dkrz.de/yaxt/
+.. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/
 .. PISM-related external links
 
 .. _pism-releases: https://github.com/pism/pism/releases
