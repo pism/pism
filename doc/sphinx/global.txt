@@ -137,6 +137,8 @@
 
 .. _HDF5: https://portal.hdfgroup.org/display/HDF5/HDF5
 .. _Lustre: https://www.lustre.org/
+.. _Zenodo: https://zenodo.org/
+.. _geodynamics-publishing-guidelines: https://geodynamics.org/software/software-bp/software-publishing
 
 .. PISM-related external links
 

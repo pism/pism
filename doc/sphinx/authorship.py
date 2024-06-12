@@ -14,7 +14,7 @@ print(""".. DO NOT EDIT. Update CITATION.cff to add more authors and see `author
 Authorship
 ==========
 
-   *Copyright* |copy| *2004 -- 2023 the PISM authors.*
+   *Copyright* |copy| *2004 -- 2024 the PISM authors.*
 
    *This file is part of PISM. PISM is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as published by the Free

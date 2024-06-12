@@ -20,4 +20,6 @@ PISM |version| documentation
 
    authorship.rst
 
+   citing/index.rst
+
    zzz_references_latex.rst
