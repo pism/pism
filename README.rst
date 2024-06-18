@@ -63,14 +63,11 @@ Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 .. _pism-contributing: http://www.pism.io/docs/contributing
 .. _pism-installation: http://www.pism.io/docs/installation
 .. _mpi: http://www.mcs.anl.gov/research/projects/mpi/
-.. _petsc: http://www.mcs.anl.gov/petsc/
+.. _petsc: https://petsc.org/
 .. _cf: http://cf-pcmdi.llnl.gov/
 .. _netcdf: http://www.unidata.ucar.edu/software/netcdf/
 .. _sip: https://www.gi.alaska.edu/research/snow-ice-and-permafrost
 .. _gi: http://www.gi.alaska.edu
-.. _NASA-MAP: http://map.nasa.gov/
-.. _NASA-Cryosphere: http://ice.nasa.gov/
-.. _NSF-Polar: https://nsf.gov/geo/plr/about.jsp
 .. _Slack-PISM: https://uaf-pism.slack.com/join/shared_invite/enQtODc3Njc1ODg0ODM5LThmOTEyNjEwN2I3ZTU4YTc5OGFhNGMzOWQ1ZmUzMWUwZDAyMzRlMzBhZDg1NDY5MmQ1YWFjNDU4MDZiNTk3YmE
 .. _uaf-pism: mailto:uaf-pism@alaska.edu
 
