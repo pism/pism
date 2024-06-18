@@ -94,6 +94,16 @@ whenever possible.
 Please cite |pism-website| when talking about code that will be available in *future*
 PISM versions.
 
+.. code-block:: bibtex
+
+   @misc {pism-web-page,
+     AUTHOR = {the {PISM} authors},
+      TITLE = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel},
+        URL = {https://www.pism.io},
+       YEAR = {2024},
+   }
+
+
 You can cite all PISM versions by using the DOI `10.5281/zenodo.1199019
 <https://doi.org/10.5281/zenodo.1199019>`_. This DOI represents all versions and will
 always resolve to the latest one.

@@ -21,8 +21,9 @@ PISM is jointly developed at the `University of Alaska, Fairbanks (UAF) <uaf_>`_
 `Potsdam Institute for Climate Impact Research (PIK) <pik_>`_. UAF developers are based in
 the `Snow, Ice, and Permafrost Group <sip_>`_ at the `Geophysical Institute <gi_>`_.
 
-Please see ``ACKNOWLEDGE.rst`` and ``doc/funding.csv`` for how to acknowledge the use of PISM
-and a list of grants supporting PISM development.
+Please see PISM's manual https://www.pism.io/docs/citing for how to acknowledge the use of
+PISM and PISM's funding sources. If the manual is not available, please refer to the file
+``doc/sphinx/citing/index.rst`` in the PISM repository.
 
 Homepage
 --------
