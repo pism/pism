@@ -22,4 +22,6 @@ PISM |version| documentation
 
    citing/index.rst
 
+   publishing.rst
+
    zzz_references_html.rst
