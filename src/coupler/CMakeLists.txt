@@ -2,10 +2,12 @@
 add_library (boundary OBJECT
   ./util/options.cc
   ./util/lapse_rates.cc
+  ./util/ClimateIndexWeights.cc
   ./atmosphere/AtmosphereModel.cc
   ./atmosphere/SeariseGreenland.cc
   ./atmosphere/YearlyCycle.cc
   ./atmosphere/CosineYearlyCycle.cc
+  ./atmosphere/ClimateIndex.cc
   ./atmosphere/GivenClimate.cc
   ./atmosphere/PIK.cc
   ./atmosphere/ElevationChange.cc
@@ -46,6 +48,7 @@ add_library (boundary OBJECT
   ./ocean/PicoPhysics.cc
   ./ocean/PicoGeometry.cc
   ./ocean/PyOceanModel.cc
+  ./ocean/ClimateIndex.cc
   ./ocean/sea_level/Initialization.cc
   ./ocean/sea_level/SeaLevel.cc
   ./ocean/sea_level/Delta_SL.cc
