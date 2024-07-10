@@ -69,34 +69,35 @@ whenever possible.
      - BibTeX entry
    * - all versions
      - `10.5281/zenodo.1199019 <https://doi.org/10.5281/zenodo.1199019>`_
-     - `download link <https://zenodo.org/records/1199019/export/bibtex>`_
+     - `download link <https://zenodo.org/records/1199019/export/bibtex>`__
    * - 2.1
      - `10.5281/zenodo.10202029 <https://doi.org/10.5281/zenodo.10202029>`_
-     - `download link <https://zenodo.org/records/10202029/export/bibtex>`_
+     - `download link <https://zenodo.org/records/10202029/export/bibtex>`__
    * - 2.0.7
      - `10.5281/zenodo.10183040 <https://doi.org/10.5281/zenodo.10183040>`_
-     - `download link <https://zenodo.org/records/10183040/export/bibtex>`_
+     - `download link <https://zenodo.org/records/10183040/export/bibtex>`__
    * - 2.0.6
      - `10.5281/zenodo.7563365  <https://doi.org/10.5281/zenodo.7563365>`_
-     - `download link <https://zenodo.org/records/7563365/export/bibtex>`_
+     - `download link <https://zenodo.org/records/7563365/export/bibtex>`__
    * - 2.0.5
      - `10.5281/zenodo.7199611  <https://doi.org/10.5281/zenodo.7199611>`_
-     - `download link <https://zenodo.org/records/7199611/export/bibtex>`_
+     - `download link <https://zenodo.org/records/7199611/export/bibtex>`__
    * - 2.0.4
      - `10.5281/zenodo.6584915  <https://doi.org/10.5281/zenodo.6584915>`_
-     - `download link <https://zenodo.org/records/6584915/export/bibtex>`_
+     - `download link <https://zenodo.org/records/6584915/export/bibtex>`__
    * - 2.0.3
      - `10.5281/zenodo.6537481  <https://doi.org/10.5281/zenodo.6537481>`_
-     - `download link <https://zenodo.org/records/6537481/export/bibtex>`_
+     - `download link <https://zenodo.org/records/6537481/export/bibtex>`__
    * - 2.0.2
      - `10.5281/zenodo.6001196  <https://doi.org/10.5281/zenodo.6001196>`_
-     - `download link <https://zenodo.org/records/6001196/export/bibtex>`_
+     - `download link <https://zenodo.org/records/6001196/export/bibtex>`__
    * - 2.0.1
      - `10.5281/zenodo.5966037  <https://doi.org/10.5281/zenodo.5966037>`_
-     - `download link <https://zenodo.org/records/5966037/export/bibtex>`_
+     - `download link <https://zenodo.org/records/5966037/export/bibtex>`__
    * - 2.0
      - `10.5281/zenodo.5758039  <https://doi.org/10.5281/zenodo.5758039>`_
-     - `download link <https://zenodo.org/records/5758039/export/bibtex>`_
+     - `download link <https://zenodo.org/records/5758039/export/bibtex>`__
+
 
 Citing the PISM project
 %%%%%%%%%%%%%%%%%%%%%%%
