@@ -4,7 +4,7 @@
 #
 # - Updates lists of configuration parameters and diagnostics in the manual.
 #
-# - Updates lists of funding sources (in the manual and ACKNOWLEDGE.rst).
+# - Updates lists of funding sources in the manual
 #
 # - Updates PISM version in VERSION. This file is used to determine the PISM version
 #   reported by "pismr -version" for PISM binaries built from a tarball (instead of a
@@ -31,7 +31,6 @@ make -C doc/sphinx
 
 # update funding sources
 make -C doc
-git add ACKNOWLEDGE.rst
 git add doc/sphinx/funding.txt
 
 # commit these changes

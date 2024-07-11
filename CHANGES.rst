@@ -11,6 +11,10 @@ Changes since v2.1
 - Update some examples in `examples/marine`.
 - Fix an bug reported by Ken Mankoff: scripts in `examples/antarctica/` required PISM
   built with PROJ.
+- Add a section about citing PISM to the manual; remove redundant and possibly
+  inconsistent recommendations elsewhere in PISM's docs.
+- Add a section about publishing PISM results to the manual. This section covers archiving
+  the code, model inputs and outputs, etc.
 
 Changes since v2.0
 ==================

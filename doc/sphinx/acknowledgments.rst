@@ -4,6 +4,8 @@
 
 .. include:: <isonum.txt>
 
+.. _sec-acknowledgments:
+
 Acknowledgments
 ===============
 
