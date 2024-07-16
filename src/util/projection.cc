@@ -21,6 +21,7 @@
 #include <cmath>                // std::pow, std::sqrt, std::fabs
 #include <string>
 #include <vector>
+#include <tuple>
 
 #include "pism/util/projection.hh"
 #include "pism/util/VariableMetadata.hh"
@@ -40,8 +41,13 @@
 
 namespace pism {
 
-MappingInfo::MappingInfo(const std::string &mapping_name, units::System::Ptr unit_system)
-  : cf_mapping(mapping_name, unit_system) {
+MappingInfo::MappingInfo(const std::string &mapping_variable_name, units::System::Ptr unit_system)
+    : cf_mapping(mapping_variable_name, unit_system) {
+  // empty
+}
+
+MappingInfo::MappingInfo(const VariableMetadata &mapping_variable, const std::string &proj_string_)
+    : cf_mapping(mapping_variable), proj_string(proj_string_) {
   // empty
 }
 
@@ -145,61 +151,64 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
   return mapping;
 }
 
-void check_consistency_epsg(const MappingInfo &info) {
+void check_consistency_epsg(const VariableMetadata &cf_mapping, const std::string &proj_string) {
 
-  VariableMetadata epsg_mapping = epsg_to_cf(info.cf_mapping.unit_system(), info.proj_string);
+  VariableMetadata epsg_mapping = epsg_to_cf(cf_mapping.unit_system(), proj_string);
 
-  bool mapping_is_empty      = not info.cf_mapping.has_attributes();
-  bool epsg_mapping_is_empty = not epsg_mapping.has_attributes();
+  // All CF grid mapping variables have to have the "grid_mapping_name" attribute.
+  bool mapping_is_empty      = not cf_mapping.has_attribute("grid_mapping_name");
+  bool epsg_mapping_is_empty = not epsg_mapping.has_attribute("grid_mapping_name");
 
   if (mapping_is_empty and epsg_mapping_is_empty) {
     // empty mapping variables are equivalent
     return;
   }
 
-  // Check if the "info.mapping" variable in the input file matches the EPSG code.
+  // Check if the `cf_mapping` variable matches the EPSG code in `proj_string`.
+  //
   // Check strings.
   for (const auto &s : epsg_mapping.all_strings()) {
-    if (not info.cf_mapping.has_attribute(s.first)) {
+    if (not cf_mapping.has_attribute(s.first)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "inconsistent metadata:\n"
                                     "PROJ string \"%s\" requires %s = \"%s\",\n"
-                                    "but the mapping variable has no %s.",
-                                    info.proj_string.c_str(), s.first.c_str(), s.second.c_str(),
+                                    "but the mapping variable has no attribute \"%s\".",
+                                    proj_string.c_str(), s.first.c_str(), s.second.c_str(),
                                     s.first.c_str());
     }
 
-    std::string string = info.cf_mapping[s.first];
+    std::string string = cf_mapping[s.first];
 
     if (not(string == s.second)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "inconsistent metadata:\n"
                                     "%s requires %s = \"%s\",\n"
                                     "but the mapping variable has %s = \"%s\".",
-                                    info.proj_string.c_str(), s.first.c_str(), s.second.c_str(),
+                                    proj_string.c_str(), s.first.c_str(), s.second.c_str(),
                                     s.first.c_str(), string.c_str());
     }
   }
 
   // Check doubles
+  const double eps = 1e-12;
   for (auto d : epsg_mapping.all_doubles()) {
-    if (not info.cf_mapping.has_attribute(d.first)) {
+    if (not cf_mapping.has_attribute(d.first)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "inconsistent metadata:\n"
                                     "%s requires %s = %f,\n"
-                                    "but the mapping variable has no %s.",
-                                    info.proj_string.c_str(), d.first.c_str(), d.second[0],
+                                    "but the mapping variable has no attribute \"%s\".",
+                                    proj_string.c_str(), d.first.c_str(), d.second[0],
                                     d.first.c_str());
     }
 
-    double value = info.cf_mapping.get_number(d.first);
+    double value = cf_mapping.get_number(d.first);
 
-    if (std::fabs(value - d.second[0]) > 1e-12) {
+    if (std::fabs(value - d.second[0]) > eps) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "inconsistent metadata:\n"
                                     "%s requires %s = %f,\n"
                                     "but the mapping variable has %s = %f.",
-                                    info.proj_string.c_str(), d.first.c_str(), d.second[0],
+                                    proj_string.c_str(), d.first.c_str(), d.second[0],
                                     d.first.c_str(), value);
     }
   }
@@ -219,78 +228,122 @@ std::string grid_name(const pism::File &file, const std::string &variable_name,
   return result;
 }
 
+/*!
+ * Return true if `string` contains "epsg:" or "EPSG:", otherwise false.
+ */
+static bool contains_epsg(const std::string &string) {
+  for (const auto &auth : { "epsg:", "EPSG:" }) {
+    if (string.find(auth) != std::string::npos) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/*!
+ * Get PROJ parameters from the grid mapping variable `mapping_variable_name` in
+ * `input_file` *or* from global attributes.
+ *
+ * Return the string containing PROJ parameters.
+ *
+ * Tries
+ *
+ * - reading the "crs_wkt" attribute of the grid mapping variable (CF conventions)
+ * - reading the "proj_params" attribute of the grid mapping variable (convention used by CDO)
+ *
+ * If failed to discover PROJ parameters, tries global attributes "proj" and "proj4", in
+ * this order (PISM's old convention).
+ */
+static std::string get_proj_parameters(const File &input_file, const std::string &mapping_variable_name) {
+
+  std::string proj_string;
+
+  if (not mapping_variable_name.empty()) {
+    // try the crs_wkt attribute
+    proj_string = input_file.read_text_attribute(mapping_variable_name, "crs_wkt");
+
+    // if failed, try the "proj_params" attribute used by CDO:
+    if (proj_string.empty()) {
+      proj_string = input_file.read_text_attribute(mapping_variable_name, "proj_params");
+    }
+  }
+
+  // if failed, try the global attribute "proj"
+  if (proj_string.empty()) {
+    proj_string = input_file.read_text_attribute("PISM_GLOBAL", "proj");
+  }
+
+  // if failed, try the global attribute "proj4"
+  if (proj_string.empty()) {
+    proj_string = input_file.read_text_attribute("PISM_GLOBAL", "proj4");
+  }
+
+  if (contains_epsg(proj_string)) {
+    // re-create the PROJ string to make sure it does not contain "+init="
+    proj_string = pism::printf("EPSG:%d", parse_epsg(proj_string));
+  }
+
+  return proj_string;
+}
+
+
+/*!
+ * Get projection info for a variable `variable_name` from `input_file`.
+ *
+ * Obtains the string containing PROJ parameters as described in `get_proj_parameters()`.
+ * If the grid mapping variable has
+ */
 MappingInfo get_projection_info(const File &input_file, const std::string &variable_name,
                                 units::System::Ptr unit_system) {
 
   auto mapping_variable_name = input_file.read_text_attribute(variable_name, "grid_mapping");
 
-  MappingInfo result(mapping_variable_name, unit_system);
+  auto proj_string = get_proj_parameters(input_file, mapping_variable_name);
 
-  if (not mapping_variable_name.empty()) {
-    // try the crs_wkt attribute
-    result.proj_string = input_file.read_text_attribute(mapping_variable_name, "crs_wkt");
+  auto proj_is_epsg = contains_epsg(proj_string);
 
-    // if failed, try the "proj_params" attribute used by CDO:
-    if (result.proj_string.empty()) {
-      result.proj_string = input_file.read_text_attribute(mapping_variable_name, "proj_params");
-    }
-  }
-
-  // if failed, try the global attribute "proj"
-  if (result.proj_string.empty()) {
-    result.proj_string = input_file.read_text_attribute("PISM_GLOBAL", "proj");
-  }
-
-  // if failed, try the global attribute "proj4"
-  if (result.proj_string.empty()) {
-    result.proj_string = input_file.read_text_attribute("PISM_GLOBAL", "proj4");
-  }
-
-  bool proj_is_epsg = false;
-  for (const auto &auth : {"epsg:", "EPSG:"}) {
-    if (result.proj_string.find(auth) != std::string::npos) {
-      proj_is_epsg = true;
-      break;
-    }
-  }
-
-  if (proj_is_epsg) {
-    // re-create the PROJ string to make sure it does not contain "+init="
-    result.proj_string = pism::printf("EPSG:%d", parse_epsg(result.proj_string));
-  }
-
+  // Initialize (and possibly validate) the CF-style grid mapping variable by reading
+  // metadata from the input file:
+  VariableMetadata cf_mapping(mapping_variable_name, unit_system);
   if (input_file.variable_exists(mapping_variable_name)) {
     // input file has a mapping variable
 
-    result.cf_mapping = io::read_attributes(input_file, mapping_variable_name, unit_system);
+    cf_mapping = io::read_attributes(input_file, mapping_variable_name, unit_system);
 
-    if (result.cf_mapping.has_attributes()) {
-      if (proj_is_epsg) {
-        // check consistency
-        try {
-          check_consistency_epsg(result);
-        } catch (RuntimeError &e) {
-          e.add_context("getting projection info from variable '%s' in '%s'", variable_name.c_str(),
-                        input_file.name().c_str());
-          throw;
-        }
+    // From the CF Conventions document, section 5.6:
+    //
+    // The one attribute that all grid mapping variables must have is grid_mapping_name, which
+    // takes a string value that contains the mapping’s name.
+
+    if (cf_mapping.has_attribute("grid_mapping_name") and proj_is_epsg) {
+      // The grid mapping variable contains the CF Conventions-style grid mapping
+      // definition: check consistency
+      try {
+        check_consistency_epsg(cf_mapping, proj_string);
+      } catch (RuntimeError &e) {
+        e.add_context("getting projection info from variable '%s' in '%s'", variable_name.c_str(),
+                      input_file.name().c_str());
+        throw;
       }
-
-      if (result.proj_string.empty()) {
-        result.proj_string = cf_to_proj(result.cf_mapping);
-      }
-    }
-
-  } else {
-    // no mapping variable in the input file
-
-    if (proj_is_epsg) {
-      result.cf_mapping = epsg_to_cf(unit_system, result.proj_string);
-    } else {
-      // leave mapping empty
     }
   }
-  return result;
+
+  if (cf_mapping.has_attribute("grid_mapping_name")) {
+    if (proj_string.empty()) {
+      // CF-style mapping was initialized, by the PROJ string was not: set proj_string
+      // from cf_mapping
+      proj_string = cf_to_proj(cf_mapping);
+    }
+  } else {
+    if (proj_is_epsg) {
+      // cf_mapping was not initialized by the code above and proj_string contains an EPSG
+      // code we may be able to convert to a CF-style mapping variable: set cf_mapping
+      // from proj_string
+      cf_mapping = epsg_to_cf(unit_system, proj_string);
+    }
+  }
+
+  return {cf_mapping, proj_string};
 }
 
 enum LonLat {LONGITUDE, LATITUDE};

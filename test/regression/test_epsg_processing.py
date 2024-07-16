@@ -16,7 +16,7 @@ def run(command):
 files = ["eisII-output.nc",
          "pismr-output.nc",
          "both-consistent.nc",
-         "both-string-missing.nc",
+         # "both-string-missing.nc",
          "both-string-mismatch.nc",
          "both-double-missing.nc",
          "both-double-mismatch.nc"]
@@ -42,13 +42,18 @@ print("Test re-starting PISM with consistent proj and mapping...")
 assert run(PISMR + " -verbose 1 -i both-consistent.nc -o pismr-output.nc") == 0
 
 # remove a required string attribute
-shutil.copy("both-consistent.nc", "both-string-missing.nc")
-nc = Dataset("both-string-missing.nc", "a")
-del nc.variables["mapping"].grid_mapping_name
-nc.close()
+#
+# EDIT: as far as I can tell "grid_mapping_name" is the only required string attribute and
+# we *ignore* a CF-style grid mapping variable if it is missing. This means that the
+# commented out consistency check below should not be needed.
+#
+# shutil.copy("both-consistent.nc", "both-string-missing.nc")
+# nc = Dataset("both-string-missing.nc", "a")
+# del nc.variables["mapping"].grid_mapping_name
+# nc.close()
 
-print("Test that PISM stops if a required string attribute is missing...")
-assert run(PISMR + " -verbose 1 -i both-string-missing.nc -o pismr-output.nc") != 0
+# print("Test that PISM stops if a required string attribute is missing...")
+# assert run(PISMR + " -verbose 1 -i both-string-missing.nc -o pismr-output.nc") != 0
 
 # alter a required string sttribute
 shutil.copy("both-consistent.nc", "both-string-mismatch.nc")

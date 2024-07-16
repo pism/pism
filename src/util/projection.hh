@@ -57,6 +57,7 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
 class MappingInfo {
 public:
   MappingInfo(const std::string &mapping_variable_name, units::System::Ptr unit_system);
+  MappingInfo(const VariableMetadata &mapping_variable, const std::string &proj_string);
 
   //! grid mapping description following CF conventions
   VariableMetadata cf_mapping;
@@ -76,7 +77,7 @@ int parse_epsg(const std::string &proj_string);
  * If the consistency check fails, throws RuntimeError explaining the failure. Fails if `info.proj`
  * does not use an EPSG code.
  */
-void check_consistency_epsg(const MappingInfo &info);
+void check_consistency_epsg(const VariableMetadata &cf_mapping, const std::string &proj_string);
 
 /*! @brief Get projection info from a file. */
 MappingInfo get_projection_info(const File &input_file, const std::string &variable_name,
