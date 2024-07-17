@@ -27,9 +27,10 @@ and corners.)
 
 To use this code, make sure that
 
-- the projection used by PISM's internal grid was specified (see :ref:`sec-projections`)
+- the coordinate reference system used by PISM's internal grid was specified (see
+  :ref:`sec-crs`)
 - an input (often climate or ocean forcing) file contains projection information (again,
-  see :ref:`sec-projections`).
+  see :ref:`sec-crs`).
 
 PISM will automatically choose the interpolation method depending of the *interpolation
 direction*:

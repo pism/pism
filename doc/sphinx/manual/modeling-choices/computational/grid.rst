@@ -183,10 +183,23 @@ See :numref:`fig-cell-corner` for an illustration.
 To switch between :eq:`eq-grid-center` and :eq:`eq-grid-corner`,
 set the configuration parameter :config:`grid.registration`.
 
-.. _sec-projections:
+.. _sec-crs:
 
-Grid projections
-^^^^^^^^^^^^^^^^
+Coordinate Reference Systems
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PISM can use the PROJ_ library (see :ref:`sec-install-prerequisites`) and coordinate
+reference system (CRS) information to
+
+- compute latitudes and longitudes of grid points (used by some parameterizations and
+  saved to output files as variables :var:`lat` and :var:`lon`),
+- compute latitudes and longitudes of cell corners (saved to output files as variables
+  :var:`lat_bnds` and :var:`lon_bnds` to simplify post-processing),
+- interpolate inputs (climate forcing, etc) from a grid present in an input file to PISM's
+  computational grid.
+
+Interpolation of model inputs requires YAC_ in addition to PROJ_; see
+:ref:`sec-install-yac` and :ref:`sec-interpolation`.
 
 .. admonition:: Limitations
 
@@ -197,18 +210,81 @@ Grid projections
    - The "Vertical perspective" grid mapping is not supported.
 
 
-PISM can use the PROJ_ library (see :ref:`sec-install-prerequisites`) and projection
-information to
+To use features listed above, compile PISM with PROJ_ specify the grid projection in an
+input file as described below.
 
-- compute latitudes and longitudes of grid points (used by some parameterizations and
-  saved to output files as variables :var:`lat` and :var:`lon`),
-- compute latitudes and longitudes of cell corners (saved to output files as variables
-  :var:`lat_bnds` and :var:`lon_bnds` to simplify post-processing),
-- interpolate inputs (climate forcing, etc) from a grid present in an input file to PISM's
-  computational grid. (This requires YAC_; see :ref:`sec-install-yac` and
-  :ref:`sec-interpolation`)
+.. _sec-crs-metadata:
 
-To use this feature, compile PISM with PROJ and add the global attribute ``proj``
+NetCDF metadata describing a CRS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+.. _sec-crs-grid-mapping-variable:
+
+Grid mapping variable
+=====================
+
+PISM supports CF grid mapping variables corresponding to the following CRS defined in
+Appendix F of the `CF Conventions`_ document.
+
+.. list-table:: Supported coordinate reference systems
+   :header-rows: 1
+
+   * - CRS Name
+     - ``grid_mapping_name`` attribute
+
+   * - Albers Equal Area
+     - ``albers_conical_equal_area``
+   * - Azimuthal equidistant
+     - ``azimuthal_equidistant``
+   * - Lambert azimuthal equal area
+     - ``lambert_azimuthal_equal_area``
+   * - Lambert conformal
+     - ``lambert_conformal_conic``
+   * - Lambert Cylindrical Equal Area
+     - ``lambert_cylindrical_equal_area``
+   * - Latitude-Longitude
+     - ``latitude_longitude``
+   * - Mercator
+     - ``mercator``
+   * - Orthographic
+     - ``orthographic``
+   * - Polar stereographic
+     - ``polar_stereographic``
+   * - Rotated pole
+     - ``rotated_latitude_longitude``
+   * - Stereographic
+     - ``stereographic``
+   * - Transverse Mercator
+     - ``transverse_mercator``
+
+
+.. _sec-crs-proj-global-attr:
+
+Global attribute ``proj``
+=========================
+
+.. list-table:: Supported EPSG codes
+   :header-rows: 1
+
+   * - EPSG code
+     - Description
+   * - 3413
+     - `WGS 84 / NSIDC Sea Ice Polar Stereographic North <https://epsg.io/3413>`_
+   * - 3031
+     - `WGS 84 / Antarctic Polar Stereographic <https://epsg.io/3031>`_
+   * - 3057
+     - `ISN93 / Lambert 1993 (Iceland) <https://epsg.io/3057>`_
+   * - 5936
+     - `WGS 84 / EPSG Alaska Polar Stereographic <https://epsg.io/5936>`_
+   * - 26710
+     - `NAD27 / UTM zone 10N (Canada) <https://epsg.io/26710>`_
+
+.. note::
+
+   The global attribute ``proj4`` is still supported for compatibility with older PISM
+   versions.
+
+and add the global attribute ``proj``
 containing the parameter string describing the projection to the input file.
 
 For example, the input file ``pism_Greenland_5km_v1.1.nc`` in :ref:`sec-start` has the
