@@ -39,6 +39,7 @@ except:
 exp_mask = datnc.variables["mask"][:]-1
 exp_crate = datnc.variables["calvingmip_calving_rate"][:]*secperyear
 exp_topg = datnc.variables["topg"][:]
+exp_subh = datnc.variables["ice_area_specific_volume"][:]
 datnc.close()
 
 #print(exp_t)
@@ -47,6 +48,10 @@ Mt,Mx,My = np.shape(exp_mask)
 exp_thk[exp_thk == 0.0] = np.nan
 exp_xvm[exp_xvm == 0.0] = np.nan
 exp_yvm[exp_yvm == 0.0] = np.nan
+
+# avoid empty first snapshot
+exp_xvm[0]=exp_xvm[1]
+exp_yvm[0]=exp_yvm[1]
 
 datnc = nc.Dataset(pism_tsfile,"r")
 exp_ts_t      = [datnc.variables["time"][:]/secperyear-120000.0]
@@ -63,7 +68,7 @@ datnc.close()
 
 # define profiles
 Mp=int((Mx-1)/2.0)
-print(Mx,My,Mp)
+#print(Mx,My,Mp)
 
 points_C = [[Mp,Mp],[Mx-2,Mp]]
 points_B = [[Mp,Mp],[Mx-2,My-2]]
@@ -86,14 +91,22 @@ trans = ph.get_troughs(pism_infile,transects,dp)
 # average along profiles
 profiles = {}
 
-xav=np.zeros([len(trans),300])
-yav=np.zeros([len(trans),300])
-sav=np.zeros([len(trans),300])
+lentr=len(trans)
 
-Hav=np.zeros([Mt,len(trans),300])
-mav=np.zeros([Mt,len(trans),300])
-uav=np.zeros([Mt,len(trans),300])
-vav=np.zeros([Mt,len(trans),300])
+xav=np.zeros([lentr,300])
+yav=np.zeros([lentr,300])
+sav=np.zeros([lentr,300])
+
+Hav=np.zeros([Mt,lentr,300])
+mav=np.zeros([Mt,lentr,300])
+uav=np.zeros([Mt,lentr,300])
+vav=np.zeros([Mt,lentr,300])
+
+Hcf=np.zeros([Mt,lentr])
+xcf=np.zeros([Mt,lentr])
+ycf=np.zeros([Mt,lentr])
+vxcf=np.zeros([Mt,lentr])
+vycf=np.zeros([Mt,lentr])
 
 exp_xm = np.zeros([Mx,My])
 exp_ym = np.zeros([Mx,My])
@@ -128,11 +141,131 @@ for ti in range(Mt):
         #nearest neighbors
         mav[ti,l,k]=ph.nearest_along_transect(exp_mask[ti],i,j,di,dj)
 
-    
+
+        # get marginal values along profiles
+        if l==0:
+            if exp_mask[ti,i+1,j]==3.0 and exp_mask[ti,i,j]==2.0:
+              Hcf[ti,l]=exp_thk[ti,i,j]
+              vxcf[ti,l]=exp_xvm[ti,i,j]
+              vycf[ti,l]=exp_yvm[ti,i,j]
+              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i+1,j]/Hcf[ti,l]*(exp_ym[i+1,j]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i+1,j]/Hcf[ti,l]*(exp_xm[i+1,j]-exp_xm[i,j])
+        elif l==2:
+            if exp_mask[ti,i,j+1]==3.0 and exp_mask[ti,i,j]==2.0:
+              Hcf[ti,l]=exp_thk[ti,i,j]
+              vxcf[ti,l]=exp_xvm[ti,i,j]
+              vycf[ti,l]=exp_yvm[ti,i,j]
+              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j+1]/Hcf[ti,l]*(exp_ym[i,j+1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i,j+1]/Hcf[ti,l]*(exp_xm[i,j+1]-exp_xm[i,j])
+        elif l==4:
+            if exp_mask[ti,i-1,j]==3.0 and exp_mask[ti,i,j]==2.0:
+              Hcf[ti,l]=exp_thk[ti,i,j]
+              vxcf[ti,l]=exp_xvm[ti,i,j]
+              vycf[ti,l]=exp_yvm[ti,i,j]
+              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i-1,j]/Hcf[ti,l]*(exp_ym[i-1,j]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i-1,j]/Hcf[ti,l]*(exp_xm[i-1,j]-exp_xm[i,j])
+        elif l==6:
+            if (exp_mask[ti,i,j-1]==3.0 and exp_mask[ti,i,j]==2.0):
+              Hcf[ti,l]=exp_thk[ti,i,j]
+              vxcf[ti,l]=exp_xvm[ti,i,j]
+              vycf[ti,l]=exp_yvm[ti,i,j]
+              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j-1]/Hcf[ti,l]*(exp_ym[i,j-1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i,j-1]/Hcf[ti,l]*(exp_xm[i,j-1]-exp_xm[i,j])
+        elif l==1:
+            if (exp_mask[ti,i,j+1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i+1,j+1]>0.0):
+              Hcf[ti,l]=exp_thk[ti,i,j]
+              vxcf[ti,l]=exp_xvm[ti,i,j]
+              vycf[ti,l]=exp_yvm[ti,i,j]
+              dxy=np.sqrt((exp_xm[i+1,j+1]-exp_xm[i,j])**2+(exp_ym[i+1,j+1]-exp_ym[i,j])**2)
+              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
+              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
+        elif l==3:
+            if (exp_mask[ti,i,j+1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i-1,j+1]>0.0):
+              Hcf[ti,l]=exp_thk[ti,i,j]
+              vxcf[ti,l]=exp_xvm[ti,i,j]
+              vycf[ti,l]=exp_yvm[ti,i,j]
+              dxy=np.sqrt((exp_xm[i-1,j+1]-exp_xm[i,j])**2+(exp_ym[i-1,j+1]-exp_ym[i,j])**2)
+              xcf[ti,l]=exp_xm[i,j]-exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
+              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
+        elif l==5:
+            if (exp_mask[ti,i,j-1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i-1,j-1]>0.0):
+              Hcf[ti,l]=exp_thk[ti,i,j]
+              vxcf[ti,l]=exp_xvm[ti,i,j]
+              vycf[ti,l]=exp_yvm[ti,i,j]
+              dxy=np.sqrt((exp_xm[i-1,j-1]-exp_xm[i,j])**2+(exp_ym[i-1,j-1]-exp_ym[i,j])**2)
+              xcf[ti,l]=exp_xm[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
+              ycf[ti,l]=exp_ym[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
+        elif l==7:
+            if (exp_mask[ti,i,j-1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i+1,j-1]>0.0):
+              Hcf[ti,l]=exp_thk[ti,i,j]
+              vxcf[ti,l]=exp_xvm[ti,i,j]
+              vycf[ti,l]=exp_yvm[ti,i,j]
+              dxy=np.sqrt((exp_xm[i+1,j-1]-exp_xm[i,j])**2+(exp_ym[i+1,j-1]-exp_ym[i,j])**2)
+              xcf[ti,l]=exp_xm[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
+              ycf[ti,l]=exp_ym[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
+
+
     if ti==0:
         profiles[point_names[l]]=profile
-    
-########################################################################################################
+
+
+################################################################################################
+# get ice covered quadrants
+
+Anw=np.zeros([Mt])
+Ane=np.zeros([Mt])
+Asw=np.zeros([Mt])
+Ase=np.zeros([Mt])
+
+Axy=(resolution*1e3)**2 #m2
+
+print('Aggregate ice covered area...')
+
+for ti,t in enumerate(exp_t):
+    for i,xi in enumerate(exp_x):
+      for j,yj in enumerate(exp_y):
+        if exp_mask[ti,i,j]<3.0:
+
+            if xi>=0 and yj>=0:
+                if xi==0.0 and yj==0.0:
+                    Ane[ti]+=0.25
+                elif xi==0.0 or yj==0.0:
+                    Ane[ti]+=0.5
+                else:
+                    Ane[ti]+=1.0
+            if xi>=0 and yj<=0:
+                if xi==0.0 and yj==0.0:
+                    Anw[ti]+=0.25
+                elif xi==0.0 or yj==0.0:
+                    Anw[ti]+=0.5
+                else:
+                    Anw[ti]+=1.0
+            if xi<=0 and yj>=0:
+                if xi==0.0 and yj==0.0:
+                    Ase[ti]+=0.25
+                elif xi==0.0 or yj==0.0:
+                    Ase[ti]+=0.5
+                else:
+                    Ase[ti]+=1.0
+            if xi<=0 and yj<=0:
+                if xi==0.0 and yj==0.0:
+                    Asw[ti]+=0.25
+                elif xi==0.0 or yj==0.0:
+                    Asw[ti]+=0.5
+                else:
+                    Asw[ti]+=1.0
+                
+#print(Ane,Anw,Ase,Asw)
+
+Anw*=Axy
+Ane*=Axy
+Asw*=Axy
+Ase*=Axy
+
+
+###########################################################################################################
+
+lent=Mt
 
 if True:
   print("Write data to netCDF file "+exp_outfile)
@@ -149,21 +282,21 @@ if True:
   nct2    = wrtfile.createVariable('Time100', 'f8', ('Time100',))
   ncx     = wrtfile.createVariable('X', 'f8', ('X',))
   ncy     = wrtfile.createVariable('Y', 'f8', ('Y',))
-    
+
   ncxvm   = wrtfile.createVariable('xvelmean', 'f8', ('Time100','Y', 'X'),fill_value=np.nan)
   ncyvm   = wrtfile.createVariable('yvelmean', 'f8', ('Time100','Y', 'X'),fill_value=np.nan)
   ncthk   = wrtfile.createVariable('lithk', 'f8', ('Time100','Y', 'X'),fill_value=np.nan)
   ncmask  = wrtfile.createVariable('mask', 'f8', ('Time100','Y', 'X'))
   nccrate = wrtfile.createVariable('calverate', 'f8', ('Time100','Y', 'X'),fill_value=np.nan)
   nctopg  = wrtfile.createVariable('topg', 'f8', ('Time100','Y', 'X'))
-    
+
   ncafl  = wrtfile.createVariable('iareafl', 'f8', ('Time1'))
   ncagr  = wrtfile.createVariable('iareagr', 'f8', ('Time1'))
   nclim  = wrtfile.createVariable('lim', 'f8', ('Time1'))
   nclimw  = wrtfile.createVariable('limnsw', 'f8', ('Time1'))
   nctcf  = wrtfile.createVariable('tendlicalvf', 'f8', ('Time1'))
   nctgf  = wrtfile.createVariable('tendligroundf', 'f8', ('Time1'))
-    
+
   wrtfile.createDimension('Profile A', size=np.shape(trans[0])[0])
   ncxa     = wrtfile.createVariable('Profile A', 'f8', ('Profile A',))
   ncsa    = wrtfile.createVariable('sA', 'f8', ('Profile A'))
@@ -171,7 +304,7 @@ if True:
   ncxvma  = wrtfile.createVariable('xvelmeanA', 'f8', ('Time1','Profile A'),fill_value=np.nan)
   ncyvma  = wrtfile.createVariable('yvelmeanA', 'f8', ('Time1','Profile A'),fill_value=np.nan)
   ncmaska  = wrtfile.createVariable('maskA', 'f8', ('Time1','Profile A'))
-    
+
   wrtfile.createDimension('Profile B', size=np.shape(trans[1])[0])
   ncxb     = wrtfile.createVariable('Profile B', 'f8', ('Profile B',))
   ncsb    = wrtfile.createVariable('sB', 'f8', ('Profile B'))
@@ -187,7 +320,7 @@ if True:
   ncxvmc  = wrtfile.createVariable('xvelmeanC', 'f8', ('Time1','Profile C'),fill_value=np.nan)
   ncyvmc  = wrtfile.createVariable('yvelmeanC', 'f8', ('Time1','Profile C'),fill_value=np.nan)
   ncmaskc  = wrtfile.createVariable('maskC', 'f8', ('Time1','Profile C'))
-    
+
   wrtfile.createDimension('Profile D', size=np.shape(trans[3])[0])
   ncxd     = wrtfile.createVariable('Profile D', 'f8', ('Profile D',))
   ncsd    = wrtfile.createVariable('sD', 'f8', ('Profile D'))
@@ -203,7 +336,7 @@ if True:
   ncxvme  = wrtfile.createVariable('xvelmeanE', 'f8', ('Time1','Profile E'),fill_value=np.nan)
   ncyvme  = wrtfile.createVariable('yvelmeanE', 'f8', ('Time1','Profile E'),fill_value=np.nan)
   ncmaske  = wrtfile.createVariable('maskE', 'f8', ('Time1','Profile E'))
-    
+
   wrtfile.createDimension('Profile F', size=np.shape(trans[5])[0])
   ncxf     = wrtfile.createVariable('Profile F', 'f8', ('Profile F',))
   ncsf    = wrtfile.createVariable('sF', 'f8', ('Profile F'))
@@ -219,7 +352,7 @@ if True:
   ncxvmg  = wrtfile.createVariable('xvelmeanG', 'f8', ('Time1','Profile G'),fill_value=np.nan)
   ncyvmg  = wrtfile.createVariable('yvelmeanG', 'f8', ('Time1','Profile G'),fill_value=np.nan)
   ncmaskg  = wrtfile.createVariable('maskG', 'f8', ('Time1','Profile G'))
-    
+
   wrtfile.createDimension('Profile H', size=np.shape(trans[7])[0])
   ncxh     = wrtfile.createVariable('Profile H', 'f8', ('Profile H',))
   ncsh    = wrtfile.createVariable('sH', 'f8', ('Profile H'))
@@ -227,14 +360,68 @@ if True:
   ncxvmh  = wrtfile.createVariable('xvelmeanH', 'f8', ('Time1','Profile H'),fill_value=np.nan)
   ncyvmh  = wrtfile.createVariable('yvelmeanH', 'f8', ('Time1','Profile H'),fill_value=np.nan)
   ncmaskh  = wrtfile.createVariable('maskH', 'f8', ('Time1','Profile H'))
-    
-  #####################################################################################
-    
+
+
+  ncatnw  = wrtfile.createVariable('iareatotalNW', 'f8', ('Time1'))
+  ncatne  = wrtfile.createVariable('iareatotalNE', 'f8', ('Time1'))
+  ncatsw  = wrtfile.createVariable('iareatotalSW', 'f8', ('Time1'))
+  ncatse  = wrtfile.createVariable('iareatotalSE', 'f8', ('Time1'))
+
+  ncxcfa  = wrtfile.createVariable('xcfA', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfa  = wrtfile.createVariable('ycfA', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfa  = wrtfile.createVariable('xvelmeancfA', 'f8', ('Time1'))
+  ncyvmcfa  = wrtfile.createVariable('yvelmeancfA', 'f8', ('Time1'))
+  ncthkcfa  = wrtfile.createVariable('lithkcfA', 'f8', ('Time1'))
+
+  ncxcfb  = wrtfile.createVariable('xcfB', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfb  = wrtfile.createVariable('ycfB', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfb  = wrtfile.createVariable('xvelmeancfB', 'f8', ('Time1'))
+  ncyvmcfb  = wrtfile.createVariable('yvelmeancfB', 'f8', ('Time1'))
+  ncthkcfb  = wrtfile.createVariable('lithkcfB', 'f8', ('Time1'))
+
+  ncxcfc  = wrtfile.createVariable('xcfC', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfc  = wrtfile.createVariable('ycfC', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfc  = wrtfile.createVariable('xvelmeancfC', 'f8', ('Time1'))
+  ncyvmcfc  = wrtfile.createVariable('yvelmeancfC', 'f8', ('Time1'))
+  ncthkcfc  = wrtfile.createVariable('lithkcfC', 'f8', ('Time1'))
+
+  ncxcfd  = wrtfile.createVariable('xcfD', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfd  = wrtfile.createVariable('ycfD', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfd  = wrtfile.createVariable('xvelmeancfD', 'f8', ('Time1'))
+  ncyvmcfd  = wrtfile.createVariable('yvelmeancfD', 'f8', ('Time1'))
+  ncthkcfd  = wrtfile.createVariable('lithkcfD', 'f8', ('Time1'))
+
+  ncxcfe  = wrtfile.createVariable('xcfE', 'f8', ('Time1'), fill_value=np.nan)
+  ncycfe  = wrtfile.createVariable('ycfE', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfe  = wrtfile.createVariable('xvelmeancfE', 'f8', ('Time1'))
+  ncyvmcfe  = wrtfile.createVariable('yvelmeancfE', 'f8', ('Time1'))
+  ncthkcfe  = wrtfile.createVariable('lithkcfE', 'f8', ('Time1'))
+ 
+  ncxcff  = wrtfile.createVariable('xcfF', 'f8', ('Time1'),fill_value=np.nan)
+  ncycff  = wrtfile.createVariable('ycfF', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcff  = wrtfile.createVariable('xvelmeancfF', 'f8', ('Time1'))
+  ncyvmcff  = wrtfile.createVariable('yvelmeancfF', 'f8', ('Time1'))
+  ncthkcff  = wrtfile.createVariable('lithkcfF', 'f8', ('Time1'))
+
+  ncxcfg  = wrtfile.createVariable('xcfG', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfg  = wrtfile.createVariable('ycfG', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfg  = wrtfile.createVariable('xvelmeancfG', 'f8', ('Time1'))
+  ncyvmcfg  = wrtfile.createVariable('yvelmeancfG', 'f8', ('Time1'))
+  ncthkcfg  = wrtfile.createVariable('lithkcfG', 'f8', ('Time1'))
+
+  ncxcfh  = wrtfile.createVariable('xcfH', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfh  = wrtfile.createVariable('ycfH', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfh  = wrtfile.createVariable('xvelmeancfH', 'f8', ('Time1'))
+  ncyvmcfh  = wrtfile.createVariable('yvelmeancfH', 'f8', ('Time1'))
+  ncthkcfh  = wrtfile.createVariable('lithkcfH', 'f8', ('Time1'))
+
+#####################################################################################
+
   nct[:] = exp_t[:]
   nct2[:]= exp_t[::100]
   ncx[:] = exp_x[:]
   ncy[:] = exp_y[:]
-    
+
 
   ncxvm[:]  = exp_xvm[::100]
   ncyvm[:]  = exp_yvm[::100] 
@@ -242,7 +429,7 @@ if True:
   ncmask[:] = exp_mask[::100]
   nccrate[:]= exp_crate[::100]
   nctopg[:] = exp_topg[::100]
-    
+
 
   ncafl[1:]  = exp_ts_afl[:]
   ncagr[1:]  = exp_ts_agr[:]
@@ -250,7 +437,7 @@ if True:
   nclimw[1:] = exp_ts_limnsw[:]
   nctcf[1:] = exp_ts_tendcf[:]
   nctgf[1:] = exp_ts_tendgf[:]
-    
+
 
   cuta = np.shape(trans[0])[0]
   ncxa[:] = sav[0][0:cuta] 
@@ -259,7 +446,7 @@ if True:
   ncmaska[:] = mav[:,0,0:cuta]
   ncxvma[:] = uav[:,0,0:cuta]
   ncyvma[:] = vav[:,0,0:cuta]
-    
+
   cutb = np.shape(trans[1])[0]
   ncxb[:] = sav[1][0:cutb] 
   ncsb[:] = sav[1][0:cutb]
@@ -267,7 +454,7 @@ if True:
   ncmaskb[:] = mav[:,1,0:cutb]
   ncxvmb[:] = uav[:,1,0:cutb]
   ncyvmb[:] = vav[:,1,0:cutb]
-    
+
   cutc = np.shape(trans[2])[0]
   ncxc[:] = sav[2][0:cutc] 
   ncsc[:] = sav[2][0:cutc]
@@ -283,7 +470,7 @@ if True:
   ncmaskd[:] = mav[:,3,0:cutd]
   ncxvmd[:] = uav[:,3,0:cutd]
   ncyvmd[:] = vav[:,3,0:cutd]
-    
+
   cute = np.shape(trans[4])[0]
   ncxe[:] = sav[4][0:cute] 
   ncse[:] = sav[4][0:cute]
@@ -299,7 +486,7 @@ if True:
   ncmaskf[:] = mav[:,5,0:cutf]
   ncxvmf[:] = uav[:,5,0:cutf]
   ncyvmf[:] = vav[:,5,0:cutf]
-    
+
   cutg = np.shape(trans[6])[0]
   ncxg[:] = sav[6][0:cutg] 
   ncsg[:] = sav[6][0:cutg]
@@ -316,77 +503,185 @@ if True:
   ncxvmh[:] = uav[:,7,0:cuth]
   ncyvmh[:] = vav[:,7,0:cuth]
 
- 
-  #####################################################################################
+
+  ncatnw[:] = Anw[:]
+  ncatne[:] = Ane[:]
+  ncatsw[:] = Asw[:]
+  ncatse[:] = Ase[:]
+
+  ncxcfa[:] = xcf[:lent,0]
+  ncycfa[:] = ycf[:lent,0]
+  ncxvmcfa[:] = vxcf[:lent,0]
+  ncyvmcfa[:] = vycf[:lent,0]
+  ncthkcfa[:] = Hcf[:lent,0]
+
+  ncxcfb[:] = xcf[:lent,1]
+  ncycfb[:] = ycf[:lent,1]
+  ncxvmcfb[:] = vxcf[:lent,1]
+  ncyvmcfb[:] = vycf[:lent,1]
+  ncthkcfb[:] = Hcf[:lent,1]
+
+  ncxcfc[:] = xcf[:lent,2]
+  ncycfc[:] = ycf[:lent,2]
+  ncxvmcfc[:] = vxcf[:lent,2]
+  ncyvmcfc[:] = vycf[:lent,2]
+  ncthkcfc[:] = Hcf[:lent,2]
+
+  ncxcfd[:] = xcf[:lent,3]
+  ncycfd[:] = ycf[:lent,3]
+  ncxvmcfd[:] = vxcf[:lent,3]
+  ncyvmcfd[:] = vycf[:lent,3]
+  ncthkcfd[:] = Hcf[:lent,3]
+
+  ncxcfe[:] = xcf[:lent,4]
+  ncycfe[:] = ycf[:lent,4]
+  ncxvmcfe[:] = vxcf[:lent,4]
+  ncyvmcfe[:] = vycf[:lent,4]
+  ncthkcfe[:] = Hcf[:lent,4]
+
+  ncxcff[:] = xcf[:lent,5]
+  ncycff[:] = ycf[:lent,5]
+  ncxvmcff[:] = vxcf[:lent,5]
+  ncyvmcff[:] = vycf[:lent,5]
+  ncthkcff[:] = Hcf[:lent,5]
+
+  ncxcfg[:] = xcf[:lent,6]
+  ncycfg[:] = ycf[:lent,6]
+  ncxvmcfg[:] = vxcf[:lent,6]
+  ncyvmcfg[:] = vycf[:lent,6]
+  ncthkcfg[:] = Hcf[:lent,6]
+
+  ncxcfh[:] = xcf[:lent,7]
+  ncycfh[:] = ycf[:lent,7]
+  ncxvmcfh[:] = vxcf[:lent,7]
+  ncyvmcfh[:] = vycf[:lent,7]
+  ncthkcfh[:] = Hcf[:lent,7]
+
+
+ #####################################################################################
 
   nct.units = 'a'
   nct2.units = 'a'
   ncx.units = 'm'
   ncy.units = 'm'
-    
+
   ncxvm.units = 'm/a'
   ncyvm.units = 'm/a'  
   ncthk.units = 'm'
   nctopg.units = 'm'
   nccrate.units = 'm/a'
-    
+
   ncafl.units = 'm^2'
   ncagr.units = 'm^2'
   nclim.units = 'kg'
   nclimw.units = 'kg'
   nctcf.units = 'kg/a'
   nctgf.units = 'kg/a'
-    
+
   ncxa.units = 'm'
   ncsa.units = 'm'
   ncthka.units = 'm'
   ncxvma.units = 'm/a'
   ncyvma.units = 'm/a'
-    
+
   ncxb.units = 'm'
   ncsb.units = 'm'
   ncthkb.units = 'm'
   ncxvmb.units = 'm/a'
   ncyvmb.units = 'm/a'
-    
+
   ncxc.units = 'm'
   ncsc.units = 'm'
   ncthkc.units = 'm'
   ncxvmc.units = 'm/a'
   ncyvmc.units = 'm/a'
-    
+
   ncxd.units = 'm'
   ncsd.units = 'm'
   ncthkd.units = 'm'
   ncxvmd.units = 'm/a'
   ncyvmd.units = 'm/a'
-    
+
   ncxe.units = 'm'
   ncse.units = 'm'
   ncthke.units = 'm'
   ncxvme.units = 'm/a'
   ncyvme.units = 'm/a'
-    
+
   ncxf.units = 'm'
   ncsf.units = 'm'
   ncthkf.units = 'm'
   ncxvmf.units = 'm/a'
   ncyvmf.units = 'm/a'
-    
+
   ncxg.units = 'm'
   ncsg.units = 'm'
   ncthkg.units = 'm'
   ncxvmg.units = 'm/a'
   ncyvmg.units = 'm/a'
-    
+
   ncxh.units = 'm'
   ncsh.units = 'm'
   ncthkh.units = 'm'
   ncxvmh.units = 'm/a'
   ncyvmh.units = 'm/a'
 
-    
-  #####################################################################################
+
+  ncatnw.units = 'm^2'
+  ncatne.units = 'm^2'
+  ncatsw.units = 'm^2'
+  ncatse.units = 'm^2'
+
+  ncxcfa.units = 'm'
+  ncycfa.units = 'm'
+  ncxvmcfa.units = 'm/a'
+  ncyvmcfa.units = 'm/a'
+  ncthkcfa.units = 'm'
+
+  ncxcfb.units = 'm'
+  ncycfb.units = 'm'
+  ncxvmcfb.units = 'm/a'
+  ncyvmcfb.units = 'm/a'
+  ncthkcfb.units = 'm'
+ 
+  ncxcfc.units = 'm'
+  ncycfc.units = 'm'
+  ncxvmcfc.units = 'm/a'
+  ncyvmcfc.units = 'm/a'
+  ncthkcfc.units = 'm'
+
+  ncxcfd.units = 'm'
+  ncycfd.units = 'm'
+  ncxvmcfd.units = 'm/a'
+  ncyvmcfd.units = 'm/a'
+  ncthkcfd.units = 'm'
+
+  ncxcfe.units = 'm'
+  ncycfe.units = 'm'
+  ncxvmcfe.units = 'm/a'
+  ncyvmcfe.units = 'm/a'
+  ncthkcfe.units = 'm'
+
+  ncxcff.units = 'm'
+  ncycff.units = 'm'
+  ncxvmcff.units = 'm/a'
+  ncyvmcff.units = 'm/a'
+  ncthkcff.units = 'm'
+
+  ncxcfg.units = 'm'
+  ncycfg.units = 'm'
+  ncxvmcfg.units = 'm/a'
+  ncyvmcfg.units = 'm/a'
+  ncthkcfg.units = 'm'
+
+  ncxcfh.units = 'm'
+  ncycfh.units = 'm'
+  ncxvmcfh.units = 'm/a'
+  ncyvmcfh.units = 'm/a'
+  ncthkcfh.units = 'm'
+
+
+#####################################################################################
 
 
   ncxvm.Standard_name   = 'land_ice_vertical_mean_x_velocity'
@@ -394,59 +689,113 @@ if True:
   ncthk.Standard_name   = 'land_ice_thickness'
   nctopg.Standard_name  = 'bedrock_altitude'
   nccrate.Standard_name = 'calving_rate'
-    
+
   ncafl.Standard_name  = 'floating_ice_shelf_area'
   ncagr.Standard_name  = 'grounded_ice_sheet_area'
   nclim.Standard_name  =  'land_ice_mass'
   nclimw.Standard_name = 'land_ice_mass_not_displacing_sea_water'
   nctcf.Standard_name  =  'tendency_of_land_ice_mass_due_to_calving'
   nctgf.Standard_name  =  'tendency_of_grounded_ice_mass'
-    
+
   ncsa.Standard_name   = 'distance_along_profile_A'
   ncthka.Standard_name = 'land_ice_thickness_along_profile_A'
   ncxvma.Standard_name = 'land_ice_vertical_mean_x_velocity_along_profile_A'
   ncyvma.Standard_name = 'land_ice_vertical_mean_y_velocity_along_profile_A'
-    
+
   ncsb.Standard_name   = 'distance_along_profile_B'
   ncthkb.Standard_name = 'land_ice_thickness_along_profile_B'
   ncxvmb.Standard_name = 'land_ice_vertical_mean_x_velocity_along_profile_B'
-  ncyvmb.Standard_name = 'land_ice_vertical_mean_y_velocity_along_profile_B'    
-    
+  ncyvmb.Standard_name = 'land_ice_vertical_mean_y_velocity_along_profile_B'
+
   ncsc.Standard_name   = 'distance_along_profile_C'
   ncthkc.Standard_name = 'land_ice_thickness_along_profile_C'
   ncxvmc.Standard_name = 'land_ice_vertical_mean_x_velocity_along_profile_C'
   ncyvmc.Standard_name = 'land_ice_vertical_mean_y_velocity_along_profile_C'
-    
+
   ncsd.Standard_name   = 'distance_along_profile_D'
   ncthkd.Standard_name = 'land_ice_thickness_along_profile_D'
   ncxvmd.Standard_name = 'land_ice_vertical_mean_x_velocity_along_profile_D'
   ncyvmd.Standard_name = 'land_ice_vertical_mean_y_velocity_along_profile_D'
-    
+
   ncse.Standard_name   = 'distance_along_profile_E'
   ncthke.Standard_name = 'land_ice_thickness_along_profile_E'
   ncxvme.Standard_name = 'land_ice_vertical_mean_x_velocity_along_profile_E'
   ncyvme.Standard_name = 'land_ice_vertical_mean_y_velocity_along_profile_E'
-    
+
   ncsf.Standard_name   = 'distance_along_profile_F'
   ncthkf.Standard_name = 'land_ice_thickness_along_profile_F'
   ncxvmf.Standard_name = 'land_ice_vertical_mean_x_velocity_along_profile_F'
   ncyvmf.Standard_name = 'land_ice_vertical_mean_y_velocity_along_profile_F'
-    
+
   ncsg.Standard_name   = 'distance_along_profile_G'
   ncthkg.Standard_name = 'land_ice_thickness_along_profile_G'
   ncxvmg.Standard_name = 'land_ice_vertical_mean_x_velocity_along_profile_G'
   ncyvmg.Standard_name = 'land_ice_vertical_mean_y_velocity_along_profile_G'
-    
+
   ncsh.Standard_name   = 'distance_along_profile_H'
   ncthkh.Standard_name = 'land_ice_thickness_along_profile_H'
   ncxvmh.Standard_name = 'land_ice_vertical_mean_x_velocity_along_profile_H'
   ncyvmh.Standard_name = 'land_ice_vertical_mean_y_velocity_along_profile_H'
-    
-  #####################################################################################
-    
+
+
+  ncatnw.Standard_name  = 'total_ice_area_NorthWest'
+  ncatne.Standard_name  = 'total_ice_area_NorthEast'
+  ncatsw.Standard_name  = 'total_ice_area_SouthWest'
+  ncatse.Standard_name  = 'total_ice_area_SouthEast'
+
+  ncxcfa.Standard_name   = 'x_calving_front_on_profile_A'
+  ncycfa.Standard_name   = 'y_calving_front_on_profile_A'
+  ncxvmcfa.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_profile_A'
+  ncyvmcfa.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_profile_A'
+  ncthkcfa.Standard_name = 'land_ice_thickness_at_calving_front_on_profile_A'
+
+  ncxcfb.Standard_name   = 'x_calving_front_on_profile_B'
+  ncycfb.Standard_name   = 'y_calving_front_on_profile_B'
+  ncxvmcfb.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_profile_B'
+  ncyvmcfb.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_profile_B'
+  ncthkcfb.Standard_name = 'land_ice_thickness_at_calving_front_on_profile_B'
+
+  ncxcfc.Standard_name   = 'x_calving_front_on_profile_C'
+  ncycfc.Standard_name   = 'y_calving_front_on_profile_C'
+  ncxvmcfc.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_profile_C'
+  ncyvmcfc.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_profile_C'
+  ncthkcfc.Standard_name = 'land_ice_thickness_at_calving_front_on_profile_C'
+
+  ncxcfd.Standard_name   = 'x_calving_front_on_profile_D'
+  ncycfd.Standard_name   = 'y_calving_front_on_profile_D'
+  ncxvmcfd.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_profile_D'
+  ncyvmcfd.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_profile_D'
+  ncthkcfd.Standard_name = 'land_ice_thickness_at_calving_front_on_profile_D'
+
+  ncxcfe.Standard_name   = 'x_calving_front_on_profile_E'
+  ncycfe.Standard_name   = 'y_calving_front_on_profile_e'
+  ncxvmcfe.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_profile_E'
+  ncyvmcfe.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_profile_E'
+  ncthkcfe.Standard_name = 'land_ice_thickness_at_calving_front_on_profile_E'
+
+  ncxcff.Standard_name   = 'x_calving_front_on_profile_F'
+  ncycff.Standard_name   = 'y_calving_front_on_profile_F'
+  ncxvmcff.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_profile_F'
+  ncyvmcff.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_profile_F'
+  ncthkcff.Standard_name = 'land_ice_thickness_at_calving_front_on_profile_F'
+
+  ncxcfg.Standard_name   = 'x_calving_front_on_profile_G'
+  ncycfg.Standard_name   = 'y_calving_front_on_profile_G'
+  ncxvmcfg.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_profile_G'
+  ncyvmcfg.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_profile_G'
+  ncthkcfg.Standard_name = 'land_ice_thickness_at_calving_front_on_profile_G'
+
+  ncxcfh.Standard_name   = 'x_calving_front_on_profile_H'
+  ncycfh.Standard_name   = 'y_calving_front_on_profile_H'
+  ncxvmcfh.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_profile_H'
+  ncyvmcfh.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_profile_H'
+  ncthkcfh.Standard_name = 'land_ice_thickness_at_calving_front_on_profile_H'
+
+#####################################################################################
+
   ncmask.flag_values = '1, 2, 3'
   ncmask.flag_meanings = '1=grounded ice, 2=floating ice, 3=open ocean'
-   
+
   ncmaska.flag_values = '1, 2, 3'
   ncmaska.flag_meanings = '1=grounded ice, 2=floating ice, 3=open ocean'
 
@@ -470,13 +819,13 @@ if True:
 
   ncmaskh.flag_values = '1, 2, 3'
   ncmaskh.flag_meanings = '1=grounded ice, 2=floating ice, 3=open ocean'
-    
+
 
   now = datetime.datetime.now().strftime("%B %d, %Y")
   wrtfile.comment  = "CalvingMIP contribution postprocessed by torsten.albrecht@pik-potsdam.de at " + now
   wrtfile.institution = 'Potsdam Institute for Climate Impact Research (PIK), Germany'
   wrtfile.inputdata = 'PISM code from https://github.com/pism/pism/tree/pik/calving_rate_given'
-    
+
   wrtfile.close()
 
 

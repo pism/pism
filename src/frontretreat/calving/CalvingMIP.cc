@@ -113,7 +113,10 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
          thisyear = convert(m_sys, thistime-starttime, "seconds","year");
 
   if (m_retreat_and_advance) {
-    Wv = -300.0 * sin(2.0*M_PI*thisyear/1000.0);
+    if (m_experiment == 2)
+      Wv = -300.0 * sin(2.0*M_PI*thisyear/1000.0);
+    else if (m_experiment == 4)
+      Wv = -750.0 * sin(2.0*M_PI*thisyear/1000.0);
     m_log->message(2, "    Update CalvingMIP Exp%d calving rate at year %f with Wv=%f m/yr\n",m_experiment,thisyear,Wv);
   } else {
     m_log->message(3, "    Update CalvingMIP Exp%d calving rate.\n",m_experiment);
