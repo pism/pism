@@ -51,12 +51,6 @@
 .. _CalCalcs: https://cirrus.ucsd.edu/~pierce/calcalcs/calendars.html
 .. _CalCalcs-home: https://cirrus.ucsd.edu/~pierce/calcalcs/index.html
 .. _CDO: https://code.mpimet.mpg.de/projects/cdo
-.. _CF-cell-boundaries: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#cell-boundaries
-.. _CF Conventions: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html
-.. _CF-Calendars: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar
-.. _CF-standard-names: http://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html
-.. _cf-names-for-glaciology: https://web.archive.org/web/20221006124555/http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
-.. _cf-names-proposed: https://cfeditor.ceda.ac.uk/proposals/1
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 .. _CMake: https://cmake.org/
 .. _Make: https://www.gnu.org/software/make/
@@ -143,6 +137,19 @@
 
 .. _YAXT: https://dkrz-sw.gitlab-pages.dkrz.de/yaxt/
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/
+
+.. CF conventions
+
+.. _CF Conventions: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html
+.. _CF-cell-boundaries: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#cell-boundaries
+.. _CF-Calendars: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#calendar
+.. _cf-section-56: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#grid-mappings-and-projections
+.. _cf-appendix-f: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#appendix-grid-mappings
+
+.. _CF-standard-names: http://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html
+
+.. _cf-names-for-glaciology: https://web.archive.org/web/20221006124555/http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
+.. _cf-names-proposed: https://cfeditor.ceda.ac.uk/proposals/1
 
 .. PISM-related external links
 
