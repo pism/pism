@@ -191,7 +191,7 @@ Coordinate Reference Systems
 PISM can use the PROJ_ library (see :ref:`sec-install-prerequisites`) and coordinate
 reference system (CRS) information to
 
-- compute latitudes and longitudes of grid points (used by some parameterizations and
+- compute latitudes and longitudes of cell centers (used by some parameterizations and
   saved to output files as variables :var:`lat` and :var:`lon`),
 - compute latitudes and longitudes of cell corners (saved to output files as variables
   :var:`lat_bnds` and :var:`lon_bnds` to simplify post-processing),
@@ -218,13 +218,54 @@ input file as described below.
 NetCDF metadata describing a CRS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+To convert coordinates from a projected coordinate system to longitudes and latitudes PISM
+needs a *string* containing PROJ parameters corresponding to this mapping.
+
+We support four ways of setting these parameters. Here they are listed in the order PISM
+uses when looking for a CRS definition in an input file.
+
+1. ``crs_wkt`` attribute of the grid mapping variable corresponding to a data variable (CF
+   Conventions)
+2. ``proj_params`` attribute of the grid mapping variable corresponding to a data variable
+   (convention used by CDO_)
+3. global attributes ``proj`` or ``proj4`` (PISM's old convention)
+4. attributes of the grid mapping variable corresponding to a data variable, according to
+   `CF Conventions`_.
+
+We recommend following CF Conventions if possible. However, sometimes what we need is a
+minimal modification of a file's metadata needed to make it usable. In this case setting
+the ``proj`` attribute might be easier.
+
+If the ``proj`` attribute has the form ``"+init=EPSG:XXXX"``, ``"+init=epsg:XXXX"``,
+``"EPSG:XXXX"`` or ``"epsg:XXXX"`` where ``XXXX`` is an EPSG code listed below PISM will
+convert the EPSG code to a grid mapping variable conforming to CF metadata conventions and
+use that in PISM's output files.
+
+.. list-table:: Supported EPSG codes
+   :header-rows: 1
+
+   * - EPSG code
+     - Description
+   * - 3413
+     - `WGS 84 / NSIDC Sea Ice Polar Stereographic North <https://epsg.io/3413>`_
+   * - 3031
+     - `WGS 84 / Antarctic Polar Stereographic <https://epsg.io/3031>`_
+   * - 3057
+     - `ISN93 / Lambert 1993 (Iceland) <https://epsg.io/3057>`_
+   * - 5936
+     - `WGS 84 / EPSG Alaska Polar Stereographic <https://epsg.io/5936>`_
+   * - 26710
+     - `NAD27 / UTM zone 10N (Canada) <https://epsg.io/26710>`_
+
 .. _sec-crs-grid-mapping-variable:
 
 Grid mapping variable
 =====================
 
-PISM supports CF grid mapping variables corresponding to the following CRS defined in
-Appendix F of the `CF Conventions`_ document.
+PISM supports some CF grid mapping variables corresponding to coordinate reference systems
+described in `Appendix F of the CF Conventions <cf-appendix-f_>`_ document. Please see `CF
+Conventions sections 5.6 <cf-section-56_>`_ for details about specifying the grid mapping
+for a NetCDF variable.
 
 .. list-table:: Supported coordinate reference systems
    :header-rows: 1
@@ -257,35 +298,43 @@ Appendix F of the `CF Conventions`_ document.
    * - Transverse Mercator
      - ``transverse_mercator``
 
+.. admonition:: Example climate forcing file metadata
 
-.. _sec-crs-proj-global-attr:
+   ``ncdump -h`` output for a climate forcing file using the polar stereographic projection
+
+   .. literalinclude:: cdl/cf-grid-mapping.cdl
+
+If a grid mapping variable contains the ``crs_wkt`` attribute as described in `CF
+Conventions sections 5.6 <cf-section-56_>`_ PISM will use this string to initialize the
+mapping from projected coordinates to longitude and latitude coordinates and will not
+attempt to create a PROJ string from other attributes of this variable.
+
+If a grid mapping variable contains the ``proj_params`` attribute as used by CDO_ PISM
+will use this string to initialize the mapping from projected coordinates to longitude and
+latitude coordinates and will not attempt to create a PROJ string from other attributes of
+this variable.
+
+.. _sec-crs-cdo-proj-params:
+
+Attribute ``proj_params`` of a grid mapping variable
+====================================================
+
+.. admonition:: Example climate forcing file metadata
+
+   ``ncdump -h`` output for a climate forcing file using the polar stereographic projection
+
+   .. literalinclude:: cdl/cdo-proj_params.cdl
+
+.. _sec-crs-proj-attribute:
 
 Global attribute ``proj``
 =========================
-
-.. list-table:: Supported EPSG codes
-   :header-rows: 1
-
-   * - EPSG code
-     - Description
-   * - 3413
-     - `WGS 84 / NSIDC Sea Ice Polar Stereographic North <https://epsg.io/3413>`_
-   * - 3031
-     - `WGS 84 / Antarctic Polar Stereographic <https://epsg.io/3031>`_
-   * - 3057
-     - `ISN93 / Lambert 1993 (Iceland) <https://epsg.io/3057>`_
-   * - 5936
-     - `WGS 84 / EPSG Alaska Polar Stereographic <https://epsg.io/5936>`_
-   * - 26710
-     - `NAD27 / UTM zone 10N (Canada) <https://epsg.io/26710>`_
 
 .. note::
 
    The global attribute ``proj4`` is still supported for compatibility with older PISM
    versions.
 
-and add the global attribute ``proj``
-containing the parameter string describing the projection to the input file.
 
 For example, the input file ``pism_Greenland_5km_v1.1.nc`` in :ref:`sec-start` has the
 following:
