@@ -337,7 +337,7 @@ MappingInfo get_projection_info(const File &input_file, const std::string &varia
   } else {
     if (proj_is_epsg) {
       // cf_mapping was not initialized by the code above and proj_string contains an EPSG
-      // code we may be able to convert to a CF-style mapping variable: set cf_mapping
+      // code: we may be able to convert to a CF-style mapping variable and set cf_mapping
       // from proj_string
       cf_mapping = epsg_to_cf(unit_system, proj_string);
     }
