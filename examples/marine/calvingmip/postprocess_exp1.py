@@ -142,61 +142,108 @@ for ti in range(Mt):
               Hcf[ti,l]=exp_thk[ti,i,j]
               vxcf[ti,l]=exp_xvm[ti,i,j]
               vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i+1,j]/Hcf[ti,l]*(exp_ym[i+1,j]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i+1,j]/Hcf[ti,l]*(exp_xm[i+1,j]-exp_xm[i,j])
+              ycf[ti,l]=exp_ym[i,j]+(0.5+exp_subh[ti,i+1,j]/Hcf[ti,l])*(exp_ym[i+1,j]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+(0.5+exp_subh[ti,i+1,j]/Hcf[ti,l])*(exp_xm[i+1,j]-exp_xm[i,j])
         elif l==2:
             if exp_mask[ti,i,j+1]==3.0 and exp_mask[ti,i,j]==2.0:
               Hcf[ti,l]=exp_thk[ti,i,j]
               vxcf[ti,l]=exp_xvm[ti,i,j]
               vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j+1]/Hcf[ti,l]*(exp_ym[i,j+1]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i,j+1]/Hcf[ti,l]*(exp_xm[i,j+1]-exp_xm[i,j])
+              ycf[ti,l]=exp_ym[i,j]+(0.5+exp_subh[ti,i,j+1]/Hcf[ti,l])*(exp_ym[i,j+1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+(0.5+exp_subh[ti,i,j+1]/Hcf[ti,l])*(exp_xm[i,j+1]-exp_xm[i,j])
         elif l==4:
             if exp_mask[ti,i-1,j]==3.0 and exp_mask[ti,i,j]==2.0:
               Hcf[ti,l]=exp_thk[ti,i,j]
               vxcf[ti,l]=exp_xvm[ti,i,j]
               vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i-1,j]/Hcf[ti,l]*(exp_ym[i-1,j]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i-1,j]/Hcf[ti,l]*(exp_xm[i-1,j]-exp_xm[i,j])
+              ycf[ti,l]=exp_ym[i,j]+(0.5+exp_subh[ti,i-1,j]/Hcf[ti,l])*(exp_ym[i-1,j]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+(0.5+exp_subh[ti,i-1,j]/Hcf[ti,l])*(exp_xm[i-1,j]-exp_xm[i,j])
         elif l==6:
             if (exp_mask[ti,i,j-1]==3.0 and exp_mask[ti,i,j]==2.0):
               Hcf[ti,l]=exp_thk[ti,i,j]
               vxcf[ti,l]=exp_xvm[ti,i,j]
               vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j-1]/Hcf[ti,l]*(exp_ym[i,j-1]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i,j-1]/Hcf[ti,l]*(exp_xm[i,j-1]-exp_xm[i,j])
+              ycf[ti,l]=exp_ym[i,j]+(0.5+exp_subh[ti,i,j-1]/Hcf[ti,l])*(exp_ym[i,j-1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+(0.5+exp_subh[ti,i,j-1]/Hcf[ti,l])*(exp_xm[i,j-1]-exp_xm[i,j])
         elif l==1:
-            if (exp_mask[ti,i,j+1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i+1,j+1]>0.0):
+            if (exp_mask[ti,i-1,j+1]==3.0 and exp_mask[ti,i,j]==2.0):
               Hcf[ti,l]=exp_thk[ti,i,j]
               vxcf[ti,l]=exp_xvm[ti,i,j]
               vycf[ti,l]=exp_yvm[ti,i,j]
-              dxy=np.sqrt((exp_xm[i+1,j+1]-exp_xm[i,j])**2+(exp_ym[i+1,j+1]-exp_ym[i,j])**2)
-              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
+              if exp_mask[ti,i,j+1]==3.0:
+                ds=0.5
+                if exp_subh[ti,i,j+1]<=Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
+                elif exp_subh[ti,i,j+1]>Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
+              else: #exp_mask[ti,i,j+1]==2.0
+                ds=1.5
+                if exp_subh[ti,i-1,j+1]<=Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i-1,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
+                elif exp_subh[ti,i-1,j+1]>Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i-1,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
+              ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i-1,j+1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i-1,j+1]-exp_xm[i,j])
+
         elif l==3:
-            if (exp_mask[ti,i,j+1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i-1,j+1]>0.0):
+            if (exp_mask[ti,i-1,j+1]==3.0 and exp_mask[ti,i,j]==2.0):
               Hcf[ti,l]=exp_thk[ti,i,j]
               vxcf[ti,l]=exp_xvm[ti,i,j]
               vycf[ti,l]=exp_yvm[ti,i,j]
-              dxy=np.sqrt((exp_xm[i-1,j+1]-exp_xm[i,j])**2+(exp_ym[i-1,j+1]-exp_ym[i,j])**2)
-              xcf[ti,l]=exp_xm[i,j]-exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
+              if exp_mask[ti,i,j+1]==3.0:
+                ds=0.5
+                if exp_subh[ti,i,j+1]<=Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
+                elif exp_subh[ti,i,j+1]>Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
+              else: #exp_mask[ti,i,j+1]==2.0
+                ds=1.5
+                if exp_subh[ti,i-1,j+1]<=Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i-1,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
+                elif exp_subh[ti,i-1,j+1]>Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i-1,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
+              ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i-1,j+1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i-1,j+1]-exp_xm[i,j])
+
         elif l==5:
-            if (exp_mask[ti,i,j-1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i-1,j-1]>0.0):
+            if (exp_mask[ti,i-1,j-1]==3.0 and exp_mask[ti,i,j]==2.0):
               Hcf[ti,l]=exp_thk[ti,i,j]
               vxcf[ti,l]=exp_xvm[ti,i,j]
               vycf[ti,l]=exp_yvm[ti,i,j]
-              dxy=np.sqrt((exp_xm[i-1,j-1]-exp_xm[i,j])**2+(exp_ym[i-1,j-1]-exp_ym[i,j])**2)
-              xcf[ti,l]=exp_xm[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
-              ycf[ti,l]=exp_ym[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
+              if exp_mask[ti,i,j-1]==3.0:
+                ds=0.5
+                if exp_subh[ti,i,j-1]<=Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
+                elif exp_subh[ti,i,j-1]>Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
+              else: #exp_mask[ti,i,j-1]==2.0
+                ds=1.5
+                if exp_subh[ti,i-1,j-1]<=Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i-1,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
+                elif exp_subh[ti,i-1,j-1]>Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i-1,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
+              ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i-1,j-1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i-1,j-1]-exp_xm[i,j])
+ 
         elif l==7:
-            if (exp_mask[ti,i,j-1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i+1,j-1]>0.0):
+            if (exp_mask[ti,i+1,j-1]==3.0 and exp_mask[ti,i,j]==2.0):
               Hcf[ti,l]=exp_thk[ti,i,j]
               vxcf[ti,l]=exp_xvm[ti,i,j]
               vycf[ti,l]=exp_yvm[ti,i,j]
-              dxy=np.sqrt((exp_xm[i+1,j-1]-exp_xm[i,j])**2+(exp_ym[i+1,j-1]-exp_ym[i,j])**2)
-              xcf[ti,l]=exp_xm[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
-              ycf[ti,l]=exp_ym[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
+              if exp_mask[ti,i,j-1]==3.0:
+                ds=0.5
+                if exp_subh[ti,i,j-1]<=Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
+                elif exp_subh[ti,i,j-1]>Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
+              else: #exp_mask[ti,i,j-1]==2.0
+                ds=1.5
+                if exp_subh[ti,i+1,j-1]<=Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i+1,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
+                elif exp_subh[ti,i+1,j-1]>Hcf[ti,l]/2.0:
+                  ds+=np.sqrt(exp_subh[ti,i+1,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
+              ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i+1,j-1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i+1,j-1]-exp_xm[i,j])
 
     if ti==0:
         profiles[point_names[l]]=profile
