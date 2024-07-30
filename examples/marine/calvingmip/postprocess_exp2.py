@@ -73,12 +73,12 @@ Mp=int((Mx-1)/2.0)
 points_C = [[Mp,Mp],[Mx-2,Mp]]
 points_B = [[Mp,Mp],[Mx-2,My-2]]
 points_A = [[Mp,Mp],[Mp,My-2]]
-points_H = [[Mp,Mp],[2,My-2]]
+points_H = [[Mp,Mp],[1,My-2]]
 
-points_G = [[Mp,Mp],[2,Mp]]
-points_F = [[Mp,Mp],[2,2]]
-points_E = [[Mp,Mp],[Mp,2]]
-points_D = [[Mp,Mp],[Mx-2,2]]
+points_G = [[Mp,Mp],[1,Mp]]
+points_F = [[Mp,Mp],[1,1]]
+points_E = [[Mp,Mp],[Mp,1]]
+points_D = [[Mp,Mp],[Mx-2,1]]
 
 transects=[points_A,points_B,points_C,points_D,points_E,points_F,points_G,points_H]
 point_names=['A','B','C','D','E','F','G','H']
@@ -124,8 +124,8 @@ for ti in range(Mt):
         
         i=int(np.floor(p[1]))
         j=int(np.floor(p[0]))
-        di=p[0]-np.floor(p[0])
-        dj=p[1]-np.floor(p[1])
+        dj=p[0]-np.floor(p[0])
+        di=p[1]-np.floor(p[1])
 
         if ti==0:
             xav[l,k]=ph.interpolate_along_transect(exp_ym,i,j,di,dj)
@@ -141,6 +141,10 @@ for ti in range(Mt):
         #nearest neighbors
         mav[ti,l,k]=ph.nearest_along_transect(exp_mask[ti],i,j,di,dj)
 
+
+        #re-define for calving front interpolation
+        i=int(np.around(p[1]))
+        j=int(np.around(p[0]))
 
         # get marginal values along profiles
         if l==0:
@@ -188,8 +192,8 @@ for ti in range(Mt):
                   ds+=np.sqrt(exp_subh[ti,i+1,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
                 elif exp_subh[ti,i+1,j+1]>Hcf[ti,l]/2.0:
                   ds+=np.sqrt(exp_subh[ti,i+1,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              ycf[ti,l]=exp_ym[i,j]#+0.5*ds*(exp_ym[i+1,j+1]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]#+0.5*ds*(exp_xm[i+1,j+1]-exp_xm[i,j])
+              ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i+1,j+1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i+1,j+1]-exp_xm[i,j])
 
         elif l==3:
             if (exp_mask[ti,i-1,j+1]==3.0 and exp_mask[ti,i,j]==2.0):
@@ -209,8 +213,8 @@ for ti in range(Mt):
                   ds+=np.sqrt(exp_subh[ti,i-1,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
                 elif exp_subh[ti,i-1,j+1]>Hcf[ti,l]/2.0:
                   ds+=np.sqrt(exp_subh[ti,i-1,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              ycf[ti,l]=exp_ym[i,j]#+0.5*ds*(exp_ym[i-1,j+1]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]#+0.5*ds*(exp_xm[i-1,j+1]-exp_xm[i,j])
+              ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i-1,j+1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i-1,j+1]-exp_xm[i,j])
 
         elif l==5:
             if (exp_mask[ti,i-1,j-1]==3.0 and exp_mask[ti,i,j]==2.0):
@@ -230,8 +234,8 @@ for ti in range(Mt):
                   ds+=np.sqrt(exp_subh[ti,i-1,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
                 elif exp_subh[ti,i-1,j-1]>Hcf[ti,l]/2.0:
                   ds+=np.sqrt(exp_subh[ti,i-1,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              ycf[ti,l]=exp_ym[i,j]#+0.5*ds*(exp_ym[i-1,j-1]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]#+0.5*ds*(exp_xm[i-1,j-1]-exp_xm[i,j])
+              ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i-1,j-1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i-1,j-1]-exp_xm[i,j])
 
         elif l==7:
             if (exp_mask[ti,i+1,j-1]==3.0 and exp_mask[ti,i,j]==2.0):
@@ -251,8 +255,8 @@ for ti in range(Mt):
                   ds+=np.sqrt(exp_subh[ti,i+1,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
                 elif exp_subh[ti,i+1,j-1]>Hcf[ti,l]/2.0:
                   ds+=np.sqrt(exp_subh[ti,i+1,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              ycf[ti,l]=exp_ym[i,j]#+0.5*ds*(exp_ym[i+1,j-1]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]#+0.5*ds*(exp_xm[i+1,j-1]-exp_xm[i,j])
+              ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i+1,j-1]-exp_ym[i,j])
+              xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i+1,j-1]-exp_xm[i,j])
 
 
 

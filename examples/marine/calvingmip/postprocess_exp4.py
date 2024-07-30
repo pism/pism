@@ -89,7 +89,7 @@ points_HD = [[Mp+MH1,Mp],[Mp+MH1,Mp-MH2]]
 
 
 transects=[points_CA,points_CB,points_CC,points_CD,points_HA,points_HB,points_HC,points_HD]
-point_names=['Caprona A','Caprona B','Caprona C','Caprona D','Halbrane E','Halbrane F','Halbrane G','Halbrane H']
+point_names=['Caprona A','Caprona B','Caprona C','Caprona D','Halbrane A','Halbrane B','Halbrane C','Halbrane D']
 
 dp=np.float(dkm)/np.float(resolution)
 trans = ph.get_troughs(pism_infile,transects,dp)
