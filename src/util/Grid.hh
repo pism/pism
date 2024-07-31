@@ -123,9 +123,6 @@ public:
   Parameters(const Config &config);
 
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  Parameters(const Context &ctx, const std::string &filename, const std::string &variable_name,
-             Registration r);
-  //! Initialize grid defaults from a configuration database and a NetCDF variable.
   Parameters(const Context &ctx, const File &file, const std::string &variable_name,
              Registration r);
 

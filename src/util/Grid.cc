@@ -1169,13 +1169,6 @@ Parameters::Parameters(const Context &ctx, const File &file, const std::string &
   init_from_file(ctx, file, variable_name, r);
 }
 
-Parameters::Parameters(const Context &ctx, const std::string &filename,
-                       const std::string &variable_name, Registration r) {
-  File file(ctx.com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
-  init_from_file(ctx, file, variable_name, r);
-}
-
-
 void Parameters::horizontal_size_from_options() {
   Mx = options::Integer("-Mx", "grid size in X direction", Mx);
   My = options::Integer("-My", "grid size in Y direction", My);
