@@ -275,16 +275,6 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
                                 file.name().c_str(), join(var_names, ",").c_str());
 }
 
-std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
-                                     const std::string &filename,
-                                     const std::vector<std::string> &var_names,
-                                     grid::Registration r) {
-
-  File file(ctx->com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
-
-  return Grid::FromFile(ctx, file, var_names, r);
-}
-
 Grid::~Grid() {
   gsl_interp_accel_free(m_impl->bsearch_accel);
 
@@ -1275,15 +1265,15 @@ void Parameters::validate() const {
 std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
   auto config = ctx->config();
 
-  auto input_file = config->get_string("input.file");
+  auto input_file_name = config->get_string("input.file");
   bool bootstrap  = config->get_flag("input.bootstrap");
 
   auto r = grid::string_to_registration(config->get_string("grid.registration"));
 
   auto log = ctx->log();
 
-  if (not input_file.empty()) {
-    File file(ctx->com(), input_file, io::PISM_NETCDF3, io::PISM_READONLY);
+  if (not input_file_name.empty()) {
+    File input_file(ctx->com(), input_file_name, io::PISM_NETCDF3, io::PISM_READONLY);
 
     // list of variables to try getting grid information from
     std::vector<std::string> candidates;
@@ -1296,7 +1286,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     // loop over candidates and save the name of the first variable we found
     std::string variable_name;
     for (const auto &name : candidates) {
-      auto V = file.find_variable(name, name);
+      auto V = input_file.find_variable(name, name);
       if (V.exists) {
         variable_name = V.name;
         break;
@@ -1306,18 +1296,18 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     // stop with an error message if we could not find anything
     if (variable_name.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no geometry information found in '%s'",
-                                    input_file.c_str());
+                                    input_file_name.c_str());
     }
 
     // get grid projection info
-    auto grid_mapping = get_projection_info(file, variable_name, ctx->unit_system());
+    auto grid_mapping = get_projection_info(input_file, variable_name, ctx->unit_system());
 
     std::shared_ptr<Grid> result;
     if (bootstrap) {
       // bootstrapping; get domain size defaults from an input file, allow overriding all grid
       // parameters using command-line options
 
-      grid::Parameters input_grid(*ctx, file, variable_name, r);
+      grid::Parameters input_grid(*ctx, input_file, variable_name, r);
 
       // process all possible options controlling grid parameters, overriding values read
       // from a file
@@ -1336,7 +1326,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
           2,
           "  setting computational box for ice from variable '%s' in '%s' and\n"
           "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-          variable_name.c_str(), input_file.c_str(), km(result->x0() - result->Lx()),
+          variable_name.c_str(), input_file_name.c_str(), km(result->x0() - result->Lx()),
           km(result->x0() + result->Lx()), km(result->y0() - result->Ly()),
           km(result->y0() + result->Ly()), result->Lz());
     } else {

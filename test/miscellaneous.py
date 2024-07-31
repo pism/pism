@@ -158,7 +158,9 @@ def grid_from_file_test():
 
         enthalpy.write(pio)
 
-        grid2 = PISM.Grid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
+        input_file = PISM.File(ctx.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+
+        grid2 = PISM.Grid.FromFile(ctx.ctx, input_file, ["enthalpy"], PISM.CELL_CORNER)
     finally:
         os.remove(file_name)
 
