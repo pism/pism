@@ -123,8 +123,8 @@ public:
   Parameters(const Config &config);
 
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  Parameters(const Context &ctx, const File &file, const std::string &variable_name,
-             Registration r);
+  Parameters(std::shared_ptr<units::System> unit_system, const File &file,
+             const std::string &variable_name, Registration r);
 
   //! Process -Mx and -My; set Mx and My.
   void horizontal_size_from_options();
@@ -160,10 +160,6 @@ public:
   std::vector<unsigned int> procs_x;
   //! Processor ownership ranges in the Y direction.
   std::vector<unsigned int> procs_y;
-
-private:
-  void init_from_file(const Context &ctx, const File &file, const std::string &variable_name,
-                      Registration r);
 };
 } // namespace grid
 

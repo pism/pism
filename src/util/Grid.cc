@@ -233,7 +233,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    grid::Parameters p(*ctx, file, var_name, r);
+    grid::Parameters p(ctx->unit_system(), file, var_name, r);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
@@ -1147,12 +1147,9 @@ void Parameters::ownership_ranges_from_options(unsigned int size) {
   procs_y               = procs.y;
 }
 
-void Parameters::init_from_file(const Context &ctx, const File &file,
-                                const std::string &variable_name, Registration r) {
-  int size = 0;
-  MPI_Comm_size(ctx.com(), &size);
-
-  InputGridInfo input_grid(file, variable_name, ctx.unit_system(), r);
+Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &file,
+                       const std::string &variable_name, Registration r) {
+  InputGridInfo input_grid(file, variable_name, unit_system, r);
 
   Lx           = input_grid.Lx;
   Ly           = input_grid.Ly;
@@ -1162,11 +1159,6 @@ void Parameters::init_from_file(const Context &ctx, const File &file,
   My           = input_grid.y.size();
   registration = r;
   z            = input_grid.z;
-}
-
-Parameters::Parameters(const Context &ctx, const File &file, const std::string &variable_name,
-                       Registration r) {
-  init_from_file(ctx, file, variable_name, r);
 }
 
 void Parameters::horizontal_size_from_options() {
@@ -1300,7 +1292,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       // bootstrapping; get domain size defaults from an input file, allow overriding all grid
       // parameters using command-line options
 
-      grid::Parameters input_grid(*ctx, input_file, variable_name, r);
+      grid::Parameters input_grid(ctx->unit_system(), input_file, variable_name, r);
 
       // process all possible options controlling grid parameters, overriding values read
       // from a file
