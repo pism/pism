@@ -828,10 +828,6 @@ netcdf pism_config {
     pism_config:energy.drainage_target_water_fraction_type = "number";
     pism_config:energy.drainage_target_water_fraction_units = "1";
 
-    pism_config:energy.enabled = "yes";
-    pism_config:energy.enabled_doc = "Solve energy conservation equations.";
-    pism_config:energy.enabled_type = "flag";
-
     pism_config:energy.enthalpy.cold_bulge_max = 60270.0;
     pism_config:energy.enthalpy.cold_bulge_max_doc = "= (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
     pism_config:energy.enthalpy.cold_bulge_max_type = "number";
@@ -871,9 +867,11 @@ netcdf pism_config {
     pism_config:energy.minimum_allowed_temperature_type = "number";
     pism_config:energy.minimum_allowed_temperature_units = "kelvin";
 
-    pism_config:energy.temperature_based = "no";
-    pism_config:energy.temperature_based_doc = "Use cold ice (i.e. not polythermal) methods.";
-    pism_config:energy.temperature_based_type = "flag";
+    pism_config:energy.model = "enthalpy";
+    pism_config:energy.model_choices = "enthalpy,cold,none";
+    pism_config:energy.model_doc = "Energy balance model";
+    pism_config:energy.model_option = "energy";
+    pism_config:energy.model_type = "keyword";
 
     pism_config:energy.temperature_dependent_thermal_conductivity = "no";
     pism_config:energy.temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in :cite:`GreveBlatter2009`. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice.thermal_conductivity.";

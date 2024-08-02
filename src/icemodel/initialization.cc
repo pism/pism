@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2024 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -589,12 +589,11 @@ void IceModel::allocate_energy_model() {
 
   m_log->message(2, "# Allocating an energy balance model...\n");
 
-  if (m_config->get_flag("energy.enabled")) {
-    if (m_config->get_flag("energy.temperature_based")) {
-      m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance);
-    } else {
-      m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance);
-    }
+  auto energy_model = m_config->get_string("energy.model");
+  if (energy_model == "enthalpy") {
+    m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance);
+  } else if (energy_model == "cold") {
+    m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance);
   } else {
     m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
   }

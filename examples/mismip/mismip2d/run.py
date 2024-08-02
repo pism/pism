@@ -120,8 +120,7 @@ class Experiment:
             "-constants.ice.density {}".format(MISMIP.rho_i()),
             "-constants.sea_water.density {}".format(MISMIP.rho_w()),
             "-constants.standard_gravity {}".format(MISMIP.g()),
-            "-energy.enabled no",       # isothermal setup
-            "-energy.temperature_based", # use the temperature-based relaxed check for temperate ice
+            "-energy.model none",       # isothermal setup
             "-flow_law.isothermal_Glen.ice_softness {}".format(MISMIP.A(self.experiment, step)),
             "-geometry.front_retreat.prescribed.file {}".format(input_file), # prescribe the maximum ice extent
             "-geometry.part_grid.enabled", # sub-grid front motion parameterization

@@ -50,7 +50,7 @@ static void set_config_defaults(Config &config) {
   config.set_string("grid.registration", "corner");
   config.set_string("stress_balance.sia.flow_law", "pb");
 
-  config.set_flag("energy.temperature_based", true);
+  config.set_string("energy.model", "none");
 
   // Set sea level elevation to -1e4 meters to remove ocean interaction
   config.set_number("sea_level.constant.value", -1e4);

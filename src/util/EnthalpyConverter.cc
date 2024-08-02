@@ -20,6 +20,7 @@
 #include "pism/util/ConfigInterface.hh"
 
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -63,13 +64,13 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_T_tolerance = config.get_number("enthalpy_converter.relaxed_is_temperate_tolerance"); // K
   m_T_0         = config.get_number("enthalpy_converter.T_reference"); // K
 
-  m_do_cold_ice_methods  = config.get_flag("energy.temperature_based");
+  m_cold_mode = member(config.get_string("energy.model"), {"cold", "none"});
 }
 
 //! Return `true` if ice at `(E, P)` is temperate.
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::is_temperate(double E, double P) const {
-  if (m_do_cold_ice_methods) {
+  if (m_cold_mode) {
     return is_temperate_relaxed(E, P);
   }
 
@@ -290,7 +291,7 @@ double EnthalpyConverter::enthalpy_permissive(double T, double omega, double P) 
 ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
   : EnthalpyConverter(config) {
   // turn on the "cold" enthalpy converter mode
-  m_do_cold_ice_methods = true;
+  m_cold_mode = true;
   // set melting temperature to one million kelvin so that all ice is cold
   m_T_melting = 1e6;
   // disable pressure-dependence of the melting temperature by setting Clausius-Clapeyron beta to

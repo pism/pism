@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -670,30 +670,6 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
     set_parameter_from_options(unit_system, config, b.first);
   }
 
-  // Energy modeling
-  {
-    options::Keyword energy("-energy",
-                            "choose the energy model (one of 'none', 'cold', 'enthalpy')",
-                            "none,cold,enthalpy", "enthalpy");
-
-    if (energy.is_set()) {
-      if (energy == "none") {
-        config.set_flag("energy.enabled", false, CONFIG_USER);
-        // Allow selecting cold ice flow laws in isothermal mode.
-        config.set_flag("energy.temperature_based", true, CONFIG_USER);
-      } else if (energy == "cold") {
-        config.set_flag("energy.enabled", true, CONFIG_USER);
-        config.set_flag("energy.temperature_based", true, CONFIG_USER);
-      } else if (energy == "enthalpy") {
-        config.set_flag("energy.enabled", true, CONFIG_USER);
-        config.set_flag("energy.temperature_based", false, CONFIG_USER);
-      } else {
-        throw RuntimeError(PISM_ERROR_LOCATION,
-                           "this can't happen: options::Keyword validates input");
-      }
-    }
-  }
-
   // -topg_to_phi
   {
     std::vector<double> defaults = {
@@ -756,7 +732,7 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
       options::Bool("-test_climate_models", "Disable ice dynamics to test climate models");
   if (test_climate_models) {
     config.set_string("stress_balance.model", "none", CONFIG_USER);
-    config.set_flag("energy.enabled", false, CONFIG_USER);
+    config.set_string("energy.model", "none", CONFIG_USER);
     config.set_flag("age.enabled", false, CONFIG_USER);
     // let the user decide if they want to use "-no_mass" or not
   }

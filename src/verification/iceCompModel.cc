@@ -113,13 +113,13 @@ IceCompModel::IceCompModel(std::shared_ptr<Grid> grid, std::shared_ptr<Context> 
   }
 
   if ((m_testname == 'F') || (m_testname == 'G') || (m_testname == 'K') || (m_testname == 'O')) {
-    m_config->set_flag("energy.enabled", true);
+    m_config->set_string("energy.model", "cold");
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
     m_config->set_number("energy.minimum_allowed_temperature", 0.0);
     m_config->set_number("energy.max_low_temperature_count", 1000000);
   } else {
-    m_config->set_flag("energy.enabled", false);
+    m_config->set_string("energy.model", "none");
   }
 
   // set sea level to -1e4 to ensure that all ice is grounded
@@ -138,7 +138,7 @@ IceCompModel::IceCompModel(std::shared_ptr<Grid> grid, std::shared_ptr<Context> 
     m_config->set_flag("geometry.update.use_basal_melt_rate", false);
 
     // this test is isothermal
-    m_config->set_flag("energy.enabled", false);
+    m_config->set_string("energy.model", "none");
 
     // use the SSA solver
     m_config->set_string("stress_balance_model", "ssa");
@@ -148,8 +148,6 @@ IceCompModel::IceCompModel(std::shared_ptr<Grid> grid, std::shared_ptr<Context> 
 
     m_config->set_flag("stress_balance.ssa.dirichlet_bc", true);
   }
-
-  m_config->set_flag("energy.temperature_based", true);
 }
 
 void IceCompModel::allocate_storage() {

@@ -26,16 +26,15 @@ the parameter name. For example,
 sets the acceleration due to gravity (parameter :config:`constants.standard_gravity`) to
 `10`. Options listed below are *shortcuts*, added for convenience.
 
-The following are equivalent and choose the temperature-based (as opposed to
-enthalpy-based) energy balance model:
+The following are equivalent and enable solving the age equation:
 
 .. code-block:: none
 
-   -energy.temperature_based
-   -energy.temperature_based on
-   -energy.temperature_based yes
-   -energy.temperature_based true
-   -energy.temperature_based True
+   -age.enabled
+   -age.enabled on
+   -age.enabled yes
+   -age.enabled true
+   -age.enabled True
 
 The following are also equivalent: they disable updating geometry by performing a step of
 the mass-continuity equation:

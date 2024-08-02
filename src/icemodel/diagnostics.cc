@@ -1085,7 +1085,7 @@ TemperaturePA::TemperaturePA(const IceModel *m)
 }
 
 std::shared_ptr<array::Array> TemperaturePA::compute_impl() const {
-  bool cold_mode = m_config->get_flag("energy.temperature_based");
+  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Array3D>(m_grid, "temp_pa", array::WITHOUT_GHOSTS, m_grid->z());
@@ -1149,7 +1149,7 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
 
 std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
 
-  bool cold_mode = m_config->get_flag("energy.temperature_based");
+  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Scalar>(m_grid, "temp_pa_base");
@@ -1416,7 +1416,7 @@ std::shared_ptr<array::Array> LiquidFraction::compute_impl() const {
       new array::Array3D(m_grid, "liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  bool cold_mode = m_config->get_flag("energy.temperature_based");
+  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
 
   if (cold_mode) {
     result->set(0.0);

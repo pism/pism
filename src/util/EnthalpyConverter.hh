@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2021 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2021, 2024 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -104,7 +104,7 @@ protected:
   double m_T_0;
   //! @brief if cold ice methods are selected, use `is_temperate()`
   //! check based on temperature, not enthalpy
-  bool m_do_cold_ice_methods;
+  bool m_cold_mode;
 };
 
 
