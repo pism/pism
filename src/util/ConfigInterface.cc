@@ -554,7 +554,7 @@ void set_integer_list_from_option(Config &config, const std::string &option,
   std::vector<int> default_value;
 
   for (auto v : config.get_numbers(parameter, Config::FORGET_THIS_USE)) {
-    default_value.push_back(v);
+    default_value.push_back(static_cast<int>(v));
   }
 
   options::IntegerList list("-" + option, config.doc(parameter), default_value);
