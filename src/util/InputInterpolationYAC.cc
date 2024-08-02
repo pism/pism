@@ -43,7 +43,7 @@
 #endif
 
 extern "C" {
-#include "yac_interface.h"
+#include "yac.h"
 }
 
 namespace pism {
@@ -240,7 +240,8 @@ int InputInterpolationYAC::interpolation_coarse_to_fine(double missing_value) {
   // nearest neighbor
   int n_neighbors = 1;
   double scaling  = 1.0;
-  yac_cadd_interp_stack_config_nnn(id, YAC_NNN_DIST, n_neighbors, scaling);
+  double max_search_distance = 0.0; // unlimited
+  yac_cadd_interp_stack_config_nnn(id, YAC_NNN_DIST, n_neighbors, max_search_distance, scaling);
 
   // constant if all of the above failed
   yac_cadd_interp_stack_config_fixed(id, missing_value);
@@ -267,7 +268,8 @@ int InputInterpolationYAC::interpolation_fine_to_coarse(double missing_value) {
   // nearest neighbor
   int n_neighbors = 1;
   double scaling  = 1.0;
-  yac_cadd_interp_stack_config_nnn(id, YAC_NNN_DIST, n_neighbors, scaling);
+  double max_search_distance = 0.0; // unlimited
+  yac_cadd_interp_stack_config_nnn(id, YAC_NNN_DIST, n_neighbors, max_search_distance, scaling);
 
   // constant if all of the above failed
   yac_cadd_interp_stack_config_fixed(id, missing_value);

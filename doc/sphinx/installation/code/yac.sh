@@ -7,7 +7,7 @@ set -x
 rm -rf yac
 
 # manual-begin
-version=3.2.0_a_p2
+version=3.3.0
 prefix=$HOME/local/yac
 
 git clone -b release-${version} \
@@ -24,6 +24,7 @@ export CC=mpicc FC=mpifort CFLAGS="-O3 -g -march=native"
             --disable-netcdf \
             --disable-examples \
             --disable-tools \
+            --disable-deprecated \
             --with-pic
 
 make all && make install

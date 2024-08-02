@@ -8,7 +8,7 @@ rm -rf yaxt
 
 # manual-begin
 prefix=$HOME/local/yac
-version=0.11.1
+version=0.11.2
 
 git clone -b release-${version} \
     https://gitlab.dkrz.de/dkrz-sw/yaxt.git
