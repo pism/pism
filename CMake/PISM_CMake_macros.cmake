@@ -222,11 +222,6 @@ macro(pism_set_dependencies)
     include_directories (BEFORE SYSTEM ${PNETCDF_INCLUDE_DIRS})
   endif()
 
-  if (Pism_USE_YAC_INTERPOLATION)
-    include_directories (${YAC_INCLUDE_DIRS})
-    list (APPEND Pism_EXTERNAL_LIBS PkgConfig::YAC)
-  endif()
-
   # Hide distracting CMake variables
   mark_as_advanced(file_cmd MPI_LIBRARY MPI_EXTRA_LIBRARY
     HDF5_C_LIBRARY_dl HDF5_C_LIBRARY_hdf5 HDF5_C_LIBRARY_hdf5_hl HDF5_C_LIBRARY_m HDF5_C_LIBRARY_z
