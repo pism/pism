@@ -15,6 +15,8 @@ Changes since v2.1
   inconsistent recommendations elsewhere in PISM's docs.
 - Add a section about publishing PISM results to the manual. This section covers archiving
   the code, model inputs and outputs, etc.
+- Add the configuration parameter `energy.model` (choices: `none`, `cold`, `enthalpy`);
+  remove `energy.enabled` and `energy.temperature_based`.
 
 Changes since v2.0
 ==================
