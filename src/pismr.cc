@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "util/io/IO_Flags.hh"
 static char help[] =
   "Ice sheet driver for PISM ice sheet simulations, initialized from data.\n"
   "The basic PISM executable for evolution runs.\n";
@@ -179,15 +180,17 @@ grid::Parameters grid_defaults(Config::Ptr config, char testname) {
 std::shared_ptr<Grid> grid(std::shared_ptr<Context> ctx, char testname) {
   auto config = ctx->config();
 
-  auto input_file = config->get_string("input.file");
+  auto input_file_name = config->get_string("input.file");
 
   if (config->get_flag("input.bootstrap")) {
     throw RuntimeError(PISM_ERROR_LOCATION, "PISM does not support bootstrapping in verification mode");
   }
 
-  if (not input_file.empty()) {
+  if (not input_file_name.empty()) {
     auto r = grid::string_to_registration(ctx->config()->get_string("grid.registration"));
 
+
+    File input_file(ctx->com(), input_file_name, pism::io::PISM_NETCDF3, pism::io::PISM_READONLY);
     // get grid from a PISM input file
     return Grid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
   }
