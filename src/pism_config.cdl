@@ -1716,7 +1716,7 @@ netcdf pism_config {
     pism_config:ocean.pico.number_of_boxes_doc = "For each ice shelf the number of ocean boxes is determined by interpolating between 1 and number_of_boxes depending on its size and geometry such that larger ice shelves are resolved with more boxes; a value of 5 is suitable for the Antarctic setup.";
     pism_config:ocean.pico.number_of_boxes_option = "number_of_boxes";
     pism_config:ocean.pico.number_of_boxes_type = "integer";
-    pism_config:ocean.pico.number_of_boxes_units = "pure number";
+    pism_config:ocean.pico.number_of_boxes_units = "count";
 
     pism_config:ocean.pico.overturning_coefficent = 1e6;
     pism_config:ocean.pico.overturning_coefficent_doc = "Sets the overturning strength coefficient.";
@@ -1825,7 +1825,7 @@ netcdf pism_config {
     pism_config:output.compression_level = 0;
     pism_config:output.compression_level_doc = "Compression level for 2D and 3D output variables (if supported by :config:`output.format`)";
     pism_config:output.compression_level_type = "integer";
-    pism_config:output.compression_level_units = "count";
+    pism_config:output.compression_level_units = "none";
 
     pism_config:output.extra.append = "no";
     pism_config:output.extra.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.extra.split` is set.";
@@ -1881,7 +1881,7 @@ netcdf pism_config {
     pism_config:output.pio.base = 0;
     pism_config:output.pio.base_doc = "Rank of the first I/O task";
     pism_config:output.pio.base_type = "integer";
-    pism_config:output.pio.base_units = "count";
+    pism_config:output.pio.base_units = "none";
 
     pism_config:output.pio.n_writers = 1;
     pism_config:output.pio.n_writers_doc = "Number of I/O tasks to use";
@@ -1897,7 +1897,7 @@ netcdf pism_config {
     pism_config:output.runtime.area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
     pism_config:output.runtime.area_scale_factor_log10_option = "summary_area_scale_factor_log10";
     pism_config:output.runtime.area_scale_factor_log10_type = "integer";
-    pism_config:output.runtime.area_scale_factor_log10_units = "pure number";
+    pism_config:output.runtime.area_scale_factor_log10_units = "none";
 
     pism_config:output.runtime.time_unit_name = "year";
     pism_config:output.runtime.time_unit_name_doc = "Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)";
@@ -1922,7 +1922,7 @@ netcdf pism_config {
     pism_config:output.runtime.volume_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";
     pism_config:output.runtime.volume_scale_factor_log10_option = "summary_vol_scale_factor_log10";
     pism_config:output.runtime.volume_scale_factor_log10_type = "integer";
-    pism_config:output.runtime.volume_scale_factor_log10_units = "pure number";
+    pism_config:output.runtime.volume_scale_factor_log10_units = "none";
 
     pism_config:output.size = "medium";
     pism_config:output.size_choices = "none,small,medium,big_2d,big";
