@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2019, 2021, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2019, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -50,7 +50,7 @@ double NetCDFConfig::get_number_impl(const std::string &name) const {
   }
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "parameter '%s' is unset. (Parameters read from '%s'.)",
+                                "numeric parameter '%s' was not set. (Parameters read from '%s'.)",
                                 name.c_str(), m_config_filename.c_str());
 
   return 0; // can't happen
@@ -63,7 +63,7 @@ std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) cons
   }
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "parameter '%s' is unset. (Parameters read from '%s'.)",
+                                "numeric parameter '%s' was not set. (Parameters read from '%s'.)",
                                 name.c_str(), m_config_filename.c_str());
 
   return {};                    // can't happen
@@ -97,7 +97,7 @@ std::string NetCDFConfig::get_string_impl(const std::string &name) const {
   }
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "Parameter '%s' was not set. (Read from '%s'.)\n", name.c_str(),
+                                "string parameter '%s' was not set. (Read from '%s'.)\n", name.c_str(),
                                 m_config_filename.c_str());
 
   return std::string();         // will never happen
