@@ -18,7 +18,7 @@
 */
 
 #include <mpi.h>
-#include <cmath>
+#include <cmath>                // std::round()
 #include <cstdlib>              // realpath()
 
 
@@ -168,10 +168,57 @@ Config::Doubles Config::all_doubles() const {
 }
 
 double Config::get_number(const std::string &name, UseFlag flag) const {
+  auto value = get_number_impl(name);
+
   if (flag == REMEMBER_THIS_USE) {
+    // check the valid range (if set) and remember that this parameter was used
+    //
+    // note that we don't check the valid range when flag == FORGET_THIS_USE. This way we
+    // can get the default value of a parameter. Parameters without a default value should
+    // be set to values outside of their respective valid ranges (if possible).
     m_impl->parameters_used.insert(name);
+
+    if (type(name) == "integer" and std::round(value) != value) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "integer parameter '%s' was set to a number with a non-zero fractional part (%f)",
+          name.c_str(), value);
+    }
+
+    auto min = valid_min(name);
+    if (std::get<0>(min)) {
+      auto valid_min = std::get<1>(min);
+
+      if (value < valid_min) {
+        if (type(name) == "integer") {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Please set '%s' to a number greater than or equal to %d",
+                                        name.c_str(), (int)valid_min);
+        }
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Please set '%s' to a number greater than or equal to %f",
+                                      name.c_str(), valid_min);
+      }
+    }
+
+    auto max = valid_max(name);
+    if (std::get<0>(max)) {
+      auto valid_max = std::get<1>(max);
+
+      if (value > valid_max) {
+        if (type(name) == "integer") {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Please set '%s' to a number less than or equal to %d",
+                                        name.c_str(), (int)valid_max);
+        }
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Please set '%s' to a number less than or equal to %f",
+                                      name.c_str(), valid_max);
+      }
+    }
   }
-  return this->get_number_impl(name);
+
+  return value;
 }
 
 double Config::get_number(const std::string &name,
@@ -308,7 +355,7 @@ void Config::set_flag(const std::string& name, bool value,
 }
 
 static bool special_parameter(const std::string &name) {
-  for (const auto &suffix : {"_doc", "_units", "_type", "_option", "_choices"}) {
+  for (const auto &suffix : {"_doc", "_units", "_type", "_option", "_choices", "_valid_min", "_valid_max"}) {
     if (ends_with(name, suffix)) {
       return true;
     }
@@ -370,6 +417,10 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
   for (auto d : config.all_doubles()) {
     std::string name  = d.first;
     double      value = d.second[0];
+
+    if (special_parameter(name)) {
+      continue;
+    }
 
     std::string units = config.units(name); // will be empty if not set
     std::string padding(max_name_size - name.size(), ' ');
@@ -837,6 +888,18 @@ std::string Config::choices(const std::string &parameter) const {
   return this->get_string(parameter + "_choices", Config::FORGET_THIS_USE);
 }
 
+std::pair<bool, double> Config::valid_min(const std::string &parameter) const {
+  if (is_set(parameter + "_valid_min")) {
+    return { true, get_number(parameter + "_valid_min", Config::FORGET_THIS_USE) };
+  }
+  return { false, {} };
+}
 
+std::pair<bool, double> Config::valid_max(const std::string &parameter) const {
+  if (is_set(parameter + "_valid_max")) {
+    return { true, get_number(parameter + "_valid_max", Config::FORGET_THIS_USE) };
+  }
+  return { false, {} };
+}
 
 } // end of namespace pism

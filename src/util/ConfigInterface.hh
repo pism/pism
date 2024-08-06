@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <utility>              // std::pair
 
 #include <mpi.h>                // MPI_Comm
 
@@ -123,6 +124,9 @@ public:
   std::string type(const std::string &parameter) const;
   std::string option(const std::string &parameter) const;
   std::string choices(const std::string &parameter) const;
+  std::pair<bool, double> valid_min(const std::string &parameter) const;
+  std::pair<bool, double> valid_max(const std::string &parameter) const;
+
   // Implementations
 protected:
   virtual void read_impl(const File &nc) = 0;
