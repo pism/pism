@@ -1215,6 +1215,18 @@ netcdf pism_config {
     pism_config:grid.Mz_type = "integer";
     pism_config:grid.Mz_units = "count";
 
+    pism_config:grid.Nx = -1;
+    pism_config:grid.Nx_doc = "Number of MPI sub-domains in the x direction (uses default if negative)";
+    pism_config:grid.Nx_option = "Nx";
+    pism_config:grid.Nx_type = "integer";
+    pism_config:grid.Nx_units = "count";
+
+    pism_config:grid.Ny = -1;
+    pism_config:grid.Ny_doc = "Number of MPI sub-domains in the y direction (uses default if negative)";
+    pism_config:grid.Ny_option = "Ny";
+    pism_config:grid.Ny_type = "integer";
+    pism_config:grid.Ny_units = "count";
+
     pism_config:grid.allow_extrapolation = "no";
     pism_config:grid.allow_extrapolation_doc = "Allow extrapolation during regridding.";
     pism_config:grid.allow_extrapolation_option = "allow_extrapolation";
