@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     P.Ly = P.Lx;
 
     P.vertical_grid_from_options(config);
-    P.ownership_ranges_from_options(ctx->size());
+    P.ownership_ranges_from_options(ctx->config(), ctx->size());
 
     // create grid and set defaults
     std::shared_ptr<Grid> grid(new Grid(ctx, P));

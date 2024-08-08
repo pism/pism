@@ -24,7 +24,7 @@ ctx.log.set_threshold(0)
 def create_dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
+    params = PISM.GridParameters(ctx.config, 5, 5)
     params.ownership_ranges_from_options(ctx.size)
     return PISM.Grid(ctx.ctx, params)
 
@@ -321,12 +321,11 @@ def modelvecs_test():
 def sia_test():
     "Test the PISM.sia module"
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
+    Mx = 100
+    params = PISM.GridParameters(ctx.config, Mx, Mx)
     params.Lx = 1e5
     params.Ly = 1e5
     params.Lz = 1000
-    params.Mx = 100
-    params.My = 100
     params.Mz = 11
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
@@ -767,9 +766,8 @@ def regridding_test():
     import numpy as np
 
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.Mx = 3
-    params.My = 3
+    Mx = 3
+    params = PISM.GridParameters(ctx.config, Mx, Mx)
     params.ownership_ranges_from_options(1)
 
     grid = PISM.Grid(ctx.ctx, params)
@@ -851,11 +849,10 @@ def vertical_extrapolation_during_regridding_test():
     "Test extrapolation in the vertical direction"
     # create a grid with 11 levels, 1000m thick
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
+    Mx = 3
+    params = PISM.GridParameters(ctx.config, Mx, Mx)
     params.Lx = 1e5
     params.Ly = 1e5
-    params.Mx = 3
-    params.My = 3
     params.Mz = 11
     params.Lz = 1000
     params.registration = PISM.CELL_CORNER
@@ -1104,7 +1101,7 @@ class AgeModel(TestCase):
 
     def create_dummy_grid(self):
         "Create a dummy grid"
-        params = PISM.GridParameters(ctx.config)
+        params = PISM.GridParameters(ctx.config, 61, 61)
         params.ownership_ranges_from_options(ctx.size)
         return PISM.Grid(ctx.ctx, params)
 

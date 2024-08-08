@@ -118,13 +118,8 @@ grid::Parameters grid_defaults(Config::Ptr config, char testname) {
   P.registration = pism::grid::CELL_CORNER;
   // use the non-periodic grid:
   P.periodicity = pism::grid::NOT_PERIODIC;
+
   // equal spacing is the default for all the tests except K
-  P.Lx = config->get_number("grid.Lx");
-  P.Ly = config->get_number("grid.Ly");
-
-  P.Mx = config->get_number("grid.Mx");
-  P.My = config->get_number("grid.My");
-
   auto spacing    = pism::grid::EQUAL;
   double Lz       = config->get_number("grid.Lz");
   unsigned int Mz = config->get_number("grid.Mz");
@@ -187,7 +182,7 @@ std::shared_ptr<Grid> grid(std::shared_ptr<Context> ctx, char testname) {
   }
 
   if (not input_file_name.empty()) {
-    auto r = grid::string_to_registration(ctx->config()->get_string("grid.registration"));
+    auto r = grid::string_to_registration(config->get_string("grid.registration"));
 
 
     File input_file(ctx->com(), input_file_name, pism::io::PISM_NETCDF3, pism::io::PISM_READONLY);
@@ -196,11 +191,11 @@ std::shared_ptr<Grid> grid(std::shared_ptr<Context> ctx, char testname) {
   }
 
   // use defaults set by grid_defaults()
-  auto P = grid_defaults(ctx->config(), testname);
-  P.horizontal_size_from_options();
+  auto P = grid_defaults(config, testname);
+
   P.horizontal_extent_from_options(ctx->unit_system());
-  P.vertical_grid_from_options(ctx->config());
-  P.ownership_ranges_from_options(ctx->size());
+  P.vertical_grid_from_options(config);
+  P.ownership_ranges_from_options(config, ctx->size());
 
   return std::make_shared<Grid>(ctx, P);
 }

@@ -157,7 +157,7 @@ std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
     input_grid.vertical_grid_from_options(ctx->config());
 
     // process options controlling ownership ranges
-    input_grid.ownership_ranges_from_options(ctx->size());
+    input_grid.ownership_ranges_from_options(ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, input_grid);
   }

@@ -1175,15 +1175,17 @@ netcdf pism_config {
     pism_config:grid.Lbz_type = "number";
     pism_config:grid.Lbz_units = "meters";
 
-    pism_config:grid.Lx = 1500e3;
+    pism_config:grid.Lx = 0.0;
     pism_config:grid.Lx_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
     pism_config:grid.Lx_type = "number";
     pism_config:grid.Lx_units = "meters";
+    pism_config:grid.Lx_valid_min = 1e-16;
 
-    pism_config:grid.Ly = 1500e3;
+    pism_config:grid.Ly = 0.0;
     pism_config:grid.Ly_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
     pism_config:grid.Ly_type = "number";
     pism_config:grid.Ly_units = "meters";
+    pism_config:grid.Ly_valid_min = 1e-16;
 
     pism_config:grid.Lz = 4000;
     pism_config:grid.Lz_doc = "Height of the computational domain.";
@@ -1196,6 +1198,7 @@ netcdf pism_config {
     pism_config:grid.Mbz_option = "Mbz";
     pism_config:grid.Mbz_type = "integer";
     pism_config:grid.Mbz_units = "count";
+    pism_config:grid.Mbz_valid_min = 1;
 
     pism_config:grid.Mx = -1;
     pism_config:grid.Mx_doc = "Number of grid points in the x direction.";
@@ -1216,18 +1219,21 @@ netcdf pism_config {
     pism_config:grid.Mz_option = "Mz";
     pism_config:grid.Mz_type = "integer";
     pism_config:grid.Mz_units = "count";
+    pism_config:grid.Mz_valid_min = 2;
 
     pism_config:grid.Nx = -1;
     pism_config:grid.Nx_doc = "Number of MPI sub-domains in the x direction (uses default if negative)";
     pism_config:grid.Nx_option = "Nx";
     pism_config:grid.Nx_type = "integer";
     pism_config:grid.Nx_units = "count";
+    pism_config:grid.Nx_valid_min = 1;
 
     pism_config:grid.Ny = -1;
     pism_config:grid.Ny_doc = "Number of MPI sub-domains in the y direction (uses default if negative)";
     pism_config:grid.Ny_option = "Ny";
     pism_config:grid.Ny_type = "integer";
     pism_config:grid.Ny_units = "count";
+    pism_config:grid.Ny_valid_min = 1;
 
     pism_config:grid.allow_extrapolation = "no";
     pism_config:grid.allow_extrapolation_doc = "Allow extrapolation during regridding.";

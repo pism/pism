@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -298,13 +298,12 @@ int main(int argc, char *argv[]) {
     grid::Parameters P(*config);
     P.Lx = 900e3;
     P.Ly = P.Lx;
-    P.horizontal_size_from_options();
 
     double Lz = 4000.0;
     unsigned int Mz = config->get_number("grid.Mz");
 
     P.z = grid::compute_vertical_levels(Lz, Mz, grid::EQUAL);
-    P.ownership_ranges_from_options(ctx->size());
+    P.ownership_ranges_from_options(ctx->config(), ctx->size());
 
     // create grid and set defaults
     std::shared_ptr<Grid> grid(new Grid(ctx, P));

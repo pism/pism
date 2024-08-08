@@ -26,6 +26,7 @@
 #include <petscsys.h>
 #include <string>
 #include <vector>
+#include <utility>              // std::pair, std::swap
 
 #include "pism/util/InputInterpolation.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -142,20 +143,18 @@ std::shared_ptr<Grid> Grid::Shallow(std::shared_ptr<const Context> ctx, double L
                                     grid::Registration registration,
                                     grid::Periodicity periodicity) {
   try {
-    grid::Parameters p(*ctx->config());
+    grid::Parameters p(*ctx->config(), Mx, My);
     p.Lx           = Lx;
     p.Ly           = Ly;
     p.x0           = x0;
     p.y0           = y0;
-    p.Mx           = Mx;
-    p.My           = My;
     p.registration = registration;
     p.periodicity  = periodicity;
 
     double Lz = ctx->config()->get_number("grid.Lz");
     p.z       = { 0.0, 0.5 * Lz, Lz };
 
-    p.ownership_ranges_from_options(ctx->size());
+    p.ownership_ranges_from_options(ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, p);
   } catch (RuntimeError &e) {
@@ -247,7 +246,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
     }
 
 
-    p.ownership_ranges_from_options(ctx->size());
+    p.ownership_ranges_from_options(ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, p);
   } catch (RuntimeError &e) {
@@ -313,15 +312,15 @@ unsigned int Grid::kBelowHeight(double height) const {
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
-static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size, unsigned int &Nx,
-                           unsigned int &Ny) {
+static std::pair<unsigned, unsigned> compute_nprocs(unsigned int size, unsigned int Mx,
+                                                    unsigned int My) {
 
   if (My <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "'My' is invalid.");
   }
 
-  Nx = (unsigned int)(0.5 + sqrt(((double)Mx) * ((double)size) / ((double)My)));
-  Ny = 0;
+  unsigned int Nx = (unsigned int)(0.5 + sqrt(((double)Mx) * ((double)size) / ((double)My)));
+  unsigned int Ny = 0;
 
   if (Nx == 0) {
     Nx = 1;
@@ -337,9 +336,7 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size, 
 
   if (Mx > My and Nx < Ny) {
     // Swap Nx and Ny
-    auto tmp = Nx;
-    Nx       = Ny;
-    Ny       = tmp;
+    std::swap(Nx, Ny);
   }
 
   if ((Mx / Nx) < 2) { // note: integer division
@@ -353,6 +350,8 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size, 
                                   "Can't split %d grid points into %d parts (Y-direction).", My,
                                   (int)Ny);
   }
+
+  return {Nx, Ny};
 }
 
 
@@ -392,19 +391,12 @@ struct OwnershipRanges {
 
 //! Compute processor ownership ranges using the grid size, MPI communicator size, and command-line
 //! options `-Nx`, `-Ny`, `-procs_x`, `-procs_y`.
-static OwnershipRanges compute_ownership_ranges(unsigned int Mx, unsigned int My,
-                                                unsigned int size) {
+static OwnershipRanges compute_ownership_ranges(unsigned int size,
+                                                unsigned int Mx, unsigned int My,
+                                                unsigned int Nx, unsigned int Ny) {
   OwnershipRanges result;
 
-  unsigned int Nx_default, Ny_default;
-  compute_nprocs(Mx, My, size, Nx_default, Ny_default);
-
-  // check -Nx and -Ny
-  options::Integer Nx("-Nx", "Number of processors in the x direction", Nx_default);
-  options::Integer Ny("-Ny", "Number of processors in the y direction", Ny_default);
-
-  // validate results (compute_nprocs checks its results, but we also need to validate command-line
-  // options)
+  // validate inputs
   if ((Mx / Nx) < 2) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Can't split %d grid points into %d parts (X-direction).", Mx,
@@ -417,7 +409,7 @@ static OwnershipRanges compute_ownership_ranges(unsigned int Mx, unsigned int My
                                   (int)Ny);
   }
 
-  if (Nx * Ny != (int)size) {
+  if (Nx * Ny != size) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Nx * Ny has to be equal to %d.", size);
   }
 
@@ -1120,15 +1112,21 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
   }
 }
 
-Parameters::Parameters(const Config &config) {
+Parameters::Parameters(const Config &config)
+    : Parameters(config, (unsigned)config.get_number("grid.Mx"),
+                 (unsigned)config.get_number("grid.My")) {
+  // empty
+}
+
+Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_) {
   Lx = config.get_number("grid.Lx");
   Ly = config.get_number("grid.Ly");
 
   x0 = 0.0;
   y0 = 0.0;
 
-  Mx = static_cast<unsigned int>(config.get_number("grid.Mx"));
-  My = static_cast<unsigned int>(config.get_number("grid.My"));
+  Mx = Mx_;
+  My = My_;
 
   periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
   registration = string_to_registration(config.get_string("grid.registration"));
@@ -1141,10 +1139,24 @@ Parameters::Parameters(const Config &config) {
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-void Parameters::ownership_ranges_from_options(unsigned int size) {
-  OwnershipRanges procs = compute_ownership_ranges(Mx, My, size);
-  procs_x               = procs.x;
-  procs_y               = procs.y;
+void Parameters::ownership_ranges_from_options(std::shared_ptr<const Config> config,
+                                               unsigned int size) {
+  unsigned int Nx = 0;
+  unsigned int Ny = 0;
+  if (config->is_valid_number("grid.Nx") and config->is_valid_number("grid.Ny")) {
+    Nx = config->get_number("grid.Nx");
+    Ny = config->get_number("grid.Ny");
+  } else {
+    auto N = compute_nprocs(size, Mx, My);
+
+    Nx = std::get<0>(N);
+    Ny = std::get<1>(N);
+  }
+
+  auto procs = compute_ownership_ranges(size, Mx, My, Nx, Ny);
+
+  procs_x = procs.x;
+  procs_y = procs.y;
 }
 
 Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &file,
@@ -1161,11 +1173,6 @@ Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &f
   z            = input_grid.z;
 }
 
-void Parameters::horizontal_size_from_options() {
-  Mx = options::Integer("-Mx", "grid size in X direction", Mx);
-  My = options::Integer("-My", "grid size in Y direction", My);
-}
-
 void Parameters::horizontal_extent_from_options(std::shared_ptr<units::System> unit_system) {
   // Domain size
   {
@@ -1174,22 +1181,6 @@ void Parameters::horizontal_extent_from_options(std::shared_ptr<units::System> u
                             "km", Lx / km);
     Ly = km * options::Real(unit_system, "-Ly", "Half of the grid extent in the X direction, in km",
                             "km", Ly / km);
-  }
-
-  // Alternatively: domain size and extent
-  {
-    options::RealList x_range("-x_range", "min,max x coordinate values", {});
-    options::RealList y_range("-y_range", "min,max y coordinate values", {});
-
-    if (x_range.is_set() and y_range.is_set()) {
-      if (x_range->size() != 2 or y_range->size() != 2) {
-        throw RuntimeError(PISM_ERROR_LOCATION, "-x_range and/or -y_range argument is invalid.");
-      }
-      x0 = (x_range[0] + x_range[1]) / 2.0;
-      y0 = (y_range[0] + y_range[1]) / 2.0;
-      Lx = (x_range[1] - x_range[0]) / 2.0;
-      Ly = (y_range[1] - y_range[0]) / 2.0;
-    }
   }
 }
 
@@ -1214,11 +1205,11 @@ void Parameters::validate() const {
   }
 
   if (Lx <= 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Lx = %f is invalid (negative)", Lx);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Lx = %f is invalid (has to be positive)", Lx);
   }
 
   if (Ly <= 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Ly = %f is invalid (negative)", Ly);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Ly = %f is invalid (has to be positive)", Ly);
   }
 
   if (not is_increasing(z)) {
@@ -1296,10 +1287,11 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
       // process all possible options controlling grid parameters, overriding values read
       // from a file
-      input_grid.horizontal_size_from_options();
+      //
+// #error "implement overriding values obtained from a file"
       input_grid.horizontal_extent_from_options(ctx->unit_system());
       input_grid.vertical_grid_from_options(config);
-      input_grid.ownership_ranges_from_options(ctx->size());
+      input_grid.ownership_ranges_from_options(ctx->config(), ctx->size());
 
       result = std::make_shared<Grid>(ctx, input_grid);
 
@@ -1330,10 +1322,9 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     // Use defaults from the configuration database
     grid::Parameters P(*ctx->config());
-    P.horizontal_size_from_options();
     P.horizontal_extent_from_options(ctx->unit_system());
     P.vertical_grid_from_options(ctx->config());
-    P.ownership_ranges_from_options(ctx->size());
+    P.ownership_ranges_from_options(ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, P);
   }

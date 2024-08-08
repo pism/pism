@@ -85,7 +85,7 @@ class TestXY(TestCase):
     def inputs(self, N):
         "Allocate stress balance inputs for a given grid size"
 
-        P = PISM.GridParameters(config)
+        P = PISM.GridParameters(config, int(N), int(N))
 
         # Domain: [0,1] * [0, 1] * [0, 1]
         P.Lx = 0.5
@@ -96,8 +96,6 @@ class TestXY(TestCase):
         # isothermal flow law, so 2 levels is enough.
         P.z = PISM.DoubleVector([0.0, 1.0])
         P.registration = PISM.CELL_CORNER
-        P.Mx = int(N)
-        P.My = int(N)
         P.ownership_ranges_from_options(ctx.size)
 
         grid = PISM.Grid(ctx.ctx, P)
@@ -296,7 +294,7 @@ class TestXZ(TestCase):
             self.opt.delValue(k)
 
     def inputs(self, N):
-        P = PISM.GridParameters(config)
+        P = PISM.GridParameters(config, int(N), 3)
 
         # Domain: [-50e3, 50e3] * [-dx, dx] * [0, 1000]
         Lx = 50e3
@@ -304,11 +302,9 @@ class TestXZ(TestCase):
         dx = (2 * Lx) / (Mx - 1)
 
         P.Lx = 50e3
-        P.Mx = int(N)
         P.x0 = 0.0
 
         P.Ly = dx
-        P.My = 3
         P.y0 = 0.0
 
         # this vertical grid is used to store ice enthalpy, not ice velocity, so 2 levels
@@ -494,7 +490,7 @@ class TestCFBC(TestCase):
             self.opt.delValue(k)
 
     def inputs(self, N):
-        P = PISM.GridParameters(config)
+        P = PISM.GridParameters(config, int(N), int(N))
 
         # Domain: [0, 1] * [-dx, dx] * [-1, 0]
         Lx = 0.5 * self.L
@@ -502,11 +498,9 @@ class TestCFBC(TestCase):
         dx = (2 * Lx) / (Mx - 1)
 
         P.Lx = Lx
-        P.Mx = int(N)
         P.x0 = Lx
 
         P.Ly = dx
-        P.My = 3
         P.y0 = 0.0
 
         # this vertical grid is used to store ice enthalpy, not ice velocity, so 2 levels
@@ -671,10 +665,8 @@ class TestXZvanderVeen(TestCase):
         dx = (2 * Lx) / (Mx - 1)
         dy = dx
 
-        P = PISM.GridParameters(config)
+        P = PISM.GridParameters(config, int(Mx), 3)
         P.horizontal_size_from_options()
-        P.Mx = Mx
-        P.My = 3
         P.periodicity = PISM.Y_PERIODIC
         P.Lx = Lx
         P.x0 = 1.1 * Lx
@@ -808,14 +800,12 @@ class TestXZHalfar(TestCase):
 
         dx = (2 * Lx) / (Mx - 1)
 
-        P = PISM.GridParameters(config)
+        P = PISM.GridParameters(config, int(Mx), 3)
 
         P.Lx = Lx
-        P.Mx = Mx
         P.x0 = Lx
 
         P.Ly = dx
-        P.My = 3
         P.y0 = 0.0
 
         # this vertical grid is used to store ice enthalpy, not ice velocity, so 2 levels

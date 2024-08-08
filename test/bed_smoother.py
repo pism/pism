@@ -19,7 +19,6 @@ def grid():
     "Create the bed smoother grid."
     P = PISM.GridParameters(config)
 
-    P.horizontal_size_from_options()
     P.horizontal_extent_from_options(ctx.unit_system)
     P.vertical_grid_from_options(config)
     P.ownership_ranges_from_options(ctx.size)
@@ -75,6 +74,8 @@ def set_config():
 
     config.set_number("stress_balance.sia.Glen_exponent", 3.0)
     config.set_number("stress_balance.sia.bed_smoother.range", 50.0e3)
+
+    PISM.set_config_from_options(ctx.unit_system, config)
 
 
 def smooth(topg, topg_smoothed, usurf, theta):

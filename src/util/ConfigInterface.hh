@@ -88,6 +88,10 @@ public:
 
   bool is_set(const std::string &name) const;
 
+  //! Return true if the numeric parameter `name` is set to a value within its valid
+  //! range.
+  bool is_valid_number(const std::string &name) const;
+
   // doubles
   typedef std::map<std::string, std::vector<double> > Doubles;
   Doubles all_doubles() const;

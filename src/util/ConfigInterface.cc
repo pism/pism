@@ -167,6 +167,30 @@ Config::Doubles Config::all_doubles() const {
   return this->all_doubles_impl();
 }
 
+bool Config::is_valid_number(const std::string &name) const {
+  auto value = get_number(name, FORGET_THIS_USE);
+  auto min = valid_min(name);
+
+  if (std::get<0>(min)) {
+    auto valid_min = std::get<1>(min);
+
+    if (value < valid_min) {
+      return false;
+    }
+  }
+
+  auto max = valid_max(name);
+  if (std::get<0>(max)) {
+    auto valid_max = std::get<1>(max);
+
+    if (value > valid_max) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 double Config::get_number(const std::string &name, UseFlag flag) const {
   auto value = get_number_impl(name);
 
