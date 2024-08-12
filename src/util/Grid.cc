@@ -1094,7 +1094,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
           this->dimension_types[dimension_name] = UNKNOWN_AXIS;
         } else {
           this->t_len          = file.dimension_length(dimension_name);
-          time_dimension_processed = false;
+          time_dimension_processed = true;
         }
         break;
       }
