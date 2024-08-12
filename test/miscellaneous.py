@@ -24,8 +24,10 @@ ctx.log.set_threshold(0)
 def create_dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config, 5, 5)
-    params.ownership_ranges_from_options(ctx.size)
+    Mx = 5
+    Lx = 1e3
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
     return PISM.Grid(ctx.ctx, params)
 
 
@@ -157,6 +159,8 @@ def grid_from_file_test():
         pio = PISM.util.prepare_output(file_name)
 
         enthalpy.write(pio)
+
+        pio.close()
 
         input_file = PISM.File(ctx.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
 
@@ -322,14 +326,13 @@ def sia_test():
     "Test the PISM.sia module"
     ctx = PISM.Context()
     Mx = 100
-    params = PISM.GridParameters(ctx.config, Mx, Mx)
-    params.Lx = 1e5
-    params.Ly = 1e5
+    Lx = 1e5
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
     params.Lz = 1000
     params.Mz = 11
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
-    params.ownership_ranges_from_options(ctx.size)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
     grid = PISM.Grid(ctx.ctx, params)
 
     enthalpyconverter = PISM.EnthalpyConverter(ctx.config)
@@ -767,8 +770,9 @@ def regridding_test():
 
     ctx = PISM.Context()
     Mx = 3
-    params = PISM.GridParameters(ctx.config, Mx, Mx)
-    params.ownership_ranges_from_options(1)
+    Lx = 1e5
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
+    params.ownership_ranges_from_options(ctx.config, 1)
 
     grid = PISM.Grid(ctx.ctx, params)
 
@@ -850,14 +854,13 @@ def vertical_extrapolation_during_regridding_test():
     # create a grid with 11 levels, 1000m thick
     ctx = PISM.Context()
     Mx = 3
-    params = PISM.GridParameters(ctx.config, Mx, Mx)
-    params.Lx = 1e5
-    params.Ly = 1e5
+    Lx = 1e5
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
     params.Mz = 11
     params.Lz = 1000
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
-    params.ownership_ranges_from_options(ctx.size)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
 
     z = np.linspace(0, params.Lz, params.Mz)
     params.z[:] = z
@@ -1101,8 +1104,10 @@ class AgeModel(TestCase):
 
     def create_dummy_grid(self):
         "Create a dummy grid"
-        params = PISM.GridParameters(ctx.config, 61, 61)
-        params.ownership_ranges_from_options(ctx.size)
+        Mx = 61
+        Lx = 1e3
+        params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
+        params.ownership_ranges_from_options(ctx.config, ctx.size)
         return PISM.Grid(ctx.ctx, params)
 
     def test_age_model_runs(self):

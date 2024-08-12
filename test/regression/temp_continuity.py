@@ -23,7 +23,7 @@ deltas = []
 dts = [100, 50]
 for dt in dts:
     try:
-        cmd = "{path}/pismr -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file in-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt {dt} -o out-temp-continuity.nc -output.sizes.medium temp -gradient mahaffy".format(path=pism_path, dt=dt)
+        cmd = f"{pism_path}/pismr -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file in-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt {dt} -o out-temp-continuity.nc -output.sizes.medium temp -gradient mahaffy"
 
         run(cmd)
 

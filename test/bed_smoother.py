@@ -19,9 +19,9 @@ def grid():
     "Create the bed smoother grid."
     P = PISM.GridParameters(config)
 
-    P.horizontal_extent_from_options(ctx.unit_system)
+    P.horizontal_size_and_extent_from_options(config)
     P.vertical_grid_from_options(config)
-    P.ownership_ranges_from_options(ctx.size)
+    P.ownership_ranges_from_options(config, ctx.size)
 
     return PISM.Grid(ctx.ctx, P)
 

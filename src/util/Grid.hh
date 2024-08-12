@@ -123,18 +123,19 @@ public:
   Parameters(const Config &config);
 
   //! Initialize grid defaults from a configuration database, but set Mx and My explicitly.
-  Parameters(const Config &config, unsigned Mx_, unsigned My_);
+  Parameters(const Config &config, unsigned Mx_, unsigned My_,
+             double Lx, double Ly);
 
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
   Parameters(std::shared_ptr<units::System> unit_system, const File &file,
              const std::string &variable_name, Registration r);
 
   //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0.
-  void horizontal_extent_from_options(std::shared_ptr<units::System> unit_system);
+  void horizontal_size_and_extent_from_options(const Config &config);
   //! Process -Mz and -Lz; set z;
-  void vertical_grid_from_options(std::shared_ptr<const Config> config);
+  void vertical_grid_from_options(const Config &config);
   //! Re-compute ownership ranges. Uses current values of Mx and My.
-  void ownership_ranges_from_options(std::shared_ptr<const Config> config, unsigned int size);
+  void ownership_ranges_from_options(const Config &config, unsigned int size);
 
   //! Validate data members.
   void validate() const;

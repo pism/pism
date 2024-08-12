@@ -303,7 +303,7 @@ int main(int argc, char *argv[]) {
     unsigned int Mz = config->get_number("grid.Mz");
 
     P.z = grid::compute_vertical_levels(Lz, Mz, grid::EQUAL);
-    P.ownership_ranges_from_options(ctx->config(), ctx->size());
+    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     // create grid and set defaults
     std::shared_ptr<Grid> grid(new Grid(ctx, P));

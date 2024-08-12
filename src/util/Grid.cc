@@ -143,9 +143,7 @@ std::shared_ptr<Grid> Grid::Shallow(std::shared_ptr<const Context> ctx, double L
                                     grid::Registration registration,
                                     grid::Periodicity periodicity) {
   try {
-    grid::Parameters p(*ctx->config(), Mx, My);
-    p.Lx           = Lx;
-    p.Ly           = Ly;
+    grid::Parameters p(*ctx->config(), Mx, My, Lx, Ly);
     p.x0           = x0;
     p.y0           = y0;
     p.registration = registration;
@@ -154,7 +152,7 @@ std::shared_ptr<Grid> Grid::Shallow(std::shared_ptr<const Context> ctx, double L
     double Lz = ctx->config()->get_number("grid.Lz");
     p.z       = { 0.0, 0.5 * Lz, Lz };
 
-    p.ownership_ranges_from_options(ctx->config(), ctx->size());
+    p.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, p);
   } catch (RuntimeError &e) {
@@ -195,7 +193,7 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
       int stencil_width = (int)context->config()->get_number("grid.max_stencil_width");
 
       try {
-        std::shared_ptr<petsc::DM> tmp = this->get_dm(1, stencil_width);
+        auto tmp = this->get_dm(1, stencil_width);
       } catch (RuntimeError &e) {
         e.add_context("distributing a %d x %d grid across %d processors.", Mx(), My(), size());
         throw;
@@ -246,7 +244,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
     }
 
 
-    p.ownership_ranges_from_options(ctx->config(), ctx->size());
+    p.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, p);
   } catch (RuntimeError &e) {
@@ -1114,19 +1112,23 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
 
 Parameters::Parameters(const Config &config)
     : Parameters(config, (unsigned)config.get_number("grid.Mx"),
-                 (unsigned)config.get_number("grid.My")) {
+                 (unsigned)config.get_number("grid.My"),
+                 config.get_number("grid.Lx"),
+                 config.get_number("grid.Ly")) {
   // empty
 }
 
-Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_) {
-  Lx = config.get_number("grid.Lx");
-  Ly = config.get_number("grid.Ly");
+Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_,
+                       double Lx_, double Ly_) {
 
   x0 = 0.0;
   y0 = 0.0;
 
   Mx = Mx_;
   My = My_;
+
+  Lx = Lx_;
+  Ly = Ly_;
 
   periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
   registration = string_to_registration(config.get_string("grid.registration"));
@@ -1139,13 +1141,13 @@ Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_) {
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-void Parameters::ownership_ranges_from_options(std::shared_ptr<const Config> config,
+void Parameters::ownership_ranges_from_options(const Config &config,
                                                unsigned int size) {
   unsigned int Nx = 0;
   unsigned int Ny = 0;
-  if (config->is_valid_number("grid.Nx") and config->is_valid_number("grid.Ny")) {
-    Nx = config->get_number("grid.Nx");
-    Ny = config->get_number("grid.Ny");
+  if (config.is_valid_number("grid.Nx") and config.is_valid_number("grid.Ny")) {
+    Nx = config.get_number("grid.Nx");
+    Ny = config.get_number("grid.Ny");
   } else {
     auto N = compute_nprocs(size, Mx, My);
 
@@ -1173,24 +1175,38 @@ Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &f
   z            = input_grid.z;
 }
 
-void Parameters::horizontal_extent_from_options(std::shared_ptr<units::System> unit_system) {
-  // Domain size
-  {
-    const double km = 1000.0;
-    Lx = km * options::Real(unit_system, "-Lx", "Half of the grid extent in the Y direction, in km",
-                            "km", Lx / km);
-    Ly = km * options::Real(unit_system, "-Ly", "Half of the grid extent in the X direction, in km",
-                            "km", Ly / km);
+//! Set `output`
+template <typename T>
+static void maybe_override(const Config &config, const char *name, const char *units, T &output) {
+
+  if (not config.is_valid_number(name)) {
+    return;
+  }
+
+  if (units != nullptr) {
+    output = static_cast<T>(config.get_number(name, units));
+  } else {
+    output = static_cast<T>(config.get_number(name));
   }
 }
 
-void Parameters::vertical_grid_from_options(Config::ConstPtr config) {
-  double Lz = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
-  int Mz    = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
+void Parameters::horizontal_size_and_extent_from_options(const Config &config) {
+
+  // grid size
+  maybe_override(config, "grid.Mx", nullptr, Mx);
+  maybe_override(config, "grid.My", nullptr, My);
+
+  maybe_override(config, "grid.Lx", "m", Lx);
+  maybe_override(config, "grid.Ly", "m", Ly);
+}
+
+void Parameters::vertical_grid_from_options(const Config &config) {
+  double Lz = (not z.empty()) ? z.back() : config.get_number("grid.Lz");
+  int Mz    = (not z.empty()) ? z.size() : config.get_number("grid.Mz");
 
   z = compute_vertical_levels(Lz, Mz,
-                              string_to_spacing(config->get_string("grid.ice_vertical_spacing")),
-                              config->get_number("grid.lambda"));
+                              string_to_spacing(config.get_string("grid.ice_vertical_spacing")),
+                              config.get_number("grid.lambda"));
 }
 
 void Parameters::validate() const {
@@ -1289,9 +1305,9 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       // from a file
       //
 // #error "implement overriding values obtained from a file"
-      input_grid.horizontal_extent_from_options(ctx->unit_system());
-      input_grid.vertical_grid_from_options(config);
-      input_grid.ownership_ranges_from_options(ctx->config(), ctx->size());
+      input_grid.horizontal_size_and_extent_from_options(*config);
+      input_grid.vertical_grid_from_options(*config);
+      input_grid.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
       result = std::make_shared<Grid>(ctx, input_grid);
 
@@ -1322,9 +1338,9 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     // Use defaults from the configuration database
     grid::Parameters P(*ctx->config());
-    P.horizontal_extent_from_options(ctx->unit_system());
-    P.vertical_grid_from_options(ctx->config());
-    P.ownership_ranges_from_options(ctx->config(), ctx->size());
+    P.horizontal_size_and_extent_from_options(*ctx->config());
+    P.vertical_grid_from_options(*ctx->config());
+    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, P);
   }

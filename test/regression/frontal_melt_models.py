@@ -15,6 +15,8 @@ config = PISM.Context().config
 config.set_number("grid.Mx", 3)
 config.set_number("grid.My", 3)
 config.set_number("grid.Mz", 5)
+config.set_number("grid.Lx", 1e5)
+config.set_number("grid.Ly", 1e5)
 
 log = PISM.Context().log
 # silence models' initialization messages
@@ -58,7 +60,7 @@ def create_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config)
-    params.ownership_ranges_from_options(ctx.size)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
     return PISM.Grid(ctx.ctx, params)
 
 def create_given_input_file(filename, grid, temperature, mass_flux):

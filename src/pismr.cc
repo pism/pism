@@ -112,7 +112,9 @@ std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix) {
 grid::Parameters grid_defaults(Config::Ptr config, char testname) {
   // This sets the defaults for each test; command-line options can override this.
 
-  grid::Parameters P(*config);
+  int Mx = 61, My = 61;
+  double Lx = 1e3, Ly = 1e3;
+  grid::Parameters P(*config, Mx, My, Lx, Ly);
 
   // use the cell corner grid registration
   P.registration = pism::grid::CELL_CORNER;
@@ -193,9 +195,9 @@ std::shared_ptr<Grid> grid(std::shared_ptr<Context> ctx, char testname) {
   // use defaults set by grid_defaults()
   auto P = grid_defaults(config, testname);
 
-  P.horizontal_extent_from_options(ctx->unit_system());
-  P.vertical_grid_from_options(config);
-  P.ownership_ranges_from_options(config, ctx->size());
+  P.horizontal_size_and_extent_from_options(*config);
+  P.vertical_grid_from_options(*config);
+  P.ownership_ranges_from_options(*config, ctx->size());
 
   return std::make_shared<Grid>(ctx, P);
 }

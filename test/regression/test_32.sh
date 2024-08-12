@@ -12,7 +12,7 @@ OPTS="-ys 0 -y 0 -i foo-32.nc -bootstrap -regrid_file foo-32.nc -Lz 4000 -Mx 31 
 set -e -x
 
 # Create the file to regrid and bootstrap from:
-$PISM_PATH/pismr -eisII A -energy enthalpy -y 500 -o foo-32.nc -o_size big
+$PISM_PATH/pismr -eisII A -Mx 61 -My 61 -energy enthalpy -y 500 -o foo-32.nc -o_size big
 
 # Bootstrap from this file:
 $PISM_PATH/pismr $OPTS -o bar-32.nc

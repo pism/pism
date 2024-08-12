@@ -52,6 +52,14 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
+  int Mx = 3;
+  double Lx = 1500e3;
+  // default horizontal grid parameters
+  config->set_number("grid.Mx", Mx);
+  config->set_number("grid.My", Mx);
+  config->set_number("grid.Lx", Lx);
+  config->set_number("grid.Ly", Lx);
+
   // default vertical grid parameters
   config->set_number("grid.Mbz", 11);
   config->set_number("grid.Lbz", 1000);
@@ -105,16 +113,12 @@ int main(int argc, char *argv[]) {
     log->message(2,
                  "  initializing Grid from options ...\n");
 
-    Config::Ptr config = ctx->config();
+    auto config = ctx->config();
 
     grid::Parameters P(*config);
-    P.Mx = 3;
-    P.My = P.Mx;
-    P.Lx = 1500e3;
-    P.Ly = P.Lx;
 
-    P.vertical_grid_from_options(config);
-    P.ownership_ranges_from_options(ctx->config(), ctx->size());
+    P.vertical_grid_from_options(*config);
+    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     // create grid and set defaults
     std::shared_ptr<Grid> grid(new Grid(ctx, P));

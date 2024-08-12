@@ -594,62 +594,6 @@ void set_number_from_option(units::System::Ptr unit_system, Config &config, cons
   }
 }
 
-/*!
- * Use a command-line option -option to set a parameter that is a list of numbers.
- *
- * The length of the list given as an argument to the command-line option has to be the
- * same as the length of the default value of the parameter *unless* the length of the
- * default value is less than 2. This default value length is used to disable this check.
- */
-void set_number_list_from_option(Config &config, const std::string &option,
-                                 const std::string &parameter) {
-  auto default_value = config.get_numbers(parameter, Config::FORGET_THIS_USE);
-  options::RealList list("-" + option, config.doc(parameter), default_value);
-
-  if (list.is_set()) {
-    if (default_value.size() < 2 and list->size() != default_value.size()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Option -%s requires a list of %d numbers (got %d instead).",
-                                    option.c_str(), (int)default_value.size(), (int)list->size());
-    }
-
-    config.set_numbers(parameter, list, CONFIG_USER);
-  }
-}
-
-/*!
- * Use a command-line option -option to set a parameter that is a list of integers.
- *
- * The length of the list given as an argument to the command-line option has to be the
- * same as the length of the default value of the parameter *unless* the length of the
- * default value is less than 2. This default value length is used to disable this check.
- */
-void set_integer_list_from_option(Config &config, const std::string &option,
-                                  const std::string &parameter) {
-  std::vector<int> default_value;
-
-  for (auto v : config.get_numbers(parameter, Config::FORGET_THIS_USE)) {
-    default_value.push_back(static_cast<int>(v));
-  }
-
-  options::IntegerList list("-" + option, config.doc(parameter), default_value);
-
-  std::vector<double> value;
-  for (auto v : list.value()) {
-    value.push_back(v);
-  }
-
-  if (list.is_set()) {
-    if (default_value.size() < 2 and value.size() != default_value.size()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Option -%s requires a list of %d integers (got %d instead).",
-                                    option.c_str(), (int)default_value.size(), (int)value.size());
-    }
-
-    config.set_numbers(parameter, value, CONFIG_USER);
-  }
-}
-
 void set_integer_from_option(Config &config, const std::string &name,
                              const std::string &parameter) {
   options::Integer option("-" + name, config.doc(parameter),
@@ -745,36 +689,6 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
     set_parameter_from_options(unit_system, config, b.first);
   }
 
-  // -topg_to_phi
-  {
-    std::vector<double> defaults = {
-      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
-      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
-      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
-      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max")
-    };
-
-    options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max", defaults);
-    if (topg_to_phi.is_set()) {
-      if (topg_to_phi->size() != 4) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "option -topg_to_phi expected 4 numbers; got %d",
-                                      (int)topg_to_phi->size());
-      }
-      config.set_flag("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
-      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
-      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
-      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
-      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
-    }
-  }
-  // Ice shelves
-
-  bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
-  if (nu_bedrock) {
-    config.set_flag("stress_balance.ssa.fd.lateral_drag.enabled", true, CONFIG_USER);
-  }
-
   // Shortcuts
 
   // option "-pik" turns on a suite of PISMPIK effects (but NOT a calving choice,
@@ -801,15 +715,6 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
   // geometry.remove_icebergs requires part_grid
   if (config.get_flag("geometry.remove_icebergs")) {
     config.set_flag("geometry.part_grid.enabled", true, CONFIG_USER);
-  }
-
-  bool test_climate_models =
-      options::Bool("-test_climate_models", "Disable ice dynamics to test climate models");
-  if (test_climate_models) {
-    config.set_string("stress_balance.model", "none", CONFIG_USER);
-    config.set_string("energy.model", "none", CONFIG_USER);
-    config.set_flag("age.enabled", false, CONFIG_USER);
-    // let the user decide if they want to use "-no_mass" or not
   }
 
   // If frontal melt code includes floating ice, routing hydrology should include it also.
