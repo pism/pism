@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -156,36 +156,6 @@ Integer::Integer(const std::string& option,
   }
 }
 
-
-IntegerList::IntegerList(const std::string& option,
-                         const std::string& description,
-                         const std::vector<int> &defaults) {
-  std::vector<double> default_value;
-
-  for (auto v : defaults) {
-    default_value.push_back(v);
-  }
-
-  RealList input(option, description, default_value);
-  std::vector<int> result;
-
-  const double eps = 1e-6;
-  for (auto v : input.value()) {
-    if (fabs(v - floor(v)) > eps) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Can't process '%s': (%f is not an integer).",
-                                    option.c_str(), v);
-    }
-    result.push_back(static_cast<int>(v));
-  }
-
-  this->set(result, input.is_set());
-}
-
-const int& IntegerList::operator[](size_t index) const {
-  return m_value[index];
-}
-
 Real::Real(std::shared_ptr<units::System> system,
            const std::string& option,
            const std::string& description,
@@ -215,26 +185,6 @@ Real::Real(std::shared_ptr<units::System> system,
   } else {
     this->set(default_value, false);
   }
-}
-
-
-RealList::RealList(const std::string& option,
-                   const std::string& description,
-                   const std::vector<double> &default_value) {
-  String input(option, description, "", DONT_ALLOW_EMPTY);
-  std::vector<double> result = default_value;
-
-  if (input.is_set()) {
-    result.clear();
-    for (const auto &p : split(input, ',')) {
-      result.push_back(parse_number(p));
-    }
-  }
-  this->set(result, input.is_set());
-}
-
-const double& RealList::operator[](size_t index) const {
-  return m_value[index];
 }
 
 bool Bool(const std::string& option,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -159,7 +159,11 @@ void print_vector(MPI_Comm com,
 
 double parse_number(const std::string &input);
 
+std::vector<double> parse_number_list(const std::string &input);
+
 long int parse_integer(const std::string &input);
+
+std::vector<long> parse_integer_list(const std::string &input);
 
 } // end of namespace pism
 

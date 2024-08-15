@@ -14,13 +14,9 @@
 
 // rename classes in pism::options (SWIG flattens namespaces)
 %rename(OptionString) pism::options::String;
-%rename(OptionStringList) pism::options::StringList;
-%rename(OptionStringSet) pism::options::StringSet;
 %rename(OptionKeyword) pism::options::Keyword;
 %rename(OptionInteger) pism::options::Integer;
-%rename(OptionIntegerList) pism::options::IntegerList;
 %rename(OptionReal) pism::options::Real;
-%rename(OptionRealList) pism::options::RealList;
 %rename(OptionBool) pism::options::Bool;
 
 %ignore pism::options::StringList::operator[];

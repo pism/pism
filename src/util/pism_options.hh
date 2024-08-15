@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -83,14 +83,6 @@ public:
           int default_value);
 };
 
-class IntegerList : public Option<std::vector<int> > {
-public:
-  IntegerList(const std::string& option,
-              const std::string& description,
-              const std::vector<int> &defaults);
-  const int& operator[](size_t index) const;
-};
-
 class Real : public Option<double> {
 public:
   Real(std::shared_ptr<units::System> system,
@@ -98,14 +90,6 @@ public:
        const std::string& description,
        const std::string& units,
        double default_value);
-};
-
-class RealList : public Option<std::vector<double> > {
-public:
-  RealList(const std::string& option,
-           const std::string& description,
-           const std::vector<double> &default_value);
-  const double& operator[](size_t index) const;
 };
 
 bool Bool(const std::string& option,
