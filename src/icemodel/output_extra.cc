@@ -17,11 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <netcdf.h>
-#ifdef NC_HAVE_META_H
-#include <netcdf_meta.h>
-#endif
-
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/pism_utilities.hh"
@@ -203,21 +198,19 @@ void IceModel::init_extras() {
                "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
-#ifdef NC_HAVE_META_H
-  {
-    if (100 * NC_VERSION_MAJOR + 10 * NC_VERSION_MINOR + NC_VERSION_PATCH < 473) {
-      if (m_extra_times.size() > 5000 and m_config->get_string("output.format") == "netcdf4_parallel") {
-        throw RuntimeError(PISM_ERROR_LOCATION,
-                           "more than 5000 times requested."
-                           "Please use -extra_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
-                           "Alternatively\n"
-                           "- split this simulation into several runs and then concatenate results\n"
-                           "- select a different output.format value\n"
-                           "- upgrade NetCDF to 4.7.3");
-      }
+  if (pism::netcdf_version() > 0 and pism::netcdf_version() < 473) {
+    if (m_extra_times.size() > 5000 and
+        m_config->get_string("output.format") == "netcdf4_parallel") {
+      throw RuntimeError(
+          PISM_ERROR_LOCATION,
+          "more than 5000 times requested."
+          "Please use -extra_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
+          "Alternatively\n"
+          "- split this simulation into several runs and then concatenate results\n"
+          "- select a different output.format value\n"
+          "- upgrade NetCDF to 4.7.3");
     }
   }
-#endif
 
   if (not vars.empty()) {
     m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));

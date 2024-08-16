@@ -40,6 +40,9 @@
 #define MPI_INCLUDED 1
 #endif
 #include <netcdf.h>             // nc_inq_libvers
+#ifdef NC_HAVE_META_H
+#include <netcdf_meta.h>        // NC_VERSION_MAJOR, etc
+#endif
 
 #if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"    // pj_release
@@ -269,6 +272,14 @@ std::string version() {
 #endif
 
   return result;
+}
+
+int netcdf_version() {
+#ifdef NC_HAVE_META_H
+  return 100 * NC_VERSION_MAJOR + 10 * NC_VERSION_MINOR + NC_VERSION_PATCH;
+#else
+  return 0;                    // unknown
+#endif
 }
 
 
