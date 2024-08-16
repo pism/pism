@@ -1267,6 +1267,14 @@ netcdf pism_config {
     pism_config:grid.periodicity_option = "periodicity";
     pism_config:grid.periodicity_type = "keyword";
 
+    pism_config:grid.procs_x = "";
+    pism_config:grid.procs_x_doc = "comma-separated list of custom sub-domain widths in the X direction";
+    pism_config:grid.procs_x_type = "string";
+
+    pism_config:grid.procs_y = "";
+    pism_config:grid.procs_y_doc = "comma-separated list of custom sub-domain widths in the Y direction";
+    pism_config:grid.procs_y_type = "string";
+
     pism_config:grid.recompute_longitude_and_latitude = "yes";
     pism_config:grid.recompute_longitude_and_latitude_doc = "Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.";
     pism_config:grid.recompute_longitude_and_latitude_type = "flag";

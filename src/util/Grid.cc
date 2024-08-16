@@ -383,72 +383,6 @@ void Grid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_pro
   }
 }
 
-struct OwnershipRanges {
-  std::vector<unsigned int> x, y;
-};
-
-//! Compute processor ownership ranges using the grid size, MPI communicator size, and command-line
-//! options `-Nx`, `-Ny`, `-procs_x`, `-procs_y`.
-static OwnershipRanges compute_ownership_ranges(unsigned int size,
-                                                unsigned int Mx, unsigned int My,
-                                                unsigned int Nx, unsigned int Ny) {
-  OwnershipRanges result;
-
-  // validate inputs
-  if ((Mx / Nx) < 2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (X-direction).", Mx,
-                                  (int)Nx);
-  }
-
-  if ((My / Ny) < 2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (Y-direction).", My,
-                                  (int)Ny);
-  }
-
-  if (Nx * Ny != size) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Nx * Ny has to be equal to %d.", size);
-  }
-
-  // check -procs_x and -procs_y
-  options::IntegerList procs_x("-procs_x", "Processor ownership ranges (x direction)", {});
-  options::IntegerList procs_y("-procs_y", "Processor ownership ranges (y direction)", {});
-
-  if (procs_x.is_set()) {
-    if (procs_x->size() != (unsigned int)Nx) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "-Nx has to be equal to the -procs_x size.");
-    }
-
-    result.x.resize(procs_x->size());
-    for (unsigned int k = 0; k < procs_x->size(); ++k) {
-      result.x[k] = procs_x[k];
-    }
-
-  } else {
-    result.x = ownership_ranges(Mx, Nx);
-  }
-
-  if (procs_y.is_set()) {
-    if (procs_y->size() != (unsigned int)Ny) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "-Ny has to be equal to the -procs_y size.");
-    }
-
-    result.y.resize(procs_y->size());
-    for (unsigned int k = 0; k < procs_y->size(); ++k) {
-      result.y[k] = procs_y[k];
-    }
-  } else {
-    result.y = ownership_ranges(My, Ny);
-  }
-
-  if (result.x.size() * result.y.size() != size) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "length(procs_x) * length(procs_y) != MPI size");
-  }
-
-  return result;
-}
-
 //! Compute horizontal grid spacing. See compute_horizontal_coordinates() for more.
 static double compute_horizontal_spacing(double half_width, unsigned int M, bool cell_centered) {
   if (cell_centered) {
@@ -1143,11 +1077,12 @@ Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_,
 
 void Parameters::ownership_ranges_from_options(const Config &config,
                                                unsigned int size) {
+  // number of sub-domains in X and Y directions
   unsigned int Nx = 0;
   unsigned int Ny = 0;
   if (config.is_valid_number("grid.Nx") and config.is_valid_number("grid.Ny")) {
-    Nx = config.get_number("grid.Nx");
-    Ny = config.get_number("grid.Ny");
+    Nx = static_cast<unsigned int>(config.get_number("grid.Nx"));
+    Ny = static_cast<unsigned int>(config.get_number("grid.Ny"));
   } else {
     auto N = compute_nprocs(size, Mx, My);
 
@@ -1155,10 +1090,65 @@ void Parameters::ownership_ranges_from_options(const Config &config,
     Ny = std::get<1>(N);
   }
 
-  auto procs = compute_ownership_ranges(size, Mx, My, Nx, Ny);
+  // sub-domain widths in X and Y directions
+  std::vector<unsigned> px, py;
+  {
 
-  procs_x = procs.x;
-  procs_y = procs.y;
+    // validate inputs
+    if ((Mx / Nx) < 2) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Can't split %d grid points into %d parts (X-direction).", Mx,
+                                    (int)Nx);
+    }
+
+    if ((My / Ny) < 2) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Can't split %d grid points into %d parts (Y-direction).", My,
+                                    (int)Ny);
+    }
+
+    if (Nx * Ny != size) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Nx * Ny has to be equal to %d.", size);
+    }
+
+
+    auto procs_x = parse_integer_list(config.get_string("grid.procs_x"));
+    auto procs_y = parse_integer_list(config.get_string("grid.procs_y"));
+
+    if (not procs_x.empty()) {
+      if (procs_x.size() != (unsigned int)Nx) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "-Nx has to be equal to the -procs_x size.");
+      }
+
+      px.resize(procs_x.size());
+      for (unsigned int k = 0; k < Nx; ++k) {
+        px[k] = procs_x[k];
+      }
+
+    } else {
+      px = ownership_ranges(Mx, Nx);
+    }
+
+    if (not procs_y.empty()) {
+      if (procs_y.size() != (unsigned int)Ny) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "-Ny has to be equal to the -procs_y size.");
+      }
+
+      py.resize(Ny);
+      for (unsigned int k = 0; k < Ny; ++k) {
+        py[k] = procs_y[k];
+      }
+    } else {
+      py = ownership_ranges(My, Ny);
+    }
+
+    if (px.size() * py.size() != size) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "length(procs_x) * length(procs_y) != MPI size");
+    }
+  }
+
+  procs_x = px;
+  procs_y = py;
 }
 
 Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &file,
