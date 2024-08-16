@@ -8,7 +8,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   include(${SWIG_USE_FILE})
 
-  include_directories (. ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDE_DIRS} ${Pism_SOURCE_DIR}/src)
+  include_directories (BEFORE SYSTEM ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDE_DIRS})
+  include_directories (. ${Pism_SOURCE_DIR}/src)
 
   set(PISM_PYTHON_BINDING_LIBRARIES "pism")
 

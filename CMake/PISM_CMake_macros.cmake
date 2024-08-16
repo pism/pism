@@ -202,15 +202,15 @@ macro(pism_set_dependencies)
   )
 
   if (Pism_USE_PROJ)
-    include_directories (${PROJ_INCLUDE_DIRS})
+    include_directories (BEFORE SYSTEM ${PROJ_INCLUDE_DIRS})
   endif()
 
   if (Pism_USE_PIO)
-    include_directories (${ParallelIO_INCLUDES})
+    include_directories (BEFORE SYSTEM ${ParallelIO_INCLUDES})
   endif()
 
   if (Pism_USE_PNETCDF)
-    include_directories (${PNETCDF_INCLUDE_DIRS})
+    include_directories (BEFORE SYSTEM ${PNETCDF_INCLUDE_DIRS})
   endif()
 
   # Hide distracting CMake variables
