@@ -39,7 +39,6 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/projection.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
 
@@ -395,22 +394,18 @@ static double compute_horizontal_spacing(double half_width, unsigned int M, bool
 //! Compute grid coordinates for one direction (X or Y).
 static std::vector<double> compute_coordinates(unsigned int M, double delta, double v_min,
                                                double v_max, bool cell_centered) {
-  std::vector<double> result(M);
+
+  double offset = cell_centered ? 0.5 : 0.0;
 
   // Here v_min, v_max define the extent of the computational domain,
   // which is not necessarily the same thing as the smallest and
   // largest values of grid coordinates.
-  if (cell_centered) {
-    for (unsigned int i = 0; i < M; ++i) {
-      result[i] = v_min + (i + 0.5) * delta;
-    }
-    result[M - 1] = v_max - 0.5 * delta;
-  } else {
-    for (unsigned int i = 0; i < M; ++i) {
-      result[i] = v_min + i * delta;
-    }
-    result[M - 1] = v_max;
+  std::vector<double> result(M);
+  for (unsigned int i = 0; i < M; ++i) {
+    result[i] = v_min + (i + offset) * delta;
   }
+  result[M - 1] = v_max - offset * delta;
+
   return result;
 }
 
