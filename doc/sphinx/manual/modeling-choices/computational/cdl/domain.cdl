@@ -1,0 +1,35 @@
+netcdf domain {
+dimensions:
+  x = 1 ;
+  y = 1 ;
+  nv2 = 2 ;
+variables:
+  double x(x) ;
+    x:units = "meter" ;
+    x:standard_name = "projection_x_coordinate" ;
+    x:bounds = "x_bnds" ;
+  double x_bnds(x, nv2) ;
+  double y(y) ;
+    y:units = "meter" ;
+    y:standard_name = "projection_y_coordinate" ;
+    y:bounds = "y_bnds" ;
+  double y_bnds(y, nv2) ;
+  byte domain ;
+    domain:grid_mapping = "polar_stereo" ;
+    domain:dimensions = "x y" ;
+    domain:long_name = "Modeling domain definition" ;
+  byte polar_stereo ;
+    polar_stereo:grid_mapping_name = "polar_stereographic" ;
+    polar_stereo:latitude_of_projection_origin = 90 ;
+    polar_stereo:scale_factor_at_projection_origin = 1. ;
+    polar_stereo:straight_vertical_longitude_from_pole = -45 ;
+    polar_stereo:standard_parallel = 70 ;
+    polar_stereo:false_northing = 0 ;
+    polar_stereo:false_easting = 0 ;
+data:
+ x_bnds =
+  -1, 1 ;
+
+ y_bnds =
+  -1, 1 ;
+}
