@@ -37,7 +37,6 @@ static char help[] =
 #include "pism/util/pism_options.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
-#include "pism/regional/Grid_Regional.hh"
 #include "pism/regional/IceRegionalModel.hh"
 
 using namespace pism;
@@ -292,7 +291,7 @@ int main(int argc, char *argv[]) {
       verification_model = std::make_shared<IceCompModel>(grid, ctx, test);
       model = verification_model;
     } else if (options::Bool("-regional", "enable regional (outlet glacier) mode")) {
-      grid = regional_grid_from_options(ctx);
+      grid = Grid::FromOptions(ctx);
       model = std::make_shared<IceRegionalModel>(grid, ctx);
     } else {
       grid = Grid::FromOptions(ctx);
