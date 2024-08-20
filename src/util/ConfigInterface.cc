@@ -728,6 +728,60 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
     // use MKS units in ISMIP6 mode
     config.set_flag("output.use_MKS", true);
   }
+
+  // Special command-line options for "-surface elevation,...":
+  {
+    options::String T("-ice_surface_temp", "ice surface temperature parameterization");
+
+    if (T.is_set()) {
+      auto IST = parse_number_list(T);
+
+      if (IST.size() != 4) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "option -ice_surface_temp requires an argument"
+                                                " (comma-separated list of 4 numbers)");
+      }
+
+      config.set_number("surface.elevation_dependent.T_min", IST[0]);
+      config.set_number("surface.elevation_dependent.T_max", IST[1]);
+      config.set_number("surface.elevation_dependent.z_T_min", IST[2]);
+      config.set_number("surface.elevation_dependent.z_T_max", IST[3]);
+    }
+
+    options::String M("-climatic_mass_balance", "climatic mass balance parameterization");
+
+    if (M.is_set()) {
+      auto CMB = parse_number_list(M);
+
+      if (CMB.size() != 5) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance requires an argument"
+                                                " (comma-separated list of 5 numbers)");
+      }
+
+      config.set_number("surface.elevation_dependent.M_min", CMB[0]);
+      config.set_number("surface.elevation_dependent.M_max", CMB[1]);
+      config.set_number("surface.elevation_dependent.z_M_min", CMB[2]);
+      config.set_number("surface.elevation_dependent.z_ELA", CMB[3]);
+      config.set_number("surface.elevation_dependent.z_M_max", CMB[4]);
+    }
+
+    options::String limits("-climatic_mass_balance_limits",
+                           "lower and upper limits of the climatic mass balance");
+
+    if (limits.is_set()) {
+
+      auto L = parse_number_list(limits);
+
+      if (L.size() != 2) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance_limits requires an argument"
+                                                " (a comma-separated list of 2 numbers)");
+      }
+
+      units::Converter meter_per_second(unit_system, "m year^-1", "m second^-1");
+
+      config.set_number("surface.elevation_dependent.M_limit_min", meter_per_second(L[0]));
+      config.set_number("surface.elevation_dependent.M_limit_max", meter_per_second(L[1]));
+    }
+  }
 }
 
 //! Create a configuration database using command-line options.

@@ -2507,6 +2507,72 @@ netcdf pism_config {
     pism_config:surface.elevation_change.temperature_lapse_rate_type = "number";
     pism_config:surface.elevation_change.temperature_lapse_rate_units = "K / km";
 
+    pism_config:surface.elevation_dependent.M_limit_max = 0.0;
+    pism_config:surface.elevation_dependent.M_limit_max_doc = "climatic mass balance at elevations below `h_{\\text{min}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_min`)";
+    pism_config:surface.elevation_dependent.M_limit_max_option = "M_limit_max";
+    pism_config:surface.elevation_dependent.M_limit_max_type = "number";
+    pism_config:surface.elevation_dependent.M_limit_max_units = "m year^-1";
+
+    pism_config:surface.elevation_dependent.M_limit_min = 0.0;
+    pism_config:surface.elevation_dependent.M_limit_min_doc = "climatic mass balance at elevations above `h_{\\text{max}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_max`)";
+    pism_config:surface.elevation_dependent.M_limit_min_option = "M_limit_min";
+    pism_config:surface.elevation_dependent.M_limit_min_type = "number";
+    pism_config:surface.elevation_dependent.M_limit_min_units = "m year^-1";
+
+    pism_config:surface.elevation_dependent.M_max = 4.0;
+    pism_config:surface.elevation_dependent.M_max_doc = "`M_{\\text{max}}`, maximum climatic mass balance in the elevation range `[h_{\\text{min}}, h_{\\text{max}}]`";
+    pism_config:surface.elevation_dependent.M_max_option = "M_max";
+    pism_config:surface.elevation_dependent.M_max_type = "number";
+    pism_config:surface.elevation_dependent.M_max_units = "m year^-1";
+
+    pism_config:surface.elevation_dependent.M_min = -3.0;
+    pism_config:surface.elevation_dependent.M_min_doc = "`M_{\\text{min}}`, minimum climatic mass balance in the elevation range `[h_{\\text{min}}, h_{\\text{max}}]`";
+    pism_config:surface.elevation_dependent.M_min_option = "M_min";
+    pism_config:surface.elevation_dependent.M_min_type = "number";
+    pism_config:surface.elevation_dependent.M_min_units = "m year^-1";
+
+    pism_config:surface.elevation_dependent.T_max = 0;
+    pism_config:surface.elevation_dependent.T_max_doc = "maximum ice surface temperature `T_{\\text{max}}`";
+    pism_config:surface.elevation_dependent.T_max_option = "T_max";
+    pism_config:surface.elevation_dependent.T_max_type = "number";
+    pism_config:surface.elevation_dependent.T_max_units = "degree_Celsius";
+
+    pism_config:surface.elevation_dependent.T_min = -5;
+    pism_config:surface.elevation_dependent.T_min_doc = "minimum ice surface temperature `T_{\\text{min}}`";
+    pism_config:surface.elevation_dependent.T_min_option = "T_min";
+    pism_config:surface.elevation_dependent.T_min_type = "number";
+    pism_config:surface.elevation_dependent.T_min_units = "degree_Celsius";
+
+    pism_config:surface.elevation_dependent.z_ELA = 1450;
+    pism_config:surface.elevation_dependent.z_ELA_doc = "equilibrium line altitude `z_{\\text{ELA}}`";
+    pism_config:surface.elevation_dependent.z_ELA_option = "z_ELA";
+    pism_config:surface.elevation_dependent.z_ELA_type = "number";
+    pism_config:surface.elevation_dependent.z_ELA_units = "meters";
+
+    pism_config:surface.elevation_dependent.z_M_max = 1700;
+    pism_config:surface.elevation_dependent.z_M_max_doc = "surface elevation corresponding to the maximum mass balance `M_{\\text{max}}`";
+    pism_config:surface.elevation_dependent.z_M_max_option = "z_M_max";
+    pism_config:surface.elevation_dependent.z_M_max_type = "number";
+    pism_config:surface.elevation_dependent.z_M_max_units = "meters";
+
+    pism_config:surface.elevation_dependent.z_M_min = 1100;
+    pism_config:surface.elevation_dependent.z_M_min_doc = "surface elevation corresponding to the minimum mass balance `M_{\\text{min}}`";
+    pism_config:surface.elevation_dependent.z_M_min_option = "z_M_min";
+    pism_config:surface.elevation_dependent.z_M_min_type = "number";
+    pism_config:surface.elevation_dependent.z_M_min_units = "meters";
+
+    pism_config:surface.elevation_dependent.z_T_max = 1350;
+    pism_config:surface.elevation_dependent.z_T_max_doc = "surface elevation corresponding to the maximum ice surface temperature `T_{\\text{max}}`";
+    pism_config:surface.elevation_dependent.z_T_max_option = "z_T_max";
+    pism_config:surface.elevation_dependent.z_T_max_type = "number";
+    pism_config:surface.elevation_dependent.z_T_max_units = "meters";
+
+    pism_config:surface.elevation_dependent.z_T_min = 1325;
+    pism_config:surface.elevation_dependent.z_T_min_doc = "surface elevation corresponding to the minimum ice surface temperature `T_{\\text{min}}`";
+    pism_config:surface.elevation_dependent.z_T_min_option = "z_T_min";
+    pism_config:surface.elevation_dependent.z_T_min_type = "number";
+    pism_config:surface.elevation_dependent.z_T_min_units = "meters";
+
     pism_config:surface.force_to_thickness.alpha = 0.01;
     pism_config:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";
     pism_config:surface.force_to_thickness.alpha_option = "force_to_thickness_alpha";
