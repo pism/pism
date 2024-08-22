@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
+#include <memory>
 #include <stdexcept>
 
 #include "pism/geometry/Geometry.hh"
@@ -64,8 +65,7 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid, bool regional_mode)
       .units("Pa s m");
 
   // The nuH viewer:
-  m_view_nuh        = false;
-  m_nuh_viewer_size = 300;
+  m_nuh_viewer = nullptr;
 
   // PETSc objects and settings
   {
@@ -178,10 +178,13 @@ void SSAFD::init_impl() {
 
   m_log->message(2, "  [using the KSP-based finite difference implementation]\n");
 
-  // options
-  options::Integer viewer_size("-ssa_nuh_viewer_size", "nuH viewer size", m_nuh_viewer_size);
-  m_nuh_viewer_size = viewer_size;
-  m_view_nuh        = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
+  int nuh_viewer_size =
+      static_cast<int>(m_config->get_number("stress_balance.ssa.fd.nuH_viewer_size"));
+
+  if (nuh_viewer_size > 0) {
+    m_nuh_viewer = std::make_shared<petsc::Viewer>(m_grid->com, "nuH", nuh_viewer_size,
+                                                   m_grid->Lx(), m_grid->Ly());
+  }
 
   if (m_config->get_flag("stress_balance.calving_front_stress_bc")) {
     m_log->message(2, "  using PISM-PIK calving-front stress boundary condition ...\n");
@@ -368,7 +371,8 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
     compute_nuH(inputs.geometry->ice_thickness, m_cell_type, m_velocity.array(), m_hardness,
                 nuH_regularization, m_nuH);
   }
-  if (m_view_nuh) {
+
+  if (m_nuh_viewer != nullptr) {
     update_nuH_viewers(m_nuH);
   }
 
@@ -470,7 +474,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
       nuH_norm_change = norm[1];
     }
 
-    if (m_view_nuh) {
+    if (m_nuh_viewer != nullptr) {
       update_nuH_viewers(m_nuH);
     }
 
@@ -596,6 +600,10 @@ std::array<double, 2> SSAFD::compute_nuH_norm(const array::Staggered &nuH,
 //! Update the nuH viewer, which shows log10(nu H).
 void SSAFD::update_nuH_viewers(const array::Staggered &nuH) {
 
+  if (not m_nuh_viewer) {
+    return;
+  }
+
   array::Scalar tmp(m_grid, "nuH");
   tmp.metadata(0)
       .long_name("log10 of (viscosity * thickness)")
@@ -612,11 +620,6 @@ void SSAFD::update_nuH_viewers(const array::Staggered &nuH) {
     } else {
       tmp(i,j) = 14.0;
     }
-  }
-
-  if (not m_nuh_viewer) {
-    m_nuh_viewer.reset(new petsc::Viewer(m_grid->com, "nuH", m_nuh_viewer_size,
-                                         m_grid->Lx(), m_grid->Ly()));
   }
 
   tmp.view({m_nuh_viewer});

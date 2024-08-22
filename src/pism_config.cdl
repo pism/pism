@@ -2241,6 +2241,11 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.nuH_iter_failure_underrelaxation_type = "number";
     pism_config:stress_balance.ssa.fd.nuH_iter_failure_underrelaxation_units = "pure number";
 
+    pism_config:stress_balance.ssa.fd.nuH_viewer_size = 0;
+    pism_config:stress_balance.ssa.fd.nuH_viewer_size_doc = "size of the run time viewer (inactive if zero)";
+    pism_config:stress_balance.ssa.fd.nuH_viewer_size_type = "integer";
+    pism_config:stress_balance.ssa.fd.nuH_viewer_size_units = "count";
+
     pism_config:stress_balance.ssa.fd.relative_convergence = 1.0e-4;
     pism_config:stress_balance.ssa.fd.relative_convergence_doc = "Relative change tolerance for the effective viscosity in the ``SSAFD`` object";
     pism_config:stress_balance.ssa.fd.relative_convergence_option = "ssafd_picard_rtol";
