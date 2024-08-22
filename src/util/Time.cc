@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2023 Constantine Khroulev
+// Copyright (C) 2011-2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -792,10 +792,7 @@ void Time::init_from_file(MPI_Comm com,
     std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
     if (not time_bounds_name.empty()) {
       // use the time bounds
-      VariableMetadata bounds(time_bounds_name, m_unit_system);
-      bounds["units"] = m_time_units.format();
-
-      io::read_time_bounds(file, bounds, log, time);
+      time = io::read_bounds(file, time_bounds_name, m_time_units.format(), m_unit_system, log);
     } else {
       // use the time axis
       VariableMetadata time_axis(time_name, m_unit_system);

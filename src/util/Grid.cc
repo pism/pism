@@ -170,8 +170,8 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
       throw RuntimeError(PISM_ERROR_LOCATION, "Failed to allocate a GSL interpolation accelerator");
     }
 
-    MPI_Comm_rank(com, &m_impl->rank);
-    MPI_Comm_size(com, &m_impl->size);
+    m_impl->rank = context->rank();
+    m_impl->size = context->size();
 
     p.validate();
 
@@ -1039,6 +1039,68 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
   }
 }
 
+//! Get a list of dimensions from a grid definition file
+std::string get_dimensions(const File &file) {
+  auto n_variables = file.nvariables();
+
+  for (unsigned int k = 0; k < n_variables; ++k) {
+    auto variable = file.variable_name(k);
+
+    auto n_attributes = file.nattributes(variable);
+
+    for (unsigned int a = 0; a < n_attributes; ++a) {
+      auto attribute = file.attribute_name(variable, a);
+
+      if (attribute == "dimensions") {
+        return file.read_text_attribute(variable, attribute);
+      }
+    }
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to find a domain variable in '%s",
+                                file.name().c_str());
+}
+
+InputGridInfo InputGridInfo::FromGridDefinition(const File &file,
+                                                std::shared_ptr<units::System> unit_system,
+                                                Registration registration) {
+  InputGridInfo result;
+
+  result.filename = file.name();
+
+  for (const auto &dimension_name : set_split(get_dimensions(file), ' ')) {
+
+    AxisType dimtype = file.dimension_type(dimension_name, unit_system);
+
+    auto units = file.read_text_attribute(dimension_name, "units");
+
+    auto dim = file.read_dimension(dimension_name);
+
+    std::vector<double> bounds;
+    auto bounds_name = file.read_text_attribute(dimension_name, "bounds");
+    if (not bounds.empty()) {
+
+    }
+
+
+    switch (dimtype) {
+    case X_AXIS:
+      {
+        break;
+      }
+    case Y_AXIS:
+      {
+        break;
+      }
+    default: {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "only X and Y dimensions are supported");
+    }
+    }
+  }
+
+  return result;
+}
+
 Parameters::Parameters(const Config &config)
     : Parameters(config, (unsigned)config.get_number("grid.Mx"),
                  (unsigned)config.get_number("grid.My"),
@@ -1160,7 +1222,8 @@ Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &f
   z            = input_grid.z;
 }
 
-//! Set `output`
+//! Set `output` if the parameter `name` is set to a "valid" number, otherwise leave
+//! `output` unchanged.
 template <typename T>
 static void maybe_override(const Config &config, const char *name, const char *units, T &output) {
 

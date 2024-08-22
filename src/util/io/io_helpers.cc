@@ -978,37 +978,34 @@ void define_time_bounds(const VariableMetadata& var,
   write_attributes(file, var, nctype);
 }
 
-void read_time_bounds(const File &file,
-                      const VariableMetadata &metadata,
-                      const Logger &log,
-                      std::vector<double> &data) {
+std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
+                                const std::string &internal_units,
+                                std::shared_ptr<units::System> unit_system, const Logger &log) {
 
-  std::string name = metadata.get_name();
+  std::vector<double> data;
 
   try {
-    auto system = metadata.unit_system();
-    units::Unit internal_units(system, metadata["units"]);
+    units::Unit internal(unit_system, internal_units);
 
     // Find the variable:
-    if (not file.variable_exists(name)) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " is missing");
+    if (not file.variable_exists(bounds_variable_name)) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + bounds_variable_name + " is missing");
     }
 
-    std::vector<std::string> dims = file.dimensions(name);
+    auto dims = file.dimensions(bounds_variable_name);
 
     if (dims.size() != 2) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " has to has two dimensions");
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + bounds_variable_name + " has to have two dimensions");
     }
 
-    std::string
-      &dimension_name = dims[0],
-      &bounds_name    = dims[1];
+    const auto &dimension_name        = dims[0];
+    const auto &bounds_dimension_name = dims[1];
 
-    // Check that we have 2 vertices (interval end-points) per time record.
-    unsigned int length = file.dimension_length(bounds_name);
+    // Check that we have 2 vertices (interval end-points) per record.
+    auto length = file.dimension_length(bounds_dimension_name);
     if (length != 2) {
       throw RuntimeError(PISM_ERROR_LOCATION,
-                         "time-bounds variable " + name + " has to have exactly 2 bounds per time record");
+                         "time-bounds variable " + bounds_variable_name + " has to have exactly 2 bounds per time record");
     }
 
     // Get the number of time records.
@@ -1017,48 +1014,39 @@ void read_time_bounds(const File &file,
       throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
 
-    data.resize(2*length);                // memory allocation happens here
+    data.resize((size_t)2*length);                // memory allocation happens here
 
-    file.read_variable(name, {0, 0}, {length, 2}, data.data());
+    file.read_variable(bounds_variable_name, {0, 0}, {length, 2}, data.data());
 
-    // Find the corresponding 'time' variable. (We get units from the 'time'
+    // Find the corresponding coordinate variable. (We get units from the 'time'
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
     // may not have metadata set.)
     if (not file.variable_exists(dimension_name)) {
       throw RuntimeError(PISM_ERROR_LOCATION,
-                         "time coordinate variable " + dimension_name + " is missing");
+                         "coordinate variable " + dimension_name + " is missing");
     }
 
-    bool input_has_units = false;
-    units::Unit input_units(internal_units.system(), "1");
+    units::Unit input_units(unit_system, "1");
 
     std::string input_units_string = file.read_text_attribute(dimension_name, "units");
     if (input_units_string.empty()) {
-      input_has_units = false;
-    } else {
-      input_units = units::Unit(internal_units.system(), input_units_string);
-      input_has_units = true;
-    }
-
-    if (metadata.has_attribute("units") && not input_has_units) {
-      std::string units_string = internal_units.format();
       log.message(2,
                   "PISM WARNING: Variable '%s' does not have the units attribute.\n"
                   "              Assuming that it is in '%s'.\n",
                   dimension_name.c_str(),
-                  units_string.c_str());
-      input_units = internal_units;
+                  internal_units.c_str());
+      input_units = internal;
+    } else {
+      input_units = units::Unit(unit_system, input_units_string);
     }
 
-    units::Converter(input_units, internal_units).convert_doubles(data.data(), data.size());
-
-    // FIXME: check that time intervals described by the time bounds
-    // variable are contiguous (without gaps) and stop if they are not.
+    units::Converter(input_units, internal).convert_doubles(data.data(), data.size());
   } catch (RuntimeError &e) {
-    e.add_context("reading time bounds variable '%s' from '%s'", name.c_str(),
+    e.add_context("reading bounds variable '%s' from '%s'", bounds_variable_name.c_str(),
                   file.name().c_str());
     throw;
   }
+  return data;
 }
 
 void write_time_bounds(const File &file, const VariableMetadata &metadata,
@@ -1128,10 +1116,7 @@ void read_time_info(const Logger &log,
                                     time_name.c_str());
     }
 
-    VariableMetadata bounds_variable(time_bounds_name, unit_system);
-    bounds_variable["units"] = time_units;
-
-    io::read_time_bounds(file, bounds_variable, log, bounds);
+    bounds = io::read_bounds(file, time_bounds_name, time_units, unit_system, log);
 
     if (2 * N != bounds.size()) {
       throw RuntimeError(PISM_ERROR_LOCATION,

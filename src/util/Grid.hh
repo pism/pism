@@ -69,7 +69,14 @@ class InputGridInfo {
 public:
   InputGridInfo(const File &file, const std::string &variable,
                 std::shared_ptr<units::System> unit_system, Registration registration);
+
+  static InputGridInfo FromGridDefinition(const File &file,
+                                          std::shared_ptr<units::System> unit_system,
+                                          Registration registration);
+
   void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
+
+
   // dimension lengths
   unsigned int t_len;
   //! x-coordinate of the domain center
@@ -102,6 +109,7 @@ public:
   std::map<std::string, AxisType> dimension_types;
 
 private:
+  InputGridInfo() = default;
   void reset();
 };
 

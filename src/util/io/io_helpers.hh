@@ -99,9 +99,9 @@ void read_timeseries(const File &nc, const VariableMetadata &metadata,
 void write_timeseries(const File &nc, const VariableMetadata &metadata,
                       size_t t_start, const std::vector<double> &data);
 
-void read_time_bounds(const File &file,
-                      const VariableMetadata &metadata,
-                      const Logger &log, std::vector<double> &data);
+std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
+                                const std::string &units,
+                                std::shared_ptr<units::System> unit_system, const Logger &log);
 
 void write_time_bounds(const File &file, const VariableMetadata &metadata,
                        size_t t_start, const std::vector<double> &data);
