@@ -385,10 +385,7 @@ static double start_time(const Config &config,
   // FIXME: it would make sense to get the length of the time dimension and read the last
   // number instead.
   if (file->dimension_length(time_name) > 0) {
-    VariableMetadata time_axis(time_name, time_units.system());
-    time_axis["units"] = time_units.format();
-
-    auto time = io::read_timeseries(*file, time_axis, log);
+    auto time = io::read_1d_variable(*file, time_name, time_units.format(), time_units.system(), log);
 
     return time.back();
   }
@@ -794,10 +791,7 @@ void Time::init_from_file(MPI_Comm com,
       time = io::read_bounds(file, time_bounds_name, m_time_units.format(), m_unit_system, log);
     } else {
       // use the time axis
-      VariableMetadata time_axis(time_name, m_unit_system);
-      time_axis["units"] = m_time_units.format();
-
-      time = io::read_timeseries(file, time_axis, log);
+      time = io::read_1d_variable(file, time_name, m_time_units.format(), m_unit_system, log);
     }
 
     // Set time.

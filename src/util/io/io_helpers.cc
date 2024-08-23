@@ -889,10 +889,6 @@ std::vector<double> read_1d_variable(const File &file, const std::string &variab
       throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
 
-    std::vector<double> result(length); // memory allocation happens here
-
-    file.read_variable(variable_name, { 0 }, { length }, result.data());
-
     units::Unit internal_units(unit_system, units), input_units(unit_system, "1");
 
     auto input_units_string = file.read_text_attribute(variable_name, "units");
@@ -907,75 +903,15 @@ std::vector<double> read_1d_variable(const File &file, const std::string &variab
       input_units = internal_units;
     }
 
+    std::vector<double> result(length); // memory allocation happens here
+
+    file.read_variable(variable_name, { 0 }, { length }, result.data());
+
     units::Converter(input_units, internal_units).convert_doubles(result.data(), result.size());
 
     return result;
   } catch (RuntimeError &e) {
     e.add_context("reading 1D variable '%s' from '%s'", variable_name.c_str(),
-                  file.name().c_str());
-    throw;
-  }
-}
-
-//! Read a time-series variable from a NetCDF file to a vector of doubles.
-std::vector<double> read_timeseries(const File &file, const VariableMetadata &metadata,
-                                    const Logger &log) {
-
-  std::string name = metadata.get_name();
-
-  try {
-    // Find the variable:
-    std::string long_name = metadata["long_name"], standard_name = metadata["standard_name"];
-
-    auto var = file.find_variable(name, standard_name);
-
-    if (not var.exists) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " is missing");
-    }
-
-    auto dims = file.dimensions(var.name);
-    if (dims.size() != 1) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "variable '%s' in '%s' should to have 1 dimension (got %d)",
-                                    name.c_str(), file.name().c_str(), (int)dims.size());
-    }
-
-    auto dimension_name = dims[0];
-
-    unsigned int length = file.dimension_length(dimension_name);
-    if (length <= 0) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
-    }
-
-    std::vector<double> result(length); // memory allocation happens here
-
-    file.read_variable(var.name, { 0 }, { length }, result.data());
-
-    units::System::Ptr system = metadata.unit_system();
-    units::Unit internal_units(system, metadata["units"]), input_units(system, "1");
-
-    std::string input_units_string = file.read_text_attribute(var.name, "units");
-
-    bool input_has_units = not input_units_string.empty();
-
-    if (input_has_units) {
-      input_units = units::Unit(system, input_units_string);
-    }
-
-    if (metadata.has_attribute("units") && not input_has_units) {
-      std::string units_string = internal_units.format();
-      log.message(2,
-                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                  "              Assuming that it is in '%s'.\n",
-                  name.c_str(), long_name.c_str(), units_string.c_str());
-      input_units = internal_units;
-    }
-
-    units::Converter(input_units, internal_units).convert_doubles(result.data(), result.size());
-
-    return result;
-  } catch (RuntimeError &e) {
-    e.add_context("reading time-series variable '%s' from '%s'", name.c_str(),
                   file.name().c_str());
     throw;
   }
@@ -1037,8 +973,6 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
                                 const std::string &internal_units,
                                 std::shared_ptr<units::System> unit_system, const Logger &log) {
 
-  std::vector<double> data;
-
   try {
     units::Unit internal(unit_system, internal_units);
 
@@ -1057,7 +991,7 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
     const auto &bounds_dimension_name = dims[1];
 
     // Check that we have 2 vertices (interval end-points) per record.
-    auto length = file.dimension_length(bounds_dimension_name);
+    size_t length = file.dimension_length(bounds_dimension_name);
     if (length != 2) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "time-bounds variable " + bounds_variable_name + " has to have exactly 2 bounds per time record");
@@ -1068,10 +1002,6 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
     if (length <= 0) {
       throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
-
-    data.resize((size_t)2*length);                // memory allocation happens here
-
-    file.read_variable(bounds_variable_name, {0, 0}, {length, 2}, data.data());
 
     // Find the corresponding coordinate variable. (We get units from the 'time'
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
@@ -1095,13 +1025,18 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
       input_units = units::Unit(unit_system, input_units_string);
     }
 
-    units::Converter(input_units, internal).convert_doubles(data.data(), data.size());
+    std::vector<double> result(length * 2); // memory allocation happens here
+
+    file.read_variable(bounds_variable_name, {0, 0}, {(unsigned)length, 2}, result.data());
+
+    units::Converter(input_units, internal).convert_doubles(result.data(), result.size());
+
+    return result;
   } catch (RuntimeError &e) {
     e.add_context("reading bounds variable '%s' from '%s'", bounds_variable_name.c_str(),
                   file.name().c_str());
     throw;
   }
-  return data;
 }
 
 void write_time_bounds(const File &file, const VariableMetadata &metadata,
@@ -1149,10 +1084,7 @@ void read_time_info(const Logger &log,
 
   size_t N = 0;
   {
-    VariableMetadata time_variable(time_name, unit_system);
-    time_variable["units"] = time_units;
-
-    times = io::read_timeseries(file, time_variable, log);
+    times = io::read_1d_variable(file, time_name, time_units, unit_system, log);
 
     if (not is_increasing(times)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,

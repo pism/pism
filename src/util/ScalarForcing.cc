@@ -39,7 +39,6 @@ namespace pism {
 
 //! \brief Report the range of a time-series stored in `data`.
 static void report_range(const std::vector<double> &data,
-                         const units::System::Ptr &unit_system,
                          const VariableMetadata &metadata,
                          const Logger &log) {
   // min_element and max_element return iterators; "*" is used to get
@@ -47,20 +46,7 @@ static void report_range(const std::vector<double> &data,
   double min = *std::min_element(data.begin(), data.end());
   double max = *std::max_element(data.begin(), data.end());
 
-  units::Converter c(unit_system,
-                     metadata["units"],
-                     metadata["output_units"]);
-  min = c(min);
-  max = c(max);
-
-  std::string spacer(metadata.get_name().size(), ' ');
-
-  log.message(2,
-              "  FOUND  %s / %-60s\n"
-              "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-              metadata.get_name().c_str(),
-              metadata.get_string("long_name").c_str(), spacer.c_str(), min, max,
-              metadata.get_string("output_units").c_str());
+  metadata.report_range(log, min, max);
 }
 
 struct ScalarForcing::Impl {
@@ -90,12 +76,6 @@ void ScalarForcing::initialize(const Context &ctx,
   try {
     auto unit_system = ctx.unit_system();
 
-    VariableMetadata variable(variable_name, unit_system);
-
-    variable["units"]               = units;
-    variable["output_units"] = output_units;
-    variable["long_name"]           = long_name;
-
     double forcing_t0{};
     double forcing_t1{};
 
@@ -107,9 +87,9 @@ void ScalarForcing::initialize(const Context &ctx,
 
       File file(ctx.com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-      // Read forcing data. The read_timeseries() call will ensure that variable_name is a
+      // Read forcing data. The read_1d_variable() call will ensure that variable_name is a
       // scalar variable.
-      auto data = io::read_timeseries(file, variable, *ctx.log());
+      auto data = io::read_1d_variable(file, variable_name, units, unit_system, *ctx.log());
 
       // The following line relies on the fact that this is a scalar variable.
       std::string time_name = file.dimensions(variable_name)[0];
@@ -179,7 +159,15 @@ void ScalarForcing::initialize(const Context &ctx,
                                     "m_impl->times have to be strictly increasing (this is a bug)");
     }
 
-    report_range(m_impl->values, unit_system, variable, *ctx.log());
+    {
+      VariableMetadata variable(variable_name, unit_system);
+
+      variable["units"]        = units;
+      variable["output_units"] = output_units;
+      variable["long_name"]    = long_name;
+
+      report_range(m_impl->values, variable, *ctx.log());
+    }
 
     // Set up interpolation.
     {
