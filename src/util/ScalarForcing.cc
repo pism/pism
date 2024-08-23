@@ -109,8 +109,7 @@ void ScalarForcing::initialize(const Context &ctx,
 
       // Read forcing data. The read_timeseries() call will ensure that variable_name is a
       // scalar variable.
-      std::vector<double> data{};
-      io::read_timeseries(file, variable, *ctx.log(), data);
+      auto data = io::read_timeseries(file, variable, *ctx.log());
 
       // The following line relies on the fact that this is a scalar variable.
       std::string time_name = file.dimensions(variable_name)[0];

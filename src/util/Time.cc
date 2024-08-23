@@ -388,8 +388,7 @@ static double start_time(const Config &config,
     VariableMetadata time_axis(time_name, time_units.system());
     time_axis["units"] = time_units.format();
 
-    std::vector<double> time{};
-    io::read_timeseries(*file, time_axis, log, time);
+    auto time = io::read_timeseries(*file, time_axis, log);
 
     return time.back();
   }
@@ -798,7 +797,7 @@ void Time::init_from_file(MPI_Comm com,
       VariableMetadata time_axis(time_name, m_unit_system);
       time_axis["units"] = m_time_units.format();
 
-      io::read_timeseries(file, time_axis, log, time);
+      time = io::read_timeseries(file, time_axis, log);
     }
 
     // Set time.

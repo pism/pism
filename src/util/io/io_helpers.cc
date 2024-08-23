@@ -918,8 +918,8 @@ std::vector<double> read_1d_variable(const File &file, const std::string &variab
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-void read_timeseries(const File &file, const VariableMetadata &metadata, const Logger &log,
-                     std::vector<double> &data) {
+std::vector<double> read_timeseries(const File &file, const VariableMetadata &metadata,
+                                    const Logger &log) {
 
   std::string name = metadata.get_name();
 
@@ -947,9 +947,9 @@ void read_timeseries(const File &file, const VariableMetadata &metadata, const L
       throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
 
-    data.resize(length); // memory allocation happens here
+    std::vector<double> result(length); // memory allocation happens here
 
-    file.read_variable(var.name, { 0 }, { length }, data.data());
+    file.read_variable(var.name, { 0 }, { length }, result.data());
 
     units::System::Ptr system = metadata.unit_system();
     units::Unit internal_units(system, metadata["units"]), input_units(system, "1");
@@ -971,8 +971,9 @@ void read_timeseries(const File &file, const VariableMetadata &metadata, const L
       input_units = internal_units;
     }
 
-    units::Converter(input_units, internal_units).convert_doubles(data.data(), data.size());
+    units::Converter(input_units, internal_units).convert_doubles(result.data(), result.size());
 
+    return result;
   } catch (RuntimeError &e) {
     e.add_context("reading time-series variable '%s' from '%s'", name.c_str(),
                   file.name().c_str());
@@ -1151,7 +1152,7 @@ void read_time_info(const Logger &log,
     VariableMetadata time_variable(time_name, unit_system);
     time_variable["units"] = time_units;
 
-    io::read_timeseries(file, time_variable, log, times);
+    times = io::read_timeseries(file, time_variable, log);
 
     if (not is_increasing(times)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
