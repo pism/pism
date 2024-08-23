@@ -19,6 +19,7 @@
 #include <cassert>
 
 #include <array>
+#include <cmath>
 #include <gsl/gsl_interp.h>
 #include <map>
 #include <memory>
@@ -28,6 +29,7 @@
 #include <vector>
 #include <utility>              // std::pair, std::swap
 
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/InputInterpolation.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
@@ -1061,35 +1063,51 @@ std::string get_dimensions(const File &file) {
                                 file.name().c_str());
 }
 
-InputGridInfo InputGridInfo::FromGridDefinition(const File &file,
-                                                std::shared_ptr<units::System> unit_system,
-                                                Registration registration) {
-  InputGridInfo result;
+Parameters Parameters::FromGridDefinition(const File &file,
+                                          std::shared_ptr<units::System> unit_system,
+                                          const Logger &log, Registration registration) {
+  Parameters result;
 
-  result.filename = file.name();
+  result.z = {};
+  result.registration = registration;
+  result.periodicity = NOT_PERIODIC;
 
   for (const auto &dimension_name : set_split(get_dimensions(file), ' ')) {
 
-    AxisType dimtype = file.dimension_type(dimension_name, unit_system);
+    double v_min = 0.0;
+    double v_max = 0.0;
+    unsigned int length = 0;
 
-    auto units = file.read_text_attribute(dimension_name, "units");
-
-    auto dim = file.read_dimension(dimension_name);
-
-    std::vector<double> bounds;
     auto bounds_name = file.read_text_attribute(dimension_name, "bounds");
-    if (not bounds.empty()) {
+    if (not bounds_name.empty()) {
+      auto bounds = io::read_bounds(file, bounds_name, "meters", unit_system, log);
 
+      v_min = bounds.front();
+      v_max = bounds.back();
+      length = static_cast<unsigned int>(bounds.size()) / 2;
+    } else {
+      auto dimension = io::read_1d_variable(file, dimension_name, "meters", unit_system, log);
+
+      v_min = dimension.front();
+      v_max = dimension.back();
+      length = static_cast<unsigned int>(dimension.size());
     }
 
+    AxisType dimtype = file.dimension_type(dimension_name, unit_system);
 
     switch (dimtype) {
     case X_AXIS:
       {
+        result.x0 = (v_min + v_max) / 2.0;
+        result.Lx = (v_max - v_min) / 2.0;
+        result.Mx = length;
         break;
       }
     case Y_AXIS:
       {
+        result.y0 = (v_min + v_max) / 2.0;
+        result.Ly = (v_max - v_min) / 2.0;
+        result.My = length;
         break;
       }
     default: {
@@ -1169,31 +1187,31 @@ void Parameters::ownership_ranges_from_options(const Config &config,
     }
 
 
-    auto procs_x = parse_integer_list(config.get_string("grid.procs_x"));
-    auto procs_y = parse_integer_list(config.get_string("grid.procs_y"));
+    auto grid_procs_x = parse_integer_list(config.get_string("grid.procs_x"));
+    auto grid_procs_y = parse_integer_list(config.get_string("grid.procs_y"));
 
-    if (not procs_x.empty()) {
-      if (procs_x.size() != (unsigned int)Nx) {
+    if (not grid_procs_x.empty()) {
+      if (grid_procs_x.size() != (unsigned int)Nx) {
         throw RuntimeError(PISM_ERROR_LOCATION, "-Nx has to be equal to the -procs_x size.");
       }
 
-      px.resize(procs_x.size());
+      px.resize(grid_procs_x.size());
       for (unsigned int k = 0; k < Nx; ++k) {
-        px[k] = procs_x[k];
+        px[k] = grid_procs_x[k];
       }
 
     } else {
       px = ownership_ranges(Mx, Nx);
     }
 
-    if (not procs_y.empty()) {
-      if (procs_y.size() != (unsigned int)Ny) {
+    if (not grid_procs_y.empty()) {
+      if (grid_procs_y.size() != (unsigned int)Ny) {
         throw RuntimeError(PISM_ERROR_LOCATION, "-Ny has to be equal to the -procs_y size.");
       }
 
       py.resize(Ny);
       for (unsigned int k = 0; k < Ny; ++k) {
-        py[k] = procs_y[k];
+        py[k] = grid_procs_y[k];
       }
     } else {
       py = ownership_ranges(My, Ny);

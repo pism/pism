@@ -70,9 +70,9 @@ public:
   InputGridInfo(const File &file, const std::string &variable,
                 std::shared_ptr<units::System> unit_system, Registration registration);
 
-  static InputGridInfo FromGridDefinition(const File &file,
-                                          std::shared_ptr<units::System> unit_system,
-                                          Registration registration);
+  // static InputGridInfo FromGridDefinition(const File &file,
+  //                                         std::shared_ptr<units::System> unit_system,
+  //                                         Registration registration);
 
   void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
 
@@ -138,6 +138,9 @@ public:
   Parameters(std::shared_ptr<units::System> unit_system, const File &file,
              const std::string &variable_name, Registration r);
 
+  static Parameters FromGridDefinition(const File &file, std::shared_ptr<units::System> unit_system,
+                                       const Logger &log, Registration registration);
+
   //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0.
   void horizontal_size_and_extent_from_options(const Config &config);
   //! Process -Mz and -Lz; set z;
@@ -170,6 +173,8 @@ public:
   std::vector<unsigned int> procs_x;
   //! Processor ownership ranges in the Y direction.
   std::vector<unsigned int> procs_y;
+private:
+  Parameters() = default;
 };
 } // namespace grid
 
