@@ -93,6 +93,10 @@ void define_time_bounds(const VariableMetadata& metadata,
                         const std::string &bounds_name,
                         const File &file, io::Type nctype);
 
+std::vector<double> read_1d_variable(const File &file, const std::string &name,
+                                     const std::string &units,
+                                     std::shared_ptr<units::System> unit_system, const Logger &log);
+
 void read_timeseries(const File &nc, const VariableMetadata &metadata,
                      const Logger &log, std::vector<double> &data);
 

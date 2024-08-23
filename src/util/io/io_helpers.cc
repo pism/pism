@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <memory>
 #include <array>
+#include <string>
 #include <vector>
 
 #include "pism/util/ConfigInterface.hh"
@@ -861,6 +862,59 @@ void define_timeseries(const VariableMetadata &var, const std::string &dimension
   }
 
   write_attributes(file, var, nctype);
+}
+
+std::vector<double> read_1d_variable(const File &file, const std::string &variable_name,
+                                     const std::string &units,
+                                     std::shared_ptr<units::System> unit_system,
+                                     const Logger &log) {
+
+
+  try {
+    if (not file.variable_exists(variable_name)) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + variable_name + " is missing");
+    }
+
+    auto dims = file.dimensions(variable_name);
+    if (dims.size() != 1) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "variable '%s' in '%s' should to have 1 dimension (got %d)",
+                                    variable_name.c_str(), file.name().c_str(), (int)dims.size());
+    }
+
+    const auto &dimension_name = dims[0];
+
+    unsigned int length = file.dimension_length(dimension_name);
+    if (length == 0) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
+    }
+
+    std::vector<double> result(length); // memory allocation happens here
+
+    file.read_variable(variable_name, { 0 }, { length }, result.data());
+
+    units::Unit internal_units(unit_system, units), input_units(unit_system, "1");
+
+    auto input_units_string = file.read_text_attribute(variable_name, "units");
+
+    if (not input_units_string.empty()) {
+      input_units = units::Unit(unit_system, input_units_string);
+    } else {
+      log.message(2,
+                  "PISM WARNING: Variable '%s' does not have the units attribute.\n"
+                  "              Assuming that it is in '%s'.\n",
+                  variable_name.c_str(), units.c_str());
+      input_units = internal_units;
+    }
+
+    units::Converter(input_units, internal_units).convert_doubles(result.data(), result.size());
+
+    return result;
+  } catch (RuntimeError &e) {
+    e.add_context("reading 1D variable '%s' from '%s'", variable_name.c_str(),
+                  file.name().c_str());
+    throw;
+  }
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
