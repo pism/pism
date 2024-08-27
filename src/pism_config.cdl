@@ -1245,15 +1245,15 @@ netcdf pism_config {
     pism_config:grid.allow_extrapolation_option = "allow_extrapolation";
     pism_config:grid.allow_extrapolation_type = "flag";
 
+    pism_config:grid.file = "";
+    pism_config:grid.file_doc = "grid definition file used to initialize the horizontal computational grid";
+    pism_config:grid.file_type = "string";
+
     pism_config:grid.ice_vertical_spacing = "quadratic";
     pism_config:grid.ice_vertical_spacing_choices = "quadratic,equal";
     pism_config:grid.ice_vertical_spacing_doc = "vertical spacing in the ice";
     pism_config:grid.ice_vertical_spacing_option = "z_spacing";
     pism_config:grid.ice_vertical_spacing_type = "keyword";
-
-    pism_config:grid.file = "";
-    pism_config:grid.file_doc = "grid definition file used to initialize the horizontal computational grid";
-    pism_config:grid.file_type = "string";
 
     pism_config:grid.lambda = 4.0;
     pism_config:grid.lambda_doc = "Vertical grid spacing parameter. Roughly equal to the factor by which the grid is coarser at an end away from the ice-bedrock interface.";

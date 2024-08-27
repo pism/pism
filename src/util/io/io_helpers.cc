@@ -866,8 +866,7 @@ void define_timeseries(const VariableMetadata &var, const std::string &dimension
 
 std::vector<double> read_1d_variable(const File &file, const std::string &variable_name,
                                      const std::string &units,
-                                     std::shared_ptr<units::System> unit_system,
-                                     const Logger &log) {
+                                     std::shared_ptr<units::System> unit_system) {
 
 
   try {
@@ -896,11 +895,9 @@ std::vector<double> read_1d_variable(const File &file, const std::string &variab
     if (not input_units_string.empty()) {
       input_units = units::Unit(unit_system, input_units_string);
     } else {
-      log.message(2,
-                  "PISM WARNING: Variable '%s' does not have the units attribute.\n"
-                  "              Assuming that it is in '%s'.\n",
-                  variable_name.c_str(), units.c_str());
-      input_units = internal_units;
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "variable '%s' does not have the units attribute", variable_name.c_str());
     }
 
     std::vector<double> result(length); // memory allocation happens here
@@ -971,7 +968,7 @@ void define_time_bounds(const VariableMetadata& var,
 
 std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
                                 const std::string &internal_units,
-                                std::shared_ptr<units::System> unit_system, const Logger &log) {
+                                std::shared_ptr<units::System> unit_system) {
 
   try {
     units::Unit internal(unit_system, internal_units);
@@ -1015,15 +1012,13 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
 
     std::string input_units_string = file.read_text_attribute(dimension_name, "units");
     if (input_units_string.empty()) {
-      log.message(2,
-                  "PISM WARNING: Variable '%s' does not have the units attribute.\n"
-                  "              Assuming that it is in '%s'.\n",
-                  dimension_name.c_str(),
-                  internal_units.c_str());
-      input_units = internal;
-    } else {
-      input_units = units::Unit(unit_system, input_units_string);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "variable '%s' does not have the units attribute",
+                                    dimension_name.c_str());
     }
+
+    input_units = units::Unit(unit_system, input_units_string);
+
 
     std::vector<double> result(length * 2); // memory allocation happens here
 
@@ -1074,21 +1069,16 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
 /*!
  * Reads and validates times and time bounds.
  */
-void read_time_info(const Logger &log,
-                    std::shared_ptr<units::System> unit_system,
-                    const File &file,
-                    const std::string &time_name,
-                    const std::string &time_units,
-                    std::vector<double> &times,
-                    std::vector<double> &bounds) {
+void read_time_info(std::shared_ptr<units::System> unit_system, const File &file,
+                    const std::string &time_name, const std::string &time_units,
+                    std::vector<double> &times, std::vector<double> &bounds) {
 
   size_t N = 0;
   {
-    times = io::read_1d_variable(file, time_name, time_units, unit_system, log);
+    times = io::read_1d_variable(file, time_name, time_units, unit_system);
 
     if (not is_increasing(times)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "times have to be strictly increasing");
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times have to be strictly increasing");
     }
     N = times.size();
   }
@@ -1098,12 +1088,11 @@ void read_time_info(const Logger &log,
     std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
 
     if (time_bounds_name.empty()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "please provide time bounds for '%s'",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "please provide time bounds for '%s'",
                                     time_name.c_str());
     }
 
-    bounds = io::read_bounds(file, time_bounds_name, time_units, unit_system, log);
+    bounds = io::read_bounds(file, time_bounds_name, time_units, unit_system);
 
     if (2 * N != bounds.size()) {
       throw RuntimeError(PISM_ERROR_LOCATION,

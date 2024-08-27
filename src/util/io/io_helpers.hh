@@ -95,25 +95,21 @@ void define_time_bounds(const VariableMetadata& metadata,
 
 std::vector<double> read_1d_variable(const File &file, const std::string &name,
                                      const std::string &units,
-                                     std::shared_ptr<units::System> unit_system, const Logger &log);
+                                     std::shared_ptr<units::System> unit_system);
 
 void write_timeseries(const File &nc, const VariableMetadata &metadata,
                       size_t t_start, const std::vector<double> &data);
 
 std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
                                 const std::string &units,
-                                std::shared_ptr<units::System> unit_system, const Logger &log);
+                                std::shared_ptr<units::System> unit_system);
 
 void write_time_bounds(const File &file, const VariableMetadata &metadata,
                        size_t t_start, const std::vector<double> &data);
 
-void read_time_info(const Logger &log,
-                    std::shared_ptr<units::System> unit_system,
-                    const File &file,
-                    const std::string &time_name,
-                    const std::string &time_units,
-                    std::vector<double> &times,
-                    std::vector<double> &bounds);
+void read_time_info(std::shared_ptr<units::System> unit_system, const File &file,
+                    const std::string &time_name, const std::string &time_units,
+                    std::vector<double> &times, std::vector<double> &bounds);
 
 std::string time_dimension(units::System::Ptr unit_system,
                            const File &file,

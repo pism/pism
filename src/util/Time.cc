@@ -347,7 +347,6 @@ static double parse_date(const std::string &input,
  * Return the start time.
  */
 static double start_time(const Config &config,
-                         const Logger &log,
                          const File *file,
                          const std::string &reference_date,
                          const std::string &calendar,
@@ -385,7 +384,7 @@ static double start_time(const Config &config,
   // FIXME: it would make sense to get the length of the time dimension and read the last
   // number instead.
   if (file->dimension_length(time_name) > 0) {
-    auto time = io::read_1d_variable(*file, time_name, time_units.format(), time_units.system(), log);
+    auto time = io::read_1d_variable(*file, time_name, time_units.format(), time_units.system());
 
     return time.back();
   }
@@ -715,7 +714,6 @@ Time::Time(MPI_Comm com,
   m_simple_calendar = member(m_calendar_string, {"360_day", "365_day", "no_leap"});
 
   m_run_start = start_time(*config,
-                           log,
                            file.get(),
                            ref_date,
                            m_calendar_string,
@@ -788,10 +786,10 @@ void Time::init_from_file(MPI_Comm com,
     std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
     if (not time_bounds_name.empty()) {
       // use the time bounds
-      time = io::read_bounds(file, time_bounds_name, m_time_units.format(), m_unit_system, log);
+      time = io::read_bounds(file, time_bounds_name, m_time_units.format(), m_unit_system);
     } else {
       // use the time axis
-      time = io::read_1d_variable(file, time_name, m_time_units.format(), m_unit_system, log);
+      time = io::read_1d_variable(file, time_name, m_time_units.format(), m_unit_system);
     }
 
     // Set time.

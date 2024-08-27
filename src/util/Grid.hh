@@ -131,15 +131,14 @@ public:
   Parameters(const Config &config);
 
   //! Initialize grid defaults from a configuration database, but set Mx and My explicitly.
-  Parameters(const Config &config, unsigned Mx_, unsigned My_,
-             double Lx, double Ly);
+  Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx, double Ly);
 
-  //! Initialize grid defaults from a configuration database and a NetCDF variable.
+  //! Initialize grid defaults from a NetCDF variable.
   Parameters(std::shared_ptr<units::System> unit_system, const File &file,
              const std::string &variable_name, Registration r);
 
-  static Parameters FromGridDefinition(const File &file, std::shared_ptr<units::System> unit_system,
-                                       const Logger &log, Registration registration);
+  static Parameters FromGridDefinition(std::shared_ptr<units::System> unit_system, const File &file,
+                                       Registration registration);
 
   //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0.
   void horizontal_size_and_extent_from_options(const Config &config);
@@ -151,28 +150,31 @@ public:
   //! Validate data members.
   void validate() const;
 
-  //! Domain half-width in the X direction.
+  //! Domain half-width in the X direction
   double Lx;
-  //! Domain half-width in the Y direction.
+  //! Domain half-width in the Y direction
   double Ly;
-  //! Domain center in the X direction.
+  //! Domain center in the X direction
   double x0;
-  //! Domain center in the Y direction.
+  //! Domain center in the Y direction
   double y0;
-  //! Number of grid points in the X direction.
+  //! Number of grid points in the X direction
   unsigned int Mx;
-  //! Number of grid points in the Y direction.
+  //! Number of grid points in the Y direction
   unsigned int My;
-  //! Grid registration.
+  //! Grid registration
   Registration registration;
-  //! Grid periodicity.
+  //! Grid periodicity
   Periodicity periodicity;
-  //! Vertical levels.
+  //! Vertical levels
   std::vector<double> z;
-  //! Processor ownership ranges in the X direction.
+  //! Processor ownership ranges in the X direction
   std::vector<unsigned int> procs_x;
-  //! Processor ownership ranges in the Y direction.
+  //! Processor ownership ranges in the Y direction
   std::vector<unsigned int> procs_y;
+
+  //! Name of the variable used to initialize the instance (empty if not used)
+  std::string variable_name;
 private:
   Parameters() = default;
 };

@@ -305,8 +305,8 @@ void SteadyState::init_time(const std::string &input_file) {
   }
 
   // read time bounds data from a file
-  m_time_bounds = io::read_bounds(file, bounds_name, time().units_string(),
-                                  m_grid->ctx()->unit_system(), *m_log);
+  m_time_bounds =
+      io::read_bounds(file, bounds_name, time().units_string(), m_grid->ctx()->unit_system());
 
   // time bounds data overrides the time variable: we make t[j] be the
   // left end-point of the j-th interval

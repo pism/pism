@@ -89,16 +89,14 @@ void ScalarForcing::initialize(const Context &ctx,
 
       // Read forcing data. The read_1d_variable() call will ensure that variable_name is a
       // scalar variable.
-      auto data = io::read_1d_variable(file, variable_name, units, unit_system, *ctx.log());
+      auto data = io::read_1d_variable(file, variable_name, units, unit_system);
 
       // The following line relies on the fact that this is a scalar variable.
       std::string time_name = file.dimensions(variable_name)[0];
 
       std::vector<double> times{};
       std::vector<double> bounds{};
-      io::read_time_info(*ctx.log(), unit_system,
-                         file, time_name, ctx.time()->units_string(),
-                         times, bounds);
+      io::read_time_info(unit_system, file, time_name, ctx.time()->units_string(), times, bounds);
       size_t N = times.size();
 
       // Compute values used to extend data read from file

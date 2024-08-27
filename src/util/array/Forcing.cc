@@ -257,9 +257,7 @@ void Forcing::init(const std::string &filename, bool periodic) {
     if (not one_record) {
       std::vector<double> times{};
       std::vector<double> bounds{};
-      io::read_time_info(*ctx->log(), ctx->unit_system(),
-                         file, time_name, time->units_string(),
-                         times, bounds);
+      io::read_time_info(ctx->unit_system(), file, time_name, time->units_string(), times, bounds);
 
       if (periodic) {
         m_data->period_start = bounds.front();
