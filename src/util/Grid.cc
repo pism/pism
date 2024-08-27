@@ -983,37 +983,44 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
     bool time_dimension_processed = false;
     for (const auto &dimension_name : dimensions) {
 
-      AxisType dimtype = file.dimension_type(dimension_name, unit_system);
+      auto dimtype = file.dimension_type(dimension_name, unit_system);
 
+      std::vector<double> data;
+      double center, half_width, v_min, v_max;
+      if (dimtype == X_AXIS or dimtype == Y_AXIS or dimtype == Z_AXIS) {
+        data = io::read_1d_variable(file, dimension_name, "meters", unit_system);
+
+        v_min  = vector_min(data);
+        v_max  = vector_max(data);
+        center = 0.5 * (v_min + v_max);
+
+        half_width = 0.5 * (v_max - v_min);
+        if (r == CELL_CENTER) {
+          half_width += 0.5 * (data[1] - data[0]);
+        }
+      }
+
+      // This has to happen *before* the switch statement below so the T_AXIS case below
+      // can override it.
       this->dimension_types[dimension_name] = dimtype;
 
       switch (dimtype) {
       case X_AXIS: {
-        this->x = io::read_1d_variable(file, dimension_name, "meters", unit_system);
-        double x_min = vector_min(this->x), x_max = vector_max(this->x);
-        this->x0 = 0.5 * (x_min + x_max);
-        this->Lx = 0.5 * (x_max - x_min);
-        if (r == CELL_CENTER) {
-          const double dx = this->x[1] - this->x[0];
-          this->Lx += 0.5 * dx;
-        }
+        this->x  = data;
+        this->x0 = center;
+        this->Lx = half_width;
         break;
       }
       case Y_AXIS: {
-        this->y = io::read_1d_variable(file, dimension_name, "meters", unit_system);
-        double y_min = vector_min(this->y), y_max = vector_max(this->y);
-        this->y0 = 0.5 * (y_min + y_max);
-        this->Ly = 0.5 * (y_max - y_min);
-        if (r == CELL_CENTER) {
-          const double dy = this->y[1] - this->y[0];
-          this->Ly += 0.5 * dy;
-        }
+        this->y  = data;
+        this->y0 = center;
+        this->Ly = half_width;
         break;
       }
       case Z_AXIS: {
-        this->z     = io::read_1d_variable(file, dimension_name, "meters", unit_system);
-        this->z_min = vector_min(this->z);
-        this->z_max = vector_max(this->z);
+        this->z     = data;
+        this->z_min = v_min;
+        this->z_max = v_max;
         break;
       }
       case T_AXIS: {
