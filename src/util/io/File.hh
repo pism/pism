@@ -92,8 +92,6 @@ public:
   AxisType dimension_type(const std::string &name,
                           units::System::Ptr unit_system) const;
 
-  std::vector<double> read_dimension(const std::string &name) const;
-
   // variables
 
   std::string variable_name(unsigned int id) const;

@@ -599,27 +599,6 @@ void File::define_variable(const std::string &variable_name, io::Type nctype,
   }
 }
 
-//! \brief Get dimension data (a coordinate variable).
-std::vector<double>  File::read_dimension(const std::string &dimension_name) const {
-  try {
-    if (not variable_exists(dimension_name)) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable not found");
-    }
-
-    unsigned int length = dimension_length(dimension_name);
-
-    std::vector<double> result(length);
-
-    read_variable(dimension_name, {0}, {length}, result.data());
-
-    return result;
-  } catch (RuntimeError &e) {
-    e.add_context("reading dimension '%s' from '%s'", dimension_name.c_str(),
-                  name().c_str());
-    throw;
-  }
-}
-
 //! \brief Append to the history global attribute.
 /*!
  * Use write_attribute("PISM_GLOBAL", "history", ...) to overwrite "history".

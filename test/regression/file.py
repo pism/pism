@@ -258,21 +258,6 @@ class File(TestCase):
 
             f.close()
 
-    def test_read_dimension(self):
-        "File.read_dimension()"
-        for backend in backends:
-            f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
-                          ctx.pio_iosys_id())
-            assert f.read_dimension("x") == (-10000.0, 0.0, 10000.0)
-
-            try:
-                f.read_dimension("z")
-                fail(backend)
-            except RuntimeError:
-                pass
-
-            f.close()
-
     def test_variable_name(self):
         "File.variable_name()"
         for backend in backends:

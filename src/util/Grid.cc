@@ -989,7 +989,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
 
       switch (dimtype) {
       case X_AXIS: {
-        this->x      = file.read_dimension(dimension_name);
+        this->x = io::read_1d_variable(file, dimension_name, "meters", unit_system);
         double x_min = vector_min(this->x), x_max = vector_max(this->x);
         this->x0 = 0.5 * (x_min + x_max);
         this->Lx = 0.5 * (x_max - x_min);
@@ -1000,7 +1000,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
         break;
       }
       case Y_AXIS: {
-        this->y      = file.read_dimension(dimension_name);
+        this->y = io::read_1d_variable(file, dimension_name, "meters", unit_system);
         double y_min = vector_min(this->y), y_max = vector_max(this->y);
         this->y0 = 0.5 * (y_min + y_max);
         this->Ly = 0.5 * (y_max - y_min);
@@ -1011,7 +1011,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
         break;
       }
       case Z_AXIS: {
-        this->z     = file.read_dimension(dimension_name);
+        this->z     = io::read_1d_variable(file, dimension_name, "meters", unit_system);
         this->z_min = vector_min(this->z);
         this->z_max = vector_max(this->z);
         break;

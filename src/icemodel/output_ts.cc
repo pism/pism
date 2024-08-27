@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021, 2023 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -83,10 +83,12 @@ void IceModel::init_timeseries() {
     File file(m_grid->com, m_ts_filename, io::PISM_NETCDF3, mode);      // Use NetCDF-3 to write time-series.
     // add the last saved time to the list of requested times so that the first time is interpreted
     // as the end of a reporting time step
-    if (append and file.dimension_length("time") > 0) {
+    std::string time_name = m_config->get_string("time.dimension_name");
+    if (append and file.dimension_length(time_name) > 0) {
+      auto time = io::read_1d_variable(file, time_name, m_time->units_string(), m_sys);
       double
         epsilon = m_config->get_number("time_stepping.resolution"), // usually one second
-        t       = vector_max(file.read_dimension("time"));
+        t       = vector_max(time);
 
       // add this time only if it is strictly before the first requested one
       if (t + epsilon < m_ts_times->front()) {
