@@ -1049,19 +1049,17 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
 }
 
 //! Get a list of dimensions from a grid definition file
-std::string get_dimensions(const File &file) {
+std::string get_domain_variable(const File &file) {
   auto n_variables = file.nvariables();
 
   for (unsigned int k = 0; k < n_variables; ++k) {
-    auto variable = file.variable_name(k);
 
+    auto variable     = file.variable_name(k);
     auto n_attributes = file.nattributes(variable);
 
     for (unsigned int a = 0; a < n_attributes; ++a) {
-      auto attribute = file.attribute_name(variable, a);
-
-      if (attribute == "dimensions") {
-        return file.read_text_attribute(variable, attribute);
+      if (file.attribute_name(variable, a) == "dimensions") {
+        return variable;
       }
     }
   }
@@ -1075,11 +1073,14 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
                                           Registration registration) {
   Parameters result;
 
-  result.z = {};
-  result.registration = registration;
-  result.periodicity = NOT_PERIODIC;
+  result.z             = {};
+  result.registration  = registration;
+  result.periodicity   = NOT_PERIODIC;
+  result.variable_name = get_domain_variable(file);
 
-  for (const auto &dimension_name : set_split(get_dimensions(file), ' ')) {
+  auto dimensions = file.read_text_attribute(result.variable_name, "dimensions");
+
+  for (const auto &dimension_name : set_split(dimensions, ' ')) {
 
     double v_min = 0.0;
     double v_max = 0.0;
@@ -1100,23 +1101,19 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
       length = static_cast<unsigned int>(dimension.size());
     }
 
-    AxisType dimtype = file.dimension_type(dimension_name, unit_system);
-
-    switch (dimtype) {
-    case X_AXIS:
-      {
-        result.x0 = (v_min + v_max) / 2.0;
-        result.Lx = (v_max - v_min) / 2.0;
-        result.Mx = length;
-        break;
-      }
-    case Y_AXIS:
-      {
-        result.y0 = (v_min + v_max) / 2.0;
-        result.Ly = (v_max - v_min) / 2.0;
-        result.My = length;
-        break;
-      }
+    switch (file.dimension_type(dimension_name, unit_system)) {
+    case X_AXIS: {
+      result.x0 = (v_min + v_max) / 2.0;
+      result.Lx = (v_max - v_min) / 2.0;
+      result.Mx = length;
+      break;
+    }
+    case Y_AXIS: {
+      result.y0 = (v_min + v_max) / 2.0;
+      result.Ly = (v_max - v_min) / 2.0;
+      result.My = length;
+      break;
+    }
     default: {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "only X and Y dimensions are supported");
     }
@@ -1152,7 +1149,7 @@ Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_,
   double Lz         = config.get_number("grid.Lz");
   unsigned int Mz   = config.get_number("grid.Mz");
   double lambda     = config.get_number("grid.lambda");
-  VerticalSpacing s = string_to_spacing(config.get_string("grid.ice_vertical_spacing"));
+  auto s            = string_to_spacing(config.get_string("grid.ice_vertical_spacing"));
   z                 = compute_vertical_levels(Lz, Mz, s, lambda);
   // does not set ownership ranges because we don't know if these settings are final
 }
@@ -1330,37 +1327,53 @@ void Parameters::validate() const {
  */
 std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
   auto config = ctx->config();
+  auto unit_system = ctx->unit_system();
+  auto log = ctx->log();
 
   auto r = grid::string_to_registration(config->get_string("grid.registration"));
 
-  auto log = ctx->log();
+  bool bootstrap  = config->get_flag("input.bootstrap");
 
   auto grid_file_name = config->get_string("grid.file");
-  if (not grid_file_name.empty()) {
+  if (bootstrap and not grid_file_name.empty()) {
     File grid_file(ctx->com(), grid_file_name, io::PISM_NETCDF3, io::PISM_READONLY);
-    auto P = grid::Parameters::FromGridDefinition(ctx->unit_system(), grid_file, r);
+    auto P = grid::Parameters::FromGridDefinition(unit_system, grid_file, r);
 
-    auto mapping_info = get_projection_info(grid_file, P.variable_name, ctx->unit_system());
+    // process configuration parameters controlling grid size and extent, overriding
+    // values read from a file *if* configuration parameters are set to "valid" numbers
+    P.horizontal_size_and_extent_from_options(*config);
+    // process configuration parameters controlling vertical grid size and extent
+    P.vertical_grid_from_options(*config);
+    // process configuration parameters controlling grid ownership ranges
+    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     auto result = std::make_shared<Grid>(ctx, P);
 
+    auto mapping_info = MappingInfo::FromFile(grid_file, P.variable_name, unit_system);
     result->set_mapping_info(mapping_info);
+
+    units::Converter km(unit_system, "m", "km");
+
+    log->message(
+        2,
+        "  setting computational box for ice from variable '%s' in grid definition file '%s'\n"
+        "  and user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+        P.variable_name.c_str(), grid_file_name.c_str(), km(result->x0() - result->Lx()),
+        km(result->x0() + result->Lx()), km(result->y0() - result->Ly()),
+        km(result->y0() + result->Ly()), result->Lz());
 
     return result;
   }
 
   auto input_file_name = config->get_string("input.file");
-  bool bootstrap  = config->get_flag("input.bootstrap");
 
   if (not input_file_name.empty()) {
     File input_file(ctx->com(), input_file_name, io::PISM_NETCDF3, io::PISM_READONLY);
 
     // list of variables to try getting grid information from
-    std::vector<std::string> candidates;
+    std::vector<std::string> candidates = { "enthalpy", "temp" };
     if (bootstrap) {
       candidates = { "land_ice_thickness", "bedrock_altitude", "thk", "topg" };
-    } else {
-      candidates = { "enthalpy", "temp" };
     }
 
     // loop over candidates and save the name of the first variable we found
@@ -1375,39 +1388,40 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     // stop with an error message if we could not find anything
     if (variable_name.empty()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no geometry information found in '%s'",
-                                    input_file_name.c_str());
+      auto list = pism::join(candidates, ", ");
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION, "no geometry information found in '%s' (checked variables '%s')",
+          input_file_name.c_str(), list.c_str());
     }
 
     if (bootstrap) {
       // bootstrapping; get domain size defaults from an input file, allow overriding all grid
       // parameters using command-line options
 
-      grid::Parameters input_grid(ctx->unit_system(), input_file, variable_name, r);
+      grid::Parameters input_grid(unit_system, input_file, variable_name, r);
 
-      // process all possible options controlling grid parameters, overriding values read
-      // from a file
-      //
-// #error "implement overriding values obtained from a file"
+      // process configuration parameters controlling grid size and extent, overriding
+      // values read from a file *if* configuration parameters are set to "valid" numbers
       input_grid.horizontal_size_and_extent_from_options(*config);
+      // process configuration parameters controlling vertical grid size and extent
       input_grid.vertical_grid_from_options(*config);
+      // process configuration parameters controlling grid ownership ranges
       input_grid.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
       auto result = std::make_shared<Grid>(ctx, input_grid);
 
-      units::System::Ptr sys = ctx->unit_system();
-      units::Converter km(sys, "m", "km");
+      units::Converter km(unit_system, "m", "km");
 
       // get grid projection info
-      auto grid_mapping = get_projection_info(input_file, variable_name, ctx->unit_system());
+      auto grid_mapping = MappingInfo::FromFile(input_file, variable_name, unit_system);
 
       result->set_mapping_info(grid_mapping);
 
       // report on resulting computational box
       log->message(
           2,
-          "  setting computational box for ice from variable '%s' in '%s' and\n"
-          "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+          "  setting computational box for ice from variable '%s' in '%s'\n"
+          "  and user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
           variable_name.c_str(), input_file_name.c_str(), km(result->x0() - result->Lx()),
           km(result->x0() + result->Lx()), km(result->y0() - result->Ly()),
           km(result->y0() + result->Ly()), result->Lz());
@@ -1420,7 +1434,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       auto result = Grid::FromFile(ctx, input_file, candidates, r);
 
       // get grid projection info
-      auto grid_mapping = get_projection_info(input_file, variable_name, ctx->unit_system());
+      auto grid_mapping = MappingInfo::FromFile(input_file, variable_name, unit_system);
 
       result->set_mapping_info(grid_mapping);
 

@@ -293,8 +293,8 @@ static std::string get_proj_parameters(const File &input_file, const std::string
  * Obtains the string containing PROJ parameters as described in `get_proj_parameters()`.
  * If the grid mapping variable has
  */
-MappingInfo get_projection_info(const File &input_file, const std::string &variable_name,
-                                units::System::Ptr unit_system) {
+MappingInfo MappingInfo::FromFile(const File &input_file, const std::string &variable_name,
+                                  units::System::Ptr unit_system) {
 
   auto mapping_variable_name = input_file.read_text_attribute(variable_name, "grid_mapping");
 

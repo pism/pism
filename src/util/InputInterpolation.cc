@@ -108,7 +108,7 @@ InputInterpolation::create(const Grid &target_grid,
                            const std::string &variable_name, InterpolationType type) {
 
   auto source_projection =
-      get_projection_info(input_file, variable_name, target_grid.ctx()->unit_system()).proj_string;
+    MappingInfo::FromFile(input_file, variable_name, target_grid.ctx()->unit_system()).proj_string;
 
   auto target_projection = target_grid.get_mapping_info().proj_string;
 

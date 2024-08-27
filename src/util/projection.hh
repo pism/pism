@@ -59,6 +59,10 @@ public:
   MappingInfo(const std::string &mapping_variable_name, units::System::Ptr unit_system);
   MappingInfo(const VariableMetadata &mapping_variable, const std::string &proj_string);
 
+  /*! @brief Get projection info from a file. */
+  static MappingInfo FromFile(const File &input_file, const std::string &variable_name,
+                              units::System::Ptr unit_system);
+
   //! grid mapping description following CF conventions
   VariableMetadata cf_mapping;
 
@@ -78,10 +82,6 @@ int parse_epsg(const std::string &proj_string);
  * does not use an EPSG code.
  */
 void check_consistency_epsg(const VariableMetadata &cf_mapping, const std::string &proj_string);
-
-/*! @brief Get projection info from a file. */
-MappingInfo get_projection_info(const File &input_file, const std::string &variable_name,
-                                units::System::Ptr unit_system);
 
 void compute_longitude(const std::string &projection, array::Scalar &result);
 void compute_latitude(const std::string &projection, array::Scalar &result);

@@ -302,7 +302,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
     std::string source_grid_name = grid_name(input_file, variable_name, ctx->unit_system());
 
-    auto mapping = get_projection_info(input_file, variable_name, ctx->unit_system());
+    auto mapping = MappingInfo::FromFile(input_file, variable_name, ctx->unit_system());
 
     source_grid->set_mapping_info(mapping);
 
