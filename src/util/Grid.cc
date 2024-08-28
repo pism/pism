@@ -244,7 +244,6 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
       p.z = { 0.0, Lz };
     }
 
-
     p.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, p);
@@ -1077,6 +1076,9 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
   result.registration  = registration;
   result.periodicity   = NOT_PERIODIC;
   result.variable_name = get_domain_variable(file);
+
+  // FIXME: allow using 2D variables to define the grid *in addition to* using domain
+  // variables
 
   auto dimensions = file.read_text_attribute(result.variable_name, "dimensions");
 
