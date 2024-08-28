@@ -57,8 +57,8 @@ if __name__ == '__main__':
 
     config.set_number("grid.Mx", Mx, PISM.CONFIG_DEFAULT)
     config.set_number("grid.My", My, PISM.CONFIG_DEFAULT)
-    config.set_number("grid.Lx", Lx, PISM.CONFIG_DEFAULT)
-    config.set_number("grid.Ly", Ly, PISM.CONFIG_DEFAULT)
+    config.set_number("grid.Lx", Lx/1000, PISM.CONFIG_DEFAULT) # in km
+    config.set_number("grid.Ly", Ly/1000, PISM.CONFIG_DEFAULT) # in km
 
     # Build the grid.
     p = PISM.GridParameters(config)

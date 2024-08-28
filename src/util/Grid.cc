@@ -1126,8 +1126,8 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
 Parameters::Parameters(const Config &config)
     : Parameters(config, (unsigned)config.get_number("grid.Mx"),
                  (unsigned)config.get_number("grid.My"),
-                 config.get_number("grid.Lx"),
-                 config.get_number("grid.Ly")) {
+                 config.get_number("grid.Lx", "m"),
+                 config.get_number("grid.Ly", "m")) {
   // empty
 }
 

@@ -44,8 +44,8 @@ using namespace pism;
 namespace eismint2 {
 
 static void set_config_defaults(Config &config) {
-  config.set_number("grid.Lx", 750e3);
-  config.set_number("grid.Ly", 750e3);
+  config.set_number("grid.Lx", 750); // in km
+  config.set_number("grid.Ly", 750); // in km
   config.set_string("grid.periodicity", "none");
   config.set_string("grid.registration", "corner");
   config.set_string("stress_balance.sia.flow_law", "pb");

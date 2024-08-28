@@ -53,16 +53,16 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   Config::Ptr config = config_from_options(com, *logger, sys);
 
   int Mx = 3;
-  double Lx = 1500e3;
+  double Lx = 1500;
   // default horizontal grid parameters
   config->set_number("grid.Mx", Mx);
   config->set_number("grid.My", Mx);
-  config->set_number("grid.Lx", Lx);
-  config->set_number("grid.Ly", Lx);
+  config->set_number("grid.Lx", Lx); // in km
+  config->set_number("grid.Ly", Lx); // in km
 
   // default vertical grid parameters
   config->set_number("grid.Mbz", 11);
-  config->set_number("grid.Lbz", 1000);
+  config->set_number("grid.Lbz", 1000); // in m
 
   // when Grid constructor is called, these settings are used
   config->set_string("time.start", "0s");

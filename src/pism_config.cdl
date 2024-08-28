@@ -1181,15 +1181,15 @@ netcdf pism_config {
     pism_config:grid.Lbz_units = "meters";
 
     pism_config:grid.Lx = 0.0;
-    pism_config:grid.Lx_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
+    pism_config:grid.Lx_doc = "Half-width of the computational box in the `X` direction";
     pism_config:grid.Lx_type = "number";
-    pism_config:grid.Lx_units = "meters";
+    pism_config:grid.Lx_units = "km";
     pism_config:grid.Lx_valid_min = 1e-16;
 
     pism_config:grid.Ly = 0.0;
-    pism_config:grid.Ly_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
+    pism_config:grid.Ly_doc = "Half-width of the computational box in the `Y` direction";
     pism_config:grid.Ly_type = "number";
-    pism_config:grid.Ly_units = "meters";
+    pism_config:grid.Ly_units = "km";
     pism_config:grid.Ly_valid_min = 1e-16;
 
     pism_config:grid.Lz = 4000;

@@ -69,8 +69,8 @@ def set_config():
     config.set_number("grid.Mx", 81)
     config.set_number("grid.My", 81)
 
-    config.set_number("grid.Lx", 1200e3)
-    config.set_number("grid.Ly", 1200e3)
+    config.set_number("grid.Lx", 1200) # in km
+    config.set_number("grid.Ly", 1200) # in km
 
     config.set_number("stress_balance.sia.Glen_exponent", 3.0)
     config.set_number("stress_balance.sia.bed_smoother.range", 50.0e3)

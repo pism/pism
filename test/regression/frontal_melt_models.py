@@ -15,8 +15,8 @@ config = PISM.Context().config
 config.set_number("grid.Mx", 3)
 config.set_number("grid.My", 3)
 config.set_number("grid.Mz", 5)
-config.set_number("grid.Lx", 1e5)
-config.set_number("grid.Ly", 1e5)
+config.set_number("grid.Lx", 1e2) # in km
+config.set_number("grid.Ly", 1e2) # in km
 
 log = PISM.Context().log
 # silence models' initialization messages
