@@ -112,7 +112,34 @@ InputInterpolation::create(const Grid &target_grid,
   auto target_projection = target_grid.get_mapping_info().proj_string;
 
 #if (Pism_USE_YAC_INTERPOLATION == 1)
-  if (levels.size() < 2 and (not source_projection.empty()) and (not target_projection.empty())) {
+  bool use_yac =
+      (levels.size() < 2 and (not source_projection.empty()) and (not target_projection.empty()));
+
+  // Avoid expensive interpolation if source and target grid size, center, and extent are
+  // equal.
+  if (source_projection == target_projection) {
+    grid::InputGridInfo source_grid(input_file, variable_name, target_grid.ctx()->unit_system(),
+                                    target_grid.registration());
+
+    bool size_matches =
+        (source_grid.x.size() == target_grid.Mx() and source_grid.y.size() == target_grid.My());
+
+    bool center_matches = (source_grid.x0 == target_grid.x0() and
+                           source_grid.y0 == target_grid.y0());
+
+    bool extent_matches = (source_grid.Lx == target_grid.Lx() and
+                           source_grid.Ly == target_grid.Ly());
+
+    if (size_matches and center_matches and extent_matches) {
+      use_yac = false;
+    }
+  }
+
+  if (use_yac) {
+    grid::InputGridInfo source_grid(input_file, variable_name, target_grid.ctx()->unit_system(),
+                                    grid::CELL_CENTER);
+
+
     return std::make_shared<InputInterpolationYAC>(target_grid, input_file, variable_name);
   }
 #endif
