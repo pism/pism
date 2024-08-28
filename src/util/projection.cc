@@ -216,8 +216,24 @@ void check_consistency_epsg(const VariableMetadata &cf_mapping, const std::strin
 
 std::string grid_name(const pism::File &file, const std::string &variable_name,
                       pism::units::System::Ptr sys) {
+
+  std::vector<std::string> dimensions = file.dimensions(variable_name);
+
+  if (dimensions.empty()) {
+    // variable `variable_name` has no dimensions, so we check if it is a domain variable
+    auto dimension_list = file.read_text_attribute(variable_name, "dimensions");
+    dimensions          = split(dimension_list, ' ');
+  }
+
+  if (dimensions.empty()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "variable '%s' in '%s' does not define a grid",
+                                  variable_name.c_str(), file.name().c_str());
+  }
+
   std::string result = file.name();
-  for (const auto &d : file.dimensions(variable_name)) {
+
+  for (const auto &d : dimensions) {
     auto type = file.dimension_type(d, sys);
 
     if (type == pism::X_AXIS or type == pism::Y_AXIS) {
@@ -225,6 +241,7 @@ std::string grid_name(const pism::File &file, const std::string &variable_name,
       result += d;
     }
   }
+
   return result;
 }
 
