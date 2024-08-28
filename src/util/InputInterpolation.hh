@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "pism/util/Interpolation1D.hh" // InterpolationType
-#include "pism/util/Units.hh"           // units::System::Ptr
 
 namespace pism {
 

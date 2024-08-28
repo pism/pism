@@ -300,7 +300,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     auto source_grid =
         pism::Grid::FromFile(ctx, input_file, { variable_name }, pism::grid::CELL_CENTER);
 
-    std::string source_grid_name = grid_name(input_file, variable_name, ctx->unit_system());
+    auto source_grid_name = grid_name(input_file, variable_name, ctx->unit_system());
 
     auto mapping = MappingInfo::FromFile(input_file, variable_name, ctx->unit_system());
 

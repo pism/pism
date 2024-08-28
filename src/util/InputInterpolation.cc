@@ -18,6 +18,7 @@
  */
 
 #include "pism/util/InputInterpolation.hh"
+#include "io/LocalInterpCtx.hh"
 #include "pism/pism_config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
@@ -88,13 +89,11 @@ double InputInterpolation3D::regrid_impl(const SpatialVariableMetadata &metadata
 
   double start = get_time(target_grid.com);
   {
-    int old_t_start                 = m_interp_context->start[T_AXIS];
-    m_interp_context->start[T_AXIS] = record_index;
+    LocalInterpCtx context = *m_interp_context;
+    context.start[T_AXIS] = record_index;
 
-    io::regrid_spatial_variable(metadata, target_grid, *m_interp_context, file,
+    io::regrid_spatial_variable(metadata, target_grid, context, file,
                                 output_array.get());
-
-    m_interp_context->start[T_AXIS] = old_t_start;
   }
   double end = get_time(target_grid.com);
 
