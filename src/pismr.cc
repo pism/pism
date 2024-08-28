@@ -101,7 +101,7 @@ std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix) {
 
   print_config(*logger, 3, *config);
 
-  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
+  auto time = std::make_shared<Time>(com, config, *logger, sys);
 
   auto EC = std::make_shared<ColdEnthalpyConverter>(*config);
 
@@ -290,13 +290,12 @@ int main(int argc, char *argv[]) {
 
       verification_model = std::make_shared<IceCompModel>(grid, ctx, test);
       model = verification_model;
-    } else if (options::Bool("-regional", "enable regional (outlet glacier) mode")) {
-      grid = Grid::FromOptions(ctx);
-      model = std::make_shared<IceRegionalModel>(grid, ctx);
     } else {
       grid = Grid::FromOptions(ctx);
 
-      if (eisII.is_set()) {
+      if (options::Bool("-regional", "enable regional (outlet glacier) mode")) {
+        model = std::make_shared<IceRegionalModel>(grid, ctx);
+      } else if (eisII.is_set()) {
         char experiment = eisII.value()[0];
 
         model = std::make_shared<IceEISModel>(grid, ctx, experiment);
