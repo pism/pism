@@ -125,12 +125,29 @@ class ParameterList(Directive):
         p1 = nodes.paragraph()
         p1 += config(name, text=text)
 
-        if not (data["type"] == "string" and len(data["value"]) == 0):
+        datatype = data["type"]
+        value = data["value"]
+        if not (datatype == "string" and len(value) == 0):
             p1 += nodes.Text(" (")
-            p1 += self.format_value(data["value"], data["type"])
-            if "units" in data:
-                if data["units"] not in ["1", "pure number", "count"]:
-                    p1 += nodes.emphasis("", " {units}".format(**data))
+
+            valid = True
+            if datatype in ["number", "integer"]:
+                if "valid_min" in data and (float(value) < float(data["valid_min"])):
+                    valid = False
+                if "valid_max" in data and (float(value) > float(data["valid_max"])):
+                    valid = False
+
+            if valid:
+                p1 += self.format_value(data["value"], data["type"])
+                if "units" in data:
+                    if data["units"] not in ["1", "pure number", "count"]:
+                        p1 += nodes.emphasis("", " {units}".format(**data))
+            else:
+                p1 += nodes.emphasis("", "no default value")
+
+                if "units" in data:
+                    p1 += nodes.emphasis("", "; units: {units}".format(**data))
+
             p1 += nodes.Text(")")
 
         doc, _ = self.state.inline_text(data["doc"], self.lineno)
@@ -236,7 +253,7 @@ def init_pism_parameters(app):
     variable = f.variables["pism_config"]
     data = {k : getattr(variable, k) for k in variable.ncattrs()}
 
-    suffixes = ["choices", "doc", "option", "type", "units"]
+    suffixes = ["choices", "doc", "option", "type", "units", "valid_min", "valid_max"]
 
     def special(name):
         "Return true if 'name' is a 'special' parameter, false otherwise."

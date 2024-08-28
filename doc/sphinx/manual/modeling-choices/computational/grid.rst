@@ -15,7 +15,7 @@ bedrock thermal layer model always uses equal vertical spacing.
 The grid is described by four numbers, namely the number of grid points :config:`grid.Mx`
 in the `x` direction, the number :config:`grid.My` in the `y` direction, the number
 :config:`grid.Mz` in the `z` direction within the ice, and the number :config:`grid.Mbz`
-in the `z` direction within the bedrock thermal layer. These are specified by options
+in the `z` direction within the bedrock thermal layer. These can be specified by options
 :opt:`-Mx`, :opt:`-My`, :opt:`-Mz`, and :opt:`-Mbz`, respectively. Note that ``Mx``,
 ``My``, ``Mz``, and ``Mbz`` all indicate the number of grid *points* so the number of grid
 *spaces* are one less.
@@ -37,16 +37,17 @@ See :numref:`fig-grid-vertical-sigma`.
 
    The "sigma" vertical grid used by PISM's Blatter solver
 
-Choosing ``Mbz`` `>1` is required to use the bedrock thermal model. When a thermal bedrock
-layer is used, the distance ``Lbz`` is controlled by the :opt:`-Lbz` option. Note that
-:config:`grid.Mbz` is unrelated to the bed deformation model (glacial isostasy model); see
-section :ref:`sec-beddef`.
+Set :config:`grid.Mbz` to a number greater than one to use the bedrock thermal model. When
+a thermal bedrock layer is used, the depth of the layer is controlled by
+:config:`grid.Lbz`. Note that :config:`grid.Mbz` is unrelated to the bed deformation model
+(glacial isostasy model); see section :ref:`sec-beddef`.
 
 In the quadratically-spaced case the vertical spacing near the ice/bedrock interface is
-about four times finer than it would be with equal spacing for the same value of ``Mz``,
-while the spacing near the top of the computational box is correspondingly coarser. For a
-detailed description of the spacing of the grid, see the documentation on
-``IceGrid::compute_vertical_levels()`` in the `PISM class browser <pism-browser_>`_.
+about :config:`grid.lambda` times finer than it would be with equal spacing for the same
+value of :config:`grid.Mz`, while the spacing near the top of the computational box is
+correspondingly coarser. For a detailed description of the spacing of the grid, see the
+documentation on ``Grid::compute_vertical_levels()`` in the `PISM class browser
+<pism-browser_>`_.
 
 The user should specify the grid when using ``-bootstrap`` or when initializing a
 verification test (section :ref:`sec-verif`) or a simplified-geometry experiment (section
@@ -232,7 +233,7 @@ uses when looking for a CRS definition in an input file.
 4. attributes of the grid mapping variable corresponding to a data variable, according to
    `CF Conventions`_.
 
-We recommend following CF Conventions if possible. However, sometimes what we need is a
+We recommend following CF Conventions if possible. However, sometimes what we want is a
 minimal modification of a file's metadata needed to make it usable. In this case setting
 the ``proj`` attribute might be easier.
 
@@ -336,8 +337,8 @@ Global attribute ``proj``
    versions.
 
 
-For example, the input file ``pism_Greenland_5km_v1.1.nc`` in :ref:`sec-start` has the
-following:
+For example, the input file ``pism_Greenland_5km_v1.1.nc`` in :ref:`sec-start` contains the
+following metadata:
 
 .. code-block:: bash
 
@@ -360,14 +361,6 @@ PISM will report the following.
    ...
    ... done with run
    Writing model state to file `output.nc'...
-
-If the ``proj`` attribute contains the string "``+init=epsg:XXXX``" where ``XXXX`` is
-3413, 3031, or 26710, PISM will also create a CF-conforming ``mapping`` variable
-describing the projection in use.
-
-"Mapping" variables following CF metadata conventions in input files are copied to output
-files (including ``-extra_file``\s) but are **not** used to compute latitude/longitude
-coordinates.
 
 To simplify post-processing and analysis with CDO PISM adds the PROJ string (if known)
 to the mapping variable, putting it in the ``proj_params`` attribute.
@@ -396,20 +389,20 @@ across `N` processes [#]_. PISM divides the grid into `N_x` parts in the `x` dir
 that `N_x\times N_y = N` and `N_x` is as close to `N_y` as possible. Note that `N` should,
 therefore, be a composite (not prime) number.
 
-Users seeking to override this default can specify `N_x` and `N_y` using the :opt:`-Nx`
-and :opt:`-Ny` command-line options.
+Users seeking to override this default can specify `N_x` and `N_y` using configuration
+parameters :config:`grid.Nx` and :config:`grid.Ny`.
 
 Once `N_x` and `N_y` are computed, PISM computes sizes of sub-domains `M_{x,i}` so that
 `\sum_{i=1}^{N_x}M_{x,i} = M_x` and `M_{x,i} - \left\lfloor M_x / N_x \right\rfloor < 1`.
-To specify strip widths `M_{x,i}` and `M_{y,i}`, use command-line options :opt:`-procs_x`
-and :opt:`-procs_y`. Each option takes a comma-separated list of numbers as its argument.
-For example,
+To specify strip widths `M_{x,i}` and `M_{y,i}`, use configuration parameters
+:config:`grid.procs_x` and :config:`grid.procs_y`. Both of these parameters take a
+comma-separated list of numbers as its argument. For example,
 
 .. code-block:: none
 
    mpiexec -n 3 pismr -eisII A -Mx 101 -My 101 \
-                      -Nx 1 -procs_x 101 \
-                      -Ny 3 -procs_y 20,61,20
+                      -Nx 1 -grid.procs_x 101 \
+                      -Ny 3 -grid.procs_y 20,61,20
 
 splits a `101 \times 101` grid into 3 strips along the `x` axis.
 
