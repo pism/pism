@@ -381,6 +381,24 @@ to the mapping variable, putting it in the ``proj_params`` attribute.
    mapping:straight_vertical_longitude_from_pole = -39. ;
    mapping:proj_params = "+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" ;
 
+.. _sec-grid-file:
+
+Using a grid definition file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. literalinclude:: cdl/domain.cdl
+   :language: none
+
+.. code-block:: bash
+
+   pismr \
+     -i pism_Greenland_5km_v1.1.nc \
+     -bootstrap \
+     -grid.file grid.nc \
+     -Mx 360 \
+     -My 561 \
+     -y 1s
+
 .. _sec-domain-distribution:
 
 Parallel domain distribution
