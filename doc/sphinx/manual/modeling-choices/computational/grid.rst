@@ -97,8 +97,8 @@ extends *past* |xmin| and |xmax| by one half of the grid spacing, see
    The solid black line represents the domain boundary, dashed red lines are cell
    boundaries, black circles represent grid points.
 
-When getting the size of the domain from an input file, PISM will compute grid parameters
-as follows:
+When getting the size of the domain from an input file, PISM will compute cell-centered
+grid parameters as follows:
 
 .. math::
 
@@ -111,18 +111,20 @@ specifying grid parameters at bootstrapping and reading in fields using "regridd
 
 For example:
 
-.. code-block:: bash
+.. code-block:: none
 
-   > pismr -eisII A -grid.registration center \
-           -Lx 10 -Mx 4 \
+   > pismr -eisII A \
+           -grid.registration center \
+           -Lx 10 -Mx 4 -My 4 \
            -y 0 -verbose 1 \
            -o grid-test.nc
-   > ncdump -v x grid-test.nc | tail -2 | head -1
+   > ncdump -v x grid-test.nc | grep "^ x ="
     x = -7500, -2500, 2500, 7500 ;
 
 Note that we specified the domain half width of 10 km and selected 4 grid points in the
-`x` direction. The resulting `x` coordinates range from `-7500` meters to `7500` meters with
-the grid spacing of `5` km.
+`x` direction. The resulting `x` coordinates range from `-7500` meters to `7500` meters
+with the grid spacing of `5` km, so the width of the domain is `20` km, but
+`x_{\text{max}} - x_{\text{min}} = 15` km.
 
 In summary, with the default (center) grid registration
 
@@ -147,13 +149,14 @@ where `x_c` is the `x`\-coordinate of the domain center.
 
 Compare this to
 
-.. code-block:: bash
+.. code-block:: none
 
-   > pismr -eisII A -grid.registration corner \
-           -Lx 10 -Mx 5 \
+   > pismr -eisII A \
+           -grid.registration corner \
+           -Lx 10 -Mx 5 -My 5 \
            -y 0 -verbose 1 \
            -o grid-test.nc
-   > ncdump -v x grid-test.nc | tail -2 | head -1
+   > ncdump -v x grid-test.nc | grep "^ x ="
     x = -10000, -5000, 0, 5000, 10000 ;
 
 Here the grid spacing is also 5 km, although there are 5 grid points in the `x` direction
