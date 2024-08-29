@@ -370,25 +370,17 @@ void IceModel::bootstrap_2d(const File &input_file) {
   m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
   // longitude
-  {
+  if (m_geometry.longitude.metadata().has_attribute("initialized")) {
+    m_geometry.longitude.metadata()["initialized"] = "";
+  } else {
     m_geometry.longitude.regrid(input_file, io::Default(0.0));
-
-    auto lon = input_file.find_variable("lon", "longitude");
-
-    if (not lon.exists) {
-      m_geometry.longitude.metadata()["missing_at_bootstrap"] = "true";
-    }
   }
 
   // latitude
-  {
+  if (m_geometry.latitude.metadata().has_attribute("initialized")) {
+    m_geometry.latitude.metadata()["initialized"] = "";
+  } else {
     m_geometry.latitude.regrid(input_file, io::Default(0.0));
-
-    auto lat = input_file.find_variable("lat", "latitude");
-
-    if (not lat.exists) {
-      m_geometry.latitude.metadata()["missing_at_bootstrap"] = "true";
-    }
   }
 
   m_geometry.ice_thickness.regrid(
@@ -1086,9 +1078,12 @@ void IceModel::compute_lat_lon() {
                    "* Computing longitude and latitude using projection parameters...\n");
 
     compute_longitude(projection, m_geometry.longitude);
-    m_geometry.longitude.metadata()["missing_at_bootstrap"] = "";
     compute_latitude(projection, m_geometry.latitude);
-    m_geometry.latitude.metadata()["missing_at_bootstrap"] = "";
+
+    // IceModel::bootstrap_2d() uses these attributes to determine if it needs to regrid
+    // longitude and latitude.
+    m_geometry.longitude.metadata()["initialized"] = "true";
+    m_geometry.latitude.metadata()["initialized"] = "true";
   }
 }
 
