@@ -989,6 +989,12 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       if (dimtype == X_AXIS or dimtype == Y_AXIS or dimtype == Z_AXIS) {
         data = io::read_1d_variable(file, dimension_name, "meters", unit_system);
 
+        if (data.size() < 2) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "length(%s) in %s has to be at least 2",
+                                        dimension_name.c_str(), file.name().c_str());
+        }
+
         v_min  = vector_min(data);
         v_max  = vector_max(data);
         center = 0.5 * (v_min + v_max);
@@ -1069,57 +1075,99 @@ std::string get_domain_variable(const File &file) {
 
 Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_system,
                                           const File &file,
+                                          const std::string &variable_name,
                                           Registration registration) {
   Parameters result;
 
-  result.z             = {};
-  result.registration  = registration;
-  result.periodicity   = NOT_PERIODIC;
-  result.variable_name = get_domain_variable(file);
+  result.Mx           = 0;
+  result.My           = 0;
+  result.z            = {};
+  result.registration = registration;
+  result.periodicity  = NOT_PERIODIC;
 
-  // FIXME: allow using 2D variables to define the grid *in addition to* using domain
-  // variables
+  std::vector<std::string> dimensions;
+  if (variable_name.empty()) {
+    result.variable_name = get_domain_variable(file);
 
-  auto dimensions = file.read_text_attribute(result.variable_name, "dimensions");
+    auto dimension_list = file.read_text_attribute(result.variable_name, "dimensions");
 
-  for (const auto &dimension_name : set_split(dimensions, ' ')) {
+    dimensions = split(dimension_list, ' ');
+  } else {
+    dimensions = file.dimensions(variable_name);
+  }
 
-    double v_min = 0.0;
-    double v_max = 0.0;
+  for (const auto &dimension_name : dimensions) {
+
+    double v_min        = 0.0;
+    double v_max        = 0.0;
     unsigned int length = 0;
+    double half_width   = 0.0;
 
     auto bounds_name = file.read_text_attribute(dimension_name, "bounds");
     if (not bounds_name.empty()) {
       auto bounds = io::read_bounds(file, bounds_name, "meters", unit_system);
 
-      v_min = bounds.front();
-      v_max = bounds.back();
+      if (bounds.size() < 2) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "length(%s) in '%s' has to be at least 2",
+                                      bounds_name.c_str(), file.name().c_str());
+      }
+
+      v_min  = bounds.front();
+      v_max  = bounds.back();
       length = static_cast<unsigned int>(bounds.size()) / 2;
+      // bounds set domain size regardless of grid registration
+      half_width = (v_max - v_min) / 2.0;
     } else {
       auto dimension = io::read_1d_variable(file, dimension_name, "meters", unit_system);
 
-      v_min = dimension.front();
-      v_max = dimension.back();
-      length = static_cast<unsigned int>(dimension.size());
+      if (dimension.size() < 2) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "length(%s) in '%s' has to be at least 2",
+                                      dimension_name.c_str(), file.name().c_str());
+      }
+
+      v_min   = dimension.front();
+      v_max   = dimension.back();
+      length  = static_cast<unsigned int>(dimension.size());
+      // same as in InputGridInfo, domain half-width depends on grid registration
+      half_width = (v_max - v_min) / 2.0;
+      if (registration == CELL_CENTER) {
+        half_width += 0.5 * (dimension[1] - dimension[0]);
+      }
     }
+
+    double center = (v_min + v_max) / 2.0;
 
     switch (file.dimension_type(dimension_name, unit_system)) {
     case X_AXIS: {
-      result.x0 = (v_min + v_max) / 2.0;
-      result.Lx = (v_max - v_min) / 2.0;
+      result.x0 = center;
+      result.Lx = half_width;
       result.Mx = length;
       break;
     }
     case Y_AXIS: {
-      result.y0 = (v_min + v_max) / 2.0;
-      result.Ly = (v_max - v_min) / 2.0;
+      result.y0 = center;
+      result.Ly = half_width;
       result.My = length;
       break;
     }
     default: {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "only X and Y dimensions are supported");
+      // ignore
     }
     }
+  }
+
+  if (result.Mx == 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "failed to initialize the X grid dimension from '%s' in '%s'",
+                                  result.variable_name.c_str(), file.name().c_str());
+  }
+
+  if (result.My == 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "failed to initialize the Y grid dimension from '%s' in '%s'",
+                                  result.variable_name.c_str(), file.name().c_str());
   }
 
   return result;
@@ -1127,14 +1175,12 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
 
 Parameters::Parameters(const Config &config)
     : Parameters(config, (unsigned)config.get_number("grid.Mx"),
-                 (unsigned)config.get_number("grid.My"),
-                 config.get_number("grid.Lx", "m"),
+                 (unsigned)config.get_number("grid.My"), config.get_number("grid.Lx", "m"),
                  config.get_number("grid.Ly", "m")) {
   // empty
 }
 
-Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_,
-                       double Lx_, double Ly_) {
+Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx_, double Ly_) {
 
   x0 = 0.0;
   y0 = 0.0;
@@ -1148,16 +1194,15 @@ Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_,
   periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
   registration = string_to_registration(config.get_string("grid.registration"));
 
-  double Lz         = config.get_number("grid.Lz");
-  unsigned int Mz   = config.get_number("grid.Mz");
-  double lambda     = config.get_number("grid.lambda");
-  auto s            = string_to_spacing(config.get_string("grid.ice_vertical_spacing"));
-  z                 = compute_vertical_levels(Lz, Mz, s, lambda);
+  double Lz       = config.get_number("grid.Lz");
+  unsigned int Mz = config.get_number("grid.Mz");
+  double lambda   = config.get_number("grid.lambda");
+  auto s          = string_to_spacing(config.get_string("grid.ice_vertical_spacing"));
+  z               = compute_vertical_levels(Lz, Mz, s, lambda);
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-void Parameters::ownership_ranges_from_options(const Config &config,
-                                               unsigned int size) {
+void Parameters::ownership_ranges_from_options(const Config &config, unsigned int size) {
   // number of sub-domains in X and Y directions
   unsigned int Nx = 0;
   unsigned int Ny = 0;
@@ -1294,11 +1339,13 @@ void Parameters::validate() const {
   }
 
   if (Lx <= 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Lx = %f is invalid (has to be positive)", Lx);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Lx = %f is invalid (has to be positive)",
+                                  Lx);
   }
 
   if (Ly <= 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Ly = %f is invalid (has to be positive)", Ly);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Ly = %f is invalid (has to be positive)",
+                                  Ly);
   }
 
   if (not is_increasing(z)) {
@@ -1328,18 +1375,23 @@ void Parameters::validate() const {
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
 std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
-  auto config = ctx->config();
+  auto config      = ctx->config();
   auto unit_system = ctx->unit_system();
-  auto log = ctx->log();
+  auto log         = ctx->log();
 
   auto r = grid::string_to_registration(config->get_string("grid.registration"));
 
-  bool bootstrap  = config->get_flag("input.bootstrap");
+  bool bootstrap = config->get_flag("input.bootstrap");
 
   auto grid_file_name = config->get_string("grid.file");
   if (bootstrap and not grid_file_name.empty()) {
-    File grid_file(ctx->com(), grid_file_name, io::PISM_NETCDF3, io::PISM_READONLY);
-    auto P = grid::Parameters::FromGridDefinition(unit_system, grid_file, r);
+    auto parts = split(grid_file_name, ':');
+    auto file_name = parts[0];
+    std::string variable_name = parts.size() == 2 ? parts[1] : "";
+
+    File grid_file(ctx->com(), file_name, io::PISM_NETCDF3, io::PISM_READONLY);
+
+    auto P = grid::Parameters::FromGridDefinition(unit_system, grid_file, variable_name, r);
 
     // process configuration parameters controlling grid size and extent, overriding
     // values read from a file *if* configuration parameters are set to "valid" numbers
@@ -1486,12 +1538,11 @@ int Grid::pio_io_decomposition(int dof, int output_datatype) const {
       int ndims = dof < 2 ? 2 : 3;
 
       // the last element is not used if ndims == 2
-      std::vector<int> gdimlen{(int)My(), (int)Mx(), dof};
-      std::vector<long int> start{ys(), xs(), 0}, count{ym(), xm(), dof};
+      std::vector<int> gdimlen{ (int)My(), (int)Mx(), dof };
+      std::vector<long int> start{ ys(), xs(), 0 }, count{ ym(), xm(), dof };
 
-      int stat = PIOc_InitDecomp_bc(m_impl->ctx->pio_iosys_id(),
-                                    output_datatype, ndims, gdimlen.data(),
-                                    start.data(), count.data(), &result);
+      int stat = PIOc_InitDecomp_bc(m_impl->ctx->pio_iosys_id(), output_datatype, ndims,
+                                    gdimlen.data(), start.data(), count.data(), &result);
       m_impl->io_decompositions[key] = result;
       if (stat != PIO_NOERR) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -1500,8 +1551,8 @@ int Grid::pio_io_decomposition(int dof, int output_datatype) const {
     }
   }
 #else
-  (void) dof;
-  (void) output_datatype;
+  (void)dof;
+  (void)output_datatype;
 #endif
   return result;
 }

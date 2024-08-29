@@ -138,7 +138,7 @@ public:
              const std::string &variable_name, Registration r);
 
   static Parameters FromGridDefinition(std::shared_ptr<units::System> unit_system, const File &file,
-                                       Registration registration);
+                                       const std::string &variable_name, Registration registration);
 
   //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0.
   void horizontal_size_and_extent_from_options(const Config &config);
