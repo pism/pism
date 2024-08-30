@@ -396,6 +396,12 @@ The parameter :config:`grid.file` makes it possible to read a grid definition fr
 NetCDF file and then override values read from this file using configuration parameters,
 if necessary.
 
+A grid definition file has to contain a "domain variable" (see `CF Conventions`_ version
+1.11 or later, section 5.8, ). A domain variable is a scalar variable that has the
+``dimensions`` attribute, a space-separated list of coordinate variables defining the
+domain. It may also have other attributes, e.g. ``grid_mapping`` to specify the coordinate
+reference system.
+
 See :numref:`code-coarse-grid-greenland` for an example of a grid definition. Here the
 *size* of a domain is determined as described in section :ref:`sec-grid-registration`; see
 equations :eq:`eq-grid-from-file-centered`, :eq:`eq-grid-center` and :eq:`eq-grid-corner`.
@@ -474,6 +480,16 @@ equation :eq:`eq-grid-from-file-centered` is very awkward. There is a better way
    - Similarly to :numref:`code-proj-params`, a file with metadata in
      :numref:`code-greenland-domain` does not follow CF conventions.
 
+.. rubric:: Minimal domain definition
+
+If following conventions is not a concern a domain definition file can be stripped down to
+its smallest form, see :numref:`code-greenland-domain-minimal`.
+
+.. literalinclude:: cdl/domain_minimal.cdl
+   :language: none
+   :caption: Absolutely minimal domain definition
+   :name: code-greenland-domain-minimal
+
 
 .. _sec-domain-distribution:
 
@@ -506,6 +522,14 @@ splits a `101 \times 101` grid into 3 strips along the `x` axis.
 To see the parallel domain decomposition from a completed run, see the :var:`rank`
 variable in the output file, e.g. using ``-o_size big``. The same :var:`rank` variable is
 available as a spatial diagnostic field (section :ref:`sec-saving-diagnostics`).
+
+.. _sec-grid-parameters:
+
+Configuration parameters controlling grid choices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. pism-parameters::
+   :regexp: ^grid\.
 
 .. rubric:: Footnotes
 

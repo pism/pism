@@ -59,7 +59,8 @@ class ParameterList(Directive):
     required_arguments = 0
 
     option_spec = {"prefix": directives.unchanged,
-                   "exclude": directives.unchanged}
+                   "exclude": directives.unchanged,
+                   "regexp": directives.unchanged}
 
     def format_value(self, value, T):
         if T == "string" and len(value) == 0:
@@ -176,23 +177,33 @@ class ParameterList(Directive):
             # It is used in resolve_config_links() to build URIs.
             env.pism_parameters["docname"] = env.docname
 
+        if "regexp" in self.options:
+            regexp = self.options["regexp"]
+        else:
+            regexp = None
+
         if "exclude" in self.options:
             exclude = self.options["exclude"]
         else:
             exclude = None
 
-        full_list = prefix == "" and exclude == None
+        full_list = prefix == "" and exclude == None and regexp == None
 
         parameter_list = nodes.enumerated_list()
 
         parameters_found = False
         for name in sorted(pism_data.keys()):
 
-            pattern = "^" + prefix
-            # skip parameters that don't have the desired prefix
+            if regexp == None:
+                pattern = "^" + prefix
+            else:
+                pattern = regexp
+
+            # skip parameters that don't match the pattern
             if not re.match(pattern, name):
                 continue
 
+            # skip parameters that match the "exclude" pattern
             if exclude and re.match(exclude, name):
                 continue
 
@@ -204,9 +215,10 @@ class ParameterList(Directive):
                 # only the full parameter list items become targets
                 item += self.list_entry(name, pism_data[name])
             else:
-                item += self.compact_list_entry(name,
-                                                re.sub(pattern, "", name),
-                                                pism_data[name])
+                print_name = name
+                if regexp is None:
+                    print_name = re.sub(pattern, "", name)
+                item += self.compact_list_entry(name, print_name, pism_data[name])
             parameter_list += item
 
         if not parameters_found:

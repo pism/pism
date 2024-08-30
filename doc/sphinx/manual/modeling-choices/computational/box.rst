@@ -54,14 +54,11 @@ kilometers when set by command-line options or displayed.
 
 .. rubric:: Configuration parameters controlling the domain size
 
-Prefix: ``grid.``
-
 .. pism-parameters::
-   :prefix: grid.
-   :exclude: grid\.[a-z]|grid\.M|grid\.N
+   :regexp: ^grid\.L
 
-See :ref:`sec-grid-registration` for details about the interpretation of `L_x`, `L_y`, and
-the way the grid spacing is computed.
+See section :ref:`sec-grid-registration` for details about the interpretation of `L_x`,
+`L_y`, and the way the grid spacing is computed.
 
 .. rubric:: Footnotes
 

@@ -1,0 +1,21 @@
+netcdf domain_minimal {
+dimensions:
+  x = 1 ;
+  y = 1 ;
+  nv2 = 2 ;
+variables:
+  double x(x) ;
+    x:units = "km" ;
+    x:bounds = "x_bnds";
+  double x_bnds(x, nv2);
+  double y(y) ;
+    y:units = "km" ;
+    y:bounds = "y_bnds";
+  double y_bnds(y, nv2);
+  byte domain;
+    domain:dimensions = "x y";
+  :proj = "EPSG:3413";
+data:
+ x_bnds = -800, 1000;
+ y_bnds = -3400, -600;
+}
