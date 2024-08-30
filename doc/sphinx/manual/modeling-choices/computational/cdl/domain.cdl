@@ -1,28 +1,27 @@
 netcdf domain {
 dimensions:
- x = 2 ;
- y = 2 ;
+  // length of the x dimension is not important
+  x = 1 ;
+  // length of the y dimension is not important
+  y = 1 ;
+  nv2 = 2 ;
 variables:
- double x(x) ;
-  x:units = "km" ;
-  x:standard_name = "projection_x_coordinate" ;
- double y(y) ;
-  y:units = "km" ;
-  y:standard_name = "projection_y_coordinate" ;
- byte domain ;
-  domain:dimensions = "x y" ;
-  domain:grid_mapping = "mapping";
-  domain:long_name = "Greenland model domain definition" ;
- byte mapping ;
-  mapping:grid_mapping_name = "polar_stereographic" ;
-  mapping:latitude_of_projection_origin = 90 ;
-  mapping:scale_factor_at_projection_origin = 1. ;
-  mapping:straight_vertical_longitude_from_pole = -45 ;
-  mapping:standard_parallel = 70 ;
-  mapping:false_northing = 0 ;
-  mapping:false_easting = 0 ;
- :Conventions = "CF-1.8";
+  double x(x) ;
+    x:units = "km" ;
+    x:standard_name = "projection_x_coordinate" ;
+    x:bounds = "x_bnds";
+  double x_bnds(x, nv2);
+  double y(y) ;
+    y:units = "km" ;
+    y:standard_name = "projection_y_coordinate" ;
+    y:bounds = "y_bnds";
+  double y_bnds(y, nv2);
+  byte domain;
+    domain:dimensions = "x y";
+    domain:grid_mapping = "mapping";
+  byte mapping;
+    mapping:proj_params = "EPSG:3413";
 data:
- x = -800, 1000;
- y = -3400, -600;
+ x_bnds = -800, 1000;
+ y_bnds = -3400, -600;
 }

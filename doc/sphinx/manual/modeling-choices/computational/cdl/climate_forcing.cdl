@@ -7,20 +7,15 @@ dimensions:
 variables:
   double time(time) ;
     time:units = "days since 1980-1-1" ;
-    time:axis = "T" ;
     time:calendar = "365_day" ;
     time:long_name = "time" ;
     time:bounds = "time_bounds" ;
   double time_bounds(time, nv) ;
   double x(x) ;
     x:units = "m" ;
-    x:axis = "X" ;
-    x:long_name = "X-coordinate in Cartesian system" ;
     x:standard_name = "projection_x_coordinate" ;
   double y(y) ;
     y:units = "m" ;
-    y:axis = "Y" ;
-    y:long_name = "Y-coordinate in Cartesian system" ;
     y:standard_name = "projection_y_coordinate" ;
   char mapping;
     mapping:grid_mapping_name                     = "polar_stereographic";
@@ -38,4 +33,5 @@ variables:
     precipitation:units = "kg m^-2 year^-1" ;
     precipitation:long_name = "total (liquid and solid) precipitation" ;
     precipitation:grid_mapping = "mapping" ;
+  :Conventions = "CF-1.8";
 }

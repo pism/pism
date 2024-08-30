@@ -8,10 +8,10 @@ Interpolation of input data
 ---------------------------
 
 PISM includes a basic implementation of bilinear and trilinear interpolation. This code
-assumes that input and output grids\ [#f1]_ use the same projection. (This is
-interpolation in the projected *Cartesian* coordinate system.) It works best if input and
-output grids use *similar* grid resolution. It suffers from signal aliasing when the input
-grid resolution is significantly (e.g. 10 times) higher than the output grid resolution.\
+assumes that source and target grids\ [#f1]_ use the same projection. (This is
+interpolation in the projected *Cartesian* coordinate system.) It works best if source and
+target grids use *similar* grid resolution. It suffers from signal aliasing when the source
+grid resolution is significantly (e.g. 10 times) higher than the target grid resolution.\
 [#f2]_
 
 One way to avoid aliasing issues is by pre-processing PISM's inputs, e.g. *conservatively*
@@ -40,8 +40,8 @@ direction*:
 
 .. rubric:: Footnotes
 
-.. [#f1] Here the "output" grid is the grid used to perform a simulation, i.e. PISM's
-         internal grid.
+.. [#f1] Here the "source" grid is a grid used in an input file and the "target" grid is
+         the grid used to perform a simulation, i.e. PISM's internal grid.
 
 .. [#f2] Aliasing artifacts in the bed topography field can significantly increase the
          "roughness" of the bed used by PISM, which unnecessarily increases the

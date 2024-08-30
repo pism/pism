@@ -101,6 +101,7 @@ When getting the size of the domain from an input file, PISM will compute cell-c
 grid parameters as follows:
 
 .. math::
+   :label: eq-grid-from-file-centered
 
    \dx &= x_1 - x_0
 
@@ -302,11 +303,9 @@ for a NetCDF variable.
    * - Transverse Mercator
      - ``transverse_mercator``
 
-.. admonition:: Example climate forcing file metadata
-
-   ``ncdump -h`` output for a climate forcing file using the polar stereographic projection
-
-   .. literalinclude:: cdl/cf-grid-mapping.cdl
+.. literalinclude:: cdl/climate_forcing.cdl
+   :caption: ``ncdump -h`` output for a climate forcing file following CF metadata
+             conventions and using the polar stereographic projection
 
 If a grid mapping variable contains the ``crs_wkt`` attribute as described in `CF
 Conventions sections 5.6 <cf-section-56_>`_ PISM will use this string to initialize the
@@ -323,11 +322,14 @@ this variable.
 Attribute ``proj_params`` of a grid mapping variable
 ====================================================
 
-.. admonition:: Example climate forcing file metadata
+.. literalinclude:: cdl/cdo-proj_params.cdl
+   :name: code-proj-params
+   :caption: ``ncdump -h`` output for a climate forcing file using CDO's ``proj_params``
+             attribute
 
-   ``ncdump -h`` output for a climate forcing file using the polar stereographic projection
+.. note::
 
-   .. literalinclude:: cdl/cdo-proj_params.cdl
+   This data set does not follow CF metadata conventions.
 
 .. _sec-crs-proj-attribute:
 
@@ -386,18 +388,92 @@ to the mapping variable, putting it in the ``proj_params`` attribute.
 Using a grid definition file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: cdl/domain.cdl
+Configuration parameters :config:`grid.Mx`, :config:`grid.My`, :config:`grid.Lx`,
+:config:`grid.Ly` make it relatively easy to change the size and resolution of a grid, but
+not its location on the globe.
+
+The parameter :config:`grid.file` makes it possible to read a grid definition from a
+NetCDF file and then override values read from this file using configuration parameters,
+if necessary.
+
+See :numref:`code-coarse-grid-greenland` for an example of a grid definition. Here the
+*size* of a domain is determined as described in section :ref:`sec-grid-registration`; see
+equations :eq:`eq-grid-from-file-centered`, :eq:`eq-grid-center` and :eq:`eq-grid-corner`.
+
+.. literalinclude:: cdl/grid.cdl
    :language: none
+   :caption: Very coarse grid covering Greenland
+   :name: code-coarse-grid-greenland
+
+.. note::
+
+   - PISM uses the first and last values of ``x`` in :numref:`code-coarse-grid-greenland`
+     to determine `x_{\text{min}}` and `x_{\text{max}}` and the first and second values of
+     ``x`` to compute `\Delta x`, and similarly for ``y``. Other values of ``x`` and ``y``
+     are not used.
+
+   - This example specifies grid coordinates in *km*. PISM will automatically convert to
+     *meters* used internally.
+
+Note that it can also be used as a *domain and CRS definition* since configuration
+parameters :config:`grid.Mx` and :config:`grid.My` can be used to create a finer grid
+covering this domain.
+
+For example, :numref:`code-using-grid-definition-file` below shows how one could set up a
+simulation using a `5` km grid covering this domain.
 
 .. code-block:: bash
+   :caption: Using a grid definition file to define the domain and command-line options to
+             set grid resolution.
+   :name: code-using-grid-definition-file
 
    pismr \
      -i pism_Greenland_5km_v1.1.nc \
      -bootstrap \
      -grid.file grid.nc \
      -Mx 360 \
-     -My 561 \
-     -y 1s
+     -My 560 \
+     -y 1s \
+     -o output.nc
+
+.. note::
+
+   The grid in the data set ``pism_Greenland_v1.1.nc`` from section :ref:`sec-start` and
+   the grid described in :numref:`code-coarse-grid-greenland` use different projections.
+   PISM will use YAC_ to re-project and interpolate data between these grids; see
+   :ref:`sec-interpolation`.
+
+.. _sec-domain-file:
+
+A better way to define a modeling domain
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Defining the domain extent by setting `x_1=x_{\text{min}}`, `x_2` and `x_N=x_{\text{max}}`
+in :numref:`code-using-grid-definition-file` so that `L_x` comes out "right" according to
+equation :eq:`eq-grid-from-file-centered` is very awkward. There is a better way; see
+:numref:`code-greenland-domain` for an example.
+
+.. literalinclude:: cdl/domain.cdl
+   :language: none
+   :caption: Defining a domain including Greenland
+   :name: code-greenland-domain
+
+.. note::
+
+   - This file defines *exactly* the same domain as
+     :numref:`code-using-grid-definition-file`.
+
+   - If ``x`` and ``y`` bounds (``x_bnds`` and ``y_bnds`` in
+     :numref:`code-greenland-domain`) are present then *only bounds are used* to determine
+     the domain extent and the number of grid points. Values of ``x`` and ``y`` are
+     *ignored*.
+
+   - All methods of specifying the CRS described in :ref:`sec-crs` are supported (here:
+     the ``proj_params`` attribute).
+
+   - Similarly to :numref:`code-proj-params`, a file with metadata in
+     :numref:`code-greenland-domain` does not follow CF conventions.
+
 
 .. _sec-domain-distribution:
 
