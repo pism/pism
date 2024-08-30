@@ -91,7 +91,10 @@ class ParameterList(Directive):
 
             f = nodes.field()
             value = nodes.paragraph()
-            value += self.format_value(data["value"], data["type"])
+            if self.is_valid(data):
+                value += self.format_value(data["value"], data["type"])
+            else:
+                value += nodes.Text(" no default")
             if "units" in data:
                 value += nodes.emphasis("", " ({})".format(data["units"]))
             f += [nodes.field_name("", "Default value"),
@@ -119,25 +122,26 @@ class ParameterList(Directive):
 
         return [p1, p2]
 
+    def is_valid(self, data):
+        value = data["value"]
+        if data["type"] in ["number", "integer"]:
+            if "valid_min" in data and (float(value) < float(data["valid_min"])):
+                return False
+            if "valid_max" in data and (float(value) > float(data["valid_max"])):
+                return False
+        return True
+
     def compact_list_entry(self, name, text, data):
         "Build an entry for the compact list of parameters."
 
         p1 = nodes.paragraph()
         p1 += config(name, text=text)
 
-        datatype = data["type"]
         value = data["value"]
-        if not (datatype == "string" and len(value) == 0):
+        if not (data["type"] == "string" and len(value) == 0):
             p1 += nodes.Text(" (")
 
-            valid = True
-            if datatype in ["number", "integer"]:
-                if "valid_min" in data and (float(value) < float(data["valid_min"])):
-                    valid = False
-                if "valid_max" in data and (float(value) > float(data["valid_max"])):
-                    valid = False
-
-            if valid:
+            if self.is_valid(data):
                 p1 += self.format_value(data["value"], data["type"])
                 if "units" in data:
                     if data["units"] not in ["1", "pure number", "count"]:
