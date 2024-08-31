@@ -1089,25 +1089,7 @@ protected:
   std::shared_ptr<array::Array> compute_impl() const {
     auto result = allocate<array::Staggered>("flux_staggered");
 
-    const array::Staggered &input = model->flux_staggered();
-    array::Staggered &output      = *result;
-
-    // FIXME: implement array::Staggered::copy_from()
-
-    array::AccessScope list{ &input, &output };
-
-    ParallelSection loop(m_grid->com);
-    try {
-      for (auto p = m_grid->points(); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        output(i, j, 0) = input(i, j, 0);
-        output(i, j, 1) = input(i, j, 1);
-      }
-    } catch (...) {
-      loop.failed();
-    }
-    loop.check();
+    result->copy_from(model->flux_staggered());
 
     return result;
   }
