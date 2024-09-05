@@ -893,6 +893,21 @@ std::string cf_to_proj(const VariableMetadata &mapping) {
   return mappings[mapping_name](mapping) + common_flags(mapping);
 }
 
+void write_mapping(const File &file, const pism::MappingInfo &info) {
 
+  const auto &mapping = info.cf_mapping;
+  if (mapping.has_attributes()) {
+    auto name = mapping.get_name();
+    if (not file.variable_exists(name)) {
+      file.define_variable(name, io::PISM_DOUBLE, {});
+    }
+    io::write_attributes(file, mapping, io::PISM_DOUBLE);
+
+    // Write the PROJ string to mapping:proj_params (for CDO).
+    if (not info.proj_string.empty()) {
+      file.write_attribute(name, "proj_params", info.proj_string);
+    }
+  }
+}
 
 } // end of namespace pism

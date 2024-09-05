@@ -70,6 +70,8 @@ public:
   std::string proj_string;
 };
 
+void write_mapping(const File &file, const pism::MappingInfo &info);
+
 /*!
  * Parse a string "EPSG:XXXX", "epsg:XXXX", "+init=epsg:XXXX" and return the EPSG code
  * (XXXX).

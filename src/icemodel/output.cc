@@ -141,23 +141,6 @@ void IceModel::save_results() {
   profiling.end("io.model_state");
 }
 
-void write_mapping(const File &file, const pism::MappingInfo &info) {
-
-  const auto &mapping = info.cf_mapping;
-  if (mapping.has_attributes()) {
-    auto name = mapping.get_name();
-    if (not file.variable_exists(name)) {
-      file.define_variable(name, io::PISM_DOUBLE, {});
-    }
-    io::write_attributes(file, mapping, io::PISM_DOUBLE);
-
-    // Write the PROJ string to mapping:proj_params (for CDO).
-    if (not info.proj_string.empty()) {
-      file.write_attribute(name, "proj_params", info.proj_string);
-    }
-  }
-}
-
 void write_run_stats(const File &file, const pism::VariableMetadata &stats) {
   if (not file.variable_exists(stats.get_name())) {
     file.define_variable(stats.get_name(), io::PISM_DOUBLE, {});
