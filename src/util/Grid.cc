@@ -989,7 +989,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       if (dimtype == X_AXIS or dimtype == Y_AXIS or dimtype == Z_AXIS) {
         data = io::read_1d_variable(file, dimension_name, "meters", unit_system);
 
-        if (data.size() < 2) {
+        if ((dimtype == X_AXIS or dimtype == Y_AXIS) and data.size() < 2) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                         "length(%s) in %s has to be at least 2",
                                         dimension_name.c_str(), file.name().c_str());
@@ -1103,6 +1103,13 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
     unsigned int length = 0;
     double half_width   = 0.0;
 
+    auto dimension_type = file.dimension_type(dimension_name, unit_system);
+
+    if (not (dimension_type == X_AXIS or dimension_type == Y_AXIS)) {
+      // use X and Y dimensions and ignore the rest
+      continue;
+    }
+
     auto bounds_name = file.read_text_attribute(dimension_name, "bounds");
     if (not bounds_name.empty()) {
       auto bounds = io::read_bounds(file, bounds_name, "meters", unit_system);
@@ -1139,7 +1146,7 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
 
     double center = (v_min + v_max) / 2.0;
 
-    switch (file.dimension_type(dimension_name, unit_system)) {
+    switch (dimension_type) {
     case X_AXIS: {
       result.x0 = center;
       result.Lx = half_width;
