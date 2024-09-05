@@ -231,7 +231,7 @@ std::string grid_name(const pism::File &file, const std::string &variable_name,
                                   variable_name.c_str(), file.name().c_str());
   }
 
-  std::string result = file.name();
+  std::string result = split(file.name(), '/').back();
 
   for (const auto &d : dimensions) {
     auto type = file.dimension_type(d, sys);
