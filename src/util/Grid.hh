@@ -70,12 +70,7 @@ public:
   InputGridInfo(const File &file, const std::string &variable,
                 std::shared_ptr<units::System> unit_system, Registration registration);
 
-  // static InputGridInfo FromGridDefinition(const File &file,
-  //                                         std::shared_ptr<units::System> unit_system,
-  //                                         Registration registration);
-
   void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
-
 
   // dimension lengths
   unsigned int t_len;
