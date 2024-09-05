@@ -106,12 +106,8 @@ InputInterpolation::create(const Grid &target_grid,
                            const std::vector<double> &levels, const File &input_file,
                            const std::string &variable_name, InterpolationType type) {
 
-  bool try_using_yac = false;
 #if (Pism_USE_YAC_INTERPOLATION == 1)
-  try_using_yac = true;
-#endif
-
-  if (try_using_yac) {
+  {
     auto source_projection =
         MappingInfo::FromFile(input_file, variable_name, target_grid.ctx()->unit_system())
             .proj_string;
@@ -141,12 +137,11 @@ InputInterpolation::create(const Grid &target_grid,
       }
     }
 
-#if (Pism_USE_YAC_INTERPOLATION == 1)
     if (use_yac) {
       return std::make_shared<InputInterpolationYAC>(target_grid, input_file, variable_name);
     }
-#endif
   }
+#endif
 
   return std::make_shared<InputInterpolation3D>(target_grid, levels, input_file, variable_name,
                                                 type);
