@@ -987,7 +987,14 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       std::vector<double> data;
       double center, half_width, v_min, v_max;
       if (dimtype == X_AXIS or dimtype == Y_AXIS or dimtype == Z_AXIS) {
-        data = io::read_1d_variable(file, dimension_name, "meters", unit_system);
+        std::string units = "meters";
+
+        auto std_name = file.read_text_attribute(dimension_name, "standard_name");
+        if (std_name == "grid_latitude" or std_name == "grid_longitude") {
+          units = "degrees";
+        }
+
+        data = io::read_1d_variable(file, dimension_name, units, unit_system);
 
         if ((dimtype == X_AXIS or dimtype == Y_AXIS) and data.size() < 2) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
