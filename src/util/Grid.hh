@@ -103,8 +103,8 @@ public:
 
   std::map<std::string, AxisType> dimension_types;
 
+  bool longitude_latitude;
 private:
-  InputGridInfo() = default;
   void reset();
 };
 

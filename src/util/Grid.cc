@@ -942,21 +942,38 @@ void InputGridInfo::reset() {
 
   z_min = 0;
   z_max = 0;
+
+  longitude_latitude = false;
 }
 
 void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr s) const {
-  units::Converter km(s, "m", "km");
+  if (longitude_latitude) {
+    log.message(
+        threshold,
+        "  x:  %5d points, [%7.3f, %7.3f] degree, x0 = %7.3f degree, Lx = %7.3f degree\n",
+        (int)this->x.size(), this->x0 - this->Lx, this->x0 + this->Lx, this->x0, this->Lx);
+    log.message(
+        threshold,
+        "  y:  %5d points, [%7.3f, %7.3f] degree, y0 = %7.3f degree, Ly = %7.3f degree\n",
+        (int)this->y.size(), this->y0 - this->Ly, this->y0 + this->Ly, this->y0, this->Ly);
+  } else {
+    units::Converter km(s, "m", "km");
 
-  log.message(threshold, "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
-              (int)this->x.size(), km(this->x0 - this->Lx), km(this->x0 + this->Lx), km(this->x0),
-              km(this->Lx));
+    log.message(threshold,
+                "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
+                (int)this->x.size(), km(this->x0 - this->Lx), km(this->x0 + this->Lx), km(this->x0),
+                km(this->Lx));
 
-  log.message(threshold, "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
-              (int)this->y.size(), km(this->y0 - this->Ly), km(this->y0 + this->Ly), km(this->y0),
-              km(this->Ly));
+    log.message(threshold,
+                "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
+                (int)this->y.size(), km(this->y0 - this->Ly), km(this->y0 + this->Ly), km(this->y0),
+                km(this->Ly));
+  }
 
-  log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(), this->z_min,
-              this->z_max);
+  if (z.size() > 1) {
+    log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(),
+                this->z_min, this->z_max);
+  }
 
   log.message(threshold, "  t:  %5d records\n\n", this->t_len);
 }
@@ -977,29 +994,44 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
                                     variable.c_str());
     }
 
-    auto dimensions = file.dimensions(var.name);
+    std::string xy_units = "meters";
+    // Attempting to detect rotated pole grids
+    {
+      auto mapping                  = MappingInfo::FromFile(file, var.name, unit_system).cf_mapping;
+      std::string grid_mapping_name = mapping["grid_mapping_name"];
+      longitude_latitude                  = (grid_mapping_name == "rotated_latitude_longitude");
+      if (longitude_latitude) {
+        xy_units = "degrees";
+      }
+    }
 
     bool time_dimension_processed = false;
-    for (const auto &dimension_name : dimensions) {
+    for (const auto &dimension_name : file.dimensions(var.name)) {
 
       auto dimtype = file.dimension_type(dimension_name, unit_system);
 
       std::vector<double> data;
       double center, half_width, v_min, v_max;
       if (dimtype == X_AXIS or dimtype == Y_AXIS or dimtype == Z_AXIS) {
-        std::string units = "meters";
-
-        auto std_name = file.read_text_attribute(dimension_name, "standard_name");
-        if (std_name == "grid_latitude" or std_name == "grid_longitude") {
-          units = "degrees";
-        }
-
-        data = io::read_1d_variable(file, dimension_name, units, unit_system);
-
-        if ((dimtype == X_AXIS or dimtype == Y_AXIS) and data.size() < 2) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "length(%s) in %s has to be at least 2",
-                                        dimension_name.c_str(), file.name().c_str());
+        // horizontal dimensions
+        if (dimtype == X_AXIS or dimtype == Y_AXIS) {
+          // another attempt at detecting rotated pole grids
+          {
+            auto std_name = file.read_text_attribute(dimension_name, "standard_name");
+            if (member(std_name, { "grid_latitude", "grid_longitude" }) or
+                member(dimension_name, { "rlat", "rlon" })) {
+              xy_units     = "degrees";
+              longitude_latitude = true;
+            }
+          }
+          data = io::read_1d_variable(file, dimension_name, xy_units, unit_system);
+          if (data.size() < 2) {
+            throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                          "length(%s) in %s has to be at least 2",
+                                          dimension_name.c_str(), file.name().c_str());
+          }
+        } else {
+          data = io::read_1d_variable(file, dimension_name, "meters", unit_system);
         }
 
         v_min  = vector_min(data);

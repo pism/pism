@@ -18,6 +18,7 @@
  */
 
 #include <cstddef>
+#include <memory>
 #include <vector>
 #include <cmath>
 
@@ -297,12 +298,37 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
   try {
     auto log = ctx->log();
 
-    auto source_grid =
-        pism::Grid::FromFile(ctx, input_file, { variable_name }, pism::grid::CELL_CENTER);
-
     auto source_grid_name = grid_name(input_file, variable_name, ctx->unit_system());
 
+    log->message(
+        2, "* Initializing 2D interpolation on the sphere from '%s' to the internal grid...\n",
+        source_grid_name.c_str());
+
+    grid::InputGridInfo info(input_file, variable_name, ctx->unit_system(),
+                             pism::grid::CELL_CENTER);
+
     auto mapping = MappingInfo::FromFile(input_file, variable_name, ctx->unit_system());
+
+    std::string grid_mapping_name = mapping.cf_mapping["grid_mapping_name"];
+
+    log->message(2, "Input grid:\n");
+    if (not grid_mapping_name.empty()) {
+      log->message(2, " Grid mapping: %s\n", grid_mapping_name.c_str());
+    }
+    if (not mapping.proj_string.empty()) {
+      log->message(2, " PROJ string: '%s'\n", mapping.proj_string.c_str());
+    }
+    info.report(*log, 2, ctx->unit_system());
+
+    grid::Parameters P(*ctx->config(), info.x.size(), info.y.size(), info.Lx, info.Ly);
+    P.x0 = info.x0;
+    P.y0 = info.y0;
+    P.registration = grid::CELL_CENTER;
+    P.variable_name = variable_name;
+    P.vertical_grid_from_options(*ctx->config());
+    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
+
+    auto source_grid = std::make_shared<Grid>(ctx, P);
 
     source_grid->set_mapping_info(mapping);
 
@@ -311,13 +337,6 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                     "unsupported or missing projection info for the grid '%s'",
                                     source_grid_name.c_str());
     }
-
-    log->message(
-        2, "* Initializing 2D interpolation on the sphere from '%s' to the internal grid...\n",
-        source_grid_name.c_str());
-
-    log->message(2, "Input grid:\n");
-    source_grid->report_parameters();
 
     m_buffer = std::make_shared<pism::array::Scalar>(source_grid, variable_name);
 
@@ -349,6 +368,9 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
       {
         std::string direction;
         int interp_stack_id = 0;
+        // FIXME: this will almost always choose conservative interpolation when going
+        // from lon,lat to a projected grid because if (...) below compares quantities
+        // that have different units.
         if (source_grid->dx() < target_grid.dx() or source_grid->dy() < target_grid.dy()) {
           interp_stack_id = interpolation_fine_to_coarse(fill_value);
           direction       = "fine to coarse (conservative)";
