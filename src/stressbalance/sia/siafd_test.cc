@@ -307,7 +307,7 @@ int main(int argc, char *argv[]) {
     P.ownership_ranges_from_options(ctx->size());
 
     // create grid and set defaults
-    std::shared_ptr<Grid> grid(new Grid(ctx, P));
+    auto grid = std::make_shared<Grid>(ctx, P);
     grid->report_parameters();
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
