@@ -1125,14 +1125,19 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
   result.periodicity  = NOT_PERIODIC;
 
   std::vector<std::string> dimensions;
-  if (variable_name.empty()) {
-    result.variable_name = get_domain_variable(file);
+  {
+    if (variable_name.empty()) {
+      result.variable_name = get_domain_variable(file);
+    } else {
+      result.variable_name = variable_name;
+    }
 
     auto dimension_list = file.read_text_attribute(result.variable_name, "dimensions");
-
-    dimensions = split(dimension_list, ' ');
-  } else {
-    dimensions = file.dimensions(variable_name);
+    if (not dimension_list.empty()) {
+      dimensions = split(dimension_list, ' ');
+    } else {
+      dimensions = file.dimensions(variable_name);
+    }
   }
 
   for (const auto &dimension_name : dimensions) {
