@@ -420,13 +420,16 @@ to the mapping variable, putting it in the ``proj_params`` attribute.
 Using a grid definition file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Configuration parameters :config:`grid.Mx`, :config:`grid.My`, :config:`grid.Lx`,
-:config:`grid.Ly` make it relatively easy to change the size and resolution of a grid, but
-not its location on the globe.
+Configuration parameters :config:`grid.dx`, :config:`grid.dy`, :config:`grid.Mx`,
+:config:`grid.My`, :config:`grid.Lx`, :config:`grid.Ly` make it relatively easy to change
+the size and resolution of a grid, but not its location on the globe.
 
 The parameter :config:`grid.file` makes it possible to read a grid definition from a
 NetCDF file and then override values read from this file using configuration parameters,
-if necessary.
+if necessary. Its argument is a string containing the name of a grid definition file *or*
+a string containing the name of a NetCDF file and the name of a 2D variable to get grid
+information from, separated by a colon, ``file_name:variable_name`` (for example:
+``pism_Greenland_5km_v1.1.nc:thk``).
 
 A grid definition file has to contain a "domain variable" (see `CF Conventions`_ version
 1.11 or later, section 5.8, ). A domain variable is a scalar variable that has the
