@@ -67,6 +67,38 @@ precedence over options,
 
 will give a warning that "``PISM WARNING: ignoring command-line option '-Mz'``".
 
+.. _sec-grid-resolution:
+
+Setting grid resolution
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Once :config:`grid.Lx` and :config:`grid.Mx` are known, the grid resolution in the X
+direction `\Delta x` is computed using :eq:`eq-grid-center` (if
+:config:`grid.registration` is "center") or :eq:`eq-grid-corner` (with the "corner" grid
+registration). Alternatively, one can set :config:`grid.Lx` and :config:`grid.dx` to
+compute `M_x` (`L_x` will be re-computed, if necessary):
+
+.. math::
+   M_x &= \left\lfloor \frac{2 L_x}{\Delta x} \right\rfloor,
+
+   L_x &= \frac12 M_x\, \Delta x
+
+in the case of the "center" grid registration; compare this to :eq:`eq-grid-center` and
+note that we round `\frac{2 L_x}{\Delta x}` *down* to get `M_x`. A similar equation is
+used when :config:`grid.registration` is "corner" (see :eq:`eq-grid-corner`).
+
+Set :config:`grid.Ly` and :config:`grid.dy` to set grid resolution in the Y direction.
+
+.. note::
+
+   Recall that PISM will automatically convert from provided units into units used
+   internally, so the command below will work as expected.
+
+   .. code-block:: bash
+
+      pismr -bootstrap -i pism_Greenland_5km_v1.1.nc \
+            -dx 5km -dy 5km ...
+
 .. _sec-grid-registration:
 
 Grid registration

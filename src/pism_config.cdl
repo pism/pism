@@ -1208,14 +1208,14 @@ netcdf pism_config {
     pism_config:grid.Mbz_valid_min = 1;
 
     pism_config:grid.Mx = -1;
-    pism_config:grid.Mx_doc = "Number of grid points in the x direction.";
+    pism_config:grid.Mx_doc = "Number of grid points in the x direction (see also :config:`grid.dx`)";
     pism_config:grid.Mx_option = "Mx";
     pism_config:grid.Mx_type = "integer";
     pism_config:grid.Mx_units = "count";
     pism_config:grid.Mx_valid_min = 3;
 
     pism_config:grid.My = -1;
-    pism_config:grid.My_doc = "Number of grid points in the y direction.";
+    pism_config:grid.My_doc = "Number of grid points in the y direction (see also :config:`grid.dy`)";
     pism_config:grid.My_option = "My";
     pism_config:grid.My_type = "integer";
     pism_config:grid.My_units = "count";
