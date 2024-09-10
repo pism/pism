@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required packages listed in the manual. This is done separately so that we can
@@ -10,7 +10,7 @@ RUN set -eux; \
         rm -rf /var/lib/apt/lists/*
 
 # Install tools:
-# - Cython to build PETSc
+# - Cython to build PETSc with petsc4py
 # - wget to download sources of I/O libraries
 # - NumPy is used by petsc4py and PISM's scripts
 # - SciPy is used by at least one regression test
@@ -20,39 +20,47 @@ RUN set -eux; \
 # - python3-dev is needed to build Python bindings
 # - python3-nose is used to run some regression tests
 # - SWIG is needed to build Python bindings
-# - MPICH is needed to build PETSc and PISM
+# - OpenMPI is needed to build PETSc and PISM
 # - doxygen and graphviz are needed to build the source code browser
-# - python2 is needed to install old PETSc
 # - various versions of GCC and Clang are used to catch compilation issues
 # - latexmk is needed to build the PDF version of the manual
 # - Sphinx and sphinxcontrib-bibtex are needed to build the manual
 RUN set -eux; \
     apt-get update && apt-get install -y --no-install-recommends \
     apt-utils \
-    clang \
-    clang-11 \
-    clang-12 \
-    clang-13 \
+    autoconf \
+    automake \
     clang-14 \
     clang-15 \
+    clang-16 \
+    clang-17 \
+    clang-18 \
     cython3 \
     doxygen \
     g++-10 \
     g++-11 \
     g++-12 \
+    g++-13 \
+    g++-14 \
     g++-9 \
     gcc-10 \
     gcc-11 \
     gcc-12 \
+    gcc-13 \
+    gcc-14 \
     gcc-9 \
+    gfortran \
     graphviz \
     latexmk \
-    libmpich-dev \
+    libfyaml-dev \
+    libopenmpi-dev \
     libproj-dev \
+    libtool \
     lld \
     m4 \
+    make \
     nco \
-    python2 \
+    pkg-config \
     python3-dev \
     python3-netcdf4 \
     python3-nose \
@@ -79,19 +87,48 @@ USER builder
 # manual. Re-using them here makes it easier to keep this part of the manual up to date.
 
 COPY hdf5.sh /tmp/
-COPY netcdf.sh /tmp/
-COPY pnetcdf.sh /tmp/
-COPY parallelio.sh /tmp/
-
 RUN <<EOF
     set -eux
     cd /tmp
     ./hdf5.sh
-    ./netcdf.sh
-    ./pnetcdf.sh
-    ./parallelio.sh
     rm -rf ~/local/build
 EOF
+
+COPY netcdf.sh /tmp/
+RUN <<EOF
+    set -eux
+    cd /tmp
+    ./netcdf.sh
+    rm -rf ~/local/build
+EOF
+
+COPY pnetcdf.sh /tmp/
+RUN <<EOF
+    set -eux
+    cd /tmp
+    ./pnetcdf.sh
+    rm -rf ~/local/build
+EOF
+
+# Build the oldest supported CMake version
+COPY cmake-3_16_0.sh /tmp/
+RUN set -eux;\
+        cd /tmp && \
+        ./cmake-3_16_0.sh
+
+# Build YAXT
+COPY yaxt.sh /tmp/
+RUN set -eux;\
+    cd /tmp && \
+    ./yaxt.sh && \
+    rm -rf /tmp/yaxt
+
+# Build YAC
+COPY yac.sh /tmp/
+RUN set -eux;\
+    cd /tmp && \
+    ./yac.sh && \
+    rm -rf yac
 
 # Build the current PETSc version
 COPY petsc.sh /tmp/
@@ -101,12 +138,12 @@ RUN set -eux;\
         rm -rf ~/local/build
 
 # Build the oldest supported PETSc version. The goal is to check if PISM's C++ code
-# compiles with PETSc 3.7. We do not support PISM's Python bindings with old PETSc
+# compiles with PETSc 3.11. We do not support PISM's Python bindings with old PETSc
 # versions, so we build PETSc without petsc4py here.
 COPY old-petsc.sh /tmp/
 RUN set -eux;\
         cd /tmp && \
-        version=3.7.0 ./old-petsc.sh && \
+        version=3.11.0 ./old-petsc.sh && \
         rm -rf ~/local/build
 
 # Build the current PETSc version with 64-bit indices
@@ -115,12 +152,6 @@ RUN set -eux;\
         cd /tmp && \
         ./petsc-64bit.sh && \
         rm -rf ~/local/build
-
-# Build the oldest supported CMake version
-COPY cmake-3_16_0.sh /tmp/
-RUN set -eux;\
-        cd /tmp && \
-        ./cmake-3_16_0.sh
 
 ENV PETSC_DIR="/home/builder/local/petsc" \
     PYTHONPATH="/home/builder/local/petsc/lib"

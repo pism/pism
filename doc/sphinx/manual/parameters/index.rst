@@ -26,6 +26,19 @@ the parameter name. For example,
 sets the acceleration due to gravity (parameter :config:`constants.standard_gravity`) to
 `10`. Options listed below are *shortcuts*, added for convenience.
 
+In the example above (command-line option ``-constants.standard_gravity 10``), the
+provided value of acceleration due to gravity (`10`) is expected to use units listed in
+this section (here: meters per second squared).
+
+PISM also allows using other units supported by UDUNITS_. For example, the following
+command line options are equivalent:
+
+.. code-block:: none
+
+   -grid.dx 5000
+   -grid.dx 5km
+   -dx "5e6 mm"
+
 The following are equivalent and enable solving the age equation:
 
 .. code-block:: none

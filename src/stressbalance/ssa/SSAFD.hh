@@ -76,9 +76,7 @@ protected:
   unsigned int m_default_pc_failure_count;
   unsigned int m_default_pc_failure_max_count;
   
-  bool m_view_nuh;
   std::shared_ptr<petsc::Viewer> m_nuh_viewer;
-  int m_nuh_viewer_size;
 
   bool m_regional_mode;
 

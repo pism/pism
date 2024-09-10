@@ -141,6 +141,10 @@ if (Pism_USE_EVERYTRACE)
   target_link_libraries(pism ${EVERYTRACE_LIBRARY})
 endif()
 
+if(Pism_USE_YAC_INTERPOLATION)
+  target_link_libraries(pism PkgConfig::YAC)
+endif()
+
 # Main executable:
 add_executable (pismr pismr.cc)
 target_link_libraries (pismr pism)

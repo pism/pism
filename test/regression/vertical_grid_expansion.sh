@@ -15,7 +15,7 @@ set -e
 rm -f $files
 
 # create an input file
-${PISM_PATH}/pismr -eisII A -y 0 -o input-vertical-grid.nc ${short_grid}
+${PISM_PATH}/pismr -eisII A -y 0 -Mx 5 -My 5 -o input-vertical-grid.nc ${short_grid}
 
 # run in two steps: using the short grid and then re-starting with a better one
 set +e

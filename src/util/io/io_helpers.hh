@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -55,7 +55,7 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
                       const Grid& internal_grid,
                       const std::vector<double> &internal_z_levels);
 
-void regrid_spatial_variable(SpatialVariableMetadata &variable,
+void regrid_spatial_variable(const SpatialVariableMetadata &variable,
                              const Grid& internal_grid,
                              const LocalInterpCtx &lic,
                              const File &file,
@@ -93,36 +93,32 @@ void define_time_bounds(const VariableMetadata& metadata,
                         const std::string &bounds_name,
                         const File &file, io::Type nctype);
 
-void read_timeseries(const File &nc, const VariableMetadata &metadata,
-                     const Logger &log, std::vector<double> &data);
+std::vector<double> read_1d_variable(const File &file, const std::string &name,
+                                     const std::string &units,
+                                     std::shared_ptr<units::System> unit_system);
 
 void write_timeseries(const File &nc, const VariableMetadata &metadata,
                       size_t t_start, const std::vector<double> &data);
 
-void read_time_bounds(const File &file,
-                      const VariableMetadata &metadata,
-                      const Logger &log, std::vector<double> &data);
+std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
+                                const std::string &units,
+                                std::shared_ptr<units::System> unit_system);
 
 void write_time_bounds(const File &file, const VariableMetadata &metadata,
                        size_t t_start, const std::vector<double> &data);
 
-void read_time_info(const Logger &log,
-                    std::shared_ptr<units::System> unit_system,
-                    const File &file,
-                    const std::string &time_name,
-                    const std::string &time_units,
-                    std::vector<double> &times,
-                    std::vector<double> &bounds);
+void read_time_info(std::shared_ptr<units::System> unit_system, const File &file,
+                    const std::string &time_name, const std::string &time_units,
+                    std::vector<double> &times, std::vector<double> &bounds);
 
 std::string time_dimension(units::System::Ptr unit_system,
                            const File &file,
                            const std::string &variable_name);
 
-void read_attributes(const File &file, const std::string &variable_name, VariableMetadata &variable);
+VariableMetadata read_attributes(const File &file, const std::string &variable_name,
+                                 std::shared_ptr<units::System> unit_system);
 
 void write_attributes(const File &file, const VariableMetadata &variable, io::Type nctype);
-
-void read_valid_range(const File &file, const std::string &name, VariableMetadata &variable);
 
 bool file_exists(MPI_Comm com, const std::string &filename);
 

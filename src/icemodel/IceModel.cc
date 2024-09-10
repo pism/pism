@@ -865,6 +865,7 @@ void IceModel::init() {
   model_state_setup();
 
   //! 7) Report grid parameters:
+  m_log->message(2, "Computational domain and grid:\n");
   m_grid->report_parameters();
 
   //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the

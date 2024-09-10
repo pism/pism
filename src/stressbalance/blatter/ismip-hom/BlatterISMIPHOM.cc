@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -77,9 +77,6 @@ BlatterISMIPHOM::BlatterISMIPHOM(std::shared_ptr<const Grid> grid,
     m_s = A_surface;
     break;
   case HOM_C:
-    m_b = C_bed;
-    m_s = C_surface;
-    break;
   case HOM_D:
     // test D geometry is the same as for test C
     m_b = C_bed;
@@ -123,11 +120,11 @@ void BlatterISMIPHOM::nodal_parameter_values(const fem::Q1Element3 &element,
     bottom_elevation[n] = m_b(x, y, m_L);
     ice_thickness[n]    = m_s(x, y, m_L) - m_b(x, y, m_L);
 
-    if (surface_elevation) {
+    if (surface_elevation != nullptr) {
       surface_elevation[n] = m_s(x, y, m_L);
     }
 
-    if (sea_level) {
+    if (sea_level != nullptr) {
       // set sea level low enough to ensure that all ice is grounded
       sea_level[n] = bottom_elevation[n] - 1.0;
     }

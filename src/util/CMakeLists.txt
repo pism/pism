@@ -29,7 +29,6 @@ add_library (util OBJECT
   array/Array3D.cc
   array/Scalar.cc
   array/Staggered.cc
-  interpolation.cc
   io/LocalInterpCtx.cc
   io/File.cc
   io/NC_Serial.cc
@@ -56,7 +55,21 @@ add_library (util OBJECT
   label_components.cc
   connected_components.cc
   ScalarForcing.cc
+  Interpolation1D.cc
+  InputInterpolation.cc
 )
+
+if(Pism_USE_YAC_INTERPOLATION)
+  set_source_files_properties(InputInterpolationYAC.cc
+    PROPERTIES
+    INCLUDE_DIRECTORIES ${YAC_INCLUDE_DIRS})
+  target_sources(util PRIVATE InputInterpolationYAC.cc)
+
+  set_source_files_properties(yaxt_wrapper.c
+    PROPERTIES
+    INCLUDE_DIRECTORIES ${YAXT_INCLUDE_DIRS})
+  target_sources(util PRIVATE yaxt_wrapper.c)
+endif()
 
 if(Pism_DEBUG)
   target_sources(util PRIVATE Poisson.cc)

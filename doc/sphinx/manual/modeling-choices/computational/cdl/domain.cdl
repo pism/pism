@@ -1,0 +1,27 @@
+netcdf domain {
+dimensions:
+  // length of the x dimension is not important
+  x = 1 ;
+  // length of the y dimension is not important
+  y = 1 ;
+  nv2 = 2 ;
+variables:
+  double x(x) ;
+    x:units = "km" ;
+    x:standard_name = "projection_x_coordinate" ;
+    x:bounds = "x_bnds";
+  double x_bnds(x, nv2);
+  double y(y) ;
+    y:units = "km" ;
+    y:standard_name = "projection_y_coordinate" ;
+    y:bounds = "y_bnds";
+  double y_bnds(y, nv2);
+  byte domain;
+    domain:dimensions = "x y";
+    domain:grid_mapping = "mapping";
+  byte mapping;
+    mapping:proj_params = "EPSG:3413";
+data:
+ x_bnds = -800, 1000;
+ y_bnds = -3400, -600;
+}

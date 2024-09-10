@@ -480,25 +480,30 @@ netcdf pism_config {
 
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled = "no";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_doc = "If the option ``-topg_to_phi`` is set then this will be set to \"yes\", and then ``MohrCoulombYieldStress`` will initialize the :var:`tillphi` field using a piece-wise linear function of depth described by four parameters.";
+    pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_option = "topg_to_phi";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.enabled_type = "flag";
 
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max = 15.0;
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max_doc = "upper value of the till friction angle; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max_option = "phi_max";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max_type = "number";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max_units = "degrees";
 
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min = 5.0;
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min_doc = "lower value of the till friction angle; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min_option = "phi_min";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min_type = "number";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min_units = "degrees";
 
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max = 1000.0;
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max_doc = "the elevation at which the upper value of the till friction angle is used; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max_option = "topg_max";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max_type = "number";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max_units = "meters";
 
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min = -1000.0;
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min_doc = "the elevation at which the lower value of the till friction angle is used; see the implementation of MohrCoulombYieldStress";
+    pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min_option = "topg_min";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min_type = "number";
     pism_config:basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min_units = "meters";
 
@@ -1175,15 +1180,19 @@ netcdf pism_config {
     pism_config:grid.Lbz_type = "number";
     pism_config:grid.Lbz_units = "meters";
 
-    pism_config:grid.Lx = 1500e3;
-    pism_config:grid.Lx_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
+    pism_config:grid.Lx = 0.0;
+    pism_config:grid.Lx_doc = "Half-width of the computational box in the `X` direction";
+    pism_config:grid.Lx_option = "Lx";
     pism_config:grid.Lx_type = "number";
-    pism_config:grid.Lx_units = "meters";
+    pism_config:grid.Lx_units = "km";
+    pism_config:grid.Lx_valid_min = 1e-16;
 
-    pism_config:grid.Ly = 1500e3;
-    pism_config:grid.Ly_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
+    pism_config:grid.Ly = 0.0;
+    pism_config:grid.Ly_doc = "Half-width of the computational box in the `Y` direction";
+    pism_config:grid.Ly_option = "Ly";
     pism_config:grid.Ly_type = "number";
-    pism_config:grid.Ly_units = "meters";
+    pism_config:grid.Ly_units = "km";
+    pism_config:grid.Ly_valid_min = 1e-16;
 
     pism_config:grid.Lz = 4000;
     pism_config:grid.Lz_doc = "Height of the computational domain.";
@@ -1196,29 +1205,65 @@ netcdf pism_config {
     pism_config:grid.Mbz_option = "Mbz";
     pism_config:grid.Mbz_type = "integer";
     pism_config:grid.Mbz_units = "count";
+    pism_config:grid.Mbz_valid_min = 1;
 
-    pism_config:grid.Mx = 61;
-    pism_config:grid.Mx_doc = "Number of grid points in the x direction.";
+    pism_config:grid.Mx = -1;
+    pism_config:grid.Mx_doc = "Number of grid points in the x direction (see also :config:`grid.dx`)";
     pism_config:grid.Mx_option = "Mx";
     pism_config:grid.Mx_type = "integer";
     pism_config:grid.Mx_units = "count";
+    pism_config:grid.Mx_valid_min = 3;
 
-    pism_config:grid.My = 61;
-    pism_config:grid.My_doc = "Number of grid points in the y direction.";
+    pism_config:grid.My = -1;
+    pism_config:grid.My_doc = "Number of grid points in the y direction (see also :config:`grid.dy`)";
     pism_config:grid.My_option = "My";
     pism_config:grid.My_type = "integer";
     pism_config:grid.My_units = "count";
+    pism_config:grid.My_valid_min = 3;
 
     pism_config:grid.Mz = 31;
     pism_config:grid.Mz_doc = "Number of vertical grid levels in the ice.";
     pism_config:grid.Mz_option = "Mz";
     pism_config:grid.Mz_type = "integer";
     pism_config:grid.Mz_units = "count";
+    pism_config:grid.Mz_valid_min = 2;
+
+    pism_config:grid.Nx = -1;
+    pism_config:grid.Nx_doc = "Number of MPI sub-domains in the x direction (uses default if negative)";
+    pism_config:grid.Nx_option = "Nx";
+    pism_config:grid.Nx_type = "integer";
+    pism_config:grid.Nx_units = "count";
+    pism_config:grid.Nx_valid_min = 1;
+
+    pism_config:grid.Ny = -1;
+    pism_config:grid.Ny_doc = "Number of MPI sub-domains in the y direction (uses default if negative)";
+    pism_config:grid.Ny_option = "Ny";
+    pism_config:grid.Ny_type = "integer";
+    pism_config:grid.Ny_units = "count";
+    pism_config:grid.Ny_valid_min = 1;
 
     pism_config:grid.allow_extrapolation = "no";
     pism_config:grid.allow_extrapolation_doc = "Allow extrapolation during regridding.";
     pism_config:grid.allow_extrapolation_option = "allow_extrapolation";
     pism_config:grid.allow_extrapolation_type = "flag";
+
+    pism_config:grid.dx = 0;
+    pism_config:grid.dx_doc = "Grid resolution in the X direction (overrides :config:`grid.Mx`)";
+    pism_config:grid.dx_option = "dx";
+    pism_config:grid.dx_type = "number";
+    pism_config:grid.dx_units = "meter";
+    pism_config:grid.dx_valid_min = 1e-16;
+
+    pism_config:grid.dy = 0;
+    pism_config:grid.dy_doc = "Grid resolution in the Y direction (overrides :config:`grid.My`)";
+    pism_config:grid.dy_option = "dy";
+    pism_config:grid.dy_type = "number";
+    pism_config:grid.dy_units = "meter";
+    pism_config:grid.dy_valid_min = 1e-16;
+
+    pism_config:grid.file = "";
+    pism_config:grid.file_doc = "grid definition file used to initialize the horizontal computational grid";
+    pism_config:grid.file_type = "string";
 
     pism_config:grid.ice_vertical_spacing = "quadratic";
     pism_config:grid.ice_vertical_spacing_choices = "quadratic,equal";
@@ -1241,6 +1286,14 @@ netcdf pism_config {
     pism_config:grid.periodicity_doc = "horizontal grid periodicity";
     pism_config:grid.periodicity_option = "periodicity";
     pism_config:grid.periodicity_type = "keyword";
+
+    pism_config:grid.procs_x = "";
+    pism_config:grid.procs_x_doc = "comma-separated list of custom sub-domain widths in the X direction";
+    pism_config:grid.procs_x_type = "string";
+
+    pism_config:grid.procs_y = "";
+    pism_config:grid.procs_y_doc = "comma-separated list of custom sub-domain widths in the Y direction";
+    pism_config:grid.procs_y_type = "string";
 
     pism_config:grid.recompute_longitude_and_latitude = "yes";
     pism_config:grid.recompute_longitude_and_latitude_doc = "Re-compute longitude and latitude using grid information and provided projection parameters. Requires PROJ.";
@@ -1704,7 +1757,7 @@ netcdf pism_config {
     pism_config:ocean.pico.number_of_boxes_doc = "For each ice shelf the number of ocean boxes is determined by interpolating between 1 and number_of_boxes depending on its size and geometry such that larger ice shelves are resolved with more boxes; a value of 5 is suitable for the Antarctic setup.";
     pism_config:ocean.pico.number_of_boxes_option = "number_of_boxes";
     pism_config:ocean.pico.number_of_boxes_type = "integer";
-    pism_config:ocean.pico.number_of_boxes_units = "pure number";
+    pism_config:ocean.pico.number_of_boxes_units = "count";
 
     pism_config:ocean.pico.overturning_coefficent = 1e6;
     pism_config:ocean.pico.overturning_coefficent_doc = "Sets the overturning strength coefficient.";
@@ -1813,7 +1866,7 @@ netcdf pism_config {
     pism_config:output.compression_level = 0;
     pism_config:output.compression_level_doc = "Compression level for 2D and 3D output variables (if supported by :config:`output.format`)";
     pism_config:output.compression_level_type = "integer";
-    pism_config:output.compression_level_units = "count";
+    pism_config:output.compression_level_units = "none";
 
     pism_config:output.extra.append = "no";
     pism_config:output.extra.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.extra.split` is set.";
@@ -1869,7 +1922,7 @@ netcdf pism_config {
     pism_config:output.pio.base = 0;
     pism_config:output.pio.base_doc = "Rank of the first I/O task";
     pism_config:output.pio.base_type = "integer";
-    pism_config:output.pio.base_units = "count";
+    pism_config:output.pio.base_units = "none";
 
     pism_config:output.pio.n_writers = 1;
     pism_config:output.pio.n_writers_doc = "Number of I/O tasks to use";
@@ -1885,7 +1938,7 @@ netcdf pism_config {
     pism_config:output.runtime.area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
     pism_config:output.runtime.area_scale_factor_log10_option = "summary_area_scale_factor_log10";
     pism_config:output.runtime.area_scale_factor_log10_type = "integer";
-    pism_config:output.runtime.area_scale_factor_log10_units = "pure number";
+    pism_config:output.runtime.area_scale_factor_log10_units = "none";
 
     pism_config:output.runtime.time_unit_name = "year";
     pism_config:output.runtime.time_unit_name_doc = "Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)";
@@ -1910,7 +1963,7 @@ netcdf pism_config {
     pism_config:output.runtime.volume_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";
     pism_config:output.runtime.volume_scale_factor_log10_option = "summary_vol_scale_factor_log10";
     pism_config:output.runtime.volume_scale_factor_log10_type = "integer";
-    pism_config:output.runtime.volume_scale_factor_log10_units = "pure number";
+    pism_config:output.runtime.volume_scale_factor_log10_units = "none";
 
     pism_config:output.size = "medium";
     pism_config:output.size_choices = "none,small,medium,big_2d,big";
@@ -2208,6 +2261,11 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.nuH_iter_failure_underrelaxation_type = "number";
     pism_config:stress_balance.ssa.fd.nuH_iter_failure_underrelaxation_units = "pure number";
 
+    pism_config:stress_balance.ssa.fd.nuH_viewer_size = 0;
+    pism_config:stress_balance.ssa.fd.nuH_viewer_size_doc = "size of the run time viewer (inactive if zero)";
+    pism_config:stress_balance.ssa.fd.nuH_viewer_size_type = "integer";
+    pism_config:stress_balance.ssa.fd.nuH_viewer_size_units = "count";
+
     pism_config:stress_balance.ssa.fd.relative_convergence = 1.0e-4;
     pism_config:stress_balance.ssa.fd.relative_convergence_doc = "Relative change tolerance for the effective viscosity in the ``SSAFD`` object";
     pism_config:stress_balance.ssa.fd.relative_convergence_option = "ssafd_picard_rtol";
@@ -2473,6 +2531,72 @@ netcdf pism_config {
     pism_config:surface.elevation_change.temperature_lapse_rate_option = "temp_lapse_rate";
     pism_config:surface.elevation_change.temperature_lapse_rate_type = "number";
     pism_config:surface.elevation_change.temperature_lapse_rate_units = "K / km";
+
+    pism_config:surface.elevation_dependent.M_limit_max = 0.0;
+    pism_config:surface.elevation_dependent.M_limit_max_doc = "climatic mass balance at elevations below `h_{\\text{min}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_min`)";
+    pism_config:surface.elevation_dependent.M_limit_max_option = "M_limit_max";
+    pism_config:surface.elevation_dependent.M_limit_max_type = "number";
+    pism_config:surface.elevation_dependent.M_limit_max_units = "m year^-1";
+
+    pism_config:surface.elevation_dependent.M_limit_min = 0.0;
+    pism_config:surface.elevation_dependent.M_limit_min_doc = "climatic mass balance at elevations above `h_{\\text{max}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_max`)";
+    pism_config:surface.elevation_dependent.M_limit_min_option = "M_limit_min";
+    pism_config:surface.elevation_dependent.M_limit_min_type = "number";
+    pism_config:surface.elevation_dependent.M_limit_min_units = "m year^-1";
+
+    pism_config:surface.elevation_dependent.M_max = 4.0;
+    pism_config:surface.elevation_dependent.M_max_doc = "`M_{\\text{max}}`, maximum climatic mass balance in the elevation range `[h_{\\text{min}}, h_{\\text{max}}]`";
+    pism_config:surface.elevation_dependent.M_max_option = "M_max";
+    pism_config:surface.elevation_dependent.M_max_type = "number";
+    pism_config:surface.elevation_dependent.M_max_units = "m year^-1";
+
+    pism_config:surface.elevation_dependent.M_min = -3.0;
+    pism_config:surface.elevation_dependent.M_min_doc = "`M_{\\text{min}}`, minimum climatic mass balance in the elevation range `[h_{\\text{min}}, h_{\\text{max}}]`";
+    pism_config:surface.elevation_dependent.M_min_option = "M_min";
+    pism_config:surface.elevation_dependent.M_min_type = "number";
+    pism_config:surface.elevation_dependent.M_min_units = "m year^-1";
+
+    pism_config:surface.elevation_dependent.T_max = 0;
+    pism_config:surface.elevation_dependent.T_max_doc = "maximum ice surface temperature `T_{\\text{max}}`";
+    pism_config:surface.elevation_dependent.T_max_option = "T_max";
+    pism_config:surface.elevation_dependent.T_max_type = "number";
+    pism_config:surface.elevation_dependent.T_max_units = "degree_Celsius";
+
+    pism_config:surface.elevation_dependent.T_min = -5;
+    pism_config:surface.elevation_dependent.T_min_doc = "minimum ice surface temperature `T_{\\text{min}}`";
+    pism_config:surface.elevation_dependent.T_min_option = "T_min";
+    pism_config:surface.elevation_dependent.T_min_type = "number";
+    pism_config:surface.elevation_dependent.T_min_units = "degree_Celsius";
+
+    pism_config:surface.elevation_dependent.z_ELA = 1450;
+    pism_config:surface.elevation_dependent.z_ELA_doc = "equilibrium line altitude `z_{\\text{ELA}}`";
+    pism_config:surface.elevation_dependent.z_ELA_option = "z_ELA";
+    pism_config:surface.elevation_dependent.z_ELA_type = "number";
+    pism_config:surface.elevation_dependent.z_ELA_units = "meters";
+
+    pism_config:surface.elevation_dependent.z_M_max = 1700;
+    pism_config:surface.elevation_dependent.z_M_max_doc = "surface elevation corresponding to the maximum mass balance `M_{\\text{max}}`";
+    pism_config:surface.elevation_dependent.z_M_max_option = "z_M_max";
+    pism_config:surface.elevation_dependent.z_M_max_type = "number";
+    pism_config:surface.elevation_dependent.z_M_max_units = "meters";
+
+    pism_config:surface.elevation_dependent.z_M_min = 1100;
+    pism_config:surface.elevation_dependent.z_M_min_doc = "surface elevation corresponding to the minimum mass balance `M_{\\text{min}}`";
+    pism_config:surface.elevation_dependent.z_M_min_option = "z_M_min";
+    pism_config:surface.elevation_dependent.z_M_min_type = "number";
+    pism_config:surface.elevation_dependent.z_M_min_units = "meters";
+
+    pism_config:surface.elevation_dependent.z_T_max = 1350;
+    pism_config:surface.elevation_dependent.z_T_max_doc = "surface elevation corresponding to the maximum ice surface temperature `T_{\\text{max}}`";
+    pism_config:surface.elevation_dependent.z_T_max_option = "z_T_max";
+    pism_config:surface.elevation_dependent.z_T_max_type = "number";
+    pism_config:surface.elevation_dependent.z_T_max_units = "meters";
+
+    pism_config:surface.elevation_dependent.z_T_min = 1325;
+    pism_config:surface.elevation_dependent.z_T_min_doc = "surface elevation corresponding to the minimum ice surface temperature `T_{\\text{min}}`";
+    pism_config:surface.elevation_dependent.z_T_min_option = "z_T_min";
+    pism_config:surface.elevation_dependent.z_T_min_type = "number";
+    pism_config:surface.elevation_dependent.z_T_min_units = "meters";
 
     pism_config:surface.force_to_thickness.alpha = 0.01;
     pism_config:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";

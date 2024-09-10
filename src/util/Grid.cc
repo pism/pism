@@ -19,11 +19,18 @@
 #include <cassert>
 
 #include <array>
+#include <cmath>
 #include <gsl/gsl_interp.h>
 #include <map>
+#include <memory>
 #include <numeric>
 #include <petscsys.h>
+#include <string>
+#include <vector>
+#include <utility>              // std::pair, std::swap
 
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/InputInterpolation.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
@@ -34,7 +41,6 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/projection.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
 
@@ -121,6 +127,8 @@ struct Grid::Impl {
 
   //! ParallelIO I/O decompositions.
   std::map<std::array<int, 2>, int> io_decompositions;
+
+  std::map<std::string, std::shared_ptr<InputInterpolation>> regridding_2d;
 };
 
 Grid::Impl::Impl(std::shared_ptr<const Context> context)
@@ -136,20 +144,16 @@ std::shared_ptr<Grid> Grid::Shallow(std::shared_ptr<const Context> ctx, double L
                                     grid::Registration registration,
                                     grid::Periodicity periodicity) {
   try {
-    grid::Parameters p(*ctx->config());
-    p.Lx           = Lx;
-    p.Ly           = Ly;
+    grid::Parameters p(*ctx->config(), Mx, My, Lx, Ly);
     p.x0           = x0;
     p.y0           = y0;
-    p.Mx           = Mx;
-    p.My           = My;
     p.registration = registration;
     p.periodicity  = periodicity;
 
     double Lz = ctx->config()->get_number("grid.Lz");
     p.z       = { 0.0, 0.5 * Lz, Lz };
 
-    p.ownership_ranges_from_options(ctx->size());
+    p.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, p);
   } catch (RuntimeError &e) {
@@ -168,8 +172,8 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
       throw RuntimeError(PISM_ERROR_LOCATION, "Failed to allocate a GSL interpolation accelerator");
     }
 
-    MPI_Comm_rank(com, &m_impl->rank);
-    MPI_Comm_size(com, &m_impl->size);
+    m_impl->rank = context->rank();
+    m_impl->size = context->size();
 
     p.validate();
 
@@ -190,7 +194,7 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
       int stencil_width = (int)context->config()->get_number("grid.max_stencil_width");
 
       try {
-        std::shared_ptr<petsc::DM> tmp = this->get_dm(1, stencil_width);
+        auto tmp = this->get_dm(1, stencil_width);
       } catch (RuntimeError &e) {
         e.add_context("distributing a %d x %d grid across %d processors.", Mx(), My(), size());
         throw;
@@ -227,7 +231,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    grid::Parameters p(*ctx, file, var_name, r);
+    grid::Parameters p(ctx->unit_system(), file, var_name, r);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
@@ -240,8 +244,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
       p.z = { 0.0, Lz };
     }
 
-
-    p.ownership_ranges_from_options(ctx->size());
+    p.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, p);
   } catch (RuntimeError &e) {
@@ -258,7 +261,7 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
                                      grid::Registration r) {
 
   for (const auto &name : var_names) {
-    if (file.find_variable(name)) {
+    if (file.variable_exists(name)) {
       return Grid_FromFile(ctx, file, name, r);
     }
   }
@@ -267,16 +270,6 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
                                 "file %s does not have any of %s."
                                 " Cannot initialize the grid.",
                                 file.name().c_str(), join(var_names, ",").c_str());
-}
-
-std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
-                                     const std::string &filename,
-                                     const std::vector<std::string> &var_names,
-                                     grid::Registration r) {
-
-  File file(ctx->com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
-
-  return Grid::FromFile(ctx, file, var_names, r);
 }
 
 Grid::~Grid() {
@@ -317,15 +310,15 @@ unsigned int Grid::kBelowHeight(double height) const {
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
-static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size, unsigned int &Nx,
-                           unsigned int &Ny) {
+static std::pair<unsigned, unsigned> compute_nprocs(unsigned int size, unsigned int Mx,
+                                                    unsigned int My) {
 
   if (My <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "'My' is invalid.");
   }
 
-  Nx = (unsigned int)(0.5 + sqrt(((double)Mx) * ((double)size) / ((double)My)));
-  Ny = 0;
+  unsigned int Nx = (unsigned int)(0.5 + sqrt(((double)Mx) * ((double)size) / ((double)My)));
+  unsigned int Ny = 0;
 
   if (Nx == 0) {
     Nx = 1;
@@ -341,9 +334,7 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size, 
 
   if (Mx > My and Nx < Ny) {
     // Swap Nx and Ny
-    auto tmp = Nx;
-    Nx       = Ny;
-    Ny       = tmp;
+    std::swap(Nx, Ny);
   }
 
   if ((Mx / Nx) < 2) { // note: integer division
@@ -357,6 +348,8 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size, 
                                   "Can't split %d grid points into %d parts (Y-direction).", My,
                                   (int)Ny);
   }
+
+  return {Nx, Ny};
 }
 
 
@@ -390,77 +383,15 @@ void Grid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_pro
   }
 }
 
-struct OwnershipRanges {
-  std::vector<unsigned int> x, y;
-};
+//! Compute horizontal grid size. See compute_horizontal_coordinates() for more.
+static unsigned int compute_horizontal_grid_size(double half_width, double dx, bool cell_centered) {
+  auto M = static_cast<unsigned int>(std::floor(half_width / dx));
 
-//! Compute processor ownership ranges using the grid size, MPI communicator size, and command-line
-//! options `-Nx`, `-Ny`, `-procs_x`, `-procs_y`.
-static OwnershipRanges compute_ownership_ranges(unsigned int Mx, unsigned int My,
-                                                unsigned int size) {
-  OwnershipRanges result;
-
-  unsigned int Nx_default, Ny_default;
-  compute_nprocs(Mx, My, size, Nx_default, Ny_default);
-
-  // check -Nx and -Ny
-  options::Integer Nx("-Nx", "Number of processors in the x direction", Nx_default);
-  options::Integer Ny("-Ny", "Number of processors in the y direction", Ny_default);
-
-  // validate results (compute_nprocs checks its results, but we also need to validate command-line
-  // options)
-  if ((Mx / Nx) < 2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (X-direction).", Mx,
-                                  (int)Nx);
+  if (cell_centered) {
+    return 2 * M;
   }
 
-  if ((My / Ny) < 2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (Y-direction).", My,
-                                  (int)Ny);
-  }
-
-  if (Nx * Ny != (int)size) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Nx * Ny has to be equal to %d.", size);
-  }
-
-  // check -procs_x and -procs_y
-  options::IntegerList procs_x("-procs_x", "Processor ownership ranges (x direction)", {});
-  options::IntegerList procs_y("-procs_y", "Processor ownership ranges (y direction)", {});
-
-  if (procs_x.is_set()) {
-    if (procs_x->size() != (unsigned int)Nx) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "-Nx has to be equal to the -procs_x size.");
-    }
-
-    result.x.resize(procs_x->size());
-    for (unsigned int k = 0; k < procs_x->size(); ++k) {
-      result.x[k] = procs_x[k];
-    }
-
-  } else {
-    result.x = ownership_ranges(Mx, Nx);
-  }
-
-  if (procs_y.is_set()) {
-    if (procs_y->size() != (unsigned int)Ny) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "-Ny has to be equal to the -procs_y size.");
-    }
-
-    result.y.resize(procs_y->size());
-    for (unsigned int k = 0; k < procs_y->size(); ++k) {
-      result.y[k] = procs_y[k];
-    }
-  } else {
-    result.y = ownership_ranges(My, Ny);
-  }
-
-  if (result.x.size() * result.y.size() != size) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "length(procs_x) * length(procs_y) != MPI size");
-  }
-
-  return result;
+  return 2 * M + 1;
 }
 
 //! Compute horizontal grid spacing. See compute_horizontal_coordinates() for more.
@@ -475,22 +406,18 @@ static double compute_horizontal_spacing(double half_width, unsigned int M, bool
 //! Compute grid coordinates for one direction (X or Y).
 static std::vector<double> compute_coordinates(unsigned int M, double delta, double v_min,
                                                double v_max, bool cell_centered) {
-  std::vector<double> result(M);
+
+  double offset = cell_centered ? 0.5 : 0.0;
 
   // Here v_min, v_max define the extent of the computational domain,
   // which is not necessarily the same thing as the smallest and
   // largest values of grid coordinates.
-  if (cell_centered) {
-    for (unsigned int i = 0; i < M; ++i) {
-      result[i] = v_min + (i + 0.5) * delta;
-    }
-    result[M - 1] = v_max - 0.5 * delta;
-  } else {
-    for (unsigned int i = 0; i < M; ++i) {
-      result[i] = v_min + i * delta;
-    }
-    result[M - 1] = v_max;
+  std::vector<double> result(M);
+  for (unsigned int i = 0; i < M; ++i) {
+    result[i] = v_min + (i + offset) * delta;
   }
+  result[M - 1] = v_max - offset * delta;
+
   return result;
 }
 
@@ -533,8 +460,6 @@ void Grid::report_parameters() const {
 
   const Logger &log      = *this->ctx()->log();
   units::System::Ptr sys = this->ctx()->unit_system();
-
-  log.message(2, "computational domain and grid:\n");
 
   units::Converter km(sys, "m", "km");
 
@@ -1028,21 +953,38 @@ void InputGridInfo::reset() {
 
   z_min = 0;
   z_max = 0;
+
+  longitude_latitude = false;
 }
 
 void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr s) const {
-  units::Converter km(s, "m", "km");
+  if (longitude_latitude) {
+    log.message(
+        threshold,
+        "  x:  %5d points, [%7.3f, %7.3f] degree, x0 = %7.3f degree, Lx = %7.3f degree\n",
+        (int)this->x.size(), this->x0 - this->Lx, this->x0 + this->Lx, this->x0, this->Lx);
+    log.message(
+        threshold,
+        "  y:  %5d points, [%7.3f, %7.3f] degree, y0 = %7.3f degree, Ly = %7.3f degree\n",
+        (int)this->y.size(), this->y0 - this->Ly, this->y0 + this->Ly, this->y0, this->Ly);
+  } else {
+    units::Converter km(s, "m", "km");
 
-  log.message(threshold, "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
-              (int)this->x.size(), km(this->x0 - this->Lx), km(this->x0 + this->Lx), km(this->x0),
-              km(this->Lx));
+    log.message(threshold,
+                "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
+                (int)this->x.size(), km(this->x0 - this->Lx), km(this->x0 + this->Lx), km(this->x0),
+                km(this->Lx));
 
-  log.message(threshold, "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
-              (int)this->y.size(), km(this->y0 - this->Ly), km(this->y0 + this->Ly), km(this->y0),
-              km(this->Ly));
+    log.message(threshold,
+                "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
+                (int)this->y.size(), km(this->y0 - this->Ly), km(this->y0 + this->Ly), km(this->y0),
+                km(this->Ly));
+  }
 
-  log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(), this->z_min,
-              this->z_max);
+  if (z.size() > 1) {
+    log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(),
+                this->z_min, this->z_max);
+  }
 
   log.message(threshold, "  t:  %5d records\n\n", this->t_len);
 }
@@ -1063,42 +1005,77 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
                                     variable.c_str());
     }
 
-    auto dimensions = file.dimensions(var.name);
+    std::string xy_units = "meters";
+    // Attempting to detect rotated pole grids
+    {
+      auto mapping                  = MappingInfo::FromFile(file, var.name, unit_system).cf_mapping;
+      std::string grid_mapping_name = mapping["grid_mapping_name"];
+      longitude_latitude                  = (grid_mapping_name == "rotated_latitude_longitude");
+      if (longitude_latitude) {
+        xy_units = "degrees";
+      }
+    }
 
     bool time_dimension_processed = false;
-    for (const auto &dimension_name : dimensions) {
+    for (const auto &dimension_name : file.dimensions(var.name)) {
 
-      AxisType dimtype = file.dimension_type(dimension_name, unit_system);
+      auto dimtype = file.dimension_type(dimension_name, unit_system);
 
+      std::vector<double> data;
+      double center, half_width, v_min, v_max;
+      if (dimtype == X_AXIS or dimtype == Y_AXIS or dimtype == Z_AXIS) {
+        // horizontal dimensions
+        if (dimtype == X_AXIS or dimtype == Y_AXIS) {
+          // another attempt at detecting rotated pole grids
+          {
+            auto std_name = file.read_text_attribute(dimension_name, "standard_name");
+            if (member(std_name, { "grid_latitude", "grid_longitude" }) or
+                member(dimension_name, { "rlat", "rlon" })) {
+              xy_units     = "degrees";
+              longitude_latitude = true;
+            }
+          }
+          data = io::read_1d_variable(file, dimension_name, xy_units, unit_system);
+          if (data.size() < 2) {
+            throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                          "length(%s) in %s has to be at least 2",
+                                          dimension_name.c_str(), file.name().c_str());
+          }
+        } else {
+          data = io::read_1d_variable(file, dimension_name, "meters", unit_system);
+        }
+
+        v_min  = vector_min(data);
+        v_max  = vector_max(data);
+        center = 0.5 * (v_min + v_max);
+
+        half_width = 0.5 * (v_max - v_min);
+        if (r == CELL_CENTER) {
+          half_width += 0.5 * (data[1] - data[0]);
+        }
+      }
+
+      // This has to happen *before* the switch statement below so the T_AXIS case below
+      // can override it.
       this->dimension_types[dimension_name] = dimtype;
 
       switch (dimtype) {
       case X_AXIS: {
-        this->x      = file.read_dimension(dimension_name);
-        double x_min = vector_min(this->x), x_max = vector_max(this->x);
-        this->x0 = 0.5 * (x_min + x_max);
-        this->Lx = 0.5 * (x_max - x_min);
-        if (r == CELL_CENTER) {
-          const double dx = this->x[1] - this->x[0];
-          this->Lx += 0.5 * dx;
-        }
+        this->x  = data;
+        this->x0 = center;
+        this->Lx = half_width;
         break;
       }
       case Y_AXIS: {
-        this->y      = file.read_dimension(dimension_name);
-        double y_min = vector_min(this->y), y_max = vector_max(this->y);
-        this->y0 = 0.5 * (y_min + y_max);
-        this->Ly = 0.5 * (y_max - y_min);
-        if (r == CELL_CENTER) {
-          const double dy = this->y[1] - this->y[0];
-          this->Ly += 0.5 * dy;
-        }
+        this->y  = data;
+        this->y0 = center;
+        this->Ly = half_width;
         break;
       }
       case Z_AXIS: {
-        this->z     = file.read_dimension(dimension_name);
-        this->z_min = vector_min(this->z);
-        this->z_max = vector_max(this->z);
+        this->z     = data;
+        this->z_min = v_min;
+        this->z_max = v_max;
         break;
       }
       case T_AXIS: {
@@ -1108,7 +1085,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
           this->dimension_types[dimension_name] = UNKNOWN_AXIS;
         } else {
           this->t_len          = file.dimension_length(dimension_name);
-          time_dimension_processed = false;
+          time_dimension_processed = true;
         }
         break;
       }
@@ -1126,101 +1103,310 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
   }
 }
 
+//! Get a list of dimensions from a grid definition file
+std::string get_domain_variable(const File &file) {
+  auto n_variables = file.nvariables();
+
+  for (unsigned int k = 0; k < n_variables; ++k) {
+
+    auto variable     = file.variable_name(k);
+    auto n_attributes = file.nattributes(variable);
+
+    for (unsigned int a = 0; a < n_attributes; ++a) {
+      if (file.attribute_name(variable, a) == "dimensions") {
+        return variable;
+      }
+    }
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to find a domain variable in '%s",
+                                file.name().c_str());
+}
+
+Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_system,
+                                          const File &file,
+                                          const std::string &variable_name,
+                                          Registration registration) {
+  Parameters result;
+
+  result.Mx           = 0;
+  result.My           = 0;
+  result.z            = {};
+  result.registration = registration;
+  result.periodicity  = NOT_PERIODIC;
+
+  std::vector<std::string> dimensions;
+  {
+    if (variable_name.empty()) {
+      result.variable_name = get_domain_variable(file);
+    } else {
+      result.variable_name = variable_name;
+    }
+
+    auto dimension_list = file.read_text_attribute(result.variable_name, "dimensions");
+    if (not dimension_list.empty()) {
+      dimensions = split(dimension_list, ' ');
+    } else {
+      dimensions = file.dimensions(variable_name);
+    }
+  }
+
+  for (const auto &dimension_name : dimensions) {
+
+    double v_min        = 0.0;
+    double v_max        = 0.0;
+    unsigned int length = 0;
+    double half_width   = 0.0;
+
+    auto dimension_type = file.dimension_type(dimension_name, unit_system);
+
+    if (not (dimension_type == X_AXIS or dimension_type == Y_AXIS)) {
+      // use X and Y dimensions and ignore the rest
+      continue;
+    }
+
+    auto bounds_name = file.read_text_attribute(dimension_name, "bounds");
+    if (not bounds_name.empty()) {
+      auto bounds = io::read_bounds(file, bounds_name, "meters", unit_system);
+
+      if (bounds.size() < 2) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "length(%s) in '%s' has to be at least 2",
+                                      bounds_name.c_str(), file.name().c_str());
+      }
+
+      v_min  = bounds.front();
+      v_max  = bounds.back();
+      length = static_cast<unsigned int>(bounds.size()) / 2;
+      // bounds set domain size regardless of grid registration
+      half_width = (v_max - v_min) / 2.0;
+    } else {
+      auto dimension = io::read_1d_variable(file, dimension_name, "meters", unit_system);
+
+      if (dimension.size() < 2) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "length(%s) in '%s' has to be at least 2",
+                                      dimension_name.c_str(), file.name().c_str());
+      }
+
+      v_min   = dimension.front();
+      v_max   = dimension.back();
+      length  = static_cast<unsigned int>(dimension.size());
+      // same as in InputGridInfo, domain half-width depends on grid registration
+      half_width = (v_max - v_min) / 2.0;
+      if (registration == CELL_CENTER) {
+        half_width += 0.5 * (dimension[1] - dimension[0]);
+      }
+    }
+
+    double center = (v_min + v_max) / 2.0;
+
+    switch (dimension_type) {
+    case X_AXIS: {
+      result.x0 = center;
+      result.Lx = half_width;
+      result.Mx = length;
+      break;
+    }
+    case Y_AXIS: {
+      result.y0 = center;
+      result.Ly = half_width;
+      result.My = length;
+      break;
+    }
+    default: {
+      // ignore
+    }
+    }
+  }
+
+  if (result.Mx == 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "failed to initialize the X grid dimension from '%s' in '%s'",
+                                  result.variable_name.c_str(), file.name().c_str());
+  }
+
+  if (result.My == 0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "failed to initialize the Y grid dimension from '%s' in '%s'",
+                                  result.variable_name.c_str(), file.name().c_str());
+  }
+
+  return result;
+}
+
 Parameters::Parameters(const Config &config) {
-  Lx = config.get_number("grid.Lx");
-  Ly = config.get_number("grid.Ly");
-
-  x0 = 0.0;
-  y0 = 0.0;
-
-  Mx = static_cast<unsigned int>(config.get_number("grid.Mx"));
-  My = static_cast<unsigned int>(config.get_number("grid.My"));
 
   periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
   registration = string_to_registration(config.get_string("grid.registration"));
 
-  double Lz         = config.get_number("grid.Lz");
-  unsigned int Mz   = config.get_number("grid.Mz");
-  double lambda     = config.get_number("grid.lambda");
-  VerticalSpacing s = string_to_spacing(config.get_string("grid.ice_vertical_spacing"));
-  z                 = compute_vertical_levels(Lz, Mz, s, lambda);
+  x0 = 0.0;
+  y0 = 0.0;
+
+  horizontal_size_and_extent_from_options(config);
+  vertical_grid_from_options(config);
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-void Parameters::ownership_ranges_from_options(unsigned int size) {
-  OwnershipRanges procs = compute_ownership_ranges(Mx, My, size);
-  procs_x               = procs.x;
-  procs_y               = procs.y;
+Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx_, double Ly_) {
+
+  periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
+  registration = string_to_registration(config.get_string("grid.registration"));
+
+  x0 = 0.0;
+  y0 = 0.0;
+
+  Mx = Mx_;
+  My = My_;
+
+  Lx = Lx_;
+  Ly = Ly_;
+
+  vertical_grid_from_options(config);
+  // does not set ownership ranges because we don't know if these settings are final
 }
 
-void Parameters::init_from_file(const Context &ctx, const File &file,
-                                const std::string &variable_name, Registration r) {
-  int size = 0;
-  MPI_Comm_size(ctx.com(), &size);
+void Parameters::ownership_ranges_from_options(const Config &config, unsigned int size) {
+  // number of sub-domains in X and Y directions
+  unsigned int Nx = 0;
+  unsigned int Ny = 0;
+  if (config.is_valid_number("grid.Nx") and config.is_valid_number("grid.Ny")) {
+    Nx = static_cast<unsigned int>(config.get_number("grid.Nx"));
+    Ny = static_cast<unsigned int>(config.get_number("grid.Ny"));
+  } else {
+    auto N = compute_nprocs(size, Mx, My);
 
-  InputGridInfo input_grid(file, variable_name, ctx.unit_system(), r);
-
-  Lx           = input_grid.Lx;
-  Ly           = input_grid.Ly;
-  x0           = input_grid.x0;
-  y0           = input_grid.y0;
-  Mx           = input_grid.x.size();
-  My           = input_grid.y.size();
-  registration = r;
-  z            = input_grid.z;
-}
-
-Parameters::Parameters(const Context &ctx, const File &file, const std::string &variable_name,
-                       Registration r) {
-  init_from_file(ctx, file, variable_name, r);
-}
-
-Parameters::Parameters(const Context &ctx, const std::string &filename,
-                       const std::string &variable_name, Registration r) {
-  File file(ctx.com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
-  init_from_file(ctx, file, variable_name, r);
-}
-
-
-void Parameters::horizontal_size_from_options() {
-  Mx = options::Integer("-Mx", "grid size in X direction", Mx);
-  My = options::Integer("-My", "grid size in Y direction", My);
-}
-
-void Parameters::horizontal_extent_from_options(std::shared_ptr<units::System> unit_system) {
-  // Domain size
-  {
-    const double km = 1000.0;
-    Lx = km * options::Real(unit_system, "-Lx", "Half of the grid extent in the Y direction, in km",
-                            "km", Lx / km);
-    Ly = km * options::Real(unit_system, "-Ly", "Half of the grid extent in the X direction, in km",
-                            "km", Ly / km);
+    Nx = std::get<0>(N);
+    Ny = std::get<1>(N);
   }
 
-  // Alternatively: domain size and extent
+  // sub-domain widths in X and Y directions
+  std::vector<unsigned> px, py;
   {
-    options::RealList x_range("-x_range", "min,max x coordinate values", {});
-    options::RealList y_range("-y_range", "min,max y coordinate values", {});
 
-    if (x_range.is_set() and y_range.is_set()) {
-      if (x_range->size() != 2 or y_range->size() != 2) {
-        throw RuntimeError(PISM_ERROR_LOCATION, "-x_range and/or -y_range argument is invalid.");
+    // validate inputs
+    if ((Mx / Nx) < 2) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Can't split %d grid points into %d parts (X-direction).", Mx,
+                                    (int)Nx);
+    }
+
+    if ((My / Ny) < 2) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Can't split %d grid points into %d parts (Y-direction).", My,
+                                    (int)Ny);
+    }
+
+    if (Nx * Ny != size) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Nx * Ny has to be equal to %d.", size);
+    }
+
+
+    auto grid_procs_x = parse_integer_list(config.get_string("grid.procs_x"));
+    auto grid_procs_y = parse_integer_list(config.get_string("grid.procs_y"));
+
+    if (not grid_procs_x.empty()) {
+      if (grid_procs_x.size() != (unsigned int)Nx) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "-Nx has to be equal to the -procs_x size.");
       }
-      x0 = (x_range[0] + x_range[1]) / 2.0;
-      y0 = (y_range[0] + y_range[1]) / 2.0;
-      Lx = (x_range[1] - x_range[0]) / 2.0;
-      Ly = (y_range[1] - y_range[0]) / 2.0;
+
+      px.resize(grid_procs_x.size());
+      for (unsigned int k = 0; k < Nx; ++k) {
+        px[k] = grid_procs_x[k];
+      }
+
+    } else {
+      px = ownership_ranges(Mx, Nx);
+    }
+
+    if (not grid_procs_y.empty()) {
+      if (grid_procs_y.size() != (unsigned int)Ny) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "-Ny has to be equal to the -procs_y size.");
+      }
+
+      py.resize(Ny);
+      for (unsigned int k = 0; k < Ny; ++k) {
+        py[k] = grid_procs_y[k];
+      }
+    } else {
+      py = ownership_ranges(My, Ny);
+    }
+
+    if (px.size() * py.size() != size) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "length(procs_x) * length(procs_y) != MPI size");
     }
   }
+
+  procs_x = px;
+  procs_y = py;
 }
 
-void Parameters::vertical_grid_from_options(Config::ConstPtr config) {
-  double Lz = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
-  int Mz    = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
+Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &file,
+                       const std::string &variable, Registration r) {
+  InputGridInfo input_grid(file, variable, unit_system, r);
+
+  Lx            = input_grid.Lx;
+  Ly            = input_grid.Ly;
+  x0            = input_grid.x0;
+  y0            = input_grid.y0;
+  Mx            = input_grid.x.size();
+  My            = input_grid.y.size();
+  registration  = r;
+  z             = input_grid.z;
+  variable_name = variable;
+}
+
+//! Set `output` if the parameter `name` is set to a "valid" number, otherwise leave
+//! `output` unchanged.
+template <typename T>
+static void maybe_override(const Config &config, const char *name, const char *units, T &output) {
+
+  if (not config.is_valid_number(name)) {
+    return;
+  }
+
+  if (units != nullptr) {
+    output = static_cast<T>(config.get_number(name, units));
+  } else {
+    output = static_cast<T>(config.get_number(name));
+  }
+}
+
+void Parameters::horizontal_size_and_extent_from_options(const Config &config) {
+
+  maybe_override(config, "grid.Lx", "m", Lx);
+  maybe_override(config, "grid.Ly", "m", Ly);
+
+  // grid size
+  if (config.is_valid_number("grid.dx") and config.is_valid_number("grid.dy")) {
+
+    double dx = config.get_number("grid.dx", "m");
+    double dy = config.get_number("grid.dy", "m");
+
+    Mx = compute_horizontal_grid_size(Lx, dx, registration == CELL_CENTER);
+    My = compute_horizontal_grid_size(Ly, dy, registration == CELL_CENTER);
+
+    // re-compute Lx and Ly
+    if (registration == CELL_CENTER) {
+      Lx = Mx * dx / 2.0;
+      Ly = My * dy / 2.0;
+    } else {
+      Lx = (Mx - 1) * dx / 2.0;
+      Ly = (My - 1) * dy / 2.0;
+    }
+  } else {
+    maybe_override(config, "grid.Mx", nullptr, Mx);
+    maybe_override(config, "grid.My", nullptr, My);
+  }
+}
+
+void Parameters::vertical_grid_from_options(const Config &config) {
+  double Lz = (not z.empty()) ? z.back() : config.get_number("grid.Lz");
+  int Mz    = (not z.empty()) ? z.size() : config.get_number("grid.Mz");
 
   z = compute_vertical_levels(Lz, Mz,
-                              string_to_spacing(config->get_string("grid.ice_vertical_spacing")),
-                              config->get_number("grid.lambda"));
+                              string_to_spacing(config.get_string("grid.ice_vertical_spacing")),
+                              config.get_number("grid.lambda"));
 }
 
 void Parameters::validate() const {
@@ -1235,11 +1421,13 @@ void Parameters::validate() const {
   }
 
   if (Lx <= 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Lx = %f is invalid (negative)", Lx);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Lx = %f is invalid (has to be positive)",
+                                  Lx);
   }
 
   if (Ly <= 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Ly = %f is invalid (negative)", Ly);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Ly = %f is invalid (has to be positive)",
+                                  Ly);
   }
 
   if (not is_increasing(z)) {
@@ -1269,71 +1457,125 @@ void Parameters::validate() const {
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
 std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
-  auto config = ctx->config();
-
-  auto input_file = config->get_string("input.file");
-  bool bootstrap  = config->get_flag("input.bootstrap");
+  auto config      = ctx->config();
+  auto unit_system = ctx->unit_system();
+  auto log         = ctx->log();
 
   auto r = grid::string_to_registration(config->get_string("grid.registration"));
 
-  auto log = ctx->log();
+  bool bootstrap = config->get_flag("input.bootstrap");
 
-  if (not input_file.empty() and (not bootstrap)) {
-    // get grid from a PISM input file
-    return Grid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
+  auto grid_file_name = config->get_string("grid.file");
+  if (bootstrap and not grid_file_name.empty()) {
+    auto parts = split(grid_file_name, ':');
+    auto file_name = parts[0];
+    std::string variable_name = parts.size() == 2 ? parts[1] : "";
+
+    File grid_file(ctx->com(), file_name, io::PISM_NETCDF3, io::PISM_READONLY);
+
+    auto P = grid::Parameters::FromGridDefinition(unit_system, grid_file, variable_name, r);
+
+    // process configuration parameters controlling grid size and extent, overriding
+    // values read from a file *if* configuration parameters are set to "valid" numbers
+    P.horizontal_size_and_extent_from_options(*config);
+    // process configuration parameters controlling vertical grid size and extent
+    P.vertical_grid_from_options(*config);
+    // process configuration parameters controlling grid ownership ranges
+    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
+
+    auto result = std::make_shared<Grid>(ctx, P);
+
+    auto mapping_info = MappingInfo::FromFile(grid_file, P.variable_name, unit_system);
+    result->set_mapping_info(mapping_info);
+
+    units::Converter km(unit_system, "m", "km");
+
+    log->message(
+        2,
+        "  setting computational box for ice from variable '%s' in grid definition file '%s'\n"
+        "  and user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+        P.variable_name.c_str(), grid_file_name.c_str(), km(result->x0() - result->Lx()),
+        km(result->x0() + result->Lx()), km(result->y0() - result->Ly()),
+        km(result->y0() + result->Ly()), result->Lz());
+
+    return result;
   }
 
-  if (not input_file.empty() and bootstrap) {
-    // bootstrapping; get domain size defaults from an input file, allow overriding all grid
-    // parameters using command-line options
+  auto input_file_name = config->get_string("input.file");
 
-    grid::Parameters input_grid(*config);
+  if (not input_file_name.empty()) {
+    File input_file(ctx->com(), input_file_name, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    bool grid_info_found = false;
+    // list of variables to try getting grid information from
+    std::vector<std::string> candidates = { "enthalpy", "temp" };
+    if (bootstrap) {
+      candidates = { "land_ice_thickness", "bedrock_altitude", "thk", "topg" };
+    }
 
-    File file(ctx->com(), input_file, io::PISM_NETCDF3, io::PISM_READONLY);
-
-    for (const auto *name : { "land_ice_thickness", "bedrock_altitude", "thk", "topg" }) {
-
-      grid_info_found = file.find_variable(name);
-      if (not grid_info_found) {
-        // Failed to find using a short name. Try using name as a
-        // standard name...
-        grid_info_found = file.find_variable("unlikely_name", name).exists;
-      }
-
-      if (grid_info_found) {
-        input_grid = grid::Parameters(*ctx, file, name, r);
+    // loop over candidates and save the name of the first variable we found
+    std::string variable_name;
+    for (const auto &name : candidates) {
+      auto V = input_file.find_variable(name, name);
+      if (V.exists) {
+        variable_name = V.name;
         break;
       }
     }
 
-    if (not grid_info_found) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no geometry information found in '%s'",
-                                    input_file.c_str());
+    // stop with an error message if we could not find anything
+    if (variable_name.empty()) {
+      auto list = pism::join(candidates, ", ");
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION, "no geometry information found in '%s' (checked variables '%s')",
+          input_file_name.c_str(), list.c_str());
     }
 
-    // process all possible options controlling grid parameters, overriding values read
-    // from a file
-    input_grid.horizontal_size_from_options();
-    input_grid.horizontal_extent_from_options(ctx->unit_system());
-    input_grid.vertical_grid_from_options(config);
-    input_grid.ownership_ranges_from_options(ctx->size());
+    if (bootstrap) {
+      // bootstrapping; get domain size defaults from an input file, allow overriding all grid
+      // parameters using command-line options
 
-    auto result = std::make_shared<Grid>(ctx, input_grid);
+      grid::Parameters input_grid(unit_system, input_file, variable_name, r);
 
-    units::System::Ptr sys = ctx->unit_system();
-    units::Converter km(sys, "m", "km");
+      // process configuration parameters controlling grid size and extent, overriding
+      // values read from a file *if* configuration parameters are set to "valid" numbers
+      input_grid.horizontal_size_and_extent_from_options(*config);
+      // process configuration parameters controlling vertical grid size and extent
+      input_grid.vertical_grid_from_options(*config);
+      // process configuration parameters controlling grid ownership ranges
+      input_grid.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
-    // report on resulting computational box
-    log->message(2,
-                 "  setting computational box for ice from '%s' and\n"
-                 "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-                 input_file.c_str(), km(result->x0() - result->Lx()),
-                 km(result->x0() + result->Lx()), km(result->y0() - result->Ly()),
-                 km(result->y0() + result->Ly()), result->Lz());
+      auto result = std::make_shared<Grid>(ctx, input_grid);
 
-    return result;
+      units::Converter km(unit_system, "m", "km");
+
+      // get grid projection info
+      auto grid_mapping = MappingInfo::FromFile(input_file, variable_name, unit_system);
+
+      result->set_mapping_info(grid_mapping);
+
+      // report on resulting computational box
+      log->message(
+          2,
+          "  setting computational box for ice from variable '%s' in '%s'\n"
+          "  and user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+          variable_name.c_str(), input_file_name.c_str(), km(result->x0() - result->Lx()),
+          km(result->x0() + result->Lx()), km(result->y0() - result->Ly()),
+          km(result->y0() + result->Ly()), result->Lz());
+
+      return result;
+    }
+
+    {
+      // get grid from a PISM input file
+      auto result = Grid::FromFile(ctx, input_file, candidates, r);
+
+      // get grid projection info
+      auto grid_mapping = MappingInfo::FromFile(input_file, variable_name, unit_system);
+
+      result->set_mapping_info(grid_mapping);
+
+      return result;
+    }
   }
 
   {
@@ -1342,10 +1584,9 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     // Use defaults from the configuration database
     grid::Parameters P(*ctx->config());
-    P.horizontal_size_from_options();
-    P.horizontal_extent_from_options(ctx->unit_system());
-    P.vertical_grid_from_options(ctx->config());
-    P.ownership_ranges_from_options(ctx->size());
+    P.horizontal_size_and_extent_from_options(*ctx->config());
+    P.vertical_grid_from_options(*ctx->config());
+    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     return std::make_shared<Grid>(ctx, P);
   }
@@ -1379,12 +1620,11 @@ int Grid::pio_io_decomposition(int dof, int output_datatype) const {
       int ndims = dof < 2 ? 2 : 3;
 
       // the last element is not used if ndims == 2
-      std::vector<int> gdimlen{(int)My(), (int)Mx(), dof};
-      std::vector<long int> start{ys(), xs(), 0}, count{ym(), xm(), dof};
+      std::vector<int> gdimlen{ (int)My(), (int)Mx(), dof };
+      std::vector<long int> start{ ys(), xs(), 0 }, count{ ym(), xm(), dof };
 
-      int stat = PIOc_InitDecomp_bc(m_impl->ctx->pio_iosys_id(),
-                                    output_datatype, ndims, gdimlen.data(),
-                                    start.data(), count.data(), &result);
+      int stat = PIOc_InitDecomp_bc(m_impl->ctx->pio_iosys_id(), output_datatype, ndims,
+                                    gdimlen.data(), start.data(), count.data(), &result);
       m_impl->io_decompositions[key] = result;
       if (stat != PIO_NOERR) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -1393,11 +1633,31 @@ int Grid::pio_io_decomposition(int dof, int output_datatype) const {
     }
   }
 #else
-  (void) dof;
-  (void) output_datatype;
+  (void)dof;
+  (void)output_datatype;
 #endif
   return result;
 }
+
+std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<double> &levels,
+                                                            const File &input_file,
+                                                            const std::string &variable_name,
+                                                            InterpolationType type) const {
+
+  auto name = grid_name(input_file, variable_name, ctx()->unit_system());
+
+  if (levels.size() < 2) {
+    if (m_impl->regridding_2d[name] == nullptr) {
+      m_impl->regridding_2d[name] =
+        InputInterpolation::create(*this, levels, input_file, variable_name, type);
+    }
+
+    return m_impl->regridding_2d[name];
+  }
+
+  return InputInterpolation::create(*this, levels, input_file, variable_name, type);
+}
+
 
 PointsWithGhosts::PointsWithGhosts(const Grid &grid, unsigned int stencil_width) {
   m_i_first = grid.xs() - stencil_width;

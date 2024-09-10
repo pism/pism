@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -78,12 +78,12 @@ enum InterpolationType : int {LINEAR, NEAREST, PIECEWISE_CONSTANT};
  * constant extrapolation for points outside the interval covered by input data.
  *
  */
-class Interpolation {
+class Interpolation1D {
 public:
-  Interpolation(InterpolationType type, const std::vector<double> &input_x,
-                const std::vector<double> &output_x);
-  Interpolation(InterpolationType type, const double *input_x, unsigned int input_x_size,
-                const double *output_x, unsigned int output_x_size);
+  Interpolation1D(InterpolationType type, const std::vector<double> &input_x,
+                  const std::vector<double> &output_x);
+  Interpolation1D(InterpolationType type, const double *input_x, unsigned int input_x_size,
+                  const double *output_x, unsigned int output_x_size);
 
   const std::vector<int>& left() const;
   const std::vector<int>& right() const;

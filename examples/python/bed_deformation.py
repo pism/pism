@@ -79,11 +79,11 @@ def run(scenario, plot, pause, save):
     config.set_number("grid.Mx", 193)
     config.set_number("grid.My", 129)
 
-    config.set_number("grid.Lx", 3000e3)
-    config.set_number("grid.Ly", 2000e3)
+    config.set_number("grid.Lx", 3000) # in km
+    config.set_number("grid.Ly", 2000) # in km
 
     config.set_number("grid.Mz", 2)
-    config.set_number("grid.Lz", 1000)
+    config.set_number("grid.Lz", 1000) # in m
 
     scenarios = {"1": (False, False, 1000.0),
                  "2": (True,  False, 1000.0),

@@ -152,8 +152,9 @@ void IceModel::init_extras() {
     File file(m_grid->com, m_extra_filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     std::string time_name = m_config->get_string("time.dimension_name");
-    if (file.find_variable(time_name)) {
-      double time_max = vector_max(file.read_dimension(time_name));
+    if (file.variable_exists(time_name)) {
+      auto time = io::read_1d_variable(file, time_name, m_time->units_string(), m_sys);
+      double time_max = vector_max(time);
 
       while (m_next_extra + 1 < m_extra_times.size() && m_extra_times[m_next_extra + 1] < time_max) {
         m_next_extra++;

@@ -29,7 +29,7 @@
 #include "pism/util/Grid.hh"
 
 #include "pism/util/error_handling.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 
 namespace pism {
 
@@ -87,7 +87,7 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid
   count[Z_AXIS] = std::max((int)input_grid.z.size(), 1); // read at least one level
 
   if (type == LINEAR or type == NEAREST) {
-    z.reset(new Interpolation(type, input_grid.z, z_internal));
+    z.reset(new Interpolation1D(type, input_grid.z, z_internal));
   } else {
     throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
   }
@@ -120,14 +120,14 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid
   count[Z_AXIS] = 1;
 
   if (type == LINEAR or type == NEAREST) {
-    x = std::make_shared<Interpolation>(type, &input_grid.x[start[X_AXIS]], count[X_AXIS],
+    x = std::make_shared<Interpolation1D>(type, &input_grid.x[start[X_AXIS]], count[X_AXIS],
                                         &internal_grid.x()[internal_grid.xs()], internal_grid.xm());
 
-    y = std::make_shared<Interpolation>(type, &input_grid.y[start[Y_AXIS]], count[Y_AXIS],
+    y = std::make_shared<Interpolation1D>(type, &input_grid.y[start[Y_AXIS]], count[Y_AXIS],
                                         &internal_grid.y()[internal_grid.ys()], internal_grid.ym());
 
     std::vector<double> zz = {0.0};
-    z = std::make_shared<Interpolation>(type, zz, zz);
+    z = std::make_shared<Interpolation1D>(type, zz, zz);
   } else {
     throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
   }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 #include "pism/util/pism_utilities.hh" // pism::combine()
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 
 namespace pism {
 

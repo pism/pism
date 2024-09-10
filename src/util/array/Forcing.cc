@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 Constantine Khroulev
+// Copyright (C) 2009--2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,11 +31,12 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/array/Array_impl.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/InputInterpolation.hh"
 
 namespace pism {
 namespace array {
@@ -81,7 +82,7 @@ struct Forcing::Data {
   InterpolationType interp_type;
 
   //! temporal interpolation code
-  std::shared_ptr<Interpolation> interp;
+  std::shared_ptr<Interpolation1D> interp;
 
   //! forcing period, in seconds
   double period;
@@ -176,7 +177,10 @@ Forcing::Forcing(std::shared_ptr<const Grid> grid, const std::string &short_name
 }
 
 void Forcing::allocate(unsigned int buffer_size, InterpolationType interpolation_type) {
-  m_impl->report_range = false;
+
+  if (buffer_size > 1) {
+    m_impl->report_range = false;
+  }
 
   m_data->interp_type = interpolation_type;
   m_data->buffer_size = buffer_size;
@@ -202,7 +206,7 @@ Forcing::~Forcing() {
   delete m_data;
 }
 
-unsigned int Forcing::buffer_size() {
+unsigned int Forcing::buffer_size() const {
   return m_data->buffer_size;
 }
 
@@ -253,9 +257,7 @@ void Forcing::init(const std::string &filename, bool periodic) {
     if (not one_record) {
       std::vector<double> times{};
       std::vector<double> bounds{};
-      io::read_time_info(*ctx->log(), ctx->unit_system(),
-                         file, time_name, time->units_string(),
-                         times, bounds);
+      io::read_time_info(ctx->unit_system(), file, time_name, time->units_string(), times, bounds);
 
       if (periodic) {
         m_data->period_start = bounds.front();
@@ -299,7 +301,7 @@ void Forcing::init(const std::string &filename, bool periodic) {
       init_periodic_data(file);
     }
   } catch (RuntimeError &e) {
-    e.add_context("reading %s (%s) from '%s'",
+    e.add_context("reading '%s' (%s) from '%s'",
                   m_impl->metadata[0].get_string("long_name").c_str(),
                   m_impl->metadata[0].get_name().c_str(),
                   m_data->filename.c_str());
@@ -321,7 +323,7 @@ void Forcing::init_periodic_data(const File &file) {
 
   auto buffer_required = n_records + 2 * static_cast<int>(m_data->interp_type == LINEAR);
 
-  if (m_data->buffer_size < buffer_required) {
+  if (buffer_size() < buffer_required) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "the buffer is too small to contain periodic data");
   }
@@ -333,18 +335,11 @@ void Forcing::init_periodic_data(const File &file) {
   auto variable = m_impl->metadata[0];
   auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-  grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
-
-  LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
+  auto interp = grid()->get_interpolation({0.0}, file, V.name, m_impl->interpolation_type);
 
   for (unsigned int j = 0; j < n_records; ++j) {
-    {
-      lic.start[T_AXIS] = (int)j;
-      lic.count[T_AXIS] = 1;
 
-      petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(variable, *grid(), lic, file, tmp_array.get());
-    }
+    interp->regrid(variable, file, (int)j, *grid(), vec());
 
     auto time = ctx->time();
     auto log  = ctx->log();
@@ -390,7 +385,7 @@ void Forcing::init_periodic_data(const File &file) {
   }
 
   set_record(0);
-  set_record(m_data->buffer_size - 1);
+  set_record(buffer_size() - 1);
 
   // add two more records to m_data->time
   {
@@ -462,16 +457,16 @@ void Forcing::update(double t, double dt) {
     }
   }
 
-  Interpolation I(m_data->interp_type, m_data->time, { t, t + dt });
+  Interpolation1D I(m_data->interp_type, m_data->time, { t, t + dt });
 
   unsigned int first = I.left(0), last = I.right(1), N = last - first + 1;
 
   // check if all the records necessary to cover this interval fit in the
   // buffer:
-  if (N > m_data->buffer_size) {
+  if (N > buffer_size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "cannot read %d records of %s (buffer size: %d)", N,
-                                  m_impl->name.c_str(), m_data->buffer_size);
+                                  m_impl->name.c_str(), buffer_size());
   }
 
   update(first);
@@ -487,7 +482,7 @@ void Forcing::update(unsigned int start) {
                                   "Forcing::update(int start): start = %d is invalid", start);
   }
 
-  unsigned int missing = std::min(m_data->buffer_size, time_size - start);
+  unsigned int missing = std::min(buffer_size(), time_size - start);
 
   if (start == static_cast<unsigned int>(m_data->first)) {
     // nothing to do
@@ -520,16 +515,13 @@ void Forcing::update(unsigned int start) {
   auto t = m_impl->grid->ctx()->time();
 
   auto log = m_impl->grid->ctx()->log();
-  if (this->buffer_size() > 1) {
+  if (buffer_size() > 1) {
     log->message(4,
                  "  reading \"%s\" into buffer\n"
                  "          (short_name = %s): %d records, time %s through %s...\n",
                  metadata().get_string("long_name").c_str(), m_impl->name.c_str(), missing,
                  t->date(m_data->time[start]).c_str(),
                  t->date(m_data->time[start + missing - 1]).c_str());
-    m_impl->report_range = false;
-  } else {
-    m_impl->report_range = true;
   }
 
   File file(m_impl->grid->com, m_data->filename, io::PISM_GUESS, io::PISM_READONLY);
@@ -538,16 +530,11 @@ void Forcing::update(unsigned int start) {
 
   try {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
-    grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
 
-    LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
+    auto interp = grid()->get_interpolation({0.0}, file, V.name, m_impl->interpolation_type);
 
     for (unsigned int j = 0; j < missing; ++j) {
-      lic.start[T_AXIS] = (int)(start + j);
-      lic.count[T_AXIS] = 1;
-
-      petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(variable, *m_impl->grid, lic, file, tmp_array.get());
+      interp->regrid(variable, file, (int)(start + j), *grid(), vec());
 
       log->message(5, " %s: reading entry #%02d, year %s...\n", m_impl->name.c_str(), start + j,
                    t->date(m_data->time[start + j]).c_str());
@@ -615,7 +602,7 @@ MaxTimestep Forcing::max_timestep(double t) const {
   size_t L = gsl_interp_bsearch(m_data->time.data(), t, 0, time_size - 1);
 
   // find the index of the last record we could read in given the size of the buffer
-  size_t R = L + m_data->buffer_size - 1;
+  size_t R = L + buffer_size() - 1;
 
   if (R >= time_size - 1) {
     // We can read all the remaining records: no time step restriction from now on
@@ -792,7 +779,7 @@ void Forcing::init_interpolation(const std::vector<double> &ts) {
     times_requested = ts;
   }
 
-  m_data->interp.reset(new Interpolation(m_data->interp_type,
+  m_data->interp.reset(new Interpolation1D(m_data->interp_type,
                                          &m_data->time[m_data->first],
                                          m_data->n_records,
                                          times_requested.data(),

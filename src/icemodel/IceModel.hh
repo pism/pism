@@ -469,7 +469,6 @@ private:
   double m_start_time;    // this is used in the wall-clock-time checkpoint code
 };
 
-void write_mapping(const File &file, const pism::MappingInfo &info);
 void write_run_stats(const File &file, const pism::VariableMetadata &stats);
 
 MaxTimestep reporting_max_timestep(const std::vector<double> &times,

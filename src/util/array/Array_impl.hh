@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@
 #include <gsl/gsl_interp.h>
 
 #include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/VariableMetadata.hh"
 
 namespace pism {
@@ -114,9 +114,8 @@ struct Array::Impl {
 void global_to_local(petsc::DM &dm, Vec source, Vec destination);
 
 // set default value or stop with an error message (during regridding)
-void set_default_value_or_stop(const std::string &filename, const VariableMetadata &variable,
-                               io::Default default_value, const Logger &log,
-                               Vec output);
+void set_default_value_or_stop(const VariableMetadata &variable, io::Default default_value,
+                               const Logger &log, Vec output);
 
 } // end of namespace array
 } // end of namespace pism

@@ -162,7 +162,7 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
 
     m_log->message(2, "  creating till friction angle map from bed elevation...\n");
 
-    if (input_file.find_variable(m_till_phi.metadata().get_name())) {
+    if (input_file.variable_exists(m_till_phi.metadata().get_name())) {
       // till_phi is present in the input file
       m_log->message(2,
                      "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"

@@ -24,8 +24,10 @@ ctx.log.set_threshold(0)
 def create_dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.ownership_ranges_from_options(ctx.size)
+    Mx = 5
+    Lx = 1e3
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
     return PISM.Grid(ctx.ctx, params)
 
 
@@ -158,7 +160,11 @@ def grid_from_file_test():
 
         enthalpy.write(pio)
 
-        grid2 = PISM.Grid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
+        pio.close()
+
+        input_file = PISM.File(ctx.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+
+        grid2 = PISM.Grid.FromFile(ctx.ctx, input_file, ["enthalpy"], PISM.CELL_CORNER)
     finally:
         os.remove(file_name)
 
@@ -319,16 +325,14 @@ def modelvecs_test():
 def sia_test():
     "Test the PISM.sia module"
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.Lx = 1e5
-    params.Ly = 1e5
+    Mx = 100
+    Lx = 1e5
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
     params.Lz = 1000
-    params.Mx = 100
-    params.My = 100
     params.Mz = 11
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
-    params.ownership_ranges_from_options(ctx.size)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
     grid = PISM.Grid(ctx.ctx, params)
 
     enthalpyconverter = PISM.EnthalpyConverter(ctx.config)
@@ -548,7 +552,7 @@ def linear_interpolation_test(plot=False):
 
     values = F(x_input)
 
-    i = PISM.Interpolation(PISM.LINEAR, x_input, x_output)
+    i = PISM.Interpolation1D(PISM.LINEAR, x_input, x_output)
 
     F_interpolated = i.interpolate(values)
 
@@ -765,10 +769,10 @@ def regridding_test():
     import numpy as np
 
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.Mx = 3
-    params.My = 3
-    params.ownership_ranges_from_options(1)
+    Mx = 3
+    Lx = 1e5
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
+    params.ownership_ranges_from_options(ctx.config, 1)
 
     grid = PISM.Grid(ctx.ctx, params)
 
@@ -849,16 +853,14 @@ def vertical_extrapolation_during_regridding_test():
     "Test extrapolation in the vertical direction"
     # create a grid with 11 levels, 1000m thick
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.Lx = 1e5
-    params.Ly = 1e5
-    params.Mx = 3
-    params.My = 3
+    Mx = 3
+    Lx = 1e5
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
     params.Mz = 11
     params.Lz = 1000
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
-    params.ownership_ranges_from_options(ctx.size)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
 
     z = np.linspace(0, params.Lz, params.Mz)
     params.z[:] = z
@@ -1058,7 +1060,7 @@ def test_interpolation_other():
     x = [0.0, 10.0]
 
     try:
-        PISM.Interpolation(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
+        PISM.Interpolation1D(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
         assert False, "failed to detect non-increasing times"
     except RuntimeError as e:
         print(e)
@@ -1078,7 +1080,7 @@ def test_interpolation_other():
         print(e)
         pass
 
-    I = PISM.Interpolation(PISM.LINEAR, [0, 1, 2], [0.5, 1.5])
+    I = PISM.Interpolation1D(PISM.LINEAR, [0, 1, 2], [0.5, 1.5])
     np.testing.assert_almost_equal(I.left(), [0, 1])
     np.testing.assert_almost_equal(I.right(), [1, 2])
     np.testing.assert_almost_equal(I.alpha(), [0.5, 0.5])
@@ -1091,7 +1093,7 @@ def test_nearest_neighbor():
     xx = np.linspace(-0.9, 0.9, 10)
     yy = np.ones_like(xx) * (xx > 0)
 
-    zz = PISM.Interpolation(PISM.NEAREST, x, xx).interpolate(y)
+    zz = PISM.Interpolation1D(PISM.NEAREST, x, xx).interpolate(y)
 
     np.testing.assert_almost_equal(yy, zz)
 
@@ -1102,8 +1104,10 @@ class AgeModel(TestCase):
 
     def create_dummy_grid(self):
         "Create a dummy grid"
-        params = PISM.GridParameters(ctx.config)
-        params.ownership_ranges_from_options(ctx.size)
+        Mx = 61
+        Lx = 1e3
+        params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
+        params.ownership_ranges_from_options(ctx.config, ctx.size)
         return PISM.Grid(ctx.ctx, params)
 
     def test_age_model_runs(self):

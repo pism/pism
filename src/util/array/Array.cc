@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2023 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2024 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,27 +20,31 @@
 
 #include <cmath>
 #include <cstddef>
+#include <memory>
 #include <petscdraw.h>
 #include <string>
+#include <vector>
 
 #include "pism/util/array/Array.hh"
 #include "pism/util/array/Array_impl.hh"
 
-#include "pism/util/Time.hh"
-#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Time.hh"
 
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/petscwrappers/VecScatter.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/io/IO_Flags.hh"
+
+#include "pism/util/InputInterpolation.hh"
 
 namespace pism {
 
@@ -56,19 +60,15 @@ void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
   PISM_CHK(ierr, "DMGlobalToLocalEnd");
 }
 
-Array::Array(std::shared_ptr<const Grid> grid,
-             const std::string &name,
-             Kind ghostedp,
-             size_t dof,
-             size_t stencil_width,
-             const std::vector<double> &zlevels) {
-  m_impl = new Impl();
+Array::Array(std::shared_ptr<const Grid> grid, const std::string &name, Kind ghostedp, size_t dof,
+             size_t stencil_width, const std::vector<double> &zlevels) {
+  m_impl  = new Impl();
   m_array = nullptr;
 
-  m_impl->name = name;
-  m_impl->grid = grid;
+  m_impl->name    = name;
+  m_impl->grid    = grid;
   m_impl->ghosted = (ghostedp == WITH_GHOSTS);
-  m_impl->dof = dof;
+  m_impl->dof     = dof;
   m_impl->zlevels = zlevels;
 
   const auto &config = grid->ctx()->config();
@@ -86,18 +86,17 @@ Array::Array(std::shared_ptr<const Grid> grid,
   if (m_impl->dof > 1) {
     // dof > 1: this is a 2D vector
     for (unsigned int j = 0; j < m_impl->dof; ++j) {
-      m_impl->metadata.push_back({system, pism::printf("%s[%d]", name.c_str(), j)});
+      m_impl->metadata.push_back({ system, pism::printf("%s[%d]", name.c_str(), j) });
     }
   } else {
     // both 2D and 3D vectors
-    m_impl->metadata = {{system, name, zlevels}};
+    m_impl->metadata = { { system, name, zlevels } };
   }
 
   if (zlevels.size() > 1) {
     m_impl->bsearch_accel = gsl_interp_accel_alloc();
     if (m_impl->bsearch_accel == NULL) {
-      throw RuntimeError(PISM_ERROR_LOCATION,
-                         "Failed to allocate a GSL interpolation accelerator");
+      throw RuntimeError(PISM_ERROR_LOCATION, "Failed to allocate a GSL interpolation accelerator");
     }
   }
 }
@@ -137,7 +136,7 @@ unsigned int Array::ndof() const {
   return m_impl->dof;
 }
 
-const std::vector<double>& Array::levels() const {
+const std::vector<double> &Array::levels() const {
   return m_impl->zlevels;
 }
 
@@ -162,14 +161,14 @@ std::vector<int> Array::shape() const {
   auto grid = m_impl->grid;
 
   if (ndims() == 3) {
-    return {(int)grid->My(), (int)grid->Mx(), (int)levels().size()};
+    return { (int)grid->My(), (int)grid->Mx(), (int)levels().size() };
   }
 
   if (ndof() == 1) {
-    return {(int)grid->My(), (int)grid->Mx()};
+    return { (int)grid->My(), (int)grid->Mx() };
   }
 
-  return {(int)grid->My(), (int)grid->Mx(), (int)ndof()};
+  return { (int)grid->My(), (int)grid->Mx(), (int)ndof() };
 }
 
 void Array::set_begin_access_use_dof(bool flag) {
@@ -177,9 +176,8 @@ void Array::set_begin_access_use_dof(bool flag) {
 }
 
 void Array::set_interpolation_type(InterpolationType type) {
-  if (not (type == LINEAR or type == NEAREST)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid interpolation type: %d", (int)type);
+  if (not(type == LINEAR or type == NEAREST)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid interpolation type: %d", (int)type);
   }
   m_impl->interpolation_type = type;
 }
@@ -200,8 +198,7 @@ static NormType int_to_normtype(int input) {
   case NORM_INFINITY:
     return NORM_INFINITY;
   default:
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid norm type: %d",
-                                  input);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid norm type: %d", input);
   }
 }
 
@@ -212,7 +209,7 @@ void Array::add(double alpha, const Array &x) {
   PetscErrorCode ierr = VecAXPY(vec(), alpha, x.vec());
   PISM_CHK(ierr, "VecAXPY");
 
-  inc_state_counter();          // mark as modified
+  inc_state_counter(); // mark as modified
 }
 
 //! Result: v[j] <- v[j] + alpha for all j. Calls VecShift.
@@ -220,7 +217,7 @@ void Array::shift(double alpha) {
   PetscErrorCode ierr = VecShift(vec(), alpha);
   PISM_CHK(ierr, "VecShift");
 
-  inc_state_counter();          // mark as modified
+  inc_state_counter(); // mark as modified
 }
 
 //! Result: v <- v * alpha. Calls VecScale.
@@ -358,40 +355,21 @@ const std::string &Array::get_name() const {
   return m_impl->name;
 }
 
-void set_default_value_or_stop(const std::string &filename, const VariableMetadata &variable,
-                               io::Default default_value, const Logger &log,
-                               Vec output) {
+void set_default_value_or_stop(const VariableMetadata &variable, io::Default default_value,
+                               const Logger &log, Vec output) {
 
-  if (not default_value.exists()) {
+  if (default_value.exists()) {
+    // If it is optional, fill with the provided default value.
+    log.message(2, "  variable %s (%s) is not found: using the default constant\n",
+                variable.get_name().c_str(), variable.get_string("long_name").c_str());
+
+    PetscErrorCode ierr = VecSet(output, default_value);
+    PISM_CHK(ierr, "VecSet");
+  } else {
     // if it's critical, print an error message and stop
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't find '%s' in the regridding file '%s'.",
-                                  variable.get_name().c_str(), filename.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find variable '%s'",
+                                  variable.get_name().c_str());
   }
-
-  // If it is optional, fill with the provided default value.
-  // units::Converter constructor will make sure that units are compatible.
-  units::Converter c(variable.unit_system(), variable["units"], variable["output_units"]);
-
-  std::string spacer(variable.get_name().size(), ' ');
-  log.message(2,
-              "  absent %s / %-10s\n"
-              "         %s \\ not found; using default constant %7.2f (%s)\n",
-              variable.get_name().c_str(), variable.get_string("long_name").c_str(), spacer.c_str(),
-              c(default_value), variable.get_string("output_units").c_str());
-
-  PetscErrorCode ierr = VecSet(output, default_value);
-  PISM_CHK(ierr, "VecSet");
-}
-
-static std::array<double, 2> compute_range(MPI_Comm com, const double *data, size_t data_size) {
-  double min_result = data[0], max_result = data[0];
-  for (size_t k = 0; k < data_size; ++k) {
-    min_result = std::min(min_result, data[k]);
-    max_result = std::max(max_result, data[k]);
-  }
-
-  return { GlobalMin(com, min_result), GlobalMax(com, max_result) };
 }
 
 //! Gets an Array from a file `file`, interpolating onto the current grid.
@@ -399,62 +377,33 @@ static std::array<double, 2> compute_range(MPI_Comm com, const double *data, siz
  */
 void Array::regrid_impl(const File &file, io::Default default_value) {
 
+  assert(ndims() == 2);
+
   auto log = grid()->ctx()->log();
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  auto da2 = grid()->get_dm(1, 0);
+  auto dm_for_io = ndof() == 1 ? dm() : grid()->get_dm(1, 0);
 
   // a temporary one-component vector that uses a compatible domain decomposition
-  petsc::TemporaryGlobalVec tmp(da2);
+  petsc::TemporaryGlobalVec tmp(dm_for_io);
 
   for (unsigned int j = 0; j < ndof(); ++j) {
     auto variable = metadata(j);
 
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-    if (not V.exists) {
-      set_default_value_or_stop(file.name(), variable, default_value, *log, tmp);
+    if (V.exists) {
+      auto interp = grid()->get_interpolation(levels(), file, V.name, m_impl->interpolation_type);
+
+      int last_record = -1;
+      interp->regrid(variable, file, last_record, *grid(), tmp);
     } else {
-      grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
-
-      input_grid.report(*log, 4, variable.unit_system());
-
-      // Note: this implementation is used for 2D fields, so we don't need to use the
-      // internal vertical (Z) grid.
-      io::check_input_grid(input_grid, *grid(), {0.0});
-
-      LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
-
-      // Note: this call will read the last time record (the index is set in `lic` based on
-      // info in `input_grid`).
-      petsc::VecArray tmp_array(tmp);
-      io::regrid_spatial_variable(metadata(j), *grid(), lic, file, tmp_array.get());
-
-      // Check the range and report it if necessary.
-      {
-        const size_t data_size = grid()->xm() * grid()->ym() * levels().size();
-        auto range = compute_range(grid()->com, tmp_array.get(), data_size);
-        auto min   = range[0];
-        auto max   = range[1];
-
-        if ((not std::isfinite(min)) or (not std::isfinite(max))) {
-          throw RuntimeError::formatted(
-              PISM_ERROR_LOCATION,
-              "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
-              variable.get_name().c_str(), variable.get_string("long_name").c_str());
-        }
-
-        // Check the range and warn the user if needed:
-        variable.check_range(file.name(), min, max);
-        if (m_impl->report_range) {
-          variable.report_range(*log, min, max, V.found_using_standard_name);
-        }
-      }
+      set_default_value_or_stop(variable, default_value, *log, tmp);
     }
 
-    set_dof(da2, tmp, j);
-  }
+    set_dof(dm_for_io, tmp, j);
+  } // end of the loop over degrees of freedom
 
   // The calls above only set the values owned by a processor, so we need to
   // communicate if m_has_ghosts == true:
@@ -790,6 +739,29 @@ void Array::regrid(const std::string &filename, io::Default default_value) {
   this->regrid(file, default_value);
 }
 
+static void check_range(petsc::Vec &v,
+                        const SpatialVariableMetadata &metadata,
+                        const std::string &filename,
+                        const Logger &log,
+                        bool report_range) {
+  PetscErrorCode ierr = 0;
+
+  double min = 0.0;
+  double max = 0.0;
+
+  ierr = VecMin(v, NULL, &min);
+  PISM_CHK(ierr, "VecMin");
+  ierr = VecMax(v, NULL, &max);
+  PISM_CHK(ierr, "VecMax");
+
+  // Check the range and warn the user if needed:
+  metadata.check_range(filename, min, max);
+  if (report_range) {
+    metadata.report_range(log, min, max);
+  }
+}
+
+
 /** Read a field from a file, interpolating onto the current grid.
  *
  * When `flag` is set to `CRITICAL`, stop if could not find the variable
@@ -816,13 +788,31 @@ void Array::regrid(const std::string &filename, io::Default default_value) {
  * @return 0 on success
  */
 void Array::regrid(const File &file, io::Default default_value) {
-  m_impl->grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
-                                      timestamp(m_impl->grid->com).c_str(), m_impl->name.c_str());
+  auto log = m_impl->grid->ctx()->log();
+
+  log->message(3, "  [%s] Regridding %s...\n", timestamp(m_impl->grid->com).c_str(),
+               m_impl->name.c_str());
   double start_time = get_time(m_impl->grid->com);
   m_impl->grid->ctx()->profiling().begin("io.regridding");
   try {
     this->regrid_impl(file, default_value);
     inc_state_counter();          // mark as modified
+
+    if (ndims() == 2) {
+      for (unsigned k = 0; k < ndof(); ++k) {
+        auto dm = grid()->get_dm(1, 0);
+
+        petsc::TemporaryGlobalVec v(dm);
+
+        get_dof(dm, v, k);
+
+        check_range(v, metadata(k), file.name(), *log, m_impl->report_range);
+      }
+    } else {
+      check_range(vec(), metadata(0), file.name(), *log, m_impl->report_range);
+    }
+
+
   } catch (RuntimeError &e) {
     e.add_context("regridding '%s' from '%s'",
                   this->get_name().c_str(), file.name().c_str());
@@ -834,9 +824,9 @@ void Array::regrid(const File &file, io::Default default_value) {
     time_spent = end_time - start_time;
 
   if (time_spent > 1.0) {
-    m_impl->grid->ctx()->log()->message(3, "  done in %f seconds.\n", time_spent);
+    log->message(3, "  done in %f seconds.\n", time_spent);
   } else {
-    m_impl->grid->ctx()->log()->message(3, "  done.\n");
+    log->message(3, "  done.\n");
   }
 }
 

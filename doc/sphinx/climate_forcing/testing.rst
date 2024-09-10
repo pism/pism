@@ -18,16 +18,16 @@ code to visualize the climate mass balance and temperature boundary conditions p
 using a combination of options and input files. This is helpful during the process of
 creating PISM-readable data files, and modeling with such.
 
-To do this, use the option :opt:`-test_climate_models` (which is equivalent to
-:opt:`-stress_balance none` and :opt:`-energy none`) together with PISM's reporting
-capabilities (:opt:`-extra_file`, :opt:`-extra_times`, :opt:`-extra_vars`).
+To do this, :config:`stress_balance.model` to "none", :config:`energy.model` to "none" and
+:config:`age.enabled` to "false" and use PISM's reporting capabilities
+(:opt:`-extra_file`, :opt:`-extra_times`, :opt:`-extra_vars`) to monitor.
 
 Turning "off" ice dynamics saves computational time while allowing one to use the same
-options as in an actual modeling run. Note that :opt:`-test_climate_models` does *not*
-disable geometry updates, so one can check if surface elevation feedbacks modeled using
-lapse rates (and similar) work correctly. Please use the :opt:`-no_mass` command-line
-option to fix ice geometry. (This may be necessary if the mass balance rate data would
-result in extreme ice sheet growth that is not balanced by ice flow in this setup.)
+options as in an actual modeling run. Note that we do *not* disable geometry updates, so
+one can check if surface elevation feedbacks modeled using lapse rates (and similar) work
+correctly. Please set :config:`geometry.update.enabled` to "false" to fix ice geometry.
+(This may be necessary if the mass balance rate data would result in extreme ice sheet
+growth that is not balanced by ice flow in this setup.)
 
 As an example, set up an ice sheet state file and check if climate data is read in
 correctly:
@@ -56,7 +56,11 @@ Assuming that ``g20km_10ka.nc`` was created :ref:`as described in the User's Man
 
 .. code-block:: none
 
-    pismr -test_climate_models -no_mass -i g20km_10ka.nc \
+    pismr -stress_balance.model none \
+          -energy.model none \
+          -age.enabled no \
+          -geometry.update.enabled no \
+          -i g20km_10ka.nc \
           -atmosphere searise_greenland -surface pdd \
           -ys 0 -ye 1 -extra_times 0:1week:1 \
           -extra_file foo.nc \
@@ -72,8 +76,8 @@ Using low-resolution test runs
 ++++++++++++++++++++++++++++++
 
 Sometimes a run like the one above is still too costly. In this case it might be helpful
-to replace it with a similar run on a coarser grid, with or without the option
-:opt:`-test_climate_models`. (Testing climate inputs usually means checking if the timing
+to replace it with a similar run on a coarser grid, with or without settings disabling ice
+dynamics components. (Testing climate inputs usually means checking if the timing
 of modeled events is right, and high spatial resolution is not essential.)
 
 The command
@@ -152,8 +156,11 @@ We can also test the surface temperature forcing code with the following command
           -extra_times 100 -ys -125e3 -ye 0 \
           -extra_vars ice_surface_temp \
           -extra_file dT_movie.nc -o_order zyx \
-          -test_climate_models -no_mass
-    
+          -stress_balance.model none \
+          -energy.model none \
+          -age.enabled no \
+          -geometry.update.enabled no
+
 The output ``dT_movie.nc`` and ``pism_dT.nc`` were used to create
 :numref:`fig-artm-timeseries`.
 

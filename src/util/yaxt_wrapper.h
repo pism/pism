@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2020, 2023 PISM Authors
+/* Copyright (C) 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,20 +17,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _ICEGRID_REGIONAL_H_
-#define _ICEGRID_REGIONAL_H_
+#ifndef PISM_YAXT_WRAPPER_H
+#define PISM_YAXT_WRAPPER_H
 
-namespace pism {
+#include <mpi.h>
 
-/**
- * Select a subset of the computational grid in an input file.
- *
- * @param ctx execution context
- *
- * @return A pointer to a new grid instance.
- */
-std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-} // end of namespace pism
+void pism_yaxt_initialize(MPI_Comm default_comm);
 
-#endif /* _ICEGRID_REGIONAL_H_ */
+void pism_yaxt_finalize(void);
+
+int pism_yaxt_initialized(void);
+
+int pism_yaxt_finalized(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* PISM_YAXT_WRAPPER_H */

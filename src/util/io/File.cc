@@ -375,7 +375,6 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
         if (attribute == std_name) {
           if (not result.exists) {
             result.exists = true;
-            result.found_using_standard_name = true;
             result.name = var_name;
           } else {
             throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistency in '%s': variables '%s' and '%s'\n"
@@ -395,8 +394,6 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
       } else {
         result.name = "";
       }
-
-      result.found_using_standard_name = false;
     }
 
   } catch (RuntimeError &e) {
@@ -408,7 +405,7 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
 }
 
 //! \brief Checks if a variable exists.
-bool File::find_variable(const std::string &variable_name) const {
+bool File::variable_exists(const std::string &variable_name) const {
   try {
     bool exists = false;
     m_impl->nc->inq_varid(variable_name, exists);
@@ -434,7 +431,7 @@ std::vector<std::string> File::dimensions(const std::string &variable_name) cons
 
 
 //! \brief Checks if a dimension exists.
-bool File::find_dimension(const std::string &dimension_name) const {
+bool File::dimension_exists(const std::string &dimension_name) const {
   try {
     bool exists = false;
     m_impl->nc->inq_dimid(dimension_name, exists);
@@ -452,7 +449,7 @@ bool File::find_dimension(const std::string &dimension_name) const {
  */
 unsigned int File::dimension_length(const std::string &dimension_name) const {
   try {
-    if (find_dimension(dimension_name)) {
+    if (dimension_exists(dimension_name)) {
       unsigned int result = 0;
       m_impl->nc->inq_dimlen(dimension_name, result);
       return result;
@@ -493,7 +490,7 @@ AxisType axis_type_from_string(const std::string &input) {
 AxisType File::dimension_type(const std::string &dimension_name,
                               units::System::Ptr unit_system) const {
   try {
-    if (not find_variable(dimension_name)) {
+    if (not variable_exists(dimension_name)) {
       throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable " + dimension_name + " is missing");
     }
 
@@ -514,11 +511,13 @@ AxisType File::dimension_type(const std::string &dimension_name,
       return T_AXIS;
     }
 
-    if (standard_name == "projection_x_coordinate") {
+    if (standard_name == "projection_x_coordinate" or
+        standard_name == "grid_longitude") {
       return X_AXIS;
     }
 
-    if (standard_name == "projection_y_coordinate") {
+    if (standard_name == "projection_y_coordinate" or
+        standard_name == "grid_latitude") {
       return Y_AXIS;
     }
 
@@ -530,12 +529,12 @@ AxisType File::dimension_type(const std::string &dimension_name,
     }
 
     // check the variable name:
-    if (dimension_name == "x" or dimension_name == "X" or
+    if (member(dimension_name, {"x", "X", "rlon"}) or
         dimension_name.find('x') == 0 or dimension_name.find('X') == 0) {
       return X_AXIS;
     }
 
-    if (dimension_name == "y" or dimension_name == "Y" or
+    if (member(dimension_name, {"y", "Y", "rlat"}) or
         dimension_name.find('y') == 0 or dimension_name.find('Y') == 0) {
       return Y_AXIS;
     }
@@ -597,27 +596,6 @@ void File::define_variable(const std::string &variable_name, io::Type nctype,
 
   } catch (RuntimeError &e) {
     e.add_context("defining variable '%s' in '%s'", variable_name.c_str(),
-                  name().c_str());
-    throw;
-  }
-}
-
-//! \brief Get dimension data (a coordinate variable).
-std::vector<double>  File::read_dimension(const std::string &dimension_name) const {
-  try {
-    if (not find_variable(dimension_name)) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable not found");
-    }
-
-    unsigned int length = dimension_length(dimension_name);
-
-    std::vector<double> result(length);
-
-    read_variable(dimension_name, {0}, {length}, result.data());
-
-    return result;
-  } catch (RuntimeError &e) {
-    e.add_context("reading dimension '%s' from '%s'", dimension_name.c_str(),
                   name().c_str());
     throw;
   }

@@ -292,6 +292,18 @@ class Elevation(TestCase):
         self.geometry.ice_thickness.set(1000.0)
         self.geometry.ensure_consistency(0.0)
 
+        ctx = PISM.Context()
+
+        # make a copy of the configuration database so we can re-initialize it from
+        # options and then restore it
+        self.config = PISM.DefaultConfig(ctx.com, "pism_config", "-config", ctx.unit_system)
+        self.config.init_with_default(ctx.log)
+        self.config.import_from(ctx.config)
+
+    def tearDown(self):
+        ctx = PISM.Context()
+        ctx.config.import_from(self.config)
+
     def elevation_1_test(self):
         "Model 'elevation', test 1"
         model = PISM.SurfaceElevation(self.grid, PISM.AtmosphereUniform(self.grid))
@@ -328,6 +340,9 @@ class Elevation(TestCase):
         options.setValue("-ice_surface_temp", "{},{},{},{}".format(T_min, T_max, z_min, z_max))
         options.setValue("-climatic_mass_balance",
                          "{},{},{},{},{}".format(M_min, M_max, z_min, z_ela, z_max))
+
+        ctx = PISM.Context()
+        PISM.set_config_from_options(ctx.unit_system, ctx.config)
 
         T = PISM.util.convert(0.5 * (T_min + T_max), "degree_Celsius", "kelvin")
         SMB = PISM.util.convert(1.87504, "m/year", "m/s") * config.get_number("constants.ice.density")

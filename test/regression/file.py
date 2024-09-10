@@ -216,13 +216,13 @@ class File(TestCase):
             assert f.dimensions(variable_name) == ()
             f.close()
 
-    def test_find_dimension(self):
-        "File.find_dimension()"
+    def test_dimension_exists(self):
+        "File.dimension_exists()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
                           ctx.pio_iosys_id())
-            assert f.find_dimension("x")
-            assert not f.find_dimension("z")
+            assert f.dimension_exists("x")
+            assert not f.dimension_exists("z")
             f.close()
 
     def test_dimension_type(self):
@@ -255,21 +255,6 @@ class File(TestCase):
             check(self.t_names + self.strange_t_names, PISM.T_AXIS)
 
             assert f.dimension_type("unknown_axis", ctx.unit_system()) == PISM.UNKNOWN_AXIS
-
-            f.close()
-
-    def test_read_dimension(self):
-        "File.read_dimension()"
-        for backend in backends:
-            f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
-                          ctx.pio_iosys_id())
-            assert f.read_dimension("x") == (-10000.0, 0.0, 10000.0)
-
-            try:
-                f.read_dimension("z")
-                fail(backend)
-            except RuntimeError:
-                pass
 
             f.close()
 
@@ -325,10 +310,7 @@ class File(TestCase):
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
                           ctx.pio_iosys_id())
             assert f.find_variable("v", "standard_name").exists
-            assert f.find_variable("v", "standard_name").found_using_standard_name
-            assert f.find_variable("other_name", "standard_name").found_using_standard_name
             assert f.find_variable("other_name", "standard_name").name == "v"
-            assert not f.find_variable("v", "").found_using_standard_name
             assert f.find_variable("missing", "other_standard_name").exists == False
             assert f.find_variable("missing", "other_standard_name").name == ""
             f.close()

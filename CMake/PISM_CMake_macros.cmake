@@ -166,6 +166,15 @@ macro(pism_find_prerequisites)
     find_package (ParallelIO REQUIRED)
   endif()
 
+  if (Pism_USE_YAC_INTERPOLATION)
+    if (NOT Pism_USE_PROJ)
+      message(FATAL_ERROR "Please build PISM with PROJ to use YAC for interpolation")
+    endif()
+
+    pism_find_library(YAC "yac-mci>=3.3.0")
+    pism_find_library(YAXT "yaxt>=0.11.0")
+  endif()
+
   if (Pism_USE_PARALLEL_NETCDF4)
     # Try to find netcdf_par.h. We assume that NetCDF was compiled with
     # parallel I/O if this header is present.

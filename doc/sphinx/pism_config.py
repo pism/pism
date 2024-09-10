@@ -59,7 +59,8 @@ class ParameterList(Directive):
     required_arguments = 0
 
     option_spec = {"prefix": directives.unchanged,
-                   "exclude": directives.unchanged}
+                   "exclude": directives.unchanged,
+                   "regexp": directives.unchanged}
 
     def format_value(self, value, T):
         if T == "string" and len(value) == 0:
@@ -91,7 +92,10 @@ class ParameterList(Directive):
 
             f = nodes.field()
             value = nodes.paragraph()
-            value += self.format_value(data["value"], data["type"])
+            if self.is_valid(data):
+                value += self.format_value(data["value"], data["type"])
+            else:
+                value += nodes.Text(" no default")
             if "units" in data:
                 value += nodes.emphasis("", " ({})".format(data["units"]))
             f += [nodes.field_name("", "Default value"),
@@ -119,18 +123,36 @@ class ParameterList(Directive):
 
         return [p1, p2]
 
+    def is_valid(self, data):
+        value = data["value"]
+        if data["type"] in ["number", "integer"]:
+            if "valid_min" in data and (float(value) < float(data["valid_min"])):
+                return False
+            if "valid_max" in data and (float(value) > float(data["valid_max"])):
+                return False
+        return True
+
     def compact_list_entry(self, name, text, data):
         "Build an entry for the compact list of parameters."
 
         p1 = nodes.paragraph()
         p1 += config(name, text=text)
 
-        if not (data["type"] == "string" and len(data["value"]) == 0):
+        value = data["value"]
+        if not (data["type"] == "string" and len(value) == 0):
             p1 += nodes.Text(" (")
-            p1 += self.format_value(data["value"], data["type"])
-            if "units" in data:
-                if data["units"] not in ["1", "pure number", "count"]:
-                    p1 += nodes.emphasis("", " {units}".format(**data))
+
+            if self.is_valid(data):
+                p1 += self.format_value(data["value"], data["type"])
+                if "units" in data:
+                    if data["units"] not in ["1", "pure number", "count"]:
+                        p1 += nodes.emphasis("", " {units}".format(**data))
+            else:
+                p1 += nodes.emphasis("", "no default value")
+
+                if "units" in data:
+                    p1 += nodes.emphasis("", "; units: {units}".format(**data))
+
             p1 += nodes.Text(")")
 
         doc, _ = self.state.inline_text(data["doc"], self.lineno)
@@ -155,23 +177,33 @@ class ParameterList(Directive):
             # It is used in resolve_config_links() to build URIs.
             env.pism_parameters["docname"] = env.docname
 
+        if "regexp" in self.options:
+            regexp = self.options["regexp"]
+        else:
+            regexp = None
+
         if "exclude" in self.options:
             exclude = self.options["exclude"]
         else:
             exclude = None
 
-        full_list = prefix == "" and exclude == None
+        full_list = prefix == "" and exclude == None and regexp == None
 
         parameter_list = nodes.enumerated_list()
 
         parameters_found = False
         for name in sorted(pism_data.keys()):
 
-            pattern = "^" + prefix
-            # skip parameters that don't have the desired prefix
+            if regexp == None:
+                pattern = "^" + prefix
+            else:
+                pattern = regexp
+
+            # skip parameters that don't match the pattern
             if not re.match(pattern, name):
                 continue
 
+            # skip parameters that match the "exclude" pattern
             if exclude and re.match(exclude, name):
                 continue
 
@@ -183,9 +215,10 @@ class ParameterList(Directive):
                 # only the full parameter list items become targets
                 item += self.list_entry(name, pism_data[name])
             else:
-                item += self.compact_list_entry(name,
-                                                re.sub(pattern, "", name),
-                                                pism_data[name])
+                print_name = name
+                if regexp is None:
+                    print_name = re.sub(pattern, "", name)
+                item += self.compact_list_entry(name, print_name, pism_data[name])
             parameter_list += item
 
         if not parameters_found:
@@ -236,7 +269,7 @@ def init_pism_parameters(app):
     variable = f.variables["pism_config"]
     data = {k : getattr(variable, k) for k in variable.ncattrs()}
 
-    suffixes = ["choices", "doc", "option", "type", "units"]
+    suffixes = ["choices", "doc", "option", "type", "units", "valid_min", "valid_max"]
 
     def special(name):
         "Return true if 'name' is a 'special' parameter, false otherwise."

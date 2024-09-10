@@ -334,22 +334,23 @@ void TSDiagnostic::flush() {
     return;
   }
 
-  std::string dimension_name = m_dimension.get_name();
+  auto time_name = m_config->get_string("time.dimension_name");
 
   File file(m_grid->com, m_output_filename, io::PISM_NETCDF3,
             io::PISM_READWRITE); // OK to use netcdf3
 
-  unsigned int len = file.dimension_length(dimension_name);
+  unsigned int len = file.dimension_length(time_name);
 
   if (len > 0) {
-    double last_time = vector_max(file.read_dimension(dimension_name));
+    // Note: does not perform unit conversion of the time read from the file. This should
+    // be OK because this file was written by PISM.
+    double last_time = 0;
+    file.read_variable(time_name, {len - 1}, {1}, &last_time);
 
     if (last_time < m_time.front()) {
       m_start = len;
     }
   }
-
-  auto time_name = m_config->get_string("time.dimension_name");
 
   if (len == m_start) {
     io::define_timeseries(m_dimension, time_name, file, io::PISM_DOUBLE);

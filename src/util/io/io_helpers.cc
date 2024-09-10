@@ -1,4 +1,4 @@
-/* Copyright (C) 2015--2023 PISM Authors
+/* Copyright (C) 2015--2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <memory>
 #include <array>
+#include <string>
 #include <vector>
 
 #include "pism/util/ConfigInterface.hh"
@@ -32,7 +33,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
@@ -59,18 +60,19 @@ namespace io {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *input_array,
-                   double *output_array) {
+static void interpolate(const Grid &grid, const LocalInterpCtx &lic, double const *input_array,
+                        double *output_array) {
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
-  const int X = X_AXIS,
-            Z = Z_AXIS; // indices, just for clarity
-
   unsigned int nlevels = lic.z->n_output();
 
-  // array sizes for mapping from logical to "flat" indices
-  int x_count = lic.count[X], z_count = lic.count[Z];
+  int x_count = lic.count[X_AXIS], z_count = lic.count[Z_AXIS];
+  auto input = [input_array, x_count, z_count](int X, int Y, int Z) {
+    // the map from logical to linear indices for the input array
+    int index = (Y * x_count + X) * z_count + Z;
+    return input_array[index];
+  };
 
   for (auto p = grid.points(); p; p.next()) {
     const int i_global = p.i(), j_global = p.j();
@@ -78,8 +80,8 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
     const int i = i_global - grid.xs(), j = j_global - grid.ys();
 
     // Indices of neighboring points.
-    const int X_m = lic.x->left(i), X_p = lic.x->right(i), Y_m = lic.y->left(j),
-              Y_p = lic.y->right(j);
+    const int X_m = lic.x->left(i), X_p = lic.x->right(i);
+    const int Y_m = lic.y->left(j), Y_p = lic.y->right(j);
 
     for (unsigned int k = 0; k < nlevels; k++) {
 
@@ -93,26 +95,27 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
         // We pretend that there are always 8 neighbors (4 in the map plane,
         // 2 vertical levels). And compute the indices into the input_array for
         // those neighbors.
-        const int mmm = (Y_m * x_count + X_m) * z_count + Z_m,
-                  mmp = (Y_m * x_count + X_m) * z_count + Z_p,
-                  mpm = (Y_m * x_count + X_p) * z_count + Z_m,
-                  mpp = (Y_m * x_count + X_p) * z_count + Z_p,
-                  pmm = (Y_p * x_count + X_m) * z_count + Z_m,
-                  pmp = (Y_p * x_count + X_m) * z_count + Z_p,
-                  ppm = (Y_p * x_count + X_p) * z_count + Z_m,
-                  ppp = (Y_p * x_count + X_p) * z_count + Z_p;
+        const double
+          mmm = input(X_m, Y_m, Z_m),
+          mmp = input(X_m, Y_m, Z_p),
+          pmm = input(X_p, Y_m, Z_m),
+          pmp = input(X_p, Y_m, Z_p),
+          mpm = input(X_m, Y_p, Z_m),
+          mpp = input(X_m, Y_p, Z_p),
+          ppm = input(X_p, Y_p, Z_m),
+          ppp = input(X_p, Y_p, Z_p);
 
         // linear interpolation in the z-direction
-        a_mm = input_array[mmm] * (1.0 - alpha_z) + input_array[mmp] * alpha_z;
-        a_mp = input_array[mpm] * (1.0 - alpha_z) + input_array[mpp] * alpha_z;
-        a_pm = input_array[pmm] * (1.0 - alpha_z) + input_array[pmp] * alpha_z;
-        a_pp = input_array[ppm] * (1.0 - alpha_z) + input_array[ppp] * alpha_z;
+        a_mm = mmm * (1.0 - alpha_z) + mmp * alpha_z;
+        a_mp = pmm * (1.0 - alpha_z) + pmp * alpha_z;
+        a_pm = mpm * (1.0 - alpha_z) + mpp * alpha_z;
+        a_pp = ppm * (1.0 - alpha_z) + ppp * alpha_z;
       } else {
-        // we don't need to interpolate vertically for the 2-D case
-        a_mm = input_array[Y_m * x_count + X_m];
-        a_mp = input_array[Y_m * x_count + X_p];
-        a_pm = input_array[Y_p * x_count + X_m];
-        a_pp = input_array[Y_p * x_count + X_p];
+        // no interpolation in Z in the 2-D case
+        a_mm = input(X_m, Y_m, 0);
+        a_mp = input(X_p, Y_m, 0);
+        a_pm = input(X_m, Y_p, 0);
+        a_pp = input(X_p, Y_p, 0);
       }
 
       // interpolation coefficient in the x direction
@@ -126,10 +129,10 @@ static void regrid(const Grid &grid, const LocalInterpCtx &lic, double const *in
 
       int index = (j * grid.xm() + i) * nlevels + k;
 
-      // index into the new array and interpolate in x direction
+      // index into the new array and interpolate in y direction
       output_array[index] = a_m * (1.0 - y_alpha) + a_p * y_alpha;
       // done with the point at (x,y,z)
-    }
+    } // end of the loop over vertical levels
   }
 }
 
@@ -146,8 +149,8 @@ struct StartCountInfo {
  * get start and count in the order matching the one in `dim_types`.
  */
 static StartCountInfo compute_start_and_count(std::vector<AxisType> &dim_types,
-                                              std::array<int, 4> start,
-                                              std::array<int, 4> count) {
+                                              const std::array<int, 4> &start,
+                                              const std::array<int, 4> &count) {
   auto ndims = dim_types.size();
 
   // Resize output vectors:
@@ -220,7 +223,7 @@ void define_time(const File &file, const Context &ctx) {
 void define_time(const File &file, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system) {
   try {
-    if (file.find_variable(name)) {
+    if (file.variable_exists(name)) {
       return;
     }
 
@@ -264,14 +267,14 @@ static void define_dimensions(const SpatialVariableMetadata &var, const Grid &gr
 
   // x
   std::string x_name = var.x().get_name();
-  if (not file.find_dimension(x_name)) {
+  if (not file.dimension_exists(x_name)) {
     define_dimension(file, grid.Mx(), var.x());
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE, { grid.x(1) - grid.x(0) });
   }
 
   // y
   std::string y_name = var.y().get_name();
-  if (not file.find_dimension(y_name)) {
+  if (not file.dimension_exists(y_name)) {
     define_dimension(file, grid.My(), var.y());
     file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE, { grid.y(1) - grid.y(0) });
   }
@@ -279,7 +282,7 @@ static void define_dimensions(const SpatialVariableMetadata &var, const Grid &gr
   // z
   std::string z_name = var.z().get_name();
   if (not z_name.empty()) {
-    if (not file.find_dimension(z_name)) {
+    if (not file.dimension_exists(z_name)) {
       const std::vector<double> &levels = var.levels();
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
@@ -316,19 +319,19 @@ static void write_dimension_data(const File &file, const std::string &name,
 void write_dimensions(const SpatialVariableMetadata &var, const Grid &grid, const File &file) {
   // x
   std::string x_name = var.x().get_name();
-  if (file.find_dimension(x_name)) {
+  if (file.dimension_exists(x_name)) {
     write_dimension_data(file, x_name, grid.x());
   }
 
   // y
   std::string y_name = var.y().get_name();
-  if (file.find_dimension(y_name)) {
+  if (file.dimension_exists(y_name)) {
     write_dimension_data(file, y_name, grid.y());
   }
 
   // z
   std::string z_name = var.z().get_name();
-  if (file.find_dimension(z_name)) {
+  if (file.dimension_exists(z_name)) {
     write_dimension_data(file, z_name, var.levels());
   }
 }
@@ -341,7 +344,7 @@ void write_dimensions(const SpatialVariableMetadata &var, const Grid &grid, cons
  * @param var_name name of the variable to check
  * @returns false if storage orders match, true otherwise
  */
-static bool use_transposed_io(std::vector<AxisType> dimension_types) {
+static bool transpose(std::vector<AxisType> dimension_types) {
 
   std::vector<AxisType> storage, memory = { Y_AXIS, X_AXIS };
 
@@ -432,79 +435,59 @@ static void transpose(const double *input, const std::vector<AxisType> &input_ax
   }
 }
 
-//! \brief Read an array distributed according to the grid.
-static void read_distributed_array(const File &file, const Grid &grid, const std::string &var_name,
-                                   unsigned int z_count, unsigned int t_start, double *output) {
-  try {
-    auto dim_types = dimension_types(file, var_name, grid.ctx()->unit_system());
+/*!
+ * Check if some values in `buffer` match the _FillValue attribute and stop with an error
+ * message if such values are found.
+ */
+static void check_for_missing_values(const File &file, const std::string &variable_name,
+                                     double tolerance, const double *buffer, size_t buffer_length) {
+  auto attribute = file.read_double_attribute(variable_name, "_FillValue");
+  if (attribute.size() == 1) {
+    double fill_value = attribute[0];
 
-    std::array<int, 4> count = { 1, grid.xm(), grid.ym(), (int)z_count };
-    auto sc = compute_start_and_count(dim_types,
-                                      { (int)t_start, grid.xs(), grid.ys(), 0 },
-                                      count);
-
-    if (use_transposed_io(dim_types)) {
-      auto size = count[X_AXIS] * count[Y_AXIS] * count[Z_AXIS];
-      std::vector<double> tmp(size);
-      file.read_variable(var_name, sc.start, sc.count, tmp.data());
-      transpose(tmp.data(), dim_types, count, output);
-    } else {
-      file.read_variable(var_name, sc.start, sc.count, output);
+    for (size_t k = 0; k < buffer_length; ++k) {
+      if (fabs(buffer[k] - fill_value) < tolerance) {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "Variable '%s' in '%s' contains values matching the _FillValue attribute",
+            variable_name.c_str(), file.name().c_str());
+      }
+      if (not std::isfinite(buffer[k])) {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "Variable '%s' in '%s' contains values that are not finite (NaN or infinity)",
+            variable_name.c_str(), file.name().c_str());
+      }
     }
-
-  } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' from '%s'", var_name.c_str(), file.name().c_str());
-    throw;
   }
 }
 
-/** Read enough data for interpolation `variable_name` from a file
- *
- * @param file input file
- * @param variable_name variable to regrid
- * @param[in] unit_system unit system used to determine dimension types
- * @param[in] lic local interpolation context
- */
-static std::vector<double> read_for_interpolation(const File &file,
-                                                  const std::string &variable_name,
-                                                  std::shared_ptr<units::System> unit_system,
-                                                  const LocalInterpCtx &lic) {
-
+//! \brief Read an array distributed according to the grid.
+static void read_distributed_array(const File &file, const std::string &variable_name,
+                                   std::shared_ptr<units::System> unit_system,
+                                   const std::array<int,4> &start,
+                                   const std::array<int,4> &count,
+                                   double *output) {
   try {
-    std::vector<double> buffer(lic.buffer_size());
-
     auto dim_types = dimension_types(file, variable_name, unit_system);
 
-    auto sc = compute_start_and_count(dim_types, lic.start, lic.count);
+    auto sc = compute_start_and_count(dim_types, start, count);
 
-    if (use_transposed_io(dim_types)) {
-      std::vector<double> tmp(buffer.size());
+    auto size = count[X_AXIS] * count[Y_AXIS] * count[Z_AXIS];
+
+    if (transpose(dim_types)) {
+      std::vector<double> tmp(size);
       file.read_variable(variable_name, sc.start, sc.count, tmp.data());
-      transpose(tmp.data(), dim_types, lic.count, buffer.data());
+      transpose(tmp.data(), dim_types, count, output);
     } else {
-      file.read_variable(variable_name, sc.start, sc.count, buffer.data());
+      file.read_variable(variable_name, sc.start, sc.count, output);
     }
 
     // Stop with an error message if some values match the _FillValue attribute:
-    {
-      auto attribute = file.read_double_attribute(variable_name, "_FillValue");
-      if (attribute.size() == 1) {
-        double fill_value = attribute[0], epsilon = 1e-12;
+    check_for_missing_values(file, variable_name, 1e-12, output, size);
 
-        for (const auto &value : buffer) {
-          if (fabs(value - fill_value) < epsilon) {
-            throw RuntimeError::formatted(
-                PISM_ERROR_LOCATION, "Some values of '%s' in '%s' match the _FillValue attribute.",
-                variable_name.c_str(), file.name().c_str());
-          }
-        }
-      }
-    }
-
-    return buffer;
   } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(),
-                  file.name().c_str());
+    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), file.name().c_str());
     throw;
   }
 }
@@ -524,7 +507,7 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
   std::vector<std::string> dims;
   std::string name = var.get_name();
 
-  if (file.find_variable(name)) {
+  if (file.variable_exists(name)) {
     return;
   }
 
@@ -556,10 +539,28 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
   // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat, lon,
   // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
   // #384).
-  const VariableMetadata &mapping = grid.get_mapping_info().mapping;
+  const VariableMetadata &mapping = grid.get_mapping_info().cf_mapping;
   if (mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
     file.write_attribute(var.get_name(), "grid_mapping", mapping.get_name());
   }
+}
+
+/*!
+ * Check if units are set in an input file and warn if they are not.
+ */
+static std::string check_units(const VariableMetadata &variable, const std::string &input_units,
+                               const Logger &log) {
+  std::string internal_units = variable["units"];
+  if (input_units.empty() and not internal_units.empty()) {
+    log.message(2,
+                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                "              Assuming that it is in '%s'.\n",
+                variable.get_name().c_str(), variable.get_string("long_name").c_str(),
+                internal_units.c_str());
+    return internal_units;
+  }
+
+  return input_units;
 }
 
 //! Read a variable from a file into an array `output`.
@@ -620,38 +621,18 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
   // make sure we have at least one level
   size_t nlevels = std::max(variable.levels().size(), (size_t)1);
 
-  read_distributed_array(file, grid, var.name, nlevels, time, output);
+  read_distributed_array(file, var.name, variable.unit_system(),
+                         {(int)time, grid.xs(), grid.ys(), 0},
+                         {1, grid.xm(), grid.ym(), (int)nlevels},
+                         output);
 
-  std::string input_units           = file.read_text_attribute(var.name, "units");
+  auto input_units           = file.read_text_attribute(var.name, "units");
   const std::string &internal_units = variable["units"];
 
-  if (input_units.empty() and not internal_units.empty()) {
-    const std::string &long_name = variable["long_name"];
-    log.message(2,
-                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                "              Assuming that it is in '%s'.\n",
-                variable.get_name().c_str(), long_name.c_str(), internal_units.c_str());
-    input_units = internal_units;
-  }
+  input_units = check_units(variable, input_units, log);
 
   // Convert data:
   size_t size = grid.xm() * grid.ym() * nlevels;
-
-  // stop if some values match the _FillValue attribute
-  {
-    auto att = file.read_double_attribute(var.name, "_FillValue");
-    if (att.size() == 1) {
-      double fill_value = att[0];
-      for (size_t k = 0; k < size; ++k) {
-        if (output[k] == fill_value) {
-          throw RuntimeError::formatted(
-              PISM_ERROR_LOCATION,
-              "Some values of the variable '%s' in '%s' match the _FillValue attribute.",
-              var.name.c_str(), file.name().c_str());
-        }
-      }
-    }
-  }
 
   units::Converter(variable.unit_system(), input_units, internal_units)
       .convert_doubles(output, size);
@@ -674,7 +655,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
 
   auto name = var.get_name();
 
-  if (not file.find_variable(name)) {
+  if (not file.variable_exists(name)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
                                   file.name().c_str());
   }
@@ -826,48 +807,39 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
   - uses the last record in the file
 */
 
-void regrid_spatial_variable(SpatialVariableMetadata &variable,
-                             const Grid &internal_grid,
-                             const LocalInterpCtx &lic, const File &file,
+void regrid_spatial_variable(const SpatialVariableMetadata &variable,
+                             const Grid &target_grid,
+                             const LocalInterpCtx &interp_context, const File &file,
                              double *output) {
 
-  auto var_info = file.find_variable(variable.get_name(), variable["standard_name"]);
-  auto variable_name = var_info.name;
+  auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-  const Profiling &profiling = internal_grid.ctx()->profiling();
+  const Profiling &profiling = target_grid.ctx()->profiling();
 
   profiling.begin("io.regridding.read");
-  auto buffer = read_for_interpolation(file, variable_name, internal_grid.ctx()->unit_system(), lic);
+  std::vector<double> buffer(interp_context.buffer_size());
+  read_distributed_array(file, var.name, variable.unit_system(), interp_context.start,
+                         interp_context.count, buffer.data());
   profiling.end("io.regridding.read");
 
   // interpolate
   profiling.begin("io.regridding.interpolate");
-  regrid(internal_grid, lic, buffer.data(), output);
+  interpolate(target_grid, interp_context, buffer.data(), output);
   profiling.end("io.regridding.interpolate");
 
   // Get the units string from the file and convert the units:
   {
-    std::string input_units    = file.read_text_attribute(variable_name, "units");
+    std::string input_units    = file.read_text_attribute(var.name, "units");
     std::string internal_units = variable["units"];
 
-    if (input_units.empty() and not internal_units.empty()) {
-      const Logger &log = *internal_grid.ctx()->log();
-      log.message(2,
-                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                  "              Assuming that it is in '%s'.\n",
-                  variable.get_name().c_str(), variable.get_string("long_name").c_str(),
-                  internal_units.c_str());
-      input_units = internal_units;
-    }
+    input_units = check_units(variable, input_units, *target_grid.ctx()->log());
 
-    const size_t data_size = internal_grid.xm() * internal_grid.ym() * lic.z->n_output();
+    const size_t data_size = target_grid.xm() * target_grid.ym() * interp_context.z->n_output();
 
     // Convert data:
     units::Converter(variable.unit_system(), input_units, internal_units)
         .convert_doubles(output, data_size);
   }
-
-  read_valid_range(file, variable_name, variable);
 }
 
 
@@ -877,79 +849,66 @@ void define_timeseries(const VariableMetadata &var, const std::string &dimension
 
   std::string name = var.get_name();
 
-  if (file.find_variable(name)) {
+  if (file.variable_exists(name)) {
     return;
   }
 
-  if (not file.find_dimension(dimension_name)) {
+  if (not file.dimension_exists(dimension_name)) {
     define_dimension(file, PISM_UNLIMITED, VariableMetadata(dimension_name, var.unit_system()));
   }
 
-  if (not file.find_variable(name)) {
+  if (not file.variable_exists(name)) {
     file.define_variable(name, nctype, { dimension_name });
   }
 
   write_attributes(file, var, nctype);
 }
 
-//! Read a time-series variable from a NetCDF file to a vector of doubles.
-void read_timeseries(const File &file, const VariableMetadata &metadata, const Logger &log,
-                     std::vector<double> &data) {
+std::vector<double> read_1d_variable(const File &file, const std::string &variable_name,
+                                     const std::string &units,
+                                     std::shared_ptr<units::System> unit_system) {
 
-  std::string name = metadata.get_name();
 
   try {
-    // Find the variable:
-    std::string long_name = metadata["long_name"], standard_name = metadata["standard_name"];
-
-    auto var = file.find_variable(name, standard_name);
-
-    if (not var.exists) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " is missing");
+    if (not file.variable_exists(variable_name)) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + variable_name + " is missing");
     }
 
-    auto dims = file.dimensions(var.name);
+    auto dims = file.dimensions(variable_name);
     if (dims.size() != 1) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "variable '%s' in '%s' should to have 1 dimension (got %d)",
-                                    name.c_str(), file.name().c_str(), (int)dims.size());
+                                    variable_name.c_str(), file.name().c_str(), (int)dims.size());
     }
 
-    auto dimension_name = dims[0];
+    const auto &dimension_name = dims[0];
 
     unsigned int length = file.dimension_length(dimension_name);
-    if (length <= 0) {
+    if (length == 0) {
       throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
 
-    data.resize(length); // memory allocation happens here
+    units::Unit internal_units(unit_system, units), input_units(unit_system, "1");
 
-    file.read_variable(var.name, { 0 }, { length }, data.data());
+    auto input_units_string = file.read_text_attribute(variable_name, "units");
 
-    units::System::Ptr system = metadata.unit_system();
-    units::Unit internal_units(system, metadata["units"]), input_units(system, "1");
-
-    std::string input_units_string = file.read_text_attribute(var.name, "units");
-
-    bool input_has_units = not input_units_string.empty();
-
-    if (input_has_units) {
-      input_units = units::Unit(system, input_units_string);
+    if (not input_units_string.empty()) {
+      input_units = units::Unit(unit_system, input_units_string);
+    } else {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "variable '%s' does not have the units attribute", variable_name.c_str());
     }
 
-    if (metadata.has_attribute("units") && not input_has_units) {
-      std::string units_string = internal_units.format();
-      log.message(2,
-                  "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                  "              Assuming that it is in '%s'.\n",
-                  name.c_str(), long_name.c_str(), units_string.c_str());
-      input_units = internal_units;
-    }
+    std::vector<double> result(length); // memory allocation happens here
 
-    units::Converter(input_units, internal_units).convert_doubles(data.data(), data.size());
+    file.read_variable(variable_name, { 0 }, { length }, result.data());
 
+    units::Converter(input_units, internal_units).convert_doubles(result.data(), result.size());
+
+    return result;
   } catch (RuntimeError &e) {
-    e.add_context("reading time-series variable '%s' from '%s'", name.c_str(),
+    e.add_context("reading 1D variable '%s' from '%s'", variable_name.c_str(),
                   file.name().c_str());
     throw;
   }
@@ -964,7 +923,7 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
 
   std::string name = metadata.get_name();
   try {
-    if (not file.find_variable(name)) {
+    if (not file.variable_exists(name)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' not found", name.c_str());
     }
 
@@ -990,15 +949,15 @@ void define_time_bounds(const VariableMetadata& var,
                         const File &file, io::Type nctype) {
   std::string name = var.get_name();
 
-  if (file.find_variable(name)) {
+  if (file.variable_exists(name)) {
     return;
   }
 
-  if (not file.find_dimension(dimension_name)) {
+  if (not file.dimension_exists(dimension_name)) {
     file.define_dimension(dimension_name, PISM_UNLIMITED);
   }
 
-  if (not file.find_dimension(bounds_name)) {
+  if (not file.dimension_exists(bounds_name)) {
     file.define_dimension(bounds_name, 2);
   }
 
@@ -1007,37 +966,32 @@ void define_time_bounds(const VariableMetadata& var,
   write_attributes(file, var, nctype);
 }
 
-void read_time_bounds(const File &file,
-                      const VariableMetadata &metadata,
-                      const Logger &log,
-                      std::vector<double> &data) {
-
-  std::string name = metadata.get_name();
+std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
+                                const std::string &internal_units,
+                                std::shared_ptr<units::System> unit_system) {
 
   try {
-    auto system = metadata.unit_system();
-    units::Unit internal_units(system, metadata["units"]);
+    units::Unit internal(unit_system, internal_units);
 
     // Find the variable:
-    if (not file.find_variable(name)) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " is missing");
+    if (not file.variable_exists(bounds_variable_name)) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + bounds_variable_name + " is missing");
     }
 
-    std::vector<std::string> dims = file.dimensions(name);
+    auto dims = file.dimensions(bounds_variable_name);
 
     if (dims.size() != 2) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " has to has two dimensions");
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + bounds_variable_name + " has to have two dimensions");
     }
 
-    std::string
-      &dimension_name = dims[0],
-      &bounds_name    = dims[1];
+    const auto &dimension_name        = dims[0];
+    const auto &bounds_dimension_name = dims[1];
 
-    // Check that we have 2 vertices (interval end-points) per time record.
-    unsigned int length = file.dimension_length(bounds_name);
+    // Check that we have 2 vertices (interval end-points) per record.
+    size_t length = file.dimension_length(bounds_dimension_name);
     if (length != 2) {
       throw RuntimeError(PISM_ERROR_LOCATION,
-                         "time-bounds variable " + name + " has to have exactly 2 bounds per time record");
+                         "time-bounds variable " + bounds_variable_name + " has to have exactly 2 bounds per time record");
     }
 
     // Get the number of time records.
@@ -1046,45 +1000,35 @@ void read_time_bounds(const File &file,
       throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
 
-    data.resize(2*length);                // memory allocation happens here
-
-    file.read_variable(name, {0, 0}, {length, 2}, data.data());
-
-    // Find the corresponding 'time' variable. (We get units from the 'time'
+    // Find the corresponding coordinate variable. (We get units from the 'time'
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
     // may not have metadata set.)
-    if (not file.find_variable(dimension_name)) {
+    if (not file.variable_exists(dimension_name)) {
       throw RuntimeError(PISM_ERROR_LOCATION,
-                         "time coordinate variable " + dimension_name + " is missing");
+                         "coordinate variable " + dimension_name + " is missing");
     }
 
-    bool input_has_units = false;
-    units::Unit input_units(internal_units.system(), "1");
+    units::Unit input_units(unit_system, "1");
 
     std::string input_units_string = file.read_text_attribute(dimension_name, "units");
     if (input_units_string.empty()) {
-      input_has_units = false;
-    } else {
-      input_units = units::Unit(internal_units.system(), input_units_string);
-      input_has_units = true;
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "variable '%s' does not have the units attribute",
+                                    dimension_name.c_str());
     }
 
-    if (metadata.has_attribute("units") && not input_has_units) {
-      std::string units_string = internal_units.format();
-      log.message(2,
-                  "PISM WARNING: Variable '%s' does not have the units attribute.\n"
-                  "              Assuming that it is in '%s'.\n",
-                  dimension_name.c_str(),
-                  units_string.c_str());
-      input_units = internal_units;
-    }
+    input_units = units::Unit(unit_system, input_units_string);
 
-    units::Converter(input_units, internal_units).convert_doubles(data.data(), data.size());
 
-    // FIXME: check that time intervals described by the time bounds
-    // variable are contiguous (without gaps) and stop if they are not.
+    std::vector<double> result(length * 2); // memory allocation happens here
+
+    file.read_variable(bounds_variable_name, {0, 0}, {(unsigned)length, 2}, result.data());
+
+    units::Converter(input_units, internal).convert_doubles(result.data(), result.size());
+
+    return result;
   } catch (RuntimeError &e) {
-    e.add_context("reading time bounds variable '%s' from '%s'", name.c_str(),
+    e.add_context("reading bounds variable '%s' from '%s'", bounds_variable_name.c_str(),
                   file.name().c_str());
     throw;
   }
@@ -1097,7 +1041,7 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
 
   std::string name = var.get_name();
   try {
-    bool variable_exists = file.find_variable(name);
+    bool variable_exists = file.variable_exists(name);
     if (not variable_exists) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' not found",
                                     name.c_str());
@@ -1125,24 +1069,16 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
 /*!
  * Reads and validates times and time bounds.
  */
-void read_time_info(const Logger &log,
-                    std::shared_ptr<units::System> unit_system,
-                    const File &file,
-                    const std::string &time_name,
-                    const std::string &time_units,
-                    std::vector<double> &times,
-                    std::vector<double> &bounds) {
+void read_time_info(std::shared_ptr<units::System> unit_system, const File &file,
+                    const std::string &time_name, const std::string &time_units,
+                    std::vector<double> &times, std::vector<double> &bounds) {
 
   size_t N = 0;
   {
-    VariableMetadata time_variable(time_name, unit_system);
-    time_variable["units"] = time_units;
-
-    io::read_timeseries(file, time_variable, log, times);
+    times = io::read_1d_variable(file, time_name, time_units, unit_system);
 
     if (not is_increasing(times)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "times have to be strictly increasing");
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times have to be strictly increasing");
     }
     N = times.size();
   }
@@ -1152,15 +1088,11 @@ void read_time_info(const Logger &log,
     std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
 
     if (time_bounds_name.empty()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "please provide time bounds for '%s'",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "please provide time bounds for '%s'",
                                     time_name.c_str());
     }
 
-    VariableMetadata bounds_variable(time_bounds_name, unit_system);
-    bounds_variable["units"] = time_units;
-
-    io::read_time_bounds(file, bounds_variable, log, bounds);
+    bounds = io::read_bounds(file, time_bounds_name, time_units, unit_system);
 
     if (2 * N != bounds.size()) {
       throw RuntimeError(PISM_ERROR_LOCATION,
@@ -1195,15 +1127,17 @@ bool file_exists(MPI_Comm com, const std::string &filename) {
   return file_exists_flag == 1;
 }
 
-void read_attributes(const File &file,
-                     const std::string &variable_name,
-                     VariableMetadata &variable) {
+VariableMetadata read_attributes(const File &file,
+                                 const std::string &variable_name,
+                                 std::shared_ptr<units::System> unit_system) {
+
+  VariableMetadata variable(variable_name, unit_system);
+
   try {
-    if (not file.find_variable(variable_name)) {
+
+    if (not file.variable_exists(variable_name)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' is missing", variable_name.c_str());
     }
-
-    variable.clear();
 
     unsigned int nattrs = file.nattributes(variable_name);
 
@@ -1224,6 +1158,7 @@ void read_attributes(const File &file,
                   variable_name.c_str(), file.name().c_str());
     throw;
   }
+  return variable;
 }
 
 //! Write variable attributes to a NetCDF file.
@@ -1322,51 +1257,6 @@ void write_attributes(const File &file, const VariableMetadata &variable, io::Ty
   } catch (RuntimeError &e) {
     e.add_context("writing attributes of variable '%s' to '%s'",
                   var_name.c_str(), file.name().c_str());
-    throw;
-  }
-}
-
-//! Read the valid range information from a file.
-/*! Reads `valid_min`, `valid_max` and `valid_range` attributes; if \c
-  valid_range is found, sets the pair `valid_min` and `valid_max` instead.
-*/
-void read_valid_range(const File &file, const std::string &name, VariableMetadata &variable) {
-  try {
-    // Never reset valid_min/max if they were set internally
-    if (variable.has_attribute("valid_min") or
-        variable.has_attribute("valid_max")) {
-      return;
-    }
-
-    // Read the units.
-    std::string file_units = file.read_text_attribute(name, "units");
-
-    if (file_units.empty()) {
-      // If the variable in the file does not have the units attribute we assume that
-      // units in the file match internal (PISM) units.
-      file_units = variable.get_string("units");
-    }
-
-    units::Converter c(variable.unit_system(), file_units, variable["units"]);
-
-    std::vector<double> bounds = file.read_double_attribute(name, "valid_range");
-    if (bounds.size() == 2) {             // valid_range is present
-      variable["valid_min"] = {c(bounds[0])};
-      variable["valid_max"] = {c(bounds[1])};
-    } else {                      // valid_range has the wrong length or is missing
-      bounds = file.read_double_attribute(name, "valid_min");
-      if (bounds.size() == 1) {           // valid_min is present
-        variable["valid_min"] = {c(bounds[0])};
-      }
-
-      bounds = file.read_double_attribute(name, "valid_max");
-      if (bounds.size() == 1) {           // valid_max is present
-        variable["valid_max"] = {c(bounds[0])};
-      }
-    }
-  } catch (RuntimeError &e) {
-    e.add_context("reading valid range of variable '%s' from '%s'", name.c_str(),
-                  file.name().c_str());
     throw;
   }
 }

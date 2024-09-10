@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -581,6 +581,15 @@ double parse_number(const std::string &input) {
   return result;
 }
 
+std::vector<double> parse_number_list(const std::string &input) {
+  std::vector<double> result;
+
+  for (const auto &p : split(input, ',')) {
+    result.push_back(parse_number(p));
+  }
+  return result;
+}
+
 long int parse_integer(const std::string &input) {
   char *endptr = NULL;
   long int result = strtol(input.c_str(), &endptr, 10);
@@ -588,6 +597,15 @@ long int parse_integer(const std::string &input) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Can't parse %s (expected an integer)",
                                   input.c_str());
+  }
+  return result;
+}
+
+std::vector<long> parse_integer_list(const std::string &input) {
+  std::vector<long> result;
+
+  for (const auto &p : split(input, ',')) {
+    result.push_back(parse_integer(p));
   }
   return result;
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -668,8 +668,8 @@ void Blatter::init_impl() {
 
   if (opts.type == INIT_RESTART) {
     File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
-    bool u_sigma_found = input_file.find_variable("uvel_sigma");
-    bool v_sigma_found = input_file.find_variable("vvel_sigma");
+    bool u_sigma_found = input_file.variable_exists("uvel_sigma");
+    bool v_sigma_found = input_file.variable_exists("vvel_sigma");
     unsigned int start = input_file.nrecords() - 1;
 
     if (u_sigma_found and v_sigma_found) {

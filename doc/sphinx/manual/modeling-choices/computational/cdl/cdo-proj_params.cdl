@@ -1,0 +1,30 @@
+netcdf climate_forcing {
+dimensions:
+  time = UNLIMITED ; // (12 currently)
+  nv = 2 ;
+  x = 301 ;
+  y = 561 ;
+variables:
+  double time(time) ;
+    time:units = "days since 1980-1-1" ;
+    time:calendar = "365_day" ;
+    time:long_name = "time" ;
+    time:bounds = "time_bounds" ;
+  double time_bounds(time, nv) ;
+  double x(x) ;
+    x:units = "m" ;
+    x:standard_name = "projection_x_coordinate" ;
+  double y(y) ;
+    y:units = "m" ;
+    y:standard_name = "projection_y_coordinate" ;
+  char mapping;
+    mapping:proj_params = "EPSG:3413";
+  double air_temp(time, y, x) ;
+    air_temp:units = "kelvin" ;
+    air_temp:long_name = "near surface air temperature" ;
+    air_temp:grid_mapping = "mapping" ;
+  double precipitation(time, y, x) ;
+    precipitation:units = "kg m^-2 year^-1" ;
+    precipitation:long_name = "total (liquid and solid) precipitation" ;
+    precipitation:grid_mapping = "mapping" ;
+}

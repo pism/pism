@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,20 +20,20 @@
 #include <gsl/gsl_interp.h>
 #include <cassert>
 
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
 
-Interpolation::Interpolation(InterpolationType type,
+Interpolation1D::Interpolation1D(InterpolationType type,
                              const std::vector<double> &input_x,
                              const std::vector<double> &output_x)
-  : Interpolation(type, input_x.data(), input_x.size(),
+  : Interpolation1D(type, input_x.data(), input_x.size(),
                   output_x.data(), output_x.size()) {
   // empty
 }
 
-Interpolation::Interpolation(InterpolationType type,
+Interpolation1D::Interpolation1D(InterpolationType type,
                              const double *input_x, unsigned int input_x_size,
                              const double *output_x, unsigned int output_x_size) {
 
@@ -86,7 +86,7 @@ Interpolation::Interpolation(InterpolationType type,
  * @param[in] output_x coordinates of the output grid
  * @param[in] output_x_size number of points in the output grid
  */
-void Interpolation::init_linear(const double *input_x, unsigned int input_x_size,
+void Interpolation1D::init_linear(const double *input_x, unsigned int input_x_size,
                                 const double *output_x, unsigned int output_x_size) {
   assert(input_x_size >= 2);
 
@@ -124,35 +124,35 @@ void Interpolation::init_linear(const double *input_x, unsigned int input_x_size
   }
 }
 
-const std::vector<int>& Interpolation::left() const {
+const std::vector<int>& Interpolation1D::left() const {
   return m_left;
 }
 
-const std::vector<int>& Interpolation::right() const {
+const std::vector<int>& Interpolation1D::right() const {
   return m_right;
 }
 
-const std::vector<double>& Interpolation::alpha() const {
+const std::vector<double>& Interpolation1D::alpha() const {
   return m_alpha;
 }
 
-int Interpolation::left(size_t j) const {
+int Interpolation1D::left(size_t j) const {
   return m_left[j];
 }
 
-int Interpolation::right(size_t j) const {
+int Interpolation1D::right(size_t j) const {
   return m_right[j];
 }
 
-double Interpolation::alpha(size_t j) const {
+double Interpolation1D::alpha(size_t j) const {
   return m_alpha[j];
 }
 
-int Interpolation::n_output() const {
+int Interpolation1D::n_output() const {
   return (int)m_alpha.size();
 }
 
-std::vector<double> Interpolation::interpolate(const std::vector<double> &input_values) const {
+std::vector<double> Interpolation1D::interpolate(const std::vector<double> &input_values) const {
   std::vector<double> result(m_alpha.size());
 
   interpolate(input_values.data(), result.data());
@@ -160,7 +160,7 @@ std::vector<double> Interpolation::interpolate(const std::vector<double> &input_
   return result;
 }
 
-void Interpolation::interpolate(const double *input, double *output) const {
+void Interpolation1D::interpolate(const double *input, double *output) const {
   size_t n = m_alpha.size();
   for (size_t k = 0; k < n; ++k) {
     const int
@@ -170,7 +170,7 @@ void Interpolation::interpolate(const double *input, double *output) const {
   }
 }
 
-void Interpolation::init_nearest(const double *input_x, unsigned int input_x_size,
+void Interpolation1D::init_nearest(const double *input_x, unsigned int input_x_size,
                                  const double *output_x, unsigned int output_x_size) {
 
   init_linear(input_x, input_x_size, output_x, output_x_size);
@@ -183,7 +183,7 @@ void Interpolation::init_nearest(const double *input_x, unsigned int input_x_siz
 /*!
  * Input grid `input_x` corresponds to *left* end-points of intervals.
  */
-void Interpolation::init_piecewise_constant(const double *input_x, unsigned int input_x_size,
+void Interpolation1D::init_piecewise_constant(const double *input_x, unsigned int input_x_size,
                                             const double *output_x, unsigned int output_x_size) {
   assert(input_x_size >= 2);
 

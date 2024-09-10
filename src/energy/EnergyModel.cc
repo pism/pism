@@ -134,13 +134,13 @@ EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
 
 void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record) {
 
-  if (input_file.find_variable("enthalpy")) {
+  if (input_file.variable_exists("enthalpy")) {
     if (do_regrid) {
       m_ice_enthalpy.regrid(input_file, io::Default::Nil());
     } else {
       m_ice_enthalpy.read(input_file, record);
     }
-  } else if (input_file.find_variable("temp")) {
+  } else if (input_file.variable_exists("temp")) {
     array::Array3D &temp = m_work, &liqfrac = m_ice_enthalpy;
 
     {
@@ -160,7 +160,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
 
     const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-    if (input_file.find_variable("liqfrac")) {
+    if (input_file.variable_exists("liqfrac")) {
       SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
 
       liqfrac.set_name("liqfrac");

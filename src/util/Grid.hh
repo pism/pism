@@ -28,11 +28,14 @@
 
 #include <mpi.h>                // MPI_Comm
 
+#include "pism/util/Interpolation1D.hh"
+
 namespace pism {
 
 class Config;
 class Context;
 class File;
+class InputInterpolation;
 class Logger;
 class MappingInfo;
 class Vars;
@@ -66,7 +69,9 @@ class InputGridInfo {
 public:
   InputGridInfo(const File &file, const std::string &variable,
                 std::shared_ptr<units::System> unit_system, Registration registration);
+
   void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
+
   // dimension lengths
   unsigned int t_len;
   //! x-coordinate of the domain center
@@ -98,6 +103,7 @@ public:
 
   std::map<std::string, AxisType> dimension_types;
 
+  bool longitude_latitude;
 private:
   void reset();
 };
@@ -119,51 +125,53 @@ public:
   //! Initialize grid defaults from a configuration database.
   Parameters(const Config &config);
 
-  //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  Parameters(const Context &ctx, const std::string &filename, const std::string &variable_name,
-             Registration r);
-  //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  Parameters(const Context &ctx, const File &file, const std::string &variable_name,
-             Registration r);
+  //! Initialize grid defaults from a configuration database, but set Mx and My explicitly.
+  Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx, double Ly);
 
-  //! Process -Mx and -My; set Mx and My.
-  void horizontal_size_from_options();
+  //! Initialize grid defaults from a NetCDF variable.
+  Parameters(std::shared_ptr<units::System> unit_system, const File &file,
+             const std::string &variable_name, Registration r);
+
+  static Parameters FromGridDefinition(std::shared_ptr<units::System> unit_system, const File &file,
+                                       const std::string &variable_name, Registration registration);
+
   //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0.
-  void horizontal_extent_from_options(std::shared_ptr<units::System> unit_system);
+  void horizontal_size_and_extent_from_options(const Config &config);
   //! Process -Mz and -Lz; set z;
-  void vertical_grid_from_options(std::shared_ptr<const Config> config);
+  void vertical_grid_from_options(const Config &config);
   //! Re-compute ownership ranges. Uses current values of Mx and My.
-  void ownership_ranges_from_options(unsigned int size);
+  void ownership_ranges_from_options(const Config &config, unsigned int size);
 
   //! Validate data members.
   void validate() const;
 
-  //! Domain half-width in the X direction.
+  //! Domain half-width in the X direction
   double Lx;
-  //! Domain half-width in the Y direction.
+  //! Domain half-width in the Y direction
   double Ly;
-  //! Domain center in the X direction.
+  //! Domain center in the X direction
   double x0;
-  //! Domain center in the Y direction.
+  //! Domain center in the Y direction
   double y0;
-  //! Number of grid points in the X direction.
+  //! Number of grid points in the X direction
   unsigned int Mx;
-  //! Number of grid points in the Y direction.
+  //! Number of grid points in the Y direction
   unsigned int My;
-  //! Grid registration.
+  //! Grid registration
   Registration registration;
-  //! Grid periodicity.
+  //! Grid periodicity
   Periodicity periodicity;
-  //! Vertical levels.
+  //! Vertical levels
   std::vector<double> z;
-  //! Processor ownership ranges in the X direction.
+  //! Processor ownership ranges in the X direction
   std::vector<unsigned int> procs_x;
-  //! Processor ownership ranges in the Y direction.
+  //! Processor ownership ranges in the Y direction
   std::vector<unsigned int> procs_y;
 
+  //! Name of the variable used to initialize the instance (empty if not used)
+  std::string variable_name;
 private:
-  void init_from_file(const Context &ctx, const File &file, const std::string &variable_name,
-                      Registration r);
+  Parameters() = default;
 };
 } // namespace grid
 
@@ -290,11 +298,6 @@ public:
                                        grid::Registration r, grid::Periodicity p);
 
   static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx,
-                                        const std::string &filename,
-                                        const std::vector<std::string> &var_names,
-                                        grid::Registration r);
-
-  static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx,
                                         const File &file,
                                         const std::vector<std::string> &var_names,
                                         grid::Registration r);
@@ -302,6 +305,11 @@ public:
   static std::shared_ptr<Grid> FromOptions(std::shared_ptr<const Context> ctx);
 
   std::shared_ptr<petsc::DM> get_dm(unsigned int dm_dof, unsigned int stencil_width) const;
+
+  std::shared_ptr<InputInterpolation> get_interpolation(const std::vector<double> &levels,
+                                                        const File &input_file,
+                                                        const std::string &variable_name,
+                                                        InterpolationType type) const;
 
   void report_parameters() const;
 
