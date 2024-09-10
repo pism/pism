@@ -383,6 +383,17 @@ void Grid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_pro
   }
 }
 
+//! Compute horizontal grid size. See compute_horizontal_coordinates() for more.
+static unsigned int compute_horizontal_grid_size(double half_width, double dx, bool cell_centered) {
+  auto M = static_cast<unsigned int>(half_width / dx);
+
+  if (cell_centered) {
+    return 2 * M;
+  }
+
+  return 2 * M + 1;
+}
+
 //! Compute horizontal grid spacing. See compute_horizontal_coordinates() for more.
 static double compute_horizontal_spacing(double half_width, unsigned int M, bool cell_centered) {
   if (cell_centered) {
@@ -1224,14 +1235,23 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
   return result;
 }
 
-Parameters::Parameters(const Config &config)
-    : Parameters(config, (unsigned)config.get_number("grid.Mx"),
-                 (unsigned)config.get_number("grid.My"), config.get_number("grid.Lx", "m"),
-                 config.get_number("grid.Ly", "m")) {
-  // empty
+Parameters::Parameters(const Config &config) {
+
+  periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
+  registration = string_to_registration(config.get_string("grid.registration"));
+
+  x0 = 0.0;
+  y0 = 0.0;
+
+  horizontal_size_and_extent_from_options(config);
+  vertical_grid_from_options(config);
+  // does not set ownership ranges because we don't know if these settings are final
 }
 
 Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx_, double Ly_) {
+
+  periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
+  registration = string_to_registration(config.get_string("grid.registration"));
 
   x0 = 0.0;
   y0 = 0.0;
@@ -1242,14 +1262,7 @@ Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double 
   Lx = Lx_;
   Ly = Ly_;
 
-  periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
-  registration = string_to_registration(config.get_string("grid.registration"));
-
-  double Lz       = config.get_number("grid.Lz");
-  unsigned int Mz = config.get_number("grid.Mz");
-  double lambda   = config.get_number("grid.lambda");
-  auto s          = string_to_spacing(config.get_string("grid.ice_vertical_spacing"));
-  z               = compute_vertical_levels(Lz, Mz, s, lambda);
+  vertical_grid_from_options(config);
   // does not set ownership ranges because we don't know if these settings are final
 }
 
@@ -1361,12 +1374,30 @@ static void maybe_override(const Config &config, const char *name, const char *u
 
 void Parameters::horizontal_size_and_extent_from_options(const Config &config) {
 
-  // grid size
-  maybe_override(config, "grid.Mx", nullptr, Mx);
-  maybe_override(config, "grid.My", nullptr, My);
-
   maybe_override(config, "grid.Lx", "m", Lx);
   maybe_override(config, "grid.Ly", "m", Ly);
+
+  // grid size
+  if (config.is_valid_number("grid.dx") and config.is_valid_number("grid.dy")) {
+
+    double dx = config.get_number("grid.dx", "m");
+    double dy = config.get_number("grid.dy", "m");
+
+    Mx = compute_horizontal_grid_size(Lx, dx, registration == CELL_CENTER);
+    My = compute_horizontal_grid_size(Ly, dy, registration == CELL_CENTER);
+
+    // re-compute Lx and Ly
+    if (registration == CELL_CENTER) {
+      Lx = Mx * dx / 2.0;
+      Ly = My * dy / 2.0;
+    } else {
+      Lx = (Mx - 1) * dx / 2.0;
+      Ly = (My - 1) * dy / 2.0;
+    }
+  } else {
+    maybe_override(config, "grid.Mx", nullptr, Mx);
+    maybe_override(config, "grid.My", nullptr, My);
+  }
 }
 
 void Parameters::vertical_grid_from_options(const Config &config) {

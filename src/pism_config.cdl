@@ -1247,6 +1247,20 @@ netcdf pism_config {
     pism_config:grid.allow_extrapolation_option = "allow_extrapolation";
     pism_config:grid.allow_extrapolation_type = "flag";
 
+    pism_config:grid.dx = 0;
+    pism_config:grid.dx_doc = "Grid resolution in the X direction (overrides :config:`grid.Mx`)";
+    pism_config:grid.dx_option = "dx";
+    pism_config:grid.dx_type = "number";
+    pism_config:grid.dx_units = "meter";
+    pism_config:grid.dx_valid_min = 1e-16;
+
+    pism_config:grid.dy = 0;
+    pism_config:grid.dy_doc = "Grid resolution in the Y direction (overrides :config:`grid.My`)";
+    pism_config:grid.dy_option = "dy";
+    pism_config:grid.dy_type = "number";
+    pism_config:grid.dy_units = "meter";
+    pism_config:grid.dy_valid_min = 1e-16;
+
     pism_config:grid.file = "";
     pism_config:grid.file_doc = "grid definition file used to initialize the horizontal computational grid";
     pism_config:grid.file_type = "string";
