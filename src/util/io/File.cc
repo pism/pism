@@ -511,11 +511,13 @@ AxisType File::dimension_type(const std::string &dimension_name,
       return T_AXIS;
     }
 
-    if (standard_name == "projection_x_coordinate") {
+    if (standard_name == "projection_x_coordinate" or
+        standard_name == "grid_longitude") {
       return X_AXIS;
     }
 
-    if (standard_name == "projection_y_coordinate") {
+    if (standard_name == "projection_y_coordinate" or
+        standard_name == "grid_latitude") {
       return Y_AXIS;
     }
 
@@ -527,12 +529,12 @@ AxisType File::dimension_type(const std::string &dimension_name,
     }
 
     // check the variable name:
-    if (dimension_name == "x" or dimension_name == "X" or
+    if (member(dimension_name, {"x", "X", "rlon"}) or
         dimension_name.find('x') == 0 or dimension_name.find('X') == 0) {
       return X_AXIS;
     }
 
-    if (dimension_name == "y" or dimension_name == "Y" or
+    if (member(dimension_name, {"y", "Y", "rlat"}) or
         dimension_name.find('y') == 0 or dimension_name.find('Y') == 0) {
       return Y_AXIS;
     }
