@@ -5,7 +5,7 @@ dimensions:
 variables:
   double nv(nv) ;
   double time(time) ;
-    time:units = "365 days since 1-1-1" ;
+    time:units = "common_year since 1-1-1" ;
     time:axis = "T" ;
     time:bounds = "time_bounds" ;
     time:calendar = "365_day" ;
