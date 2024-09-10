@@ -36,3 +36,6 @@ Release checklist
 #. Send an e-mail to CRYOLIST.
 #. Tell more people, if desired.
 #. Create a new "release" on https://github.com/pism/pism/releases
+
+   Add the phrase "Follow https://doi.org/10.5281/zenodo.1199019 to the zenodo DOI for
+   this release." to the release notes on GitHub to make it easier to find the right DOI.
