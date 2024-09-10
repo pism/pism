@@ -385,7 +385,7 @@ void Grid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_pro
 
 //! Compute horizontal grid size. See compute_horizontal_coordinates() for more.
 static unsigned int compute_horizontal_grid_size(double half_width, double dx, bool cell_centered) {
-  auto M = static_cast<unsigned int>(half_width / dx);
+  auto M = static_cast<unsigned int>(std::floor(half_width / dx));
 
   if (cell_centered) {
     return 2 * M;
