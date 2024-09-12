@@ -247,8 +247,8 @@ Interpolation of model inputs requires YAC_ in addition to PROJ_; see
    - The "Vertical perspective" grid mapping is not supported.
 
 
-To use features listed above, compile PISM with PROJ_ specify the grid projection in an
-input file as described below.
+To use features listed above, compile PISM with PROJ_ and specify the grid projection in
+an input file as described below.
 
 .. _sec-crs-metadata:
 
@@ -266,17 +266,17 @@ uses when looking for a CRS definition in an input file.
 2. ``proj_params`` attribute of the grid mapping variable corresponding to a data variable
    (convention used by CDO_)
 3. global attributes ``proj`` or ``proj4`` (PISM's old convention)
-4. attributes of the grid mapping variable corresponding to a data variable, according to
-   `CF Conventions`_.
+4. attributes of the grid mapping variable corresponding to a data or domain variable,
+   according to `CF Conventions`_.
 
 We recommend following CF Conventions if possible. However, sometimes what we want is a
 minimal modification of a file's metadata needed to make it usable. In this case setting
 the ``proj`` attribute might be easier.
 
-If the ``proj`` attribute has the form ``"+init=EPSG:XXXX"``, ``"+init=epsg:XXXX"``,
-``"EPSG:XXXX"`` or ``"epsg:XXXX"`` where ``XXXX`` is an EPSG code listed below PISM will
-convert the EPSG code to a grid mapping variable conforming to CF metadata conventions and
-use that in PISM's output files.
+If the ``proj`` (or ``proj_params``) attribute has the form ``"+init=EPSG:XXXX"``,
+``"+init=epsg:XXXX"``, ``"EPSG:XXXX"`` or ``"epsg:XXXX"`` where ``XXXX`` is an EPSG code
+listed below PISM will convert the EPSG code to a grid mapping variable conforming to CF
+metadata conventions and use that in PISM's output files.
 
 .. list-table:: Supported EPSG codes
    :header-rows: 1
@@ -433,9 +433,9 @@ information from, separated by a colon, ``file_name:variable_name`` (for example
 
 A grid definition file has to contain a "domain variable" (see `CF Conventions`_ version
 1.11 or later, section 5.8, ). A domain variable is a scalar variable that has the
-``dimensions`` attribute, a space-separated list of coordinate variables defining the
-domain. It may also have other attributes, e.g. ``grid_mapping`` to specify the coordinate
-reference system.
+``dimensions`` attribute, a space-separated list of names of coordinate variables defining
+the domain. It may also have other attributes, e.g. ``grid_mapping`` to specify the
+coordinate reference system.
 
 See :numref:`code-coarse-grid-greenland` for an example of a grid definition. Here the
 *size* of a domain is determined as described in section :ref:`sec-grid-registration`; see
@@ -457,8 +457,8 @@ equations :eq:`eq-grid-from-file-centered`, :eq:`eq-grid-center` and :eq:`eq-gri
      *meters* used internally.
 
 Note that it can also be used as a *domain and CRS definition* since configuration
-parameters :config:`grid.Mx` and :config:`grid.My` can be used to create a finer grid
-covering this domain.
+parameters :config:`grid.Mx` and :config:`grid.My` (or :config:`grid.dx` and
+:config:`grid.dy`) can be used to create a finer grid covering the same domain.
 
 For example, :numref:`code-using-grid-definition-file` below shows how one could set up a
 simulation using a `5` km grid covering this domain.
@@ -469,11 +469,9 @@ simulation using a `5` km grid covering this domain.
    :name: code-using-grid-definition-file
 
    pismr \
-     -i pism_Greenland_5km_v1.1.nc \
-     -bootstrap \
+     -bootstrap -i pism_Greenland_5km_v1.1.nc \
      -grid.file grid.nc \
-     -Mx 360 \
-     -My 560 \
+     -dx 5km -dy 5km \
      -y 1s \
      -o output.nc
 
