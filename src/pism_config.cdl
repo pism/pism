@@ -542,10 +542,11 @@ netcdf pism_config {
     pism_config:bed_deformation.lc.grid_size_factor_type = "integer";
     pism_config:bed_deformation.lc.grid_size_factor_units = "count";
 
-    pism_config:bed_deformation.lc.update_interval = 10.0;
-    pism_config:bed_deformation.lc.update_interval_doc = "Interval between updates of the Lingle-Clark model";
-    pism_config:bed_deformation.lc.update_interval_type = "number";
-    pism_config:bed_deformation.lc.update_interval_units = "365days";
+    pism_config:bed_deformation.update_interval = 10.0;
+    pism_config:bed_deformation.update_interval_doc = "Interval between updates of bed deformation models";
+    pism_config:bed_deformation.update_interval_type = "number";
+    pism_config:bed_deformation.update_interval_units = "365days";
+    pism_config:bed_deformation.update_interval_valid_min = 0.0;
 
     pism_config:bed_deformation.lithosphere_flexural_rigidity = 5.0e24;
     pism_config:bed_deformation.lithosphere_flexural_rigidity_doc = "lithosphere flexural rigidity used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`";

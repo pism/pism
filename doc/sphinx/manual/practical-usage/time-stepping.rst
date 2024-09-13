@@ -88,8 +88,8 @@ step length.
 
 #. Atmosphere, surface process, ocean, and sea level forcing components.
 
-#. The Lingle-Clark bed deformation model (see :ref:`sec-bed-def-lc` and
-   :config:`bed_deformation.lc.update_interval`).
+#. A bed deformation model (see :ref:`sec-bed-def-lc` and
+   :config:`bed_deformation.update_interval`).
 
 #. If :config:`geometry.front_retreat.use_cfl` is set, PISM adjusts time step lengths to
    satisfy the CFL condition that uses the total front retreat rate coming from calving
