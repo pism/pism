@@ -1457,6 +1457,7 @@ netcdf pism_config {
     pism_config:input.forcing.buffer_size_doc = "number of 2D climate forcing records to keep in memory; = 5 years of monthly records";
     pism_config:input.forcing.buffer_size_type = "integer";
     pism_config:input.forcing.buffer_size_units = "count";
+    pism_config:input.forcing.buffer_size_valid_min = 1;
 
     pism_config:input.forcing.time_extrapolation = "false";
     pism_config:input.forcing.time_extrapolation_doc = "If 'true', time-dependent forcing inputs are extrapolated in time";
