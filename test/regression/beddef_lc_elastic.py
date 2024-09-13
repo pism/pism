@@ -87,7 +87,7 @@ class LingleClarkElastic(TestCase):
 
         # dt of zero disables the viscous part of the model, so all we get is the elastic
         # response
-        bed_model.step(geometry.ice_thickness, geometry.sea_level_elevation, 0)
+        bed_model.step(geometry.ice_thickness, 0)
 
         return (geometry.ice_thickness.to_numpy(),
                 bed_model.total_displacement().to_numpy(),

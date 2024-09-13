@@ -92,7 +92,7 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, Nx, dt):
         if t + dt > t_end:
             dt = t_end - t
 
-        bed_model.step(ice_thickness, sea_level, dt)
+        bed_model.step(ice_thickness, dt)
 
         t += dt
         log.message(2, ".")

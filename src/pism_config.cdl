@@ -542,12 +542,6 @@ netcdf pism_config {
     pism_config:bed_deformation.lc.grid_size_factor_type = "integer";
     pism_config:bed_deformation.lc.grid_size_factor_units = "count";
 
-    pism_config:bed_deformation.update_interval = 10.0;
-    pism_config:bed_deformation.update_interval_doc = "Interval between updates of bed deformation models";
-    pism_config:bed_deformation.update_interval_type = "number";
-    pism_config:bed_deformation.update_interval_units = "365days";
-    pism_config:bed_deformation.update_interval_valid_min = 0.0;
-
     pism_config:bed_deformation.lithosphere_flexural_rigidity = 5.0e24;
     pism_config:bed_deformation.lithosphere_flexural_rigidity_doc = "lithosphere flexural rigidity used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`";
     pism_config:bed_deformation.lithosphere_flexural_rigidity_type = "number";
@@ -568,6 +562,12 @@ netcdf pism_config {
     pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use. ``iso`` is point-wise isostasy, ``lc`` is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW_), ``given`` uses prescribed bed topography changes read from a file.";
     pism_config:bed_deformation.model_option = "bed_def";
     pism_config:bed_deformation.model_type = "keyword";
+
+    pism_config:bed_deformation.update_interval = 10.0;
+    pism_config:bed_deformation.update_interval_doc = "Interval between updates of bed deformation models";
+    pism_config:bed_deformation.update_interval_type = "number";
+    pism_config:bed_deformation.update_interval_units = "365days";
+    pism_config:bed_deformation.update_interval_valid_min = 0.0;
 
     pism_config:bootstrapping.defaults.bed = 1.0;
     pism_config:bootstrapping.defaults.bed_doc = "bed elevation value to use if :var:`topg` (``bedrock_altitude``) variable is absent in bootstrapping file";

@@ -12,10 +12,13 @@ from unittest import TestCase
 ctx = PISM.Context()
 ctx.log.set_threshold(1)
 
+times = [0.25, 0.75, 1.25, 1.75, 2.25, 2.75]
+
 # set run duration so that all forcing used here spans the duration of the run
 time = ctx.time
-time.set_start(0.5)
-time.set_end(1)
+time.set_start(times[0])
+time.set(times[0])
+time.set_end(times[-1])
 
 class BeddefGiven(TestCase):
     def setUp(self):
@@ -27,13 +30,18 @@ class BeddefGiven(TestCase):
         self.grid = shallow_grid(Mx=3, My=3)
 
         # Create time-dependent topography changes
+        #
+        # Note that the array `values` below contains intervals where topg_delta is
+        # constant in time. We need this to get easily predictable outputs: PISM uses
+        # piecewise-linear interpolation in time to compute averages of topg_delta over
+        # time steps.
         create_forcing(self.grid, self.filename, "topg_delta", "meters",
-                       values=[2, -4, 3], times=[1, 2, 3],
-                       time_bounds=[0.5, 1.5, 2.5, 3.5])
+                       values=[2, 2, -4, -4, 3, 3], times=times,
+                       time_bounds=[0, 0.5, 1, 1.5, 2, 2.5, 3])
 
         # Create the reference topography
         topg_ref = PISM.Scalar(self.grid, "topg")
-        topg_ref.metadata(0).long_name("bed elevation change relative to reference").units("m")
+        topg_ref.metadata(0).long_name("reference bed elevation").units("m")
         topg_ref.set(-1.0)
 
         topg_ref.dump(self.ref_filename)
@@ -53,6 +61,7 @@ class BeddefGiven(TestCase):
         config.set_string("input.file", self.geometry_filename)
         config.set_string("bed_deformation.given.file", self.filename)
         config.set_string("bed_deformation.given.reference_file", self.ref_filename)
+        config.set_number("bed_deformation.update_interval", 0.0)
 
     def tearDown(self):
         try:
@@ -75,17 +84,24 @@ class BeddefGiven(TestCase):
         opts = PISM.process_input_options(ctx.com, ctx.config)
         model.init(opts, geometry.ice_thickness, geometry.sea_level_elevation)
 
-        # use dt == 0 to sample topg_delta at a predictable time
-        dt = 0.0
+        # step from t=0.25 to t=0.75
         model.update(geometry.ice_thickness,
                      geometry.sea_level_elevation,
-                     1, dt)
+                     0.25, 0.5)
 
         topg_0 = model.bed_elevation().to_numpy()[0, 0]
 
+        # step from t=0.75 to t=1.25
+        #
+        # this update is used to advance the time used by the bed deformation model
         model.update(geometry.ice_thickness,
                      geometry.sea_level_elevation,
-                     2, dt)
+                     0.75, 0.5)
+
+        # step from t=1.25 to t=1.75
+        model.update(geometry.ice_thickness,
+                     geometry.sea_level_elevation,
+                     1.25, 0.5)
 
         topg_1 = model.bed_elevation().to_numpy()[0, 0]
 

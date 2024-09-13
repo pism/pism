@@ -73,7 +73,7 @@ def run(dt, restart=False):
     add_disc_load(geometry.ice_thickness, disc_radius, disc_thickness)
 
     # do 1 step
-    model.step(geometry.ice_thickness, geometry.sea_level_elevation, dt)
+    model.step(geometry.ice_thickness, dt)
 
     if restart:
         # save the model state
@@ -96,7 +96,7 @@ def run(dt, restart=False):
             os.remove(filename)
 
     # do 1 more step
-    model.step(geometry.ice_thickness, geometry.sea_level_elevation, dt)
+    model.step(geometry.ice_thickness, dt)
 
     return model
 

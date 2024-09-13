@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,20 +17,30 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/earth/BedDef.hh"
-#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Time.hh"
+#include <string>
 
 namespace pism {
 namespace bed {
 
-BedDef::BedDef(std::shared_ptr<const Grid> grid)
+BedDef::BedDef(std::shared_ptr<const Grid> grid, const std::string &model_name)
   : Component(grid),
-    m_wide_stencil(m_config->get_number("grid.max_stencil_width")),
     m_topg(m_grid, "topg"),
     m_topg_last(m_grid, "topg"),
-    m_uplift(m_grid, "dbdt")
+    m_load(grid, "bed_def_load"),
+    m_load_accumulator(grid, "bed_def_load_accumulator"),
+    m_uplift(m_grid, "dbdt"),
+    m_model_name(model_name)
 {
+
+  m_time_name = m_config->get_string("time.dimension_name") + "_bed_deformation";
+  m_t_last = time().current();
+  m_update_interval = m_config->get_number("bed_deformation.update_interval", "seconds");
+  m_t_eps = m_config->get_number("time_stepping.resolution", "seconds");
 
   m_topg.metadata(0)
       .long_name("bedrock surface elevation")
@@ -38,9 +48,17 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid)
       .standard_name("bedrock_altitude");
 
   m_topg_last.metadata(0)
-      .long_name("bedrock surface elevation")
+      .long_name("bedrock surface elevation after the previous update (used to compute uplift)")
       .units("m")
       .standard_name("bedrock_altitude");
+
+  m_load.metadata(0)
+    .long_name("load on the bed expressed as ice-equivalent thickness")
+    .units("m");
+
+  m_load_accumulator.metadata(0)
+    .long_name("accumulated load on the bed expressed as a time integral of ice-equivalent thickness")
+    .units("m s");
 
   m_uplift.metadata(0)
       .long_name("bedrock uplift rate")
@@ -59,11 +77,22 @@ const array::Scalar &BedDef::uplift() const {
 void BedDef::define_model_state_impl(const File &output) const {
   m_uplift.define(output, io::PISM_DOUBLE);
   m_topg.define(output, io::PISM_DOUBLE);
+
+  if (not output.variable_exists(m_time_name)) {
+    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
+
+    output.write_attribute(m_time_name, "long_name",
+                        "time of the last update of the Lingle-Clark bed deformation model");
+    output.write_attribute(m_time_name, "calendar", time().calendar());
+    output.write_attribute(m_time_name, "units", time().units_string());
+  }
 }
 
 void BedDef::write_model_state_impl(const File &output) const {
   m_uplift.write(output);
   m_topg.write(output);
+
+  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
 }
 
 DiagnosticList BedDef::diagnostics_impl() const {
@@ -75,100 +104,175 @@ DiagnosticList BedDef::diagnostics_impl() const {
 
 void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
                   const array::Scalar &sea_level_elevation) {
+
+  m_log->message(2, "* Initializing the %s bed deformation model...\n",
+                 m_model_name.c_str());
+
+  if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
+    File input_file(m_grid->com, opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
+
+    if (input_file.variable_exists(m_time_name)) {
+      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
+    } else {
+      m_t_last = time().current();
+    }
+  } else {
+    m_t_last = time().current();
+  }
+
+  {
+    switch (opts.type) {
+    case INIT_RESTART:
+      // read bed elevation and uplift rate from file
+      m_log->message(2, "    reading bed topography and uplift from %s ... \n",
+                     opts.filename.c_str());
+      // re-starting
+      m_topg.read(opts.filename, opts.record);   // fails if not found!
+      m_uplift.read(opts.filename, opts.record); // fails if not found!
+      break;
+    case INIT_BOOTSTRAP:
+      // bootstrapping
+      m_topg.regrid(opts.filename, io::Default(m_config->get_number("bootstrapping.defaults.bed")));
+      m_uplift.regrid(opts.filename,
+                      io::Default(m_config->get_number("bootstrapping.defaults.uplift")));
+      break;
+    case INIT_OTHER:
+    default: {
+      // do nothing
+    }
+    }
+
+    // process -regrid_file and -regrid_vars
+    regrid("bed deformation", m_topg);
+    // uplift is not a part of the model state, but the user may want to take it from a -regrid_file
+    // during bootstrapping
+    regrid("bed deformation", m_uplift);
+
+    auto uplift_file = m_config->get_string("bed_deformation.bed_uplift_file");
+    if (not uplift_file.empty()) {
+      m_log->message(2, "    reading bed uplift from %s ... \n", uplift_file.c_str());
+      m_uplift.regrid(uplift_file, io::Default::Nil());
+    }
+
+    auto correction_file = m_config->get_string("bed_deformation.bed_topography_delta_file");
+    if (not correction_file.empty()) {
+      m_log->message(2, "  Adding a bed topography correction read in from '%s'...\n",
+                     correction_file.c_str());
+      apply_topg_offset(correction_file, m_topg);
+    }
+  }
+
   this->init_impl(opts, ice_thickness, sea_level_elevation);
+
+  // this should be the last thing we do
+  m_topg_last.copy_from(m_topg);
 }
 
 //! Initialize using provided bed elevation and uplift.
 void BedDef::bootstrap(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
                        const array::Scalar &ice_thickness,
                        const array::Scalar &sea_level_elevation) {
+  m_t_last = time().current();
+
+  m_topg.copy_from(bed_elevation);
+  m_uplift.copy_from(bed_uplift);
+  m_topg_last.copy_from(bed_elevation);
+
   this->bootstrap_impl(bed_elevation, bed_uplift, ice_thickness, sea_level_elevation);
 }
 
-void BedDef::bootstrap_impl(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
-                            const array::Scalar &ice_thickness,
-                            const array::Scalar &sea_level_elevation) {
-  m_topg.copy_from(bed_elevation);
-  m_uplift.copy_from(bed_uplift);
-
-  // suppress a compiler warning:
-  (void)ice_thickness;
-  (void)sea_level_elevation;
+void BedDef::bootstrap_impl(const array::Scalar & /*bed_elevation*/,
+                           const array::Scalar & /*bed_uplift*/,
+                           const array::Scalar & /*ice_thickness*/,
+                           const array::Scalar & /*sea_level_elevation*/) {
+  // empty
 }
 
 void BedDef::update(const array::Scalar &ice_thickness, const array::Scalar &sea_level_elevation,
                     double t, double dt) {
-  this->update_impl(ice_thickness, sea_level_elevation, t, dt);
+
+  double t_final = t + dt;
+
+  if (t_final < m_t_last) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "cannot go back in time");
+  }
+
+  compute_load(m_topg_last, ice_thickness, sea_level_elevation, m_load);
+  m_load_accumulator.add(dt, m_load);
+
+  double t_next = m_update_interval > 0.0 ? m_t_last + m_update_interval : t_final;
+  if (std::abs(t_next - t_final) < m_t_eps) { // reached the next update time
+
+    double dt_beddef = t_final - m_t_last;
+
+    // compute time-averaged load and reset the accumulator
+    {
+      m_load.copy_from(m_load_accumulator);
+      m_load.scale(1.0 / dt_beddef);
+
+      m_load_accumulator.set(0.0);
+    }
+
+    this->update_impl(m_load, m_t_last, dt_beddef);
+    // note: we don't know if a derived class modified m_topg in update_impl(), so we *do
+    // not* call m_topg.inc_state_counter() here -- it should be done in update_impl(), if
+    // necessary
+
+    m_t_last = t_final;
+
+    // Update m_uplift and m_topg_last
+    {
+      m_topg.add(-1, m_topg_last, m_uplift);
+      //! uplift = (m_topg - m_topg_last) / dt
+      m_uplift.scale(1.0 / dt_beddef);
+    }
+    m_topg_last.copy_from(m_topg);
+  }
 }
 
-//! Initialize from the context (input file and the "variables" database).
-void BedDef::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
-                       const array::Scalar &sea_level_elevation) {
-  (void)ice_thickness;
-  (void)sea_level_elevation;
+MaxTimestep BedDef::max_timestep_impl(double t) const {
 
-  switch (opts.type) {
-  case INIT_RESTART:
-    // read bed elevation and uplift rate from file
-    m_log->message(2, "    reading bed topography and uplift from %s ... \n",
-                   opts.filename.c_str());
-    // re-starting
-    m_topg.read(opts.filename, opts.record);   // fails if not found!
-    m_uplift.read(opts.filename, opts.record); // fails if not found!
-    break;
-  case INIT_BOOTSTRAP:
-    // bootstrapping
-    m_topg.regrid(opts.filename, io::Default(m_config->get_number("bootstrapping.defaults.bed")));
-    m_uplift.regrid(opts.filename,
-                    io::Default(m_config->get_number("bootstrapping.defaults.uplift")));
-    break;
-  case INIT_OTHER:
-  default: {
-    // do nothing
-  }
+  if (t < m_t_last) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "time %f is less than the previous time %f",
+                                  t, m_t_last);
   }
 
-  // process -regrid_file and -regrid_vars
-  regrid("bed deformation", m_topg);
-  // uplift is not a part of the model state, but the user may want to take it from a -regrid_file
-  // during bootstrapping
-  regrid("bed deformation", m_uplift);
-
-  std::string uplift_file = m_config->get_string("bed_deformation.bed_uplift_file");
-  if (not uplift_file.empty()) {
-    m_log->message(2, "    reading bed uplift from %s ... \n", uplift_file.c_str());
-    m_uplift.regrid(uplift_file, io::Default::Nil());
+  if (m_update_interval == 0.0) {
+    return {};
   }
 
-  std::string correction_file = m_config->get_string("bed_deformation.bed_topography_delta_file");
-  if (not correction_file.empty()) {
-    apply_topg_offset(correction_file);
+  // Find the smallest time of the form m_t_last + k * m_update_interval that is greater
+  // than t
+  double k = std::ceil((t - m_t_last) / m_update_interval);
+
+  double t_next = m_t_last + k * m_update_interval;
+
+  double dt_max = m_update_interval;
+  if (t < t_next) {
+    dt_max = t_next - t;
   }
 
-  // this should be the last thing we do here
-  m_topg_last.copy_from(m_topg);
+  if (dt_max < m_t_eps) {
+    dt_max = m_update_interval;
+  }
+
+  return MaxTimestep(dt_max, "bed_def");
 }
 
 /*!
- * Apply a correction to the bed topography by reading topg_delta from filename.
+ * Apply a correction to the bed topography by reading "topg_delta" from `filename`.
  */
-void BedDef::apply_topg_offset(const std::string &filename) {
-  m_log->message(2, "  Adding a bed topography correction read in from %s...\n", filename.c_str());
+void BedDef::apply_topg_offset(const std::string &filename, array::Scalar &bed_topography) {
 
-  array::Scalar topg_delta(m_grid, "topg_delta");
+  auto grid = bed_topography.grid();
+
+  array::Scalar topg_delta(grid, "topg_delta");
   topg_delta.metadata(0).long_name("bed topography correction").units("meters");
 
   topg_delta.regrid(filename, io::Default::Nil());
 
-  m_topg.add(1.0, topg_delta);
-}
-
-//! Compute bed uplift (dt is in seconds).
-void BedDef::compute_uplift(const array::Scalar &bed, const array::Scalar &bed_last,
-                            double dt, array::Scalar &result) {
-  bed.add(-1, bed_last, result);
-  //! uplift = (topg - topg_last) / dt
-  result.scale(1.0 / dt);
+  bed_topography.add(1.0, topg_delta);
 }
 
 double compute_load(double bed, double ice_thickness, double sea_level,

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ void compute_load(const array::Scalar &bed_elevation,
 //! PISM bed deformation model (base class).
 class BedDef : public Component {
 public:
-  BedDef(std::shared_ptr<const Grid> g);
+  BedDef(std::shared_ptr<const Grid> g, const std::string &model_name);
   virtual ~BedDef() = default;
 
   void init(const InputOptions &opts, const array::Scalar &ice_thickness,
@@ -56,34 +56,48 @@ public:
   const array::Scalar& uplift() const;
 
 protected:
+  virtual MaxTimestep max_timestep_impl(double t) const;
+
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
 
-  virtual void update_impl(const array::Scalar &ice_thickness,
-                           const array::Scalar &sea_level_elevation,
+  virtual void update_impl(const array::Scalar &load,
                            double t, double dt) = 0;
+
   virtual void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
-                         const array::Scalar &sea_level_elevation);
+                         const array::Scalar &sea_level_elevation) = 0;
+
   virtual void bootstrap_impl(const array::Scalar &bed_elevation,
                               const array::Scalar &bed_uplift,
                               const array::Scalar &ice_thickness,
-                              const array::Scalar &sea_level_elevation);
-  virtual void apply_topg_offset(const std::string &filename);
+                              const array::Scalar &sea_level_elevation) = 0;
 
-  void compute_uplift(const array::Scalar &bed, const array::Scalar &bed_last,
-                            double dt, array::Scalar &result);
-protected:
-  const int m_wide_stencil;
+  static void apply_topg_offset(const std::string &filename, array::Scalar &bed_topography);
+
   //! current bed elevation
   array::Scalar2 m_topg;
 
   //! bed elevation at the time of the last update
-  array::Scalar2 m_topg_last;
+  array::Scalar m_topg_last;
+
+  array::Scalar m_load;
+  array::Scalar m_load_accumulator;
 
   //! bed uplift rate
   array::Scalar m_uplift;
+
+  //! time of the last bed deformation update
+  double m_t_last;
+  //! Update interval in seconds
+  double m_update_interval;
+  //! Temporal resolution to use when checking whether it's time to update
+  double m_t_eps;
+  //! Name of the variable used to store the last update time.
+  std::string m_time_name;
+
+  std::string m_model_name;
 };
 
 /*!
@@ -93,12 +107,17 @@ class Null : public BedDef {
 public:
   Null(std::shared_ptr<const Grid> g);
 protected:
-  void update_impl(const array::Scalar &ice_thickness,
-                   const array::Scalar &sea_level_elevation,
-                   double t, double dt);
-  MaxTimestep max_timestep_impl(double t) const;
+  void update_impl(const array::Scalar &load, double t, double dt);
+
   void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                  const array::Scalar &sea_level_elevation);
+
+  void bootstrap_impl(const array::Scalar &bed_elevation,
+                      const array::Scalar &bed_uplift,
+                      const array::Scalar &ice_thickness,
+                      const array::Scalar &sea_level_elevation);
+
+  MaxTimestep max_timestep_impl(double t) const;
 };
 
 //! Point-wise isostasy bed deformation model.
@@ -107,16 +126,16 @@ public:
   PointwiseIsostasy(std::shared_ptr<const Grid> g);
   virtual ~PointwiseIsostasy() = default;
 protected:
-  MaxTimestep max_timestep_impl(double t) const;
   void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                  const array::Scalar &sea_level_elevation);
+
   void bootstrap_impl(const array::Scalar &bed_elevation,
                       const array::Scalar &bed_uplift,
                       const array::Scalar &ice_thickness,
                       const array::Scalar &sea_level_elevation);
-  void update_impl(const array::Scalar &ice_thickness,
-                   const array::Scalar &sea_level_elevation,
-                   double t, double dt);
+
+  void update_impl(const array::Scalar &load, double t, double dt);
+
   //! last ice load (ice-equivalent thickness)
   array::Scalar m_load_last;
 };

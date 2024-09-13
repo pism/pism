@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,33 +25,29 @@ namespace pism {
 namespace bed {
 
 Null::Null(std::shared_ptr<const Grid> g)
-  : BedDef(g) {
+  : BedDef(g, "dummy (no-op)") {
   // empty
 }
 
-void Null::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
-                     const array::Scalar &sea_level_elevation) {
-  m_log->message(2,
-             "* Initializing the dummy (no-op) bed deformation model...\n");
-
-  BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
-
+void Null::init_impl(const InputOptions & /*opts*/, const array::Scalar & /*ice_thickness*/,
+                     const array::Scalar & /*sea_level_elevation*/) {
   m_uplift.set(0.0);
 }
 
-MaxTimestep Null::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("bed_def none");
+void Null::bootstrap_impl(const array::Scalar & /*bed_elevation*/,
+                           const array::Scalar & /*bed_uplift*/,
+                           const array::Scalar & /*ice_thickness*/,
+                           const array::Scalar & /*sea_level_elevation*/) {
+  // empty
 }
 
-void Null::update_impl(const array::Scalar &ice_thickness,
-                       const array::Scalar &sea_level_elevation,
-                       double t, double dt) {
-  (void) ice_thickness;
-  (void) sea_level_elevation;
-  (void) t;
-  (void) dt;
-  // This model does not update bed topography or bed uplift.
+void Null::update_impl(const array::Scalar &/*load*/,
+                       double /*t*/, double /*dt*/) {
+  // This model does not update bed topography
+}
+
+MaxTimestep Null::max_timestep_impl(double /*t*/) const {
+  return {};
 }
 
 } // end of namespace bed

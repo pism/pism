@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,90 +18,71 @@
 
 #include "pism/earth/BedDef.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace bed {
 
 PointwiseIsostasy::PointwiseIsostasy(std::shared_ptr<const Grid> grid)
-    : BedDef(grid), m_load_last(m_grid, "load_last") {
+    : BedDef(grid, "pointwise isostasy"), m_load_last(m_grid, "load_last") {
   // empty
 }
 
-void PointwiseIsostasy::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+void PointwiseIsostasy::init_impl(const InputOptions &/*opts*/, const array::Scalar &ice_thickness,
                                   const array::Scalar &sea_level_elevation) {
-
-  m_log->message(2,
-                 "* Initializing the pointwise isostasy bed deformation model...\n");
-
-  BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
-
   // store the initial load
   compute_load(m_topg, ice_thickness, sea_level_elevation, m_load_last);
 }
 
 
 void PointwiseIsostasy::bootstrap_impl(const array::Scalar &bed_elevation,
-                                       const array::Scalar &bed_uplift,
+                                       const array::Scalar &/*bed_uplift*/,
                                        const array::Scalar &ice_thickness,
                                        const array::Scalar &sea_level_elevation) {
-  BedDef::bootstrap_impl(bed_elevation, bed_uplift, ice_thickness, sea_level_elevation);
-
   // store initial load and bed elevation
   compute_load(bed_elevation, ice_thickness, sea_level_elevation, m_load_last);
   m_topg_last.copy_from(bed_elevation);
 }
 
-MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("bed_def iso");
-}
-
 //! Updates the pointwise isostasy model.
-void PointwiseIsostasy::update_impl(const array::Scalar &ice_thickness,
-                                    const array::Scalar &sea_level_elevation,
-                                    double t, double dt) {
-  (void) t;
-
+/*!
+ * Inputs:
+ *
+ * - ice thickness
+ * - sea level
+ * - old bed elevation
+ * - old load
+ *
+ * Outputs:
+ *
+ * - new bed elevation
+ * - updated "old" load
+ */
+void PointwiseIsostasy::update_impl(const array::Scalar &load,
+                                    double /*t*/, double /*dt*/) {
   const double
     mantle_density = m_config->get_number("bed_deformation.mantle_density"),
     load_density   = m_config->get_number("constants.ice.density"),
-    ocean_density  = m_config->get_number("constants.sea_water.density"),
-    ice_density    = m_config->get_number("constants.ice.density"),
     f              = load_density / mantle_density;
 
-  //! Our goal: topg = topg_last - f*(load - load_last)
+  // Our goal: topg_{n+1} = topg_{n} - f*(load(topg_{n}) - load_{n-1})
 
-  array::AccessScope list{&m_topg, &m_topg_last,
-                               &ice_thickness, &sea_level_elevation, &m_load_last};
+  array::AccessScope list{ &m_topg, &m_topg_last, &load, &m_load_last };
 
   ParallelSection loop(m_grid->com);
   try {
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double load = compute_load(m_topg(i, j),
-                                 ice_thickness(i, j),
-                                 sea_level_elevation(i, j),
-                                 ice_density, ocean_density);
-
-      m_topg(i, j) = m_topg_last(i, j) - f * (load - m_load_last(i, j));
-      m_load_last(i, j) = load;
+      m_topg(i, j) = m_topg_last(i, j) - f * (load(i, j) - m_load_last(i, j));
+      m_load_last(i, j) = load(i, j);
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
 
-  //! Finally, we need to update bed uplift, topg_last and load_last.
-  compute_uplift(m_topg, m_topg_last, dt, m_uplift);
-
-  m_topg_last.copy_from(m_topg);
-
-  //! Increment the topg state counter. SIAFD relies on this!
+  // mark m_topg as "modified"
   m_topg.inc_state_counter();
 }
 
