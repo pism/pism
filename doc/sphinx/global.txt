@@ -137,6 +137,9 @@
 
 .. _YAXT: https://dkrz-sw.gitlab-pages.dkrz.de/yaxt/
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/
+.. _libyaml: https://pyyaml.org/wiki/LibYAML
+.. _Autoconf: https://www.gnu.org/software/autoconf/
+.. _Automake: https://www.gnu.org/software/automake/
 
 .. CF conventions
 

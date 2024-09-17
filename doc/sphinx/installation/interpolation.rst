@@ -10,19 +10,12 @@ Enabling flexible interpolation using YAC and PROJ
 PISM's projection-aware interpolation code uses PROJ_\ [#f1]_ to compute *longitude, latitude*
 coordinates of cell centers and cell corners and YAC_ for the interpolation itself.
 
-YAC depends on YAXT_. Use the following commands to install it:
-
-.. literalinclude:: code/yaxt.sh
-   :language: bash
-   :caption: Building YAXT
-   :start-after: manual-begin
-   :end-before: manual-end
-
-Once this is done, build and install YAC:
+YAC depends on YAXT_. Please make sure you have Autoconf_, Automake_, and libyaml_
+installed, then use the following commands to install both YAXT and YAC:
 
 .. literalinclude:: code/yac.sh
    :language: bash
-   :caption: Building YAC
+   :caption: Building YAXT and YAC
    :start-after: manual-begin
    :end-before: manual-end
 
