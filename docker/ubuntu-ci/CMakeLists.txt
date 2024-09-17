@@ -1,6 +1,6 @@
 configure_file(Dockerfile.in Dockerfile)
 
-foreach(script petsc.sh petsc-64bit.sh hdf5.sh netcdf.sh pnetcdf.sh parallelio.sh yaxt.sh yac.sh)
+foreach(script petsc.sh petsc-64bit.sh hdf5.sh netcdf.sh pnetcdf.sh parallelio.sh yac.sh)
   configure_file(${Pism_SOURCE_DIR}/doc/sphinx/installation/code/${script} . COPYONLY)
 endforeach()
 

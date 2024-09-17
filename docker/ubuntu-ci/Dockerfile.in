@@ -116,19 +116,12 @@ RUN set -eux;\
         cd /tmp && \
         ./cmake-3_16_0.sh
 
-# Build YAXT
-COPY yaxt.sh /tmp/
-RUN set -eux;\
-    cd /tmp && \
-    ./yaxt.sh && \
-    rm -rf /tmp/yaxt
-
-# Build YAC
+# Build YAXT and YAC
 COPY yac.sh /tmp/
 RUN set -eux;\
     cd /tmp && \
     ./yac.sh && \
-    rm -rf yac
+    rm -rf yaxt yac
 
 # Build the current PETSc version
 COPY petsc.sh /tmp/
