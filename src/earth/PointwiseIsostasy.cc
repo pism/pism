@@ -31,7 +31,8 @@ PointwiseIsostasy::PointwiseIsostasy(std::shared_ptr<const Grid> grid)
 void PointwiseIsostasy::init_impl(const InputOptions &/*opts*/, const array::Scalar &ice_thickness,
                                   const array::Scalar &sea_level_elevation) {
   // store the initial load
-  compute_load(m_topg, ice_thickness, sea_level_elevation, m_load_last);
+  m_load_last.set(0.0);
+  accumulate_load(m_topg, ice_thickness, sea_level_elevation, 1.0, m_load_last);
 }
 
 
@@ -40,7 +41,8 @@ void PointwiseIsostasy::bootstrap_impl(const array::Scalar &bed_elevation,
                                        const array::Scalar &ice_thickness,
                                        const array::Scalar &sea_level_elevation) {
   // store initial load and bed elevation
-  compute_load(bed_elevation, ice_thickness, sea_level_elevation, m_load_last);
+  m_load_last.set(0.0);
+  accumulate_load(bed_elevation, ice_thickness, sea_level_elevation, 1.0, m_load_last);
   m_topg_last.copy_from(bed_elevation);
 }
 

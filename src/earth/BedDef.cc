@@ -82,15 +82,17 @@ void BedDef::define_model_state_impl(const File &output) const {
     output.define_variable(m_time_name, io::PISM_DOUBLE, {});
 
     output.write_attribute(m_time_name, "long_name",
-                        "time of the last update of the Lingle-Clark bed deformation model");
+                           "time of the last update of the Lingle-Clark bed deformation model");
     output.write_attribute(m_time_name, "calendar", time().calendar());
     output.write_attribute(m_time_name, "units", time().units_string());
   }
+  // FIXME: define the load accumulator
 }
 
 void BedDef::write_model_state_impl(const File &output) const {
   m_uplift.write(output);
   m_topg.write(output);
+  // FIXME: write the load accumulator
 
   output.write_variable(m_time_name, {0}, {1}, &m_t_last);
 }
@@ -129,6 +131,7 @@ void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
       // re-starting
       m_topg.read(opts.filename, opts.record);   // fails if not found!
       m_uplift.read(opts.filename, opts.record); // fails if not found!
+      // FIXME: read in the load accumulator
       break;
     case INIT_BOOTSTRAP:
       // bootstrapping
@@ -197,8 +200,7 @@ void BedDef::update(const array::Scalar &ice_thickness, const array::Scalar &sea
     throw RuntimeError(PISM_ERROR_LOCATION, "cannot go back in time");
   }
 
-  compute_load(m_topg_last, ice_thickness, sea_level_elevation, m_load);
-  m_load_accumulator.add(dt, m_load);
+  accumulate_load(m_topg_last, ice_thickness, sea_level_elevation, dt, m_load_accumulator);
 
   double t_next = m_update_interval > 0.0 ? m_t_last + m_update_interval : t_final;
   if (std::abs(t_next - t_final) < m_t_eps) { // reached the next update time
@@ -209,7 +211,6 @@ void BedDef::update(const array::Scalar &ice_thickness, const array::Scalar &sea
     {
       m_load.copy_from(m_load_accumulator);
       m_load.scale(1.0 / dt_beddef);
-
       m_load_accumulator.set(0.0);
     }
 
@@ -287,29 +288,27 @@ double compute_load(double bed, double ice_thickness, double sea_level,
   return ice_load > ocean_load ? ice_load : 0.0;
 }
 
-/*! Compute the load on the bedrock in units of ice-equivalent thickness.
+/*! Add the load on the bedrock in units of ice-equivalent thickness to `result`.
  *
+ * Result:
+ *
+ * `result(i, j) += C * load(bed, ice_thickness, sea_level)`
  */
-void compute_load(const array::Scalar &bed_elevation,
-                  const array::Scalar &ice_thickness,
-                  const array::Scalar &sea_level_elevation,
-                  array::Scalar &result) {
+void accumulate_load(const array::Scalar &bed_elevation, const array::Scalar &ice_thickness,
+                     const array::Scalar &sea_level_elevation, double C, array::Scalar &result) {
 
   Config::ConstPtr config = result.grid()->ctx()->config();
 
-  const double
-    ice_density   = config->get_number("constants.ice.density"),
-    ocean_density = config->get_number("constants.sea_water.density");
+  const double ice_density   = config->get_number("constants.ice.density"),
+               ocean_density = config->get_number("constants.sea_water.density");
 
-  array::AccessScope list{&bed_elevation, &ice_thickness, &sea_level_elevation, &result};
+  array::AccessScope list{ &bed_elevation, &ice_thickness, &sea_level_elevation, &result };
 
   for (auto p = result.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j) = compute_load(bed_elevation(i, j),
-                                ice_thickness(i, j),
-                                sea_level_elevation(i, j),
-                                ice_density, ocean_density);
+    result(i, j) += C * compute_load(bed_elevation(i, j), ice_thickness(i, j), sea_level_elevation(i, j),
+                                     ice_density, ocean_density);
   }
 }
 

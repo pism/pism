@@ -120,23 +120,28 @@ void LingleClark::bootstrap_impl(const array::Scalar &bed_elevation,
                                  const array::Scalar &bed_uplift,
                                  const array::Scalar &ice_thickness,
                                  const array::Scalar &sea_level_elevation) {
-  compute_load(bed_elevation, ice_thickness, sea_level_elevation, m_load);
 
-  std::shared_ptr<petsc::Vec> thickness0 = m_load.allocate_proc0_copy();
+  auto load_proc0 = m_load.allocate_proc0_copy();
+
+  auto &total_displacement = *m_work0;
 
   // initialize the plate displacement
   {
-    bed_uplift.put_on_proc0(*m_work0);
-    m_load.put_on_proc0(*thickness0);
+    auto &uplift_proc0 = *m_work0;
+    bed_uplift.put_on_proc0(uplift_proc0);
+
+    m_load.set(0.0);
+    accumulate_load(bed_elevation, ice_thickness, sea_level_elevation, 1.0, m_load);
+    m_load.put_on_proc0(*load_proc0);
 
     ParallelSection rank0(m_grid->com);
     try {
       if (m_grid->rank() == 0) {
         PetscErrorCode ierr = 0;
 
-        m_serial_model->bootstrap(*thickness0, *m_work0);
+        m_serial_model->bootstrap(*load_proc0, uplift_proc0);
 
-        ierr = VecCopy(m_serial_model->total_displacement(), *m_work0);
+        ierr = VecCopy(m_serial_model->total_displacement(), total_displacement);
         PISM_CHK(ierr, "VecCopy");
 
         ierr = VecCopy(m_serial_model->viscous_displacement(), *m_viscous_displacement0);
@@ -155,7 +160,7 @@ void LingleClark::bootstrap_impl(const array::Scalar &bed_elevation,
 
   m_elastic_displacement.get_from_proc0(*m_elastic_displacement0);
 
-  m_total_displacement.get_from_proc0(*m_work0);
+  m_total_displacement.get_from_proc0(total_displacement);
 
   // compute bed relief
   m_topg.add(-1.0, m_total_displacement, m_relief);
@@ -223,9 +228,6 @@ void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_t
          *m_viscous_displacement, REGRID_WITHOUT_REGRID_VARS);
   regrid("Lingle-Clark bed deformation model",
          m_elastic_displacement, REGRID_WITHOUT_REGRID_VARS);
-
-  compute_load(m_topg, ice_thickness, sea_level_elevation,
-               m_load);
 
   // Now that viscous displacement and elastic displacement are finally initialized,
   // put them on rank 0 and initialize the serial model itself.

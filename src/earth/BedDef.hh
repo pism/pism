@@ -30,10 +30,8 @@ namespace bed {
 double compute_load(double bed, double ice_thickness, double sea_level,
                     double ice_density, double ocean_density);
 
-void compute_load(const array::Scalar &bed_elevation,
-                  const array::Scalar &ice_thickness,
-                  const array::Scalar &sea_level_elevation,
-                  array::Scalar &result);
+void accumulate_load(const array::Scalar &bed_elevation, const array::Scalar &ice_thickness,
+                     const array::Scalar &sea_level_elevation, double C, array::Scalar &result);
 
 //! PISM bed deformation model (base class).
 class BedDef : public Component {
