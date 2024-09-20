@@ -55,6 +55,7 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid, const std::string &model_name)
   m_load.metadata(0)
     .long_name("load on the bed expressed as ice-equivalent thickness")
     .units("m");
+  m_load.set(0.0);
 
   m_load_accumulator.metadata(0)
     .long_name("accumulated load on the bed expressed as a time integral of ice-equivalent thickness")
@@ -99,7 +100,9 @@ void BedDef::write_model_state_impl(const File &output) const {
 
 DiagnosticList BedDef::diagnostics_impl() const {
   DiagnosticList result;
-  result = { { "dbdt", Diagnostic::wrap(m_uplift) }, { "topg", Diagnostic::wrap(m_topg) } };
+  result = { { "dbdt", Diagnostic::wrap(m_uplift) },
+             { "topg", Diagnostic::wrap(m_topg) },
+             { "bed_def_load", Diagnostic::wrap(m_load) } };
 
   return result;
 }
