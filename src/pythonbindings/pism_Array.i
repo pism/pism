@@ -108,6 +108,7 @@ using namespace pism;
     def get_column(self, i, j):
           return self._get_column(i, j)
     }
+    %pythoncode "ArrayScalar.py"
 };
 
 %ignore pism::array::Forcing::interp(int, int, double*);
