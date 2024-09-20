@@ -102,7 +102,7 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, Nx, dt):
     r = grid.x()[Nx-1:]
 
     # extract values along the x direction (along the radius of the disc)
-    z = bed_model.bed_elevation().numpy()[Ny-1, Nx-1:]
+    z = bed_model.bed_elevation().to_numpy()[Ny-1, Nx-1:]
 
     return r, z
 
@@ -144,7 +144,7 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, Nx):
     r = grid.x()[Nx-1:]
 
     # extract values along the x direction (along the radius of the disc)
-    z = bed_model.total_displacement().numpy()[Ny-1, Nx-1:]
+    z = bed_model.total_displacement().to_numpy()[Ny-1, Nx-1:]
 
     return r, z
 

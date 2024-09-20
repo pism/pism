@@ -103,7 +103,7 @@ def run(dt, restart=False):
 def compare_vec(v1, v2):
     "Compare two vecs."
     print("Comparing {}".format(v1.get_name()))
-    np.testing.assert_equal(v1.numpy(), v2.numpy())
+    np.testing.assert_equal(v1.to_numpy(), v2.to_numpy())
 
 def compare(model1, model2):
     "Compare two models"

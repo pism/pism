@@ -101,7 +101,7 @@ def grounded_cell_fraction_test():
         for L in [0.0, 0.25, 0.5, 0.75, 1.0]:
             geometry = run(L, test)
 
-            check_symmetry(geometry.cell_grounded_fraction.numpy())
+            check_symmetry(geometry.cell_grounded_fraction.to_numpy())
 
 if __name__ == "__main__":
     grounded_cell_fraction_test()

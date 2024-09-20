@@ -48,7 +48,7 @@ def bed_def_iso(ice_thickness_change):
     # time step duration is irrelevant
     bed_model.update(geometry.ice_thickness, geometry.sea_level_elevation, 0, 1)
 
-    return bed_model.bed_elevation().numpy()[0,0]
+    return bed_model.bed_elevation().to_numpy()[0,0]
 
 def beddef_iso_test():
     "Test the pointwise isostasy model"

@@ -717,7 +717,7 @@ class TestXZvanderVeen(TestCase):
 
         model = self.compute(grid)
 
-        u_model = model.velocity_u_sigma().numpy()[1, :, :].mean(axis=1)
+        u_model = model.velocity_u_sigma().to_numpy()[1, :, :].mean(axis=1)
         u_exact = [model.u_exact(t).u for t in grid.x()]
 
         return np.max(np.fabs(u_model - u_exact))

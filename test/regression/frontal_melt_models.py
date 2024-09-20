@@ -43,7 +43,7 @@ def create_geometry(grid):
     return geometry
 
 def sample(vec):
-    return vec.numpy()[0,0]
+    return vec.to_numpy()[0,0]
 
 def create_dummy_forcing_file(filename, variable_name, units, value):
     f = netCDF4.Dataset(filename, "w")

@@ -75,7 +75,7 @@ def set_velocity(v):
 
 
 def quiver(v, **kwargs):
-    a = v.numpy()
+    a = v.to_numpy()
     plt.quiver(a[:, :, 0], a[:, :, 1], **kwargs)
 
 
@@ -135,7 +135,7 @@ class MassTransport(object):
     def plot_thickness(self, ax, levels):
 
         cm = ax.contour(self.grid.x(), self.grid.y(),
-                        self.geometry.ice_thickness.numpy(), levels=levels)
+                        self.geometry.ice_thickness.to_numpy(), levels=levels)
         ax.clabel(cm)
         ax.grid()
 

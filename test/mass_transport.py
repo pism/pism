@@ -190,7 +190,7 @@ def part_grid_symmetry_test():
 
     # convert ice thickness to a NumPy array on rank 0 -- that way we can use flipud() and
     # fliplr().
-    H = geometry.ice_thickness.numpy()
+    H = geometry.ice_thickness.to_numpy()
 
     np.testing.assert_almost_equal(H, np.flipud(H))
     np.testing.assert_almost_equal(H, np.fliplr(H))

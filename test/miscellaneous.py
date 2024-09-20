@@ -974,7 +974,7 @@ class PrincipalStrainRates(TestCase):
                                                       PISM.WITHOUT_GHOSTS)
 
         PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
-        rates = strain_rates.numpy()
+        rates = strain_rates.to_numpy()
 
         e1 = rates[:,:,0]
         e2 = rates[:,:,1]
@@ -1490,7 +1490,7 @@ def thickness_calving_test():
                          [200., 150., 150.,   0.,   0.],
                          [200., 150., 150.,   0.,   0.]])
 
-        np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref1)
+        np.testing.assert_almost_equal(geometry.ice_thickness.to_numpy(), ref1)
 
         calving.update(30*day, 60*day, geometry.cell_type, geometry.ice_thickness)
 
@@ -1500,7 +1500,7 @@ def thickness_calving_test():
                          [200., 150.,   0.,   0.,   0.],
                          [200., 150.,   0.,   0.,   0.]])
 
-        np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref2)
+        np.testing.assert_almost_equal(geometry.ice_thickness.to_numpy(), ref2)
 
     finally:
         # clean up

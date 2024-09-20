@@ -53,7 +53,7 @@ def check(version):
         raise ValueError("invalid iceberg remover type: {}".format(version))
 
     model.update(vel_bc_mask, cell_type, ice_thickness)
-    np.testing.assert_equal(cell_type.numpy(), desired_result)
+    np.testing.assert_equal(cell_type.to_numpy(), desired_result)
 
 def iceberg_remover_fd_test():
     """Iceberg remover (FD version)"""

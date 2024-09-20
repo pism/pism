@@ -89,9 +89,9 @@ class LingleClarkElastic(TestCase):
         # response
         bed_model.step(geometry.ice_thickness, geometry.sea_level_elevation, 0)
 
-        return (geometry.ice_thickness.numpy(),
-                bed_model.total_displacement().numpy(),
-                bed_model.elastic_load_response_matrix().numpy())
+        return (geometry.ice_thickness.to_numpy(),
+                bed_model.total_displacement().to_numpy(),
+                bed_model.elastic_load_response_matrix().to_numpy())
 
     def setUp(self):
         self.ctx = PISM.Context()

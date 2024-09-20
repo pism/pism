@@ -93,7 +93,7 @@ def plot():
     y = np.array(grid.y())
     dy = grid.dy()
 
-    v = ssa.velocity().numpy()
+    v = ssa.velocity().to_numpy()
 
     plt.figure(1)
     plt.imshow(v[:,:,0])

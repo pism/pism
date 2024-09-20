@@ -81,13 +81,13 @@ class BeddefGiven(TestCase):
                      geometry.sea_level_elevation,
                      1, dt)
 
-        topg_0 = model.bed_elevation().numpy()[0, 0]
+        topg_0 = model.bed_elevation().to_numpy()[0, 0]
 
         model.update(geometry.ice_thickness,
                      geometry.sea_level_elevation,
                      2, dt)
 
-        topg_1 = model.bed_elevation().numpy()[0, 0]
+        topg_1 = model.bed_elevation().to_numpy()[0, 0]
 
         # -4 - 2 == -6 (see the create_forcing() call above)
         np.testing.assert_almost_equal(topg_1 - topg_0, -6)

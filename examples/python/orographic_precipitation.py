@@ -76,7 +76,7 @@ def synthetic_geometry(grid, orography):
     model.update(geometry, 0, 1)
 
     # convert from mm/s to mm/hour
-    return model.precipitation().numpy() * 3600
+    return model.precipitation().to_numpy() * 3600
 
 def input_file(filename):
 
