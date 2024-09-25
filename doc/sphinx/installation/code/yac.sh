@@ -18,6 +18,8 @@ cd yaxt
 
 autoreconf -i
 
+export CC=mpicc FC=mpifort CFLAGS="-O3 -g -march=native"
+
 ./configure --prefix=${prefix} \
             --with-pic
 
