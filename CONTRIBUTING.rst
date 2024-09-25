@@ -49,7 +49,7 @@ that your effort is well-directed.
 
 .. |pism-github-url| replace:: https://github.com/pism/pism
 .. |pism-issues-url| replace:: https://github.com/pism/pism/issues
-.. |pism-email| replace:: uaf-pism@alaska.educ
+.. |pism-email| replace:: uaf-pism@alaska.edu
 
 ..
    Local Variables:
