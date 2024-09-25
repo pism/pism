@@ -58,7 +58,7 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid, const std::string &model_name)
   m_load.set(0.0);
 
   m_load_accumulator.metadata(0)
-    .long_name("accumulated load on the bed expressed as a time integral of ice-equivalent thickness")
+    .long_name("accumulated load on the bed expressed as the time integral of ice-equivalent thickness")
     .units("m s");
 
   m_uplift.metadata(0)
@@ -78,6 +78,7 @@ const array::Scalar &BedDef::uplift() const {
 void BedDef::define_model_state_impl(const File &output) const {
   m_uplift.define(output, io::PISM_DOUBLE);
   m_topg.define(output, io::PISM_DOUBLE);
+  m_load_accumulator.define(output, io::PISM_DOUBLE);
 
   if (not output.variable_exists(m_time_name)) {
     output.define_variable(m_time_name, io::PISM_DOUBLE, {});
@@ -87,13 +88,13 @@ void BedDef::define_model_state_impl(const File &output) const {
     output.write_attribute(m_time_name, "calendar", time().calendar());
     output.write_attribute(m_time_name, "units", time().units_string());
   }
-  // FIXME: define the load accumulator
+
 }
 
 void BedDef::write_model_state_impl(const File &output) const {
   m_uplift.write(output);
   m_topg.write(output);
-  // FIXME: write the load accumulator
+  m_load_accumulator.write(output);
 
   output.write_variable(m_time_name, {0}, {1}, &m_t_last);
 }
@@ -134,13 +135,14 @@ void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
       // re-starting
       m_topg.read(opts.filename, opts.record);   // fails if not found!
       m_uplift.read(opts.filename, opts.record); // fails if not found!
-      // FIXME: read in the load accumulator
+      m_load_accumulator.read(opts.filename, opts.record);
       break;
     case INIT_BOOTSTRAP:
       // bootstrapping
       m_topg.regrid(opts.filename, io::Default(m_config->get_number("bootstrapping.defaults.bed")));
       m_uplift.regrid(opts.filename,
                       io::Default(m_config->get_number("bootstrapping.defaults.uplift")));
+      m_load_accumulator.set(0.0);
       break;
     case INIT_OTHER:
     default: {
@@ -150,6 +152,7 @@ void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
 
     // process -regrid_file and -regrid_vars
     regrid("bed deformation", m_topg);
+    regrid("bed deformation", m_load_accumulator);
     // uplift is not a part of the model state, but the user may want to take it from a -regrid_file
     // during bootstrapping
     regrid("bed deformation", m_uplift);
