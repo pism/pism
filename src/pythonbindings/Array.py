@@ -59,3 +59,11 @@ def attrs(self):
     """
     metadata = self.metadata()    
     return {**dict(metadata.all_strings()), **dict(metadata.all_doubles())}
+
+@property
+def cf_mapping(self):
+    """
+    Return cf_mapping
+    """
+    mapping_info = self.grid().get_mapping_info()
+    return {**dict(mapping_info.cf_mapping.all_strings()), **dict(mapping_info.cf_mapping.all_doubles())}
