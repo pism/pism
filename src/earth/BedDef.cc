@@ -34,13 +34,12 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid, const std::string &model_name)
     m_load(grid, "bed_def_load"),
     m_load_accumulator(grid, "bed_def_load_accumulator"),
     m_uplift(m_grid, "dbdt"),
+    m_t_last(time().current()),
     m_model_name(model_name)
 {
-
-  m_time_name = m_config->get_string("time.dimension_name") + "_bed_deformation";
-  m_t_last = time().current();
+  m_time_name       = m_config->get_string("time.dimension_name") + "_bed_deformation";
   m_update_interval = m_config->get_number("bed_deformation.update_interval", "seconds");
-  m_t_eps = m_config->get_number("time_stepping.resolution", "seconds");
+  m_t_eps           = m_config->get_number("time_stepping.resolution", "seconds");
 
   m_topg.metadata(0)
       .long_name("bedrock surface elevation")
@@ -114,16 +113,13 @@ void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
   m_log->message(2, "* Initializing the %s bed deformation model...\n",
                  m_model_name.c_str());
 
+  m_t_last = time().current();
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
     File input_file(m_grid->com, opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     if (input_file.variable_exists(m_time_name)) {
       input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
-    } else {
-      m_t_last = time().current();
     }
-  } else {
-    m_t_last = time().current();
   }
 
   {
