@@ -147,11 +147,11 @@ void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
     }
 
     // process -regrid_file and -regrid_vars
-    regrid("bed deformation", m_topg);
-    regrid("bed deformation", m_load_accumulator);
+    regrid("bed deformation", m_topg, REGRID_WITHOUT_REGRID_VARS);
+    regrid("bed deformation", m_load_accumulator, REGRID_WITHOUT_REGRID_VARS);
     // uplift is not a part of the model state, but the user may want to take it from a -regrid_file
     // during bootstrapping
-    regrid("bed deformation", m_uplift);
+    regrid("bed deformation", m_uplift, REGRID_WITHOUT_REGRID_VARS);
 
     auto uplift_file = m_config->get_string("bed_deformation.bed_uplift_file");
     if (not uplift_file.empty()) {
