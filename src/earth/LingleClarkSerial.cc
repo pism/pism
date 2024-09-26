@@ -49,7 +49,8 @@ LingleClarkSerial::LingleClarkSerial(Logger::ConstPtr log,
                                      int Mx, int My,
                                      double dx, double dy,
                                      int Nx, int Ny)
-  : m_log(log) {
+  : m_t_infty(1e16),            // around 317 million years
+    m_log(log) {
 
   // set parameters
   m_include_elastic = include_elastic;
@@ -292,7 +293,7 @@ void LingleClarkSerial::uplift_problem(petsc::Vec &load_thickness,
   fftw_execute(m_dft_inverse);
   get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, m_Nx, m_Ny, 0, 0, output);
 
-  tweak(load_thickness, output, m_Nx, m_Ny, 0.0);
+  tweak(load_thickness, output, m_Nx, m_Ny);
 }
 
 /*! Initialize using provided load thickness and the bed uplift rate.
@@ -414,9 +415,7 @@ void LingleClarkSerial::step(double dt, petsc::Vec &H) {
     get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, m_Nx, m_Ny, 0, 0, m_Uv);
 
     // Now tweak. (See the "correction" in section 5 of BuelerLingleBrown.)
-    //
-    // Here 1e16 approximates t = \infty.
-    tweak(H, m_Uv, m_Nx, m_Ny, 1e16);
+    tweak(H, m_Uv, m_Nx, m_Ny);
   } else {
     // zero time step: viscous displacement is zero
     PetscErrorCode ierr = VecSet(m_Uv, 0.0); PISM_CHK(ierr, "VecSet");
@@ -507,9 +506,8 @@ void LingleClarkSerial::update_displacement(petsc::Vec &Uv, petsc::Vec &Ue, pets
  * @param[in,out] U viscous plate displacement
  * @param[in] Nx grid size
  * @param[in] Ny grid size
- * @param[in] time time, seconds (usually 0 or a large number approximating \infty)
  */
-void LingleClarkSerial::tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx, int Ny, double time) {
+void LingleClarkSerial::tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx, int Ny) {
   PetscErrorCode ierr = 0;
   petsc::VecArray2D u(U, Nx, Ny);
 
@@ -529,7 +527,7 @@ void LingleClarkSerial::tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx,
 
   double shift = 0.0;
 
-  if (time > 0.0) {
+  {
     // tweak continued: replace far field with value for an equivalent disc load which has
     // R0=Lx*(2/3)=L/3 (instead of 1000km in MATLAB code: H0 = dx*dx*sum(sum(H))/(pi*1e6^2); %
     // trapezoid rule)
@@ -542,14 +540,14 @@ void LingleClarkSerial::tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx,
     // compute disc thickness by dividing its volume by the area
     const double H = (H_sum * m_dx * m_dy) / (M_PI * R * R);
 
-    shift = viscDisc(time,               // time in seconds
-                     H,                  // disc thickness
-                     R,                  // disc radius
-                     L_average,          // compute deflection at this radius
-                     m_mantle_density, m_load_density,    // mantle and load densities
-                     m_standard_gravity, //
-                     m_D,                // flexural rigidity
-                     m_eta);             // mantle viscosity
+    shift = viscDisc(m_t_infty,                        // time in seconds
+                     H,                                // disc thickness
+                     R,                                // disc radius
+                     L_average,                        // compute deflection at this radius
+                     m_mantle_density, m_load_density, // mantle and load densities
+                     m_standard_gravity,               //
+                     m_D,                              // flexural rigidity
+                     m_eta);                           // mantle viscosity
   }
 
   ierr = VecShift(U, shift - average); PISM_CHK(ierr, "VecShift");
