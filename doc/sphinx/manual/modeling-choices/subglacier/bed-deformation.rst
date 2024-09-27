@@ -8,6 +8,18 @@ Earth deformation models
 The option :opt:`-bed_def` ``[iso, lc, given]`` (flag :config:`bed_deformation.model`) turns one
 of the three available bed deformation models.
 
+Bed deformation timescale is longer than that of ice flow; this makes it possible to use
+*asynchronous* coupling between bed deformation and ice dynamics sub-models of PISM. The
+parameter :config:`bed_deformation.update_interval` controls the coupling interval. Update
+interval of zero corresponds to synchronous coupling.
+
+When performing a step of a bed deformation model PISM uses the *average* of the load over
+the time interval since the last update. This is necessary to avoid temporal aliasing of
+"high-frequency" variations in the ice thickness due to the annual cycle of the surface
+mass balance when sampled at a lower frequency of bed deformation updates.
+
+Here only *grounded* ice contributes to the load on the bed. We ignore the contribution of
+floating shelves and the pressure of the column of water in the ocean.
 
 .. _sec-bed-def-iso:
 
