@@ -147,6 +147,8 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
         pism_python_test (Python:sia_forward.py test_33.sh)
 
+        pism_python_test (bed_deformation:load_averaging beddef_load_averaging.sh)
+
 # Inversion regression tests.
 
         execute_process (COMMAND ${PYTHON_EXECUTABLE} -c "import siple"
