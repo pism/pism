@@ -63,7 +63,7 @@ fields from a file or otherwise transfers them from a climate model.
 Regarding the base of the ice, the temperature of a layer of bedrock in contact with
 grounded ice is generally included in PISM's conservation of energy model; see subsections
 :ref:`sec-coords` and :ref:`sec-grid`. Also, as described in section
-:ref:`sec-beddef`, PISM can apply an optional bed deformation component approximating
+:ref:`sec-bed-def`, PISM can apply an optional bed deformation component approximating
 the movement of the Earth's crust and upper mantle in response to changing ice load. In
 these senses everything below the black dashed line in :numref:`fig-climate-inputs` is
 always "owned" by PISM.

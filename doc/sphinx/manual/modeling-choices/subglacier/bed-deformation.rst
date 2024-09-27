@@ -1,6 +1,6 @@
 .. include:: ../../../global.txt
 
-.. _sec-beddef:
+.. _sec-bed-def:
 
 Earth deformation models
 ------------------------

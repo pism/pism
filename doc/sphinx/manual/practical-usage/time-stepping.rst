@@ -88,7 +88,7 @@ step length.
 
 #. Atmosphere, surface process, ocean, and sea level forcing components.
 
-#. A bed deformation model (see :ref:`sec-bed-def-lc` and
+#. A bed deformation model (see :ref:`sec-bed-def` and
    :config:`bed_deformation.update_interval`).
 
 #. If :config:`geometry.front_retreat.use_cfl` is set, PISM adjusts time step lengths to

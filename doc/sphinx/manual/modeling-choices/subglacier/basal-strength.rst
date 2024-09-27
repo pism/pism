@@ -293,7 +293,7 @@ stands for the bed elevation. To explain these, we define `M = (\phimax - \phimi
      \phimax, & \bmax \le b(x,y).
    \end{cases}
 
-It is worth noting that an earth deformation model (see section :ref:`sec-beddef`) changes
+It is worth noting that an earth deformation model (see section :ref:`sec-bed-def`) changes
 `b(x,y)` (NetCDF variable :var:`topg`) used in :eq:`eq-phipiecewise`, so that a sequence
 of runs such as
 
