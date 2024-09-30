@@ -120,7 +120,14 @@ def plot(data, total, grand_total):
 
     labels = [better_name(name) + " " + comment for name, comment in zip(names, comments)]
 
-    explode = [0.05]*len(times)
+    sum_of_times = np.sum(times_percent)
+    if sum_of_times < 100:
+        times_percent.append(100 - sum_of_times)
+        labels.append("other")
+    else:
+        times_percent = np.array(times_percent) / sum_of_times * 100
+
+    explode = [0.05]*len(times_percent)
     plt.pie(times_percent, autopct="%3.1f%%", labels=labels, colors=colors, startangle=0.0, explode=explode, normalize=True)
     plt.margins(x=0.2, y=0.1)
     plt.axis('equal')
@@ -128,10 +135,9 @@ def plot(data, total, grand_total):
 
 def figure(title, event_list, total, grand_total=None):
     plt.figure(figsize=(10,5))
-    plt.title("%s (%s)" % (title, filename))
+    plt.title(f"{title} ({grand_total} s total, {filename})")
     data = get_data(event_list)
     plot(aggregate(data, total), total, grand_total)
-    # plot(data, total, grand_total)
     return data
 
 
