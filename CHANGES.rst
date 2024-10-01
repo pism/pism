@@ -17,6 +17,14 @@ Changes since v2.1
   the code, model inputs and outputs, etc.
 - Add the configuration parameter `energy.model` (choices: `none`, `cold`, `enthalpy`);
   remove `energy.enabled` and `energy.temperature_based`.
+- All bed deformation models use the load averaged over the duration of the (usually long)
+  bed deformation time step (see `issue 525`_). This requires saving the time integral of
+  the load since the last bed deformation update (variable `bed_def_load_accumulator` and
+  the time of the last update `time_bed_deformation`) as a part of the model state and
+  reading them when re-starting the model. Rename `bed_deformation.lc.update_interval` to
+  `bed_deformation.update_interval` since now *all* bed deformation models use this
+  parameter. Add a new diagnostic variable: `bed_def_load`, the load used during the last
+  bed deformation update.
 
 Changes since v2.0
 ==================
@@ -985,6 +993,7 @@ Miscellaneous
 .. _issue 422: https://github.com/pism/pism/issues/422
 .. _issue 424: https://github.com/pism/pism/issues/424
 .. _issue 407: https://github.com/pism/pism/issues/407
+.. _issue 525: https://github.com/pism/pism/issues/525
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 ..
    Local Variables:

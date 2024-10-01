@@ -15,7 +15,7 @@ def run(cmd):
 pism_path = sys.argv[1]
 mpiexec = sys.argv[2]
 
-cmd = "{path}/pismr -test F -y 10 -verbose 1 -o_size small -no_report -o in-temp-continuity.nc".format(path=pism_path)
+cmd = f"{pism_path}/pismr -test F -y 10 -verbose 1 -o_size small -no_report -o in-temp-continuity.nc"
 
 run(cmd)
 

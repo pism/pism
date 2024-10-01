@@ -61,7 +61,7 @@ instead from a previously computed near-equilibrium result:
      -regrid_vars litho_temp,thk,enthalpy,tillwat,basal_melt_rate_grounded
 
 For more on regridding see section :ref:`sec-regridding`. Then we turn on the earth
-deformation model with option ``-bed_def lc``; see section :ref:`sec-beddef`. After
+deformation model with option ``-bed_def lc``; see section :ref:`sec-bed-def`. After
 that the atmosphere and surface (PDD) models are turned on and the files they need are
 identified:
 

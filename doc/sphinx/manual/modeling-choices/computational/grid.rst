@@ -40,7 +40,7 @@ See :numref:`fig-grid-vertical-sigma`.
 Set :config:`grid.Mbz` to a number greater than one to use the bedrock thermal model. When
 a thermal bedrock layer is used, the depth of the layer is controlled by
 :config:`grid.Lbz`. Note that :config:`grid.Mbz` is unrelated to the bed deformation model
-(glacial isostasy model); see section :ref:`sec-beddef`.
+(glacial isostasy model); see section :ref:`sec-bed-def`.
 
 In the quadratically-spaced case the vertical spacing near the ice/bedrock interface is
 about :config:`grid.lambda` times finer than it would be with equal spacing for the same

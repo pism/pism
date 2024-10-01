@@ -7,6 +7,8 @@ import PISM
 
 ctx  = PISM.Context().ctx
 
+ctx.config().set_number("bed_deformation.update_interval", 0.0)
+
 def exact(ice_thickness_change):
     "Exact deflection corresponding to a given thickness change."
 
