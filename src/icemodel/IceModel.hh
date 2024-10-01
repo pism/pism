@@ -349,7 +349,14 @@ protected:
   enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
   void enforce_consistency_of_geometry(ConsistencyFlag flag);
 
-  void identify_open_ocean(const array::CellType &cell_type, array::Scalar &result);
+  /*!
+   * Compute the mask (`result`) identifying "open ocean" cells, i.e. "ice free ocean"
+   * cells that are reachable from open ocean cells at an edge of the domain.
+   *
+   * Here `result` is ghosted so that we can pass it to the connected component labeling
+   * algorithm.
+   */
+  void identify_open_ocean(const array::CellType &cell_type, array::Scalar1 &result);
 
   virtual void front_retreat_step();
 
@@ -384,8 +391,6 @@ protected:
   // working space (a convenience)
   static const int m_n_work2d = 4;
   mutable std::vector<std::shared_ptr<array::Scalar2>> m_work2d;
-
-  std::shared_ptr<petsc::Vec> m_work2d_proc0;
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 

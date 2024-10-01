@@ -21,7 +21,7 @@
 
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/connected_components.hh"
+#include "pism/util/connected_components/label_components.hh"
 
 #include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 
@@ -115,24 +115,10 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
     } // end of the loop over local nodes
   } // end of the block preparing the mask
 
-  // Identify icebergs using serial code on processor 0:
+  // Identify icebergs:
   {
-    m_iceberg_mask.put_on_proc0(*m_mask_p0);
-
-    ParallelSection rank0(m_grid->com);
-    try {
-      if (m_grid->rank() == 0) {
-        petsc::VecArray mask_p0(*m_mask_p0);
-        label_connected_components(mask_p0.get(), m_grid->My(), m_grid->Mx(),
-                                   true, mask_grounded_ice);
-      }
-    } catch (...) {
-      rank0.failed();
-    }
-    rank0.check();
-
-    m_iceberg_mask.get_from_proc0(*m_mask_p0);
-    // note: this will update ghosts of m_iceberg_mask
+    connected_components::label_isolated(m_iceberg_mask, mask_grounded_ice);
+    m_iceberg_mask.update_ghosts();
   }
 
   // create a mask indicating if a *node* should be removed
@@ -175,7 +161,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
             grounded &= (mask::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
           }
 
-          if (m_iceberg_mask(i, j) == 1) {
+          if (m_iceberg_mask.as_int(i, j) == 1) {
             // this is an iceberg element
             element.add_contribution(mask_iceberg, M);
           } else {

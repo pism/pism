@@ -19,7 +19,7 @@
 
 #include <algorithm> // max_element
 #include "pism/coupler/ocean/PicoGeometry.hh"
-#include "pism/util/label_components.hh"
+#include "pism/util/connected_components/label_components.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/Vec.hh"
@@ -62,8 +62,6 @@ PicoGeometry::PicoGeometry(std::shared_ptr<const Grid> grid)
 
   m_basin_mask.metadata(0).long_name("mask determines basins for PICO");
   m_n_basins = 0;
-
-  m_tmp_p0 = m_tmp.allocate_proc0_copy();
 }
 
 const array::Scalar &PicoGeometry::continental_shelf_mask() const {
@@ -308,7 +306,7 @@ void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar
   }
 
   // identify "floating" areas that are not connected to the open ocean as defined above
-  label_components(m_tmp, *m_tmp_p0, true, reachable_from_domain_edge);
+  connected_components::label_isolated(m_tmp, reachable_from_domain_edge);
 
   result.copy_from(m_tmp);
 }
@@ -340,7 +338,7 @@ void PicoGeometry::compute_ice_rises(const array::CellType &cell_type, bool excl
   }
 
   if (exclude_ice_rises) {
-    label_components(m_tmp, *m_tmp_p0, false, 0);
+    connected_components::label(m_tmp);
 
     relabel(AREA_THRESHOLD,
             m_config->get_number("ocean.pico.maximum_ice_rise_area", "m2"),
@@ -390,7 +388,7 @@ void PicoGeometry::compute_continental_shelf_mask(const array::Scalar &bed_eleva
 
   // use "iceberg identification" to label parts *not* connected to the continental ice
   // sheet
-  label_components(m_tmp, *m_tmp_p0, true, 2.0);
+  connected_components::label_isolated(m_tmp, 2);
 
   // At this point areas with bed > threshold are 1, everything else is zero.
   //
@@ -437,7 +435,7 @@ void PicoGeometry::compute_ice_shelf_mask(const array::Scalar &ice_rise_mask, co
     }
   }
 
-  label_components(m_tmp, *m_tmp_p0, false, 0);
+  connected_components::label(m_tmp);
 
   // remove ice rises and lakes
   for (auto p = m_grid->points(); p; p.next()) {
@@ -475,7 +473,7 @@ void PicoGeometry::compute_ocean_mask(const array::CellType &cell_type, array::S
     }
   }
 
-  label_components(m_tmp, *m_tmp_p0, false, 0);
+  connected_components::label(m_tmp);
 
   relabel(BY_AREA, 0.0, m_tmp);
 

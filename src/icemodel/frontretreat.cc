@@ -35,17 +35,18 @@
 #include "pism/frontretreat/util/remove_narrow_tongues.hh"
 #include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/util/ScalarForcing.hh"
-#include "pism/util/label_components.hh"
+#include "pism/util/connected_components/label_components.hh"
 
 namespace pism {
 
-void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scalar &result) {
-
-  auto &tmp_p0 = *m_work2d_proc0;
+void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scalar1 &result) {
 
   array::AccessScope list{ &cell_type, &result };
 
   auto grid = cell_type.grid();
+
+  const int water = 1;
+  const int water_reachable_from_domain_edge = 2;
 
   // assume that ice-free ocean points at the edge of the domain belong to the "global
   // ocean"
@@ -53,17 +54,17 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free_ocean(i, j)) {
-      result(i, j) = 1.0;
+      result(i, j) = water;
 
       if (grid::domain_edge(*grid, i, j)) {
-        result(i, j) = 2.0;
+        result(i, j) = water_reachable_from_domain_edge;
       }
     } else {
       result(i, j) = 0.0;
     }
   }
 
-  label_components(result, tmp_p0, true, 2);
+  connected_components::label_isolated(result, water_reachable_from_domain_edge);
 
   // now `result` contains ones in "ice free ocean" cells that are not connected to the edge
   // of the domain and zeros elsewhere
@@ -73,7 +74,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ice_free_ocean(i, j) and result(i, j) < 0.5) {
+    if (cell_type.ice_free_ocean(i, j) and result.as_int(i, j) == 0) {
       result(i, j) = 1;
     } else {
       result(i, j) = 0;
