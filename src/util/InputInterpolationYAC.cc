@@ -123,7 +123,9 @@ struct LonLatGrid {
  *
  * Returns the point ID that can be used to define a "field".
  */
-int InputInterpolationYAC::define_grid(const pism::Grid &grid, const std::string &grid_name,
+int InputInterpolationYAC::define_grid(const std::vector<double> &x_cell,
+                                       const std::vector<double> &y_cell,
+                                       const std::string &grid_name,
                                        const std::string &projection) {
 
   if (projection.empty()) {
@@ -131,61 +133,29 @@ int InputInterpolationYAC::define_grid(const pism::Grid &grid, const std::string
         PISM_ERROR_LOCATION, "grid '%s' has no projection information", grid_name.c_str());
   }
 
-  int xs = grid.xs();
-  int ys = grid.ys();
-  int xm = grid.xm();
-  int ym = grid.ym();
-
-  std::vector<double> x(xm);
-  std::vector<double> y(ym);
-
-  // Set x and y to coordinates of centers of cells in the local sub-domain:
+  // Shift x and y by half a grid spacing and add one more row and column to get
+  // coordinates of corners of cells in the local sub-domain:
+  std::vector<double> x_node(x_cell.size() + 1), y_node(y_cell.size() + 1);
   {
-    for (int k = 0; k < xm; ++k) {
-      x[k] = grid.x(xs + k);
+    // note: dx and dy may be negative here
+    double dx = x_cell[1] - x_cell[0];
+    double dy = y_cell[1] - y_cell[0];
+
+    for (size_t k = 0; k < x_cell.size(); ++k) {
+      x_node[k] = x_cell[k] - 0.5 * dx;
     }
-    for (int k = 0; k < ym; ++k) {
-      y[k] = grid.y(ys + k);
+    x_node.back() = x_cell.back() + 0.5 * dx;
+
+    for (size_t k = 0; k < y_cell.size(); ++k) {
+      y_node[k] = y_cell[k] - 0.5 * dy;
     }
+    y_node.back() = y_cell.back() + 0.5 * dy;
   }
 
   // Compute lon,lat coordinates of cell centers:
-  LonLatGrid cells(x, y, projection);
-
-  // Shift x and y by half a grid spacing and add one more row and column to get
-  // coordinates of corners of cells in the local sub-domain:
-  {
-    double dx = x[1] - x[0];
-    double dy = y[1] - y[0];
-
-    double x_last = x.back() + 0.5 * dx;
-    for (size_t k = 0; k < x.size(); ++k) {
-      x[k] -= 0.5 * dx;
-    }
-    x.push_back(x_last);
-
-    double y_last = y.back() + 0.5 * dy;
-    for (size_t k = 0; k < y.size(); ++k) {
-      y[k] -= 0.5 * dy;
-    }
-    y.push_back(y_last);
-  }
-
+  LonLatGrid cells(x_cell, y_cell, projection);
   // Compute lon,lat coordinates of cell corners:
-  LonLatGrid nodes(x, y, projection);
-  int n_nodes[2] = { (int)x.size(), (int)y.size() };
-
-  std::vector<int> cell_global_index(xm * ym);
-  {
-    int Mx = grid.Mx();
-    int k  = 0;
-    for (int j = ys; j < ys + ym; ++j) {
-      for (int i = xs; i < xs + xm; ++i) {
-        cell_global_index[k] = j * Mx + i;
-        ++k;
-      }
-    }
-  }
+  LonLatGrid nodes(x_node, y_node, projection);
 
   int point_id = 0;
   {
@@ -193,12 +163,11 @@ int InputInterpolationYAC::define_grid(const pism::Grid &grid, const std::string
 
     int grid_id = 0;
 
+    int n_nodes[2] = { (int)x_node.size(), (int)y_node.size() };
     yac_cdef_grid_curve2d(grid_name.c_str(), n_nodes, cyclic, nodes.lon.data(), nodes.lat.data(),
                           &grid_id);
 
-    yac_cset_global_index(cell_global_index.data(), YAC_LOCATION_CELL, grid_id);
-
-    int n_cells[2] = { xm, ym };
+    int n_cells[2] = { (int)x_cell.size(), (int)y_cell.size() };
     yac_cdef_points_curve2d(grid_id, n_cells, YAC_LOCATION_CELL, cells.lon.data(), cells.lat.data(),
                             &point_id);
   }
@@ -213,10 +182,11 @@ int InputInterpolationYAC::define_grid(const pism::Grid &grid, const std::string
  * @param[in] pism_grid PISM's grid
  * @param[in] name string describing this grid and field
  */
-int InputInterpolationYAC::define_field(int component_id, const pism::Grid &grid,
-                                        const std::string &name) {
+int InputInterpolationYAC::define_field(int component_id, const std::vector<double> &x,
+                                        const std::vector<double> &y,
+                                        const std::string &proj_string, const std::string &name) {
 
-  int point_id = define_grid(grid, name, grid.get_mapping_info().proj_string);
+  int point_id = define_grid(x, y, name, proj_string);
 
   const char *time_step_length = "1";
   const int point_set_size     = 1;
@@ -283,9 +253,22 @@ static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const
   throw pism::RuntimeError::formatted(pism::ErrorLocation(source, line), "YAC error: %s", msg);
 }
 
+/*!
+ * Extract the "local" (corresponding to the current sub-domain) grid subset.
+ */
+static std::vector<double> grid_subset(int xs, int xm, const std::vector<double> &coords) {
+  std::vector<double> result(xm);
+  for (int k = 0; k < xm; ++k) {
+    result[k] = coords[xs + k];
+  }
+
+  return result;
+}
+
 InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                              const pism::File &input_file,
-                                             const std::string &variable_name) {
+                                             const std::string &variable_name)
+    : m_instance_id(0), m_source_field_id(0), m_target_field_id(0) {
   auto ctx = target_grid.ctx();
 
   if (target_grid.get_mapping_info().proj_string.empty()) {
@@ -359,10 +342,22 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
       yac_cdef_comps_instance(m_instance_id, comp_names, n_comps, comp_ids);
 
       log->message(2, "Defining the source grid (%s)...\n", source_grid_name.c_str());
-      m_source_field_id = define_field(comp_ids[0], *source_grid, source_grid_name);
+      {
+        auto x = grid_subset(source_grid->xs(), source_grid->xm(), info.x);
+        auto y = grid_subset(source_grid->ys(), source_grid->ym(), info.y);
+
+        m_source_field_id = define_field(
+            comp_ids[0], x, y, source_grid->get_mapping_info().proj_string, source_grid_name);
+      }
 
       log->message(2, "Defining the target grid (%s)...\n", target_grid_name.c_str());
-      m_target_field_id = define_field(comp_ids[1], target_grid, target_grid_name);
+      {
+        auto x = grid_subset(target_grid.xs(), target_grid.xm(), target_grid.x());
+        auto y = grid_subset(target_grid.ys(), target_grid.ym(), target_grid.y());
+
+        m_target_field_id = define_field(
+            comp_ids[1], x, y, target_grid.get_mapping_info().proj_string, target_grid_name);
+      }
 
       // Define the interpolation stack:
       {
@@ -453,8 +448,8 @@ void InputInterpolationYAC::regrid(const pism::File &file, pism::array::Scalar &
 
 
 double InputInterpolationYAC::regrid_impl(const SpatialVariableMetadata &metadata,
-                                     const pism::File &file, int record_index,
-                                          const Grid &/* target_grid (unused) */,
+                                          const pism::File &file, int record_index,
+                                          const Grid & /* target_grid (unused) */,
                                           petsc::Vec &output) const {
 
   // set metadata to help the following call find the variable, convert units, etc

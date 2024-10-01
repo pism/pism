@@ -50,7 +50,7 @@ public:
                         const std::string &variable_name);
   virtual ~InputInterpolationYAC();
 
-  void regrid(const File &file, array::Scalar &target) const;
+  void regrid(const File &file, array::Scalar &output) const;
 
 private:
   double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
@@ -61,9 +61,11 @@ private:
   static int interpolation_coarse_to_fine(double missing_value);
   static int interpolation_fine_to_coarse(double missing_value);
 
-  static int define_field(int component_id, const Grid &pism_grid, const std::string &name);
-  static int define_grid(const Grid &grid, const std::string &grid_name,
-                         const std::string &projection);
+  static int define_field(int component_id, const std::vector<double> &x,
+                          const std::vector<double> &y, const std::string &proj_string,
+                          const std::string &name);
+  static int define_grid(const std::vector<double> &x, const std::vector<double> &y,
+                         const std::string &grid_name, const std::string &projection);
 
   int m_instance_id;
   int m_source_field_id;
