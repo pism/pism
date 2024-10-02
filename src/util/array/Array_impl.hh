@@ -86,6 +86,8 @@ struct Array::Impl {
   bool ghosted;
 
   //! distributed mesh manager (DM)
+  //!
+  //! Note: do not access this directly (via `m_impl->da`). Use `dm()` instead.
   std::shared_ptr<petsc::DM> da;
 
   //! If true, use DMDAVecGetArrayDOF() in begin_access()

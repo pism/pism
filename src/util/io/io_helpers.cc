@@ -400,6 +400,9 @@ static std::vector<AxisType> dimension_types(const File &file, const std::string
  */
 static void transpose(const double *input, const std::vector<AxisType> &input_axes,
                       const std::array<int, 4> &count, double *output) {
+  // delta[X_AXIS] is the change in the linear index corresponding to incrementing x in
+  // the `input` ordering. delta[Y_AXIS], delta[Z_AXIS] and delta[T_AXIS] correspond to
+  // changes in y, z, t.
   std::vector<unsigned> delta = {1, 1, 1, 1}; // 4 to store steps for T,Y,X,Z axes
   {
     int N = (int)input_axes.size();
