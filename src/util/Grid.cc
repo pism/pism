@@ -1051,7 +1051,8 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
 
         half_width = 0.5 * (v_max - v_min);
         if (r == CELL_CENTER) {
-          half_width += 0.5 * (data[1] - data[0]);
+          auto spacing = std::abs(data[1] - data[0]);
+          half_width += 0.5 * spacing;
         }
       }
 
