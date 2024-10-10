@@ -37,6 +37,7 @@ macro(pism_test name script)
     "ncap2: command not found"
     "ncks: command not found"
     "ncrcat: command not found"
+    "cdo: command not found"
   )
 endmacro()
 
@@ -101,6 +102,10 @@ pism_test (PICO:Split-and-merge pico_split/run_test.sh)
 
 if (Pism_USE_PROJ)
   pism_test (epsg_code_processing test_epsg_processing.py)
+endif()
+
+if (Pism_USE_YAC_INTERPOLATION)
+  pism_test (regridding:yac:inverted_y interpolation_inverted_y.sh)
 endif()
 
 if(Pism_BUILD_EXTRA_EXECS)
