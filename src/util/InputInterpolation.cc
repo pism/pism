@@ -135,6 +135,14 @@ InputInterpolation::create(const Grid &target_grid,
       if (size_matches and center_matches and extent_matches) {
         use_yac = false;
       }
+
+      double dx_source = source_grid.x[1] - source_grid.x[0];
+      double dy_source = source_grid.y[1] - source_grid.y[0];
+
+      // use YAC to interpolate from grids using decreasing coordinates
+      if (dx_source < 0 or dy_source < 0) {
+        use_yac = true;
+      }
     }
 
     if (use_yac) {
