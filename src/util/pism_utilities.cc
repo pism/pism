@@ -28,10 +28,6 @@
 #include <fftw3.h>              // fftw_version
 #include <gsl/gsl_version.h>    // GSL_VERSION
 
-// All recent NetCDF versions depend on HDF5, so we should be able to include hdf5.h to
-// record the version used by PISM.
-#include <hdf5.h>               // H5_VERS_INFO
-
 #include "pism/pism_config.hh"  // Pism_USE_XXX, version info
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
@@ -253,7 +249,6 @@ std::string version() {
   result += buffer;
 #endif
 
-  result += pism::printf("%s\n", H5_VERS_INFO);
   result += pism::printf("NetCDF %s.\n", nc_inq_libvers());
   result += pism::printf("FFTW %s.\n", fftw_version);
   result += pism::printf("GSL %s.\n", GSL_VERSION);

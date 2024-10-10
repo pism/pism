@@ -106,8 +106,6 @@ target_link_libraries (pism
   PkgConfig::FFTW
   ${MPI_C_LIBRARIES}
   ${MPI_CXX_LIBRARIES}
-  ${HDF5_LIBRARIES}
-  ${HDF5_HL_LIBRARIES}
   ${UDUNITS2_LIBRARIES}
 )
 
