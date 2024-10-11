@@ -25,6 +25,7 @@
 
 #include "pism/coupler/util/options.hh"
 #include "pism/util/interpolation.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 namespace ocean {
@@ -140,9 +141,13 @@ void PicoGeometry::update(const array::Scalar &bed_elevation,
     m_ice_rises.update_ghosts();
     m_ocean_mask.update_ghosts();
 
+    profiling().begin("ocean.distances_gl");
     compute_distances_gl(m_ocean_mask, m_ice_rises, exclude_ice_rises, m_distance_gl);
+    profiling().end("ocean.distances_gl");
 
+    profiling().begin("ocean.distances_cf");
     compute_distances_cf(m_ocean_mask, m_ice_rises, exclude_ice_rises, m_distance_cf);
+    profiling().end("ocean.distances_cf");
   }
 
   // computing ice_shelf_mask and box_mask could be done at the same time
@@ -281,33 +286,39 @@ static void relabel(RelabelingType type,
  * 2 - floating ice or ice-free ocean connected to the open ocean
  */
 void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar &result) {
-  array::AccessScope list{ &cell_type, &m_tmp };
+  profiling().begin("ocean.lakes");
+  {
+    array::AccessScope list{ &cell_type, &m_tmp };
 
-  int background                 = 0;
-  int floating                   = 1;
-  int reachable_from_domain_edge = 2;
-  auto grid = cell_type.grid();
+    int background                 = 0;
+    int floating                   = 1;
+    int reachable_from_domain_edge = 2;
+    auto grid                      = cell_type.grid();
 
-  // assume that ocean points (i.e. floating, either icy or ice-free) at the edge of the
-  // domain belong to the "open ocean"
-  for (auto p = grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    // assume that ocean points (i.e. floating, either icy or ice-free) at the edge of the
+    // domain belong to the "open ocean"
+    for (auto p = grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i, j)) {
-      m_tmp(i, j) = floating;
+      if (cell_type.ocean(i, j)) {
+        m_tmp(i, j) = floating;
 
-      if (grid::domain_edge(*grid, i, j)) {
-        m_tmp(i, j) = reachable_from_domain_edge;
+        if (grid::domain_edge(*grid, i, j)) {
+          m_tmp(i, j) = reachable_from_domain_edge;
+        }
+      } else {
+        m_tmp(i, j) = background;
       }
-    } else {
-      m_tmp(i, j) = background;
     }
+
+    // identify "floating" areas that are not connected to the open ocean as defined above
+    profiling().begin("ocean.lakes.label");
+    connected_components::label_isolated(m_tmp, reachable_from_domain_edge);
+    profiling().end("ocean.lakes.label");
+
+    result.copy_from(m_tmp);
   }
-
-  // identify "floating" areas that are not connected to the open ocean as defined above
-  connected_components::label_isolated(m_tmp, reachable_from_domain_edge);
-
-  result.copy_from(m_tmp);
+  profiling().end("ocean.lakes");
 }
 
 /*!
@@ -323,37 +334,42 @@ void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar
  */
 void PicoGeometry::compute_ice_rises(const array::CellType &cell_type, bool exclude_ice_rises,
                                      array::Scalar &result) {
-  array::AccessScope list{ &cell_type, &m_tmp };
+  profiling().begin("ocean.ice_rises");
+  {
+    array::AccessScope list{ &cell_type, &m_tmp };
 
-  // mask of zeros and ones: one if grounded ice, zero otherwise
-  for (auto p = m_grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    // mask of zeros and ones: one if grounded ice, zero otherwise
+    for (auto p = m_grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (cell_type.grounded(i, j)) {
-      m_tmp(i, j) = 2.0;
-    } else {
-      m_tmp(i, j) = 0.0;
+      if (cell_type.grounded(i, j)) {
+        m_tmp(i, j) = 2.0;
+      } else {
+        m_tmp(i, j) = 0.0;
+      }
     }
-  }
 
-  if (exclude_ice_rises) {
-    connected_components::label(m_tmp);
+    profiling().begin("ocean.ice_rises.label");
+    if (exclude_ice_rises) {
+      connected_components::label(m_tmp);
 
-    relabel(AREA_THRESHOLD,
-            m_config->get_number("ocean.pico.maximum_ice_rise_area", "m2"),
-            m_tmp);
-  }
-
-  // mark floating ice areas in this mask (reduces the number of masks we need later)
-  for (auto p = m_grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (m_tmp(i, j) == 0.0 and cell_type.icy(i, j)) {
-      m_tmp(i, j) = FLOATING;
+      relabel(AREA_THRESHOLD, m_config->get_number("ocean.pico.maximum_ice_rise_area", "m2"),
+              m_tmp);
     }
-  }
+    profiling().end("ocean.ice_rises.label");
 
-  result.copy_from(m_tmp);
+    // mark floating ice areas in this mask (reduces the number of masks we need later)
+    for (auto p = m_grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_tmp(i, j) == 0.0 and cell_type.icy(i, j)) {
+        m_tmp(i, j) = FLOATING;
+      }
+    }
+
+    result.copy_from(m_tmp);
+  }
+  profiling().end("ocean.ice_rises");
 }
 
 /*!
@@ -369,43 +385,48 @@ void PicoGeometry::compute_continental_shelf_mask(const array::Scalar &bed_eleva
                                                   const array::Scalar &ice_rise_mask,
                                                   double bed_elevation_threshold,
                                                   array::Scalar &result) {
-  array::AccessScope list{ &bed_elevation, &ice_rise_mask, &m_tmp };
+  profiling().begin("ocean.continental_shelf_mask");
+  {
+    array::AccessScope list{ &bed_elevation, &ice_rise_mask, &m_tmp };
 
-  for (auto p = m_grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    for (auto p = m_grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    m_tmp(i, j) = 0.0;
+      m_tmp(i, j) = 0.0;
 
-    if (bed_elevation(i, j) > bed_elevation_threshold) {
-      m_tmp(i, j) = 1.0;
+      if (bed_elevation(i, j) > bed_elevation_threshold) {
+        m_tmp(i, j) = 1.0;
+      }
+
+      if (ice_rise_mask.as_int(i, j) == CONTINENTAL) {
+        m_tmp(i, j) = 2.0;
+      }
     }
 
-    if (ice_rise_mask.as_int(i, j) == CONTINENTAL) {
-      m_tmp(i, j) = 2.0;
+    // use "iceberg identification" to label parts *not* connected to the continental ice
+    // sheet
+    profiling().begin("ocean.continental_shelf_mask.label");
+    connected_components::label_isolated(m_tmp, 2);
+    profiling().end("ocean.continental_shelf_mask.label");
+
+    // At this point areas with bed > threshold are 1, everything else is zero.
+    //
+    // Now we need to mark the continental shelf itself.
+    for (auto p = m_grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_tmp(i, j) > 0.0) {
+        continue;
+      }
+
+      if (bed_elevation(i, j) > bed_elevation_threshold and ice_rise_mask.as_int(i, j) == OCEAN) {
+        m_tmp(i, j) = 2.0;
+      }
     }
+
+    result.copy_from(m_tmp);
   }
-
-  // use "iceberg identification" to label parts *not* connected to the continental ice
-  // sheet
-  connected_components::label_isolated(m_tmp, 2);
-
-  // At this point areas with bed > threshold are 1, everything else is zero.
-  //
-  // Now we need to mark the continental shelf itself.
-  for (auto p = m_grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (m_tmp(i, j) > 0.0) {
-      continue;
-    }
-
-    if (bed_elevation(i, j) > bed_elevation_threshold and
-        ice_rise_mask.as_int(i, j) == OCEAN) {
-      m_tmp(i, j) = 2.0;
-    }
-  }
-
-  result.copy_from(m_tmp);
+  profiling().end("ocean.continental_shelf_mask");
 }
 
 /*!
@@ -418,34 +439,40 @@ void PicoGeometry::compute_continental_shelf_mask(const array::Scalar &bed_eleva
  * Floating ice cells that are not connected to the ocean ("subglacial lakes") are
  * excluded.
  */
-void PicoGeometry::compute_ice_shelf_mask(const array::Scalar &ice_rise_mask, const array::Scalar &lake_mask,
-                                          array::Scalar &result) {
-  array::AccessScope list{ &ice_rise_mask, &lake_mask, &m_tmp };
+void PicoGeometry::compute_ice_shelf_mask(const array::Scalar &ice_rise_mask,
+                                          const array::Scalar &lake_mask, array::Scalar &result) {
+  profiling().begin("ocean.ice_shelf_mask");
+  {
+    array::AccessScope list{ &ice_rise_mask, &lake_mask, &m_tmp };
 
-  for (auto p = m_grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    for (auto p = m_grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    int M = ice_rise_mask.as_int(i, j);
+      int M = ice_rise_mask.as_int(i, j);
 
-    if (M == RISE or M == FLOATING) {
-      m_tmp(i, j) = 1.0;
-    } else {
-      m_tmp(i, j) = 0.0;
+      if (M == RISE or M == FLOATING) {
+        m_tmp(i, j) = 1.0;
+      } else {
+        m_tmp(i, j) = 0.0;
+      }
     }
-  }
 
-  connected_components::label(m_tmp);
+    profiling().begin("ocean.ice_shelf_mask.label");
+    connected_components::label(m_tmp);
+    profiling().end("ocean.ice_shelf_mask.label");
 
-  // remove ice rises and lakes
-  for (auto p = m_grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    // remove ice rises and lakes
+    for (auto p = m_grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (ice_rise_mask.as_int(i, j) == RISE or lake_mask.as_int(i, j) == 1) {
-      m_tmp(i, j) = 0.0;
+      if (ice_rise_mask.as_int(i, j) == RISE or lake_mask.as_int(i, j) == 1) {
+        m_tmp(i, j) = 0.0;
+      }
     }
-  }
 
-  result.copy_from(m_tmp);
+    result.copy_from(m_tmp);
+  }
+  profiling().end("ocean.ice_shelf_mask");
 }
 
 /*!
@@ -459,24 +486,30 @@ void PicoGeometry::compute_ice_shelf_mask(const array::Scalar &ice_rise_mask, co
  *
  */
 void PicoGeometry::compute_ocean_mask(const array::CellType &cell_type, array::Scalar &result) {
-  array::AccessScope list{ &cell_type, &m_tmp };
+  profiling().begin("ocean.ocean_mask");
+  {
+    array::AccessScope list{ &cell_type, &m_tmp };
 
-  // mask of zeros and ones: one if ice-free ocean, zero otherwise
-  for (auto p = m_grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    // mask of zeros and ones: one if ice-free ocean, zero otherwise
+    for (auto p = m_grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (cell_type.ice_free_ocean(i, j)) {
-      m_tmp(i, j) = 1.0;
-    } else {
-      m_tmp(i, j) = 0.0;
+      if (cell_type.ice_free_ocean(i, j)) {
+        m_tmp(i, j) = 1.0;
+      } else {
+        m_tmp(i, j) = 0.0;
+      }
     }
+
+    profiling().begin("ocean.ocean_mask.label");
+    connected_components::label(m_tmp);
+    profiling().end("ocean.ocean_mask.label");
+
+    relabel(BY_AREA, 0.0, m_tmp);
+
+    result.copy_from(m_tmp);
   }
-
-  connected_components::label(m_tmp);
-
-  relabel(BY_AREA, 0.0, m_tmp);
-
-  result.copy_from(m_tmp);
+  profiling().end("ocean.ocean_mask");
 }
 
 /*!
@@ -760,7 +793,9 @@ void PicoGeometry::compute_distances_gl(const array::Scalar &ocean_mask,
 
   result.update_ghosts();
 
+  profiling().begin("ocean.eikonal_equation");
   eikonal_equation(result);
+  profiling().end("ocean.eikonal_equation");
 }
 
 /*!
@@ -803,7 +838,9 @@ void PicoGeometry::compute_distances_cf(const array::Scalar1 &ocean_mask,
 
   result.update_ghosts();
 
+  profiling().begin("ocean.eikonal_equation");
   eikonal_equation(result);
+  profiling().end("ocean.eikonal_equation");
 }
 
 /*!
