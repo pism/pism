@@ -22,7 +22,6 @@
 #include "pism/util/connected_components/label_components.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/petscwrappers/Vec.hh"
 
 #include "pism/coupler/util/options.hh"
 #include "pism/util/interpolation.hh"
