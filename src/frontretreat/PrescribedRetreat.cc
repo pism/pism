@@ -58,6 +58,8 @@ void PrescribedRetreat::update(double t, double dt, array::Scalar &ice_thickness
   m_retreat_mask->update(t, dt);
   m_retreat_mask->average(t, dt);
 
+  double eps = 1e-12;
+
   array::AccessScope list{ m_retreat_mask.get(), &ice_thickness, &ice_area_specific_volume };
 
   for (auto p = m_grid->points(); p; p.next()) {
@@ -68,7 +70,7 @@ void PrescribedRetreat::update(double t, double dt, array::Scalar &ice_thickness
     if (f <= 0.0) {
       ice_area_specific_volume(i, j) = 0.0;
       ice_thickness(i, j)            = 0.0;
-    } else if (f < 1.0) {
+    } else if (f < 1.0 - eps) {
       ice_area_specific_volume(i, j) = ice_thickness(i, j) * f;
       ice_thickness(i, j)            = 0.0;
     } else {
