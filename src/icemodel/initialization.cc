@@ -1072,13 +1072,21 @@ void IceModel::compute_lat_lon() {
 
   std::string projection = m_grid->get_mapping_info().proj_string;
 
-  if (m_config->get_flag("grid.recompute_longitude_and_latitude") and
-      not projection.empty()) {
-    m_log->message(2,
-                   "* Computing longitude and latitude using projection parameters...\n");
+  const char *compute_lon_lat = "grid.recompute_longitude_and_latitude";
 
+  if (m_config->get_flag(compute_lon_lat) and not projection.empty()) {
+    m_log->message(2, "* Computing longitude and latitude using projection parameters...\n");
+
+#if (Pism_USE_PROJ==1)
     compute_longitude(projection, m_geometry.longitude);
     compute_latitude(projection, m_geometry.latitude);
+#else
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Cannot compute longitude and latitude.\n"
+                                  "Please rebuild PISM with PROJ\n"
+                                  "or set '%s' to 'false'.",
+                                  compute_lon_lat);
+#endif
 
     // IceModel::bootstrap_2d() uses these attributes to determine if it needs to regrid
     // longitude and latitude.
