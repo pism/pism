@@ -25,6 +25,9 @@ Changes since v2.1
   `bed_deformation.update_interval` since now *all* bed deformation models use this
   parameter. Add a new diagnostic variable: `bed_def_load`, the load used during the last
   bed deformation update.
+- Replace the serial connected component labeling algorithm with a parallel version (see
+  `pull request 547`_ for details). This should improve strong scaling of the ocean model
+  PICO and (less noticeably) of some other PISM components.
 
 Changes since v2.0
 ==================
@@ -995,6 +998,8 @@ Miscellaneous
 .. _issue 407: https://github.com/pism/pism/issues/407
 .. _issue 525: https://github.com/pism/pism/issues/525
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
+.. _pull request 547: https://github.com/pism/pism/pull/547
+
 ..
    Local Variables:
    fill-column: 90
