@@ -259,6 +259,12 @@ for ti in range(Mt):
               xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i+1,j-1]-exp_xm[i,j])
 
 
+        if np.abs(vxcf[ti,l])<0.1 or np.isnan(vxcf[ti,l]):
+              vxcf[ti,l]=vxcf[ti-1,l]
+        if np.abs(vycf[ti,l])<0.1 or np.isnan(vycf[ti,l]):
+              vycf[ti,l]=vycf[ti-1,l]
+
+
 
     if ti==0:
         profiles[point_names[l]]=profile

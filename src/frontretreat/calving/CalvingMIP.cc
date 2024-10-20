@@ -133,15 +133,8 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
       double old_calv_rate = m_calving_rate(i, j);
       m_calving_rate(i, j) = 0.0;
 
-      // This is relevant in case of a propagating ice shelf front, for which no terminal velocities exist yet
-      if (cell_type.floating_ice(i, j) and cell_type.next_to_ice_free_ocean(i, j)) {
-        if (ice_velocity(i, j).magnitude() < vcr) {
-          m_calving_rate(i, j) = old_calv_rate;
-          m_cell_type(i, j) = 1;
-        }
-      }
 
-      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) {
+      if ((cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) or cell_type.icy(i, j)) {
 
         double vw  = ice_velocity(i-1, j).u,
               vwm = ice_velocity(i-1, j).magnitude(),
@@ -164,7 +157,7 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
           if (exp5) {
             m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - hw) / Hc) * vw;
           } else {
-            m_calving_rate(i, j) += vw * (1.0 - (vwm > 0.0 ? Wv*C/vwm : 0.0));
+            m_calving_rate(i, j) += vw * (1.0 - (vwm > vcr ? Wv*C/vwm : 0.0));
           }
           if (vwm==0.0) divide_by_null=true;
         }
@@ -173,7 +166,7 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
           if (exp5) {
             m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - he) / Hc) * ve;
           } else {
-            m_calving_rate(i, j) -= ve * (1.0 - (vem > 0.0 ? Wv*C/vem : 0.0));
+            m_calving_rate(i, j) -= ve * (1.0 - (vem > vcr ? Wv*C/vem : 0.0));
           }
           if (vem==0.0) divide_by_null=true;
         }
@@ -182,7 +175,7 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
           if (exp5) {
             m_calving_rate(i, j) += std::max(0.0, 1.0 + (Hc - hs) / Hc) * vs;
           } else {
-            m_calving_rate(i, j) += vs * (1.0 - (vsm > 0.0 ? Wv*C/vsm : 0.0));
+            m_calving_rate(i, j) += vs * (1.0 - (vsm > vcr ? Wv*C/vsm : 0.0));
           }
           if (vsm==0.0) divide_by_null=true;
         }
@@ -191,7 +184,7 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
           if (exp5) {
             m_calving_rate(i, j) -= std::max(0.0, 1.0 + (Hc - hn) / Hc) * vn;
           } else {
-            m_calving_rate(i, j) -= vn * (1.0 - (vnm > 0.0 ? Wv*C/vnm : 0.0));
+            m_calving_rate(i, j) -= vn * (1.0 - (vnm > vcr ? Wv*C/vnm : 0.0));
           }
           if (vnm==0.0) divide_by_null=true;
         }
@@ -211,7 +204,7 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
 
 
     // This part shall fill up ocean cells next to calving front with mean calving rates,
-    // for cases, when calving front propagates forward with once cell per adaptive timestep (CFL)
+    // for cases, when calving front propagates forward with one cell per adaptive timestep (CFL)
     for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
