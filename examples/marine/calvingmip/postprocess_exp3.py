@@ -11,11 +11,12 @@ import postprocess_helper as ph
 secperyear=365*24*3600
 
 resolution=5.0
-dkm=10.0 #km steps
+dkm=5.0 #km steps
+vcr=1e-8 # terminal velocity threshold
 
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp3-05km-dir-4cpu/"
-pism_outfile = pismpath + "results/result_exp3b.nc"
-pism_tsfile  = pismpath + "results/ts_exp3b.nc"
+pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp3-05km-dir-retreat/"
+pism_outfile = pismpath + "results/result_exp3_cr.nc"
+pism_tsfile  = pismpath + "results/ts_exp3.nc"
 
 pism_infile = pismpath + "input/thule_input_5km.nc"
 
@@ -45,6 +46,16 @@ exp_crate = datnc.variables["calvingmip_calving_rate"][:,cr1:cr2,cr1:cr2]*secper
 exp_topg = datnc.variables["topg"][:,cr1:cr2,cr1:cr2]
 exp_subh = datnc.variables["ice_area_specific_volume"][:,cr1:cr2,cr1:cr2]
 datnc.close()
+
+
+exp_thks=exp_thk+exp_subh # sum of thk and ice_area_specific_volume
+exp_thkm=np.ma.masked_array(exp_thk,mask=exp_thk<=0.0) # exclude empty cells from mean
+exp_subhm=np.ma.masked_array(exp_subh,mask=exp_subh<=0.0) # exclude empty subgrid cells
+
+exp_xvmc=np.ma.masked_array(exp_xvm,mask=np.abs(exp_xvm)<=vcr) # remove small values
+exp_yvmc=np.ma.masked_array(exp_yvm,mask=np.abs(exp_yvm)<=vcr)
+
+
 
 print(np.shape(exp_mask))
 #print(exp_t)
@@ -130,6 +141,9 @@ print('Interpolate data along profiles...')
 for ti in range(Mt):
   for l,po in enumerate(trans):
     profile=[]
+    dx=po[1][1]-po[0][1]
+    dy=po[1][0]-po[0][0]
+
     for k,p in enumerate(po):
         
         i=int(np.floor(p[1]))
@@ -153,55 +167,24 @@ for ti in range(Mt):
         mav[ti,l,k]=ph.nearest_along_transect(exp_mask[ti],i,j,di,dj)
 
 
+        if (exp_mask[ti,int(np.sign(dx)+i),int(np.sign(dy)+j)]-exp_mask[ti,i,j]==1.0):
 
-        # get marginal values along profiles
-        if l==4 or l==5:
-            if exp_mask[ti,i+1,j]==3.0 and exp_mask[ti,i,j]==2.0:
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i+1,j]/Hcf[ti,l]*(exp_ym[i+1,j]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i+1,j]/Hcf[ti,l]*(exp_xm[i+1,j]-exp_xm[i,j])
-        elif l==6 or l==7:
-            if exp_mask[ti,i-1,j]==3.0 and exp_mask[ti,i,j]==2.0:
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i-1,j]/Hcf[ti,l]*(exp_ym[i-1,j]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i-1,j]/Hcf[ti,l]*(exp_xm[i-1,j]-exp_xm[i,j])
-        elif l==1:
-            if (exp_mask[ti,i,j+1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i+1,j+1]>0.0):
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              dxy=np.sqrt((exp_xm[i+1,j+1]-exp_xm[i,j])**2+(exp_ym[i+1,j+1]-exp_ym[i,j])**2)
-              xcf[ti,l]=exp_xm[i,j]+exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
-        elif l==3:
-            if (exp_mask[ti,i,j+1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i-1,j+1]>0.0):
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              dxy=np.sqrt((exp_xm[i-1,j+1]-exp_xm[i,j])**2+(exp_ym[i-1,j+1]-exp_ym[i,j])**2)
-              xcf[ti,l]=exp_xm[i,j]-exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
-              ycf[ti,l]=exp_ym[i,j]+exp_subh[ti,i,j+1]/exp_thk[ti,i,j]*dxy
-        elif l==2:
-            if (exp_mask[ti,i,j-1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i-1,j-1]>0.0):
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              dxy=np.sqrt((exp_xm[i-1,j-1]-exp_xm[i,j])**2+(exp_ym[i-1,j-1]-exp_ym[i,j])**2)
-              xcf[ti,l]=exp_xm[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
-              ycf[ti,l]=exp_ym[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
-        elif l==0:
-            if (exp_mask[ti,i,j-1]==3.0 and exp_mask[ti,i,j]==2.0) or (exp_subh[ti,i+1,j-1]>0.0):
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              dxy=np.sqrt((exp_xm[i+1,j-1]-exp_xm[i,j])**2+(exp_ym[i+1,j-1]-exp_ym[i,j])**2)
-              xcf[ti,l]=exp_xm[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
-              ycf[ti,l]=exp_ym[i,j]-exp_subh[ti,i,j-1]/exp_thk[ti,i,j]*dxy
+            Atot    = 9.0 # area of neighbor cells around i,j
+            thkmean = np.nanmean(exp_thkm[ti,i-1:i+2,j-1:j+2]) # mean over cells with thk>0
+            Acov    = np.sum((exp_thks[ti,i-1:i+2,j-1:j+2])/thkmean) # area covered by cells with thk>0 or icea_area_specific_volume>0
+            ds      = 3.0*(Acov/Atot-0.5) # average distance of i,j from ice front, assuming half of 9 cells would be filled with thk>0 
+            ycf[ti,l]=exp_ym[i,j]+ds*dy*(exp_ym[i,j+1]-exp_ym[i,j])
+            xcf[ti,l]=exp_xm[i,j]+ds*dx*(exp_xm[i+1,j]-exp_xm[i,j])
 
+            Hcf[ti,l]=thkmean
+            try:
+                vxcf[ti,l]=np.nanmean(exp_xvmc[ti,i-1:i+2,j-1:j+2])
+                vycf[ti,l]=np.nanmean(exp_yvmc[ti,i-1:i+2,j-1:j+2])
+            except:
+                vxcf[ti,l]=vxcf[ti-1,l]
+                vycf[ti,l]=vycf[ti-1,l]
+
+            print(l,i,j,xcf[ti,l],ycf[ti,l],Hcf[ti,l])
 
     if ti==0:
         profiles[point_names[l]]=profile

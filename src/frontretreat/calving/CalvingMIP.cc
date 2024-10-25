@@ -106,7 +106,7 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
   // lower calving rate threshold
   double Cmin = 1.0e-7;
   // lower threshold for terminal velocity
-  double vcr = 1e-20;
+  double vcr = 1e-8;
   double Wv = 0.0,
          thistime = m_grid->ctx()->time()->current(),
          starttime = m_grid->ctx()->time()->start(),

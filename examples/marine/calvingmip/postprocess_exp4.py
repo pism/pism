@@ -11,9 +11,12 @@ import postprocess_helper as ph
 secperyear=365*24*3600
 
 resolution=5.0
-dkm=10.0 #km steps
+#dkm=10.0 #km steps
+dkm=5.0 #km steps
+vcr=1e-8 # terminal velocity threshold
 
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp4-05km-dir/"
+
+pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp4-05km-dir-retreat/"
 pism_outfile = pismpath + "results/extra_exp4.nc"
 pism_tsfile  = pismpath + "results/ts_exp4.nc"
 
@@ -49,6 +52,15 @@ exp_crate = datnc.variables["calvingmip_calving_rate"][:,cr1:cr2,cr1:cr2]*secper
 exp_topg = datnc.variables["topg"][:,cr1:cr2,cr1:cr2]
 exp_subh = datnc.variables["ice_area_specific_volume"][:,cr1:cr2,cr1:cr2]
 datnc.close()
+
+
+exp_thks=exp_thk+exp_subh # sum of thk and ice_area_specific_volume
+exp_thkm=np.ma.masked_array(exp_thk,mask=exp_thk<=0.0) # exclude empty cells from mean
+exp_subhm=np.ma.masked_array(exp_subh,mask=exp_subh<=0.0) # exclude empty subgrid cells
+
+exp_xvmc=np.ma.masked_array(exp_xvm,mask=np.abs(exp_xvm)<=vcr) # remove small values
+exp_yvmc=np.ma.masked_array(exp_yvm,mask=np.abs(exp_yvm)<=vcr)
+
 
 print(np.shape(exp_mask))
 #print(exp_t)
@@ -105,15 +117,15 @@ points_HC = [[Mp-MH1,Mp],[Mp-MH1,Mp-MH2]]
 points_HD = [[Mp+MH1,Mp],[Mp+MH1,Mp-MH2]]
 
 #switched x and y
-points_CA = [[Mp-MC2,Mp+MC3],[Mp-MC1,Mp]]
-points_CB = [[Mp+MC2,Mp+MC3],[Mp+MC1,Mp]]
-points_CC = [[Mp-MC2,Mp-MC3],[Mp-MC1,Mp]]
-points_CD = [[Mp+MC2,Mp-MC3],[Mp+MC1,Mp]]
+#points_CA = [[Mp-MC2,Mp+MC3],[Mp-MC1,Mp]]
+#points_CB = [[Mp+MC2,Mp+MC3],[Mp+MC1,Mp]]
+#points_CC = [[Mp-MC2,Mp-MC3],[Mp-MC1,Mp]]
+#points_CD = [[Mp+MC2,Mp-MC3],[Mp+MC1,Mp]]
 
-points_HA = [[Mp-MH1,Mp+MH2],[Mp-MH1,Mp]]
-points_HB = [[Mp+MH1,Mp+MH2],[Mp+MH1,Mp]]
-points_HC = [[Mp-MH1,Mp-MH2],[Mp-MH1,Mp]]
-points_HD = [[Mp+MH1,Mp-MH2],[Mp+MH1,Mp]]
+#points_HA = [[Mp-MH1,Mp+MH2],[Mp-MH1,Mp]]
+#points_HB = [[Mp+MH1,Mp+MH2],[Mp+MH1,Mp]]
+#points_HC = [[Mp-MH1,Mp-MH2],[Mp-MH1,Mp]]
+#points_HD = [[Mp+MH1,Mp-MH2],[Mp+MH1,Mp]]
 
 
 
@@ -157,9 +169,11 @@ for j in range(My):
 
 print('Interpolate data along profiles...')
 for ti in range(Mt):
-  print(' ')
+  #print(' ')
   for l,po in enumerate(trans):
     profile=[]
+    dx=po[1][1]-po[0][1]
+    dy=po[1][0]-po[0][0]
     for k,p in enumerate(po):
         
         i=int(np.floor(p[1]))
@@ -186,153 +200,25 @@ for ti in range(Mt):
         i=int(np.around(p[1]))
         j=int(np.around(p[0]))
 
-        # get marginal values along profiles
-        if l==4 or l==5:
-            #if exp_mask[ti,i,j]==2.0 and (exp_mask[ti,i+1,j]==3.0 or exp_subh[ti,i+1,j]>0.0):
-            if exp_mask[ti,i+1,j]==3.0 and exp_mask[ti,i,j]==2.0:
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              try:
-                ycf[ti,l]=exp_ym[i,j]+(0.5+exp_subh[ti,i+1,j]/Hcf[ti,l])*(exp_ym[i+1,j]-exp_ym[i,j])
-                xcf[ti,l]=exp_xm[i,j]+(0.5+exp_subh[ti,i+1,j]/Hcf[ti,l])*(exp_xm[i+1,j]-exp_xm[i,j])
-              except:
-                print(ti,l,'failed')
-                ycf[ti,l]=xav[l,k]
-                xcf[ti,l]=yav[l,k]
 
-              print(ti,l,i,j,p[1],p[0])
-              #if l==4:
-              #  print(ti,l,Hcf[ti,l],exp_subh[ti,i+1,j],exp_xm[i,j],xcf[ti,l])
-        #if l==4 or l==5:
-        #    if exp_mask[ti,i,j+1]==3.0 and exp_mask[ti,i,j]==2.0:
-        #      Hcf[ti,l]=exp_thk[ti,i,j]
-        #      vxcf[ti,l]=exp_xvm[ti,i,j]
-        #      vycf[ti,l]=exp_yvm[ti,i,j]
-        #      ycf[ti,l]=exp_ym[i,j]+(0.5+exp_subh[ti,i,j+1]/Hcf[ti,l])*(exp_ym[i,j+1]-exp_ym[i,j])
-        #      xcf[ti,l]=exp_xm[i,j]+(0.5+exp_subh[ti,i,j+1]/Hcf[ti,l])*(exp_xm[i,j+1]-exp_xm[i,j])
-        #      print(ti,l,Hcf[ti,l],exp_subh[ti,i,j+1],exp_ym[i,j],ycf[ti,l])
-        elif l==6 or l==7:
-            if exp_mask[ti,i-1,j]==3.0 and exp_mask[ti,i,j]==2.0:
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              try:
-                ycf[ti,l]=exp_ym[i,j]+(0.5+exp_subh[ti,i-1,j]/Hcf[ti,l])*(exp_ym[i-1,j]-exp_ym[i,j])
-                xcf[ti,l]=exp_xm[i,j]+(0.5+exp_subh[ti,i-1,j]/Hcf[ti,l])*(exp_xm[i-1,j]-exp_xm[i,j])
-              except:
-                print(ti,l,'failed')
-                ycf[ti,l]=xav[l,k]
-                xcf[ti,l]=yav[l,k]
-              print(ti,l,i,j,p[1],p[0])
-              #print(ti,l,Hcf[ti,l],exp_subh[ti,i-1,j],exp_xm[i,j],xcf[ti,l])
-        #elif l==7:
-        #    if (exp_mask[ti,i,j-1]==3.0 and exp_mask[ti,i,j]==2.0):
-        #      Hcf[ti,l]=exp_thk[ti,i,j]
-        #      vxcf[ti,l]=exp_xvm[ti,i,j]
-        #      vycf[ti,l]=exp_yvm[ti,i,j]
-        #      ycf[ti,l]=exp_ym[i,j]+(0.5+exp_subh[ti,i,j-1]/Hcf[ti,l])*(exp_ym[i,j-1]-exp_ym[i,j])
-        #      xcf[ti,l]=exp_xm[i,j]+(0.5+exp_subh[ti,i,j-1]/Hcf[ti,l])*(exp_xm[i,j-1]-exp_xm[i,j])
+        if (exp_mask[ti,int(np.sign(dx)+i),int(np.sign(dy)+j)]-exp_mask[ti,i,j]==1.0):
 
-        elif l==1: #CapB
-            if (exp_mask[ti,i+1,j+1]==3.0 and exp_mask[ti,i,j]==2.0):
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=xav[l,k]
-              xcf[ti,l]=yav[l,k]
-              #if exp_mask[ti,i,j+1]==3.0:
-              #  ds=0.5
-              #  if exp_subh[ti,i,j+1]<=Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
-              #  elif exp_subh[ti,i,j+1]>Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              #else: #exp_mask[ti,i,j+1]==2.0
-              #  ds=1.5
-              #  if exp_subh[ti,i+1,j+1]<=Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i+1,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
-              #  elif exp_subh[ti,i+1,j+1]>Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i+1,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              #ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i+1,j+1]-exp_ym[i,j])
-              #xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i+1,j+1]-exp_xm[i,j])
-              print(ti,l,i,j,p[1],p[0])
+            Atot    = 9.0 # area of neighbor cells around i,j
+            thkmean = np.nanmean(exp_thkm[ti,i-1:i+2,j-1:j+2]) # mean over cells with thk>0
+            Acov    = np.sum((exp_thks[ti,i-1:i+2,j-1:j+2])/thkmean) # area covered by cells with thk>0 or icea_area_specific_volume>0
+            ds      = 3.0*(Acov/Atot-0.5) # average distance of i,j from ice front, assuming half of 9 cells would be filled with thk>0 
+            ycf[ti,l]=exp_ym[i,j]+ds*dy*(exp_ym[i,j+1]-exp_ym[i,j])
+            xcf[ti,l]=exp_xm[i,j]+ds*dx*(exp_xm[i+1,j]-exp_xm[i,j])
 
-        elif l==3: #CapD
-            if (exp_mask[ti,i-1,j+1]==3.0 and exp_mask[ti,i,j]==2.0):
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=xav[l,k]
-              xcf[ti,l]=yav[l,k]
-              #if exp_mask[ti,i,j+1]==3.0:
-              #  ds=0.5
-              #  if exp_subh[ti,i,j+1]<=Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
-              #  elif exp_subh[ti,i,j+1]>Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              #else: #exp_mask[ti,i,j+1]==2.0
-              #  ds=1.5
-              #  if exp_subh[ti,i-1,j+1]<=Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i-1,j+1]/(2.0*Hcf[ti,l])) #rectangular triangle
-              #  elif exp_subh[ti,i-1,j+1]>Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i-1,j+1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              #ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i-1,j+1]-exp_ym[i,j])
-              #xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i-1,j+1]-exp_xm[i,j])
-              print(ti,l,i,j,p[1],p[0])
+            Hcf[ti,l]=thkmean
+            try:
+                vxcf[ti,l]=np.nanmean(exp_xvmc[ti,i-1:i+2,j-1:j+2])
+                vycf[ti,l]=np.nanmean(exp_yvmc[ti,i-1:i+2,j-1:j+2])
+            except:
+                vxcf[ti,l]=vxcf[ti-1,l]
+                vycf[ti,l]=vycf[ti-1,l]
 
-        elif l==2: #CapC
-            if (exp_mask[ti,i-1,j-1]==3.0 and exp_mask[ti,i,j]==2.0):
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=xav[l,k]
-              xcf[ti,l]=yav[l,k]
-              #print(i,j,Hcf[ti,l])
-              #if exp_mask[ti,i,j-1]==3.0:
-              #  ds=0.5
-              #  if exp_subh[ti,i,j-1]<=Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
-              #  elif exp_subh[ti,i,j-1]>Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              #else: #exp_mask[ti,i,j-1]==2.0
-              #  ds=1.5
-              #  if exp_subh[ti,i-1,j-1]<=Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i-1,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
-              #  elif exp_subh[ti,i-1,j-1]>Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i-1,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              #ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i-1,j-1]-exp_ym[i,j])
-              #xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i-1,j-1]-exp_xm[i,j])
-              print(ti,l,i,j,p[1],p[0])
-
-        elif l==0: #CapA
-            if (exp_mask[ti,i+1,j-1]==3.0 and exp_mask[ti,i,j]==2.0):
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=xav[l,k]
-              xcf[ti,l]=yav[l,k]
-              #print(i,j,Hcf[ti,l])
-              #if exp_mask[ti,i,j-1]==3.0:
-              #  ds=0.5
-              #  if exp_subh[ti,i,j-1]<=Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
-              #  elif exp_subh[ti,i,j-1]>Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              #else: #exp_mask[ti,i,j-1]==2.0
-              #  ds=1.5
-              #  if exp_subh[ti,i+1,j-1]<=Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i+1,j-1]/(2.0*Hcf[ti,l])) #rectangular triangle
-              #  elif exp_subh[ti,i+1,j-1]>Hcf[ti,l]/2.0:
-              #    ds+=np.sqrt(exp_subh[ti,i+1,j-1]/(2.0*Hcf[ti,l])-0.25)+0.5
-              #ycf[ti,l]=exp_ym[i,j]+0.5*ds*(exp_ym[i+1,j-1]-exp_ym[i,j])
-              #xcf[ti,l]=exp_xm[i,j]+0.5*ds*(exp_xm[i+1,j-1]-exp_xm[i,j])
-              print(ti,l,i,j,p[1],p[0])
-
-
-        if np.abs(vxcf[ti,l])<0.1 or np.isnan(vxcf[ti,l]):
-              vxcf[ti,l]=vxcf[ti-1,l]
-        if np.abs(vycf[ti,l])<0.1 or np.isnan(vycf[ti,l]):
-              vycf[ti,l]=vycf[ti-1,l]
+            #print(ti,l,i,j,xcf[ti,l],ycf[ti,l],Hcf[ti,l])
 
 
     if ti==0:
@@ -397,17 +283,6 @@ Ase*=Axy
 
 cr1=40
 cr2=361
-
-#exp_x_cr = exp_x[cr1:cr2]
-#exp_y_cr = exp_y[cr1:cr2]
-#exp_xvm_cr =  exp_xvm[:,cr1:cr2,cr1:cr2]
-#exp_yvm_cr =  exp_yvm[:,cr1:cr2,cr1:cr2]
-#exp_thk_cr =  exp_thk[:,cr1:cr2,cr1:cr2]
-#exp_mask_cr =  exp_mask[:,cr1:cr2,cr1:cr2]
-#exp_crate_cr =  exp_crate[:,cr1:cr2,cr1:cr2]
-#exp_topg_cr =  exp_topg[:,cr1:cr2,cr1:cr2]
-#exp_subh = exp_subh[cr1:cr2]
-
 
 
 ########################################################################################################

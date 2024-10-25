@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Creates output file from PISM EXP5 result to upload for CalvinMIP, 
+# Creates output file from PISM EXP4 result to upload for CalvinMIP, 
 # as instructed from https://github.com/JRowanJordan/CalvingMIP/wiki/Experiment-5
 
 import numpy as np
@@ -11,19 +11,18 @@ import postprocess_helper as ph
 secperyear=365*24*3600
 
 resolution=5.0
-dkm=10.0 #km steps
+#dkm=10.0 #km steps
+dkm=5.0 #km steps
+vcr=1e-8 # terminal velocity threshold
 
 
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp5-05km-dir-375m/"
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp5-05km-dir-275m/"
+pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp5-05km-dir-275m-retreat/"
+pism_outfile = pismpath + "results/extra_exp5.nc"
+pism_tsfile  = pismpath + "results/ts_exp5.nc"
 
-pism_outfile = pismpath + "results/extra_exp5b.nc" #10kyr
-pism_tsfile  = pismpath + "results/ts_exp5b.nc"
 pism_infile = pismpath + "input/thule_input_5km.nc"
 
-exp_outfile = "CalvingMIP_EXP5_PISM_PIK_375m.nc"
-exp_outfile = "CalvingMIP_EXP5_PISM_PIK_275m.nc"
-
+exp_outfile = "CalvingMIP_EXP5_PISM_PIK.nc"
 
 #################################################################################################
 
@@ -32,6 +31,10 @@ print('Load PISM data...')
 #crop the outer band of 200km thickness
 cr1=40
 cr2=361
+
+cr1=0
+cr2=401
+
 datnc = nc.Dataset(pism_outfile,"r")
 exp_x = datnc.variables["x"][cr1:cr2]
 exp_y = datnc.variables["y"][cr1:cr2]
@@ -47,7 +50,17 @@ except:
 exp_mask = datnc.variables["mask"][:,cr1:cr2,cr1:cr2]-1
 exp_crate = datnc.variables["calvingmip_calving_rate"][:,cr1:cr2,cr1:cr2]*secperyear
 exp_topg = datnc.variables["topg"][:,cr1:cr2,cr1:cr2]
+exp_subh = datnc.variables["ice_area_specific_volume"][:,cr1:cr2,cr1:cr2]
 datnc.close()
+
+
+exp_thks=exp_thk+exp_subh # sum of thk and ice_area_specific_volume
+exp_thkm=np.ma.masked_array(exp_thk,mask=exp_thk<=0.0) # exclude empty cells from mean
+exp_subhm=np.ma.masked_array(exp_subh,mask=exp_subh<=0.0) # exclude empty subgrid cells
+
+exp_xvmc=np.ma.masked_array(exp_xvm,mask=np.abs(exp_xvm)<=vcr) # remove small values
+exp_yvmc=np.ma.masked_array(exp_yvm,mask=np.abs(exp_yvm)<=vcr)
+
 
 print(np.shape(exp_mask))
 #print(exp_t)
@@ -57,6 +70,9 @@ exp_thk[exp_thk == 0.0] = np.nan
 exp_xvm[exp_xvm == 0.0] = np.nan
 exp_yvm[exp_yvm == 0.0] = np.nan
 
+# avoid empty first snapshot
+exp_xvm[0]=exp_xvm[1]
+exp_yvm[0]=exp_yvm[1]
 
 datnc = nc.Dataset(pism_tsfile,"r")
 exp_ts_t      = datnc.variables["time"][:]/secperyear-1.1e5
@@ -81,6 +97,15 @@ MC3=int(450.0/resolution)
 MH1=int(150.0/resolution)
 MH2=int(740.0/resolution)
 
+#double length
+MC2=int(790.0/resolution)
+MC3=int(900.0/resolution)
+MH2=int(900.0/resolution)
+
+MC2=int(690.0/resolution)
+MC3=int(675.0/resolution)
+MH2=int(820.0/resolution)
+
 points_CA = [[Mp-MC1,Mp],[Mp-MC2,Mp+MC3]]
 points_CB = [[Mp+MC1,Mp],[Mp+MC2,Mp+MC3]]
 points_CC = [[Mp-MC1,Mp],[Mp-MC2,Mp-MC3]]
@@ -91,8 +116,22 @@ points_HB = [[Mp+MH1,Mp],[Mp+MH1,Mp+MH2]]
 points_HC = [[Mp-MH1,Mp],[Mp-MH1,Mp-MH2]]
 points_HD = [[Mp+MH1,Mp],[Mp+MH1,Mp-MH2]]
 
+#switched x and y
+#points_CA = [[Mp-MC2,Mp+MC3],[Mp-MC1,Mp]]
+#points_CB = [[Mp+MC2,Mp+MC3],[Mp+MC1,Mp]]
+#points_CC = [[Mp-MC2,Mp-MC3],[Mp-MC1,Mp]]
+#points_CD = [[Mp+MC2,Mp-MC3],[Mp+MC1,Mp]]
+
+#points_HA = [[Mp-MH1,Mp+MH2],[Mp-MH1,Mp]]
+#points_HB = [[Mp+MH1,Mp+MH2],[Mp+MH1,Mp]]
+#points_HC = [[Mp-MH1,Mp-MH2],[Mp-MH1,Mp]]
+#points_HD = [[Mp+MH1,Mp-MH2],[Mp+MH1,Mp]]
+
+
+
+
 transects=[points_CA,points_CB,points_CC,points_CD,points_HA,points_HB,points_HC,points_HD]
-point_names=['Caprona A','Caprona B','Caprona C','Caprona D','Halbrane E','Halbrane F','Halbrane G','Halbrane H']
+point_names=['Caprona A','Caprona B','Caprona C','Caprona D','Halbrane A','Halbrane B','Halbrane C','Halbrane D']
 
 dp=np.float(dkm)/np.float(resolution)
 trans = ph.get_troughs(pism_infile,transects,dp)
@@ -103,16 +142,22 @@ trans = ph.get_troughs(pism_infile,transects,dp)
 # average along profiles
 profiles = {}
 
-xav=np.zeros([len(trans),300])
-yav=np.zeros([len(trans),300])
-sav=np.zeros([len(trans),300])
+lentr=len(trans)
 
-Hav=np.zeros([Mt,len(trans),300])
-mav=np.zeros([Mt,len(trans),300])
-uav=np.zeros([Mt,len(trans),300])
-vav=np.zeros([Mt,len(trans),300])
+xav=np.zeros([lentr,300])
+yav=np.zeros([lentr,300])
+sav=np.zeros([lentr,300])
 
-#print(np.shape(Hav),np.shape(exp_thk))
+Hav=np.zeros([Mt,lentr,300])
+mav=np.zeros([Mt,lentr,300])
+uav=np.zeros([Mt,lentr,300])
+vav=np.zeros([Mt,lentr,300])
+
+Hcf=np.zeros([Mt,lentr])
+xcf=np.zeros([Mt,lentr])
+ycf=np.zeros([Mt,lentr])
+vxcf=np.zeros([Mt,lentr])
+vycf=np.zeros([Mt,lentr])
 
 exp_xm = np.zeros([Mx,My])
 exp_ym = np.zeros([Mx,My])
@@ -124,14 +169,17 @@ for j in range(My):
 
 print('Interpolate data along profiles...')
 for ti in range(Mt):
+  #print(' ')
   for l,po in enumerate(trans):
     profile=[]
+    dx=po[1][1]-po[0][1]
+    dy=po[1][0]-po[0][0]
     for k,p in enumerate(po):
         
         i=int(np.floor(p[1]))
         j=int(np.floor(p[0]))
-        di=p[0]-np.floor(p[0])
-        dj=p[1]-np.floor(p[1])
+        dj=p[0]-np.floor(p[0])
+        di=p[1]-np.floor(p[1])
 
         if ti==0:
             xav[l,k]=ph.interpolate_along_transect(exp_ym,i,j,di,dj)
@@ -148,21 +196,107 @@ for ti in range(Mt):
         #nearest neighbors
         mav[ti,l,k]=ph.nearest_along_transect(exp_mask[ti],i,j,di,dj)
 
-    
+        #re-define for calving front interpolation
+        i=int(np.around(p[1]))
+        j=int(np.around(p[0]))
+
+
+        if (exp_mask[ti,int(np.sign(dx)+i),int(np.sign(dy)+j)]-exp_mask[ti,i,j]==1.0):
+
+            Atot    = 9.0 # area of neighbor cells around i,j
+            thkmean = np.nanmean(exp_thkm[ti,i-1:i+2,j-1:j+2]) # mean over cells with thk>0
+            Acov    = np.sum((exp_thks[ti,i-1:i+2,j-1:j+2])/thkmean) # area covered by cells with thk>0 or icea_area_specific_volume>0
+            ds      = 3.0*(Acov/Atot-0.5) # average distance of i,j from ice front, assuming half of 9 cells would be filled with thk>0 
+            ycf[ti,l]=exp_ym[i,j]+ds*dy*(exp_ym[i,j+1]-exp_ym[i,j])
+            xcf[ti,l]=exp_xm[i,j]+ds*dx*(exp_xm[i+1,j]-exp_xm[i,j])
+
+            Hcf[ti,l]=thkmean
+            try:
+                vxcf[ti,l]=np.nanmean(exp_xvmc[ti,i-1:i+2,j-1:j+2])
+                vycf[ti,l]=np.nanmean(exp_yvmc[ti,i-1:i+2,j-1:j+2])
+            except:
+                vxcf[ti,l]=vxcf[ti-1,l]
+                vycf[ti,l]=vycf[ti-1,l]
+
+            #print(ti,l,i,j,xcf[ti,l],ycf[ti,l],Hcf[ti,l])
+
+
     if ti==0:
         profiles[point_names[l]]=profile
     
+
+################################################################################################
+# get ice covered quadrants
+
+Anw=np.zeros([Mt])
+Ane=np.zeros([Mt])
+Asw=np.zeros([Mt])
+Ase=np.zeros([Mt])
+
+Axy=(resolution*1e3)**2 #m2
+
+print('Aggregate ice covered area...')
+
+for ti,t in enumerate(exp_t):
+    for i,xi in enumerate(exp_x):
+      for j,yj in enumerate(exp_y):
+        if exp_mask[ti,i,j]<3.0:
+
+            if xi>=0 and yj>=0:
+                if xi==0.0 and yj==0.0:
+                    Ane[ti]+=0.25
+                elif xi==0.0 or yj==0.0:
+                    Ane[ti]+=0.5
+                else:
+                    Ane[ti]+=1.0
+            if xi>=0 and yj<=0:
+                if xi==0.0 and yj==0.0:
+                    Anw[ti]+=0.25
+                elif xi==0.0 or yj==0.0:
+                    Anw[ti]+=0.5
+                else:
+                    Anw[ti]+=1.0
+            if xi<=0 and yj>=0:
+                if xi==0.0 and yj==0.0:
+                    Ase[ti]+=0.25
+                elif xi==0.0 or yj==0.0:
+                    Ase[ti]+=0.5
+                else:
+                    Ase[ti]+=1.0
+            if xi<=0 and yj<=0:
+                if xi==0.0 and yj==0.0:
+                    Asw[ti]+=0.25
+                elif xi==0.0 or yj==0.0:
+                    Asw[ti]+=0.5
+                else:
+                    Asw[ti]+=1.0
+
+#print(Ane,Anw,Ase,Asw)
+Anw*=Axy
+Ane*=Axy
+Asw*=Axy
+Ase*=Axy
+
+
+######################################################################################################
+#cut off outer region
+
+cr1=40
+cr2=361
+
+
 ########################################################################################################
+lent=Mt
 
 if True:
   print("Write data to netCDF file "+exp_outfile)
   wrtfile = nc.Dataset(exp_outfile, 'w', format='NETCDF4_CLASSIC')
 
-  wrtfile.createDimension('X', size=len(exp_x))
-  wrtfile.createDimension('Y', size=len(exp_y))
+  wrtfile.createDimension('X', size=len(exp_x[cr1:cr2]))
+  wrtfile.createDimension('Y', size=len(exp_y[cr1:cr2]))
 
-  wrtfile.createDimension('Time1', size=len(exp_t)) # every 10 years
-  wrtfile.createDimension('Time100', size=len(exp_t[::10])) # every 100 years
+  wrtfile.createDimension('Time1', size=len(exp_t)) # every year
+  wrtfile.createDimension('Time100', size=len(exp_t[::100])) # every 100 years
 
 
   nct     = wrtfile.createVariable('Time1', 'f8', ('Time1',))
@@ -247,27 +381,95 @@ if True:
   ncxvmh  = wrtfile.createVariable('xvelmeanHalD', 'f8', ('Time1','Halbrane D'),fill_value=np.nan)
   ncyvmh  = wrtfile.createVariable('yvelmeanHalD', 'f8', ('Time1','Halbrane D'),fill_value=np.nan)
   ncmaskh  = wrtfile.createVariable('maskHalD', 'f8', ('Time1','Halbrane D'))
+
+
+  ncatnw  = wrtfile.createVariable('iareatotalNW', 'f8', ('Time1'))
+  ncatne  = wrtfile.createVariable('iareatotalNE', 'f8', ('Time1'))
+  ncatsw  = wrtfile.createVariable('iareatotalSW', 'f8', ('Time1'))
+  ncatse  = wrtfile.createVariable('iareatotalSE', 'f8', ('Time1'))
+
+  ncxcfa  = wrtfile.createVariable('xcfCapA', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfa  = wrtfile.createVariable('ycfCapA', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfa  = wrtfile.createVariable('xvelmeancfCapA', 'f8', ('Time1'))
+  ncyvmcfa  = wrtfile.createVariable('yvelmeancfCapA', 'f8', ('Time1'))
+  ncthkcfa  = wrtfile.createVariable('lithkcfCapA', 'f8', ('Time1'))
+
+  ncxcfb  = wrtfile.createVariable('xcfCapB', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfb  = wrtfile.createVariable('ycfCapB', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfb  = wrtfile.createVariable('xvelmeancfCapB', 'f8', ('Time1'))
+  ncyvmcfb  = wrtfile.createVariable('yvelmeancfCapB', 'f8', ('Time1'))
+  ncthkcfb  = wrtfile.createVariable('lithkcfCapB', 'f8', ('Time1'))
+
+  ncxcfc  = wrtfile.createVariable('xcfCapC', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfc  = wrtfile.createVariable('ycfCapC', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfc  = wrtfile.createVariable('xvelmeancfCapC', 'f8', ('Time1'))
+  ncyvmcfc  = wrtfile.createVariable('yvelmeancfCapC', 'f8', ('Time1'))
+  ncthkcfc  = wrtfile.createVariable('lithkcfCapC', 'f8', ('Time1'))
+
+  ncxcfd  = wrtfile.createVariable('xcfCapD', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfd  = wrtfile.createVariable('ycfCapD', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfd  = wrtfile.createVariable('xvelmeancfCapD', 'f8', ('Time1'))
+  ncyvmcfd  = wrtfile.createVariable('yvelmeancfCapD', 'f8', ('Time1'))
+  ncthkcfd  = wrtfile.createVariable('lithkcfCapD', 'f8', ('Time1'))
+
+  ncxcfe  = wrtfile.createVariable('xcfHalA', 'f8', ('Time1'), fill_value=np.nan)
+  ncycfe  = wrtfile.createVariable('ycfHalA', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfe  = wrtfile.createVariable('xvelmeancfHalA', 'f8', ('Time1'))
+  ncyvmcfe  = wrtfile.createVariable('yvelmeancfHalA', 'f8', ('Time1'))
+  ncthkcfe  = wrtfile.createVariable('lithkcfHalA', 'f8', ('Time1'))
+
+  ncxcff  = wrtfile.createVariable('xcfHalB', 'f8', ('Time1'),fill_value=np.nan)
+  ncycff  = wrtfile.createVariable('ycfHalB', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcff  = wrtfile.createVariable('xvelmeancfHalB', 'f8', ('Time1'))
+  ncyvmcff  = wrtfile.createVariable('yvelmeancfHalB', 'f8', ('Time1'))
+  ncthkcff  = wrtfile.createVariable('lithkcfHalB', 'f8', ('Time1'))
+
+  ncxcfg  = wrtfile.createVariable('xcfHalC', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfg  = wrtfile.createVariable('ycfHalC', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfg  = wrtfile.createVariable('xvelmeancfHalC', 'f8', ('Time1'))
+  ncyvmcfg  = wrtfile.createVariable('yvelmeancfHalC', 'f8', ('Time1'))
+  ncthkcfg  = wrtfile.createVariable('lithkcfHalC', 'f8', ('Time1'))
+
+  ncxcfh  = wrtfile.createVariable('xcfHalD', 'f8', ('Time1'),fill_value=np.nan)
+  ncycfh  = wrtfile.createVariable('ycfHalD', 'f8', ('Time1'),fill_value=np.nan)
+  ncxvmcfh  = wrtfile.createVariable('xvelmeancfHalD', 'f8', ('Time1'))
+  ncyvmcfh  = wrtfile.createVariable('yvelmeancfHalD', 'f8', ('Time1'))
+  ncthkcfh  = wrtfile.createVariable('lithkcfHalD', 'f8', ('Time1'))
     
   #####################################################################################
     
   nct[:] = exp_t[:]
-  nct2[:]= exp_t[::10]
-  ncx[:] = exp_x[:]
-  ncy[:] = exp_y[:]
+  nct2[:]= exp_t[::100]
+
+
+  ncx[:] = exp_x[cr1:cr2]
+  ncy[:] = exp_y[cr1:cr2]
     
-  ncxvm[:]  = exp_xvm[::10]
-  ncyvm[:]  = exp_yvm[::10] 
-  ncthk[:]  = exp_thk[::10]
-  ncmask[:] = exp_mask[::10]
-  nccrate[:]= exp_crate[::10]
-  nctopg[:] = exp_topg[::10]
+  ncxvm[:]  = exp_xvm[::100,cr1:cr2,cr1:cr2]
+  ncyvm[:]  = exp_yvm[::100,cr1:cr2,cr1:cr2]
+  ncthk[:]  = exp_thk[::100,cr1:cr2,cr1:cr2]
+  ncmask[:] = exp_mask[::100,cr1:cr2,cr1:cr2]
+  nccrate[:]= exp_crate[::100,cr1:cr2,cr1:cr2]
+  nctopg[:] = exp_topg[::100,cr1:cr2,cr1:cr2]
+
+
+  #ncx[:] = exp_x_cr[:]
+  #ncy[:] = exp_y_cr[:]
+
+  #ncxvm[:]  = exp_xvm_cr[::100]
+  #ncyvm[:]  = exp_yvm_cr[::100]
+  #ncthk[:]  = exp_thk_cr[::100]
+  #ncmask[:] = exp_mask_cr[::100]
+  #nccrate[:]= exp_crate_cr[::100]
+  #nctopg[:] = exp_topg_cr[::100]
+
     
-  ncafl[1:]  = exp_ts_afl[::10]
-  ncagr[1:]  = exp_ts_agr[::10]
-  nclim[1:]  = exp_ts_lim[::10]
-  nclimw[1:] = exp_ts_limnsw[::10]
-  nctcf[1:] = exp_ts_tendcf[::10]
-  nctgf[1:] = exp_ts_tendgf[::10]
+  ncafl[1:]  = exp_ts_afl[:]
+  ncagr[1:]  = exp_ts_agr[:]
+  nclim[1:]  = exp_ts_lim[:]
+  nclimw[1:] = exp_ts_limnsw[:]
+  nctcf[1:] = exp_ts_tendcf[:]
+  nctgf[1:] = exp_ts_tendgf[:]
    
   cuta = np.shape(trans[0])[0] 
   ncxa[:] = sav[0][0:cuta] 
@@ -332,6 +534,59 @@ if True:
   ncmaskh[:] = mav[:,7,0:cuth]
   ncxvmh[:] = uav[:,7,0:cuth]
   ncyvmh[:] = vav[:,7,0:cuth]
+
+
+  ncatnw[:] = Anw[:]
+  ncatne[:] = Ane[:]
+  ncatsw[:] = Asw[:]
+  ncatse[:] = Ase[:]
+
+  ncxcfa[:] = xcf[:lent,0]
+  ncycfa[:] = ycf[:lent,0]
+  ncxvmcfa[:] = vxcf[:lent,0]
+  ncyvmcfa[:] = vycf[:lent,0]
+  ncthkcfa[:] = Hcf[:lent,0]
+
+  ncxcfb[:] = xcf[:lent,1]
+  ncycfb[:] = ycf[:lent,1]
+  ncxvmcfb[:] = vxcf[:lent,1]
+  ncyvmcfb[:] = vycf[:lent,1]
+  ncthkcfb[:] = Hcf[:lent,1]
+
+  ncxcfc[:] = xcf[:lent,2]
+  ncycfc[:] = ycf[:lent,2]
+  ncxvmcfc[:] = vxcf[:lent,2]
+  ncyvmcfc[:] = vycf[:lent,2]
+  ncthkcfc[:] = Hcf[:lent,2]
+
+  ncxcfd[:] = xcf[:lent,3]
+  ncycfd[:] = ycf[:lent,3]
+  ncxvmcfd[:] = vxcf[:lent,3]
+  ncyvmcfd[:] = vycf[:lent,3]
+  ncthkcfd[:] = Hcf[:lent,3]
+
+  ncxcfe[:] = xcf[:lent,4]
+  ncycfe[:] = ycf[:lent,4]
+  ncxvmcfe[:] = vxcf[:lent,4]
+  ncyvmcfe[:] = vycf[:lent,4]
+  ncthkcfe[:] = Hcf[:lent,4]
+
+  ncxcff[:] = xcf[:lent,5]
+  ncycff[:] = ycf[:lent,5]
+  ncxvmcff[:] = vxcf[:lent,5]
+  ncyvmcff[:] = vycf[:lent,5]
+  ncthkcff[:] = Hcf[:lent,5]
+
+  ncxcfg[:] = xcf[:lent,6]
+  ncycfg[:] = ycf[:lent,6]
+  ncxvmcfg[:] = vxcf[:lent,6]
+  ncyvmcfg[:] = vycf[:lent,6]
+  ncthkcfg[:] = Hcf[:lent,6]
+
+  ncxcfh[:] = xcf[:lent,7]
+  ncycfh[:] = ycf[:lent,7]
+  ncxvmcfh[:] = vxcf[:lent,7]
+  ncyvmcfh[:] = vycf[:lent,7]
 
  
   #####################################################################################
@@ -402,6 +657,58 @@ if True:
   ncxvmh.units = 'm/a'
   ncyvmh.units = 'm/a'
 
+
+  ncatnw.units = 'm^2'
+  ncatne.units = 'm^2'
+  ncatsw.units = 'm^2'
+  ncatse.units = 'm^2'
+
+  ncxcfa.units = 'm'
+  ncycfa.units = 'm'
+  ncxvmcfa.units = 'm/a'
+  ncyvmcfa.units = 'm/a'
+  ncthkcfa.units = 'm'
+
+  ncxcfb.units = 'm'
+  ncycfb.units = 'm'
+  ncxvmcfb.units = 'm/a'
+  ncyvmcfb.units = 'm/a'
+  ncthkcfb.units = 'm'
+
+  ncxcfc.units = 'm'
+  ncycfc.units = 'm'
+  ncxvmcfc.units = 'm/a'
+  ncyvmcfc.units = 'm/a'
+  ncthkcfc.units = 'm'
+
+  ncxcfd.units = 'm'
+  ncycfd.units = 'm'
+  ncxvmcfd.units = 'm/a'
+  ncyvmcfd.units = 'm/a'
+  ncthkcfd.units = 'm'
+
+  ncxcfe.units = 'm'
+  ncycfe.units = 'm'
+  ncxvmcfe.units = 'm/a'
+  ncyvmcfe.units = 'm/a'
+  ncthkcfe.units = 'm'
+
+  ncxcff.units = 'm'
+  ncycff.units = 'm'
+  ncxvmcff.units = 'm/a'
+  ncyvmcff.units = 'm/a'
+  ncthkcff.units = 'm'
+
+  ncxcfg.units = 'm'
+  ncycfg.units = 'm'
+  ncxvmcfg.units = 'm/a'
+  ncyvmcfg.units = 'm/a'
+  ncthkcfg.units = 'm'
+
+  ncxcfh.units = 'm'
+  ncycfh.units = 'm'
+  ncxvmcfh.units = 'm/a'
+  ncyvmcfh.units = 'm/a'
     
   #####################################################################################
 
@@ -461,6 +768,61 @@ if True:
   ncxvmh.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Halbrane_D'
   ncyvmh.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Halbrane_D'
     
+  ncatnw.Standard_name  = 'total_ice_area_NorthWest'
+  ncatne.Standard_name  = 'total_ice_area_NorthEast'
+  ncatsw.Standard_name  = 'total_ice_area_SouthWest'
+  ncatse.Standard_name  = 'total_ice_area_SouthEast'
+
+  ncxcfa.Standard_name   = 'x_calving_front_on_Caprona_A'
+  ncycfa.Standard_name   = 'y_calving_front_on_Caprona_A'
+  ncxvmcfa.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_Caprona_A'
+  ncyvmcfa.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_Caprona_A'
+  ncthkcfa.Standard_name = 'land_ice_thickness_at_calving_front_on_Caprona_A'
+
+  ncxcfb.Standard_name   = 'x_calving_front_on_Caprona_B'
+  ncycfb.Standard_name   = 'y_calving_front_on_Caprona_B'
+  ncxvmcfb.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_Caprona_B'
+  ncyvmcfb.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_Caprona_B'
+  ncthkcfb.Standard_name = 'land_ice_thickness_at_calving_front_on_Caprona_B'
+
+  ncxcfc.Standard_name   = 'x_calving_front_on_Caprona_C'
+  ncycfc.Standard_name   = 'y_calving_front_on_Caprona_C'
+  ncxvmcfc.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_Caprona_C'
+  ncyvmcfc.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_Caprona_C'
+  ncthkcfc.Standard_name = 'land_ice_thickness_at_calving_front_on_Caprona_C'
+
+  ncxcfd.Standard_name   = 'x_calving_front_on_Caprona_D'
+  ncycfd.Standard_name   = 'y_calving_front_on_Caprona_D'
+  ncxvmcfd.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_Caprona_D'
+  ncyvmcfd.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_Caprona_D'
+  ncthkcfd.Standard_name = 'land_ice_thickness_at_calving_front_on_Caprona_D'
+
+  ncxcfe.Standard_name   = 'x_calving_front_on_Halbrane_A'
+  ncycfe.Standard_name   = 'y_calving_front_on_Halbrane_A'
+  ncxvmcfe.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_Halbrane_A'
+  ncyvmcfe.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_Halbrane_A'
+  ncthkcfe.Standard_name = 'land_ice_thickness_at_calving_front_on_Halbrane_A'
+
+  ncxcff.Standard_name   = 'x_calving_front_on_Halbrane_B'
+  ncycff.Standard_name   = 'y_calving_front_on_Halbrane_B'
+  ncxvmcff.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_Halbrane_B'
+  ncyvmcff.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_Halbrane_B'
+  ncthkcff.Standard_name = 'land_ice_thickness_at_calving_front_on_Halbrane_B'
+
+  ncxcfg.Standard_name   = 'x_calving_front_on_Halbrane_C'
+  ncycfg.Standard_name   = 'y_calving_front_on_Halbrane_C'
+  ncxvmcfg.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_Halbrane_C'
+  ncyvmcfg.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_Halbrane_C'
+  ncthkcfg.Standard_name = 'land_ice_thickness_at_calving_front_on_Halbrane_C'
+
+  ncxcfh.Standard_name   = 'x_calving_front_on_Halbrane_D'
+  ncycfh.Standard_name   = 'y_calving_front_on_Halbrane_D'
+  ncxvmcfh.Standard_name = 'land_ice_vertical_mean_x_velocity_at_calving_front_on_Halbrane_D'
+  ncyvmcfh.Standard_name = 'land_ice_vertical_mean_y_velocity_at_calving_front_on_Halbrane_D'
+  ncthkcfh.Standard_name = 'land_ice_thickness_at_calving_front_on_Halbrane_D'
+
+
+
   #####################################################################################
     
   ncmask.flag_values = '1, 2, 3'

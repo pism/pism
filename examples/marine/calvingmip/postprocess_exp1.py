@@ -14,7 +14,7 @@ resolution=5.0
 dkm=5.0 #km steps
 vcr=1e-8 #m/yr velocity threshold
 
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/circular/exp1-05km/"
+pismpath     = "/p/tmp/albrecht/pism23/calvmip/circular/exp1-05km-dir-retreat2/"
 pism_outfile = pismpath + "results/result_exp1.nc"
 pism_tsfile  = pismpath + "results/ts_exp1.nc"
 
@@ -42,6 +42,15 @@ exp_crate = datnc.variables["calvingmip_calving_rate"][:]*secperyear
 exp_topg  = datnc.variables["topg"][:]
 exp_subh = datnc.variables["ice_area_specific_volume"][:]
 datnc.close()
+
+
+exp_thks  = exp_thk+exp_subh # sum of thk and ice_area_specific_volume
+exp_thkm  = np.ma.masked_array(exp_thk,mask=exp_thk<=0.0) # exclude empty cells from mean
+exp_subhm = np.ma.masked_array(exp_subh,mask=exp_subh<=0.0) # exclude empty subgrid cells
+
+exp_xvmc  = np.ma.masked_array(exp_xvm,mask=np.abs(exp_xvm)<=vcr)
+exp_yvmc  = np.ma.masked_array(exp_yvm,mask=np.abs(exp_yvm)<=vcr)
+
 
 #print(exp_t)
 Mt,Mx,My = np.shape(exp_mask)
@@ -106,6 +115,7 @@ vycf=np.zeros([Mt,len(trans)])
 exp_xm = np.zeros([Mx,My])
 exp_ym = np.zeros([Mx,My])
 
+
 for i in range(Mx):
     exp_xm[i,:]=exp_x[i]
 for j in range(My):
@@ -115,6 +125,9 @@ print('Interpolate data along profiles...')
 for ti in range(Mt):
   for l,po in enumerate(trans):
     profile=[]
+    dx=po[1][1]-po[0][1]
+    dy=po[1][0]-po[0][0]
+
     for k,p in enumerate(po):
 
         i=int(np.floor(p[1]))
@@ -140,99 +153,18 @@ for ti in range(Mt):
         i=int(np.around(p[1]))
         j=int(np.around(p[0]))
 
+        if (exp_mask[ti,int(np.sign(dx)+i),int(np.sign(dy)+j)]==3.0 and exp_mask[ti,i,j]==2.0):
 
-        ip=i
-        jp=j
-        # get marginal values along profiles
-        if l==0:
-            ip=i+1
-            jp=j
-        elif l==2:
-            ip=i
-            jp=j+1
-        elif l==4:
-            ip=i-1
-            jp=j
-        elif l==6:
-            ip=i
-            jp=j-1
-        elif l==1:
-            ip=i+1
-            jp=j+1
-        elif l==3:
-            ip=i-1
-            jp=j+1
-        elif l==5:
-            ip=i-1
-            jp=j-1
-        elif l==7:
-            ip=i+1
-            jp=j-1
+          Atot    = 9.0 # area of neighbor cells around i,j
+          thkmean = np.nanmean(exp_thkm[ti,i-1:i+2,j-1:j+2]) # mean over cells with thk>0
+          Acov    = np.sum((exp_thks[ti,i-1:i+2,j-1:j+2])/thkmean) # area covered by cells with thk>0 or icea_area_specific_volume>0
+          ds      = 3.0*(Acov/Atot-0.5) # average distance of i,j from ice front, assuming half of 9 cells would be filled with thk>0 
+          ycf[ti,l]=exp_ym[i,j]+ds*dy*(exp_ym[i,j+1]-exp_ym[i,j]) # direction is determined by dy
+          xcf[ti,l]=exp_xm[i,j]+ds*dx*(exp_xm[i+1,j]-exp_xm[i,j]) # direction is determined vy dx
 
-
-        if (l%2==0):
-            if exp_mask[ti,ip,jp]==3.0 and exp_mask[ti,i,j]==2.0:
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-              ycf[ti,l]=exp_ym[i,j]+(0.5+exp_subh[ti,ip,jp]/Hcf[ti,l])*(exp_ym[ip,jp]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]+(0.5+exp_subh[ti,ip,jp]/Hcf[ti,l])*(exp_xm[ip,jp]-exp_xm[i,j])
-
-        elif (l%2==1):
-            if (exp_mask[ti,ip,jp]==3.0 and exp_mask[ti,i,j]==2.0):
-              Hcf[ti,l]=exp_thk[ti,i,j]
-              vxcf[ti,l]=exp_xvm[ti,i,j]
-              vycf[ti,l]=exp_yvm[ti,i,j]
-
-              Atot=6.0 
-              # assuming a 45deg turned rectangle with 2*sqrt(2)*dx length through i,j 
-              # and the 7 ocean side neighbors up to 3/2*sqrt(2)*dx height,
-              # makes a 6*dx*dx rectangle that can be partailly covered by thk and subh
-              Acov=0.0
-              Hi=exp_thk[ti,i,j]
-
-              if Hi>0:
-                  Acov+=0.5
-              if exp_thk[ti,2*i-ip,jp]>0:
-                  Acov+=0.25
-              if exp_thk[ti,ip,2*j-jp]>0:
-                  Acov+=0.25
-              if exp_thk[ti,i,jp]>0:
-                  Acov+=1.0
-              if exp_thk[ti,ip,j]>0:
-                  Acov+=1.0
-              if exp_thk[ti,ip,jp]>0:
-                  Acov+=1.0
-              if exp_thk[ti,i,2*jp-j]>0:
-                  Acov+=0.5
-              if exp_thk[ti,2*ip-i,j]>0:
-                  Acov+=0.5
-              #dij=1.5*(Acov/Atot)
-
-              if exp_subh[ti,2*i-ip,jp]>0:
-                  Acov+=0.25*exp_subh[ti,2*i-ip,jp]/Hi
-              if exp_subh[ti,ip,2*j-jp]>0:
-                  Acov+=0.25*exp_subh[ti,ip,2*j-jp]/Hi
-              if exp_subh[ti,i,jp]>0:
-                  Acov+=1.0*exp_subh[ti,i,jp]/Hi
-              if exp_subh[ti,ip,j]>0:
-                  Acov+=1.0*exp_subh[ti,ip,j]/Hi
-              if exp_subh[ti,ip,jp]>0:
-                  Acov+=1.0*exp_subh[ti,ip,jp]/Hi
-              if exp_subh[ti,i,2*jp-j]>0:
-                  Acov+=0.5*exp_subh[ti,i,2*jp-j]/Hi
-              if exp_subh[ti,2*ip-i,j]>0:
-                  Acov+=0.5*exp_subh[ti,2*ip-i,j]/Hi
-              ds=1.5*Acov/Atot
-
-              ycf[ti,l]=exp_ym[i,j]+ds*(exp_ym[ip,jp]-exp_ym[i,j])
-              xcf[ti,l]=exp_xm[i,j]+ds*(exp_xm[ip,jp]-exp_xm[i,j])
-
-        # replace from previous time step, if for advancing calving front new velocities are not available
-        if np.abs(vxcf[ti,l])<vcr or np.isnan(vxcf[ti,l]):
-              vxcf[ti,l]=vxcf[ti-1,l]
-        if np.abs(vycf[ti,l])<vcr or np.isnan(vycf[ti,l]):
-              vycf[ti,l]=vycf[ti-1,l]
+          Hcf[ti,l]=thkmean
+          vxcf[ti,l]=np.nanmean(exp_xvmc[ti,i-1:i+2,j-1:j+2])
+          vycf[ti,l]=np.nanmean(exp_yvmc[ti,i-1:i+2,j-1:j+2])
 
 
     if ti==0:
