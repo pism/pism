@@ -62,12 +62,12 @@ add_library (util OBJECT
 if(Pism_USE_YAC_INTERPOLATION)
   set_source_files_properties(InputInterpolationYAC.cc
     PROPERTIES
-    INCLUDE_DIRECTORIES ${YAC_INCLUDE_DIRS})
+    INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")
   target_sources(util PRIVATE InputInterpolationYAC.cc)
 
   set_source_files_properties(yaxt_wrapper.c
     PROPERTIES
-    INCLUDE_DIRECTORIES ${YAXT_INCLUDE_DIRS})
+    INCLUDE_DIRECTORIES "${YAXT_INCLUDE_DIRS}")
   target_sources(util PRIVATE yaxt_wrapper.c)
 endif()
 
