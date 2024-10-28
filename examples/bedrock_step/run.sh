@@ -5,7 +5,7 @@
 variables=mass_fluxes,thk,usurf,diffusivity,diffusivity_staggered,flux_mag,wvelsurf,mask,h_x
 
 mpiexec -n 4 \
-pismr \
+pism \
   -bootstrap \
   -constants.ice.density 910 \
   -constants.standard_gravity 9.81 \

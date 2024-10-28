@@ -60,7 +60,7 @@ ends of records for each month and set the ``time:bounds`` attribute accordingly
 
 .. code-block:: none
 
-    pismr -surface given -surface_given_file foo.nc -surface.given.periodic
+    pism -surface given -surface_given_file foo.nc -surface.given.periodic
 
 See :ref:`sec-forcing-time-dependent` for more information.
 
@@ -850,7 +850,7 @@ thickness field ``thk`` and the mask ``ftt_mask``. A basic run modifying surface
 
 .. code-block:: none
 
-    pismr -i foo.nc -surface given,forcing -force_to_thickness_file bar.nc
+    pism -i foo.nc -surface given,forcing -force_to_thickness_file bar.nc
 
 In this case ``foo.nc`` contains fields :var:`climatic_mass_balance` and
 :var:`ice_surface_temp`, as normal for ``-surface given``, and ``bar.nc`` contains fields

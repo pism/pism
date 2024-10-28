@@ -13,7 +13,7 @@ grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 4500 -Lbz 1000"
 
 pismopts="-y $length -i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_method fd"
 
-doit="mpiexec -n $N pismr $pismopts"
+doit="mpiexec -n $N pism $pismopts"
 
 extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar -extra_file"
 

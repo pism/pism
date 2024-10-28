@@ -13,7 +13,7 @@ cd $temp_dir
 set -e
 set -x
 
-PISM="$PISM_PATH/pismr -config $PISM_PATH/pism_config.nc"
+PISM="$PISM_PATH/pism -config $PISM_PATH/pism_config.nc"
 
 # Create a file to bootstrap from (with a non-trivial bed topography):
 # Note: Mx, My, and Mz should all be different.

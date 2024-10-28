@@ -16,8 +16,8 @@ If saving exactly at specified times is not critical, then use the :opt:`-save_f
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots.nc \
-         -save_times 1000:1000:10000
+   pism -i foo.nc -y 10000 -o output.nc -save_file snapshots.nc \
+        -save_times 1000:1000:10000
 
 starts a PISM evolution run, initializing from ``foo.nc``, running for 10000 years and
 saving snapshots to ``snapshots.nc`` at the first time-step after each of the years `1000`,
@@ -34,9 +34,9 @@ the :opt:`-save_times` option a comma-separated list. For example,
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 10000 -o output.nc \
-         -save_file snapshots.nc \
-         -save_times 1000,1500,2000,5000
+   pism -i foo.nc -y 10000 -o output.nc \
+        -save_file snapshots.nc \
+        -save_times 1000,1500,2000,5000
 
 will save snapshots on the first time-step after years `1000`, `1500`, `2000` and `5000`.
 The comma-separated list given to the :opt:`-save_times` option can be at most `200`
@@ -46,7 +46,7 @@ If ``snapshots.nc`` was created by the command above, running
 
 .. code-block:: none
 
-   pismr -i snapshots.nc -y 1000 -o output_2.nc
+   pism -i snapshots.nc -y 1000 -o output_2.nc
 
 will initialize using the last record in the file, at about :math:`5000` years. By
 contrast, to restart from :math:`1500` years (for example) it is necessary to extract the
@@ -89,8 +89,8 @@ For example, the run above can be changed to
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots \
-         -save_times 1000,1500,2000,5000 -save_split
+   pism -i foo.nc -y 10000 -o output.nc -save_file snapshots \
+        -save_times 1000,1500,2000,5000 -save_split
 
 for this purpose. This will produce files called ``snapshots-year.nc``. This option is
 generally faster if many snapshots are needed, apparently because of the time necessary to

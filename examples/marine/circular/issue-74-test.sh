@@ -27,7 +27,7 @@ grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 1500 -Lbz 0"
 
 pismopts="-i $infile -bootstrap $grid -stress_balance ssa -ssa_dirichlet_bc -o_order zyx -energy none -ssa_method fd -cfbc -part_grid"
 
-doit="mpiexec -n $N pismr $pismopts"
+doit="mpiexec -n $N pism $pismopts"
 
 extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,usurf,mass_fluxes -extra_file issue-74_ex.nc"
 ts="-ts_file issue-74_ts.nc -ts_times 1"

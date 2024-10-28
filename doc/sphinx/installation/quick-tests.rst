@@ -12,7 +12,7 @@ correctly.
 
    .. code-block:: bash
 
-      mpiexec -n 4 pismr -test G -y 200
+      mpiexec -n 4 pism -test G -y 200
 
    If you see some output and a final ``Writing model state to file ’unnamed.nc’``
    then PISM completed successfully. At the end of this run you get measurements of the
@@ -28,14 +28,14 @@ correctly.
 
    .. code-block:: none
 
-      pismr -eisII A -y 5000 -view thk,temppabase,velsurf_mag
+      pism -eisII A -y 5000 -view thk,temppabase,velsurf_mag
 
    When using such viewers and ``mpiexec`` the additional final option ``-display :0`` is
    sometimes required to enable MPI to use X, like this:
 
    .. code-block:: none
 
-       mpiexec -n 2 pismr -eisII A -y 5000 -view thk,temppabase,velsurf_mag -display :0
+       mpiexec -n 2 pism -eisII A -y 5000 -view thk,temppabase,velsurf_mag -display :0
 
    Also ``-drawpause 0.1`` or similar may be needed if the figures are refreshing too fast.
 

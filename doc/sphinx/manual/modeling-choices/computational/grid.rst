@@ -56,14 +56,14 @@ input file determines all grid parameters. For instance, the command
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 100
+   pism -i foo.nc -y 100
 
 should work fine if ``foo.nc`` is a PISM output file. Because ``-i`` input files take
 precedence over options,
 
 .. code-block:: none
 
-   pismr -i foo.nc -Mz 201 -y 100
+   pism -i foo.nc -Mz 201 -y 100
 
 will give a warning that "``PISM WARNING: ignoring command-line option '-Mz'``".
 
@@ -96,7 +96,7 @@ Set :config:`grid.Ly` and :config:`grid.dy` to set grid resolution in the Y dire
 
    .. code-block:: bash
 
-      pismr -bootstrap -i pism_Greenland_5km_v1.1.nc \
+      pism -bootstrap -i pism_Greenland_5km_v1.1.nc \
             -dx 5km -dy 5km ...
 
 .. _sec-grid-registration:
@@ -146,7 +146,7 @@ For example:
 
 .. code-block:: none
 
-   > pismr -eisII A \
+   > pism -eisII A \
            -grid.registration center \
            -Lx 10 -Mx 4 -My 4 \
            -y 0 -verbose 1 \
@@ -184,7 +184,7 @@ Compare this to
 
 .. code-block:: none
 
-   > pismr -eisII A \
+   > pism -eisII A \
            -grid.registration corner \
            -Lx 10 -Mx 5 -My 5 \
            -y 0 -verbose 1 \
@@ -389,7 +389,7 @@ PISM will report the following.
 
 .. code-block:: none
 
-   > pismr -i pism_Greenland_5km_v1.1.nc \
+   > pism -i pism_Greenland_5km_v1.1.nc \
            -bootstrap -Mx 76 -My 141 -Mz 101 -Mbz 11 ... \
            -grid.recompute_longitude_and_latitude true ... -o output.nc
    ...
@@ -468,7 +468,7 @@ simulation using a `5` km grid covering this domain.
              set grid resolution.
    :name: code-using-grid-definition-file
 
-   pismr \
+   pism \
      -bootstrap -i pism_Greenland_5km_v1.1.nc \
      -grid.file grid.nc \
      -dx 5km -dy 5km \
@@ -546,7 +546,7 @@ comma-separated list of numbers as its argument. For example,
 
 .. code-block:: none
 
-   mpiexec -n 3 pismr -eisII A -Mx 101 -My 101 \
+   mpiexec -n 3 pism -eisII A -Mx 101 -My 101 \
                       -Nx 1 -grid.procs_x 101 \
                       -Ny 3 -grid.procs_y 20,61,20
 

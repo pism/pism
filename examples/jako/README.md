@@ -8,7 +8,7 @@ for the whole ice sheet, plus a 5km-resolution whole ice sheet spun-up state
 called g5km_gridseq.nc.  That whole ice sheet state can be downloaded or
 regenerated from examples/std-greenland/ scripts.
 
-This example demonstrates the outlet-glacier-mode PISM regional mode `pismr -regional`
+This example demonstrates the outlet-glacier-mode PISM regional mode `pism -regional`
 and the drainage-basin-delineation tool `regional-tools`.
 
 For more detail and complete instructions see the PISM User's Manual.

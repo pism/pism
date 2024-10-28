@@ -1,12 +1,12 @@
-=====
-pismr
-=====
+====
+pism
+====
 
 ------------------------------------------------
 Parallel Ice Sheet Model (PISM): prognostic runs
 ------------------------------------------------
 :Author: ckhroulev@alaska.edu
-:Date:   2024-2-21
+:Date:   2024-10-28
 :Copyright: Copyright (C) 2024 Constantine Khrulev
 :Version: 0.1
 :Manual section: 1
@@ -15,13 +15,13 @@ Parallel Ice Sheet Model (PISM): prognostic runs
 SYNOPSIS
 ========
 
-|  pismr -i *input_file.nc* ...
-|  pismr -boot_file *bootstrapping_file.nc* ...
+|  pism -i *input_file.nc* ...
+|  pism -boot_file *bootstrapping_file.nc* ...
 
 DESCRIPTION
 ===========
 
-``pismr`` performs an evolution run using PISM, a Parallel Ice Sheet Model. Please see the
+``pism`` performs an evolution run using PISM, a Parallel Ice Sheet Model. Please see the
 *PISM User's Manual* for details.
 
 OPTIONS

@@ -16,14 +16,14 @@ common_options="
         -energy.enabled no
 "
 
-mpiexec -n ${N} pismr -eisII A \
+mpiexec -n ${N} pism -eisII A \
         -grid.Mx ${M} \
         -grid.My ${M} \
         -output.file input.nc \
         -time.end 5e3 \
         ${common_options}
 
-mpiexec -n ${N} pismr \
+mpiexec -n ${N} pism \
         -i input.nc \
         -bootstrap \
         -grid.Lz 3500 \

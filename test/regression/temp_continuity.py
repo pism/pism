@@ -15,7 +15,7 @@ def run(cmd):
 pism_path = sys.argv[1]
 mpiexec = sys.argv[2]
 
-cmd = f"{pism_path}/pismr -test F -y 10 -verbose 1 -o_size small -no_report -o in-temp-continuity.nc"
+cmd = f"{pism_path}/pism -test F -y 10 -verbose 1 -o_size small -no_report -o in-temp-continuity.nc"
 
 run(cmd)
 
@@ -23,7 +23,7 @@ deltas = []
 dts = [100, 50]
 for dt in dts:
     try:
-        cmd = f"{pism_path}/pismr -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file in-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt {dt} -o out-temp-continuity.nc -output.sizes.medium temp -gradient mahaffy"
+        cmd = f"{pism_path}/pism -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file in-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt {dt} -o out-temp-continuity.nc -output.sizes.medium temp -gradient mahaffy"
 
         run(cmd)
 

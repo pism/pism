@@ -48,17 +48,17 @@ endmacro()
 # Tests themselves:
 pism_test (pism_testing_tools test_regression_tools.py)
 
-pism_test (pismr_exact_restartability_SIA_only test_01.sh)
+pism_test (pism_exact_restartability_SIA_only test_01.sh)
 
-pism_test (pismr_processor_independence test_02.sh)
+pism_test (pism_processor_independence test_02.sh)
 
-pism_test (pismr_zero_length_run test_03.sh)
+pism_test (pism_zero_length_run test_03.sh)
 
-pism_test (pismr_regridding_during_bootstrapping test_04.sh)
+pism_test (pism_regridding_during_bootstrapping test_04.sh)
 
-pism_test (pismr_bootstrap_variable_order test_05.sh)
+pism_test (pism_bootstrap_variable_order test_05.sh)
 
-pism_test (pismr_bootstrap_variable_ranges test_06.sh)
+pism_test (pism_bootstrap_variable_ranges test_06.sh)
 
 pism_test (regridding:bootstrap_vs_regrid_file test_07.sh)
 

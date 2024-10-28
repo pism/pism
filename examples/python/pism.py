@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""This script re-implements key features of the `pismr` executable and shows how to write
+"""This script re-implements key features of the `pism` executable and shows how to write
 a custom ocean model component in Python.
 
 Note the

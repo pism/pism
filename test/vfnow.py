@@ -11,7 +11,7 @@
 ##
 # Examples:
 # - \verbatim vfnow.py \endverbatim use one processor and do three levels of refinement; this command is equivalent to \verbatim vfnow.py -n 2 -l 2 -t CGIJ \endverbatim,
-# - \verbatim vfnow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n' \endverbatim will use \verbatim aprun -n 8 bin/pismr \endverbatim as the command and do five levels (the maximum) of refinement only on test J,
+# - \verbatim vfnow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n' \endverbatim will use \verbatim aprun -n 8 bin/pism \endverbatim as the command and do five levels (the maximum) of refinement only on test J,
 # - \verbatim vfnow.py -n 2 -l 3 -t CEIJGKLO \endverbatim uses two processers (cores) and runs in about an hour,
 # - \verbatim vfnow.py -n 40 -l 5 -t ABCDEFGIJKLO \endverbatim will use forty processors to do all possible verification as managed by \c vfnow.py; don't run this unless you have a big computer and you are prepared to wait.
 # For a list of options do \verbatim test/vfnow.py --help \endverbatim.
@@ -44,7 +44,7 @@ class PISMVerificationTest:
     Mbz = [1] * N
     # extra options (such as -y, -ys, -ssafd_picard_rtol)
     opts = ""
-    executable = "pismr"
+    executable = "pism"
 
     def build_command(self, exec_prefix, level):
         M = list(zip(self.Mx, self.My, self.Mz, self.Mbz))
@@ -309,7 +309,7 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.description = """PISM verification script"""
 parser.add_argument("--eta", dest="eta", action="store_true",
-                    help="to add '-eta' option to pismr flags")
+                    help="to add '-eta' option to pism flags")
 parser.add_argument("-l", dest="levels", type=int, default=2,
                     help="number of levels of verification; '-l 1' fast, '-l 5' slowest")
 parser.add_argument("--mpido", dest="mpido", default="mpiexec -np",
@@ -317,7 +317,7 @@ parser.add_argument("--mpido", dest="mpido", default="mpiexec -np",
 parser.add_argument("-n", dest="n", type=int, default=2,
                     help="number of processors to use")
 parser.add_argument("--prefix", dest="prefix", default="",
-                    help="path prefix to pismr executable")
+                    help="path prefix to pism executable")
 parser.add_argument("-r", dest="report_file", default="",
                     help="name of the NetCDF error report file")
 parser.add_argument("-t", dest="tests", nargs="+",

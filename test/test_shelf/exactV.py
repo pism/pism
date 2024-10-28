@@ -53,7 +53,7 @@ def plot_xc(t_years):
 
 
 def run_pism(Mx, run_length, options, output):
-    command = "pismr -test V -y %f -Mx %d %s -o %s" % (run_length, Mx, options, output)
+    command = "pism -test V -y %f -Mx %d %s -o %s" % (run_length, Mx, options, output)
     print("Running %s" % command)
     subprocess.call(shlex.split(command))
 

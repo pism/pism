@@ -34,7 +34,7 @@ Use
 
 .. code:: bash
 
-   pismr -regional ...
+   pism -regional ...
 
 to enable PISM's "regional mode."
 
@@ -42,7 +42,7 @@ To run a regional mode simulation using a subset of the grid in an input file, u
 
 .. code-block:: bash
 
-   pismr -regional -bootstrap -i input.NYC \
+   pism -regional -bootstrap -i input.NYC \
          -x_range x_min,x_max \
          -y_range y_min,y_max
 
@@ -54,7 +54,7 @@ To use the same subset of the domain, but at a higher resolution, add
 
 .. code-block:: bash
 
-   pismr -regional -bootstrap -i input.NYC \
+   pism -regional -bootstrap -i input.NYC \
          -x_range x_min,x_max \
          -y_range y_min,y_max \
          -refinement_factor N

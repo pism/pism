@@ -45,7 +45,7 @@ Experiments E -- L are only documented in :cite:`EISIIdescribe`.
    :header-rows: 1
    :widths: 5,2
 
-   * - Command: "``pismr +``"
+   * - Command: "``pism +``"
      - Relation to experiment A
 
    * - ``-eisII A -Mx 61 -My 61 -Mz 61 -Lz 5000 -y 2e5 -o eisIIA.nc``

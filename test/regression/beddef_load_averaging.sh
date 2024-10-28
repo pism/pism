@@ -14,7 +14,7 @@ else
   exit 1
 fi
 
-pism="$PISM_PATH/pismr"
+pism="$PISM_PATH/pism"
 
 # create a temporary directory and set up automatic cleanup
 temp_dir=$(mktemp -d --tmpdir pism-test-XXXX)

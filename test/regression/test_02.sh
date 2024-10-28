@@ -13,7 +13,7 @@ NRANGE="1 2 3 4 6"
 # Create the files:
 for NN in $NRANGE;
 do 
-    $MPIEXEC -n $NN $PISM_PATH/pismr -test G -Mx 30 -My 40 -Mz 20 -y 1 -verbose 1 -o foo$NN-02.nc
+    $MPIEXEC -n $NN $PISM_PATH/pism -test G -Mx 30 -My 40 -Mz 20 -y 1 -verbose 1 -o foo$NN-02.nc
 done
 
 set +e

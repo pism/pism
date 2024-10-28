@@ -156,7 +156,7 @@ void IceRegionalModel::allocate_energy_model() {
     m_energy_model = std::make_shared<energy::EnthalpyModel_Regional>(m_grid, m_stress_balance);
   } else if (energy_model == "cold") {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "pismr -regional does not support the 'cold' energy.model");
+                       "pism -regional does not support the 'cold' energy.model");
   } else {
     m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
   }

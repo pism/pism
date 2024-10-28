@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
     print_config(*ctx->log(), 3, *config);
 
     std::string usage =
-      "  pismr -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pism -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i                         IN.nc is input file in NetCDF format: contains PISM-written model state\n"
       "  -bootstrap                 enable heuristics to produce an initial state from an incomplete input\n"
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
     {
-      bool done = show_usage_check_req_opts(*log, "PISMR (basic evolution run mode)" ,
+      bool done = show_usage_check_req_opts(*log, "PISM (basic evolution run mode)" ,
                                             required_options, usage);
       if (done) {
         return 0;

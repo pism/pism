@@ -34,12 +34,12 @@ correctly:
 
 .. code-block:: none
 
-   mpiexec -n 2 pismr -eisII A -y 1000 -o state.nc
-   pismr -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
+   mpiexec -n 2 pism -eisII A -y 1000 -o state.nc
+   pism -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
          -extra_file movie.nc -extra_vars climatic_mass_balance,ice_surface_temp \
          -ys 0 -ye 2.5
 
-Using ``pismr -eisII A`` merely generates demonstration climate data, using EISMINT II
+Using ``pism -eisII A`` merely generates demonstration climate data, using EISMINT II
 choices :cite:`EISMINT00`. The next run extracts the surface mass balance
 :var:`climatic_mass_balance` and surface temperature :var:`ice_surface_temp` from
 ``state.nc``. It then does nothing interesting, exactly because a constant climate is
@@ -56,7 +56,7 @@ Assuming that ``g20km_10ka.nc`` was created :ref:`as described in the User's Man
 
 .. code-block:: none
 
-    pismr -stress_balance.model none \
+    pism -stress_balance.model none \
           -energy.model none \
           -age.enabled no \
           -geometry.update.enabled no \
@@ -84,7 +84,7 @@ The command
 
 .. code-block:: none
 
-    pismr -i g20km_pre100.nc -bootstrap -Mx 51 -My 101 -Mz 11 \
+    pism -i g20km_pre100.nc -bootstrap -Mx 51 -My 101 -Mz 11 \
           -atmosphere searise_greenland \
           -surface pdd -ys 0 -ye 2.5 \
           -extra_file foo.nc -extra_times 0:0.1:2.5 \
@@ -109,7 +109,7 @@ section :ref:`sec-surface-pdd`) is "reasonable":
 
 .. code-block:: none
 
-   pismr -i g20km_pre100.nc -atmosphere searise_greenland,precip_scaling \
+   pism -i g20km_pre100.nc -atmosphere searise_greenland,precip_scaling \
          -surface pdd -atmosphere_precip_scaling_file pism_dT.nc \
          -extra_times 0:1week:3 -ys 0 -ye 3 \
          -extra_file pddmovie.nc -o_order zyx \
@@ -150,7 +150,7 @@ We can also test the surface temperature forcing code with the following command
 
 .. code-block:: none
 
-    pismr -i g20km_pre100.nc -surface simple \
+    pism -i g20km_pre100.nc -surface simple \
           -atmosphere searise_greenland,delta_T \
           -atmosphere_delta_T_file pism_dT.nc \
           -extra_times 100 -ys -125e3 -ye 0 \

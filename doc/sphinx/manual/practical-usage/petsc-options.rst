@@ -28,8 +28,8 @@ The runs
 
 .. code-block:: none
 
-   pismr -test F -y 100
-   pismr -test G -y 100
+   pism -test F -y 100
+   pism -test G -y 100
 
 then have the same refined grid in each run, and the runs report on which options were
 read.

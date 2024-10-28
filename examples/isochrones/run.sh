@@ -7,7 +7,7 @@ N=${N:-8}
 # horizontal grid size
 M=${M:-401}
 
-mpiexec -n ${N} pismr -eisII A \
+mpiexec -n ${N} pism -eisII A \
         -grid.Lz 5000 \
         -grid.Mx ${M} \
         -grid.My ${M} \

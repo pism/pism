@@ -14,7 +14,7 @@ fi
 NN="$1"
 myMx="$2"
 
-pismexec="pismr"
+pismexec="pism"
 
 oname=lab$myMx.nc
 initfile=init$oname

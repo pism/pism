@@ -13,13 +13,13 @@ FINE=" -Mx 21 -My 31 -Mz 41"
 set -e -x
 
 # Create a file to bootstrap from:
-$PISM_PATH/pismr -test G $COARSE -y 0 -o foo-04.nc
+$PISM_PATH/pism -test G $COARSE -y 0 -o foo-04.nc
 
 # Coarse -> fine:
-$PISM_PATH/pismr -i foo-04.nc -bootstrap $FINE   $OPTS -o bar-04.nc
+$PISM_PATH/pism -i foo-04.nc -bootstrap $FINE   $OPTS -o bar-04.nc
 
 # Fine -> coarse:
-$PISM_PATH/pismr -i bar-04.nc -bootstrap $COARSE $OPTS -o baz-04.nc
+$PISM_PATH/pism -i bar-04.nc -bootstrap $COARSE $OPTS -o baz-04.nc
 
 # Compare:
 $PISM_PATH/nccmp.py -v topg foo-04.nc baz-04.nc

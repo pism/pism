@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2018, 2023  PISM authors
+# Copyright (C) 2009-2018, 2023, 2024  PISM authors
 ##################################################################################
 # Coarse grid spinup of Antarctic ice sheet model using data from Anne Le Brocq
 # (README.md).  Uses PIK physics and enthalpy model
@@ -32,7 +32,7 @@ USE_PROJ=${USE_PROJ:-false}
 # naming files, directories, executables
 RESDIR=
 BOOTDIR=
-PISM_EXEC=${PISM_EXEC:=pismr}
+PISM_EXEC=${PISM_EXEC:=pism}
 PISM_MPIDO="mpiexec -n "
 
 # input data:

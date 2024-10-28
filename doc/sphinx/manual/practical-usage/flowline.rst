@@ -38,7 +38,7 @@ input file in the `y`\-direction. Now we can "bootstrap" from ``slab-in.nc``:
 
 .. code-block:: none
 
-   mpiexec -n 2 pismr \
+   mpiexec -n 2 pism \
            -surface given \
            -bootstrap -i slab-in.nc \
            -Mx 201 -Lx 1000 \

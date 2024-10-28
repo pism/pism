@@ -31,7 +31,7 @@ misc_options="-cfbc -part_grid -o_order zyx -energy none"
 
 pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $extra $misc_options"
 
-doit="mpiexec -n $N pismr"
+doit="mpiexec -n $N pism"
 
 set -x
 

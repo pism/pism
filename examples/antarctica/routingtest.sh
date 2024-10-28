@@ -12,7 +12,7 @@ DOIT=
 #DOIT=echo
 
 PREFIX=
-PISMGO="mpiexec -n $NN ${PREFIX}pismr"
+PISMGO="mpiexec -n $NN ${PREFIX}pism"
 
 VERTGRID="-Lz 5000 -Lbz 2000 -Mz 51 -Mbz 21 -z_spacing equal"
 

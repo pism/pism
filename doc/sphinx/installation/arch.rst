@@ -26,7 +26,7 @@ You can then install PISM and its dependencies with the following command:
    
    yay -Sy pism
 
-Once installed, the PISM binaries (e.g. ``pismr``, various Python tools) are available in
+Once installed, the PISM binaries (e.g. ``pism``, various Python tools) are available in
 the PATH and do not require further intervention to work. It is recommended that the
 installation is manually verified with the instructions in section
 :ref:`sec-install-quick-tests`.

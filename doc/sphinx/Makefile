@@ -12,7 +12,7 @@ INTERMEDIATE=diag.json diag-2.json dummy.nc pism_config.nc surface_input.nc
 dummy.nc:
 	# use a thermal bedrock layer model and run for 1 year to complete the
 	# bootstrapping
-	pismr -eisII A -y 1 -Mbz 5 -Lbz 1000 -Mz 5 -Mx 5 -My 5 -o $@ -verbose 1
+	pism -eisII A -y 1 -Mbz 5 -Lbz 1000 -Mz 5 -Mx 5 -My 5 -o $@ -verbose 1
 
 	# rename climatic_mass_balance: we need precipitation for an atmosphere model
 	ncrename -v climatic_mass_balance,precipitation -O $@ $@
@@ -33,7 +33,7 @@ dummy.nc:
 # - all supported calving models
 # - constant frontal melt model
 diag-2.json: dummy.nc
-	pismr -i $^ \
+	pism -i $^ \
 	      -bootstrap \
 	      -energy enthalpy \
 	      -bed_def iso \
@@ -58,7 +58,7 @@ surface_input.nc: dummy.nc
 # - isochrone tracking
 # - debm_simple surface
 diag.json: dummy.nc surface_input.nc
-	pismr -i dummy.nc \
+	pism -i dummy.nc \
 	      -atmosphere.models searise_greenland \
 	      -surface.models debm_simple \
 	      -bootstrap \

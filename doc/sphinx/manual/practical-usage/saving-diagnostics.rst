@@ -16,7 +16,7 @@ example,
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 10000 -o output.nc \
+   pism -i foo.nc -y 10000 -o output.nc \
          -extra_file extras.nc \
          -extra_times 0:10:1e4 \
          -extra_vars velsurf_mag,velbase_mag
@@ -38,13 +38,13 @@ if a non-trivial calendar is selected. Here are some examples.
 
 .. code-block:: bash
 
-   pismr ... -extra_times 10       # every 10 years
-   pismr ... -extra_times 2days    # every 2 days
-   pismr ... -calendar gregorian \
+   pism ... -extra_times 10       # every 10 years
+   pism ... -extra_times 2days    # every 2 days
+   pism ... -calendar gregorian \
              -extra_times 1-1-1:daily:11-1-1 # daily for 10 years
-   pismr ... -calendar gregorian \
+   pism ... -calendar gregorian \
              -extra_times daily -ys 1-1-1 -ye 11-1-1
-   pismr ... -calendar gregorian \
+   pism ... -calendar gregorian \
              -extra_times 2hours -ys 1-1-1 -ye 1-2-1
 
 The step in the range specification can have the form ``Nunit``, for example ``5days``.
@@ -57,7 +57,7 @@ instead of a number; for example
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 100 -o output.nc -extra_file extras.nc \
+   pism -i foo.nc -y 100 -o output.nc -extra_file extras.nc \
          -extra_times 0:monthly:100 -extra_vars dHdt
 
 will save the rate of change of the ice thickness every month for 100 years. With
@@ -74,7 +74,7 @@ This is especially useful when using a climate forcing file to set run duration:
 
 .. code-block:: none
 
-   pismr -i foo.nc -surface given -surface_given_file climate.nc \
+   pism -i foo.nc -surface given -surface_given_file climate.nc \
          -calendar gregorian -time_file climate.nc \
          -extra_times monthly -extra_file ex.nc -extra_vars thk
 

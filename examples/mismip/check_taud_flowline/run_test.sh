@@ -14,7 +14,7 @@ do
   of=ICESHELF_1a_A1_${H0}_${v0}_${ca}_${N0}_${per}.nc
   python3 prepare_iceshelf.py -c $ca -v $v0 -H $H0 -o $of -N $N0 -p $per
 
-  pismr \
+  pism \
     -Lz 6000 \
     -Mx $N0 \
     -My 3 \

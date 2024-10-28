@@ -10,19 +10,19 @@ ts=-ts_file ts.nc -ts_times 1
 options=${grid} ${ssa} ${mass} ${misc} ${length} ${ts}
 
 default: tongues.nc
-	mpiexec -n 4 pismr -i tongues.nc -bootstrap ${options} ${extra}
+	mpiexec -n 4 pism -i tongues.nc -bootstrap ${options} ${extra}
 
 extra_calving=-extra_times 5 -extra_file ex.nc -extra_vars taud,velbar_mag,thk,mask,mass_fluxes,velbar
 eigen_calving: tongues.nc
-	mpiexec -n 4 pismr -i tongues.nc -bootstrap -calving eigen_calving -eigen_calving_K 2e18 \
+	mpiexec -n 4 pism -i tongues.nc -bootstrap -calving eigen_calving -eigen_calving_K 2e18 \
                            ${options} ${extra_calving},eigen_calving_rate
 
 vonmises_calving: tongues.nc
-	mpiexec -n 4 pismr -i tongues.nc -bootstrap -calving vonmises_calving -vonmises_calving_sigma_max 1e6\
+	mpiexec -n 4 pism -i tongues.nc -bootstrap -calving vonmises_calving -vonmises_calving_sigma_max 1e6\
                            ${options} ${extra_calving},vonmises_calving_rate
 
 eigen_plus_thickness_calving: tongues.nc
-	mpiexec -n 4 pismr -i tongues.nc -bootstrap -calving eigen_calving,thickness_calving \
+	mpiexec -n 4 pism -i tongues.nc -bootstrap -calving eigen_calving,thickness_calving \
 	                   -eigen_calving_K 2e18 -thickness_calving_threshold 50 \
                            ${options} ${extra_calving},eigen_calving_rate
 

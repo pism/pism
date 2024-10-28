@@ -10,19 +10,19 @@ run can be loaded with ":opt:`-i`":
 
 .. code-block:: none
 
-   pismr -eisII A -y 100 -o foo.nc
-   pismr -eisII A -i foo.nc -y 100 -o bar.nc
+   pism -eisII A -y 100 -o foo.nc
+   pism -eisII A -i foo.nc -y 100 -o bar.nc
 
 As noted, verification tests (section :ref:`sec-verif`) and simplified-geometry experiments
 (section :ref:`sec-simp`) do not need input files at all because they initialize from
 formulas in the source code. They can, however, be continued from saved model states using
 :opt:`-i`. Specifying the simplified geometry experiment or verification test *is*,
 however, necessary if the run is to continue with the climate inputs for that experiment
-or test. For example, based on the above ``pismr -eisII A`` runs, it is valid to do
+or test. For example, based on the above ``pism -eisII A`` runs, it is valid to do
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 100 -o bar.nc
+   pism -i foo.nc -y 100 -o bar.nc
 
 but the climate and other parameters use PISM default values, and thus are not
 (necessarily) the values specified in EISMINT II.
@@ -38,7 +38,7 @@ resulting file, like this:
 
 .. code-block:: none
 
-   pismr -eisII A -y 10 -o foo.nc
+   pism -eisII A -y 10 -o foo.nc
    ncdump -h foo.nc | less
 
 Note that variables in the output file have a ``pism_intent`` attribute. When

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2021 PISM authors
+# Copyright (C) 2021, 2024 PISM authors
 # created by torsten.albrecht@pik-potsdam.de
 
 set -e
@@ -86,7 +86,7 @@ for testcase in "01" "02" "03";
 do
   echo Test $testcase:
 
-  ${PISM_PATH}/pismr -verbose 2 -i input_${testcase}.nc \
+  ${PISM_PATH}/pism -verbose 2 -i input_${testcase}.nc \
               -config ${PISM_PATH}/pism_config.nc \
               $grid \
               $stressbalance \

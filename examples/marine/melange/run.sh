@@ -18,13 +18,13 @@ ts="-ts_file ts.nc -ts_times 1"
 output="-o o.nc $extra $ts"
 
 ocean="-ssa_method fd -ocean constant,delta_MBP -ocean.delta_MBP.file delta_MBP.nc"
-mpiexec -n 4 pismr $input $grid $physics $ocean $output
+mpiexec -n 4 pism $input $grid $physics $ocean $output
 
 # Cut out a slice with x == 0 (through the center of the domain).
 ncks -O -d x,$(( $xx / 2 )) ex.nc center-mbp.nc
 
 ocean="-ssa_method fd -ocean constant"
-mpiexec -n 4 pismr $input $grid $physics $ocean $output
+mpiexec -n 4 pism $input $grid $physics $ocean $output
 
 # Cut out a slice with x == 0 (through the center of the domain).
 ncks -O -d x,$(( $xx / 2 )) ex.nc center-no-mbp.nc

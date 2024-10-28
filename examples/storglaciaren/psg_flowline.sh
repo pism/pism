@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2010-2015, 2018 Andy Aschwanden
+# Copyright (C) 2010-2015, 2018, 2024 Andy Aschwanden
 
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
@@ -50,11 +50,11 @@ else
 fi
 
 # set PISM_EXEC if using different executables, for example:
-#  $ export PISM_EXEC="pismr -energy cold"
+#  $ export PISM_EXEC="pism -energy cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
-  PISM_EXEC="pismr"
+  PISM_EXEC="pism"
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 

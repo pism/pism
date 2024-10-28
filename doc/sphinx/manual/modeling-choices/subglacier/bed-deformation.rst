@@ -73,9 +73,9 @@ Here are minimal example runs to compare these models:
 
 .. code-block:: none
 
-   mpiexec -n 4 pismr -eisII A -y 8000 -o eisIIA_nobd.nc
-   mpiexec -n 4 pismr -eisII A -bed_def iso -y 8000 -o eisIIA_bdiso.nc
-   mpiexec -n 4 pismr -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
+   mpiexec -n 4 pism -eisII A -y 8000 -o eisIIA_nobd.nc
+   mpiexec -n 4 pism -eisII A -bed_def iso -y 8000 -o eisIIA_bdiso.nc
+   mpiexec -n 4 pism -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
 
 Compare the :var:`topg`, :var:`usurf`, and :var:`dbdt` variables in the resulting output
 files. See also the comparison done in :cite:`BLKfastearth`.

@@ -7,7 +7,7 @@
 # - Updates lists of funding sources in the manual
 #
 # - Updates PISM version in VERSION. This file is used to determine the PISM version
-#   reported by "pismr -version" for PISM binaries built from a tarball (instead of a
+#   reported by "pism -version" for PISM binaries built from a tarball (instead of a
 #   working copy obtained using "git clone") and in documentation.
 #
 # - Tags the new release.

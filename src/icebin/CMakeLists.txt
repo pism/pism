@@ -8,7 +8,7 @@ add_library (pismicebin
   NullTransportHydrology.cc
   VecBundleWriter.cc
   )
-target_link_libraries (pismicebin pism)
+target_link_libraries (pismicebin libpism)
 set_target_properties(pismicebin PROPERTIES
   VERSION ${Pism_VERSION}
   SOVERSION ${Pism_VERSION})

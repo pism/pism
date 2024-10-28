@@ -37,7 +37,7 @@ Signal `SIGTERM` makes PISM end, saving state under original `-o` name
 of the output NetCDF file.
 
 Signal `SIGUSR1` makes PISM save state under a filename based on the
-the name of the executable (e.g. `pismr`) and the current
+the name of the executable (e.g. `pism`) and the current
 model year.  In addition the time series (`-ts_file`, etc.) is flushed out
 There is no indication of these actions in the history attribute of the output (`-o`)
 NetCDF file because there is no effect on it, but there is an indication at `stdout`.

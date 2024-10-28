@@ -13,15 +13,15 @@ all: no_cfbc cfbc cfbc_kill_icebergs
 
 # this works for the wrong reason
 no_cfbc: flood.nc
-	pismr ${options} -o $@.nc -extra_file ex_$@.nc
+	pism ${options} -o $@.nc -extra_file ex_$@.nc
 
 # this fails
 cfbc: flood.nc
-	pismr ${options} -cfbc -o $@.nc -extra_file ex_$@.nc || exit 0
+	pism ${options} -cfbc -o $@.nc -extra_file ex_$@.nc || exit 0
 
 # this works the way it should
 cfbc_kill_icebergs: flood.nc
-	mpiexec -n 4 pismr ${options} -cfbc -kill_icebergs -o $@.nc -extra_file ex_$@.nc
+	mpiexec -n 4 pism ${options} -cfbc -kill_icebergs -o $@.nc -extra_file ex_$@.nc
 
 flood.nc: generate_input.py
 	PYTHONPATH=../../preprocessing:${PYTHONPATH} python3 $^ -M 1001 -o $@

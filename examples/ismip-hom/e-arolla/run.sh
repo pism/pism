@@ -19,7 +19,7 @@ bp_Mz=$(echo "$C^($M - 1) + 1" | bc)
 
 echo "Using ${bp_Mz} vertical levels..."
 
-mpiexec -n 8 pismr -i ${input} -bootstrap \
+mpiexec -n 8 pism -i ${input} -bootstrap \
       -Mx ${Mx} \
       -Mz 216 \
       -Lz 215 \

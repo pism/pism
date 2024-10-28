@@ -26,7 +26,7 @@ as in this example: }
 
 .. code-block:: none
 
-    pismr -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
+    pism -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
           -regrid_file foo.nc -regrid_vars thk,temp -o bar.nc
 
 By specifying regridded variables "``thk,temp``", the ice thickness and temperature values
@@ -76,9 +76,9 @@ using ``-regrid_file`` along with ``-bootstrap``:
 
 .. code-block:: none
 
-   pismr -i foo.nc -bootstrap -Mx 201 -My 201 -Mz 21 -Lz 4000 \
-         -regrid_file foo.nc -regrid_vars litho_temp,enthalpy -y 100 -o bar.nc \
-         -surface constant
+   pism -i foo.nc -bootstrap -Mx 201 -My 201 -Mz 21 -Lz 4000 \
+        -regrid_file foo.nc -regrid_vars litho_temp,enthalpy -y 100 -o bar.nc \
+        -surface constant
 
 In this case all the model-state 2D variables present in ``foo.nc`` will be interpolated
 onto the new grid during bootstrapping, which happens first, while three-dimensional
@@ -98,9 +98,9 @@ and stops with an error message.
 
 .. code-block:: none
 
-   pismr -i input.nc -bootstrap -Mz 11 -Lz 1000 -z_spacing equal \
-         -y 3e3 \
-         -o too-short.nc
+   pism -i input.nc -bootstrap -Mz 11 -Lz 1000 -z_spacing equal \
+        -y 3e3 \
+        -o too-short.nc
    PISM ERROR: Ice thickness exceeds the height of the computational box (1000.0000 m).
                The model state was saved to 'too-short_max_thickness.nc'.
                To continue this simulation, run with

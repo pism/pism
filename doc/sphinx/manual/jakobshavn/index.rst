@@ -17,7 +17,7 @@ this ice flow is different from the ice streams in West Antarctica or Northeast 
 
 This section describes how to build a PISM regional model of this outlet glacier
 :cite:`DellaGiustina2011` using scripts from ``examples/jako/``. The same strategy should
-work for other outlet glaciers. We also demonstrate the PISM regional mode ``pismr
+work for other outlet glaciers. We also demonstrate the PISM regional mode ``pism
 -regional``, and Python `drainage-basin-delineation tools <regional-tools_>`_ which can be
 downloaded from the PISM source code website. Such regional models allow modest-size
 computers to run high resolution models [#]_ and large ensembles. Regional analysis is
@@ -271,7 +271,7 @@ Some more comments on this run are appropriate:
 - A modestly-fine vertical grid with 20 m spacing is chosen, but even finer is
   recommended, especially to resolve the temperate ice layer in these outlet glaciers.
 
-- There is an option :opt:`-no_model_strip` ``10`` asking ``pismr -regional`` to put a 10
+- There is an option :opt:`-no_model_strip` ``10`` asking ``pism -regional`` to put a 10
   km strip around edge of the computational domain. This strip is entirely outside of the
   drainage basin defined by ``ftt_mask``. In this strip the thermodynamical spun-up
   variables ``bmelt,tillwat,enthalpy,litho_temp`` from ``g5km_bc.nc`` are held fixed and

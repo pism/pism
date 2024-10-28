@@ -11,7 +11,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   include_directories (BEFORE SYSTEM ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDE_DIRS})
   include_directories (. ${Pism_SOURCE_DIR}/src)
 
-  set(PISM_PYTHON_BINDING_LIBRARIES "pism")
+  set(PISM_PYTHON_BINDING_LIBRARIES "libpism")
 
   list(APPEND PISM_Python_deps
     AgeModel.i

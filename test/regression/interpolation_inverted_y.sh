@@ -8,7 +8,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 PISM_SOURCE_DIR=$3
 
-pism=${PISM_PATH}/pismr
+pism=${PISM_PATH}/pism
 
 regular=${PISM_SOURCE_DIR}/test/regression/pico_split/bedmap2_schmidtko14_50km.nc
 inverted=ant_inverted.nc

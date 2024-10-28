@@ -13,7 +13,7 @@ Please provide a clear and concise description of what the bug is.
 
 **PISM version**
 
-Please include the output of `pismr -version` or the output of `git describe --always` (executed in PISM's source code directory).
+Please include the output of `pism -version` or the output of `git describe --always` (executed in PISM's source code directory).
 
 **To Reproduce**
 

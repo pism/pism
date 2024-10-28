@@ -32,7 +32,7 @@ fields (see :ref:`sec-extra_vars`); for example:
 
 .. code-block:: none
 
-   pismr -i input.nc -y 1000 -o output.nc -view thk,tempsurf
+   pism -i input.nc -y 1000 -o output.nc -view thk,tempsurf
 
 shows ice thickness and ice temperature at the surface.
 

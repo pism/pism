@@ -16,7 +16,7 @@ pc_asm=" -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_
 pismopts="-i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_dirichlet_bc -ssa_view_nuh -view mask,thk -calving eigen_calving,thickness_calving -eigen_calving_K 1e18 -thickness_calving_threshold 300 -o_order zyx -ssafd_ksp_max_it 75 $pc_asm"
 
 
-doit="mpiexec -n $N pismr $pismopts"
+doit="mpiexec -n $N pism $pismopts"
 
 extra="-extra_times 0.05 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,mass_fluxes -extra_file iceberg_ex.nc"
 

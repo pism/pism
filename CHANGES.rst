@@ -4,6 +4,7 @@
 Changes since v2.1
 ==================
 
+- Rename the `pismr` executable to `pism`.
 - Add some automatic testing on macOS.
 - Use pkg-config to look for all the dependencies that support it.
 - Add `VERSION` to ensure that tarballs with PISM's sources (e.g. archived by Zenodo)

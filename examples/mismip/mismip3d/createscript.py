@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2012-2015 Moritz Huetten and Torsten Albrecht (and Ed Bueler)
+# Copyright (C) 2012-2015, 2024 Moritz Huetten and Torsten Albrecht (and Ed Bueler)
 
 import argparse
 
@@ -20,8 +20,8 @@ parser.add_argument('--mpiname', metavar='NAME', default='mpiexec',
                     help='name of mpi executable')
 parser.add_argument('-n', metavar='N', type=int, default=2,
                     help='number of MPI processes; if N=1 then MPI is not used')
-parser.add_argument('--pismpath', metavar='PATH', default='pismr',
-                    help='full path to PISM executable pismr')
+parser.add_argument('--pismpath', metavar='PATH', default='pism',
+                    help='full path to PISM executable pism')
 parser.add_argument('--pythonpath', metavar='PATH', default='python',
                     help='full path to python executable')
 parser.add_argument('-r', type=int, choices=[1, 2, 3, 4, 5, 6, 7], default=5,
@@ -83,9 +83,9 @@ elif args.e == 'P75S':
 print('')
 print('# build the PISM command')
 if args.n > 1:
-    print('pismr="%s"' % (args.mpiname + (' -n %d ' % args.n) + args.pismpath))
+    print('pism="%s"' % (args.mpiname + (' -n %d ' % args.n) + args.pismpath))
 else:
-    print('pismr="%s"' % args.pismpath)
+    print('pism="%s"' % args.pismpath)
 
 print('')
 if args.duration < 0:
@@ -120,19 +120,19 @@ print('opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfro
 print('')
 if args.e == 'Stnd':
     print('infile=MISMIP3D_Stnd_initialSetup.nc')
-    print('cmd="$pismr -i $infile -bootstrap -Mx $Mx -My 3 -Mz 15 -Lz 6000 -tauc 1.0e7 -front_retreat_file $infile $opts"')
+    print('cmd="$pism -i $infile -bootstrap -Mx $Mx -My 3 -Mz 15 -Lz 6000 -tauc 1.0e7 -front_retreat_file $infile $opts"')
 elif args.e == 'P10S':
     print('infile=MISMIP3D_P10S_initialSetup.nc')
-    print('cmp="$pismr -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -front_retreat_file $infile $opts"')
+    print('cmp="$pism -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -front_retreat_file $infile $opts"')
 elif args.e == 'P10R':
     print('infile=P10S.nc')
-    print('cmd="$pismr -i $infile -tauc 1.0e7 -front_retreat_file $infile $opts"')
+    print('cmd="$pism -i $infile -tauc 1.0e7 -front_retreat_file $infile $opts"')
 elif args.e == 'P75S':
     print('infile=MISMIP3D_P75S_initialSetup.nc')
-    print('cmd="$pismr -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -front_retreat_file $infile $opts"')
+    print('cmd="$pism -i $infile -bootstrap -Mx $Mx -My $My -Mz 15 -Lz 6000 -front_retreat_file $infile $opts"')
 elif args.e == 'P75R':
     print('infile=P75S.nc')
-    print('cmd="$pismr -i $infile -tauc 1.0e7 -front_retreat_file $infile $opts"')
+    print('cmd="$pism -i $infile -tauc 1.0e7 -front_retreat_file $infile $opts"')
 
 print('')
 print('echo "running command:"')

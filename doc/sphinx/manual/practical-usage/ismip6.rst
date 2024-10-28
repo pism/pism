@@ -16,7 +16,7 @@ Use the ``ismip6`` surface model to implement ISMIP6 surface mass balance forcin
 
 .. code-block:: bash
 
-   pismr -surface ismip6 \
+   pism -surface ismip6 \
          -surface_ismip6_file climate_forcing.nc \
          -surface_ismip6_reference_file climate_forcing_reference.nc
 
@@ -49,7 +49,7 @@ parameterization.
 
 .. code-block:: bash
 
-   pismr -frontal_melt discharge_given \
+   pism -frontal_melt discharge_given \
          -frontal_melt_discharge_given_file forcing.nc ...
 
 The file ``forcing.nc`` has to contain variables :var:`theta_ocean` (potential temperature
@@ -75,7 +75,7 @@ To use the `parameterized front retreat mechanism <ismip6-greenland_>`_ use the
 
 .. code-block:: bash
 
-   pismr -front_retreat_file retreat_forcing.nc ...
+   pism -front_retreat_file retreat_forcing.nc ...
 
 The file ``retreat_forcing.nc`` should contain the variable
 ``land_ice_area_fraction_retreat`` which defines the maximum ice extent at a given time.
@@ -100,7 +100,7 @@ To save *all* the diagnostics requested by ISMIP6 use the short-cut
 
 .. code-block:: bash
 
-   pismr -extra_vars ismip6 ...
+   pism -extra_vars ismip6 ...
 
 The list of variables is stored in the configuration parameter
 :config:`output.ISMIP6_extra_variables` and contains variables Greenland projections are
@@ -110,13 +110,13 @@ To save all the time series supported by PISM, omit the ``-ts_vars`` option:
 
 .. code-block:: bash
 
-   pismr -ts_times TIMES -ts_file ts.nc
+   pism -ts_times TIMES -ts_file ts.nc
 
 To save all variables requested by ISMIP6, use ``-ts_vars ismip6``:
 
 .. code-block:: bash
 
-   pismr -ts_times TIMES -ts_file ts.nc -ts_vars ismip6
+   pism -ts_times TIMES -ts_file ts.nc -ts_vars ismip6
 
 .. list-table:: ISMIP6 variables
    :name: tab-ismip6-variables

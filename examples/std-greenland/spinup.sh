@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020, 2021 The PISM Authors
+# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020, 2021, 2024 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -54,8 +54,8 @@ consider setting optional environment variables (see script for meaning):
     PARAM_NOSGL  if set, DON'T use -tauc_slippery_grounding_lines
     PISM_DO      set to 'echo' if no run desired; defaults to empty
     PISM_MPIDO   defaults to 'mpiexec -n'
-    PISM_BIN  set to path to pismr executable if desired; defaults to empty
-    PISM_EXEC    defaults to 'pismr'
+    PISM_BIN  set to path to pism executable if desired; defaults to empty
+    PISM_EXEC    defaults to 'pism'
     REGRIDFILE   set to file name to regrid from; defaults to empty (no regrid)
     REGRIDVARS   desired -regrid_vars; applies *if* REGRIDFILE set;
                    defaults to 'basal_melt_rate_grounded,enthalpy,litho_temp,thk,tillwat'
@@ -254,11 +254,11 @@ fi
 PISM_BIN=${PISM_BIN:+${PISM_BIN%/}/}
 
 # set PISM_EXEC if using different executables, for example:
-#  $ export PISM_EXEC="pismr -energy cold"
+#  $ export PISM_EXEC="pism -energy cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
-  PISM_EXEC="pismr"
+  PISM_EXEC="pism"
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 

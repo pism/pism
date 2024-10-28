@@ -26,7 +26,7 @@ Consider the following command and compare it to the :ref:`first one <firstcomma
 
 .. code-block:: none
 
-   mpiexec -n 4 pismr \
+   mpiexec -n 4 pism \
            -bootstrap -i pism_Greenland_5km_v1.1.nc \
            -Mx 301 -My 561 \
            -Mz 201 -Lz 4000 -z_spacing equal \

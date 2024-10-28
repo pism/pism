@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2023  PISM authors
+# Copyright (C) 2009-2015, 2017, 2023, 2024  PISM authors
 ##################################################################################
 # Complete spinup of Antarctic ice sheet model by regriding to a finer resolution (~15 km).
 ##################################################################################
@@ -20,7 +20,7 @@ USE_PROJ=${USE_PROJ:-false}
 # naming files, directories, executables
 RESDIR=
 BOOTDIR=
-PISM_EXEC=pismr
+PISM_EXEC=pism
 PISM_MPIDO="mpiexec -n "
 
 # input data:

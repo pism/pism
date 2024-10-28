@@ -29,7 +29,7 @@ respectively, and for exact solutions to these models, and :cite:`BBssasliding`,
 :cite:`SchoofStream` for verification using an exact solution to the SSA equations for ice
 streams.
 
-SIA-related verification tests can be executed using ``pismr -test X`` where ``X`` is the
+SIA-related verification tests can be executed using ``pism -test X`` where ``X`` is the
 name of a test and there are additional executables for SSA-related verification.
 
 .. list-table:: Exact solutions for verification
@@ -96,20 +96,20 @@ name of a test and there are additional executables for SSA-related verification
    :name: tab-tests-exec
    :widths: auto
 
-   A, ``pismr -test A -Mx 61 -My 61 -Mz 11 -y 25000``
-   B, ``pismr -test B -Mx 61 -My 61 -Mz 11 -ys 422.45 -y 25000``
-   C, ``pismr -test C -Mx 61 -My 61 -Mz 11 -y 15208.0``
-   D, ``pismr -test D -Mx 61 -My 61 -Mz 11 -y 25000``
-   E, ``pismr -test E -Mx 61 -My 61 -Mz 11 -y 25000``
-   F, ``pismr -test F -Mx 61 -My 61 -Mz 61 -y 25000``
-   G, ``pismr -test G -Mx 61 -My 61 -Mz 61 -y 25000``
-   H, ``pismr -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def iso``
+   A, ``pism -test A -Mx 61 -My 61 -Mz 11 -y 25000``
+   B, ``pism -test B -Mx 61 -My 61 -Mz 11 -ys 422.45 -y 25000``
+   C, ``pism -test C -Mx 61 -My 61 -Mz 11 -y 15208.0``
+   D, ``pism -test D -Mx 61 -My 61 -Mz 11 -y 25000``
+   E, ``pism -test E -Mx 61 -My 61 -Mz 11 -y 25000``
+   F, ``pism -test F -Mx 61 -My 61 -Mz 61 -y 25000``
+   G, ``pism -test G -Mx 61 -My 61 -Mz 61 -y 25000``
+   H, ``pism -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def iso``
    I, ``ssa_testi -ssa_method fd -Mx 5 -My 500 -ssafd_picard_rtol 1e-6 -ssafd_ksp_rtol 1e-11``
    J, ``ssa_testj -ssa_method fd -Mx 60 -My 60 -ssafd_ksp_rtol 1e-12``
-   K, ``pismr -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000``
-   L, ``pismr -test L -Mx 61 -My 61 -Mz 31 -y 25000``
+   K, ``pism -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000``
+   L, ``pism -test L -Mx 61 -My 61 -Mz 31 -y 25000``
 
-.. csv-table:: Command-line options controlling ``pismr -test ...``
+.. csv-table:: Command-line options controlling ``pism -test ...``
    :header: Option, Description
    :name: tab-pism-verification-options
 
@@ -126,7 +126,7 @@ differential equations; only Tests A, E, J, K are fixed boundary value problems.
 :numref:`tab-tests-exec` shows how to run each of them on a coarse grids. Note that tests
 I and J require special executables ``ssa_testi,ssa_testj`` which are built with
 configuration flag ``Pism_BUILD_EXTRA_EXECS`` equal to ``ON``. :numref:`tab-pism-verification-options`
-gives the special verification-related options used by ``pismr -test``.
+gives the special verification-related options used by ``pism -test``.
 
 Numerical errors are not, however, the dominant reasons why ice sheet models give
 imperfect results. The largest sources of errors include those from using the wrong (e.g.
@@ -163,16 +163,16 @@ one refines in three dimensions, and these runs produced Figures 13, 14, and 15 
 
 .. code-block:: none
 
-   pismr -test G -max_dt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61 -z_spacing equal
-   pismr -test G -max_dt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91 -z_spacing equal
-   pismr -test G -max_dt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121 -z_spacing equal
-   pismr -test G -max_dt 10.0 -y 25000 -Mx 181 -My 181 -Mz 181 -z_spacing equal
-   pismr -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241 -z_spacing equal
-   pismr -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361 -z_spacing equal
+   pism -test G -max_dt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61 -z_spacing equal
+   pism -test G -max_dt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91 -z_spacing equal
+   pism -test G -max_dt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121 -z_spacing equal
+   pism -test G -max_dt 10.0 -y 25000 -Mx 181 -My 181 -Mz 181 -z_spacing equal
+   pism -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241 -z_spacing equal
+   pism -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361 -z_spacing equal
 
 The last two runs require a supercomputer! In fact the :math:`361\times 361\times 361` run
 involves more than :math:`100` million unknowns, updated at each of millions of time
-steps. Appropriate use of parallelism (``mpiexec -n NN pismr``) and of the ``-skip``
+steps. Appropriate use of parallelism (``mpiexec -n NN pism``) and of the ``-skip``
 modification to adaptive timestepping accelerates such fine-grid runs; see section
 :ref:`sec-adapt`.
 

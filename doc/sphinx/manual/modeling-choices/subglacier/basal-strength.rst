@@ -299,10 +299,10 @@ of runs such as
 
 .. code-block:: bash
 
-   pismr -i foo.nc -bed_def lc -stress_balance ssa+sia \
+   pism -i foo.nc -bed_def lc -stress_balance ssa+sia \
          -topg_to_phi 10,30,-50,0 ... -o bar.nc
 
-   pismr -i bar.nc -bed_def lc -stress_balance ssa+sia \
+   pism -i bar.nc -bed_def lc -stress_balance ssa+sia \
          -topg_to_phi 10,30,-50,0 ... -o baz.nc
 
 will use *different* :var:`tillphi` fields in the first and second runs. PISM will print a

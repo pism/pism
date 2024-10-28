@@ -14,7 +14,7 @@ cd $temp_dir
 set -e
 
 # do stuff
-$MPIEXEC -n 2 $PISM_PATH/pismr ...
+$MPIEXEC -n 2 $PISM_PATH/pism ...
 
 set +e
 

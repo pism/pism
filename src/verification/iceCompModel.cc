@@ -816,26 +816,26 @@ void IceCompModel::reportErrors() {
 /*
  Try
 
- pismr -test V -y 1000 -part_grid -ssa_method fd -cfbc -o fig4-blue.nc
- pismr -test V -y 1000 -part_grid -ssa_method fd -o fig4-green.nc
+ pism -test V -y 1000 -part_grid -ssa_method fd -cfbc -o fig4-blue.nc
+ pism -test V -y 1000 -part_grid -ssa_method fd -o fig4-green.nc
 
  to try to reproduce Figure 4.
 
  Try
 
- pismr -test V -y 3000 -ssa_method fd -cfbc -o fig5.nc -thickness_calving_threshold 250 -part_grid
+ pism -test V -y 3000 -ssa_method fd -cfbc -o fig5.nc -thickness_calving_threshold 250 -part_grid
 
  with -Mx 51, -Mx 101, -Mx 201 for figure 5,
 
- pismr -test V -y 300 -ssa_method fd -o fig6-ab.nc
+ pism -test V -y 300 -ssa_method fd -o fig6-ab.nc
 
  for 6a and 6b,
 
- pismr -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-cd.nc
+ pism -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-cd.nc
 
  for 6c and 6d,
 
- pismr -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-ef.nc
+ pism -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-ef.nc
 
  for 6e and 6f.
 

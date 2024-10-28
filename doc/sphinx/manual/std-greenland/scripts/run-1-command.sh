@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mpiexec -n 4 pismr \
+mpiexec -n 4 pism \
   -i pism_Greenland_5km_v1.1.nc -bootstrap -Mx 76 -My 141 \
   -Mz 101 -Mbz 11 -z_spacing equal -Lz 4000 -Lbz 2000 -skip -skip_max 10 \
   -grid.recompute_longitude_and_latitude false -periodicity none -ys -10000 -ye 0 \
