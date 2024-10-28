@@ -5,8 +5,11 @@ Changes since v2.1
 ==================
 
 - Rename the `pismr` executable to `pism`.
+- Remove the `pismv` executable. Use `pism -test X` to run a verification test `X`.
 - Add some automatic testing on macOS.
-- Use pkg-config to look for all the dependencies that support it.
+- Use `pkg-config` to look for all the dependencies that support it.
+- Add the CMake flag `Pism_PKG_CONFIG_STATIC` to tell CMake to use the `--static` flag
+  when using `pkg-config`. See `issue 529`_.
 - Add `VERSION` to ensure that tarballs with PISM's sources (e.g. archived by Zenodo)
   contain appropriate version info.
 - Update some examples in `examples/marine`.
@@ -29,6 +32,49 @@ Changes since v2.1
 - Replace the serial connected component labeling algorithm with a parallel version (see
   `pull request 547`_ for details). This should improve strong scaling of the ocean model
   PICO and (less noticeably) of some other PISM components.
+- Require CMake 3.16 or newer.
+- Support the current PETSc version (3.22).
+- Update the oldest supported PETSc version from 3.7 to 3.11. (PISM's code still works
+  with PETSc 3.7 and newer, but testing with PETSc older than 3.11 requires Python 2.7.x,
+  which is no longer supported.)
+- Refactor the SSAFD solver, adding the ability to use PETSc's infrastructure to manage
+  Picard iterations (and even use Newton iterations with a finite difference approximation
+  of the Jacobian computed using coloring). Unfortunately this approach appears to be more
+  fragile than the old one, so the default solver implementation remains the same. On the
+  plus side, we get the ability to compute and save the SSAFD residual, which may help one
+  analyze the quality of a velocity approximation produced by the SSAFD solver.
+- Create a Debian (Ubuntu) PISM package. This work required a number of changes to follow
+  best practices when installing software in a standard location. For example: Python
+  scripts in `util/` are installed in `/usr/share/pism/bin`.
+- Add a configuration flag `stress_balance.ssa.fd.upstream_surface_slope_approximation`.
+  If "yes" (the default), use the first order "upstream" (more accurately: "uphill")
+  biased FD approximation. This reduces oscillations of velocity approximations produced
+  by SSAFD in areas where the surface slope is large (e.g. near the grounding line).
+- Add a new diagnostic quantity: `ice_mass_transport_across_grounding_line` (in
+  `Gt/year`). This quantity is similar to the 2D `grounding_line_flux`, but designed to be
+  easily comparable to `tendency_of_ice_mass_due_to_discharge` and similar.
+- Use "kelvin" (lowercase "k") in all temperature units and implement other similar
+  changes to make PISM output files compatible with conventions used by `xarray`.
+- Add flexible re-projection and interpolation (including conservative interpolation)
+  using YAC_. This work makes it possible to set up a PISM simulation using a grid in one
+  projection and read inputs from NetCDF files that use *different* grids and projections
+  (with some limitations). This should reduce the amount of pre-processing needed to use
+  bed topography data sets (such as BedMachine), regional climate model outputs, etc.
+- Improve support for coordinate reference system specification following Climate and
+  Forecasting conventions.
+- Add the configuration parameter `grid.file` and remove options `-x_range` and
+  `-y_range`. The parameter `grid.file` specifies the *grid definition file* used to
+  set the coordinate reference system plus default domain and grid sizes. See the manual
+  for details.
+- Add configuration parameters `grid.dx` and `grid.dy` (command line options `-dx` and
+  `-dy`). These parameters allow users to set the domain size and location (using the
+  input file, `grid.file` or `grid.Lx` and `grid.Ly`) and then select the grid resolution
+  to use on this domain. Note that `grid.dx` and `grid.dy` are in meters, but PISM will
+  automatically convert to meters from units specified using command line options, e.g.
+  `-dx 5km`. Domain half widths `Lx` and `Ly` are re-computed to ensure that PISM uses
+  exactly the requested grid resolution (this may slightly reduce the domain size compared
+  to `Lx` and `Ly` provided by the user).
+
 
 Changes since v2.0
 ==================
@@ -998,9 +1044,10 @@ Miscellaneous
 .. _issue 424: https://github.com/pism/pism/issues/424
 .. _issue 407: https://github.com/pism/pism/issues/407
 .. _issue 525: https://github.com/pism/pism/issues/525
+.. _issue 529: https://github.com/pism/pism/issues/529
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 .. _pull request 547: https://github.com/pism/pism/pull/547
-
+.. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html
 ..
    Local Variables:
    fill-column: 90
