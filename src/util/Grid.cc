@@ -1455,7 +1455,7 @@ void Parameters::validate() const {
 } // namespace grid
 
 //! Create a grid using command-line options and (possibly) an input file.
-/** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
+/** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz.
  */
 std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
   auto config      = ctx->config();
