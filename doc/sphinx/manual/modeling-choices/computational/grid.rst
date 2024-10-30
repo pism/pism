@@ -443,7 +443,7 @@ equations :eq:`eq-grid-from-file-centered`, :eq:`eq-grid-center` and :eq:`eq-gri
 
 .. literalinclude:: cdl/grid.cdl
    :language: none
-   :caption: Very coarse grid covering Greenland
+   :caption: A very coarse grid covering Greenland
    :name: code-coarse-grid-greenland
 
 .. note::

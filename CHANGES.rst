@@ -62,10 +62,10 @@ Changes since v2.1
   bed topography data sets (such as BedMachine), regional climate model outputs, etc.
 - Improve support for coordinate reference system specification following Climate and
   Forecasting conventions.
-- Add the configuration parameter `grid.file` and remove options `-x_range` and
-  `-y_range`. The parameter `grid.file` specifies the *grid definition file* used to
-  set the coordinate reference system plus default domain and grid sizes. See the manual
-  for details.
+- Add the configuration parameter `grid.file` and remove options `-x_range`, `-y_range`
+  and `-refinement_factor`. The parameter `grid.file` specifies the *grid definition file*
+  used to set the coordinate reference system plus default domain and grid sizes. See the
+  manual for details.
 - Add configuration parameters `grid.dx` and `grid.dy` (command line options `-dx` and
   `-dy`). These parameters allow users to set the domain size and location (using the
   input file, `grid.file` or `grid.Lx` and `grid.Ly`) and then select the grid resolution
