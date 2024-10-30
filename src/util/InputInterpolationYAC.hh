@@ -47,7 +47,8 @@ class Vec;
 class InputInterpolationYAC : public InputInterpolation {
 public:
   InputInterpolationYAC(const Grid &target_grid, const File &input_file,
-                        const std::string &variable_name);
+                        const std::string &variable_name,
+                        InterpolationType type);
   virtual ~InputInterpolationYAC();
 
   void regrid(const File &file, array::Scalar &output) const;
@@ -57,9 +58,6 @@ private:
                      int record_index, const Grid &target_grid, petsc::Vec &output) const;
 
   double interpolate(const array::Scalar &source, petsc::Vec &target) const;
-
-  static int interpolation_coarse_to_fine(double missing_value);
-  static int interpolation_fine_to_coarse(double missing_value);
 
   static int define_field(int component_id, const std::vector<double> &x,
                           const std::vector<double> &y, const std::string &proj_string,

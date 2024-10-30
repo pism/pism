@@ -146,7 +146,7 @@ InputInterpolation::create(const Grid &target_grid,
     }
 
     if (use_yac) {
-      return std::make_shared<InputInterpolationYAC>(target_grid, input_file, variable_name);
+      return std::make_shared<InputInterpolationYAC>(target_grid, input_file, variable_name, type);
     }
   }
 #endif

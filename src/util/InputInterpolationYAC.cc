@@ -23,6 +23,7 @@
 #include <cmath>
 
 #include "InputInterpolation.hh"
+#include "Interpolation1D.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/Grid.hh"
@@ -198,56 +199,6 @@ int InputInterpolationYAC::define_field(int component_id, const std::vector<doub
   return field_id;
 }
 
-int InputInterpolationYAC::interpolation_coarse_to_fine(double missing_value) {
-  int id = 0;
-  yac_cget_interp_stack_config(&id);
-
-  int partial_coverage = 0;
-
-  // average over source grid nodes containing a target point, weighted using
-  // barycentric local coordinates
-  yac_cadd_interp_stack_config_average(id, YAC_AVG_BARY, partial_coverage);
-
-  // nearest neighbor
-  int n_neighbors = 1;
-  double scaling  = 1.0;
-  double max_search_distance = 0.0; // unlimited
-  yac_cadd_interp_stack_config_nnn(id, YAC_NNN_DIST, n_neighbors, max_search_distance, scaling);
-
-  // constant if all of the above failed
-  yac_cadd_interp_stack_config_fixed(id, missing_value);
-
-  return id;
-}
-
-int InputInterpolationYAC::interpolation_fine_to_coarse(double missing_value) {
-  int id = 0;
-  yac_cget_interp_stack_config(&id);
-
-  int order                = 1;
-  int enforce_conservation = 1;
-  int partial_coverage     = 0;
-
-  // conservative
-  yac_cadd_interp_stack_config_conservative(id, order, enforce_conservation, partial_coverage,
-                                            YAC_CONSERV_DESTAREA);
-
-  // average over source grid nodes containing a target point, weighted using
-  // barycentric local coordinates
-  yac_cadd_interp_stack_config_average(id, YAC_AVG_BARY, partial_coverage);
-
-  // nearest neighbor
-  int n_neighbors = 1;
-  double scaling  = 1.0;
-  double max_search_distance = 0.0; // unlimited
-  yac_cadd_interp_stack_config_nnn(id, YAC_NNN_DIST, n_neighbors, max_search_distance, scaling);
-
-  // constant if all of the above failed
-  yac_cadd_interp_stack_config_fixed(id, missing_value);
-
-  return id;
-}
-
 static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const char *source,
                                    int line) {
   throw pism::RuntimeError::formatted(pism::ErrorLocation(source, line), "YAC error: %s", msg);
@@ -267,14 +218,14 @@ static std::vector<double> grid_subset(int xs, int xm, const std::vector<double>
 
 InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                              const pism::File &input_file,
-                                             const std::string &variable_name)
+                                             const std::string &variable_name,
+                                             InterpolationType type)
     : m_instance_id(0), m_source_field_id(0), m_target_field_id(0) {
   auto ctx = target_grid.ctx();
 
   if (target_grid.get_mapping_info().proj_string.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "internal grid projection is not known");
   }
-
 
   yac_set_abort_handler((yac_abort_func)pism_yac_error_handler);
 
@@ -287,25 +238,27 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
         2, "* Initializing 2D interpolation on the sphere from '%s' to the internal grid...\n",
         source_grid_name.c_str());
 
-    grid::InputGridInfo info(input_file, variable_name, ctx->unit_system(),
-                             pism::grid::CELL_CENTER);
+    grid::InputGridInfo source_grid_info(input_file, variable_name, ctx->unit_system(),
+                                         pism::grid::CELL_CENTER);
 
-    auto mapping = MappingInfo::FromFile(input_file, variable_name, ctx->unit_system());
+    auto source_grid_mapping = MappingInfo::FromFile(input_file, variable_name, ctx->unit_system());
 
-    std::string grid_mapping_name = mapping.cf_mapping["grid_mapping_name"];
+    std::string grid_mapping_name = source_grid_mapping.cf_mapping["grid_mapping_name"];
 
     log->message(2, "Input grid:\n");
     if (not grid_mapping_name.empty()) {
       log->message(2, " Grid mapping: %s\n", grid_mapping_name.c_str());
     }
-    if (not mapping.proj_string.empty()) {
-      log->message(2, " PROJ string: '%s'\n", mapping.proj_string.c_str());
+    if (not source_grid_mapping.proj_string.empty()) {
+      log->message(2, " PROJ string: '%s'\n", source_grid_mapping.proj_string.c_str());
     }
-    info.report(*log, 2, ctx->unit_system());
+    source_grid_info.report(*log, 2, ctx->unit_system());
 
-    grid::Parameters P(*ctx->config(), info.x.size(), info.y.size(), info.Lx, info.Ly);
-    P.x0 = info.x0;
-    P.y0 = info.y0;
+    grid::Parameters P(*ctx->config(), source_grid_info.x.size(), source_grid_info.y.size(),
+                       source_grid_info.Lx, source_grid_info.Ly);
+
+    P.x0 = source_grid_info.x0;
+    P.y0 = source_grid_info.y0;
     P.registration = grid::CELL_CENTER;
     P.variable_name = variable_name;
     P.vertical_grid_from_options(*ctx->config());
@@ -313,7 +266,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
     auto source_grid = std::make_shared<Grid>(ctx, P);
 
-    source_grid->set_mapping_info(mapping);
+    source_grid->set_mapping_info(source_grid_mapping);
 
     if (source_grid->get_mapping_info().proj_string.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -343,8 +296,8 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
       log->message(2, "Defining the source grid (%s)...\n", source_grid_name.c_str());
       {
-        auto x = grid_subset(source_grid->xs(), source_grid->xm(), info.x);
-        auto y = grid_subset(source_grid->ys(), source_grid->ym(), info.y);
+        auto x = grid_subset(source_grid->xs(), source_grid->xm(), source_grid_info.x);
+        auto y = grid_subset(source_grid->ys(), source_grid->ym(), source_grid_info.y);
 
         m_source_field_id = define_field(
             comp_ids[0], x, y, source_grid->get_mapping_info().proj_string, source_grid_name);
@@ -361,19 +314,39 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
       // Define the interpolation stack:
       {
-        std::string direction;
+        std::string method = "nearest neighbor";
         int interp_stack_id = 0;
-        // FIXME: this will almost always choose conservative interpolation when going
-        // from lon,lat to a projected grid because if (...) below compares quantities
-        // that have different units.
-        if (source_grid->dx() < target_grid.dx() or source_grid->dy() < target_grid.dy()) {
-          interp_stack_id = interpolation_fine_to_coarse(fill_value);
-          direction       = "fine to coarse (conservative)";
-        } else {
-          interp_stack_id = interpolation_coarse_to_fine(fill_value);
-          direction       = "coarse to fine (distance-weighted sum of neighbors)";
+        yac_cget_interp_stack_config(&interp_stack_id);
+
+        if (type != PIECEWISE_CONSTANT) {
+          method = "2nd order conservative";
+
+          int order                = 2;
+          int enforce_conservation = 0;
+          int partial_coverage     = 0;
+
+          yac_cadd_interp_stack_config_conservative(interp_stack_id, order, enforce_conservation,
+                                                    partial_coverage, YAC_CONSERV_DESTAREA);
+
+          // use average over source grid nodes containing a target point as a backup:
+          yac_cadd_interp_stack_config_average(interp_stack_id, YAC_AVG_BARY, partial_coverage);
         }
-        log->message(2, "Interpolation direction: %s\n", direction.c_str());
+
+        // use nearest neighbor interpolation as a backup and to interpolate integer
+        // fields:
+        {
+          // nearest neighbor
+          int n_neighbors            = 1;
+          double scaling             = 1.0;
+          double max_search_distance = 0.0; // unlimited
+          yac_cadd_interp_stack_config_nnn(interp_stack_id, YAC_NNN_DIST, n_neighbors,
+                                           max_search_distance, scaling);
+        }
+
+        log->message(2, "Interpolation method: %s\n", method.c_str());
+
+        // last resort: fill with `fill_value`
+        yac_cadd_interp_stack_config_fixed(interp_stack_id, fill_value);
 
         // Define the coupling between fields:
         const int src_lag = 0;
