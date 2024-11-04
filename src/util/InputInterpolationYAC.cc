@@ -330,7 +330,6 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     m_buffer = std::make_shared<pism::array::Scalar>(source_grid, variable_name);
 
     std::string target_grid_name = "internal for " + source_grid_name;
-    double fill_value            = NAN;
     {
       // Initialize YAC:
       {
@@ -366,9 +365,10 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
           dy = std::abs(y[1] - y[0]);
         }
         source_resolution = GlobalMin(ctx->com(), std::min(dx, dy));
-        log->message(2, "Source grid resolution: ~%3.3f m\n", source_resolution);
+        log->message(2, " Source grid resolution: ~%3.3f m\n", source_resolution);
       }
 
+      double target_resolution = 0.0;
       log->message(2, "Defining the target grid (%s)...\n", target_grid_name.c_str());
       {
         auto x = grid_subset(target_grid.xs(), target_grid.xm(), target_grid.x());
@@ -376,43 +376,57 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
         m_target_field_id = define_field(
             comp_ids[1], x, y, target_grid.get_mapping_info().proj_string, target_grid_name);
+
+        target_resolution = GlobalMin(ctx->com(), std::min(target_grid.dx(), target_grid.dy()));
+        log->message(2, " Target grid resolution: %3.3f m\n", target_resolution);
       }
 
       // Define the interpolation stack:
       {
-        std::string method = "nearest neighbor";
+        std::string method;
         int interp_stack_id = 0;
         yac_cget_interp_stack_config(&interp_stack_id);
 
-        if (type != PIECEWISE_CONSTANT) {
-          method = "2nd order conservative";
+        if (type == PIECEWISE_CONSTANT) {
+          method = "nearest neighbor";
 
-          int order                = 2;
-          int enforce_conservation = 0;
-          int partial_coverage     = 0;
+          // use nearest neighbor interpolation to interpolate integer fields:
+          {
+            // nearest neighbor
+            int n_neighbors            = 1; // only one neighbor
+            double scaling             = 1.0;
+            double max_search_distance = 0.0; // unlimited
+            yac_cadd_interp_stack_config_nnn(interp_stack_id, YAC_NNN_DIST, n_neighbors,
+                                             max_search_distance, scaling);
+          }
+        } else {
+          int partial_coverage = 0;
+          if (source_resolution < target_resolution) {
+            method = "1st order conservative";
 
-          yac_cadd_interp_stack_config_conservative(interp_stack_id, order, enforce_conservation,
-                                                    partial_coverage, YAC_CONSERV_DESTAREA);
+            int order                = 1;
+            int enforce_conservation = 1;
 
-          // use average over source grid nodes containing a target point as a backup:
-          yac_cadd_interp_stack_config_average(interp_stack_id, YAC_AVG_BARY, partial_coverage);
-        }
+            yac_cadd_interp_stack_config_conservative(interp_stack_id, order, enforce_conservation,
+                                                      partial_coverage, YAC_CONSERV_DESTAREA);
+          } else {
+            method = "weighted average of source cell nodes";
 
-        // use nearest neighbor interpolation as a backup and to interpolate integer
-        // fields:
-        {
-          // nearest neighbor
-          int n_neighbors            = 1;
-          double scaling             = 1.0;
-          double max_search_distance = 0.0; // unlimited
-          yac_cadd_interp_stack_config_nnn(interp_stack_id, YAC_NNN_DIST, n_neighbors,
-                                           max_search_distance, scaling);
+            // use average over source grid nodes containing a target point as a backup:
+            yac_cadd_interp_stack_config_average(interp_stack_id, YAC_AVG_BARY, partial_coverage);
+          }
+
+          {
+            // nearest neighbor as a fallback
+            int n_neighbors            = 1;
+            double scaling             = 1.0;
+            double max_search_distance = 0.0; // unlimited
+            yac_cadd_interp_stack_config_nnn(interp_stack_id, YAC_NNN_DIST, n_neighbors,
+                                             max_search_distance, scaling);
+          }
         }
 
         log->message(2, "Interpolation method: %s\n", method.c_str());
-
-        // last resort: fill with `fill_value`
-        yac_cadd_interp_stack_config_fixed(interp_stack_id, fill_value);
 
         // Define the coupling between fields:
         const int src_lag = 0;
