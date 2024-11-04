@@ -33,10 +33,13 @@
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/InputInterpolationYAC.hh"
+#include "pism/util/pism_utilities.hh" // GlobalMin()
 
 #if (Pism_USE_PROJ == 0)
 #error "This code requires PROJ"
 #endif
+
+#include <proj.h>
 
 #include "pism/util/Proj.hh"
 
@@ -65,7 +68,7 @@ public:
     PJ_COORD in, out;
 
     in.xy = { x, y };
-    out   = proj_trans(*m_coordinate_mapping, PJ_FWD, in);
+    out   = proj_trans(m_coordinate_mapping, PJ_FWD, in);
 
     return { out.lp.phi, out.lp.lam };
   }
@@ -216,6 +219,56 @@ static std::vector<double> grid_subset(int xs, int xm, const std::vector<double>
   return result;
 }
 
+static double dx_estimate(Proj &mapping, double x1, double x2, double y) {
+  PJ_COORD p1, p2;
+  p1.lp = {proj_torad(x1), proj_torad(y)};
+  p2.lp = {proj_torad(x2), proj_torad(y)};
+
+  return proj_lp_dist(mapping, p1, p2);
+}
+
+static double dx_min(const std::string &proj_string,
+                     const std::vector<double> &x,
+                     const std::vector<double> &y) {
+  size_t Nx = x.size();
+  size_t Ny = y.size();
+
+  Proj mapping(proj_string, "EPSG:4326");
+
+  double dx = dx_estimate(mapping, x[0], x[1], y[0]);
+  for (size_t j = 0; j < Ny; ++j) {   // y
+    for (size_t i = 1; i < Nx; ++i) { // x; note: starts from 1
+      dx = std::min(dx, dx_estimate(mapping, x[i-1], x[i], y[j]));
+    }
+  }
+  return dx;
+}
+
+static double dy_estimate(Proj &mapping, double x, double y1, double y2) {
+  PJ_COORD p1, p2;
+  p1.lp = {proj_torad(x), proj_torad(y1)};
+  p2.lp = {proj_torad(x), proj_torad(y2)};
+
+  return proj_lp_dist(mapping, p1, p2);
+}
+
+static double dy_min(const std::string &proj_string,
+                     const std::vector<double> &x,
+                     const std::vector<double> &y) {
+  size_t Nx = x.size();
+  size_t Ny = y.size();
+
+  Proj mapping(proj_string, "EPSG:4326");
+
+  double dy = dy_estimate(mapping, x[0], x[1], y[0]);
+  for (size_t i = 0; i < Nx; ++i) { // x
+    for (size_t j = 1; j < Ny; ++j) { // y; note: starts from 1
+      dy = std::min(dy, dy_estimate(mapping, x[i], y[j-1], y[j]));
+    }
+  }
+  return dy;
+}
+
 InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                              const pism::File &input_file,
                                              const std::string &variable_name,
@@ -294,6 +347,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
       int comp_ids[n_comps]           = { 0, 0 };
       yac_cdef_comps_instance(m_instance_id, comp_names, n_comps, comp_ids);
 
+      double source_resolution = 0.0;
       log->message(2, "Defining the source grid (%s)...\n", source_grid_name.c_str());
       {
         auto x = grid_subset(source_grid->xs(), source_grid->xm(), source_grid_info.x);
@@ -301,6 +355,18 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
         m_source_field_id = define_field(
             comp_ids[0], x, y, source_grid->get_mapping_info().proj_string, source_grid_name);
+
+        double dx = 0.0;
+        double dy = 0.0;
+        if (source_grid_info.longitude_latitude) {
+          dx = dx_min(source_grid_mapping.proj_string, x, y);
+          dy = dy_min(source_grid_mapping.proj_string, x, y);
+        } else {
+          dx = std::abs(x[1] - x[0]);
+          dy = std::abs(y[1] - y[0]);
+        }
+        source_resolution = GlobalMin(ctx->com(), std::min(dx, dy));
+        log->message(2, "Source grid resolution: ~%3.3f m\n", source_resolution);
       }
 
       log->message(2, "Defining the target grid (%s)...\n", target_grid_name.c_str());
