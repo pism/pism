@@ -416,19 +416,19 @@ void compute_cell_areas(const std::string &projection, array::Scalar &result) {
     PJ_COORD in, out;
 
     in.xy = {x_nw, y_nw};
-    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, in);
     double nw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
     in.xy = {x_ne, y_ne};
-    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, in);
     double ne[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
     in.xy = {x_se, y_se};
-    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, in);
     double se[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
     in.xy = {x_sw, y_sw};
-    out = proj_trans(*pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, in);
     double sw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
     result(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
@@ -461,7 +461,7 @@ static void compute_lon_lat(const std::string &projection,
     PJ_COORD in, out;
 
     in.xy = {grid->x(i), grid->y(j)};
-    out = proj_trans(*crs, PJ_FWD, in);
+    out = proj_trans(crs, PJ_FWD, in);
 
     if (which == LONGITUDE) {
       result(i, j) = out.lp.phi;
@@ -499,7 +499,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
       in.xy = {x0 + x_offsets[k], y0 + y_offsets[k]};
 
       // compute lon,lat coordinates:
-      out = proj_trans(*crs, PJ_FWD, in);
+      out = proj_trans(crs, PJ_FWD, in);
 
       if (which == LATITUDE) {
         values[k] = out.lp.lam;

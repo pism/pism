@@ -52,7 +52,7 @@ public:
   ~Proj() {
     proj_destroy(m_pj);
   }
-  PJ* operator*() {
+  operator PJ*() {
     return m_pj;
   }
 private:
