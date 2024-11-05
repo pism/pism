@@ -1578,6 +1578,11 @@ netcdf pism_config {
     pism_config:inverse.state_func_option = "inv_state_func";
     pism_config:inverse.state_func_type = "keyword";
 
+    pism_config:inverse.tikhonov.adaptive = "false";
+    pism_config:inverse.tikhonov.adaptive_doc = "Adaptive Tikhonov threshold";
+    pism_config:inverse.tikhonov.adaptive_option = "tikhonov_adaptive";
+    pism_config:inverse.tikhonov.adaptive_type = "flag";
+
     pism_config:inverse.tikhonov.atol = 1e-10;
     pism_config:inverse.tikhonov.atol_doc = "absolute threshold for Tikhonov stopping criterion";
     pism_config:inverse.tikhonov.atol_option = "tikhonov_atol";
