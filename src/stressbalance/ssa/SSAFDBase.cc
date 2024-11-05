@@ -973,7 +973,7 @@ void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_ma
     ierr = MatAssemblyEnd(*A, MAT_FINAL_ASSEMBLY);
     PISM_CHK(ierr, "MatAssemblyEnd");
 #if (Pism_DEBUG == 1)
-    ierr = MatSetOption(A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+    ierr = MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
     PISM_CHK(ierr, "MatSetOption");
 #endif
   }
