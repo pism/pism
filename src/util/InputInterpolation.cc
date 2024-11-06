@@ -18,7 +18,8 @@
  */
 
 #include "pism/util/InputInterpolation.hh"
-#include "io/LocalInterpCtx.hh"
+#include "pism/util/Interpolation1D.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/pism_config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
@@ -63,7 +64,8 @@ InputInterpolation3D::InputInterpolation3D(const Grid &target_grid,
   auto log         = target_grid.ctx()->log();
   auto unit_system = target_grid.ctx()->unit_system();
 
-  auto name = grid_name(input_file, variable_name, unit_system);
+  auto name = grid_name(input_file, variable_name, unit_system,
+                        type == PIECEWISE_CONSTANT);
 
   log->message(2, "* Initializing bi- or tri-linear interpolation from '%s' to the internal grid...\n",
                name.c_str());

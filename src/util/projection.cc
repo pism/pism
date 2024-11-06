@@ -215,7 +215,7 @@ void check_consistency_epsg(const VariableMetadata &cf_mapping, const std::strin
 }
 
 std::string grid_name(const pism::File &file, const std::string &variable_name,
-                      pism::units::System::Ptr sys) {
+                      pism::units::System::Ptr sys, bool piecewise_constant) {
 
   std::vector<std::string> dimensions = file.dimensions(variable_name);
 
@@ -240,6 +240,10 @@ std::string grid_name(const pism::File &file, const std::string &variable_name,
       result += ":";
       result += d;
     }
+  }
+
+  if (piecewise_constant) {
+    result += ":piecewise_constant";
   }
 
   return result;

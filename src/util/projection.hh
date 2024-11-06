@@ -43,10 +43,12 @@ class Scalar;
  * We assume that a file may contain more than one grid, so the file
  * name alone is not sufficient.
  *
+ * Appends ":piecewise_constant" if `piecewise_constant` is true.
+ *
  * The output has the form "input_file.nc:y:x".
  */
 std::string grid_name(const File &file, const std::string &variable_name,
-                      units::System::Ptr sys);
+                      units::System::Ptr sys, bool piecewise_constant);
 
 /*! @brief Convert a proj string with an EPSG code to a set of CF attributes. */
 /*!

@@ -29,6 +29,7 @@
 #include <vector>
 #include <utility>              // std::pair, std::swap
 
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/InputInterpolation.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -1645,7 +1646,7 @@ std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<do
                                                             const std::string &variable_name,
                                                             InterpolationType type) const {
 
-  auto name = grid_name(input_file, variable_name, ctx()->unit_system());
+  auto name = grid_name(input_file, variable_name, ctx()->unit_system(), type == PIECEWISE_CONSTANT);
 
   if (levels.size() < 2) {
     if (m_impl->regridding_2d[name] == nullptr) {

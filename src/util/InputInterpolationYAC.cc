@@ -285,7 +285,8 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
   try {
     auto log = ctx->log();
 
-    auto source_grid_name = grid_name(input_file, variable_name, ctx->unit_system());
+    auto source_grid_name = grid_name(input_file, variable_name, ctx->unit_system(),
+                                      type == PIECEWISE_CONSTANT);
 
     log->message(
         2, "* Initializing 2D interpolation on the sphere from '%s' to the internal grid...\n",
