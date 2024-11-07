@@ -4,6 +4,9 @@
 Changes since v2.1
 ==================
 
+- All executables and scripts installed in the `bin` sub-directory of PISM's installation
+  location start with "pism" to make it easier to recognize ones that belong to PISM,
+  especially when using a `.deb` package to install it.
 - Rename the `pismr` executable to `pism`.
 - Remove the `pismv` executable. Use `pism -test X` to run a verification test `X`.
 - Add some automatic testing on macOS.
