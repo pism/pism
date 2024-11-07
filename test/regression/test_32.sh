@@ -26,7 +26,7 @@ $PISM_PATH/pism $OPTS -o baz-32.nc
 set +e
 
 # Compare:
-$PISM_PATH/nccmp.py -r -t 1e-6 -v enthalpy bar-32.nc baz-32.nc
+$PISM_PATH/pism_nccmp -r -t 1e-6 -v enthalpy bar-32.nc baz-32.nc
 if [ $? != 0 ];
 then
     exit 1

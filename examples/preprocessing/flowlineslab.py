@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 # creates an example flowline data set "slab.nc" which can be used with
-# flowline.py to show how to run PISM in flow-line mode
+# pism_flowline to show how to run PISM in flow-line mode
 
 # see the "Using PISM for flow-line modeling" subsection of the Users Manual
 
 # We recommend creating more metadata-rich datasets than is done here.
-# Here we generate the bare minimum to work with flowline.py and PISM.
+# Here we generate the bare minimum to work with pism_flowline and PISM.
 
 from numpy import linspace, minimum, maximum, abs
 import netCDF4

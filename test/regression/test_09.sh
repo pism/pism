@@ -49,5 +49,5 @@ do
            ""
 
   # Compare results
-  $PISM_PATH/nccmp.py -v ${variables} o-y,x,z.nc o-${order}.nc
+  $PISM_PATH/pism_nccmp -v ${variables} o-y,x,z.nc o-${order}.nc
 done

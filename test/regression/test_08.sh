@@ -26,7 +26,7 @@ $PISM_PATH/pism -i coarse1-08.nc -regrid_file fine2-08.nc -regrid_vars enthalpy 
 set +e
 
 # Compare:
-$PISM_PATH/nccmp.py -t 1e-16 -v enthalpy coarse1-08.nc coarse2-08.nc
+$PISM_PATH/pism_nccmp -t 1e-16 -v enthalpy coarse1-08.nc coarse2-08.nc
 if [ $? != 0 ];
 then
     exit 1

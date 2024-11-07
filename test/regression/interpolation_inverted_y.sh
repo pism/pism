@@ -36,4 +36,4 @@ common_options="
 ${pism} ${common_options} -regrid_file ${regular}  -o regular_topg.nc
 ${pism} ${common_options} -regrid_file ${inverted} -o inverted_topg.nc
 
-${PISM_PATH}/nccmp.py -v topg regular_topg.nc inverted_topg.nc
+${PISM_PATH}/pism_nccmp -v topg regular_topg.nc inverted_topg.nc

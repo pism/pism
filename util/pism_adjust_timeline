@@ -172,4 +172,4 @@ nc.Conventions = "CF 1.5"
 nc.close()
 
 time2 = time.time()
-print("adjust_timeline.py took {:2.1f}s".format(time2 - time1))
+print("pism_adjust_timeline took {:2.1f}s".format(time2 - time1))

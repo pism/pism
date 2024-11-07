@@ -23,7 +23,7 @@ $PISM_PATH/pism $OPTS -o baz-06.nc
 set +e
 
 # Check:
-$PISM_PATH/nccmp.py -t 1e-16 -x -v x,y,timestamp bar-06.nc baz-06.nc
+$PISM_PATH/pism_nccmp -t 1e-16 -x -v x,y,timestamp bar-06.nc baz-06.nc
 if [ $? != 0 ];
 then
     exit 1

@@ -11,7 +11,7 @@
 # Here is hypothetical example, filling the missing values in the variables
 # `topg` and `usurf` in `data.nc` :
 # \code
-# fill_missing.py -v topg,usurf data.nc data_smoothed.nc
+# pism_fill_missing_petsc -v topg,usurf data.nc data_smoothed.nc
 # \endcode
 # Generally variables should be filled one at a time.
 #

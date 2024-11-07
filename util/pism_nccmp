@@ -7,19 +7,19 @@ from getopt import getopt, GetoptError
 ##
 # Without options,
 # \code
-# nccmp.py foo.nc bar.nc
+# pism_nccmp foo.nc bar.nc
 # \endcode
 # compares all the variables in \c foo.nc and \c bar.nc.
 ##
 # Option \c -v allows selecting varibles to compare:
 # \code
-# nccmp.py -v thk,velbar_mag foo.nc bar.nc
+# pism_nccmp -v thk,velbar_mag foo.nc bar.nc
 # \endcode
 # only compares \c thk and \c velbar_mag.
 ##
 # Option \c -t sets the tolerance:
 # \code
-# nccmp.py -t 1e-6 foo.nc bar.nc
+# pism_nccmp -t 1e-6 foo.nc bar.nc
 # \endcode
 # compares all the variables using the tolerance of 1e-6.
 ##
@@ -44,12 +44,12 @@ def failure():
     exit(1)
 
 
-usage = """nccmp.py compares NetCDF files by absolute max norms of difference of variables
+usage = """pism_nccmp compares NetCDF files by absolute max norms of difference of variables
 usage:
-  nccmp.py foo.nc bar.nc            compare all variables
-  nccmp.py -v A,B foo.nc bar.nc     compare variables A and B
-  nccmp.py -x -v C foo.nc bar.nc    compare all variables except C
-  nccmp.py -t 1e-6 foo.nc bar.nc    use tolerance 1e-6 instead of default of 0"""
+  pism_nccmp foo.nc bar.nc            compare all variables
+  pism_nccmp -v A,B foo.nc bar.nc     compare variables A and B
+  pism_nccmp -x -v C foo.nc bar.nc    compare all variables except C
+  pism_nccmp -t 1e-6 foo.nc bar.nc    use tolerance 1e-6 instead of default of 0"""
 
 
 def usagefailure(message):
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt(argv[1:], "t:v:xr", ["help", "usage"])
     except GetoptError:
-        usagefailure('ERROR: INCORRECT COMMAND LINE ARGUMENTS FOR nccmp.py')
+        usagefailure('ERROR: INCORRECT COMMAND LINE ARGUMENTS FOR pism_nccmp')
     file1 = ""
     file2 = ""
     variables = []
@@ -176,7 +176,7 @@ if __name__ == "__main__":
             exit(0)
 
     if len(args) != 2:
-        usagefailure('ERROR: WRONG NUMBER OF ARGUMENTS FOR nccmp.py')
+        usagefailure('ERROR: WRONG NUMBER OF ARGUMENTS FOR pism_nccmp')
 
     compare(args[0], args[1], variables, exclude, tol, relative)
 

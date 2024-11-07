@@ -309,7 +309,7 @@ if [ -z "${NODIAGS}" ] ; then  # check if env var is NOT set
   TSTIMES=-$DURATION:yearly:0
   EXNAME=ex_$OUTNAME
   EXTIMES=-$DURATION:$EXSTEP:0
-  # check_stationarity.py can be applied to $EXNAME
+  # pism_check_stationarity can be applied to $EXNAME
   DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -extra_file $EXNAME -extra_times $EXTIMES -extra_vars $EXVARS"
 else
   DIAGNOSTICS=""

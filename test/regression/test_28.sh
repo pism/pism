@@ -31,7 +31,7 @@ set +e
 set +x
 
 # Check results:
-$PISM_PATH/nccmp.py -x -v timestamp bar-28.nc baz-28.nc
+$PISM_PATH/pism_nccmp -x -v timestamp bar-28.nc baz-28.nc
 if [ $? != 0 ];
 then
     exit 1

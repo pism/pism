@@ -90,11 +90,11 @@ int main(int argc, char *argv[]) {
   com = MPI_COMM_WORLD;
 
   try {
-    std::shared_ptr<Context> ctx = btutest_context(com, "btutest");
+    std::shared_ptr<Context> ctx = btutest_context(com, "pism_btutest");
     Logger::Ptr log = ctx->log();
 
     std::string usage =
-      "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
+      "  pism_btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
       "where these are required because they are used in BedThermalUnit:\n"
       "  -Mbz           number of bedrock thermal layer levels to use\n"
       "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"

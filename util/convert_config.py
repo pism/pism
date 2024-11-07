@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import PISM
 
 com = PISM.PETSc.COMM_WORLD

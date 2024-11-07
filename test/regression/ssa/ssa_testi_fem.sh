@@ -23,8 +23,8 @@ set -e
 OPTS="-verbose 1 -ssa_method fem -o_size none -Mx 5 -ksp_type cg"
 
 # do stuff
-$MPIEXEC_COMMAND $PISM_PATH/ssa_testi${EXT} -My 61 $OPTS > ${output}
-$MPIEXEC_COMMAND $PISM_PATH/ssa_testi${EXT} -My 121 $OPTS >> ${output}
+$MPIEXEC_COMMAND $PISM_PATH/pism_ssa_test_i${EXT} -My 61 $OPTS > ${output}
+$MPIEXEC_COMMAND $PISM_PATH/pism_ssa_test_i${EXT} -My 121 $OPTS >> ${output}
 
 set +e
 

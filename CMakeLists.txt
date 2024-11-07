@@ -214,16 +214,16 @@ add_custom_target (test-python
 
 # Install helper scripts residing in util/
 install(PROGRAMS
-  util/adjust_timeline.py
-  util/check_stationarity.py
-  util/create_timeline.py
-  util/fill_missing_petsc.py
-  util/fill_missing.py
-  util/flowline.py
-  util/nc2cdo.py
-  util/nccmp.py
-  util/plot_profiling.py
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/pism/bin)
+  util/pism_adjust_timeline
+  util/pism_check_stationarity
+  util/pism_create_timeline
+  util/pism_fill_missing_petsc
+  util/pism_fill_missing
+  util/pism_flowline
+  util/pism_nc2cdo
+  util/pism_nccmp
+  util/pism_plot_profiling
+  DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
   DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/pism

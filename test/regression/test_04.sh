@@ -22,7 +22,7 @@ $PISM_PATH/pism -i foo-04.nc -bootstrap $FINE   $OPTS -o bar-04.nc
 $PISM_PATH/pism -i bar-04.nc -bootstrap $COARSE $OPTS -o baz-04.nc
 
 # Compare:
-$PISM_PATH/nccmp.py -v topg foo-04.nc baz-04.nc
+$PISM_PATH/pism_nccmp -v topg foo-04.nc baz-04.nc
 if [ $? != 0 ];
 then
     exit 1

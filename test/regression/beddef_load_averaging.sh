@@ -177,4 +177,4 @@ ${pism} \
    ""
 
 # Compare results
-$PISM_PATH/nccmp.py -v topg ex_0.nc ex_PMMP.nc && $PISM_PATH/nccmp.py -v topg ex_0.nc ex_MMPP.nc
+$PISM_PATH/pism_nccmp -v topg ex_0.nc ex_PMMP.nc && $PISM_PATH/pism_nccmp -v topg ex_0.nc ex_MMPP.nc

@@ -24,7 +24,7 @@ $PISM_PATH/pism -i foo-23.nc -bootstrap -regrid_file foo-23.nc -y 0 $opts -o bar
 set +e
 
 # compare results (foo-23.nc and bar-23.nc contain model_state variables only)
-$PISM_PATH/nccmp.py -x -v timestamp foo-23.nc bar-23.nc
+$PISM_PATH/pism_nccmp -x -v timestamp foo-23.nc bar-23.nc
 if [ $? != 0 ];
 then
     exit 1

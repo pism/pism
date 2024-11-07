@@ -19,7 +19,7 @@ In this case :config:`grid.My` can be any number; we want to avoid unnecessary
 computations, though, so :config:`grid.My` of `3` is the obvious choice.
 
 One remaining problem is that PISM still expects input files to contain both ``x`` and
-``y`` dimensions. To help with this, PISM comes with a Python script ``flowline.py`` that
+``y`` dimensions. To help with this, PISM comes with a Python script ``pism_flowline`` that
 turns NetCDF files with `N` grid points along a flow line into files with 2D fields
 containing `N\times3` grid points.\ [#]_
 
@@ -31,9 +31,9 @@ follows:
 .. code-block:: bash
 
    examples/preprocessing/flowlineslab.py # creates slab.nc with only an x-direction
-   flowline.py -o slab-in.nc --expand -d y slab.nc
+   pism_flowline -o slab-in.nc --expand -d y slab.nc
 
-This produces a PISM-ready ``slab-in.nc``. Specifically, ``flowline.py`` "expands" its
+This produces a PISM-ready ``slab-in.nc``. Specifically, ``pism_flowline`` "expands" its
 input file in the `y`\-direction. Now we can "bootstrap" from ``slab-in.nc``:
 
 .. code-block:: none
@@ -56,4 +56,4 @@ To make it easier to visualize data in the file created by PISM, "collapse" it u
 .. rubric:: Footnotes
 
 .. [#] This script requires the ``numpy`` and ``netCDF4`` Python modules. Run
-       ``flowline.py --help`` for a full list of options.
+       ``pism_flowline --help`` for a full list of options.

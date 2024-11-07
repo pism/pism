@@ -23,7 +23,7 @@ $PISM_PATH/pism -i bar-07.nc -regrid_file foo-07.nc -regrid_vars topg $OPTS -o b
 set +e
 
 # Compare:
-$PISM_PATH/nccmp.py -v topg bar-07.nc baz-07.nc
+$PISM_PATH/pism_nccmp -v topg bar-07.nc baz-07.nc
 if [ $? != 0 ];
 then
     exit 1

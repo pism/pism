@@ -177,9 +177,9 @@ install (FILES
 
 # miscellaneous executables needed by software tests
 if (Pism_BUILD_EXTRA_EXECS)
-  add_executable (btutest energy/btutest.cc)
-  target_link_libraries (btutest libpism)
-  list (APPEND EXTRA_EXECS btutest)
+  add_executable (pism_btutest energy/btutest.cc)
+  target_link_libraries (pism_btutest libpism)
+  list (APPEND EXTRA_EXECS pism_btutest)
 
   install (TARGETS
     ${EXTRA_EXECS}

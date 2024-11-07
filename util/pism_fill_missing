@@ -16,8 +16,8 @@
 # to smoothly replace missing values in two-dimensional NetCDF variables with the average of the ``nearby'' non-missing values.
 # Here is hypothetical example, filling the missing values in the variables \c topg and \c usurf, using a convergence tolerance of \f$10^{-4}\f$ and the initial guess of \f$100\f$, on data in the NetCDF file \c data.nc :
 # \code
-# fill_missing.py -f data.nc -v topg,usurf --eps=1.0e-4 \
-#                 -i 100.0 -o data_smoothed.nc
+# pism_fill_missing -f data.nc -v topg,usurf --eps=1.0e-4 \
+#                   -i 100.0 -o data_smoothed.nc
 # \endcode
 # Options \c -i and \c -e specify the initial guess and the convergence tolerance for \e all the specified variables, so using these options only makes sense if all the variables have the same units.  Moreover, making a good initial guess can noticeably reduce the time needed to fill in the holes.  Generally variables should be filled one at a time.
 #

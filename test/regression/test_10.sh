@@ -31,7 +31,7 @@ do
     do
 	if [ $i -le $j ]; then continue; fi
 	
-	$PISM_PATH/nccmp.py -x -v timestamp foo$i-10.nc foo$j-10.nc
+	$PISM_PATH/pism_nccmp -x -v timestamp foo$i-10.nc foo$j-10.nc
 	if [ $? != 0 ];
 	then
 	    exit 1

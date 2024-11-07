@@ -52,7 +52,7 @@ ncrcat -O ex1.nc ex2.nc ex-restart.nc
 set +e
 
 # Compare results:
-$PISM_PATH/nccmp.py -v dbdt,topg ex.nc ex-restart.nc
+$PISM_PATH/pism_nccmp -v dbdt,topg ex.nc ex-restart.nc
 if [ $? != 0 ];
 then
     exit 1

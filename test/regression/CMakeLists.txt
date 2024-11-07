@@ -3,13 +3,13 @@
 # install location).
 file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
-# Copy nccmp.py into the build directory:
-configure_file (${PROJECT_SOURCE_DIR}/util/nccmp.py ${PROJECT_BINARY_DIR}/nccmp.py COPYONLY)
+# Copy pism_nccmp into the build directory:
+configure_file (${PROJECT_SOURCE_DIR}/util/pism_nccmp ${PROJECT_BINARY_DIR}/pism_nccmp COPYONLY)
 
 # Set the location of PISM regression test scripts
 set(PISM_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-set (MEMORYCHECK_COMMAND_OPTIONS "--dsymutil=yes --trace-children=yes --trace-children-skip=*python,*nccmp.py,*rm,*which,*env,*diff,*cp,*hydra_*")
+set (MEMORYCHECK_COMMAND_OPTIONS "--dsymutil=yes --trace-children=yes --trace-children-skip=*python,*pism_nccmp,*rm,*which,*env,*diff,*cp,*hydra_*")
 
 function(add_memcheck_test name binary)
   set(memcheck_command "${MEMORYCHECK_COMMAND} ${MEMORYCHECK_COMMAND_OPTIONS}")

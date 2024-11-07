@@ -119,7 +119,7 @@ NOMASSRUNLENGTH=500
 
 STEP=1
 
-EXVARS="enthalpybase,temppabase,tempicethk,bmelt,tillwat,usurf,velsurf_mag,mask,hardav,thk" # add mask, so that check_stationarity.py ignores ice-free areas.
+EXVARS="enthalpybase,temppabase,tempicethk,bmelt,tillwat,usurf,velsurf_mag,mask,hardav,thk" # add mask, so that pism_check_stationarity ignores ice-free areas.
 
 PREFIX=psg_flowline_
 
@@ -165,7 +165,7 @@ cmd="$PISM_MPIDO $NN $PISM -bootstrap $GRID -i $INNAME -regrid_file $INNAME $EB 
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
-$PISM_DO flowline.py -c -o $OUTNAME $OUTNAMEFULL
+$PISM_DO pism_flowline -c -o $OUTNAME $OUTNAMEFULL
 
 
 COUPLER_ELEV="-surface elevation -ice_surface_temp -6,0,1395,1400 -climatic_mass_balance -3,2.5,1200,1450,1615 -climatic_mass_balance_limits -3,0"
@@ -189,4 +189,4 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_ELEV $F
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
-$PISM_DO flowline.py -c -o $OUTNAME $OUTNAMEFULL
+$PISM_DO pism_flowline -c -o $OUTNAME $OUTNAMEFULL

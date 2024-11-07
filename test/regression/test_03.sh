@@ -17,7 +17,7 @@ $MPIEXEC -n 2 $PISM_PATH/pism -eisII A -energy enthalpy -y 1000 $OPTS -o foo-03.
 $MPIEXEC -n 2 $PISM_PATH/pism -i foo-03.nc -y 0 $OPTS -o bar-03.nc
 
 # Compare, excluding irrelevant diagnostic variables:
-$PISM_PATH/nccmp.py -x -v timestamp foo-03.nc bar-03.nc
+$PISM_PATH/pism_nccmp -x -v timestamp foo-03.nc bar-03.nc
 if [ $? != 0 ];
 then
     exit 1

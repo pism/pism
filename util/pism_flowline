@@ -4,19 +4,19 @@
 # \brief This script aids in setting up and visualizing flow-line modeling runs.
 #
 # \details This script expands and collapses NetCDF datasets along the 'x' or
-# 'y' dimension. Run flowline.py --help to see the command-line options.
+# 'y' dimension. Run pism_flowline --help to see the command-line options.
 #
 # To set up a data-set for flow-line modeling, create a NetCDF file with an 'x'
 # dimension and appropriate variables (usually x(x), acab(x), artm(x),
 # bheatflx(x), thk(x) and topg(x)), then run
 # \code
-# flowline.py -e -o foo_pism.nc foo.nc
+# pism_flowline -e -o foo_pism.nc foo.nc
 # \endcode
 # Then bootstrap from foo_pism.nc, adding -periodicity y to PISM command-line options.
 #
 # To collapse a PISM flow-line model output for plotting, etc, run
 # \code
-# flowline.py -c -o bar.nc pism_output.nc
+# pism_flowline -c -o bar.nc pism_output.nc
 # \endcode
 
 from optparse import OptionParser
@@ -113,7 +113,7 @@ def process(input, output, direction, collapse):
             if name == direction:
                 continue
             collapse_var(nc, out, name, direction)
-        message = "Collapsed using flowline.py"
+        message = "Collapsed using pism_flowline"
     else:
         out.createDimension(direction, 3)
 
