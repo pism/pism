@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -307,13 +307,9 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
       sea_level = geometry.sea_level_elevation(i, j);
 
     if (geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
-      const double cell_ice_volume = thickness * cell_area;
-      if (bed > sea_level) {
-        volume += cell_ice_volume;
-      } else {
-        const double max_floating_volume = (sea_level - bed) * cell_area * (sea_water_density / ice_density);
-        volume += cell_ice_volume - max_floating_volume;
-      }
+      double max_floating_thickness =
+          std::max(sea_level - bed, 0.0) * (sea_water_density / ice_density);
+      volume += cell_area * (thickness - max_floating_thickness);
     }
   } // end of the loop over grid points
 
