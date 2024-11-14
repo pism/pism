@@ -168,7 +168,7 @@ macro(pism_find_prerequisites)
       message(FATAL_ERROR "Please build PISM with PROJ to use YAC for interpolation")
     endif()
 
-    pism_find_library(YAC "yac-mci>=3.3.0")
+    pism_find_library(YAC "yac-mci>=3.4.0")
     pism_find_library(YAXT "yaxt>=0.11.0")
   endif()
 

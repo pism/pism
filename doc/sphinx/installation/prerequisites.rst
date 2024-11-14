@@ -43,7 +43,7 @@ recommended, but not strictly required:
    PROJ_,  version 6.0 or newer (used to compute longitude-latitude grid coordinates and cell bounds)
    PnetCDF_, Can be used for faster parallel I/O
    ParallelIO_, Can be used for faster parallel I/O
-   YAC_, version 3.0 or newer (used to interpolate inputs read from NetCDF files; this requires PROJ_ as well)
+   YAC_, version 3.4 or newer (used to interpolate inputs read from NetCDF files; this requires PROJ_ as well)
 
 Python_ is needed for the PETSc installation process; a number of PISM's pre- and
 post-processing scripts also use Python (version 3.x), while Git_ is usually needed to
