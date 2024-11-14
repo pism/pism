@@ -60,10 +60,11 @@ instead of a number; for example
    pism -i foo.nc -y 100 -o output.nc -extra_file extras.nc \
          -extra_times 0:monthly:100 -extra_vars dHdt
 
-will save the rate of change of the ice thickness every month for 100 years. With
-``-calendar none`` (the default), "monthly" means "every :math:`\frac 1 {12}` of the
-year", and "yearly" is "every :math:`3.14\ldots\times10^7`" seconds, otherwise PISM uses
-month lengths computed using the selected calendar.
+will save the rate of change of the ice thickness every month for 100 years. With the
+``365_day`` calendar (the default), "monthly" means "at the end of every month assuming
+that every year is a non-leap year", and "yearly" is "every :math:`365`" days. With
+``-calendar gregorian`` "monthly" means "at the end of every month, respecting leap
+years" and so on; please see :ref:`sec-calendars` for more.
 
 It is frequently desirable to save diagnostic quantities at regular intervals for the
 whole duration of the run; options :opt:`-extra_times`, :opt:`-ts_times`, and

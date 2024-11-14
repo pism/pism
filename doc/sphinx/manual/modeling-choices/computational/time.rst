@@ -87,7 +87,8 @@ model validation.
 
 PISM uses CalCalcs_ by David W. Pierce to perform calendric computations. This lets us
 support all the `calendars <CF-Calendars_>`_ defined by the CF Metadata Conventions
-document except for the ``366_day`` (``all_leap``) calendar.
+document except for the ``366_day`` (``all_leap``) calendar. The "no calendar" option
+corresponding to the keyword ``none`` is not supported either.
 
 By default PISM uses the ``365_day`` calendar. This is appropriate for runs that do not
 require precise application of forcing data or reporting on particular dates
