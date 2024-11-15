@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <functional>
+
 #include "pism/geometry/Geometry.hh"
 
 #include "pism/util/array/CellType.hh"
@@ -316,66 +318,44 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
   return GlobalSum(grid->com, volume);
 }
 
-//! Computes ice area, in m^2.
-double ice_area(const Geometry &geometry, double thickness_threshold) {
-  auto grid = geometry.ice_thickness.grid();
-
+static double compute_area(const Grid &grid, std::function<bool(int, int)> condition) {
+  double cell_area = grid.cell_area();
   double area = 0.0;
 
-  auto cell_area = grid->cell_area();
-
-  array::AccessScope list{&geometry.ice_thickness};
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (geometry.ice_thickness(i, j) >= thickness_threshold) {
+    if (condition(i, j)) {
       area += cell_area;
     }
   }
 
-  return GlobalSum(grid->com, area);
+  return GlobalSum(grid.com, area);
+}
+
+//! Computes ice area, in m^2.
+double ice_area(const Geometry &geometry, double thickness_threshold) {
+  array::AccessScope list{ &geometry.ice_thickness };
+  return compute_area(*geometry.ice_thickness.grid(), [&](int i, int j) {
+    return geometry.ice_thickness(i, j) >= thickness_threshold;
+  });
 }
 
 //! Computes grounded ice area, in m^2.
 double ice_area_grounded(const Geometry &geometry, double thickness_threshold) {
-  auto grid = geometry.ice_thickness.grid();
-
-  double area = 0.0;
-
-  auto cell_area = grid->cell_area();
-
-  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
-  for (auto p = grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (geometry.cell_type.grounded(i, j) and
-        geometry.ice_thickness(i, j) >= thickness_threshold) {
-      area += cell_area;
-    }
-  }
-
-  return GlobalSum(grid->com, area);
+  array::AccessScope list{ &geometry.cell_type, &geometry.ice_thickness };
+  return compute_area(*geometry.ice_thickness.grid(), [&](int i, int j) {
+    return (geometry.cell_type.grounded(i, j) and
+            geometry.ice_thickness(i, j) >= thickness_threshold);
+  });
 }
 
 //! Computes floating ice area, in m^2.
 double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
-  auto grid = geometry.ice_thickness.grid();
-
-  double area = 0.0;
-
-  auto cell_area = grid->cell_area();
-
-  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
-  for (auto p = grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (geometry.cell_type.ocean(i, j) and
-        geometry.ice_thickness(i, j) >= thickness_threshold) {
-      area += cell_area;
-    }
-  }
-
-  return GlobalSum(grid->com, area);
+  array::AccessScope list{ &geometry.cell_type, &geometry.ice_thickness };
+  return compute_area(*geometry.ice_thickness.grid(), [&](int i, int j) {
+    return (geometry.cell_type.ocean(i, j) and geometry.ice_thickness(i, j) >= thickness_threshold);
+  });
 }
 
 
