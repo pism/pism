@@ -311,6 +311,8 @@ public:
                                                         const std::string &variable_name,
                                                         InterpolationType type) const;
 
+  void forget_interpolations();
+
   void report_parameters() const;
 
   void compute_point_neighbors(double X, double Y,

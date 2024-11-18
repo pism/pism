@@ -1660,6 +1660,9 @@ std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<do
   return InputInterpolation::create(*this, levels, input_file, variable_name, type);
 }
 
+void Grid::forget_interpolations() {
+  m_impl->regridding_2d.clear();
+}
 
 PointsWithGhosts::PointsWithGhosts(const Grid &grid, unsigned int stencil_width) {
   m_i_first = grid.xs() - stencil_width;
