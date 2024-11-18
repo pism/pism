@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <strings.h>            /* CK: strncasecmp */
 #include <ctype.h>
 
 #include "calcalcs.h"
