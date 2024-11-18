@@ -463,7 +463,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 }
 
 InputInterpolationYAC::~InputInterpolationYAC() {
-  yac_ccleanup_instance(m_instance_id);
+  yac_cfinalize_instance(m_instance_id);
 }
 
 double InputInterpolationYAC::interpolate(const pism::array::Scalar &source,
