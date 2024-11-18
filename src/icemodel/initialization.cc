@@ -331,6 +331,9 @@ void IceModel::model_state_setup() {
                                  pism::revision, (int)m_grid->size());
     prepend_history(startstr + args_string());
   }
+
+  // forget stored interpolation weights to free up some RAM
+  m_grid->forget_interpolations();
 }
 
 //! Initialize 2D model state fields managed by IceModel from a file (for re-starting).
