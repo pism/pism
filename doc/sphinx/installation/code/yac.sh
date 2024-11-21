@@ -10,7 +10,7 @@ rm -rf yac
 # manual-begin
 prefix=$HOME/local/yac
 
-yaxt_version=0.11.2
+yaxt_version=0.11.3
 git clone -b release-${yaxt_version} \
     https://gitlab.dkrz.de/dkrz-sw/yaxt.git
 
@@ -27,7 +27,7 @@ make all && make install
 
 cd -
 
-yac_version=3.3.0
+yac_version=3.4.0
 git clone -b release-${yac_version} \
     https://gitlab.dkrz.de/dkrz-sw/yac.git
 
