@@ -27,7 +27,7 @@
 #include <petscsys.h>
 #include <string>
 #include <vector>
-#include <utility>              // std::pair, std::swap
+#include <utility>              // std::swap
 
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -311,7 +311,7 @@ unsigned int Grid::kBelowHeight(double height) const {
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
-static std::pair<unsigned, unsigned> compute_nprocs(unsigned int size, unsigned int Mx,
+static std::array<unsigned, 2> compute_nprocs(unsigned int size, unsigned int Mx,
                                                     unsigned int My) {
 
   if (My <= 0) {
@@ -1278,8 +1278,8 @@ void Parameters::ownership_ranges_from_options(const Config &config, unsigned in
   } else {
     auto N = compute_nprocs(size, Mx, My);
 
-    Nx = std::get<0>(N);
-    Ny = std::get<1>(N);
+    Nx = N[0];
+    Ny = N[1];
   }
 
   // sub-domain widths in X and Y directions
