@@ -412,6 +412,11 @@ inline bool domain_edge(const Grid &grid, int i, int j) {
   return ((j == 0) or (j == (int)grid.My() - 1) or (i == 0) or (i == (int)grid.Mx() - 1));
 }
 
+std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
+                                       unsigned int My);
+
+std::vector<unsigned int> ownership_ranges(unsigned int Mx, unsigned int Nx);
+
 } // namespace grid
 
 } // end of namespace pism

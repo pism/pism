@@ -310,61 +310,6 @@ unsigned int Grid::kBelowHeight(double height) const {
   return gsl_interp_accel_find(m_impl->bsearch_accel, m_impl->z.data(), m_impl->z.size(), height);
 }
 
-//! \brief Computes the number of processors in the X- and Y-directions.
-static std::array<unsigned, 2> compute_nprocs(unsigned int size, unsigned int Mx,
-                                                    unsigned int My) {
-
-  if (My <= 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "'My' is invalid.");
-  }
-
-  unsigned int Nx = (unsigned int)(0.5 + sqrt(((double)Mx) * ((double)size) / ((double)My)));
-  unsigned int Ny = 0;
-
-  if (Nx == 0) {
-    Nx = 1;
-  }
-
-  while (Nx > 0) {
-    Ny = size / Nx;
-    if (Nx * Ny == (unsigned int)size) {
-      break;
-    }
-    Nx--;
-  }
-
-  if (Mx > My and Nx < Ny) {
-    // Swap Nx and Ny
-    std::swap(Nx, Ny);
-  }
-
-  if ((Mx / Nx) < 2) { // note: integer division
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (X-direction).", Mx,
-                                  (int)Nx);
-  }
-
-  if ((My / Ny) < 2) { // note: integer division
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (Y-direction).", My,
-                                  (int)Ny);
-  }
-
-  return {Nx, Ny};
-}
-
-
-//! \brief Computes processor ownership ranges corresponding to equal area
-//! distribution among processors.
-static std::vector<unsigned int> ownership_ranges(unsigned int Mx, unsigned int Nx) {
-
-  std::vector<unsigned int> result(Nx);
-
-  for (unsigned int i = 0; i < Nx; i++) {
-    result[i] = Mx / Nx + static_cast<unsigned int>((Mx % Nx) > i);
-  }
-  return result;
-}
 
 //! Set processor ownership ranges. Takes care of type conversion (`unsigned int` -> `PetscInt`).
 void Grid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_procs_x,
@@ -794,6 +739,7 @@ int Grid::max_patch_size() const {
 
 
 namespace grid {
+
 //! \brief Set the vertical levels in the ice according to values in `Mz` (number of levels), `Lz`
 //! (domain height), `spacing` (quadratic or equal) and `lambda` (quadratic spacing parameter).
 /*!
@@ -1276,7 +1222,7 @@ void Parameters::ownership_ranges_from_options(const Config &config, unsigned in
     Nx = static_cast<unsigned int>(config.get_number("grid.Nx"));
     Ny = static_cast<unsigned int>(config.get_number("grid.Ny"));
   } else {
-    auto N = compute_nprocs(size, Mx, My);
+    auto N = nprocs(size, Mx, My);
 
     Nx = N[0];
     Ny = N[1];
@@ -1451,6 +1397,65 @@ void Parameters::validate() const {
   if (std::accumulate(procs_y.begin(), procs_y.end(), 0.0) != My) {
     throw RuntimeError(PISM_ERROR_LOCATION, "procs_y don't sum up to My");
   }
+}
+
+double radius(const Grid &grid, int i, int j) {
+  return sqrt(grid.x(i) * grid.x(i) + grid.y(j) * grid.y(j));
+}
+
+//! \brief Computes the number of processors in the X- and Y-directions.
+std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
+                                       unsigned int My) {
+
+  if (My <= 0) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "'My' is invalid.");
+  }
+
+  unsigned int Nx = (unsigned int)(0.5 + sqrt(((double)Mx) * ((double)size) / ((double)My)));
+  unsigned int Ny = 0;
+
+  if (Nx == 0) {
+    Nx = 1;
+  }
+
+  while (Nx > 0) {
+    Ny = size / Nx;
+    if (Nx * Ny == (unsigned int)size) {
+      break;
+    }
+    Nx--;
+  }
+
+  if (Mx > My and Nx < Ny) {
+    // Swap Nx and Ny
+    std::swap(Nx, Ny);
+  }
+
+  if ((Mx / Nx) < 2) { // note: integer division
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't split %d grid points into %d parts (X-direction).", Mx,
+                                  (int)Nx);
+  }
+
+  if ((My / Ny) < 2) { // note: integer division
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't split %d grid points into %d parts (Y-direction).", My,
+                                  (int)Ny);
+  }
+
+  return {Nx, Ny};
+}
+
+//! \brief Computes processor ownership ranges corresponding to equal area
+//! distribution among processors.
+std::vector<unsigned int> ownership_ranges(unsigned int Mx, unsigned int Nx) {
+
+  std::vector<unsigned int> result(Nx);
+
+  for (unsigned int i = 0; i < Nx; i++) {
+    result[i] = Mx / Nx + static_cast<unsigned int>((Mx % Nx) > i);
+  }
+  return result;
 }
 
 } // namespace grid
@@ -1674,13 +1679,5 @@ PointsWithGhosts::PointsWithGhosts(const Grid &grid, unsigned int stencil_width)
   m_j    = m_j_first;
   m_done = false;
 }
-
-namespace grid {
-
-double radius(const Grid &grid, int i, int j) {
-  return sqrt(grid.x(i) * grid.x(i) + grid.y(j) * grid.y(j));
-}
-
-} // namespace grid
 
 } // end of namespace pism
