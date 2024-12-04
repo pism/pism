@@ -15,13 +15,7 @@ documentation`_) and then run
 
    spack install pism
 
-This will install PISM and all its prerequisites, including PETSc. The default PETSc
-configuration in its Spack package includes many optional features not used by PISM. You
-may want to disable these; to do this, use this command instead:
-
-.. code-block:: bash
-
-   spack install pism ^petsc~metis~hdf5~hypre~superlu-dist
+This will install PISM and all its prerequisites, including PETSc.
 
 .. note::
 
