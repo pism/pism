@@ -485,8 +485,8 @@ def run():
 
     # Prep the output file from the grid so that we can save zeta to it during the runs.
     if not append_mode:
-        pio = PISM.util.prepare_output(output_filename)
-        pio.close()
+        F = PISM.util.prepare_output(output_filename)
+        F.close()
     zeta.write(output_filename)
 
     # Log the command line to the output file now so that we have a record of

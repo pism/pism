@@ -127,13 +127,12 @@ quickly") tool from the NCO_ suite. For example, run
 to turn ``bad.nc`` (with any inconvenient storage order) into ``good.nc`` using the
 ``time,z,y,x`` order.
 
-PISM also supports parallel I/O using parallel NetCDF_, PnetCDF_, or ParallelIO_, which
-can give better performance in high-resolution runs.
+PISM also supports parallel I/O using parallel NetCDF_ and PnetCDF_, which can give better
+performance in high-resolution runs.
 
 Use the command-line option :opt:`-o_format` (parameter :config:`output.format`) to choose
 the approach to use when writing to output files (see :numref:`tab-output-format`). The
-``netcdf4_parallel`` requires parallel NetCDF, ``pnetcdf`` requires PnetCDF, and
-``pio_...`` require ParallelIO build with parallel NetCDF and PnetCDF. Section
+``netcdf4_parallel`` requires parallel NetCDF and ``pnetcdf`` requires PnetCDF. Section
 :ref:`sec-install-pism-cmake-options`) explains how to select these libraries when
 building PISM.
 
@@ -150,30 +149,6 @@ building PISM.
    ``netcdf3``, (default); serialized I/O from rank 0 (NetCDF-3 file)
    ``netcdf4_parallel``, parallel I/O using NetCDF (HDF5-based NetCDF-4 file)
    ``pnetcdf``, parallel I/O using PnetCDF (CDF5 file)
-   ``pio_pnetcdf``,  parallel I/O using ParallelIO (CDF5 file)
-   ``pio_netcdf4p``, parallel I/O using ParallelIO (HDF5-based NetCDF-4 file)
-   ``pio_netcdf4c``, serial I/O using ParallelIO (*compressed* HDF5-based NetCDF-4 file)
-   ``pio_netcdf``,   serial I/O using ParallelIO (using data aggregation in ParallelIO)
-
-The ParallelIO library can aggregate data in a subset of processes used by PISM. To choose
-a subset, set
-
-- :config:`output.pio.n_writers` number of "writers"
-- :config:`output.pio.base` the index of the first writer
-- :config:`output.pio.stride` interval between writers
-
-.. note::
-
-   The CDF5 file format is a large-variable extension of the NetCDF-3 file format
-   developed by the authors of PnetCDF. This format is supported by NetCDF since version
-   4.4.
-
-We recommend performing a number of test runs to determine the best choice for your
-simulations.
-
-In our test runs on 120 cores (whole Greenland setup on a 900m grid) ``pio_pnetcdf`` with
-:config:`output.pio.n_writers` set to the number of cores used by PISM (120) gave the best
-performance.
 
 .. note::
 

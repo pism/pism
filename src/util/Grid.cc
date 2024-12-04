@@ -45,12 +45,6 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
 
-#if (Pism_USE_PIO == 1)
-// Why do I need this???
-#define _NETCDF
-#include <pio.h>
-#endif
-
 namespace pism {
 
 //! Internal structures of Grid.
@@ -125,9 +119,6 @@ struct Grid::Impl {
 
   //! GSL binary search accelerator used to speed up kBelowHeight().
   gsl_interp_accel *bsearch_accel;
-
-  //! ParallelIO I/O decompositions.
-  std::map<std::array<int, 2>, int> io_decompositions;
 
   std::map<std::string, std::shared_ptr<InputInterpolation>> regridding_2d;
 };
@@ -275,15 +266,6 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
 
 Grid::~Grid() {
   gsl_interp_accel_free(m_impl->bsearch_accel);
-
-#if (Pism_USE_PIO == 1)
-  for (auto p : m_impl->io_decompositions) {
-    int ierr = PIOc_freedecomp(m_impl->ctx->pio_iosys_id(), p.second);
-    if (ierr != PIO_NOERR) {
-      m_impl->ctx->log()->message(1, "Failed to de-allocate a ParallelIO decomposition");
-    }
-  }
-#endif
 
   delete m_impl;
 }
@@ -1606,44 +1588,6 @@ const MappingInfo &Grid::get_mapping_info() const {
 void Grid::set_mapping_info(const MappingInfo &info) {
   m_impl->mapping_info = info;
   // FIXME: re-compute lat/lon coordinates
-}
-
-/*!
- * initialize an I/O decomposition
- *
- * @param[in] dof size of the last dimension (usually z)
- * @param[in] output_datatype an integer specifying a data type (`PIO_DOUBLE`, etc)
- */
-int Grid::pio_io_decomposition(int dof, int output_datatype) const {
-  int result = 0;
-#if (Pism_USE_PIO == 1)
-  {
-    std::array<int, 2> key{ dof, output_datatype };
-
-    result = m_impl->io_decompositions[key];
-
-    if (result == 0) {
-
-      int ndims = dof < 2 ? 2 : 3;
-
-      // the last element is not used if ndims == 2
-      std::vector<int> gdimlen{ (int)My(), (int)Mx(), dof };
-      std::vector<long int> start{ ys(), xs(), 0 }, count{ ym(), xm(), dof };
-
-      int stat = PIOc_InitDecomp_bc(m_impl->ctx->pio_iosys_id(), output_datatype, ndims,
-                                    gdimlen.data(), start.data(), count.data(), &result);
-      m_impl->io_decompositions[key] = result;
-      if (stat != PIO_NOERR) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "Failed to create a ParallelIO I/O decomposition");
-      }
-    }
-  }
-#else
-  (void)dof;
-  (void)output_datatype;
-#endif
-  return result;
 }
 
 std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<double> &levels,

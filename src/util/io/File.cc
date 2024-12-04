@@ -39,10 +39,6 @@
 #include "pism/util/io/PNCFile.hh"
 #endif
 
-#if (Pism_USE_PIO==1)
-#include "pism/util/io/ParallelIO.hh"
-#endif
-
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/IO_Flags.hh"
@@ -63,10 +59,6 @@ io::Backend string_to_backend(const std::string &backend) {
      {"netcdf3", io::PISM_NETCDF3},
      {"netcdf4_parallel", io::PISM_NETCDF4_PARALLEL},
      {"netcdf4_serial", io::PISM_NETCDF4_SERIAL},
-     {"pio_netcdf", io::PISM_PIO_NETCDF},
-     {"pio_netcdf4c", io::PISM_PIO_NETCDF4C},
-     {"pio_netcdf4p", io::PISM_PIO_NETCDF4P},
-     {"pio_pnetcdf", io::PISM_PIO_PNETCDF},
      {"pnetcdf", io::PISM_PNETCDF},
   };
 
@@ -86,10 +78,6 @@ static std::string backend_to_string(io::Backend backend) {
      {io::PISM_NETCDF3, "netcdf3"},
      {io::PISM_NETCDF4_PARALLEL, "netcdf4_parallel"},
      {io::PISM_NETCDF4_SERIAL, "netcdf4_serial"},
-     {io::PISM_PIO_NETCDF, "pio_netcdf"},
-     {io::PISM_PIO_NETCDF4C, "pio_netcdf4c"},
-     {io::PISM_PIO_NETCDF4P, "pio_netcdf4p"},
-     {io::PISM_PIO_PNETCDF, "pio_pnetcdf"},
      {io::PISM_PNETCDF, "pnetcdf"}
   };
 
@@ -126,44 +114,28 @@ static io::Backend choose_backend(MPI_Comm com, const std::string &filename) {
   return io::PISM_NETCDF3;
 }
 
-static std::shared_ptr<io::NCFile> create_backend(MPI_Comm com, io::Backend backend, int iosysid) {
-  // disable a compiler warning
-  (void) iosysid;
-
+static std::shared_ptr<io::NCFile> create_backend(MPI_Comm com, io::Backend backend) {
   int size = 1;
   MPI_Comm_size(com, &size);
 
   switch (backend) {
+
   case io::PISM_NETCDF3:
     return std::make_shared<io::NC_Serial>(com);
+
   case io::PISM_NETCDF4_SERIAL:
     return std::make_shared<io::NC4_Serial>(com);
+
   case io::PISM_NETCDF4_PARALLEL:
-#if (Pism_USE_PARALLEL_NETCDF4==1)
+#if (Pism_USE_PARALLEL_NETCDF4 == 1)
     return std::make_shared<io::NC4_Par>(com);
 #else
     break;
 #endif
 
   case io::PISM_PNETCDF:
-#if (Pism_USE_PNETCDF==1)
+#if (Pism_USE_PNETCDF == 1)
     return std::make_shared<io::PNCFile>(com);
-#else
-    break;
-#endif
-
-  case io::PISM_PIO_PNETCDF:
-  case io::PISM_PIO_NETCDF4P:
-  case io::PISM_PIO_NETCDF4C:
-  case io::PISM_PIO_NETCDF:
-#if (Pism_USE_PIO==1)
-    {
-      if (iosysid == -1) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "To use ParallelIO you have to pass iosysid to File");
-      }
-      return std::make_shared<io::ParallelIO>(com, iosysid, backend);
-    }
 #else
     break;
 #endif
@@ -172,7 +144,6 @@ static std::shared_ptr<io::NCFile> create_backend(MPI_Comm com, io::Backend back
     break;
   } // end of switch (backend)
 
-
   auto backend_name = backend_to_string(backend);
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -180,8 +151,7 @@ static std::shared_ptr<io::NCFile> create_backend(MPI_Comm com, io::Backend back
                                 backend_name.c_str());
 }
 
-File::File(MPI_Comm com, const std::string &filename, io::Backend backend, io::Mode mode,
-           int iosysid)
+File::File(MPI_Comm com, const std::string &filename, io::Backend backend, io::Mode mode)
   : m_impl(new Impl) {
 
   if (filename.empty()) {
@@ -194,7 +164,7 @@ File::File(MPI_Comm com, const std::string &filename, io::Backend backend, io::M
   }
 
   m_impl->com = com;
-  m_impl->nc  = create_backend(m_impl->com, backend, iosysid);
+  m_impl->nc  = create_backend(m_impl->com, backend);
 
   this->open(filename, mode);
 }

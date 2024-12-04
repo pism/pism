@@ -79,7 +79,7 @@ RUN set -eux; \
 RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
 
-# Install parallel HDF5, NetCDF, PnetCDF, and ParallelIO by building them from sources.
+# Install parallel HDF5, NetCDF and PnetCDF by building them from sources.
 #
 # Uses wget installed above.
 #

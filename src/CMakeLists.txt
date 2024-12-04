@@ -131,10 +131,6 @@ if (Pism_USE_PROJ)
   target_link_libraries(libpism PkgConfig::PROJ)
 endif()
 
-if (Pism_USE_PIO)
-  target_link_libraries(libpism ${ParallelIO_LIBRARIES})
-endif()
-
 if (Pism_USE_PNETCDF)
   target_link_libraries(libpism PkgConfig::PNETCDF)
 endif()

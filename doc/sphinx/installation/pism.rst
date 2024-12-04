@@ -142,7 +142,6 @@ enabled when building PISM. This section lists important build-time options.
    ``Pism_BUILD_EXTRA_EXECS``, build additional executables (needed to run ``make test``)
    ``Pism_BUILD_PYTHON_BINDINGS``, build PISM's Python bindingd; requires ``petsc4py``
    ``Pism_USE_PROJ``, use the PROJ_ library to compute latitudes and longitudes of grid points
-   ``Pism_USE_PIO``, use the ParallelIO_ library to write output files
    ``Pism_USE_PARALLEL_NETCDF4``, use NetCDF_ for parallel file I/O
    ``Pism_USE_PNETCDF``, use PnetCDF_ for parallel file I/O
    ``Pism_DEBUG``, enables extra sanity checks in the code (this makes PISM a lot slower but simplifies development)
@@ -182,7 +181,6 @@ To build PISM using parallel I/O libraries installed as described in
    cmake -DCMAKE_PREFIX_PATH="$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio" \
          -DPism_USE_PNETCDF \
          -DPism_USE_PARALLEL_NETCDF4 \
-         -DPism_USE_PIO \
          ..
 
 .. rubric:: Footnotes

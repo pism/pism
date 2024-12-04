@@ -128,7 +128,6 @@
 .. _Kaye and Laby: https://web.archive.org/web/20190506031327/http://www.kayelaby.npl.co.uk/
 
 .. _Ismip6-greenland: https://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland
-.. _ParallelIO: https://ncar.github.io/ParallelIO/
 
 .. _HDF5: https://portal.hdfgroup.org/display/HDF5/HDF5
 .. _Lustre: https://www.lustre.org/

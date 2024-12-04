@@ -99,8 +99,8 @@ PISM.verbPrintf(2, context.com, "* Computing SIA velocities...\n")
 vel_sia = PISM.sia.computeSIASurfaceVelocities(modeldata, siasolver=solver)
 
 PISM.verbPrintf(2, context.com, "* Saving results to %s...\n" % output_file)
-pio = PISM.util.prepare_output(output_file)
-pio.close()
+F = PISM.util.prepare_output(output_file)
+F.close()
 
 # Save time & command line & results
 PISM.util.writeProvenance(output_file)

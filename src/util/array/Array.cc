@@ -530,8 +530,7 @@ void Array::write_impl(const File &file) const {
 void Array::dump(const char filename[]) const {
   File file(m_impl->grid->com, filename,
             string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE_CLOBBER,
-            m_impl->grid->ctx()->pio_iosys_id());
+            io::PISM_READWRITE_CLOBBER);
 
   if (not m_impl->metadata[0].get_time_independent()) {
     io::define_time(file, *m_impl->grid->ctx());
@@ -724,7 +723,7 @@ void Array::write(const std::string &filename) const {
   // We expect the file to be present and ready to write into.
   File file(m_impl->grid->com, filename,
             string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE, m_impl->grid->ctx()->pio_iosys_id());
+            io::PISM_READWRITE);
 
   this->write(file);
 }

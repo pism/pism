@@ -1916,7 +1916,7 @@ netcdf pism_config {
     pism_config:output.fill_value_units = "none";
 
     pism_config:output.format = "netcdf3";
-    pism_config:output.format_choices = "netcdf3,netcdf4_serial,netcdf4_parallel,pnetcdf,pio_pnetcdf,pio_netcdf4p,pio_netcdf4c,pio_netcdf";
+    pism_config:output.format_choices = "netcdf3,netcdf4_serial,netcdf4_parallel,pnetcdf";
     pism_config:output.format_doc = "The I/O format used for spatial fields; ``netcdf3`` is the default, ``netcd4_parallel`` is available if PISM was built with parallel NetCDF-4, and ``pnetcdf`` is available if PISM was built with PnetCDF.";
     pism_config:output.format_option = "o_format";
     pism_config:output.format_type = "keyword";
@@ -1925,21 +1925,6 @@ netcdf pism_config {
     pism_config:output.ice_free_thickness_standard_doc = "If ice is thinner than this standard then a grid cell is considered ice-free for purposes of reporting glacierized area, volume, etc.";
     pism_config:output.ice_free_thickness_standard_type = "number";
     pism_config:output.ice_free_thickness_standard_units = "meters";
-
-    pism_config:output.pio.base = 0;
-    pism_config:output.pio.base_doc = "Rank of the first I/O task";
-    pism_config:output.pio.base_type = "integer";
-    pism_config:output.pio.base_units = "none";
-
-    pism_config:output.pio.n_writers = 1;
-    pism_config:output.pio.n_writers_doc = "Number of I/O tasks to use";
-    pism_config:output.pio.n_writers_type = "integer";
-    pism_config:output.pio.n_writers_units = "count";
-
-    pism_config:output.pio.stride = 1;
-    pism_config:output.pio.stride_doc = "Offset between I/O tasks";
-    pism_config:output.pio.stride_type = "integer";
-    pism_config:output.pio.stride_units = "count";
 
     pism_config:output.runtime.area_scale_factor_log10 = 6;
     pism_config:output.runtime.area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";

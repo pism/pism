@@ -141,7 +141,7 @@ void IceModel::write_snapshot() {
 
     m_snapshot_file = std::make_shared<File>(
         m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
-        io::PISM_READWRITE_MOVE, m_ctx->pio_iosys_id());
+        io::PISM_READWRITE_MOVE);
 
     write_metadata(*m_snapshot_file, WRITE_MAPPING, PREPEND_HISTORY);
   }

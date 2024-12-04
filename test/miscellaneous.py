@@ -156,11 +156,11 @@ def grid_from_file_test():
 
     file_name = filename("grid_from_file")
     try:
-        pio = PISM.util.prepare_output(file_name)
+        F = PISM.util.prepare_output(file_name)
 
-        enthalpy.write(pio)
+        enthalpy.write(F)
 
-        pio.close()
+        F.close()
 
         input_file = PISM.File(ctx.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
 
@@ -312,8 +312,8 @@ def modelvecs_test():
     # test write()
     output_file = filename("test_ModelVecs")
     try:
-        pio = PISM.util.prepare_output(output_file)
-        pio.close()
+        F = PISM.util.prepare_output(output_file)
+        F.close()
 
         vecs.write(output_file)
 
@@ -371,8 +371,8 @@ def util_test():
 
     output_file = filename("test_pism_util")
     try:
-        pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
-        pio.close()
+        F = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
+        F.close()
 
         PISM.util.writeProvenance(output_file)
         PISM.util.writeProvenance(output_file, message="history string")

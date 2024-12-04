@@ -159,10 +159,6 @@ macro(pism_find_prerequisites)
     pism_find_library(PROJ "proj>=6.0")
   endif()
 
-  if (Pism_USE_PIO)
-    find_package (ParallelIO REQUIRED)
-  endif()
-
   if (Pism_USE_YAC_INTERPOLATION)
     if (NOT Pism_USE_PROJ)
       message(FATAL_ERROR "Please build PISM with PROJ to use YAC for interpolation")
@@ -205,10 +201,6 @@ macro(pism_set_dependencies)
 
   if (Pism_USE_PROJ)
     include_directories (BEFORE SYSTEM ${PROJ_INCLUDE_DIRS})
-  endif()
-
-  if (Pism_USE_PIO)
-    include_directories (BEFORE SYSTEM ${ParallelIO_INCLUDES})
   endif()
 
   if (Pism_USE_PNETCDF)

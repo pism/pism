@@ -8,4 +8,3 @@ set -e
 . hdf5.sh
 . netcdf.sh
 . pnetcdf.sh
-. parallelio.sh

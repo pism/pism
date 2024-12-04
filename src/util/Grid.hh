@@ -372,8 +372,6 @@ public:
   Vars& variables();
   const Vars& variables() const;
 
-  int pio_io_decomposition(int dof, int output_datatype) const;
-
   PointsWithGhosts points(unsigned int stencil_width = 0) const {
     return {*this, stencil_width};
   }

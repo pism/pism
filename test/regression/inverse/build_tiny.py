@@ -115,7 +115,7 @@ if __name__ == '__main__':
                 no_model_mask[i, j] = 1
 
     output_filename = config.get_string("output.file")
-    pio = PISM.util.prepare_output(output_filename)
-    pio.close()
+    F = PISM.util.prepare_output(output_filename)
+    F.close()
     vecs.writeall(output_filename)
     PISM.util.writeProvenance(output_filename)

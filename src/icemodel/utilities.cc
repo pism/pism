@@ -68,8 +68,7 @@ int IceModel::process_signals() {
     File file(m_grid->com,
               file_name,
               string_to_backend(m_config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE,
-              m_ctx->pio_iosys_id());
+              io::PISM_READWRITE_MOVE);
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
     // flush all the time-series buffers:

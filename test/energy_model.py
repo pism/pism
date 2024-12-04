@@ -120,22 +120,23 @@ def test_interface():
         except:
             pass
 
-        pio = PISM.util.prepare_output("energy_model_state.nc")
+        try:
+            F = PISM.util.prepare_output("energy_model_state.nc")
 
-        print("* Saving the model state...")
-        model.write_model_state(pio)
+            print("* Saving the model state...")
+            model.write_model_state(F)
 
-        print("* Restarting from a saved model state...")
-        model.restart(pio, 0)
+            print("* Restarting from a saved model state...")
+            model.restart(F, 0)
 
-        print("* Bootstrapping from a saved model state...")
-        model.bootstrap(pio,
-                        ice_thickness,
-                        surface_temp,
-                        climatic_mass_balance,
-                        basal_heat_flux)
-
-        pio.close()
+            print("* Bootstrapping from a saved model state...")
+            model.bootstrap(F,
+                            ice_thickness,
+                            surface_temp,
+                            climatic_mass_balance,
+                            basal_heat_flux)
+        finally:
+            F.close()
 
 
 def test_temp_restart_from_enth():
@@ -144,10 +145,10 @@ def test_temp_restart_from_enth():
 
     initialize(enth_model)
 
-    pio = PISM.util.prepare_output("enth_model_state.nc")
-    enth_model.write_model_state(pio)
+    F = PISM.util.prepare_output("enth_model_state.nc")
+    enth_model.write_model_state(F)
 
-    temp_model.restart(pio, 0)
+    temp_model.restart(F, 0)
 
 
 def test_enth_restart_from_temp():
@@ -156,10 +157,10 @@ def test_enth_restart_from_temp():
 
     initialize(temp_model)
 
-    pio = PISM.util.prepare_output("temp_model_state.nc")
-    temp_model.write_model_state(pio)
+    F = PISM.util.prepare_output("temp_model_state.nc")
+    temp_model.write_model_state(F)
 
-    enth_model.restart(pio, 0)
+    enth_model.restart(F, 0)
 
 
 setup()

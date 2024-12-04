@@ -77,7 +77,7 @@ Changes since v2.1
   `-dx 5km`. Domain half widths `Lx` and `Ly` are re-computed to ensure that PISM uses
   exactly the requested grid resolution (this may slightly reduce the domain size compared
   to `Lx` and `Ly` provided by the user).
-
+- Remove support for NCAR's ParallelIO library since (as far as we know) no one uses it.
 
 Changes since v2.0
 ==================

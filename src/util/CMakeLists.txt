@@ -88,8 +88,3 @@ endif()
 if (Pism_USE_PNETCDF)
   target_sources(util PRIVATE io/PNCFile.cc)
 endif()
-
-# Check if PnetCDF parallel I/O is enabled and add a source code file if necessary.
-if (Pism_USE_PIO)
-  target_sources(util PRIVATE io/ParallelIO.cc)
-endif()

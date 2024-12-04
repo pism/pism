@@ -309,8 +309,7 @@ void IceModel::write_extras() {
       }
 
       m_extra_file.reset(new File(m_grid->com, filename,
-                                  string_to_backend(m_config->get_string("output.format")), mode,
-                                  m_ctx->pio_iosys_id()));
+                                  string_to_backend(m_config->get_string("output.format")), mode));
 
       // Prepare the file:
       io::define_time(*m_extra_file, *m_ctx);

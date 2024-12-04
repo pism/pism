@@ -69,7 +69,6 @@ jobs:
             -DPism_USE_PROJ=Yes
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
-            -DPism_USE_PIO=Yes
             -DPython_ADDITIONAL_VERSIONS=3
             -DPism_BUILD_PYTHON_BINDINGS=${BUILD_PYTHON_BINDINGS}
             -DPism_BUILD_EXTRA_EXECS=Yes

@@ -197,8 +197,7 @@ void Geometry::dump(const char *filename) const {
 
   File file(grid->com, filename,
             string_to_backend(grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE_CLOBBER,
-            grid->ctx()->pio_iosys_id());
+            io::PISM_READWRITE_CLOBBER);
 
   io::define_time(file, *grid->ctx());
   io::append_time(file, *grid->ctx()->config(), 0.0);

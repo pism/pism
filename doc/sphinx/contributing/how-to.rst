@@ -162,7 +162,7 @@ the time variable.
 .. code-block:: c++
 
    File file(m_grid->com, m_config->get_string("output.format"),
-            filename, PISM_READWRITE_CLOBBER, m_grid->ctx()->pio_iosys_id());
+            filename, PISM_READWRITE_CLOBBER);
 
    io::define_time(file, *m_grid->ctx());
    io::append_time(file, *m_grid->ctx()->config(), current_time);

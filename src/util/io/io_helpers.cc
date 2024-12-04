@@ -252,9 +252,6 @@ void append_time(const File &file, const std::string &name, double value) {
     unsigned int start = file.dimension_length(name);
 
     file.write_variable(name, { start }, { 1 }, &value);
-
-    // PIO's I/O type PnetCDF requires this
-    file.sync();
   } catch (RuntimeError &e) {
     e.add_context("appending to the time dimension in \"" + file.name() + "\"");
     throw;
