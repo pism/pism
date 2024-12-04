@@ -8,7 +8,7 @@ Installing PISM using Spack
 On supercomputers, Linux, and macOS PISM can be installed using the Spack_ package
 manager.
 
-Installing PISM using this method is easy: install Spack itself (see `Spack
+Installing `PISM <https://packages.spack.io/package.html?name=pism>`_ using this method is easy: install Spack itself (see `Spack
 documentation`_) and then run
 
 .. code-block:: bash
