@@ -11,6 +11,7 @@ RUN set -eux; \
 
 # Install tools:
 # - Cython to build PETSc with petsc4py
+# - python3-setuptools is needed to build PETSc with petsc4py
 # - wget to download sources of I/O libraries
 # - NumPy is used by petsc4py and PISM's scripts
 # - SciPy is used by at least one regression test
@@ -65,8 +66,8 @@ RUN set -eux; \
     python3-netcdf4 \
     python3-nose \
     python3-numpy \
-    python3-pip \
     python3-scipy \
+    python3-setuptools \
     python3-sphinx \
     python3-sphinxcontrib.bibtex \
     swig \
