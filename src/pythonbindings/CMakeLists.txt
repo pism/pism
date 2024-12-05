@@ -8,7 +8,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   include(${SWIG_USE_FILE})
 
-  include_directories (BEFORE SYSTEM ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDE_DIRS})
+  include_directories (BEFORE SYSTEM ${PETSC4PY_INCLUDES} ${Python3_INCLUDE_DIRS})
   include_directories (. ${Pism_SOURCE_DIR}/src)
 
   set(PISM_PYTHON_BINDING_LIBRARIES "libpism")
@@ -67,7 +67,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     LANGUAGE python
     SOURCES PISM.i pism_python.cc)
 
-  SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARIES} ${PISM_PYTHON_BINDING_LIBRARIES})
+  SWIG_LINK_LIBRARIES(cpp ${Python3_LIBRARIES} ${PISM_PYTHON_BINDING_LIBRARIES})
 
   # Disable compiler warnings:
   SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
@@ -125,7 +125,7 @@ if realpath(PISM.__file__) == realpath(join('${PISM_PYTHON_MODULE_DIR}', 'PISM',
     exit(1)
 ")
 
-  install(CODE "EXEC_PROGRAM( ${PYTHON_EXECUTABLE} ARGS ${pism_test_py} RETURN_VALUE PISM_PYTHON_MATCHES OUTPUT_VARIABLE PYTHON_OUT )
+  install(CODE "EXEC_PROGRAM( ${Python3_EXECUTABLE} ARGS ${pism_test_py} RETURN_VALUE PISM_PYTHON_MATCHES OUTPUT_VARIABLE PYTHON_OUT )
 if(NOT PISM_PYTHON_MATCHES)
     MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   export PYTHONPATH=${PISM_FULL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")
 endif()

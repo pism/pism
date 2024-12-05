@@ -42,7 +42,7 @@ macro(pism_test name script)
 endmacro()
 
 macro(pism_python_test name script)
-  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python ${PYTHON_EXECUTABLE})
+  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python ${Python3_EXECUTABLE})
 endmacro()
 
 # Tests themselves:
@@ -156,7 +156,7 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
 # Inversion regression tests.
 
-        execute_process (COMMAND ${PYTHON_EXECUTABLE} -c "import siple"
+        execute_process (COMMAND ${Python3_EXECUTABLE} -c "import siple"
           RESULT_VARIABLE IMPORT_SIPLE_ERRCODE
           OUTPUT_QUIET ERROR_QUIET)
 

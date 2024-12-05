@@ -3,7 +3,7 @@ find_package(Doxygen)
 
 # PISM Source Code Browsers
 if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
-  find_package(PythonInterp REQUIRED)
+  find_package (Python3 COMPONENTS Interpreter)
 
   option(Pism_DOXYGEN_DOCUMENT_ALL "Extract all (even undocumented) entities." ON)
 
@@ -22,7 +22,7 @@ if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
 
   # Generate the list of references
   add_custom_command (OUTPUT references.md
-    COMMAND ${PYTHON_EXECUTABLE} list_references.py ice-bib.bib > references.md
+    COMMAND ${Python3_EXECUTABLE} list_references.py ice-bib.bib > references.md
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Generate the browser

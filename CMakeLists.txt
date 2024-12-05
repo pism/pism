@@ -155,8 +155,7 @@ if (Pism_USE_EVERYTRACE)
 endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
-  find_package(PythonInterp REQUIRED)
-  find_package(PythonLibs REQUIRED)
+  find_package(Python3 COMPONENTS Interpreter Development)
   find_package(PETSc4Py REQUIRED)
   find_package(SWIG REQUIRED)
 
@@ -183,7 +182,7 @@ print(sysconfig.get_path('platlib', '${pism_sysconfig_scheme}', vars={'platbase'
   unset(pism_sysconfig_scheme)
 
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${pism_python_path_py}
+    COMMAND ${Python3_EXECUTABLE} ${pism_python_path_py}
     OUTPUT_VARIABLE PISM_FULL_PYTHON_MODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   # convert to a path relative to the install prefix
