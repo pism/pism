@@ -8,14 +8,20 @@ Installing PISM using Spack
 On supercomputers, Linux, and macOS PISM can be installed using the Spack_ package
 manager.
 
-Installing `PISM <https://packages.spack.io/package.html?name=pism>`_ using this method is easy: install Spack itself (see `Spack
-documentation`_) and then run
+Installing `PISM <https://packages.spack.io/package.html?name=pism>`_ using this method
+is easy: install Spack itself (see `Spack documentation`_) and then run
 
 .. code-block:: bash
 
    spack install pism
 
-This will install PISM and all its prerequisites, including PETSc.
+This will install PISM and all its prerequisites, including PETSc. The default PETSc
+configuration in its Spack package includes many optional features not used by PISM. You
+may want to disable these; to do this, use this command instead:
+
+.. code-block:: bash
+
+   spack install pism ^petsc~metis~hdf5~hypre~superlu-dist
 
 .. note::
 
