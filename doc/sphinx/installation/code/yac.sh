@@ -16,7 +16,7 @@ git clone -b release-${yaxt_version} \
 
 cd yaxt
 
-autoreconf -i
+./scripts/reconfigure
 
 export CC=mpicc FC=mpifort CFLAGS="-O3 -g -march=native"
 
@@ -27,13 +27,13 @@ make all && make install
 
 cd -
 
-yac_version=3.4.0
+yac_version=3.5.2
 git clone -b release-${yac_version} \
     https://gitlab.dkrz.de/dkrz-sw/yac.git
 
 cd yac
 
-autoreconf -i
+test -f ./configure || ./autogen.sh
 
 export CC=mpicc FC=mpifort CFLAGS="-O3 -g -march=native"
 
