@@ -16,7 +16,7 @@ git clone -b release-${yaxt_version} \
 
 cd yaxt
 
-./scripts/reconfigure
+autoreconf -i
 
 export CC=mpicc FC=mpifort CFLAGS="-O3 -g -march=native"
 
