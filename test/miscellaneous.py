@@ -75,8 +75,8 @@ def printing_test():
 
 def random_vec_test():
     "Test methods creating random fields"
-    grid = PISM.Grid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
-                                PISM.NOT_PERIODIC, PISM.CELL_CENTER)
+    grid = PISM.Grid.Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
+                             PISM.NOT_PERIODIC, PISM.CELL_CENTER)
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
     vec_vector = PISM.vec.randVectorV(grid, 2.0)
@@ -827,10 +827,10 @@ def interpolation_weights_test():
     Lx = 20
     Ly = 10
 
-    grid = PISM.Grid_Shallow(PISM.Context().ctx,
-                                Lx, Ly, 0, 0, Mx, My,
-                                PISM.CELL_CORNER,
-                                PISM.NOT_PERIODIC)
+    grid = PISM.Grid.Shallow(PISM.Context().ctx,
+                             Lx, Ly, 0, 0, Mx, My,
+                             PISM.CELL_CORNER,
+                             PISM.NOT_PERIODIC)
 
     x = grid.x()
     y = grid.y()

@@ -28,11 +28,11 @@ def gaussian_bump_grid():
     Mx = int((x_max - x_min) / dx)
     My = int((y_max - y_min) / dy)
 
-    return PISM.Grid_Shallow(PISM.Context().ctx,
-                                Lx, Ly,
-                                x0, y0,
-                                Mx, My,
-                                PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    return PISM.Grid.Shallow(PISM.Context().ctx,
+                             Lx, Ly,
+                             x0, y0,
+                             Mx, My,
+                             PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
 def gaussian_bump(x, y, h_max=500.0,
                   x0=0.0, y0=0.0, sigma_x=15e3, sigma_y=15e3):

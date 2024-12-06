@@ -19,7 +19,7 @@ def grid_square(dx=5e4, dy=5e4):
     Mx = int((x_max - x_min) / dx)
     My = int((y_max - y_min) / dy)
 
-    return PISM.Grid_Shallow(PISM.Context().ctx,
+    return PISM.Grid.Shallow(PISM.Context().ctx,
                                 Lx, Ly,
                                 x0, y0,
                                 Mx, My,
@@ -38,7 +38,7 @@ def grid_flowline_y(dy=5e4):
     Mx = 3
     My = int((y_max - y_min) / dy)
 
-    return PISM.Grid_Shallow(PISM.Context().ctx,
+    return PISM.Grid.Shallow(PISM.Context().ctx,
                                 Lx, Ly,
                                 x0, y0,
                                 Mx, My,
@@ -57,7 +57,7 @@ def grid_flowline_x(dx=5e4):
     Mx = int((x_max - x_min) / dx)
     My = 3
 
-    return PISM.Grid_Shallow(PISM.Context().ctx,
+    return PISM.Grid.Shallow(PISM.Context().ctx,
                                 Lx, Ly,
                                 x0, y0,
                                 Mx, My,

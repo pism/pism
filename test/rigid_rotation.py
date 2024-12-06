@@ -180,7 +180,7 @@ def test():
     ctx = PISM.Context()
     Mx = int(ctx.config.get_number("grid.Mx"))
     My = int(ctx.config.get_number("grid.My"))
-    grid = PISM.Grid_Shallow(ctx.ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.Grid.Shallow(ctx.ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     from matplotlib import pyplot as plt
 
