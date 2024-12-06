@@ -14,6 +14,7 @@ prefix=$HOME/local/netcdf
 build_dir=~/local/build/netcdf
 url=https://github.com/Unidata/netcdf-c/archive/refs/tags/v${version}.tar.gz
 
+
 mkdir -p ${build_dir}
 pushd ${build_dir}
 
@@ -28,6 +29,9 @@ unset CFLAGS
 ./configure CC=mpicc CPPFLAGS=-I${hdf5}/include LDFLAGS=-L${hdf5}/lib \
         --enable-netcdf4 \
         --disable-dap \
+        --disable-libxml2 \
+        --disable-byterange \
+        --disable-v2 \
         --prefix=${prefix} 2>&1 | tee netcdf_configure.log
 
 make all 2>&1 | tee netcdf_compile.log
