@@ -27,6 +27,7 @@ RUN set -eux; \
 # - latexmk is needed to build the PDF version of the manual
 # - Sphinx and sphinxcontrib-bibtex are needed to build the manual
 # - build-essential is needed to build .deb packages
+# - cdo is used by a regression test
 RUN set -eux; \
     apt-get update && apt-get install -y --no-install-recommends \
     apt-utils \
