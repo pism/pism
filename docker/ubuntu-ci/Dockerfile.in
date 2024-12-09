@@ -28,12 +28,15 @@ RUN set -eux; \
 # - Sphinx and sphinxcontrib-bibtex are needed to build the manual
 # - build-essential is needed to build .deb packages
 # - cdo is used by a regression test
+# - ccache used to speed up re-compilation when running tests locally
 RUN set -eux; \
     apt-get update && apt-get install -y --no-install-recommends \
     apt-utils \
     autoconf \
     automake \
     build-essential \
+    ccache \
+    cdo \
     clang-14 \
     clang-15 \
     clang-16 \
