@@ -210,7 +210,7 @@ double DEBMSimplePointwise::solar_declination_present_day(double year_fraction) 
  */
 double DEBMSimplePointwise::solar_declination_paleo(double obliquity,
                                                     double solar_longitude) {
-  return asin(sin(obliquity * sin(solar_longitude)));
+  return asin(sin(obliquity) * sin(solar_longitude));
 }
 
 /*!
