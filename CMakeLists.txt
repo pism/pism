@@ -248,6 +248,10 @@ endif()
 # PISM regression testing
 ENABLE_TESTING()
 include(CTest)
+
+if (CMAKE_VERSION VERSION_GREATER 3.16)
+  set (CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+endif()
 add_subdirectory (test)
 add_subdirectory (test/regression)
 
