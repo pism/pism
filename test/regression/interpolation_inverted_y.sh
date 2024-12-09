@@ -21,6 +21,7 @@ cd $temp_dir
 cdo invertlat ${regular} ${inverted}
 
 common_options="
+-config ${PISM_PATH}/pism_config.nc
 -atmosphere uniform
 -bootstrap
 -energy none
