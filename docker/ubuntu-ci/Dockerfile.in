@@ -101,19 +101,19 @@ RUN <<EOF
     rm -rf ~/local/build
 EOF
 
-COPY netcdf.sh /tmp/
-RUN <<EOF
-    set -eux
-    cd /tmp
-    ./netcdf.sh
-    rm -rf ~/local/build
-EOF
-
 COPY pnetcdf.sh /tmp/
 RUN <<EOF
     set -eux
     cd /tmp
     ./pnetcdf.sh
+    rm -rf ~/local/build
+EOF
+
+COPY netcdf.sh /tmp/
+RUN <<EOF
+    set -eux
+    cd /tmp
+    ./netcdf.sh
     rm -rf ~/local/build
 EOF
 
