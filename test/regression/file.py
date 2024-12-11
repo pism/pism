@@ -1,5 +1,4 @@
 import PISM
-import PISM.testing
 import os
 from unittest import TestCase, SkipTest
 
@@ -437,7 +436,7 @@ class File(TestCase):
 
         self.files = [self.file_with_time, self.file_without_time, self.file_inconsistent, self.file_dim_types]
 
-        grid = PISM.testing.shallow_grid()
+        grid = PISM.Grid.Shallow(ctx, 10e3, 20e3, 0, 0, 3, 5, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
         vec = PISM.Scalar(grid, "v")
         vec.metadata(0).long_name("dummy variable for testing").units("kelvin").output_units("degree_Celsius").standard_name("standard_name")
         vec.set(1.0)
