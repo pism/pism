@@ -2,6 +2,10 @@ import PISM
 import os
 from unittest import TestCase, SkipTest
 
+# Note: with some NetCDF versions many of these tests will fail *if* NetCDF cannot open
+# NetCDF-3 files in parallel (nc_open_par()). Please build NetCDF with PnetCDF if you get
+# errors saying "Attempt to use feature that was not turned on when netCDF was built."
+
 # always available
 backends = [PISM.PISM_NETCDF3]
 
