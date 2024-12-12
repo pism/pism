@@ -167,7 +167,7 @@ As an example, consider these two runs:
 
 .. code-block:: none
 
-   pism -eisII A -y 6000 -o foo.nc
+   pism -eisII A -Mx 61 -My 61 -y 6000 -o foo.nc
    pism -i foo.nc -y 10hours -o bar.nc -o_size big
 
 The result of the second (short) run is a NetCDF file ``bar.nc`` which contains the full

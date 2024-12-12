@@ -10,8 +10,8 @@ run can be loaded with ":opt:`-i`":
 
 .. code-block:: none
 
-   pism -eisII A -y 100 -o foo.nc
-   pism -eisII A -i foo.nc -y 100 -o bar.nc
+   pism -eisII A -Mx 61 -My 61 -y 100 -o foo.nc
+   pism -eisII A -Mx 61 -My 61 -i foo.nc -y 100 -o bar.nc
 
 As noted, verification tests (section :ref:`sec-verif`) and simplified-geometry experiments
 (section :ref:`sec-simp`) do not need input files at all because they initialize from
@@ -38,7 +38,7 @@ resulting file, like this:
 
 .. code-block:: none
 
-   pism -eisII A -y 10 -o foo.nc
+   pism -eisII A -Mx 61 -My 61 -y 10 -o foo.nc
    ncdump -h foo.nc | less
 
 Note that variables in the output file have a ``pism_intent`` attribute. When

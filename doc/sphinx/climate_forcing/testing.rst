@@ -34,7 +34,7 @@ correctly:
 
 .. code-block:: none
 
-   mpiexec -n 2 pism -eisII A -y 1000 -o state.nc
+   mpiexec -n 2 pism -eisII A -Mx 61 -My 61 -y 1000 -o state.nc
    pism -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
          -extra_file movie.nc -extra_vars climatic_mass_balance,ice_surface_temp \
          -ys 0 -ye 2.5

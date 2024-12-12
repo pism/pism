@@ -28,14 +28,14 @@ correctly.
 
    .. code-block:: none
 
-      pism -eisII A -y 5000 -view thk,temppabase,velsurf_mag
+      pism -eisII A -Mx 61 -My 61 -y 5000 -view thk,temppabase,velsurf_mag
 
    When using such viewers and ``mpiexec`` the additional final option ``-display :0`` is
    sometimes required to enable MPI to use X, like this:
 
    .. code-block:: none
 
-       mpiexec -n 2 pism -eisII A -y 5000 -view thk,temppabase,velsurf_mag -display :0
+       mpiexec -n 2 pism -eisII A -Mx 61 -My 61 -y 5000 -view thk,temppabase,velsurf_mag -display :0
 
    Also ``-drawpause 0.1`` or similar may be needed if the figures are refreshing too fast.
 
