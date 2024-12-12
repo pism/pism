@@ -40,11 +40,3 @@ resulting file, like this:
 
    pism -eisII A -Mx 61 -My 61 -y 10 -o foo.nc
    ncdump -h foo.nc | less
-
-The automatically-produced :var:`time` variable has a ``units`` attribute like ``"seconds
-since 1-1-1"`` because the CF metadata conventions require a reference date.
-
-.. FIXME: double-check the statement below
-
-By default PISM ignores this reference date except when it is used in unit conversions
-based on a calendar (see below).
