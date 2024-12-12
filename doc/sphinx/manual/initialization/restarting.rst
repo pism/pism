@@ -32,7 +32,7 @@ but the climate and other parameters use PISM default values, and thus are not
 ``-i`` file format
 ^^^^^^^^^^^^^^^^^^
 
-PISM produces CF-1.5 compliant NetCDF files. The easiest way to learn the output format
+PISM produces CF-1.6 compliant NetCDF files. The easiest way to learn the output format
 *and* the :opt:`-i` format is to do a simple run and then look at the metadata in the
 resulting file, like this:
 
