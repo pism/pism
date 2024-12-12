@@ -41,11 +41,6 @@ resulting file, like this:
    pism -eisII A -Mx 61 -My 61 -y 10 -o foo.nc
    ncdump -h foo.nc | less
 
-Note that variables in the output file have a ``pism_intent`` attribute. When
-``pism_intent`` is ``diagnostic``, the variable can be deleted from the file without
-affecting whether PISM can use it as a :opt:`-i` input file. Variables with
-``pism_intent`` is ``model_state``, by contrast, must be present when using :opt:`-i`.
-
 The automatically-produced :var:`time` variable has a ``units`` attribute like ``"seconds
 since 1-1-1"`` because the CF metadata conventions require a reference date.
 

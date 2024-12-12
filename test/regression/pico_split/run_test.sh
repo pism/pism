@@ -30,7 +30,6 @@ mask=basins * 0;
 mask@units="";
 mask@flag_values="0, 2, 3, 4";
 mask@long_name="ice-type (ice-free/grounded/floating/ocean) integer mask";
-mask@pism_intent="diagnostic";
 
 where(thk >  topg / (-910.0 / 1028.0)) mask=2;
 where(thk <= topg / (-910.0 / 1028.0)) mask=3;

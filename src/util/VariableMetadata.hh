@@ -59,7 +59,6 @@ class Logger;
 
   - long_name
   - standard_name
-  - pism_intent
   - units
   - output_units (saved to files as "units")
 

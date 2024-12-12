@@ -7,10 +7,10 @@ Flotation criterion, mask, and sea level
 
 The most basic decision about marine ice sheet dynamics made internally by PISM is whether
 a ice-filled grid cell is floating. That is, PISM applies the "flotation criterion"
-:cite:`Winkelmannetal2011` at every time step and at every grid location to determine whether
-the ice is floating on the ocean or not. The result is stored in the ``mask`` variable.
-The ``mask`` variable has ``pism_intent`` = ``diagnostic``, and thus it does *not* need to
-be included in the input file set using the ``-i`` option.
+:cite:`Winkelmannetal2011` at every time step and at every grid location to determine
+whether the ice is floating on the ocean or not. The result is stored in the ``mask``
+variable. The ``mask`` variable does *not* need to be included in the input file set using
+the ``-i`` option.
 
 The possible values of the ``mask`` are given in :numref:`tab-maskvals`. The mask
 does not *by itself* determine ice dynamics. For instance, even when ice is floating (mask
