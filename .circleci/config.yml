@@ -33,7 +33,7 @@ jobs:
     environment:
       CC: << parameters.cc >>
       CXX: << parameters.cxx >>
-      cmake_prefix: << parameters.cmake_prefix >>
+      CMAKE_PREFIX: << parameters.cmake_prefix >>
       PETSC_DIR: << parameters.petsc_dir >>
       BUILD_PYTHON_BINDINGS: << parameters.python >>
 
@@ -50,7 +50,7 @@ jobs:
 
   build-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.9
+      - image: ckhrulev/pism-ubuntu:0.1.12
 
     parameters:
       cc:
@@ -85,7 +85,7 @@ jobs:
 
   manual-html:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.9
+      - image: ckhrulev/pism-ubuntu:0.1.12
 
     steps:
       - checkout
@@ -133,7 +133,7 @@ jobs:
 
   manual-pdf:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.9
+      - image: ckhrulev/pism-ubuntu:0.1.12
 
     steps:
       - checkout
@@ -180,7 +180,7 @@ jobs:
 
   doxygen:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.9
+      - image: ckhrulev/pism-ubuntu:0.1.12
 
     environment:
       LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf"
@@ -235,7 +235,7 @@ jobs:
 
   build-and-test-with-ubuntu-libs:
     docker:
-      - image: ckhrulev/pism-ubuntu-deb-package:0.1.1
+      - image: ckhrulev/pism-ubuntu-deb-package:0.1.2
 
     environment:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -358,12 +358,14 @@ workflows:
             - gcc-10
             - gcc-11
             - gcc-12
+            - gcc-13
+            - gcc-14
             - gcc-minimal
-            - clang-11
-            - clang-12
-            - clang-13
             - clang-14
             - clang-15
+            - clang-16
+            - clang-17
+            - clang-18
             - clang-minimal
             - old-petsc
             - old-cmake
