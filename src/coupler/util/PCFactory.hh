@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -34,9 +34,9 @@ template <class Model>
 class PCFactory {
 public:
 
-  PCFactory<Model>(std::shared_ptr<const Grid> g, const std::string &parameter)
+  PCFactory(std::shared_ptr<const Grid> g, const std::string &parameter)
     : m_parameter(parameter), m_grid(g)  {}
-  ~PCFactory<Model>() {}
+  ~PCFactory() {}
 
   //! Creates a boundary model. Processes command-line options.
   virtual std::shared_ptr<Model> create() {
