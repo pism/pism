@@ -16,12 +16,9 @@ def make_id(parameter):
     return "config-" + parameter
 
 class config(nodes.literal):
-    parameter = None
-
     def __init__(self, parameter, **kwargs):
-        self.parameter = parameter
-
         nodes.literal.__init__(self, parameter, **kwargs)
+        self.attributes["parameter"] = parameter
 
 # this node makes it possible to add soft hyphens to wrap long parameter names
 class softhyphen(nodes.Element):
@@ -243,7 +240,7 @@ def resolve_config_links(app, doctree, fromdocname):
         reference['internal'] = True
         reference['refdocname'] = docname
         reference['refuri'] = "{}#{}".format(app.builder.get_relative_uri(fromdocname, docname),
-                                             make_id(node.parameter))
+                                             make_id(node.attributes["parameter"]))
 
         # Allow wrapping long parameter names
         words = node.astext().split(".")
