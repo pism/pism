@@ -7,7 +7,7 @@ set -u
 # Uses environment variables CC and CXX to select the compiler
 
 # Compile using this many jobs
-N=${N:-8}
+N=${N:-4}
 
 # CMake installation prefix
 cmake_prefix=${cmake_prefix:-/usr}
