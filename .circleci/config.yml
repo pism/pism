@@ -13,7 +13,7 @@ jobs:
 
   build:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.9
+      - image: ckhrulev/pism-ubuntu:0.1.12
 
     parameters:
       version:                  # this parameter is needed to make a valid config (it is
@@ -33,55 +33,20 @@ jobs:
     environment:
       CC: << parameters.cc >>
       CXX: << parameters.cxx >>
-      CMAKE_PREFIX: << parameters.cmake_prefix >>
+      cmake_prefix: << parameters.cmake_prefix >>
       PETSC_DIR: << parameters.petsc_dir >>
       BUILD_PYTHON_BINDINGS: << parameters.python >>
-      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf;/home/builder/local/pnetcdf;/home/builder/local/parallelio"
 
     steps:
       - checkout
       - run:
-          name: Create the build directory
-          command: mkdir -p build
-      - run:
-          name: Configure PISM
-          # CMAKE_BUILD_TYPE=Debug enables pedantic compiler warnings and one or two extra
-          # tests.
-          #
-          # CMAKE_CXX_FLAGS is set to treat all warnings as errors except for the one
-          # about the "noreturn" attribute.
-          #
-          # We need Python bindings and extra executables for many regression tests.
-          #
-          # PROJ, NetCDF built with parallel I/O, and PnetCDF are optional dependencies but
-          # we should build and test the code that uses them. The same applies to ICEBIN.
-          #
-          # CMAKE_PREFIX_PATH points to HDF5 and NetCDF with support for parallel I/O.
-          command: >-
-            cd build &&
-            ${CMAKE_PREFIX}/bin/cmake ..
-            -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
-            -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
-            -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_PREFIX_PATH=${LOCAL_LIBRARIES}
-            -DCMAKE_C_FLAGS="-Werror"
-            -DCMAKE_CXX_FLAGS="-Werror"
-            -DPism_USE_PROJ=Yes
-            -DPism_USE_PARALLEL_NETCDF4=Yes
-            -DPism_USE_PNETCDF=Yes
-            -DPython_ADDITIONAL_VERSIONS=3
-            -DPism_BUILD_PYTHON_BINDINGS=${BUILD_PYTHON_BINDINGS}
-            -DPism_BUILD_EXTRA_EXECS=Yes
-            -DPism_BUILD_ICEBIN=Yes
-      - run:
           name: Build PISM
-          command: make --no-print-directory -C build -j ${N:-4} all
+          command: >-
+            bash -x ./docker/ubuntu-ci/build.sh
       - run:
           name: Run regression tests
           command: >-
-            cd build &&
-            PYTHONPATH=~/project/build/site-packages:$PETSC_DIR/lib:$PYTHONPATH
-            ${CMAKE_PREFIX}/bin/ctest -j ${N:-4} --output-on-failure
+            bash -x ./docker/ubuntu-ci/run-tests.sh
 
   build-minimal:
     docker:
@@ -218,9 +183,7 @@ jobs:
       - image: ckhrulev/pism-ubuntu:0.1.9
 
     environment:
-      CC: mpicc
-      CXX: mpicxx
-      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf;/home/builder/local/pnetcdf;/home/builder/local/parallelio"
+      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf"
       PETSC_DIR: /home/builder/local/petsc
 
     steps:
@@ -275,8 +238,6 @@ jobs:
       - image: ckhrulev/pism-ubuntu-deb-package:0.1.1
 
     environment:
-      CC: mpicc
-      CXX: mpicxx
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
@@ -299,10 +260,6 @@ jobs:
   build-deb-package:
     docker:
       - image: ckhrulev/pism-ubuntu-deb-package:0.1.1
-
-    environment:
-      CC: mpicc
-      CXX: mpicxx
 
     steps:
       - checkout
@@ -335,31 +292,31 @@ workflows:
     jobs:
       - build:
           name: gcc-<< matrix.version >>
-          cc: mpicc -cc=gcc-<< matrix.version >>
-          cxx: mpicxx -cxx=g++-<< matrix.version >>
+          cc: gcc-<< matrix.version >>
+          cxx: g++-<< matrix.version >>
           cmake_prefix: /usr
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
           matrix:
             parameters:
-              version: ["9", "10", "11", "12"]
+              version: ["9", "10", "11", "12", "13", "14"]
 
       - build:
           name: clang-<< matrix.version >>
-          cc: mpicc -cc=clang-<< matrix.version >>
-          cxx: mpicxx -cxx=clang++-<< matrix.version >>
+          cc: clang-<< matrix.version >>
+          cxx: clang++-<< matrix.version >>
           cmake_prefix: /usr
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
           matrix:
             parameters:
-              version: ["11", "12", "13", "14", "15"]
+              version: ["14", "15", "16", "17", "18"]
 
       - build:
           version: default
           name: old-petsc
-          cc: mpicc -cc=clang
-          cxx: mpicxx -cxx=clang++
+          cc: clang
+          cxx: clang++
           cmake_prefix: /usr
           petsc_dir: /home/builder/local/petsc-3.7.0
           python: "No"
@@ -367,8 +324,8 @@ workflows:
       - build:
           version: default
           name: petsc-64bit
-          cc: mpicc -cc=clang
-          cxx: mpicxx -cxx=clang++
+          cc: clang
+          cxx: clang++
           cmake_prefix: /usr
           petsc_dir: /home/builder/local/petsc-64bit
           python: "Yes"
@@ -376,28 +333,28 @@ workflows:
       - build:
           version: default
           name: old-cmake
-          cc: mpicc -cc=clang
-          cxx: mpicxx -cxx=clang++
+          cc: clang
+          cxx: clang++
           cmake_prefix: /home/builder/local/cmake-3.16.0
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
 
       - build-minimal:
           name: gcc-minimal
-          cc: mpicc -cc=gcc
-          cxx: mpicxx -cxx=g++
+          cc: gcc
+          cxx: g++
           cmake_prefix: /usr
 
       - build-minimal:
           name: clang-minimal
-          cc: mpicc -cc=clang
-          cxx: mpicxx -cxx=clang++
+          cc: clang
+          cxx: clang++
           cmake_prefix: /usr
 
       - build-minimal:
           name: old-cmake-minimal
-          cc: mpicc -cc=clang
-          cxx: mpicxx -cxx=clang++
+          cc: clang
+          cxx: clang++
           cmake_prefix: /home/builder/local/cmake-3.16.0
 
       - manual-html
