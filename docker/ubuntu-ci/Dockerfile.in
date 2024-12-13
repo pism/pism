@@ -153,5 +153,8 @@ RUN set -eux;\
         ./petsc-64bit.sh && \
         rm -rf ~/local/build
 
+# OMPI_MCA_plm_rsh_agent="" is needed to silence OpenMPI
 ENV PETSC_DIR="/home/builder/local/petsc" \
-    PYTHONPATH="/home/builder/local/petsc/lib"
+    PYTHONPATH="/home/builder/local/petsc/lib" \
+    OMPI_MCA_plm_rsh_agent="" \
+    OMPI_MCA_rmaps_base_oversubscribe=yes
