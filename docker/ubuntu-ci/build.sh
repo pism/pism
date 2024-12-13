@@ -6,6 +6,9 @@ set -u
 
 # Uses environment variables CC and CXX to select the compiler
 
+# The Make target to build
+target=${target:-all}
+
 # Compile using this many jobs
 N=${N:-4}
 
@@ -58,4 +61,4 @@ ${cmake_prefix}/bin/cmake -S ${source_dir} \
          -DPism_USE_YAC_INTERPOLATION=YES \
          -DCMAKE_INSTALL_PREFIX=${install_dir}
 
-make --no-print-directory -C ${build_dir} -j ${N} all
+make --no-print-directory -C ${build_dir} -j ${N} ${target}
