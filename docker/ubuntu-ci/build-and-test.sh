@@ -6,14 +6,15 @@ set -e
 if [[ -z ${CC} || -z ${CXX} ]];
 then
   compiler=${compiler:-gcc}
-  version=${version:-14}
 
   if [ ${compiler} == "gcc" ];
   then
+    version=${version:-14}
     CC=gcc-${version}
     CXX=g++-${version}
   elif [ ${compiler} == "clang" ];
   then
+    version=${version:-18}
     CC=clang-${version}
     CXX=clang++-${version}
   fi
