@@ -13,7 +13,7 @@ target=${target:-all}
 N=${N:-4}
 
 # CMake installation prefix
-cmake_prefix=${cmake_prefix:-/usr}
+CMAKE_PREFIX=${CMAKE_PREFIX:-/usr}
 
 # PISM's source directory in the container
 source_dir=${source_dir:-$HOME/project}
@@ -25,7 +25,8 @@ build_dir=${build_dir:-/tmp/pism-build}
 lib_prefix=${lib_prefix:-$HOME/local}
 
 # PETSc directory to use
-petsc_dir=${petsc_dir:-${lib_prefix}/petsc}
+PETSC_DIR=${petsc_dir:-${lib_prefix}/petsc}
+export PETSC_DIR
 
 # Build Python bindings?
 python=${python:-YES}
@@ -42,23 +43,23 @@ git config --global --add safe.directory ${source_dir}
 
 mkdir -p ${build_dir}
 
-${cmake_prefix}/bin/cmake -S ${source_dir} \
-         -B ${build_dir} \
-         -DCMAKE_BUILD_TYPE=Debug \
-         -DCMAKE_CXX_FLAGS="-Werror" \
-         -DCMAKE_C_FLAGS="-Werror" \
-         -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
-         -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" \
-         -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" \
-         -DCMAKE_PREFIX_PATH="${hdf5_dir};${netcdf_dir};${pnetcdf_dir};${yac_dir}" \
-         -DPism_BUILD_PYTHON_BINDINGS=${python} \
-         -DPism_BUILD_EXTRA_EXECS=YES \
-         -DPism_PEDANTIC_WARNINGS=YES \
-         -DPism_BUILD_ICEBIN=YES \
-         -DPism_USE_PROJ=YES \
-         -DPism_USE_PARALLEL_NETCDF4=YES \
-         -DPism_USE_PNETCDF=YES \
-         -DPism_USE_YAC_INTERPOLATION=YES \
-         -DCMAKE_INSTALL_PREFIX=${install_dir}
+${CMAKE_PREFIX}/bin/cmake -S ${source_dir} \
+               -B ${build_dir} \
+               -DCMAKE_BUILD_TYPE=Debug \
+               -DCMAKE_CXX_FLAGS="-Werror" \
+               -DCMAKE_C_FLAGS="-Werror" \
+               -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
+               -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" \
+               -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" \
+               -DCMAKE_PREFIX_PATH="${hdf5_dir};${netcdf_dir};${pnetcdf_dir};${yac_dir}" \
+               -DPism_BUILD_PYTHON_BINDINGS=${python} \
+               -DPism_BUILD_EXTRA_EXECS=YES \
+               -DPism_PEDANTIC_WARNINGS=YES \
+               -DPism_BUILD_ICEBIN=YES \
+               -DPism_USE_PROJ=YES \
+               -DPism_USE_PARALLEL_NETCDF4=YES \
+               -DPism_USE_PNETCDF=YES \
+               -DPism_USE_YAC_INTERPOLATION=YES \
+               -DCMAKE_INSTALL_PREFIX=${install_dir}
 
 make --no-print-directory -C ${build_dir} -j ${N} ${target}
