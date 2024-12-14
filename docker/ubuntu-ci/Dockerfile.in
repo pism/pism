@@ -77,6 +77,8 @@ RUN set -eux; \
     python3-sphinx \
     python3-sphinxcontrib.bibtex \
     swig \
+    tex-gyre \
+    texlive-fonts-recommended \
     texlive-latex-extra \
     texlive-latex-recommended \
     wget \
