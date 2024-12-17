@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -419,7 +419,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           DEBMSimpleMelt melt_info{};
           if (not mask::ice_free_ocean(cell_type)) {
 
-            melt_info = m_model.melt(orbital[k].declination,
+            melt_info = m_model.melt(orbital[k].solar_declination,
                                      orbital[k].distance_factor,
                                      dtseries,
                                      S[k],
@@ -594,9 +594,9 @@ protected:
       for (auto p = m_grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        (*result)(i, j) = M.insolation(orbital.declination,
-                                       orbital.distance_factor,
-                                       (*latitude)(i, j));
+        (*result)(i, j) = M.insolation_diagnostic(orbital.solar_declination,
+                                                  orbital.distance_factor,
+                                                  (*latitude)(i, j));
       }
     }
 
