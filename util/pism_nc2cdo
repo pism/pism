@@ -15,7 +15,7 @@
 # Proj projection string. If this string is not available (this is true for standard PISM
 # output), the script searches variables for the 'grid_mapping' attribute and translates information
 # from the corresponding mapping variable into a Proj projection string. If neither is found,
-# the script exists with an error message.
+# the script exits with an error message.
 #
 # Usage:
 #
