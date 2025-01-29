@@ -38,7 +38,7 @@ Model components and modifiers can be chained as shown in
 
 combines the component providing constant (both in space and time) ocean boundary
 conditions with a modifier that applies scalar temperature offsets. This combination
-one of the many ocean models that can be chosen using components as building blocks.
+is one of the many ocean models that can be chosen using components as building blocks.
 
 Section :ref:`sec-forcing-examples` gives examples of combining components to choose
 models. Before that we address how PISM interprets time-dependent inputs (Section
