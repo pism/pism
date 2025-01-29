@@ -7,7 +7,8 @@ This directory contains
   Changes," Journal of the Atmospheric Sciences, vol. 35, no. 12, pp. 2362–2367, Dec.
   1978.
 
-  The implementation itself is heavily based on the code from GISS ModelE version 2.1.2.
+  The implementation itself is heavily based on the code from GISS ModelE version 2.1.2
+  (see https://simplex.giss.nasa.gov/snapshots/modelE2.1.2.tgz ).
 
   Note: ModelE documentation states "our code is freely available for download and use",
   but unfortunately it does not include a license.
