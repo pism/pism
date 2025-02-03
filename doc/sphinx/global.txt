@@ -97,7 +97,7 @@
 .. _ncview: https://cirrus.ucsd.edu/ncview/
 .. _netcdf4-python: https://pypi.org/project/netCDF4
 .. _pyngl: https://www.pyngl.ucar.edu
-.. _SeaRISE-Greenland: https://web.archive.org/web/20221220001121/http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
+.. _SeaRISE-Greenland: https://doi.org/10.5281/zenodo.10140224
 .. _searise: https://web.archive.org/web/20221220001110/http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
 .. _mismip-code: https://frank.pattyn.web.ulb.be/mismip/MISMIP_distribution.tar
 .. _reStructuredText: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html

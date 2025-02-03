@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014, 2016, 2017, 2018, 2019, 2020, 2023, 2024 The PISM Authors
+# Copyright (C) 2009-2014, 2016, 2017, 2018, 2019, 2020, 2023, 2024, 2025 The PISM Authors
 
 # Downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts
 # metadata, and saves under new name ready for PISM.  See README.md.
@@ -17,7 +17,7 @@ echo
 
 # get file; see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 DATAVERSION=1.1
-DATAURL=https://github.com/pism/example-inputs/raw/main/std-greenland/
+DATAURL=https://zenodo.org/records/10179093/files/
 DATANAME=Greenland_5km_v$DATAVERSION.nc
 
 echo "fetching master file ... "
