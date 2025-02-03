@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 PISM Authors
+// Copyright (C) 2009--2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -70,7 +70,7 @@ double DEBMSimplePointwise::CalovGreveIntegrand(double sigma, double temperature
 }
 
 /*!
- * The hour angle (radians) at which the sun reaches the solar angle `phi`
+ * The hour angle (radians) at which the sun reaches the solar altitude angle `phi`
  *
  * Implements equation 11 in Krebs-Kanzow et al solved for h_phi.
  *
@@ -93,9 +93,11 @@ double DEBMSimplePointwise::hour_angle(double phi, double latitude, double decli
  *
  * @param[in] year_fraction year fraction (between 0 and 1)
  * @param[in] eccentricity eccentricity of the earth’s orbit (no units)
- * @param[in] perihelion_longitude perihelion longitude (radians)
+ * @param[in] perihelion_longitude perihelion longitude (radians) in the geocentric
+ *            ecliptic coordinate system
  *
- * Implements equation A2 in Zeitz et al.
+ * Implements equation A2 in Zeitz et al. or equivalent equations in Berger1978 (section
+ * 3).
  */
 double DEBMSimplePointwise::solar_longitude(double year_fraction, double eccentricity,
                                             double perihelion_longitude) {
@@ -123,16 +125,19 @@ double DEBMSimplePointwise::solar_longitude(double year_fraction, double eccentr
 }
 
 /*!
- * The unit-less factor scaling top of atmosphere insolation according to the Earth's
- * distance from the Sun.
+ * The unit-less factor scaling top of atmosphere insolation according to the earth's
+ * distance from the sun.
  *
  * The returned value is `(d_bar / d)^2`, where `d_bar` is the average distance from the
- * Earth to the Sun and `d` is the *current* distance at a given time.
+ * earth to the sun and `d` is the *current* distance at a given time.
  *
  * Implements equation 2.2.9 from Liou (2002).
  *
  * Liou states: "Note that the factor (a/r)^2 never departs from the unity by more than
  * 3.5%." (`a/r` in Liou is equivalent to `d_bar/d` here.)
+ *
+ * This quantity is equal to `1 / R^2`, where R is the sun-earth distance in units of the
+ * semi-major axis of the earth's orbit.
  */
 double DEBMSimplePointwise::distance_factor_present_day(double year_fraction) {
   // These coefficients come from Table 2.2 in Liou 2002
@@ -152,16 +157,21 @@ double DEBMSimplePointwise::distance_factor_present_day(double year_fraction) {
 }
 
 /*!
- * The unit-less factor scaling top of atmosphere insolation according to the Earth's
- * distance from the Sun. This is the "paleo" version used when the trigonometric
+ * The unit-less factor scaling top of atmosphere insolation according to the earth's
+ * distance from the sun. This is the "paleo" version used when the trigonometric
  * expansion (equation 2.2.9 in Liou 2002) is not valid.
  *
  * Implements equation A1 in Zeitz et al.
  *
  * See also equation 2.2.5 from Liou (2002).
+ *
+ * This quantity is equal to `1 / R^2`, where R is the sun-earth distance in units of the
+ * semi-major axis of the earth's orbit.
+ *
+ * @param[in] eccentricity eccentricity of the earth's orbit
+ * @param[in] true_anomaly true anomaly of the earth in the heliocentric ecliptic coordinate system
  */
-double DEBMSimplePointwise::distance_factor_paleo(double eccentricity, double perihelion_longitude,
-                                                  double solar_longitude) {
+double DEBMSimplePointwise::distance_factor_paleo(double eccentricity, double true_anomaly) {
   double E = eccentricity;
 
   if (E == 1.0) {
@@ -170,7 +180,7 @@ double DEBMSimplePointwise::distance_factor_paleo(double eccentricity, double pe
                                   "invalid eccentricity value: 1.0");
   }
 
-  return pow((1.0 + E * cos(solar_longitude - perihelion_longitude)) / (1.0 - E * E), 2);
+  return pow((1.0 + E * cos(true_anomaly)) / (1.0 - E * E), 2);
 }
 
 /*!
@@ -217,7 +227,9 @@ double DEBMSimplePointwise::solar_declination_paleo(double obliquity,
  * Average top of atmosphere insolation (rate) during the daily melt period, in W/m^2.
  *
  * This should be equation 5 in Zeitz et al or equation 12 in Krebs-Kanzow et al, but both
- * of these miss a factor of Delta_t (day length in seconds) in the numerator.
+ * of these miss a factor of Delta_t (day length in seconds) in the numerator. (Note that
+ * in equation 5 of Zeitz et al the units of the LHS and the RHS should match, but [LHS] =
+ * W/m^2 and [RHS] = W/(m^2 s).)
  *
  * To confirm this, see the derivation of equation 2.2.21 in Liou and note that
  *
@@ -253,7 +265,7 @@ double DEBMSimplePointwise::solar_declination_paleo(double obliquity,
  *
  * C = S0 / h_phi.
  *
- * @param[in] solar constant solar constant, W/m^2
+ * @param[in] solar_constant solar constant, W/m^2
  * @param[in] distance_factor square of the ratio of the mean sun-earth distance to the current sun-earth distance (no units)
  * @param[in] hour_angle hour angle (radians) when the sun reaches the critical angle Phi
  * @param[in] latitude latitude (radians)
@@ -322,8 +334,6 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
   std::string paleo_file = config.get_string("surface.debm_simple.paleo.file");
 
   if (not paleo_file.empty()) {
-    m_use_paleo_file = true;
-
     m_eccentricity.reset(new ScalarForcing(ctx, "surface.debm_simple.paleo", "eccentricity", "1",
                                            "1", "eccentricity of the earth"));
 
@@ -332,9 +342,8 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
 
     m_perihelion_longitude.reset(
         new ScalarForcing(ctx, "surface.debm_simple.paleo", "perihelion_longitude", "radian",
-                          "degree", "longitude of the perihelion relative to the vernal equinox"));
-  } else {
-    m_use_paleo_file = false;
+                          "degree", "longitude of the perihelion relative to the vernal equinox, "
+                          "in the geocentric ecliptic coordinate system"));
   }
 }
 
@@ -367,26 +376,40 @@ double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) const {
 }
 
 DEBMSimpleOrbitalParameters DEBMSimplePointwise::orbital_parameters(double time) const {
-  double declination     = 0.0;
-  double distance_factor = 0.0;
+  double solar_declination = 0.0;
+  double distance_factor   = 0.0;
 
   double year_fraction = m_time->year_fraction(time);
   if (m_paleo) {
-    // eccentricity and perihelion longitude are needed by both declination and distance_factor
-    double eccentricity         = this->eccentricity(time);
-    double perihelion_longitude = this->perihelion_longitude(time);
+    double eccentricity                    = this->eccentricity(time);
+    double geocentric_perihelion_longitude = this->perihelion_longitude(time);
 
-    double solar_longitude = this->solar_longitude(year_fraction, eccentricity, perihelion_longitude);
+    double sun_true_longitude =
+        this->solar_longitude(year_fraction, eccentricity, geocentric_perihelion_longitude);
 
-    declination = solar_declination_paleo(obliquity(time), solar_longitude);
+    solar_declination = solar_declination_paleo(obliquity(time), sun_true_longitude);
 
-    distance_factor = distance_factor_paleo(eccentricity, perihelion_longitude, solar_longitude);
+    // Note: here sun_true_longitude is the true longitude of the sun in the geocentric
+    // ecliptic coordinate system. The perihelion longitude is in the same coordinate
+    // system.
+    //
+    // In the heliocentric ecliptic system
+    //
+    // earth_true_longitude              = sun_true_longitude - 180 degrees
+    // heliocentric_perihelion_longitude = geocentric_perihelion_longitude - 180 degrees
+    //
+    // So earth_true_anomaly = earth_true_longitude - heliocentric_perihelion_longitude
+    //                       = sun_true_longitude - geocentric_perihelion_longitude
+    //
+    double earth_true_anomaly = sun_true_longitude - geocentric_perihelion_longitude;
+
+    distance_factor = distance_factor_paleo(eccentricity, earth_true_anomaly);
   } else {
-    declination     = solar_declination_present_day(year_fraction);
-    distance_factor = distance_factor_present_day(year_fraction);
+    solar_declination = solar_declination_present_day(year_fraction);
+    distance_factor   = distance_factor_present_day(year_fraction);
   }
 
-  return {declination, distance_factor};
+  return { solar_declination, distance_factor };
 }
 
 
@@ -396,9 +419,8 @@ DEBMSimpleOrbitalParameters DEBMSimplePointwise::orbital_parameters(double time)
  * Do not use this in the model itself: doing so will make it slower because that way we'd
  * end up computing hour_angle more than once.
  */
-double DEBMSimplePointwise::insolation(double declination,
-                                       double distance_factor,
-                                       double latitude_degrees) const {
+double DEBMSimplePointwise::insolation_diagnostic(double declination, double distance_factor,
+                                                  double latitude_degrees) const {
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude_degrees * degrees_to_radians;
 
@@ -528,10 +550,10 @@ DEBMSimpleChanges DEBMSimplePointwise::step(double ice_thickness, double max_mel
 }
 
 /*!
- * Eccentricity of the Earth’s orbit (no units).
+ * Eccentricity of the earth’s orbit (no units).
  */
 double DEBMSimplePointwise::eccentricity(double time) const {
-  if (m_use_paleo_file) {
+  if (m_eccentricity != nullptr) {
     return m_eccentricity->value(time);
   }
   return m_constant_eccentricity;
@@ -541,18 +563,23 @@ double DEBMSimplePointwise::eccentricity(double time) const {
  * Returns the obliquity of the ecliptic in radians.
  */
 double DEBMSimplePointwise::obliquity(double time) const {
-  if (m_use_paleo_file) {
+  if (m_obliquity != nullptr) {
     return m_obliquity->value(time);
   }
   return m_constant_obliquity;
 }
 
 /*!
- * Returns the longitude of the perihelion in radians.
+ * Returns the longitude of the perihelion (radians) in the geocentric ecliptic coordinate
+ * system.
  */
 double DEBMSimplePointwise::perihelion_longitude(double time) const {
-  if (m_use_paleo_file) {
-    return remainder(m_perihelion_longitude->value(time), 2.0 * M_PI);
+  if (m_perihelion_longitude != nullptr) {
+    double L_p = remainder(m_perihelion_longitude->value(time), 2.0 * M_PI);
+    if (L_p < 0.0) {
+      L_p = L_p + 2 * M_PI;
+    }
+    return L_p;
   }
   return m_constant_perihelion_longitude;
 }

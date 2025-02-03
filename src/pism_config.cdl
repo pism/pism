@@ -2411,8 +2411,8 @@ netcdf pism_config {
     pism_config:surface.debm_simple.paleo.obliquity_type = "number";
     pism_config:surface.debm_simple.paleo.obliquity_units = "degree";
 
-    pism_config:surface.debm_simple.paleo.perihelion_longitude =  102.94719;
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_doc = "Mean longitude of the perihelion relative to the vernal equinox";
+    pism_config:surface.debm_simple.paleo.perihelion_longitude =  282.94719;
+    pism_config:surface.debm_simple.paleo.perihelion_longitude_doc = "Mean longitude of the perihelion relative to the vernal equinox, in the geocentric ecliptic coordinate system";
     pism_config:surface.debm_simple.paleo.perihelion_longitude_type = "number";
     pism_config:surface.debm_simple.paleo.perihelion_longitude_units = "degree";
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 PISM Authors
+// Copyright (C) 2009--2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -54,7 +54,10 @@ struct DEBMSimpleChanges {
 };
 
 struct DEBMSimpleOrbitalParameters {
-  double declination;
+  // Solar declination, radians
+  double solar_declination;
+  // Square of the ratio of the mean sun-earth distance to the current sun-earth distance
+  // (d_bar / d)^2
   double distance_factor;
 };
 
@@ -89,7 +92,7 @@ public:
   // public because it is a diagnostic field
   double atmosphere_transmissivity(double elevation) const;
 
-  double insolation(double declination,
+  double insolation_diagnostic(double declination,
                     double distance_factor,
                     double latitude_degrees) const;
 
@@ -99,19 +102,18 @@ public:
   static double solar_longitude(double year_fraction, double eccentricity,
                                 double perihelion_longitude);
   static double distance_factor_present_day(double year_fraction);
-  static double distance_factor_paleo(double eccentricity, double perihelion_longitude,
-                                      double solar_longitude);
+  static double distance_factor_paleo(double eccentricity, double true_anomaly);
   static double solar_declination_present_day(double year_fraction);
   static double solar_declination_paleo(double obliquity,
                                         double solar_longitude);
   static double insolation(double solar_constant, double distance_factor, double hour_angle,
                            double latitude, double declination);
 
-private:
   double eccentricity(double time) const;
   double obliquity(double time) const;
   double perihelion_longitude(double time) const;
 
+private:
   //! refreeze melted ice
   bool m_refreeze_ice_melt;
   //! refreeze fraction
@@ -153,7 +155,6 @@ private:
   std::unique_ptr<ScalarForcing> m_perihelion_longitude;
 
   bool m_paleo;
-  bool m_use_paleo_file;
 
   double m_constant_eccentricity;
   double m_constant_perihelion_longitude;

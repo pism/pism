@@ -486,7 +486,7 @@ Mean top of the atmosphere insolation
 #####################################
 
 The mean top of the atmosphere insolation during the part of the day when the sun is above
-`\Phi` degrees is approximated by
+the solar altitude angle of `\Phi` degrees is approximated by
 
 .. math::
    :label: eq-debm-toa-insolation
@@ -497,8 +497,8 @@ The mean top of the atmosphere insolation during the part of the day when the su
 where
 
 - `S_0` is the solar constant :config:`surface.debm_simple.solar_constant` :cite:`Kopp2011`,
-- `\bar d / d` is the ratio of the length of the semimajor axis of the Earth's orbit to
-  the Earth-Sun distance,
+- `\bar d / d` is the ratio of the mean earth-sun distance `\bar d` to the current
+  earth-sun distance (the inverse of the earth-sun distance in units of `\bar d`),
 - `h_{\Phi}` is the hour angle when the sun has an elevation angle of at least `\Phi`,
 - `\phi` is the latitude
 - `\delta` is the solar declination angle.
@@ -506,7 +506,7 @@ where
 In short, `\bar S_{\Phi}` is a function of latitude, the factor `\bar d / d`, and the
 solar declination angle `\delta`. In the "present day" case both `\bar d / d` and `\delta`
 have the period of one year and are approximated using trigonometric expansions (see
-:cite:`Liou2002`).
+:cite:`Liou2002`, equations 2.2.9 and 2.2.10).
 
 .. rubric:: Paleo simulations
 
@@ -517,12 +517,13 @@ computationally expensive) formulas (:cite:`Liou2002`, chapter 2). Set
 
 In this case
 
-- the ratio `\bar d / d` is a function of the eccentricity of the Earth's orbit and the
-  perihelion longitude,
-- the solar declination `\delta` is a function of the eccentricity of the Earth's orbit,
-  the perihelion longitude, and the Earth's obliquity.
+- the solar declination `\delta` is a function of the *eccentricity* of the earth's orbit,
+  the *perihelion longitude*, and the earth's *obliquity* (axial tilt).
+- the ratio `\bar d / d` is a function of the *eccentricity* of the earth's orbit and the
+  true anomaly of the earth, which depends on the *perihelion longitude*.
 
-The values of these are set using the following configuration parameters (prefix:
+The values of these three orbital parameters (eccentricity, obliquity, perihelion
+longitude) are set using the following configuration parameters (prefix:
 ``surface.debm_simple.paleo.``):
 
 .. pism-parameters::
@@ -532,6 +533,32 @@ The values of these are set using the following configuration parameters (prefix
 Alternatively, PISM can read in scalar time series of variables :var:`eccentricity`,
 :var:`obliquity`, and :var:`perihelion_longitude` from a file specified using
 :config:`surface.debm_simple.paleo.file`.
+
+.. note::
+
+   Longitude of the perihelion can mean two different things:
+
+   - in the geocentric ecliptic system: longitude (measured from the direction of the
+     vernal equinox) of the sun at the time when earth is at the perihelion,
+   - in the heliocentric ecliptic system: longitude (measured from the direction of the
+     vernal equinox) of the earth at the time when earth is at the perihelion.
+
+   Since one describes the direction looking from the earth towards the sun and the other
+   from the sun towards the earth (and the reference direction, i.e. the direction of the
+   vernal equinox is the same in both systems) the difference of their values is
+   `180^{\circ}`.
+
+   .. See https://en.wikipedia.org/wiki/Ecliptic_coordinate_system and note that (quoting
+      this Wikipedia page) "the primary direction (0 degrees ecliptic longitude) points
+      from the Earth towards the Sun at the March equinox".
+
+   .. This implies that the true anomaly of the earth in the heliocentric system is the same
+      as the true anomaly of the sun in the geocentric system.
+
+   The parameter :config:`surface.debm_simple.paleo.perihelion_longitude` and the
+   ``perihelion_longitude`` variable in :config:`surface.debm_simple.paleo.file` should
+   use the *geocentric* definition, i.e. the one equal to approximately `283^{\circ}` on
+   January 1, 2000.
 
 .. note::
 
