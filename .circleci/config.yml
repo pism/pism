@@ -240,6 +240,7 @@ jobs:
     environment:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      OMPI_MCA_rmaps_base_oversubscribe: yes
 
     steps:
       - checkout
