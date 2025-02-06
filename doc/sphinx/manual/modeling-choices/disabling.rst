@@ -13,13 +13,10 @@ on every time you need it.
 But sometimes one wants to disable particular components, during model spin-up, for
 example. PISM has the following "off" switches:
 
-- :opt:`-no_mass` disables the mass-continuity (conservation of mass) step
-- :opt:`-energy none` disables the conservation of energy computation
-- :opt:`-energy cold` makes PISM use temperature instead of enthalpy in the energy
-  conservation code
-- :opt:`-stress_balance none` disables the stress balance computation (useful for testing
-  surface mass balance inputs)
-- :opt:`-dry` essentially disables ocean models: ice is always considered to be grounded,
-  the sub-shelf melt rate and temperature is not used, and the calving-front boundary
-  condition is computed ignoring the water pressure exerted on the vertical face at a
-  (possibly submerged) terminus.
+- setting :config:`geometry.update.enabled` to "false" disables the mass-continuity
+  (conservation of mass) step
+- setting :config:`energy.model` to "none" disables the conservation of energy computation
+- setting :config:`energy.model` to "cold" makes PISM use temperature instead of enthalpy
+  in the energy conservation code
+- setting :config:`stress_balance.model` to "none" disables the stress balance computation
+  (useful for testing surface mass balance inputs)
