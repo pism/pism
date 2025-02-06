@@ -18,9 +18,9 @@ code to visualize the climate mass balance and temperature boundary conditions p
 using a combination of options and input files. This is helpful during the process of
 creating PISM-readable data files, and modeling with such.
 
-To do this, :config:`stress_balance.model` to "none", :config:`energy.model` to "none" and
-:config:`age.enabled` to "false" and use PISM's reporting capabilities
-(:opt:`-extra_file`, :opt:`-extra_times`, :opt:`-extra_vars`) to monitor.
+To do this, set :config:`stress_balance.model` to "none", :config:`energy.model` to "none"
+and :config:`age.enabled` to "false" (see :ref:`sec-turning-off`) and use PISM's reporting
+capabilities (:opt:`-extra_file`, :opt:`-extra_times`, :opt:`-extra_vars`) to monitor.
 
 Turning "off" ice dynamics saves computational time while allowing one to use the same
 options as in an actual modeling run. Note that we do *not* disable geometry updates, so
@@ -36,8 +36,9 @@ correctly:
 
    mpiexec -n 2 pism -eisII A -Mx 61 -My 61 -y 1000 -o state.nc
    pism -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
-         -extra_file movie.nc -extra_vars climatic_mass_balance,ice_surface_temp \
-         -ys 0 -ye 2.5
+        -extra_file movie.nc \
+        -extra_vars climatic_mass_balance,ice_surface_temp \
+        -ys 0 -ye 2.5
 
 Using ``pism -eisII A`` merely generates demonstration climate data, using EISMINT II
 choices :cite:`EISMINT00`. The next run extracts the surface mass balance
@@ -57,20 +58,20 @@ Assuming that ``g20km_10ka.nc`` was created :ref:`as described in the User's Man
 .. code-block:: none
 
     pism -stress_balance.model none \
-          -energy.model none \
-          -age.enabled no \
-          -geometry.update.enabled no \
-          -i g20km_10ka.nc \
-          -atmosphere searise_greenland -surface pdd \
-          -ys 0 -ye 1 -extra_times 0:1week:1 \
-          -extra_file foo.nc \
-          -extra_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot,precipitation
+         -energy.model none \
+         -age.enabled no \
+         -geometry.update.enabled no \
+         -i g20km_10ka.nc -bootstrap \
+         -atmosphere searise_greenland -surface pdd \
+         -ys 0 -ye 1 -extra_times 1week \
+         -extra_file foo.nc \
+         -extra_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot
     
 produces ``foo.nc``. Viewing in with ``ncview`` shows an annual cycle in the variable
-:var:`air_temp` and a noticeable decrease in the surface mass balance during summer months
-(see variable :var:`climatic_mass_balance`). Note that :var:`ice_surface_temp` is constant
-in time: this is the temperature *at the ice surface but below firn* and it does not
-include seasonal variations :cite:`Hock05`.
+:var:`air_temp_snapshot` and a noticeable decrease in the surface mass balance during
+summer months (see variable :var:`climatic_mass_balance`). Note that
+:var:`ice_surface_temp` is constant in time: this is the temperature *at the ice surface
+but below firn* and it does not include seasonal variations :cite:`Hock05`.
 
 Using low-resolution test runs
 ++++++++++++++++++++++++++++++
@@ -84,48 +85,47 @@ The command
 
 .. code-block:: none
 
-    pism -i g20km_pre100.nc -bootstrap -Mx 51 -My 101 -Mz 11 \
-          -atmosphere searise_greenland \
-          -surface pdd -ys 0 -ye 2.5 \
-          -extra_file foo.nc -extra_times 0:0.1:2.5 \
-          -extra_vars climatic_mass_balance,air_temp_snapshot,smelt,srunoff,saccum
-          -ts_file ts.nc -ts_times 0:0.1:2.5 \
-          -o bar.nc
+    pism -i g20km_10ka.nc -bootstrap -dx 40km -dy 40km -Mz 11 \
+         -atmosphere searise_greenland \
+         -surface pdd -ys 0 -ye 2.5 \
+         -extra_file foo.nc -extra_times 0.1 \
+         -extra_vars climatic_mass_balance,air_temp_snapshot,surface_melt_rate,surface_runoff_rate,surface_accumulation_rate \
+         -ts_file ts.nc -ts_times 0.1 \
+         -o bar.nc
 
 will produce ``foo.nc`` containing a "movie" very similar to the one created by the
 previous run, but including the full influence of ice dynamics.
 
 In addition to ``foo.nc``, the latter command will produce ``ts.nc`` containing scalar
-time-series. The variable ``surface_ice_flux`` (the *total over the ice-covered area* of
-the surface mass flux) can be used to detect if climate forcing is applied at the right
-time.
+time-series. The variable ``tendency_of_ice_mass_due_to_surface_mass_flux`` (the *total
+over ice domain of top surface ice mass flux*) can be used to detect if climate forcing is
+applied at the right time.
 
 Visualizing the climate inputs in the Greenland case
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Assuming that ``g20km_pre100.nc`` was produced by the run described in section
+Assuming that ``g20km_10ka.nc`` was produced by the run described in section
 :ref:`sec-start`), one can run the following to check if the PDD model in PISM (see
 section :ref:`sec-surface-pdd`) is "reasonable":
 
 .. code-block:: none
 
-   pism -i g20km_pre100.nc -atmosphere searise_greenland,precip_scaling \
-         -surface pdd -atmosphere_precip_scaling_file pism_dT.nc \
-         -extra_times 0:1week:3 -ys 0 -ye 3 \
-         -extra_file pddmovie.nc -o_order zyx \
-         -extra_vars climatic_mass_balance,air_temp_snapshot
+   pism -i g20km_10ka.nc -bootstrap \
+        -atmosphere searise_greenland,precip_scaling \
+        -surface pdd -atmosphere_precip_scaling_file pism_dT.nc \
+        -extra_times 1week -ys -3 -ye 0 \
+        -extra_file pddmovie.nc \
+        -extra_vars climatic_mass_balance,air_temp_snapshot,effective_precipitation
 
 This produces the file ``pddmovie.nc`` with several variables:
 :var:`climatic_mass_balance` (instantaneous net accumulation (ablation) rate),
 :var:`air_temp_snapshot` (instantaneous near-surface air temperature),
-:var:`precipitation` (mean annual ice-equivalent precipitation rate) and some others.
+:var:`effective_precipitation` (total precipitation rate, including all adjustments (here:
+``precip_scaling``)).
 
-The variable :var:`precipitation` does not evolve over time because it is part of the
-SeaRISE-Greenland data and is read in from the input file.
-
-The other two variables were used to create figure :numref:`fig-pddseries`, which shows
-the time-series of the accumulation rate (top graph) and the air temperature (bottom
-graph) with the map view of the surface elevation on the left.
+The figure :numref:`fig-pddseries` shows the time-series of the surface mass balance rate
+(top graph) and the air temperature (bottom graph) with the map view of the surface
+elevation on the left.
 
 Here are two things to notice:
 
@@ -150,16 +150,17 @@ We can also test the surface temperature forcing code with the following command
 
 .. code-block:: none
 
-    pism -i g20km_pre100.nc -surface simple \
-          -atmosphere searise_greenland,delta_T \
-          -atmosphere_delta_T_file pism_dT.nc \
-          -extra_times 100 -ys -125e3 -ye 0 \
-          -extra_vars ice_surface_temp \
-          -extra_file dT_movie.nc -o_order zyx \
-          -stress_balance.model none \
-          -energy.model none \
-          -age.enabled no \
-          -geometry.update.enabled no
+    pism -i g20km_10ka.nc -bootstrap \
+         -surface simple \
+         -atmosphere searise_greenland,delta_T \
+         -atmosphere_delta_T_file pism_dT.nc \
+         -extra_times 100 -ys -125e3 -ye 0 \
+         -extra_vars ice_surface_temp \
+         -extra_file dT_movie.nc \
+         -stress_balance.model none \
+         -energy.model none \
+         -age.enabled no \
+         -geometry.update.enabled no
 
 The output ``dT_movie.nc`` and ``pism_dT.nc`` were used to create
 :numref:`fig-artm-timeseries`.
