@@ -26,7 +26,17 @@ N=${N:-8}
 
 pism_dir=${pism_dir:?Please set pism_dir}
 
+# The Make target to build
+target=${target:-all}
+
 container_pism_dir=/home/builder/project
+
+cmd="cd ${container_pism_dir}/docker/ubuntu-ci/ && ./build.sh"
+
+if [ ${target} == "all" ];
+then
+  cmd="${cmd} && ./run-tests.sh"
+fi
 
 docker run --rm -it \
        -v ${pism_dir}:${container_pism_dir} \
@@ -34,5 +44,6 @@ docker run --rm -it \
        -e CXX=${CXX} \
        -e N=${N} \
        -e source_dir=${container_pism_dir} \
+       -e target="${target}" \
        ckhrulev/pism-ubuntu:0.1.12 \
-       bash -c "cd ${container_pism_dir}/docker/ubuntu-ci/ && ./build.sh && ./run-tests.sh"
+       bash -c "${cmd}"
