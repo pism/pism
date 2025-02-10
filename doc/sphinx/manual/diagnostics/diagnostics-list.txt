@@ -46,6 +46,11 @@ Spatially-variable fields
    :Description: ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)
    :Comment: positive basal melt rate corresponds to ice loss
 
+#. ``bed_def_load``
+
+   :Units: m
+   :Description: load on the bed expressed as ice-equivalent thickness
+
 #. ``bedtoptemp``
 
    :Units: kelvin
