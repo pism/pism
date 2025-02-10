@@ -24,7 +24,7 @@ INNAME=$2
 MPIDO="mpiexec -n 6"
 
 CLIMATE="-surface given -surface_given_file pism_Greenland_5km_v1.1.nc"
-PHYS="-sia_e 3.0 -stress_balance ssa+sia -topg_to_phi 15.0,40.0,-300.0,700.0 -pseudo_plastic -pseudo_plastic_q 0.5 -till_effective_fraction_overburden 0.02 -tauc_slippery_grounding_lines"
+PHYS="-sia_e 3.0 -stress_balance ssa+sia -topg_to_phi -phi_min 15.0 -phi_max 40.0 -topg_min -300.0 -topg_max 700.0 -pseudo_plastic -pseudo_plastic_q 0.5 -till_effective_fraction_overburden 0.02 -tauc_slippery_grounding_lines"
 CALVING="-front_retreat_file pism_Greenland_5km_v1.1.nc"
 
 # run this to check for no shock: continue g2km_gridseq.nc run

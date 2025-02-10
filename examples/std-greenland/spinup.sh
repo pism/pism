@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020, 2021, 2024 The PISM Authors
+# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020, 2021, 2024, 2025 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -167,7 +167,7 @@ fi
 # done forming $PHYS if "$5" = "sia"
 if [ "$5" = "hybrid" ]; then
   if [ -z "${PARAM_TTPHI}" ] ; then  # check if env var is NOT set
-    PARAM_TTPHI="15.0,40.0,-300.0,700.0"
+    PARAM_TTPHI="-phi_min 15.0 -phi_max 40.0 -topg_min -300.0 -topg_max 700.0"
   fi
   if [ -z "${PARAM_PPQ}" ] ; then  # check if env var is NOT set
     PARAM_PPQ="0.25"
