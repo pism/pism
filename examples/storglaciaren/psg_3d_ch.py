@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2016-17 Andy Aschwanden
+# Copyright (C) 2016-17, 25 Andy Aschwanden
 
 import itertools
 from collections import OrderedDict
@@ -227,8 +227,6 @@ for n, combination in enumerate(combinations):
 
     run_id, sia_e, sia_n, ssa_e, ssa_n, ppq, uth, phi_min, phi_max, topg_min, topg_max = combination
 
-    ttphi = '{},{},{},{}'.format(phi_min, phi_max, topg_min, topg_max)
-
     name_options = OrderedDict()
     name_options['sb'] = stress_balance
     name_options['climate'] = climate
@@ -315,7 +313,11 @@ for n, combination in enumerate(combinations):
                                   'vertical_velocity_approximation':    vertical_velocity_approximation}
 
                 if start == simulation_start_year:
-                    sb_params_dict['topg_to_phi'] = ttphi
+                    sb_params_dict['topg_to_phi'] = ""
+                    sb_params_dict['phi_min'] = f"{phi_min}"
+                    sb_params_dict['phi_max'] = f"{phi_max}"
+                    sb_params_dict['topg_min'] = f"{topg_min}"
+                    sb_params_dict['topg_max'] = f"{topg_max}"
 
                 stress_balance_params_dict = generate_stress_balance(stress_balance, sb_params_dict)
 
