@@ -60,7 +60,7 @@ BCFILE=g5km_bc.nc
 CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thickness_file $BOOT"
 
 # regarding physics: match choices in spinup.sh
-PHYS="-front_retreat_file $BOOT -pik -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines"
+PHYS="-front_retreat_file $BOOT -pik -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi -phi_min 15.0 -phi_max 40.0 -topg_min -300.0 -topg_max 700.0 -till_effective_fraction_overburden 0.02 -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines"
 
 SKIP=10
 
