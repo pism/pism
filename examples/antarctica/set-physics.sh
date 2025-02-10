@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2016  PISM authors
+# Copyright (C) 2009-2016, 2025  PISM authors
 
 # grids
 export THIRTYKMGRID="-Mx 200 -My 200 -Lz 5000 -Lbz 2000 -Mz 41 -Mbz 16"
@@ -27,7 +27,7 @@ export PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANA
 # dynamics related options
 export SIA_ENHANCEMENT="-sia_e 3.0"
 export PARAMS="-pseudo_plastic -pseudo_plastic_q 0.25 -till_effective_fraction_overburden 0.02 -tauc_slippery_grounding_lines"
-export TILLPHI="-topg_to_phi 15.0,40.0,-300.0,700.0"
+export TILLPHI="-topg_to_phi -phi_min 15.0 -phi_max 40.0 -topg_min -300.0 -topg_max 700.0"
 export FULLPHYS="-stress_balance ssa+sia -hydrology null $PARAMS $TILLPHI"
 
 # perhaps use these if KSP "diverged" errors occur
