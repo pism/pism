@@ -41,7 +41,7 @@ diag-2.json: dummy.nc
 	      -atmosphere searise_greenland \
 	      -stress_balance ssa+sia \
 	      -yield_stress mohr_coulomb \
-	      -topg_to_phi 10,30,-50,0 \
+	      -topg_to_phi -phi_min 10 -phi_max 30 -topg_min -50 -topg_max 0 \
 	      -hydrology routing \
 	      -calving eigen_calving,thickness_calving,vonmises_calving \
 	      -frontal_melt constant \

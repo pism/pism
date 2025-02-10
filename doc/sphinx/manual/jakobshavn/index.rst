@@ -342,8 +342,11 @@ combination
 
 .. code-block:: none
 
-      -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 \
-         -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines
+      -topg_to_phi -phi_min 15.0 -phi_max 40.0 -topg_min -300.0 -topg_max 700.0 \
+      -till_effective_fraction_overburden 0.02 \
+      -pseudo_plastic \
+      -pseudo_plastic_q 0.25 \
+      -tauc_slippery_grounding_lines
 
 are a topic for a parameter study (compare :cite:`AschwandenAdalgeirsdottirKhroulev`) or a
 study of their relation to inverse modeling results (e.g. :cite:`Habermannetal2013`).
