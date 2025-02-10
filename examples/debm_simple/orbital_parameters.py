@@ -231,6 +231,8 @@ def orbital_parameters(year, restrict=False):
     # coordinate system to the geocentric ecliptic coordinate system.
     if restrict:
         perihelion_longitude = np.remainder(perihelion_longitude, 2 * np.pi);
+        if perihelion_longitude < 0.0:
+            perihelion_longitude += 2 * np.pi
 
     return eccentricity, obliquity, perihelion_longitude
 
