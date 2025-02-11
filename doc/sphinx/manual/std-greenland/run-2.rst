@@ -51,7 +51,7 @@ When this run is finished it produces ``g20km_10ka_hy.nc``.  As before do
 
 .. code-block:: none
 
-   ncdump -h g20km_10ka_hy.nc |grep history
+   ncdump -h g20km_10ka_hy.nc | grep -E "run_stats:.+hour"
 
 to see performance results for your machine.
 
