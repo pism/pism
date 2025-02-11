@@ -62,9 +62,9 @@ consider setting optional environment variables (see script for meaning):
 
 example usage 1:
 
-    $ ./spinup.sh 4 const 1000 20 sia
+    $ ./spinup.sh 8 const 1000 20 sia
 
-  Does spinup with 4 processors, constant-climate, 1000 year run, 20 km
+  Does spinup with 8 processors, constant-climate, 1000 year run, 20 km
   grid, and non-sliding SIA stress balance.  Bootstraps from and outputs to
   default files.
 

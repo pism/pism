@@ -249,7 +249,7 @@ processes:
 
 .. code-block:: none
 
-   ./spinup.sh 4 125 86 &> out.spin5km &
+   ./spinup.sh 8 125 86 &> out.spin5km &
 
 .. This takes 4.5055 proc-hours on bueler-gazelle
 
@@ -263,7 +263,7 @@ Some more comments on this run are appropriate:
 
   .. code-block:: none
   
-     PISM_DO=echo ./spinup.sh 4 125 86 | less
+     PISM_DO=echo ./spinup.sh 8 125 86 | less
 
 - We use ``-i jako.nc -bootstrap``, so we get to choose our grid, and (as usual in PISM
   with ``-bootstrap``) the fields are interpolated to our grid.
