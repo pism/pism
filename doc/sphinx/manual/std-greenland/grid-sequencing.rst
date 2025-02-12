@@ -26,7 +26,7 @@ Consider the following command and compare it to the :ref:`first one <firstcomma
 
 .. code-block:: none
 
-   mpiexec -n 4 pism \
+   mpiexec -n 8 pism \
            -bootstrap -i pism_Greenland_5km_v1.1.nc \
            -Mx 301 -My 561 \
            -Mz 201 -Lz 4000 -z_spacing equal \
@@ -39,7 +39,7 @@ Instead of a 20 km grid in the horizontal (``-Mx 76 -My 141``) we ask for a 5 km
 (``-Mx 301 -My 561``). Instead of vertical grid resolution of 40 m (``-Mz 101 -z_spacing
 equal -Lz 4000``) we ask for a vertical resolution of 20 m (``-Mz 201 -z_spacing equal -Lz
 4000``).\ [#bootstrapping-grid]_ Most significantly, however, we say ``-regrid_file
-g20km_10ka_hy.nc`` to regrid --- specifically, to bilinearly-interpolate --- fields from a
+g20km_10ka_hy.nc`` to regrid --- to interpolate --- fields from a
 model result computed on the coarser 20 km grid. The regridded fields (``-regrid_vars
 litho_temp,...``) are the evolving mass and energy state variables which are already
 approximately at equilibrium on the coarse grid. Because we are bootstrapping (i.e. using
@@ -75,7 +75,7 @@ options:
 .. code-block:: bash
 
    #!/bin/bash
-   NN=4
+   NN=8
    export PARAM_PPQ=0.5
    export REGRIDFILE=g20km_10ka_hy.nc
    export EXSTEP=100
