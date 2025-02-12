@@ -142,12 +142,15 @@ fi
 
 grid="-grid.registration corner -dx ${dx}km -dy ${dx}km $vgrid -grid.recompute_longitude_and_latitude false"
 
+PHYS="-front_retreat_file ${PISM_DATANAME}"
+
 # set stress balance from argument 5
 if [ -n "${PARAM_SIAE:+1}" ] ; then  # check if env var is already set
-  PHYS="-front_retreat_file ${PISM_DATANAME} -sia_e ${PARAM_SIAE}"
+  PHYS="${PHYS} -sia_e ${PARAM_SIAE}"
 else
-  PHYS="-front_retreat_file ${PISM_DATANAME} -sia_e 3.0"
+  PHYS="${PHYS} -sia_e 3.0"
 fi
+
 if [ -n "${USEPIK:+1}" ] ; then  # check if env var is already set
   PHYS="${PHYS} -pik -subgl"
 fi
