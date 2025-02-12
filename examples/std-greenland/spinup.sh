@@ -118,41 +118,29 @@ FINEVGRID="-Mz 201 -Mbz 21 -z_spacing equal ${VDIMS} ${FINESKIP}"
 FINESTVGRID="-Mz 401 -Mbz 41 -z_spacing equal ${VDIMS} ${FINESTSKIP}"
 if [ "$4" -eq "40" ]; then
   dx=40
-  myMx=38
-  myMy=71
   vgrid=$COARSEVGRID
 elif [ "$4" -eq "20" ]; then
   dx=20
-  myMx=76
-  myMy=141
   vgrid=$COARSEVGRID
 elif [ "$4" -eq "10" ]; then
   dx=10
-  myMx=151
-  myMy=281
   vgrid=$FINEVGRID
 elif [ "$4" -eq "5" ]; then
   # "native" resolution in data file, with 561 x 301 grid
   dx=5
-  myMx=301
-  myMy=561
   vgrid=$FINEVGRID
 elif [ "$4" -eq "3" ]; then
   dx=3
-  myMx=501
-  myMy=934
   vgrid=$FINEVGRID
 elif [ "$4" -eq "2" ]; then
   dx=2
-  myMx=750
-  myMy=1400
   vgrid=$FINESTVGRID
 else
   echo "invalid fourth argument: must be in $GRIDLIST"
   exit
 fi
 
-grid="-Mx $myMx -My $myMy $vgrid -grid.recompute_longitude_and_latitude false -grid.registration corner"
+grid="-grid.registration corner -dx ${dx}km -dy ${dx}km $vgrid -grid.recompute_longitude_and_latitude false"
 
 # set stress balance from argument 5
 if [ -n "${PARAM_SIAE:+1}" ] ; then  # check if env var is already set
