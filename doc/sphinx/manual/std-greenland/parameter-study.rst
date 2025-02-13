@@ -115,7 +115,7 @@ On a supercomputer, the ``runparallel.sh`` script generally should be modified t
 jobs to the scheduler. See example scripts ``advanced/paramspawn.sh`` and
 ``advanced/paramsubmit.sh`` for a parameter study that does this. (But see your system
 administrator if you don't know what a "job scheduler" is!) Of course, if you have a
-supercomputer then you can redo this parameter study on a 5 km grid.
+supercomputer then you can redo this parameter study using a finer grid.
 
 Results from these runs are seen in :numref:`fig-ivolparamstudy` and
 :numref:`fig-paramstudy`. In the former we see that the `(0.5,3)` run simply continues the
@@ -125,7 +125,7 @@ In all cases with `e=1` the flow slows and the sheet grows in volume as discharg
 decreases, while in all cases with `e=6` the flow accelerates and the sheet shrinks in
 volume as discharge increases.
 
-In :numref:`fig-paramstudy` we can compare the surface speed model results to
+In :numref:`fig-paramstudy` we can compare the modeled surface speed to
 observations. Roughly speaking, the ice softness parameter `e` has effects seen
 most-clearly by comparing the interior of the ice sheet; scan left-to-right for the
 `e=1,3,6` subfigures. The basal sliding exponent `q` has effects seen
