@@ -92,7 +92,7 @@ Otherwise you should do them in sequence (this is ``runsequential.sh`` in
 .. literalinclude:: scripts/run-5-serial.sh
    :language: bash
 
-On the same old 2012-era 4 core laptop, ``runsequential.sh`` took a total of just under 7
+On the same old 2020-era 8 core laptop, ``runsequential.sh`` took a total of about 4
 hours to complete the whole parameter study. The runs with `q=0.1` (the more
 "plastic" end of the basal sliding spectrum) took up to four times longer than the
 `q=0.5` and `q=1.0` runs. Roughly speaking, values of `q` which are
@@ -105,7 +105,7 @@ determining run times.
 .. figure:: figures/p10km-comparison.png
    :name: fig-paramstudy
 
-   Surface speed ``velsurf_mag`` from a 10 km grid parameter study. Right-most subfigure
+   Surface speed ``velsurf_mag`` from a 10 km grid parameter study. Right-most sub-figure
    is observed data from ``Greenland_5km_v1.1.nc``. Top row: `q=0.1` and
    `e=1,3,6` (left-to-right). Middle row: `q=0.5`. Bottom row: `q=1.0`.
    All subfigures have common color scale (velocity m/year), as shown in the right-most
