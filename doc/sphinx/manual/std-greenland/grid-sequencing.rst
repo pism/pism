@@ -7,7 +7,7 @@ Grid sequencing
 
 The previous sections were not very ambitious. We were just getting started! Now we
 demonstrate a serious PISM capability, the ability to change, specifically to *refine*,
-the grid resolution at runtime.
+the grid resolution at run time.
 
 One can of course do the longest model runs using a coarse grid, like the 20 km grid used
 first. It is, however, only possible to pick up detail from high quality data, for
@@ -92,6 +92,30 @@ options:
 Environment variable ``EXSTEP`` specifies the time in years between writing the
 spatially-dependent, and large-file-size-generating, frames for the ``-extra_file ...``
 diagnostic output.
+
+.. note::
+
+   As mentioned in section :ref:`sec-sia`, PISM checks if the maximum SIA diffusivity of
+   the flow exceeds the limit set by :config:`stress_balance.sia.max_diffusivity` and
+   stops the run if it does. This protects you (the user) from wasting CPU hours on a
+   possibly flawed simulation -- very high values of SIA diffusivity force PISM's adaptive
+   time stepping mechanism to take very small time steps, significantly increasing the
+   computational cost of a simulation.
+
+   Very high SIA diffusivity can be caused by artifacts in some input fields (bed
+   topography, for example), an incompatibility between some of the inputs (for example:
+   ice thickness and bed topography) or an incompatibility between an input and PISM's
+   modeling assumptions (for example: bed topography or ice thickness representing an ice
+   mass that is not "shallow") -- among other reasons.
+
+   PISM has to deal with such incompatibilities at the start of many interesting
+   simulations. Moreover, we *expect* it to happen during the first few time steps of most
+   non-trivial setups that use realistic ice geometry.
+
+   To allow PISM to proceed until SIA diffusivity decreases to within a reasonable range
+   *without* completely disabling this warning mechanism we add a very short (30 model
+   days) "smoothing" run with :config:`stress_balance.sia.max_diffusivity` set to a very
+   large number.
 
 .. warning::
 
