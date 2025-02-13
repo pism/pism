@@ -109,8 +109,8 @@ Run the script like this:
 
    ./gridseq.sh &> out.gridseq &
 
-The 10 km run takes under two wall-clock hours (8 processor-hours) and the 5 km run takes
-about 6 wall-clock hours (24 processor-hours).
+The 10 km run takes about two thirds of a wall-clock hour (about 5 processor-hours) and
+the 5 km run takes about 1.3 wall-clock hours (about 11 processor-hours).
 
 .. figure:: figures/g40-20-10-5km-detail.png
    :name: fig-gridseqdetail
