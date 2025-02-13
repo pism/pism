@@ -79,8 +79,8 @@ and ``-sia_e 1``.
 
 We have not yet run PISM, but only asked one script to create nine others. We now have the
 option of running them sequentially or in parallel. Each script itself does a parallel
-run, over the ``NN=4`` processes specified by ``param.sh`` when generating the run
-scripts. If you have `4 \times 9 = 36` cores available then you can do the runs
+run, over the ``NN=8`` processes specified by ``param.sh`` when generating the run
+scripts. If you have `8 \times 9 = 72` cores available then you can do these runs
 fully in parallel (this is ``runparallel.sh`` in ``examples/std-greenland/``):
 
 .. literalinclude:: scripts/run-5-parallel.sh
