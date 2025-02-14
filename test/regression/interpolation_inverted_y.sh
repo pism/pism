@@ -30,7 +30,6 @@ common_options="
 -regrid_vars topg
 -stress_balance none
 -surface simple
--verbose 1
 -y 1s
 "
 
