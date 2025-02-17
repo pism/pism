@@ -91,15 +91,13 @@ equations describing
 #. the salt flux balance,
 #. the pressure and salinity dependent freezing point in the boundary layer.
 
-This model is described in :cite:`HollandJenkins1999` and :cite:`Hellmeretal1998`.
+Sub-shelf circulation is not modeled. This model is described in
+:cite:`HollandJenkins1999` and :cite:`Hellmeretal1998`.
 
 Inputs are two-dimensional, possibly time-dependent potential temperature (variable
 :var:`theta_ocean`) and salinity (variable :var:`salinity_ocean`) read from a file
 :config:`ocean.th.file`. A constant salinity (see :config:`constants.sea_water.salinity`)
 is used if the input file does not contain :var:`salinity_ocean`.
-
-No ocean circulation is modeled, so melt water computed by this model is not fed back into
-the surrounding ocean.
 
 This implementation uses different approximations of the temperature gradient at the base
 of an ice shelf column depending on whether there is sub-shelf melt, sub-shelf freeze-on,
