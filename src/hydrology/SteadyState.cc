@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -111,7 +111,7 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
 
   // compute the maximum time step coming from the forcing (water input rate)
   double dt_forcing = 0.0;
-  if (m_time.size() > 0) {
+  if (not m_time.empty()) {
 
     // the right end point of the last time interval in the forcing file
     double t_last = m_time_bounds.back();
