@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021, 2023, 2024, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -313,13 +313,9 @@ void Grid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_pro
 
 //! Compute horizontal grid size. See compute_horizontal_coordinates() for more.
 static unsigned int compute_horizontal_grid_size(double half_width, double dx, bool cell_centered) {
-  auto M = static_cast<unsigned int>(std::floor(half_width / dx));
+  auto M = std::floor(2 * half_width / dx) + (cell_centered ? 0 : 1);
 
-  if (cell_centered) {
-    return 2 * M;
-  }
-
-  return 2 * M + 1;
+  return static_cast<unsigned int>(M);
 }
 
 //! Compute horizontal grid spacing. See compute_horizontal_coordinates() for more.
