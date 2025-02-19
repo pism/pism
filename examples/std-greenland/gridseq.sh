@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# stop on error:
+set -e
+
 NN=8
 export PARAM_PPQ=0.5
 
