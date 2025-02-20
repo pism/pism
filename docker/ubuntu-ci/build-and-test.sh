@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pism_dir=${pism_dir:?Please set pism_dir}
+
 set -x
 set -e
 
@@ -9,11 +11,13 @@ then
 
   if [ ${compiler} == "gcc" ];
   then
+    # available versions: 9 10 11 12 13 14
     version=${version:-14}
     CC=gcc-${version}
     CXX=g++-${version}
   elif [ ${compiler} == "clang" ];
   then
+    # available versions: 14 15 16 17 18
     version=${version:-18}
     CC=clang-${version}
     CXX=clang++-${version}
@@ -23,8 +27,6 @@ fi
 set -u
 
 N=${N:-8}
-
-pism_dir=${pism_dir:?Please set pism_dir}
 
 # The Make target to build
 target=${target:-all}
