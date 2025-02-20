@@ -1,4 +1,6 @@
 ``cmake``, required; used to configure PISM
+``pkg-config``, required; used to configure PISM
+``make``, required; used to build PISM
 ``g++``, required; used to build PISM
 ``git``, required; used to download PISM's source code
 ``libfftw3-dev``, required by PISM
