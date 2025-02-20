@@ -45,6 +45,7 @@ RUN <<EOF
 
     apt-get install -y --no-install-recommends \
     cmake \
+    coreutils \
     libfftw3-dev \
     libgsl-dev \
     libproj-dev \
