@@ -101,7 +101,7 @@ RUN <<EOF
     export MPICXX=mpiicpx
     export build_dir=/var/tmp/build/petsc
     export COPTFLAGS="-O3 -fp-model=precise -march=native -mtune=native"
-    export version=3.19.6
+    export version=3.22.2
 
     /tmp/petsc.sh
 
