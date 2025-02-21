@@ -94,7 +94,7 @@ def preprocess_config(
     pc_vals = np.array(list(config_sorted.values()))
     rs_keys = np.array(list(stats.attrs.keys()))
     rs_vals = np.array(list(stats.attrs.values()))
-
+    
     pism_config = xr.DataArray(
         pc_vals.reshape(-1, 1),
         dims=["pism_config_axis", "exp_id"],
@@ -133,12 +133,12 @@ if __name__ == "__main__":
     m_files = options.FILES
     ds = xr.open_mfdataset(m_files, preprocess=partial(preprocess_config, regexp = "sg_(.+?)_"), decode_cf=True,
                            decode_timedelta=True, parallel=True).squeeze()
-
+    
     m_var = "velsurf_mag"
-    fig = ds[m_var].plot(col="exp_id", vmin=0, vmax=25, cmap="viridis").fig
+    fig = ds[m_var].plot(col="exp_id", vmin=0, vmax=30, cmap="viridis").fig
     res = float(ds.sel({"pism_config_axis": "grid.dx"})["pism_config"].isel({"exp_id": -1}))
     fig.savefig(f"sg_stress_balance_{m_var}_{res}m.png")
     m_var = "velbase_mag"
-    fig = ds[m_var].plot(col="exp_id", vmin=0, vmax=10, cmap="viridis").fig
+    fig = ds[m_var].plot(col="exp_id", vmin=0, vmax=20, cmap="viridis").fig
     res = float(ds.sel({"pism_config_axis": "grid.dx"})["pism_config"].isel({"exp_id": -1}))
     fig.savefig(f"sg_stress_balance_{m_var}_{res}m.png")

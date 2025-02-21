@@ -27,6 +27,9 @@
 # capabilities, that is, we define the modeling domain via a CDL file which is
 # converted to a netCDF file and prescribe the horizontal grid resolution in meters
 # instead of number of grid points.
+# We choose ice flow parameters such that the higher-order model predicts basal and
+# surface speeds in broad agreement with observations while the shallow ice and
+# hybrid model predict speeds higher than observations.
 
 
 # prefix to pism (not to executables)
@@ -46,12 +49,12 @@ bootfile=pism_storglaciaren_3d.nc
 gridfile=grid.nc
 
 # setting up the SIA, Hybrid, and Higher-Order Solver
-sia="-skip -skip_max 250 -stress_balance sia -stress_balance.sia.enhancement_factor 0.1"
-hy="-skip -skip_max 250 -stress_balance ssa+sia -stress_balance.sia.enhancement_factor 0.1"
-ho="-stress_balance blatter -stress_balance.blatter.enhancement_factor 0.1 -stress_balance.blatter.coarsening_factor 4 -blatter_Mz 17 -bp_ksp_type gmres -bp_pc_type mg -bp_pc_mg_levels 3 -bp_mg_levels_ksp_type richardson -bp_mg_levels_pc_type sor -bp_mg_coarse_ksp_type preonly -bp_mg_coarse_pc_type lu -bp_snes_monitor_ratio -bp_ksp_monitor -bp_ksp_view_singularvalues -bp_snes_ksp_ew 1 -bp_snes_ksp_ew_version 3 -time_stepping.adaptive_ratio 250"
+sia="-skip -skip_max 250 -stress_balance sia -stress_balance.sia.enhancement_factor 0.3"
+hy="-skip -skip_max 250 -stress_balance ssa+sia -stress_balance.sia.enhancement_factor 0.3"
+ho="-stress_balance blatter -stress_balance.blatter.enhancement_factor 0.3 -stress_balance.blatter.coarsening_factor 4 -blatter_Mz 17 -bp_ksp_type gmres -bp_pc_type mg -bp_pc_mg_levels 3 -bp_mg_levels_ksp_type richardson -bp_mg_levels_pc_type sor -bp_mg_coarse_ksp_type preonly -bp_mg_coarse_pc_type lu -bp_snes_monitor_ratio -bp_ksp_monitor -bp_ksp_view_singularvalues -bp_snes_ksp_ew 1 -bp_snes_ksp_ew_version 3 -time_stepping.adaptive_ratio 250"
 
 # basal conditions for Hybrid and Higher-Order
-basal="-basal_resistance.pseudo_plastic.enabled yes  -basal_resistance.pseudo_plastic.q 0.75 -basal_resistance.pseudo_plastic.u_threshold 1.0 -basal_yield_stress.mohr_coulomb.till_phi_default 45 -stress_balance.sia.bed_smoother.range 10"
+basal="-basal_resistance.pseudo_plastic.enabled yes  -basal_resistance.pseudo_plastic.q 0.75 -basal_resistance.pseudo_plastic.u_threshold 1.0 -basal_yield_stress.mohr_coulomb.till_phi_default 30 -stress_balance.sia.bed_smoother.range 10"
 
 # Climate forcing
 climate="-surface given,forcing -surface_given_file $bootfile -surface.force_to_thickness.file $bootfile"
@@ -83,6 +86,7 @@ for (( i=1; i<${n}+1; i++ )); do
     infile=$outfile
     outfile=sg_${prefix}_${res}_${y}a.nc
     exfile=ex_$outfile
+    tsfile=ts_$outfile
     grid="-grid.dx $res -grid.dy $res -Mbz 1 -Lz 500 -Mz 51 -z_spacing equal -grid.file $gridfile"
     cmd="mpirun -np $N $PISM -config_override psg_config.nc -bootstrap -i $bootfile -input.regrid.file $infile -input.regrid.vars $regridvars  $climate -y $y $grid  -extra_times 10 -extra_vars usurf,taud_mag,topg,tauc,taud,beta,mask,thk,temppabase,tempicethk_basal,velbase_mag,velsurf_mag,climatic_mass_balance,tillphi -output.extra.stop_missing no -extra_file $exfile -ts_times yearly -ts_file $tsfile -o $outfile $basal $sb"
     $cmd
@@ -93,6 +97,7 @@ for (( i=1; i<${n}+1; i++ )); do
     infile=$outfile
     outfile=sg_${prefix}_${res}_${y}a.nc
     exfile=ex_$outfile
+    tsfile=ts_$outfile
     grid="-grid.dx $res -grid.dy $res -Mbz 1 -Lz 500 -Mz 51 -z_spacing equal -grid.file $gridfile"
     cmd="mpirun -np $N $PISM -config_override psg_config.nc -bootstrap -i $bootfile -input.regrid.file $infile -input.regrid.vars $regridvars  $climate -y $y $grid  -extra_times 1 -extra_vars usurf,taud_mag,topg,tauc,taud,beta,mask,thk,temppabase,tempicethk_basal,velbase_mag,velsurf_mag,climatic_mass_balance,tillphi -output.extra.stop_missing no -extra_file $exfile -ts_times yearly -ts_file $tsfile -o $outfile $basal $sb"
     $cmd
