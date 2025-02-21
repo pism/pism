@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN <<EOF
@@ -11,7 +11,7 @@ RUN <<EOF
     apt-get update
     apt-get install -y --no-install-recommends wget gpg sudo ca-certificates
 
-# See https://www.intel.com/content/www/us/en/docs/oneapi/installation-guide-linux/2024-1/apt.html
+# See https://www.intel.com/content/www/us/en/docs/oneapi/installation-guide-linux/2025-0/apt-005.html
 #
 # download the key to system keyring
     wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
@@ -32,8 +32,8 @@ RUN <<EOF
     apt-get update
 
     apt-get install -y --no-install-recommends \
-    intel-oneapi-compiler-dpcpp-cpp-2024.1 \
-    intel-oneapi-mpi-devel-2021.12 \
+    intel-oneapi-compiler-dpcpp-cpp-2025.0 \
+    intel-oneapi-mpi-devel-2021.14 \
     ""
 
     rm -rf /var/lib/apt/lists/*
@@ -119,7 +119,7 @@ USER worker
 
 # Important parts of ". /opt/intel/oneapi/setvars.sh"
 ENV ONEAPI_ROOT=/opt/intel/oneapi
-ENV LD_LIBRARY_PATH=${ONEAPI_ROOT}/tbb/2021.12/env/../lib/intel64/gcc4.8:${ONEAPI_ROOT}/mpi/2021.12/opt/mpi/libfabric/lib:${ONEAPI_ROOT}/mpi/2021.12/lib:${ONEAPI_ROOT}/mkl/2024.1/lib:${ONEAPI_ROOT}/compiler/2024.1/opt/compiler/lib:${ONEAPI_ROOT}/compiler/2024.1/lib:${ONEAPI_ROOT}/mpi/2021.12/opt/mpi/libfabric/lib:${ONEAPI_ROOT}/mpi/2021.12/lib:${ONEAPI_ROOT}/compiler/2024.1/opt/compiler/lib:${ONEAPI_ROOT}/compiler/2024.1/lib
-ENV I_MPI_ROOT=${ONEAPI_ROOT}/mpi/2021.12
-ENV FI_PROVIDER_PATH=${ONEAPI_ROOT}/mpi/2021.12/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric
-ENV PATH=${ONEAPI_ROOT}/mpi/2021.12/bin:${ONEAPI_ROOT}/mkl/2024.1/bin/:${ONEAPI_ROOT}/compiler/2024.1/bin:${PATH}
+ENV LD_LIBRARY_PATH=${ONEAPI_ROOT}/tbb/2021.14/env/../lib/intel64/gcc4.8:${ONEAPI_ROOT}/mpi/2021.14/opt/mpi/libfabric/lib:${ONEAPI_ROOT}/mpi/2021.14/lib:${ONEAPI_ROOT}/mkl/2025.0/lib:${ONEAPI_ROOT}/compiler/2025.0/opt/compiler/lib:${ONEAPI_ROOT}/compiler/2025.0/lib:${ONEAPI_ROOT}/mpi/2021.14/opt/mpi/libfabric/lib:${ONEAPI_ROOT}/mpi/2021.14/lib:${ONEAPI_ROOT}/compiler/2025.0/opt/compiler/lib:${ONEAPI_ROOT}/compiler/2025.0/lib
+ENV I_MPI_ROOT=${ONEAPI_ROOT}/mpi/2021.14
+ENV FI_PROVIDER_PATH=${ONEAPI_ROOT}/mpi/2021.14/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric
+ENV PATH=${ONEAPI_ROOT}/mpi/2021.14/bin:${ONEAPI_ROOT}/mkl/2025.0/bin/:${ONEAPI_ROOT}/compiler/2025.0/bin:${PATH}
