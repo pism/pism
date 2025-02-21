@@ -1,0 +1,47 @@
+netcdf grid {
+dimensions:
+	x = 1 ;
+	y = 1 ;
+	nv2 = 2 ;
+variables:
+	double x(x) ;
+		x:units = "m" ;
+		x:standard_name = "projection_x_coordinate" ;
+		x:bounds = "x_bnds" ;
+	double x_bnds(x, nv2) ;
+	double y(y) ;
+		y:units = "m" ;
+		y:standard_name = "projection_y_coordinate" ;
+		y:bounds = "y_bnds" ;
+	double y_bnds(y, nv2) ;
+	byte domain ;
+		domain:dimensions = "x y" ;
+		domain:grid_mapping = "mapping" ;
+	byte mapping ;
+		mapping:crs_wkt = "PROJCS[\"RT90 2.5 gon V\",GEOGCS[\"RT90\",DATUM[\"Rikets_koordinatsystem_1990\",SPHEROID[\"Bessel 1841\",6377397.155,299.1528128,AUTHORITY[\"EPSG\",\"7004\"]],AUTHORITY[\"EPSG\",\"6124\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4124\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",15.8082777777778],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",1500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Northing\",NORTH],AXIS[\"Easting\",EAST],AUTHORITY[\"EPSG\",\"3021\"]]" ;
+		mapping:semi_major_axis = 6377397.155 ;
+		mapping:semi_minor_axis = 6356078.96281819 ;
+		mapping:inverse_flattening = 299.1528128 ;
+		mapping:reference_ellipsoid_name = "Bessel 1841" ;
+		mapping:longitude_of_prime_meridian = 0. ;
+		mapping:prime_meridian_name = "Greenwich" ;
+		mapping:geographic_crs_name = "RT90" ;
+		mapping:horizontal_datum_name = "Rikets koordinatsystem 1990" ;
+		mapping:projected_crs_name = "RT90 2.5 gon V" ;
+		mapping:grid_mapping_name = "transverse_mercator" ;
+		mapping:latitude_of_projection_origin = 0. ;
+		mapping:longitude_of_central_meridian = 15.8082777777778 ;
+		mapping:false_easting = 1500000. ;
+		mapping:false_northing = 0. ;
+		mapping:scale_factor_at_central_meridian = 1. ;
+		mapping:mapping = "PROJCS[\"RT90 2.5 gon V\",GEOGCS[\"RT90\",DATUM[\"Rikets_koordinatsystem_1990\",SPHEROID[\"Bessel 1841\",6377397.155,299.1528128,AUTHORITY[\"EPSG\",\"7004\"]],AUTHORITY[\"EPSG\",\"6124\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4124\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",15.8082777777778],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",1500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Northing\",NORTH],AXIS[\"Easting\",EAST],AUTHORITY[\"EPSG\",\"3021\"]]" ;
+data:
+ x_bnds =
+  1614135, 1618455 ;
+ y_bnds =
+  7536095, 7538495 ;
+
+ domain = 0 ;
+
+ mapping = 0 ;
+}

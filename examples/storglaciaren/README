@@ -2,7 +2,6 @@ PISM Storglaciaren example.
 
 Here we provide a 3D example that uses cryo-hydrologic warming. To get started, run:
   $ ./preprocess.sh
-  $ ./sg_create_3d.py
 
 Then spinup the test case by running:
 

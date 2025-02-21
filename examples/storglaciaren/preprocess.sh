@@ -1,19 +1,29 @@
 #!/bin/bash
+#
+# Copyright (C) 2025 Andy Aschwanden
+#
+# This file is part of PISM.
+#
+# PISM is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
+#
+# PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PISM; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-./sg_create_flowline.py
-DATANAME=storglaciaren_flowline.nc
-PISM_DATANAME=pism_$DATANAME
-pism_flowline -e -o $PISM_DATANAME $DATANAME
 
-
+# Prepare 3D geometry
 ./sg_create_3d.py
-ncap2 -O -s "where(thk>0) ftt_mask=0;" pism_storglaciaren_3d.nc pism_storglaciaren_mask.nc
-ncap2 -O  -s "ice_area_specific_volume=0*ftt_mask;  tillwat=0*ftt_mask;" pism_storglaciaren_3d.nc  pism_storglaciaren_3d.nc
-ncatted -a units,ice_area_specific_volume,o,c,"m^3/m^2" -a units,tillwat,o,c,"m" pism_storglaciaren_3d.nc
-
-./create_warming_climate.py sg_warming_1K.nc
 
 # config file
-CDLCONFIG=psg_config.cdl
-PCONFIG=psg_config.nc
-ncgen -o $PCONFIG $CDLCONFIG
+ncgen3 -o psg_config.nc psg_config.cdl
+
+# config file
+ncgen3 -o grid.nc grid.cdl
