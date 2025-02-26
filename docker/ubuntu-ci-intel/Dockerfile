@@ -44,16 +44,29 @@ RUN <<EOF
     apt-get update
 
     apt-get install -y --no-install-recommends \
+    autoconf \
+    automake \
+    cdo \
     cmake \
     coreutils \
+    cython3 \
+    git \
     libfftw3-dev \
     libgsl-dev \
     libproj-dev \
     libudunits2-dev \
     m4 \
     make \
+    nco \
     pkg-config \
     python3 \
+    python3-dev \
+    python3-netcdf4 \
+    python3-nose \
+    python3-numpy \
+    python3-scipy \
+    python3-setuptools \
+    swig \
     ""
 
     rm -rf /var/lib/apt/lists/*
@@ -108,6 +121,9 @@ RUN <<EOF
     rm -rf ${build_dir}
     rm -rf /opt/petsc/share/petsc
 EOF
+
+ENV PETSC_DIR="/opt/petsc" \
+    PYTHONPATH="/opt/petsc/lib"
 
 ENV PATH="/opt/hdf5/bin:/opt/netcdf/bin:/opt/petsc/bin:$PATH"
 
