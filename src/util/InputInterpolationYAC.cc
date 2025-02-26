@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 PISM Authors
+/* Copyright (C) 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -347,7 +347,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
       int comp_ids[n_comps]           = { 0, 0 };
       yac_cdef_comps_instance(m_instance_id, comp_names, n_comps, comp_ids);
 
-      double source_resolution = 0.0;
+      double source_grid_spacing = 0.0;
       log->message(2, "Defining the source grid (%s)...\n", source_grid_name.c_str());
       {
         auto x = grid_subset(source_grid->xs(), source_grid->xm(), source_grid_info.x);
@@ -365,11 +365,11 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
           dx = std::abs(x[1] - x[0]);
           dy = std::abs(y[1] - y[0]);
         }
-        source_resolution = GlobalMin(ctx->com(), std::min(dx, dy));
-        log->message(2, " Source grid resolution: ~%3.3f m\n", source_resolution);
+        source_grid_spacing = GlobalMin(ctx->com(), std::min(dx, dy));
+        log->message(2, " Source grid spacing: ~%3.3f m\n", source_grid_spacing);
       }
 
-      double target_resolution = 0.0;
+      double target_grid_spacing = 0.0;
       log->message(2, "Defining the target grid (%s)...\n", target_grid_name.c_str());
       {
         auto x = grid_subset(target_grid.xs(), target_grid.xm(), target_grid.x());
@@ -378,8 +378,8 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
         m_target_field_id = define_field(
             comp_ids[1], x, y, target_grid.get_mapping_info().proj_string, target_grid_name);
 
-        target_resolution = GlobalMin(ctx->com(), std::min(target_grid.dx(), target_grid.dy()));
-        log->message(2, " Target grid resolution: %3.3f m\n", target_resolution);
+        target_grid_spacing = GlobalMin(ctx->com(), std::min(target_grid.dx(), target_grid.dy()));
+        log->message(2, " Target grid spacing: %3.3f m\n", target_grid_spacing);
       }
 
       // Define the interpolation stack:
@@ -402,7 +402,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
           }
         } else {
           int partial_coverage = 0;
-          if (source_resolution < target_resolution) {
+          if (source_grid_spacing < target_grid_spacing) {
             method = "1st order conservative";
 
             int order                = 1;
