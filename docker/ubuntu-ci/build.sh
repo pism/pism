@@ -25,8 +25,7 @@ build_dir=${build_dir:-/tmp/pism-build}
 lib_prefix=${lib_prefix:-$HOME/local}
 
 # PETSc directory to use
-PETSC_DIR=${petsc_dir:-${lib_prefix}/petsc}
-export PETSC_DIR
+export PETSC_DIR=${petsc_dir:-${lib_prefix}/petsc}
 
 # Build Python bindings?
 python=${python:-YES}
@@ -41,25 +40,23 @@ yac_dir=${lib_prefix}/yac
 
 git config --global --add safe.directory ${source_dir}
 
-mkdir -p ${build_dir}
-
 ${CMAKE_PREFIX}/bin/cmake -S ${source_dir} \
                -B ${build_dir} \
                -DCMAKE_BUILD_TYPE=Debug \
                -DCMAKE_CXX_FLAGS="-Werror" \
                -DCMAKE_C_FLAGS="-Werror" \
                -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
+               -DCMAKE_INSTALL_PREFIX=${install_dir} \
                -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" \
-               -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" \
                -DCMAKE_PREFIX_PATH="${hdf5_dir};${netcdf_dir};${pnetcdf_dir};${yac_dir}" \
-               -DPism_BUILD_PYTHON_BINDINGS=${python} \
+               -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" \
                -DPism_BUILD_EXTRA_EXECS=YES \
-               -DPism_PEDANTIC_WARNINGS=YES \
                -DPism_BUILD_ICEBIN=YES \
-               -DPism_USE_PROJ=YES \
+               -DPism_BUILD_PYTHON_BINDINGS=${python} \
+               -DPism_PEDANTIC_WARNINGS=YES \
                -DPism_USE_PARALLEL_NETCDF4=YES \
                -DPism_USE_PNETCDF=YES \
-               -DPism_USE_YAC_INTERPOLATION=YES \
-               -DCMAKE_INSTALL_PREFIX=${install_dir}
+               -DPism_USE_PROJ=YES \
+               -DPism_USE_YAC_INTERPOLATION=YES
 
 make --no-print-directory -C ${build_dir} -j ${N} ${target}
