@@ -13,7 +13,7 @@ jobs:
 
   build:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.12
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     parameters:
       version:                  # this parameter is needed to make a valid config (it is
@@ -50,7 +50,7 @@ jobs:
 
   build-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.12
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     parameters:
       cc:
@@ -85,7 +85,7 @@ jobs:
 
   manual-html:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.12
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     steps:
       - checkout
@@ -133,7 +133,7 @@ jobs:
 
   manual-pdf:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.12
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     steps:
       - checkout
@@ -180,7 +180,7 @@ jobs:
 
   doxygen:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.12
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     environment:
       LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf"
