@@ -7,8 +7,8 @@ set -x
 # Install PETSc in /opt/petsc using /var/tmp/build/petsc as the build
 # directory.
 
-MPICC=${MPICC:-mpiicx}
-MPICXX=${MPICXX:-mpiicx}
+CC=${CC:-mpiicx}
+CXX=${CXX:-mpiicx}
 COPTFLAGS=${COPTFLAGS:--O3 -march=native -mtune=native -fp-model=precise}
 
 build_dir=${build_dir:-/var/tmp/build/petsc}
@@ -31,8 +31,8 @@ PETSC_ARCH="linux-opt"
 python3 ./configure \
         COPTFLAGS="${COPTFLAGS}" \
         --prefix=${prefix} \
-        --with-cc="${MPICC}" \
-        --with-cxx="${MPICXX}" \
+        --with-cc="${CC}" \
+        --with-cxx="${CXX}" \
         --with-debugging=0 \
         --with-fc=0 \
         --with-petsc4py \

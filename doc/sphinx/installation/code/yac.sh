@@ -4,11 +4,20 @@ set -u
 set -e
 set -x
 
-rm -rf yaxt
-rm -rf yac
+build_dir=${build_dir:-.}
+
+rm -rf ${build_dir}/yaxt
+rm -rf ${build_dir}/yac
+
+mkdir -p ${build_dir}
+cd ${build_dir}
 
 # manual-begin
-prefix=$HOME/local/yac
+export CC=${CC:-mpicc}
+export FC=${FC:-mpifort}
+export CFLAGS="-O3 -g -march=native"
+
+prefix=${prefix:-$HOME/local/yac}
 
 yaxt_version=0.11.3
 git clone -b release-${yaxt_version} \
@@ -17,8 +26,6 @@ git clone -b release-${yaxt_version} \
 cd yaxt
 
 autoreconf -i
-
-export CC=mpicc FC=mpifort CFLAGS="-O3 -g -march=native"
 
 ./configure --prefix=${prefix} \
             --with-pic
@@ -34,8 +41,6 @@ git clone -b release-${yac_version} \
 cd yac
 
 test -f ./configure || ./autogen.sh
-
-export CC=mpicc FC=mpifort CFLAGS="-O3 -g -march=native"
 
 ./configure --prefix=${prefix} \
             --with-yaxt-root=${prefix} \

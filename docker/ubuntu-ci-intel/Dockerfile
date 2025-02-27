@@ -33,6 +33,7 @@ RUN <<EOF
 
     apt-get install -y --no-install-recommends \
     intel-oneapi-compiler-dpcpp-cpp-2025.0 \
+    intel-oneapi-compiler-fortran-2025.0 \
     intel-oneapi-mpi-devel-2021.14 \
     ""
 
@@ -52,8 +53,10 @@ RUN <<EOF
     cython3 \
     git \
     libfftw3-dev \
+    libfyaml-dev \
     libgsl-dev \
     libproj-dev \
+    libtool \
     libudunits2-dev \
     m4 \
     make \
@@ -83,12 +86,28 @@ RUN <<EOF
     . /opt/intel/oneapi/setvars.sh
 
     set -eux
-    export MPICC=mpiicx
+    export CC=mpiicx
+    export CXX=mpiicpx
     export build_dir=/var/tmp/build/hdf5
+    export prefix=/opt/hdf5
 
     /tmp/hdf5.sh
     rm -rf ${build_dir}
     rm -rf /opt/hdf5/share/hdf5_examples
+EOF
+
+COPY pnetcdf.sh /tmp/
+RUN <<EOF
+    echo "Install PnetCDF"
+    . /opt/intel/oneapi/setvars.sh
+
+    set -eux
+    export CC=mpiicx
+    export build_dir=/var/tmp/build/pnetcdf
+    export prefix=/opt/pnetcdf
+
+    /tmp/pnetcdf.sh
+    rm -rf ${build_dir}
 EOF
 
 COPY netcdf.sh /tmp/
@@ -97,10 +116,27 @@ RUN <<EOF
     . /opt/intel/oneapi/setvars.sh
 
     set -eux
-    export MPICC=mpiicx
+    export CC=mpiicx
     export build_dir=/var/tmp/build/netcdf
+    export lib_dir=/opt
+    export prefix=/opt/netcdf
 
     /tmp/netcdf.sh
+    rm -rf ${build_dir}
+EOF
+
+COPY yac.sh /tmp/
+RUN <<EOF
+    echo "Install YAC"
+    . /opt/intel/oneapi/setvars.sh
+
+    set -eux
+    export CC=mpiicx
+    export FC=mpiifx
+    export build_dir=/var/tmp/build/netcdf
+    export prefix=/opt/yac
+
+    /tmp/yac.sh
     rm -rf ${build_dir}
 EOF
 
@@ -110,9 +146,10 @@ RUN <<EOF
     . /opt/intel/oneapi/setvars.sh
 
     set -eux
-    export MPICC=mpiicx
-    export MPICXX=mpiicpx
+    export CC=mpiicx
+    export CXX=mpiicpx
     export build_dir=/var/tmp/build/petsc
+    export prefix=/opt/petsc
     export COPTFLAGS="-O3 -fp-model=precise -march=native -mtune=native"
     export version=3.22.2
 
