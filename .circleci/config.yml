@@ -276,6 +276,22 @@ jobs:
       - store_artifacts:
           path: /tmp/package
 
+  build-and-test-with-intel-oneapi:
+    docker:
+      - image: ckhrulev/pism-ubuntu-intel:0.2.0
+
+    environment:
+      source_dir: /home/worker/project
+
+    steps:
+      - checkout
+      - run:
+          name: Build PISM
+          command: bash -x ./docker/ubuntu-ci-intel/build.sh
+      - run:
+          name: Run regression tests
+          command: bash -x ./docker/ubuntu-ci-intel/run-tests.sh
+
 workflows:
   version: 2
   build-and-test:
@@ -351,6 +367,7 @@ workflows:
       - manual-pdf
       - doxygen
       - build-and-test-with-ubuntu-libs
+      - build-and-test-with-intel-oneapi
       - build-deb-package
 
       - deploy-p:
@@ -374,6 +391,9 @@ workflows:
             - manual-html
             - manual-pdf
             - doxygen
+            - build-and-test-with-ubuntu-libs
+            - build-deb-package
+            - build-and-test-with-intel-oneapi
           filters:
             branches:
               only: main
