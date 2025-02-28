@@ -69,6 +69,7 @@ RUN <<EOF
     python3-numpy \
     python3-scipy \
     python3-setuptools \
+    ssh \
     swig \
     ""
 
