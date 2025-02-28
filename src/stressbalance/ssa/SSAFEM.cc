@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2025 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -560,8 +560,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
     // interval length does not matter here
     fem::Gaussian2 Q(1.0);
 
-    for (int i : {0, 1}) {      // 2 functions
-      for (int j : {0, 1}) {    // 2 quadrature points
+    for (int i = 0; i < 2; ++i) {      // 2 functions
+      for (int j = 0; j < 2; ++j) {    // 2 quadrature points
         chi_b[i][j] = fem::linear::chi(i, Q.point(j)).val;
       }
     }
