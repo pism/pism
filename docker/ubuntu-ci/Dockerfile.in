@@ -42,6 +42,7 @@ RUN set -eux; \
     clang-16 \
     clang-17 \
     clang-18 \
+    clang-tools-18 \
     cython3 \
     doxygen \
     g++-10 \
