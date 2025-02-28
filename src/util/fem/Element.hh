@@ -199,9 +199,16 @@ public:
       dy[q]   = 0.0;
       for (unsigned int k = 0; k < m_n_chi; k++) {
         const Germ &psi = m_germs[q * m_n_chi + k];
-        vals[q] += psi.val * x[k];
-        dx[q]   += psi.dx  * x[k];
-        dy[q]   += psi.dy  * x[k];
+#ifdef __clang_analyzer__
+        // suppress false positive Clang static analyzer warnings about x[k] below being
+        // garbage
+        [[clang::suppress]]
+#endif
+        {
+          vals[q] += psi.val * x[k];
+          dx[q] += psi.dx * x[k];
+          dy[q] += psi.dy * x[k];
+        }
       }
     }
   }
