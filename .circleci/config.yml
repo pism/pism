@@ -292,6 +292,16 @@ jobs:
           name: Run regression tests
           command: bash -x ./docker/ubuntu-ci-intel/run-tests.sh
 
+  clang-static-analyzer:
+    docker:
+      - image: ckhrulev/pism-ubuntu:0.1.13
+
+    steps:
+      - checkout
+      - run:
+          name: Run Clang's static analyzer
+          command: bash -x ./docker/ubuntu-ci/static-analyzer.sh
+
 workflows:
   version: 2
   build-and-test:
@@ -369,6 +379,7 @@ workflows:
       - build-and-test-with-ubuntu-libs
       - build-and-test-with-intel-oneapi
       - build-deb-package
+      - clang-static-analyzer
 
       - deploy-p:
           requires:
@@ -385,6 +396,7 @@ workflows:
             - clang-17
             - clang-18
             - clang-minimal
+            - clang-static-analyzer
             - old-petsc
             - old-cmake
             - old-cmake-minimal
