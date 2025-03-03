@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -387,7 +387,7 @@ private:
 
 namespace grid {
 
-std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
+std::vector<double> compute_vertical_levels(double new_Lz, size_t new_Mz,
                                             grid::VerticalSpacing spacing, double Lambda = 0.0);
 
 //! Returns the distance from the point (i,j) to the origin.

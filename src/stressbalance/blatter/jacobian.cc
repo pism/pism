@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,7 @@
 
 #include "pism/stressbalance/blatter/util/DataAccess.hh"
 #include "pism/stressbalance/blatter/util/grid_hierarchy.hh"    // grid_transpose(), grid_z()
+#include "pism/util/fem/Quadrature.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -50,7 +51,7 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
   element.evaluate(B_nodal, B);
 
   // loop over all quadrature points
-  for (int q = 0; q < element.n_pts(); ++q) {
+  for (unsigned int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q) / m_scaling;
 
     double
@@ -136,7 +137,7 @@ void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
   face.evaluate(tauc_nodal, tauc);
   face.evaluate(f_nodal, floatation);
 
-  for (int q = 0; q < face.n_pts(); ++q) {
+  for (unsigned int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q) / m_scaling;
 
     bool grounded = floatation[q] <= 0.0;

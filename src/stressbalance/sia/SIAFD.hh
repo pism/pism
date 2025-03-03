@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019, 2021, 2022, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -100,7 +100,7 @@ protected:
   virtual void compute_3d_horizontal_velocity(const Geometry &geometry,
                                               const array::Staggered &h_x,
                                               const array::Staggered &h_y,
-                                              const array::Vector &vel_input,
+                                              const array::Vector &sliding_velocity,
                                               array::Array3D &u_out, array::Array3D &v_out);
 
   virtual void compute_I(const Geometry &geometry);

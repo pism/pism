@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2019, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2019, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,8 +23,6 @@
 #include "pism/util/Time.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/pism_config.hh"
 #include <memory>
 
 namespace pism {
@@ -137,12 +135,12 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com,
   }
 
   // time manager
-  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
+  auto time = std::make_shared<Time>(com, config, *logger, sys);
 
   // enthalpy converter
-  EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
+  auto EC = std::make_shared<EnthalpyConverter>(*config);
 
-  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
+  return std::make_shared<Context>(com, sys, config, EC, time, logger, prefix);
 }
 
 

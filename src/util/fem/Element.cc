@@ -20,6 +20,7 @@
 #include <cmath>                // std::sqrt()
 
 #include "pism/util/fem/Element.hh"
+#include "pism/util/fem/Quadrature.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"

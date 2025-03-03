@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2022  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2022, 2025  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,10 @@
 #ifndef PISM_IPFUNCTIONAL_H
 #define PISM_IPFUNCTIONAL_H
 
-#include "pism/util/fem/FEM.hh"
+#include "pism/util/fem/Element.hh"
+#include "pism/util/fem/Quadrature.hh"
+#include "pism/util/fem/ElementIterator.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,6 @@
 #include <cassert>
 
 #include "pism/util/petscwrappers/DM.hh"
-#include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/connected_components/label_components.hh"
 
 #include "pism/frontretreat/util/IcebergRemoverFEM.hh"
@@ -29,6 +28,7 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Interpolation1D.hh"
+#include "pism/util/fem/Quadrature.hh"
 
 namespace pism {
 namespace calving {

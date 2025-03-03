@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -228,12 +228,10 @@ static double shelf_base_melt_rate(GivenTH::Constants c,
  *
  * @return 0 on success
  */
-void GivenTH::pointwise_update(const Constants &constants,
-                                 double sea_water_salinity,
-                                 double sea_water_potential_temperature,
-                                 double thickness,
-                                 double *shelf_base_temperature_out,
-                                 double *shelf_base_melt_rate_out) {
+void GivenTH::pointwise_update(const Constants &constants, double sea_water_salinity,
+                               double sea_water_potential_temperature, double thickness,
+                               double *shelf_base_temperature_out,
+                               double *shelf_base_melt_rate_out) {
 
   assert(thickness >= 0.0);
 
@@ -243,7 +241,7 @@ void GivenTH::pointwise_update(const Constants &constants,
     min_salinity = 4.0,
     max_salinity = 40.0;
 
-  if (constants.limit_salinity_range == true) {
+  if (constants.limit_salinity_range) {
     if (sea_water_salinity < min_salinity) {
       sea_water_salinity = min_salinity;
     } else if (sea_water_salinity > max_salinity) {
@@ -257,7 +255,7 @@ void GivenTH::pointwise_update(const Constants &constants,
 
   // Clip basal salinity so that we can use the freezing point
   // temperature parameterization to recover shelf base temperature.
-  if (constants.limit_salinity_range == true) {
+  if (constants.limit_salinity_range) {
     if (basal_salinity <= min_salinity) {
       basal_salinity = min_salinity;
     } else if (basal_salinity >= max_salinity) {
@@ -287,11 +285,10 @@ void GivenTH::pointwise_update(const Constants &constants,
  *
  * @return 0 on success
  */
-void GivenTH::subshelf_salinity(const Constants &c,
-                                            double sea_water_salinity,
-                                            double sea_water_potential_temperature,
-                                            double thickness,
-                                            double *shelf_base_salinity) {
+void GivenTH::subshelf_salinity(const Constants &c, double sea_water_salinity,
+                                double sea_water_potential_temperature, double thickness,
+                                double *shelf_base_salinity) {
+
   double basal_salinity = sea_water_salinity;
 
   // first, assume that there is melt at the shelf base:
@@ -367,11 +364,9 @@ void GivenTH::subshelf_salinity(const Constants &c,
  *
  * @return 0 on success
  */
-void GivenTH::subshelf_salinity_melt(const Constants &c,
-                                                 double sea_water_salinity,
-                                                 double sea_water_potential_temperature,
-                                                 double thickness,
-                                                 double *shelf_base_salinity) {
+void GivenTH::subshelf_salinity_melt(const Constants &c, double sea_water_salinity,
+                                     double sea_water_potential_temperature, double thickness,
+                                     double *shelf_base_salinity) {
 
   const double
     c_pI    = c.ice_specific_heat_capacity,
@@ -424,11 +419,9 @@ void GivenTH::subshelf_salinity_melt(const Constants &c,
  *
  * @return 0 on success
  */
-void GivenTH::subshelf_salinity_freeze_on(const Constants &c,
-                                                      double sea_water_salinity,
-                                                      double sea_water_potential_temperature,
-                                                      double thickness,
-                                                      double *shelf_base_salinity) {
+void GivenTH::subshelf_salinity_freeze_on(const Constants &c, double sea_water_salinity,
+                                          double sea_water_potential_temperature, double thickness,
+                                          double *shelf_base_salinity) {
 
   const double
     c_pW    = c.sea_water_specific_heat_capacity,
@@ -484,11 +477,10 @@ void GivenTH::subshelf_salinity_freeze_on(const Constants &c,
  *
  * @return 0 on success
  */
-void GivenTH::subshelf_salinity_diffusion_only(const Constants &c,
-                                                           double sea_water_salinity,
-                                                           double sea_water_potential_temperature,
-                                                           double thickness,
-                                                           double *shelf_base_salinity) {
+void GivenTH::subshelf_salinity_diffusion_only(const Constants &c, double sea_water_salinity,
+                                               double sea_water_potential_temperature,
+                                               double thickness, double *shelf_base_salinity) {
+
   const double
     c_pI    = c.ice_specific_heat_capacity,
     c_pW    = c.sea_water_specific_heat_capacity,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #define PISM_QUADRATURE_H
 
 #include "pism/util/fem/FEM.hh"
+#include <vector>
 
 namespace pism {
 namespace fem {

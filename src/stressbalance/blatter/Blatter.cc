@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,6 +37,7 @@
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh" // pism::printf()
+#include "pism/util/fem/Quadrature.hh"
 
 namespace pism {
 namespace stressbalance {

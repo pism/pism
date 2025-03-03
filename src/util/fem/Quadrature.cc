@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2023 PISM Authors
+/* Copyright (C) 2020, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,7 @@
  */
 
 #include "pism/util/fem/Quadrature.hh"
+#include <cmath>
 
 namespace pism {
 namespace fem {

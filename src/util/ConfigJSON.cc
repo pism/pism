@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2016, 2018, 2023, 2024 PISM Authors
+/* Copyright (C) 2014, 2016, 2018, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -170,10 +170,10 @@ static PISMType get_value(json_t *object, const std::string &name,
   TMPType tmp;
   if (json_unpack(value, fmt, &tmp) == 0) {
     return tmp;
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "failed to convert %s to a %s", name.c_str(), type_name);
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to convert %s to a %s", name.c_str(),
+                                type_name);
 }
 
 /*! Store a 'value' corresponding to the key 'name' in the database 'data'.

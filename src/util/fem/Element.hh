@@ -26,7 +26,7 @@
 
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/Vector2d.hh"
-#include "pism/util/petscwrappers/Mat.hh" // Mat, MatStencil
+#include <petscmat.h>
 
 
 namespace pism {
@@ -77,7 +77,7 @@ public:
   }
 
   //! Number of quadrature points
-  int n_pts() const {
+  unsigned int n_pts() const {
     return m_Nq;
   }
 
@@ -408,7 +408,7 @@ public:
   Q1Element3Face(double dx, double dy, const Quadrature &quadrature);
 
   //! Number of quadrature points
-  int n_pts() const {
+  unsigned int n_pts() const {
     return m_Nq;
   }
   double weight(unsigned int q) const {

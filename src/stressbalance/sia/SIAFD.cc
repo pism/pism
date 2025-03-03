@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2023 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2023, 2025 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -657,7 +657,8 @@ void SIAFD::compute_diffusivity(bool full_update, const Geometry &geometry,
           stress[k] = alpha * pressure[k];
         }
 
-        m_flow_law->flow_n(&stress[0], &E[0], &pressure[0], &ice_grain_size[0], ks + 1, &flow[0]);
+        m_flow_law->flow_n(stress.data(), E.data(), pressure.data(), ice_grain_size.data(), ks + 1,
+                           flow.data());
 
         const double theta_local = 0.5 * (theta(i, j) + theta(i + oi, j + oj));
         for (int k = 0; k <= ks; ++k) {
@@ -708,7 +709,7 @@ void SIAFD::compute_diffusivity(bool full_update, const Geometry &geometry,
           for (unsigned int k = ks + 1; k < Mz; ++k) {
             delta_ij[k] = 0.0;
           }
-          delta[o]->set_column(i, j, &delta_ij[0]);
+          delta[o]->set_column(i, j, delta_ij.data());
         }
       } // i, j-loop
     } catch (...) {

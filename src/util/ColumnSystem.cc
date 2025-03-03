@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 PISM Authors
+// Copyright (C) 2004-2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -286,7 +286,7 @@ const std::vector<double>& columnSystemCtx::z() const {
 
 void columnSystemCtx::fine_to_coarse(const std::vector<double> &input, int i, int j,
                                      array::Array3D& output) const {
-  m_interp->fine_to_coarse(&input[0], output.get_column(i, j));
+  m_interp->fine_to_coarse(input.data(), output.get_column(i, j));
 }
 
 void columnSystemCtx::coarse_to_fine(const array::Array3D &input, int i, int j,

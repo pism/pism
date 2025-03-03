@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,11 +22,12 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/fem/DirichletData.hh"
+#include "pism/util/fem/Quadrature.hh"
 
 namespace pism {
 namespace inverse {
@@ -524,7 +525,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
     dzeta_a[j][i] *= dtauc_dzeta;
   }
 
-  if (m_fixed_tauc_locations) {
+  if (m_fixed_tauc_locations != nullptr) {
     fem::DirichletData_Scalar fixedTauc(m_fixed_tauc_locations, NULL);
     fixedTauc.fix_residual_homogeneous(dzeta_a);
   }
@@ -570,12 +571,12 @@ void IP_SSATaucForwardProblem::apply_linearization(array::Scalar &dzeta, array::
                                   "IP_SSATaucForwardProblem::apply_linearization solve"
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
-  } else {
-    m_log->message(4,
-                   "IP_SSATaucForwardProblem::apply_linearization converged"
-                   " (KSP reason %s)\n",
-                   KSPConvergedReasons[reason]);
   }
+
+  m_log->message(4,
+                 "IP_SSATaucForwardProblem::apply_linearization converged"
+                 " (KSP reason %s)\n",
+                 KSPConvergedReasons[reason]);
 
   du.copy_from(m_du_global);
 }
@@ -637,12 +638,12 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(array::Vector &du,
                                   "IP_SSATaucForwardProblem::apply_linearization solve"
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
-  } else {
-    m_log->message(4,
-                   "IP_SSATaucForwardProblem::apply_linearization converged"
-                   " (KSP reason %s)\n",
-                   KSPConvergedReasons[reason]);
   }
+
+  m_log->message(4,
+                 "IP_SSATaucForwardProblem::apply_linearization converged"
+                 " (KSP reason %s)\n",
+                 KSPConvergedReasons[reason]);
 
   this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta);
   dzeta.scale(-1);

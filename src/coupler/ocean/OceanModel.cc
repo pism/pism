@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -215,7 +215,8 @@ TSDiagnosticList OceanModel::ts_diagnostics_impl() const {
 }
 
 void compute_average_water_column_pressure(const Geometry &geometry, double ice_density,
-                                           double water_density, double g, array::Scalar &result) {
+                                           double water_density, double standard_gravity,
+                                           array::Scalar &result) {
 
   auto grid = result.grid();
 
@@ -230,7 +231,7 @@ void compute_average_water_column_pressure(const Geometry &geometry, double ice_
       const int i = p.i(), j = p.j();
 
       result(i, j) = pism::average_water_column_pressure(H(i, j), bed(i, j), z_s(i, j), ice_density,
-                                                         water_density, g);
+                                                         water_density, standard_gravity);
     }
   } catch (...) {
     loop.failed();

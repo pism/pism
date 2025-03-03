@@ -16,6 +16,7 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <cassert>
 
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/node_types.hh"
@@ -102,13 +103,13 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
 
 } // end of namespace p1
 
-ElementType element_type(int node_type[q1::n_chi]) {
+ElementType element_type(const int node_type[q1::n_chi]) {
 
   // number of exterior nodes in this element
-  const int n_exterior_nodes = ((node_type[0] == NODE_EXTERIOR) +
-                                (node_type[1] == NODE_EXTERIOR) +
-                                (node_type[2] == NODE_EXTERIOR) +
-                                (node_type[3] == NODE_EXTERIOR));
+  const int n_exterior_nodes = (static_cast<int>(node_type[0] == NODE_EXTERIOR) +
+                                static_cast<int>(node_type[1] == NODE_EXTERIOR) +
+                                static_cast<int>(node_type[2] == NODE_EXTERIOR) +
+                                static_cast<int>(node_type[3] == NODE_EXTERIOR));
 
   // an element is a "Q1 interior" if all its nodes are interior or boundary
   if (n_exterior_nodes == 0) {

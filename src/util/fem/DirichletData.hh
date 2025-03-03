@@ -20,7 +20,7 @@
 #define PISM_DIRICHLETDATA_H
 
 #include "pism/util/fem/FEM.hh"
-#include "pism/util/petscwrappers/Mat.hh" // Mat
+#include <petscmat.h>
 #include "pism/util/Vector2d.hh"
 
 namespace pism {
@@ -63,7 +63,7 @@ public:
 
   void enforce(const Element2 &element, double* x_e);
   void enforce_homogeneous(const Element2 &element, double* x_e);
-  void fix_residual(double const *const *const x_global, double **r_global);
+  void fix_residual(double const *const * x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
 protected:
@@ -78,7 +78,7 @@ public:
 
   void enforce(const Element2 &element, Vector2d* x_e);
   void enforce_homogeneous(const Element2 &element, Vector2d* x_e);
-  void fix_residual(Vector2d const *const *const x_global, Vector2d **r_global);
+  void fix_residual(Vector2d const *const * x_global, Vector2d **r_global);
   void fix_residual_homogeneous(Vector2d **r);
   void fix_jacobian(Mat J);
 protected:

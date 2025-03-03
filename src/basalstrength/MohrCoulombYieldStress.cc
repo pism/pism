@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2023 PISM Authors
+// Copyright (C) 2004--2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #include "pism/basalstrength/MohrCoulombPointwise.hh"
 
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -427,9 +426,7 @@ void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &basal_yiel
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i, j)) {
-      // no change
-    } else if (cell_type.ice_free(i, j)) {
+    if (cell_type.ocean(i, j) or cell_type.ice_free(i, j)) {
       // no change
     } else { // grounded and there is some ice
       double P_overburden = ice_density * standard_gravity * ice_thickness(i, j);

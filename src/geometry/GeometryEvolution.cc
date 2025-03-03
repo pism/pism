@@ -1,4 +1,4 @@
-/* Copyright (C) 2016--2024 PISM Authors
+/* Copyright (C) 2016--2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -587,7 +587,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
       const int i = p.i(), j = p.j(), M = cell_type.as_int(i, j);
 
       const double H   = ice_thickness(i, j);
-      const Vector2d V = velocity(i, j);
+      const Vector2d& V = velocity(i, j);
 
       for (int n = 0; n < 2; ++n) {
         const int oi = 1 - n,  // offset in the i direction
@@ -600,8 +600,8 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
         // advective velocity at the current interface
         double v = 0.0;
         {
-          Vector2d V_n = velocity(i_n, j_n);
-          int W = icy(M), W_n = icy(M_n);
+          const Vector2d& V_n = velocity(i_n, j_n);
+          int W = static_cast<int>(icy(M)), W_n = static_cast<int>(icy(M_n));
 
           auto v_staggered = (W * V + W_n * V_n) / std::max(W + W_n, 1);
           v                = n == 0 ? v_staggered.u : v_staggered.v;
@@ -929,11 +929,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
   // check if redistribution should be run once more
   remaining_residual = GlobalSum(m_grid->com, remaining_residual);
 
-  if (remaining_residual > 0.0) {
-    done = false;
-  } else {
-    done = true;
-  }
+  done = remaining_residual <= 0.0;
 
   ice_thickness.update_ghosts();
 }
@@ -1017,11 +1013,11 @@ static inline double effective_change(double H, double dH) {
  */
 void GeometryEvolution::compute_surface_and_basal_mass_balance(
     double dt, const array::Scalar &thickness_bc_mask, const array::Scalar &ice_thickness,
-    const array::CellType &cell_type, const array::Scalar &smb_flux,
+    const array::CellType &cell_type, const array::Scalar &surface_mass_flux,
     const array::Scalar &basal_melt_rate, array::Scalar &effective_SMB,
     array::Scalar &effective_BMB) {
 
-  array::AccessScope list{ &ice_thickness,     &smb_flux,      &basal_melt_rate, &cell_type,
+  array::AccessScope list{ &ice_thickness,     &surface_mass_flux,      &basal_melt_rate, &cell_type,
                            &thickness_bc_mask, &effective_SMB, &effective_BMB };
 
   ParallelSection loop(m_grid->com);
@@ -1041,7 +1037,7 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(
       // Thickness change due to the surface mass balance
       //
       // Note that here we convert surface mass balance from [kg m-2 s-1] to [m s-1].
-      double dH_SMB = effective_change(H, dt * smb_flux(i, j) / m_impl->ice_density);
+      double dH_SMB = effective_change(H, dt * surface_mass_flux(i, j) / m_impl->ice_density);
 
       // Thickness change due to the basal mass balance
       //

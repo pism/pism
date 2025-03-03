@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,7 @@
 #include "pism/util/node_types.hh"
 #include "pism/stressbalance/blatter/util/DataAccess.hh"
 #include "pism/stressbalance/blatter/util/grid_hierarchy.hh"    // grid_transpose(), grid_z()
+#include "pism/util/fem/Quadrature.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -53,7 +54,7 @@ void Blatter::residual_f(const fem::Q1Element3 &element,
   element.evaluate(B_nodal, B);
 
   // loop over all quadrature points
-  for (int q = 0; q < element.n_pts(); ++q) {
+  for (unsigned int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q) / m_scaling;
 
     double
@@ -126,7 +127,7 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
     element.evaluate(eta_nodal, eta, eta_x, eta_y, eta_z);
     element.evaluate(bed, b, b_x, b_y, b_z);
 
-    for (int q = 0; q < element.n_pts(); ++q) {
+    for (unsigned int q = 0; q < element.n_pts(); ++q) {
       double C = pow(eta[q], 1.0 / p - 1.0) / p;
 
       s_x[q] = C * eta_x[q] + b_x[q];
@@ -141,7 +142,7 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
     element.evaluate(surface, s, s_x, s_y, s_z);
   }
 
-  for (int q = 0; q < element.n_pts(); ++q) {
+  for (unsigned int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q) / m_scaling;
 
     auto F = m_rho_ice_g * Vector2d(s_x[q], s_y[q]);
@@ -177,7 +178,7 @@ void Blatter::residual_basal(const fem::Q1Element3 &element,
   face.evaluate(tauc_nodal, tauc);
   face.evaluate(f_nodal, floatation);
 
-  for (int q = 0; q < face.n_pts(); ++q) {
+  for (unsigned int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q) / m_scaling;
 
     bool grounded = floatation[q] <= 0.0;
@@ -231,7 +232,7 @@ void Blatter::residual_lateral(const fem::Q1Element3 &element,
   face.evaluate(sl_nodal, sea_level);
 
   // loop over all quadrature points
-  for (int q = 0; q < face.n_pts(); ++q) {
+  for (unsigned int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q) / m_scaling;
     auto N3 = face.normal(q);
     Vector2d N = {N3.x, N3.y};

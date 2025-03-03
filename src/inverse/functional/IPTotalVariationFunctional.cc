@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2022, 2023  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2022, 2023, 2025  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/fem/DirichletData.hh"
 
 namespace pism {
 namespace inverse {

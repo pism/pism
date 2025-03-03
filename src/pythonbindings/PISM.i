@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2024 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2025 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,6 +61,12 @@
 #include "util/projection.hh"
 #include "energy/bootstrapping.hh"
 #include "util/node_types.hh"
+
+#include "util/fem/FEM.hh"
+#include "util/fem/DirichletData.hh"
+#include "util/fem/Element.hh"
+#include "util/fem/ElementIterator.hh"
+#include "util/fem/Quadrature.hh"
 
 #include "util/connected_components/label_components.hh"
 %}

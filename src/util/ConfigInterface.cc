@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -585,27 +585,27 @@ void set_flag_from_option(Config &config, const std::string &option,
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-void set_number_from_option(units::System::Ptr unit_system, Config &config, const std::string &name,
+void set_number_from_option(units::System::Ptr unit_system, Config &config, const std::string &option,
                             const std::string &parameter) {
-  options::Real option(unit_system, "-" + name, config.doc(parameter), config.units(parameter),
-                       config.get_number(parameter, Config::FORGET_THIS_USE));
-  if (option.is_set()) {
-    config.set_number(parameter, option, CONFIG_USER);
+  options::Real opt(unit_system, "-" + option, config.doc(parameter), config.units(parameter),
+                    config.get_number(parameter, Config::FORGET_THIS_USE));
+  if (opt.is_set()) {
+    config.set_number(parameter, opt, CONFIG_USER);
   }
 }
 
-void set_integer_from_option(Config &config, const std::string &name,
+void set_integer_from_option(Config &config, const std::string &option,
                              const std::string &parameter) {
-  options::Integer option("-" + name, config.doc(parameter),
-                          (int)config.get_number(parameter, Config::FORGET_THIS_USE));
-  if (option.is_set()) {
-    config.set_number(parameter, option, CONFIG_USER);
+  options::Integer opt("-" + option, config.doc(parameter),
+                       (int)config.get_number(parameter, Config::FORGET_THIS_USE));
+  if (opt.is_set()) {
+    config.set_number(parameter, opt, CONFIG_USER);
   }
 }
 
-void set_string_from_option(Config &config, const std::string &name, const std::string &parameter) {
+void set_string_from_option(Config &config, const std::string &option, const std::string &parameter) {
 
-  options::String value("-" + name, config.doc(parameter),
+  options::String value("-" + option, config.doc(parameter),
                         config.get_string(parameter, Config::FORGET_THIS_USE));
   if (value.is_set()) {
     config.set_string(parameter, value, CONFIG_USER);
@@ -618,10 +618,10 @@ void set_string_from_option(Config &config, const std::string &name, const std::
  * option. This option requires an argument, which has to match one of the
  * keyword given in a comma-separated list "choices_list".
  */
-void set_keyword_from_option(Config &config, const std::string &name, const std::string &parameter,
+void set_keyword_from_option(Config &config, const std::string &option, const std::string &parameter,
                              const std::string &choices) {
 
-  options::Keyword keyword("-" + name, config.doc(parameter), choices,
+  options::Keyword keyword("-" + option, config.doc(parameter), choices,
                            config.get_string(parameter, Config::FORGET_THIS_USE));
 
   if (keyword.is_set()) {

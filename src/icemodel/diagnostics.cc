@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2024 Constantine Khroulev
+// Copyright (C) 2010--2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -136,7 +136,6 @@ protected:
     m_interval_length += dt;
   }
 
-protected:
   AmountKind m_kind;
   array::Scalar m_last_amount;
   double m_interval_length;
@@ -669,10 +668,10 @@ static double ice_volume(const array::Scalar &ice_thickness,
       double H = ice_thickness(i, j);
 
       if (H >= thickness_threshold) {
-        const int ks = grid->kBelowHeight(H);
+        auto ks = grid->kBelowHeight(H);
         const double *E = ice_enthalpy.get_column(i, j);
 
-        for (int k = 0; k < ks; ++k) {
+        for (unsigned int k = 0; k < ks; ++k) {
           volume += volume_counter(z[k], z[k + 1], H, E[k]);
         }
 
@@ -938,7 +937,7 @@ std::shared_ptr<array::Array> HardnessAverage::compute_impl() const {
       const double H    = ice_thickness(i, j);
       if (cell_type.icy(i, j)) {
         (*result)(i, j) = rheology::averaged_hardness(*flow_law, H, m_grid->kBelowHeight(H),
-                                                      &(m_grid->z()[0]), Eij);
+                                                      m_grid->z().data(), Eij);
       } else { // put negative value below valid range
         (*result)(i, j) = m_fill_value;
       }
@@ -1167,7 +1166,7 @@ std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
     for (auto pt = m_grid->points(); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
-      auto Enthij = enthalpy.get_column(i,j);
+      const auto *Enthij = enthalpy.get_column(i,j);
 
       const double depth = thickness(i,j),
         p = EC->pressure(depth);
@@ -1269,7 +1268,7 @@ std::shared_ptr<array::Array> IceEnthalpyBasal::compute_impl() const {
 class TemperatureBasal : public Diag<IceModel>
 {
 public:
-  TemperatureBasal(const IceModel *m, AreaType flag);
+  TemperatureBasal(const IceModel *m, AreaType area_type);
 private:
   std::shared_ptr<array::Array> compute_impl() const;
 
@@ -2515,7 +2514,6 @@ protected:
     m_interval_length += dt;
   }
 
-protected:
   array::Scalar m_last_thickness;
   double m_interval_length;
 };
@@ -3445,7 +3443,7 @@ void IceModel::init_diagnostics() {
   }
 
   // get diagnostics from submodels
-  for (auto m : m_submodels) {
+  for (const auto& m : m_submodels) {
     m_diagnostics = pism::combine(m_diagnostics, m.second->diagnostics());
     m_ts_diagnostics = pism::combine(m_ts_diagnostics, m.second->ts_diagnostics());
   }
@@ -3546,7 +3544,7 @@ static Metadata diag_metadata(const std::map<std::string,Diagnostic::Ptr> &diags
 static Metadata ts_diag_metadata(const std::map<std::string,TSDiagnostic::Ptr> &ts_diags) {
   Metadata result;
 
-  for (auto d : ts_diags) {
+  for (const auto& d : ts_diags) {
     // always one variable per diagnostic
     result[d.first] = {d.second->metadata()};
   }
@@ -3669,8 +3667,8 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
       if (m_geometry.cell_type.icy(i, j)) {
         // accumulate volume of ice which is original
         const double *age = ice_age.get_column(i, j);
-        const int  ks = m_grid->kBelowHeight(m_geometry.ice_thickness(i,j));
-        for (int k = 1; k <= ks; k++) {
+        auto ks = m_grid->kBelowHeight(m_geometry.ice_thickness(i,j));
+        for (unsigned int k = 1; k <= ks; k++) {
           // ice in segment is original if it is as old as one year less than current time
           if (0.5 * (age[k - 1] + age[k]) > currtime - one_year) {
             original_ice_volume += a * 1.0e-3 * (m_grid->z(k) - m_grid->z(k - 1));

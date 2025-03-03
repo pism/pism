@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2021, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "pism/util/ColumnInterpolation.hh"
 #include <algorithm>  // for max, min
 #include <cmath>      // for fabs
+#include <cstddef>
 
 namespace pism {
 
@@ -132,7 +133,7 @@ void ColumnInterpolation::fine_to_coarse(const double *input, double *result) co
   const unsigned int N = Mz_coarse();
 
   for (unsigned int k = 0; k < N - 1; ++k) {
-    const int m = m_fine2coarse[k];
+    const auto &m = m_fine2coarse[k];
 
     const double increment = (m_z_coarse[k] - m_z_fine[m]) / (m_z_fine[m + 1] - m_z_fine[m]);
     result[k] = input[m] + increment * (input[m + 1] - input[m]);
@@ -225,7 +226,7 @@ void ColumnInterpolation::init_interpolation() {
 
   // initialize quadratic interpolation constants
   if (not m_use_linear_interpolation) {
-    const unsigned int N = Mz_coarse() - 2;
+    size_t N = Mz_coarse() - 2;
     m_constants.resize(3 * N);
     for (unsigned int m = 0; m < N; ++m) {
       const double

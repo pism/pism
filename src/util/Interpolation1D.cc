@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cstddef>
 #include <gsl/gsl_interp.h>
 #include <cassert>
 
@@ -100,7 +101,7 @@ void Interpolation1D::init_linear(const double *input_x, unsigned int input_x_si
 
     // note: use "input_x_size" instead of "input_x_size - 1" to support extrapolation on
     // the right
-    unsigned int
+    size_t
       L = gsl_interp_bsearch(input_x, x, 0, input_x_size),
       R = L + 1;
 
@@ -118,8 +119,8 @@ void Interpolation1D::init_linear(const double *input_x, unsigned int input_x_si
     assert(R < input_x_size);
     assert(alpha >= 0.0 and alpha <= 1.0);
 
-    m_left[i]  = L;
-    m_right[i] = R;
+    m_left[i]  = static_cast<int>(L);
+    m_right[i] = static_cast<int>(R);
     m_alpha[i] = alpha;
   }
 }
@@ -198,8 +199,8 @@ void Interpolation1D::init_piecewise_constant(const double *input_x, unsigned in
     // the right
     size_t L = gsl_interp_bsearch(input_x, output_x[i], 0, input_x_size);
 
-    m_left[i] = L;
-    m_right[i] = L;
+    m_left[i] = static_cast<int>(L);
+    m_right[i] = static_cast<int>(L);
     m_alpha[i] = 0.0;
 
     assert(m_left[i] >= 0 and m_left[i] < (int)input_x_size);
@@ -269,7 +270,7 @@ static std::map<size_t, double> weights_piecewise_linear(const double *x,
 
     // intermediate intervals
     for (size_t k = ar; k < bl; ++k) {
-      int
+      size_t
         L = k,
         R = k + 1;
       result[L] += 0.5 * (x[R] - x[L]);

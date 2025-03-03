@@ -20,6 +20,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <gsl/gsl_interp.h>
 #include <map>
 #include <memory>
@@ -35,7 +36,6 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/pism_config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Vars.hh"
@@ -51,7 +51,7 @@ namespace pism {
 struct Grid::Impl {
   Impl(std::shared_ptr<const Context> context);
 
-  std::shared_ptr<petsc::DM> create_dm(int da_dof, int stencil_width) const;
+  std::shared_ptr<petsc::DM> create_dm(unsigned int da_dof, unsigned int stencil_width) const;
   void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
                             const std::vector<unsigned int> &procs_y);
 
@@ -543,17 +543,17 @@ std::shared_ptr<const Context> Grid::ctx() const {
 
 //! @brief Create a DM with the given number of `dof` (degrees of freedom per grid point) and
 //! stencil width.
-std::shared_ptr<petsc::DM> Grid::Impl::create_dm(int da_dof, int stencil_width) const {
+std::shared_ptr<petsc::DM> Grid::Impl::create_dm(unsigned int da_dof, unsigned int stencil_width) const {
 
   ctx->log()->message(3, "* Creating a DM with dof=%d and stencil_width=%d...\n", da_dof,
                       stencil_width);
 
   DM result;
-  PetscErrorCode ierr =
-      DMDACreate2d(ctx->com(), DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC, DMDA_STENCIL_BOX, Mx, My,
-                   (PetscInt)procs_x.size(), (PetscInt)procs_y.size(), da_dof, stencil_width,
-                   procs_x.data(), procs_y.data(), // lx, ly
-                   &result);
+  PetscErrorCode ierr = DMDACreate2d(
+      ctx->com(), DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC, DMDA_STENCIL_BOX, (PetscInt)Mx,
+      (PetscInt)My, (PetscInt)procs_x.size(), (PetscInt)procs_y.size(), (PetscInt)da_dof,
+      (PetscInt)stencil_width, procs_x.data(), procs_y.data(), // lx, ly
+      &result);
   PISM_CHK(ierr, "DMDACreate2d");
 
 #if PETSC_VERSION_GE(3, 8, 0)
@@ -734,7 +734,7 @@ namespace grid {
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
-std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
+std::vector<double> compute_vertical_levels(double new_Lz, size_t new_Mz,
                                             grid::VerticalSpacing spacing, double lambda) {
 
   if (new_Mz < 2) {
@@ -870,11 +870,11 @@ void InputGridInfo::reset() {
 
   t_len = 0;
 
-  x0    = 0;
-  Lx    = 0;
+  x0 = 0;
+  Lx = 0;
 
-  y0    = 0;
-  Ly    = 0;
+  y0 = 0;
+  Ly = 0;
 
   z_min = 0;
   z_max = 0;
@@ -884,14 +884,12 @@ void InputGridInfo::reset() {
 
 void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr s) const {
   if (longitude_latitude) {
-    log.message(
-        threshold,
-        "  x:  %5d points, [%7.3f, %7.3f] degree, x0 = %7.3f degree, Lx = %7.3f degree\n",
-        (int)this->x.size(), this->x0 - this->Lx, this->x0 + this->Lx, this->x0, this->Lx);
-    log.message(
-        threshold,
-        "  y:  %5d points, [%7.3f, %7.3f] degree, y0 = %7.3f degree, Ly = %7.3f degree\n",
-        (int)this->y.size(), this->y0 - this->Ly, this->y0 + this->Ly, this->y0, this->Ly);
+    log.message(threshold,
+                "  x:  %5d points, [%7.3f, %7.3f] degree, x0 = %7.3f degree, Lx = %7.3f degree\n",
+                (int)this->x.size(), this->x0 - this->Lx, this->x0 + this->Lx, this->x0, this->Lx);
+    log.message(threshold,
+                "  y:  %5d points, [%7.3f, %7.3f] degree, y0 = %7.3f degree, Ly = %7.3f degree\n",
+                (int)this->y.size(), this->y0 - this->Ly, this->y0 + this->Ly, this->y0, this->Ly);
   } else {
     units::Converter km(s, "m", "km");
 
@@ -935,7 +933,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
     {
       auto mapping                  = MappingInfo::FromFile(file, var.name, unit_system).cf_mapping;
       std::string grid_mapping_name = mapping["grid_mapping_name"];
-      longitude_latitude                  = (grid_mapping_name == "rotated_latitude_longitude");
+      longitude_latitude            = (grid_mapping_name == "rotated_latitude_longitude");
       if (longitude_latitude) {
         xy_units = "degrees";
       }
@@ -956,7 +954,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
             auto std_name = file.read_text_attribute(dimension_name, "standard_name");
             if (member(std_name, { "grid_latitude", "grid_longitude" }) or
                 member(dimension_name, { "rlat", "rlon" })) {
-              xy_units     = "degrees";
+              xy_units           = "degrees";
               longitude_latitude = true;
             }
           }
@@ -1010,7 +1008,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
           // the dimension type: it is not "time" in the sense of "record dimension"
           this->dimension_types[dimension_name] = UNKNOWN_AXIS;
         } else {
-          this->t_len          = file.dimension_length(dimension_name);
+          this->t_len              = file.dimension_length(dimension_name);
           time_dimension_processed = true;
         }
         break;
@@ -1050,8 +1048,7 @@ std::string get_domain_variable(const File &file) {
 }
 
 Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_system,
-                                          const File &file,
-                                          const std::string &variable_name,
+                                          const File &file, const std::string &variable_name,
                                           Registration registration) {
   Parameters result;
 
@@ -1086,7 +1083,7 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
 
     auto dimension_type = file.dimension_type(dimension_name, unit_system);
 
-    if (not (dimension_type == X_AXIS or dimension_type == Y_AXIS)) {
+    if (not(dimension_type == X_AXIS or dimension_type == Y_AXIS)) {
       // use X and Y dimensions and ignore the rest
       continue;
     }
@@ -1115,9 +1112,9 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
                                       dimension_name.c_str(), file.name().c_str());
       }
 
-      v_min   = dimension.front();
-      v_max   = dimension.back();
-      length  = static_cast<unsigned int>(dimension.size());
+      v_min  = dimension.front();
+      v_max  = dimension.back();
+      length = static_cast<unsigned int>(dimension.size());
       // same as in InputGridInfo, domain half-width depends on grid registration
       half_width = (v_max - v_min) / 2.0;
       if (registration == CELL_CENTER) {
@@ -1328,7 +1325,7 @@ void Parameters::horizontal_size_and_extent_from_options(const Config &config) {
 
 void Parameters::vertical_grid_from_options(const Config &config) {
   double Lz = (not z.empty()) ? z.back() : config.get_number("grid.Lz");
-  int Mz    = (not z.empty()) ? z.size() : config.get_number("grid.Mz");
+  size_t Mz = (not z.empty()) ? z.size() : static_cast<size_t>(config.get_number("grid.Mz"));
 
   z = compute_vertical_levels(Lz, Mz,
                               string_to_spacing(config.get_string("grid.ice_vertical_spacing")),
@@ -1610,10 +1607,11 @@ void Grid::forget_interpolations() {
 }
 
 PointsWithGhosts::PointsWithGhosts(const Grid &grid, unsigned int stencil_width) {
-  m_i_first = grid.xs() - stencil_width;
-  m_i_last  = grid.xs() + grid.xm() + stencil_width - 1;
-  m_j_first = grid.ys() - stencil_width;
-  m_j_last  = grid.ys() + grid.ym() + stencil_width - 1;
+  int W = static_cast<int>(stencil_width);
+  m_i_first = grid.xs() - W;
+  m_i_last  = grid.xs() + grid.xm() + W - 1;
+  m_j_first = grid.ys() - W;
+  m_j_last  = grid.ys() + grid.ym() + W - 1;
 
   m_i    = m_i_first;
   m_j    = m_j_first;

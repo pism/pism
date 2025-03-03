@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -225,7 +225,7 @@ static void relabel(RelabelingType type,
       loop.failed();
     }
     loop.check();
-    GlobalSum(grid->com, area.data(), area1.data(), area.size());
+    GlobalSum(grid->com, area.data(), area1.data(), static_cast<int>(area.size()));
 
     // copy data
     area = area1;

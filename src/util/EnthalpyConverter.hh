@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2021, 2024 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2021, 2024, 2025 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -76,8 +76,8 @@ public:
   void pressure(const std::vector<double> &depth,
                 unsigned int ks, std::vector<double> &result) const;
 protected:
-  void validate_E_P(double E, double P) const;
-  void validate_T_omega_P(double T, double omega, double P) const;
+  static void validate_E_P(double E, double P);
+  static void validate_T_omega_P(double T, double omega, double P);
 
   double temperature_cold(double E) const;
   double enthalpy_cold(double T) const;

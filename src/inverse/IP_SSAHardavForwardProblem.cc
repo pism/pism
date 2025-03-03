@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024, 2025  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,18 +17,17 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/inverse/IP_SSAHardavForwardProblem.hh"
-#include "pism/basalstrength/basal_resistance.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/fem/Quadrature.hh"
+#include "pism/util/fem/DirichletData.hh"
 
 namespace pism {
 namespace inverse {
@@ -556,7 +555,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
     dzeta_a[j][i] *= dB_dzeta;
   }
 
-  if (m_fixed_design_locations) {
+  if (m_fixed_design_locations != nullptr) {
     fem::DirichletData_Scalar fixedZeta(m_fixed_design_locations, NULL);
     fixedZeta.fix_residual_homogeneous(dzeta_a);
   }
@@ -602,12 +601,12 @@ void IP_SSAHardavForwardProblem::apply_linearization(array::Scalar &dzeta, array
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IP_SSAHardavForwardProblem::apply_linearization solve"
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
-  } else {
-    m_log->message(4,
-                   "IP_SSAHardavForwardProblem::apply_linearization converged"
-                   " (KSP reason %s)\n",
-                   KSPConvergedReasons[reason]);
   }
+
+  m_log->message(4,
+                 "IP_SSAHardavForwardProblem::apply_linearization converged"
+                 " (KSP reason %s)\n",
+                 KSPConvergedReasons[reason]);
 
   du.copy_from(m_du_global);
 }
@@ -667,11 +666,10 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(array::Vector &du
   if (reason < 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
-  } else {
-    m_log->message(4,
-                   "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
-                   KSPConvergedReasons[reason]);
   }
+
+  m_log->message(4, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
+                 KSPConvergedReasons[reason]);
 
   this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta);
   dzeta.scale(-1);

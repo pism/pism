@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2017, 2021, 2023, 2024 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2017, 2021, 2023, 2024, 2025 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -85,8 +85,7 @@ bool EnthalpyConverter::is_temperate_relaxed(double E, double P) const {
   return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
 }
 
-
-void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) const {
+void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) {
 #if (Pism_DEBUG==1)
   const double T_melting = melting_temperature(P);
   if (T <= 0.0) {
@@ -111,7 +110,7 @@ void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) con
 #endif
 }
 
-void EnthalpyConverter::validate_E_P(double E, double P) const {
+void EnthalpyConverter::validate_E_P(double E, double P) {
 #if (Pism_DEBUG==1)
   if (E >= enthalpy_liquid(P)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "E=%f J/kg at P=%f Pa equals or exceeds that of liquid water (%f J/kg)",

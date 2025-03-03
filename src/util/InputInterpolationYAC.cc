@@ -95,23 +95,23 @@ struct LonLatGrid {
   LonLatGrid(const std::vector<double> &x, const std::vector<double> &y,
              const std::string &projection) {
 
-    int nrow = y.size();
-    int ncol = x.size();
-    int N    = nrow * ncol;
+    size_t nrow = y.size();
+    size_t ncol = x.size();
+    size_t N    = nrow * ncol;
 
     lon.resize(N);
     lat.resize(N);
 
     // convert from (row, col) to the linear index in "cell" arrays
-    auto C = [ncol](int row, int col) { return row * ncol + col; };
+    auto C = [ncol](size_t row, size_t col) { return row * ncol + col; };
 
     // convert from degrees to radians
     auto deg2rad = [](double degree) { return degree * M_PI / 180; };
 
     pism::LonLatCalculator mapping(projection);
 
-    for (int row = 0; row < nrow; ++row) {
-      for (int col = 0; col < ncol; ++col) {
+    for (size_t row = 0; row < nrow; ++row) {
+      for (size_t col = 0; col < ncol; ++col) {
         auto coords = mapping.lonlat(x[col], y[row]);
 
         lon[C(row, col)] = deg2rad(coords[0]);

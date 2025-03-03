@@ -18,7 +18,8 @@
 
 #include "pism/util/Grid.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/util/fem/FEM.hh"
+#include "pism/util/fem/Quadrature.hh"
+#include "pism/util/fem/DirichletData.hh"
 #include "pism/util/Mask.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLaw.hh"
@@ -377,7 +378,7 @@ void SSAFEM::quad_point_values(const fem::Element &E,
 //! Uses explicitly-provided nodal values.
 void SSAFEM::explicit_driving_stress(const fem::Element &E,
                                      const Coefficients *x,
-                                     Vector2d *result) const {
+                                     Vector2d *result) {
   const unsigned int n = E.n_pts();
 
   for (unsigned int q = 0; q < n; q++) {
@@ -511,7 +512,7 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
 
   if (thickness < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
-    if (dnuH) {
+    if (dnuH != nullptr) {
       *dnuH = 0;
     }
   } else {
@@ -520,7 +521,7 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
 
     *nuH  = m_epsilon_ssa + *nuH * thickness;
 
-    if (dnuH) {
+    if (dnuH != nullptr) {
       *dnuH *= thickness;
     }
   }
@@ -534,7 +535,7 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
       *beta = m_beta_ice_free_bedrock;
     }
 
-    if (dbeta) {
+    if (dbeta != nullptr) {
       *dbeta = 0;
     }
   }
