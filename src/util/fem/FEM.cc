@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2023 PISM Authors
+/* Copyright (C) 2020, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,8 +57,9 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
     result.val = 0.0;
   }
 
-  result.dx  = 0.0;
-  result.dy  = 0.0;
+  result.dx = 0.0;
+  result.dy = 0.0;
+  result.dz = 0.0;
 
   return result;
 }

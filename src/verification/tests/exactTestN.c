@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2010, 2014, 2016, 2023 Ed Bueler
+   Copyright (C) 2010, 2014, 2016, 2023, 2025 Ed Bueler
   
    This file is part of PISM.
   
@@ -59,7 +59,16 @@ struct TestNParameters exactN(double x) {
   double q = 0.0, hxx = 0.0, ux = 0.0;
   const struct TestNConstants c = exactNConstants();
   struct TestNParameters result;
-  result.error_code = 0;
+
+  {
+    result.error_code = 0;
+    result.H = 0;
+    result.h_x = 0;
+    result.u = 0;
+    result.M = 0;
+    result.B = 0;
+    result.beta = 0;
+  }
 
   if (x < 0.0) {
     result.error_code = 1;
