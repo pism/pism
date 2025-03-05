@@ -76,6 +76,9 @@ Changes since v2.1
   exactly the requested grid resolution (this may slightly reduce the domain size compared
   to `Lx` and `Ly` provided by the user).
 - Remove support for NCAR's ParallelIO library since (as far as we know) no one uses it.
+- Fix a bug (reported by Isabel Schwermer) in the insolation parameterization used by the
+  "paleo" mode of dEBM-simple (1: the old code used the wrong perihelion longitude
+  definition; 2: the solar declination formula contained a typo).
 
 Changes since v2.0
 ==================
