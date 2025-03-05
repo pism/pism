@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2021 PISM Authors
+// Copyright (C) 2008-2021, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -68,7 +68,6 @@ protected:
   virtual const array::Scalar& shelf_base_mass_flux_impl() const;
   virtual const array::Scalar& average_water_column_pressure_impl() const;
 
-protected:
   std::shared_ptr<OceanModel> m_input_model;
   std::shared_ptr<array::Scalar> m_water_column_pressure;
 

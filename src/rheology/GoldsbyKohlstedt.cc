@@ -35,7 +35,7 @@ GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &prefix,
   m_V_act_vol      = -13.e-6;   // m^3/mol
   m_d_grain_size   = 1.0e-3;    // m  (see p. ?? of G&K paper)
   //--- dislocation creep ---
-  m_disl_crit_temp = 258.0;     // Kelvin
+  m_disl_crit_temp = 258.0;     // kelvin
   //disl_A_cold    = 4.0e5;                  // MPa^{-4.0} s^{-1}
   //disl_A_warm    = 6.0e28;                 // MPa^{-4.0} s^{-1}
   m_disl_A_cold    = 4.0e-19;   // Pa^{-4.0} s^{-1}
@@ -44,7 +44,7 @@ GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &prefix,
   m_disl_Q_cold    = 60.e3;     // J/mol Activation energy
   m_disl_Q_warm    = 180.e3;    // J/mol Activation energy (GK)
   //--- grain boundary sliding ---
-  m_gbs_crit_temp  = 255.0;     // Kelvin
+  m_gbs_crit_temp  = 255.0;     // kelvin
   //gbs_A_cold     = 3.9e-3;                  // MPa^{-1.8} m^{1.4} s^{-1}
   //gbs_A_warm     = 3.e26;                   // MPa^{-1.8} m^{1.4} s^{-1}
   m_gbs_A_cold     = 6.1811e-14; // Pa^{-1.8} m^{1.4} s^{-1}

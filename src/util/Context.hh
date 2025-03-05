@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -60,7 +60,6 @@ public:
   std::shared_ptr<Config> config();
   std::shared_ptr<Time> time();
 
-  int pio_iosys_id() const;
 private:
   class Impl;
   Impl *m_impl;

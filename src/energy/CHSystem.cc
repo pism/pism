@@ -66,7 +66,7 @@ CHSystem::CHSystem(std::shared_ptr<const Grid> grid,
 void CHSystem::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the cryo-hydrologic system from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   init_enthalpy(input_file, false, record);
 
@@ -80,7 +80,7 @@ void CHSystem::bootstrap_impl(const File &input_file,
                               const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the cryo-hydrologic warming model from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   int enthalpy_revision = m_ice_enthalpy.state_counter();
   regrid_enthalpy();

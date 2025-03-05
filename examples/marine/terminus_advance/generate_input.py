@@ -40,8 +40,8 @@ u = zeros.copy() + U
 
 nc.create_dimensions(x, y)
 nc.write("topg", topg, attrs={"units": "m", "long_name": "bed_topography"})
-nc.write("climatic_mass_balance", zeros, attrs={"units": "kg m-2 year-1"})
-nc.write("ice_surface_temp", zeros, attrs={"units": "Celsius"})
+nc.write("climatic_mass_balance", zeros, attrs={"units": "kg m^-2 year^-1"})
+nc.write("ice_surface_temp", zeros, attrs={"units": "degree_Celsius"})
 nc.write("thk", thk,
          attrs={"units": "m", "standard_name": "land_ice_thickness"})
 nc.write("ubar", u,

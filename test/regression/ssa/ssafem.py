@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import PISM
 from PISM.testing import shallow_grid
@@ -93,7 +93,7 @@ def plot():
     y = np.array(grid.y())
     dy = grid.dy()
 
-    v = ssa.velocity().numpy()
+    v = ssa.velocity().to_numpy()
 
     plt.figure(1)
     plt.imshow(v[:,:,0])

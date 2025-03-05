@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@ static char help[] =
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
 
-//! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
+//! Allocate the verification context. Uses ColdEnthalpyConverter.
 std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &prefix) {
   using namespace pism;
 
@@ -52,9 +52,17 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
+  int Mx = 3;
+  double Lx = 1500;
+  // default horizontal grid parameters
+  config->set_number("grid.Mx", Mx);
+  config->set_number("grid.My", Mx);
+  config->set_number("grid.Lx", Lx); // in km
+  config->set_number("grid.Ly", Lx); // in km
+
   // default vertical grid parameters
   config->set_number("grid.Mbz", 11);
-  config->set_number("grid.Lbz", 1000);
+  config->set_number("grid.Lbz", 1000); // in m
 
   // when Grid constructor is called, these settings are used
   config->set_string("time.start", "0s");
@@ -82,11 +90,11 @@ int main(int argc, char *argv[]) {
   com = MPI_COMM_WORLD;
 
   try {
-    std::shared_ptr<Context> ctx = btutest_context(com, "btutest");
+    std::shared_ptr<Context> ctx = btutest_context(com, "pism_btutest");
     Logger::Ptr log = ctx->log();
 
     std::string usage =
-      "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
+      "  pism_btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
       "where these are required because they are used in BedThermalUnit:\n"
       "  -Mbz           number of bedrock thermal layer levels to use\n"
       "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
@@ -105,16 +113,12 @@ int main(int argc, char *argv[]) {
     log->message(2,
                  "  initializing Grid from options ...\n");
 
-    Config::Ptr config = ctx->config();
+    auto config = ctx->config();
 
     grid::Parameters P(*config);
-    P.Mx = 3;
-    P.My = P.Mx;
-    P.Lx = 1500e3;
-    P.Ly = P.Lx;
 
-    P.vertical_grid_from_options(config);
-    P.ownership_ranges_from_options(ctx->size());
+    P.vertical_grid_from_options(*config);
+    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     // create grid and set defaults
     std::shared_ptr<Grid> grid(new Grid(ctx, P));
@@ -126,13 +130,13 @@ int main(int argc, char *argv[]) {
 
     // allocate tools and Arrays
     array::Scalar bedtoptemp(grid, "bedtoptemp");
-    bedtoptemp.metadata(0).long_name("temperature at top of bedrock thermal layer").units("K");
+    bedtoptemp.metadata(0).long_name("temperature at top of bedrock thermal layer").units("kelvin");
 
     array::Scalar heat_flux_at_ice_base(grid, "upward_heat_flux_at_ice_base");
     heat_flux_at_ice_base.metadata(0)
         .long_name("upward geothermal flux at bedrock thermal layer base")
-        .units("W m-2")
-        .output_units("mW m-2");
+        .units("W m^-2")
+        .output_units("mW m^-2");
 
     // initialize BTU object:
     energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(ctx);
@@ -217,8 +221,7 @@ int main(int argc, char *argv[]) {
     File file(grid->com,
               outname,
               string_to_backend(config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE,
-              ctx->pio_iosys_id());
+              io::PISM_READWRITE_MOVE);
 
     io::define_time(file, *ctx);
     io::append_time(file, *ctx->config(), ctx->time()->current());

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -52,7 +52,8 @@ registration = PISM.CELL_CENTER
 if is_regional:
     registration = PISM.CELL_CORNER
 
-grid = PISM.Grid.FromFile(ctx, input_filename, ["enthalpy"], registration)
+input_file = PISM.File(ctx.com(), input_filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+grid = PISM.Grid.FromFile(ctx, input_file, ["enthalpy"], registration)
 
 config.set_flag("basal_resistance.pseudo_plastic.enabled", False)
 
@@ -98,8 +99,8 @@ PISM.verbPrintf(2, context.com, "* Computing SIA velocities...\n")
 vel_sia = PISM.sia.computeSIASurfaceVelocities(modeldata, siasolver=solver)
 
 PISM.verbPrintf(2, context.com, "* Saving results to %s...\n" % output_file)
-pio = PISM.util.prepare_output(output_file)
-pio.close()
+F = PISM.util.prepare_output(output_file)
+F.close()
 
 # Save time & command line & results
 PISM.util.writeProvenance(output_file)

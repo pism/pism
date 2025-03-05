@@ -91,7 +91,7 @@ else
   exit
 fi
 
-pismexec="pismr"
+pismexec="pism"
 
 data=pismnbreen.nc
 

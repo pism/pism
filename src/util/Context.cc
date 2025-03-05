@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2019, 2021, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2019, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,14 +23,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/pism_config.hh"
-
-#if (Pism_USE_PIO==1)
-// Why do I need this???
-#define _NETCDF
-#include <pio.h>
-#endif
+#include <memory>
 
 namespace pism {
 
@@ -44,7 +37,7 @@ public:
        std::shared_ptr<Logger> log,
        const std::string &p)
     : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t), prefix(p),
-      logger(log), pio_iosys_id(-1) {
+      logger(log) {
     // empty
   }
   MPI_Comm com;
@@ -55,7 +48,6 @@ public:
   std::string prefix;
   Profiling profiling;
   std::shared_ptr<Logger> logger;
-  int pio_iosys_id;
 };
 
 Context::Context(MPI_Comm c, std::shared_ptr<units::System> sys,
@@ -67,14 +59,6 @@ Context::Context(MPI_Comm c, std::shared_ptr<units::System> sys,
 }
 
 Context::~Context() {
-
-#if (Pism_USE_PIO==1)
-  if (m_impl->pio_iosys_id != -1 and
-      PIOc_free_iosystem(m_impl->pio_iosys_id) != PIO_NOERR) {
-    m_impl->logger->message(1, "Error: failed to de-allocate a ParallelIO I/O system\n");
-  }
-#endif
-
   delete m_impl;
 }
 
@@ -134,62 +118,29 @@ std::shared_ptr<Logger> Context::log() {
   return m_impl->logger;
 }
 
-/*!
- * I/O system id (the ParallelIO library)
- */
-int Context::pio_iosys_id() const {
-#if (Pism_USE_PIO==1)
-  if (m_impl->pio_iosys_id == -1) {
-    int ierr = PIOc_set_iosystem_error_handling(PIO_DEFAULT, PIO_BCAST_ERROR, NULL);
-    if (ierr != 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize ParallelIO");
-    }
-
-    int
-      base      = config()->get_number("output.pio.base"),
-      stride    = config()->get_number("output.pio.stride"),
-      n_writers = config()->get_number("output.pio.n_writers");
-
-    if (n_writers > this->size()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "number of ParallelIO writers (%d)"
-                                    " exceeds the communicator size (%d)",
-                                    n_writers, this->size());
-    }
-
-    ierr = PIOc_Init_Intracomm(m_impl->com, n_writers, stride, base, PIO_REARR_BOX,
-                               &m_impl->pio_iosys_id);
-    if (ierr != 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize ParallelIO");
-    }
-  }
-#endif
-  return m_impl->pio_iosys_id;
-}
-
 std::shared_ptr<Context> context_from_options(MPI_Comm com,
                                               const std::string &prefix,
                                               bool print) {
   // unit system
-  units::System::Ptr sys(new units::System);
+  auto sys = std::make_shared<units::System>();
 
   // logger
-  Logger::Ptr logger = logger_from_options(com);
+  auto logger = logger_from_options(com);
 
   // configuration parameters
-  Config::Ptr config = config_from_options(com, *logger, sys);
+  auto config = config_from_options(com, *logger, sys);
 
   if (print) {
     print_config(*logger, 3, *config);
   }
 
   // time manager
-  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
+  auto time = std::make_shared<Time>(com, config, *logger, sys);
 
   // enthalpy converter
-  EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
+  auto EC = std::make_shared<EnthalpyConverter>(*config);
 
-  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
+  return std::make_shared<Context>(com, sys, config, EC, time, logger, prefix);
 }
 
 

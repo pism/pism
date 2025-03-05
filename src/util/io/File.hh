@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,6 @@ io::Backend string_to_backend(const std::string &backend);
 
 struct VariableLookupData {
   bool exists;
-  bool found_using_standard_name;
   std::string name;
 };
 
@@ -55,11 +54,8 @@ struct VariableLookupData {
 class File
 {
 public:
-  File(MPI_Comm com, const std::string &filename, io::Backend backend, io::Mode mode,
-       int iosysid = -1);
+  File(MPI_Comm com, const std::string &filename, io::Backend backend, io::Mode mode);
   ~File();
-
-  io::Backend backend() const;
 
   MPI_Comm com() const;
 
@@ -71,7 +67,7 @@ public:
 
   void sync() const;
 
-  std::string filename() const;
+  std::string name() const;
 
   unsigned int nrecords() const;
 
@@ -90,12 +86,10 @@ public:
 
   std::vector<std::string> dimensions(const std::string &variable_name) const;
 
-  bool find_dimension(const std::string &name) const;
+  bool dimension_exists(const std::string &name) const;
 
   AxisType dimension_type(const std::string &name,
                           units::System::Ptr unit_system) const;
-
-  std::vector<double> read_dimension(const std::string &name) const;
 
   // variables
 
@@ -106,22 +100,20 @@ public:
 
   VariableLookupData find_variable(const std::string &short_name, const std::string &std_name) const;
 
-  bool find_variable(const std::string &short_name) const;
+  bool variable_exists(const std::string &short_name) const;
 
   void read_variable(const std::string &variable_name,
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count,
                        double *ip) const;
 
-  void read_variable_transposed(const std::string &variable_name,
-                                const std::vector<unsigned int> &start,
-                                const std::vector<unsigned int> &count,
-                                const std::vector<unsigned int> &imap, double *ip) const;
-
   void write_variable(const std::string &variable_name,
                       const std::vector<unsigned int> &start,
                       const std::vector<unsigned int> &count,
                       const double *op) const;
+
+  void set_variable_was_written(const std::string &name) const;
+  bool get_variable_was_written(const std::string &name) const;
 
   void write_distributed_array(const std::string &variable_name,
                                const Grid &grid,

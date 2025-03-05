@@ -18,7 +18,7 @@ common_options="
         -energy.enabled no
 "
 
-mpiexec -n ${N} pismr -eisII A \
+mpiexec -n ${N} pism -eisII A \
         -bootstrapping.defaults.geothermal_flux 0 \
         -grid.Lz 3500 \
         -grid.Mx ${M} \
@@ -30,7 +30,7 @@ mpiexec -n ${N} pismr -eisII A \
         -time.end 10250 \
         ${common_options}
 
-mpiexec -n ${N} pismr \
+mpiexec -n ${N} pism \
         -i o_part1.nc \
         -output.extra.file ex_part2.nc \
         -output.file o_final.nc \

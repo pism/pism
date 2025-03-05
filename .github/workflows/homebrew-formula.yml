@@ -1,0 +1,22 @@
+# Test the Homebrew formula installing PISM
+name: Homebrew formula (dev branch)
+
+on:
+  push:
+    branches: [ "dev" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, macos-13]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+      - run: brew update
+      - run: brew tap pism/pism
+      - run: |
+          export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
+          brew install pism --HEAD

@@ -179,9 +179,8 @@ def orbital_parameters(year, restrict=False):
     Input:  YEAR   = years A.D. are positive, B.C. are negative
     Output: ECCEN  = eccentricity of orbital ellipse
             OBLIQ  = latitude of Tropic of Cancer in radians
-            OMEGVP = longitude of perihelion
-                   = spatial angle from vernal equinox to perihelion in radians with sun
-                     as angle vertex
+            OMEGVP = longitude of perihelion relative to the vernal equinox
+                     in the geocentric ecliptic coordinate system
 
     Table 1 (2).  Obliquity relative to mean ecliptic of date:
     Table 4 (1).  Fundamental elements of the ecliptic: ECCEN sin(pi)
@@ -227,9 +226,13 @@ def orbital_parameters(year, restrict=False):
     pie = np.arctan2(esinpi, ecospi);
     psi = np.deg2rad((ym1950 * 50.439273 + S) * second_to_degree + 3.392506)
 
-    perihelion_longitude = pie + psi
+    perihelion_longitude = pie + psi + np.pi
+    # Note: We add np.pi to convert perihelion longitude from the heliocentric ecliptic
+    # coordinate system to the geocentric ecliptic coordinate system.
     if restrict:
         perihelion_longitude = np.remainder(perihelion_longitude, 2 * np.pi);
+        if perihelion_longitude < 0.0:
+            perihelion_longitude += 2 * np.pi
 
     return eccentricity, obliquity, perihelion_longitude
 
@@ -250,8 +253,8 @@ def plot(restrict):
 
     axs[0].plot(time, pehihelion_longitude, label="approximation")
     axs[0].grid()
-    axs[0].set_title("Perihelion longitude (degrees)")
-    axs[0].hlines(102.94719, time[0], time[-1], colors="red", label="present day")
+    axs[0].set_title("Perihelion longitude (geocentric coordinate system, degrees)")
+    axs[0].hlines(102.94719 + 180.0, time[0], time[-1], colors="red", label="present day")
     axs[0].legend()
 
     axs[1].plot(time, eccentricity, label="approximation")
@@ -273,7 +276,7 @@ def plot(restrict):
 
 def save(filename, restrict):
     "Save orbital parameters to a file"
-    time = np.linspace(-125e3, 2000, 125 + 2 + 1)
+    time = np.linspace(-125e3, 3000, 125 + 3 + 1)
     data = np.array([orbital_parameters(y, restrict) for y in time])
 
     eccentricity = data[:, 0]
@@ -303,7 +306,7 @@ def save(filename, restrict):
         ob[:] = obliquity
 
         pl = f.createVariable("perihelion_longitude", np.float64, ("time",))
-        pl.long_name = "Mean longitude of the perihelion relative to the vernal equinox"
+        pl.long_name = "Mean longitude of the perihelion relative to the vernal equinox, in the geocentric ecliptic coordinate system"
         pl.units = "degrees"
         pl[:] = perihelion_longitude
 
@@ -327,7 +330,6 @@ if __name__ == "__main__":
     options, _ = parser.parse_known_args()
 
     if options.plot:
-        print(options.restrict)
         plot(options.restrict)
     else:
         save(options.output_filename, options.restrict)

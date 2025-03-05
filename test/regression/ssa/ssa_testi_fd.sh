@@ -24,8 +24,8 @@ set -x
 OPTS="-verbose 1 -ssa_method fd -o_size none -ssafd_picard_rtol 5e-07 -ssafd_ksp_rtol 1e-12 -Mx 5"
 
 # do stuff
-$MPIEXEC_COMMAND $PISM_PATH/ssa_testi${EXT} -My 61 $OPTS > ${output}
-$MPIEXEC_COMMAND $PISM_PATH/ssa_testi${EXT} -My 121 $OPTS >> ${output}
+$MPIEXEC_COMMAND $PISM_PATH/pism_ssa_test_i${EXT} -My 61 $OPTS > ${output}
+$MPIEXEC_COMMAND $PISM_PATH/pism_ssa_test_i${EXT} -My 121 $OPTS >> ${output}
 
 set +e
 

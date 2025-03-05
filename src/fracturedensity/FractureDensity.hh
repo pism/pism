@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2019, 2021, 2022, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -47,7 +47,7 @@ public:
               const array::Scalar &hardness,
               const array::Scalar &inflow_boundary_mask);
 
-  const array::Scalar& density() const;
+  const array::Scalar1& density() const;
   const array::Scalar& growth_rate() const;
   const array::Scalar& healing_rate() const;
   const array::Scalar& flow_enhancement() const;

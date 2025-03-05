@@ -809,7 +809,7 @@ Run
 
 .. code-block:: bash
 
-   pismr -stress_balance blatter [other options] -help | grep "-bp"
+   pism -stress_balance blatter [other options] -help | grep "-bp"
 
 to get the list of all PETSc options controlling this solver.
 

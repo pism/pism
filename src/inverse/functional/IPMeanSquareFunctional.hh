@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2020, 2022  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2020, 2022, 2024  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,8 @@
 #define IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C
 
 #include "pism/inverse/functional/IPFunctional.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 namespace inverse {

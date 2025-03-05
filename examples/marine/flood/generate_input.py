@@ -47,8 +47,8 @@ try:
     nc.define_2d_field("thk", attrs={"units": "m",
                                      "long_name": "ice thickness"})
 
-    nc.define_2d_field("climatic_mass_balance", attrs={"units": "kg m-2 year-1"})
-    nc.define_2d_field("ice_surface_temp", attrs={"units": "Kelvin"})
+    nc.define_2d_field("climatic_mass_balance", attrs={"units": "kg m^-2 year^-1"})
+    nc.define_2d_field("ice_surface_temp", attrs={"units": "kelvin"})
 except:
     pass
 
@@ -61,9 +61,15 @@ nc.write("ice_surface_temp", np.zeros_like(xx) + 273.15 - 30.0)
 time = np.linspace(0, 1000, 1001)
 sea_level = np.linspace(0, 700, 1001)
 
-nc.createDimension("time")
-nc.define_timeseries("time", attrs={"units": "years since 1-1-1"})
+dt = time[1] - time[0]
+time_bounds = np.zeros((len(time), 2))
+for k in range(len(time)):
+    time_bounds[k, 0] = time[k] - 0.5*dt
+    time_bounds[k, 1] = time[k] + 0.5*dt
+
+nc.create_time(use_bounds=True, length=len(time), units="common_years since 1-1-1")
 nc.write_timeseries("time", time)
+nc.write_timeseries("time_bounds", time_bounds)
 
 nc.define_timeseries("delta_SL", attrs={"units": "meters"})
 nc.write_timeseries("delta_SL", sea_level)

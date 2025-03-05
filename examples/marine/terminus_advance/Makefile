@@ -9,7 +9,7 @@ input.nc: generate_input.py
 	python ./generate_input.py -M 201 -o $@
 
 run: input.nc
-	pismr -i input.nc -bootstrap ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc
+	pism -i input.nc -bootstrap ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc
 
 clean:
 	@rm -f *.nc*

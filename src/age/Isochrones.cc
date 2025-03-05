@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 PISM Authors
+/* Copyright (C) 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
@@ -264,7 +264,7 @@ static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<co
     }
 
     // note matching input and output grids below:
-    lic.z = std::make_shared<Interpolation>(NEAREST, Z, Z);
+    lic.z = std::make_shared<Interpolation1D>(NEAREST, Z, Z);
   }
 
   petsc::VecArray tmp(result->vec());
@@ -484,7 +484,7 @@ void Isochrones::initialize(const File &input_file, int record, bool use_interpo
     using namespace details;
 
     m_log->message(2, "* Initializing the isochrone tracking model from '%s'...\n",
-                   input_file.filename().c_str());
+                   input_file.name().c_str());
 
     if (use_interpolation) {
       m_log->message(2, "  [using bilinear interpolation to read layer thicknesses]\n");
@@ -613,8 +613,11 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
 
     array::AccessScope scope{ &u, &v, m_layer_thickness.get(), m_tmp.get(), &ice_thickness };
 
-    double dx = m_grid->dx(), dy = m_grid->dy(),
-           H_min = m_config->get_number("geometry.ice_free_thickness_standard");
+    double dx = m_grid->dx(), dy = m_grid->dy();
+
+#ifndef NDEBUG
+    double H_min = m_config->get_number("geometry.ice_free_thickness_standard");
+#endif
 
     // flux estimated using first-order upwinding
     auto Q = [](double U, double f_n, double f_p) { return U * (U >= 0 ? f_n : f_p); };
@@ -679,14 +682,14 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
         z.w += d_w[k];
       }
 
-      assert(ice_thickness(i, j) < H_min or d_total > 0.0);
-
       // re-scale so that the sum of layer thicknesses is equal to the ice_thickness
       if (d_total > 0.0) {
         double S = ice_thickness(i, j) / d_total;
         for (size_t k = 0; k <= m_top_layer_index; ++k) {
           d[k] *= S;
         }
+      } else {
+        assert(ice_thickness(i, j) < H_min);
       }
     }
   }

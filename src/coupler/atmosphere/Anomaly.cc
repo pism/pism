@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -54,12 +54,12 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel>
 
   m_air_temp_anomaly->metadata(0)
       .long_name("anomaly of the near-surface air temperature")
-      .units("Kelvin");
+      .units("kelvin");
 
   m_precipitation_anomaly->metadata(0)
       .long_name("anomaly of the ice-equivalent precipitation rate")
-      .units("kg m-2 second-1")
-      .output_units("kg m-2 year-1");
+      .units("kg m^-2 second^-1")
+      .output_units("kg m^-2 year^-1");
 
   m_precipitation = allocate_precipitation(g);
   m_temperature   = allocate_temperature(g);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2022, 2023 PISM Authors
+/* Copyright (C) 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,7 +18,7 @@
  */
 
 #include "pism/util/array/CellType.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 
 namespace pism {
 namespace array {

@@ -9,6 +9,7 @@ src/base/bedroughplay. Also used in PISM software (regression) test.
 
 import PISM
 from math import sin, pi
+import numpy
 
 ctx = PISM.Context()
 config = ctx.config
@@ -18,10 +19,9 @@ def grid():
     "Create the bed smoother grid."
     P = PISM.GridParameters(config)
 
-    P.horizontal_size_from_options()
-    P.horizontal_extent_from_options(ctx.unit_system)
+    P.horizontal_size_and_extent_from_options(config)
     P.vertical_grid_from_options(config)
-    P.ownership_ranges_from_options(ctx.size)
+    P.ownership_ranges_from_options(config, ctx.size)
 
     return PISM.Grid(ctx.ctx, P)
 
@@ -69,11 +69,13 @@ def set_config():
     config.set_number("grid.Mx", 81)
     config.set_number("grid.My", 81)
 
-    config.set_number("grid.Lx", 1200e3)
-    config.set_number("grid.Ly", 1200e3)
+    config.set_number("grid.Lx", 1200) # in km
+    config.set_number("grid.Ly", 1200) # in km
 
     config.set_number("stress_balance.sia.Glen_exponent", 3.0)
     config.set_number("stress_balance.sia.bed_smoother.range", 50.0e3)
+
+    PISM.set_config_from_options(ctx.unit_system, config)
 
 
 def smooth(topg, topg_smoothed, usurf, theta):
@@ -115,16 +117,8 @@ def bed_smoother_test():
     stored_range["topg_smoothed"] = [-372.9924735817933, 372.9924735817933]
     stored_range["theta"] = [0.7147300652935706, 0.9884843647808601]
 
-    computed_range = {}
     for f in [topg, topg_smoothed, theta]:
-        computed_range[f.get_name()] = f.range()
-
-    for name in list(stored_range.keys()):
-        computed = computed_range[name]
-        stored = stored_range[name]
-
-        for k in range(2):
-            assert abs(computed[k] - stored[k]) < 1e-16
+        numpy.testing.assert_almost_equal([PISM.min(f), PISM.max(f)], stored_range[f.get_name()])
 
 
 if __name__ == "__main__":

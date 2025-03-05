@@ -94,7 +94,7 @@ def generate_forcing(filename):
     tb_var = nc.createVariable("time_bounds", 'f', dimensions=("time", "nv"))
     tb_var[:] = time_bounds
 
-    dT_var = def_var(nc, "delta_T", "K", fill_value)
+    dT_var = def_var(nc, "delta_T", "kelvin", fill_value)
     dT_var.standard_name = "land_ice_temperature_at_firn_base"
     dT_var.long_name = "Temperature (variation from present)"
     dT_var[:] = delta_T

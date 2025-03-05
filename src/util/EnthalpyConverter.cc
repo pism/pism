@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2017, 2021, 2023 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2017, 2021, 2023, 2024, 2025 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #include "pism/util/ConfigInterface.hh"
 
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -63,13 +64,13 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_T_tolerance = config.get_number("enthalpy_converter.relaxed_is_temperate_tolerance"); // K
   m_T_0         = config.get_number("enthalpy_converter.T_reference"); // K
 
-  m_do_cold_ice_methods  = config.get_flag("energy.temperature_based");
+  m_cold_mode = member(config.get_string("energy.model"), {"cold", "none"});
 }
 
 //! Return `true` if ice at `(E, P)` is temperate.
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::is_temperate(double E, double P) const {
-  if (m_do_cold_ice_methods) {
+  if (m_cold_mode) {
     return is_temperate_relaxed(E, P);
   }
 
@@ -84,8 +85,7 @@ bool EnthalpyConverter::is_temperate_relaxed(double E, double P) const {
   return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
 }
 
-
-void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) const {
+void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) {
 #if (Pism_DEBUG==1)
   const double T_melting = melting_temperature(P);
   if (T <= 0.0) {
@@ -110,7 +110,7 @@ void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) con
 #endif
 }
 
-void EnthalpyConverter::validate_E_P(double E, double P) const {
+void EnthalpyConverter::validate_E_P(double E, double P) {
 #if (Pism_DEBUG==1)
   if (E >= enthalpy_liquid(P)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "E=%f J/kg at P=%f Pa equals or exceeds that of liquid water (%f J/kg)",
@@ -174,7 +174,9 @@ We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
 double EnthalpyConverter::temperature(double E, double P) const {
+#if (Pism_DEBUG==1)
   validate_E_P(E, P);
+#endif
 
   if (E < enthalpy_cts(P)) {
     return temperature_cold(E);
@@ -184,7 +186,7 @@ double EnthalpyConverter::temperature(double E, double P) const {
 }
 
 
-//! Get pressure-adjusted ice temperature, in Kelvin, from enthalpy and pressure.
+//! Get pressure-adjusted ice temperature, in kelvin, from enthalpy and pressure.
 /*!
 The pressure-adjusted temperature is:
      \f[ T_{pa}(E,p) = T(E,p) - T_m(p) + T_{melting}. \f]
@@ -208,7 +210,9 @@ double EnthalpyConverter::pressure_adjusted_temperature(double E, double P) cons
    We do not allow liquid water (i.e. water fraction @f$ \omega=1.0 @f$).
  */
 double EnthalpyConverter::water_fraction(double E, double P) const {
+#if (Pism_DEBUG==1)
   validate_E_P(E, P);
+#endif
 
   double E_s = enthalpy_cts(P);
   if (E <= E_s) {
@@ -235,7 +239,9 @@ Certain cases are not allowed and throw exceptions:
 These inequalities may be violated in the sixth digit or so, however.
  */
 double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
+#if (Pism_DEBUG==1)
   validate_T_omega_P(T, omega, P);
+#endif
 
   const double T_melting = melting_temperature(P);
 
@@ -284,8 +290,8 @@ double EnthalpyConverter::enthalpy_permissive(double T, double omega, double P) 
 ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
   : EnthalpyConverter(config) {
   // turn on the "cold" enthalpy converter mode
-  m_do_cold_ice_methods = true;
-  // set melting temperature to one million Kelvin so that all ice is cold
+  m_cold_mode = true;
+  // set melting temperature to one million kelvin so that all ice is cold
   m_T_melting = 1e6;
   // disable pressure-dependence of the melting temperature by setting Clausius-Clapeyron beta to
   // zero

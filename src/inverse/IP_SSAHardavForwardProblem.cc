@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024, 2025  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,18 +17,17 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/inverse/IP_SSAHardavForwardProblem.hh"
-#include "pism/basalstrength/basal_resistance.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/fem/Quadrature.hh"
+#include "pism/util/fem/DirichletData.hh"
 
 namespace pism {
 namespace inverse {
@@ -55,10 +54,12 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(std::shared_ptr<const Gri
   m_velocity_shared->metadata(0) = m_velocity.metadata(0);
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 
-  ierr = DMSetMatType(*m_da, MATBAIJ);
+  auto dm = m_velocity_global.dm();
+
+  ierr = DMSetMatType(*dm, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");
 
-  ierr = DMCreateMatrix(*m_da, m_J_state.rawptr());
+  ierr = DMCreateMatrix(*dm, m_J_state.rawptr());
   PISM_CHK(ierr, "DMCreateMatrix");
 
   ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
@@ -91,19 +92,37 @@ void IP_SSAHardavForwardProblem::init() {
     geometry.ice_thickness.copy_from(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
     geometry.bed_elevation.copy_from(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
     geometry.sea_level_elevation.set(0.0); // FIXME: this should be an input
-    geometry.ice_area_specific_volume.set(0.0);
+
+    if (m_config->get_flag("geometry.part_grid.enabled")) {
+      geometry.ice_area_specific_volume.copy_from(
+          *m_grid->variables().get_2d_scalar("ice_area_specific_volume"));
+    } else {
+      geometry.ice_area_specific_volume.set(0.0);
+    }
 
     geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
     stressbalance::Inputs inputs;
 
+    const auto &variables = m_grid->variables();
+
+    const array::Scalar *vel_bc_mask = nullptr;
+    if (variables.is_available("vel_bc_mask")) {
+      vel_bc_mask = variables.get_2d_scalar("vel_bc_mask");
+    }
+
+    const array::Vector *vel_bc = nullptr;
+    if (variables.is_available("vel_bc")) {
+      vel_bc = variables.get_2d_vector("vel_bc");
+    }
+
     inputs.geometry           = &geometry;
     inputs.basal_melt_rate    = NULL;
-    inputs.basal_yield_stress = m_grid->variables().get_2d_scalar("tauc");
-    inputs.enthalpy           = m_grid->variables().get_3d_scalar("enthalpy");
+    inputs.basal_yield_stress = variables.get_2d_scalar("tauc");
+    inputs.enthalpy           = variables.get_3d_scalar("enthalpy");
     inputs.age                = NULL;
-    inputs.bc_mask            = m_grid->variables().get_2d_mask("vel_bc_mask");
-    inputs.bc_values          = m_grid->variables().get_2d_vector("vel_bc");
+    inputs.bc_mask            = vel_bc_mask;
+    inputs.bc_values          = vel_bc;
 
     inputs.water_column_pressure = NULL;
 
@@ -164,7 +183,7 @@ void IP_SSAHardavForwardProblem::assemble_residual(array::Vector &u, Vec RHS) {
 
   array::AccessScope l{&u};
 
-  petsc::DMDAVecArray rhs_a(m_da, RHS);
+  petsc::DMDAVecArray rhs_a(m_velocity_global.dm(), RHS);
 
   this->compute_local_function(u.array(), (Vector2d**)rhs_a.get());
 }
@@ -202,7 +221,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
                                                        array::Scalar &dzeta,
                                                        Vec du) {
-  petsc::DMDAVecArray du_a(m_da, du);
+  petsc::DMDAVecArray du_a(m_velocity_global.dm(), du);
   this->apply_jacobian_design(u, dzeta, (Vector2d**)du_a.get());
 }
 
@@ -536,7 +555,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
     dzeta_a[j][i] *= dB_dzeta;
   }
 
-  if (m_fixed_design_locations) {
+  if (m_fixed_design_locations != nullptr) {
     fem::DirichletData_Scalar fixedZeta(m_fixed_design_locations, NULL);
     fixedZeta.fix_residual_homogeneous(dzeta_a);
   }
@@ -582,12 +601,12 @@ void IP_SSAHardavForwardProblem::apply_linearization(array::Scalar &dzeta, array
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IP_SSAHardavForwardProblem::apply_linearization solve"
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
-  } else {
-    m_log->message(4,
-                   "IP_SSAHardavForwardProblem::apply_linearization converged"
-                   " (KSP reason %s)\n",
-                   KSPConvergedReasons[reason]);
   }
+
+  m_log->message(4,
+                 "IP_SSAHardavForwardProblem::apply_linearization converged"
+                 " (KSP reason %s)\n",
+                 KSPConvergedReasons[reason]);
 
   du.copy_from(m_du_global);
 }
@@ -647,11 +666,10 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(array::Vector &du
   if (reason < 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
-  } else {
-    m_log->message(4,
-                   "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
-                   KSPConvergedReasons[reason]);
   }
+
+  m_log->message(4, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
+                 KSPConvergedReasons[reason]);
 
   this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta);
   dzeta.scale(-1);

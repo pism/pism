@@ -23,8 +23,8 @@ set -e
 OPTS="-verbose 1 -ssa_method fd -o_size none -ssafd_pc_type gamg -ssafd_ksp_rtol 1e-12"
 
 # do stuff
-$MPIEXEC_COMMAND $PISM_PATH/ssa_testj${EXT} -Mx 61 -My 61 $OPTS > ${output}
-$MPIEXEC_COMMAND $PISM_PATH/ssa_testj${EXT} -Mx 121 -My 121 $OPTS >> ${output}
+$MPIEXEC_COMMAND $PISM_PATH/pism_ssa_test_j${EXT} -Mx 61 -My 61 $OPTS > ${output}
+$MPIEXEC_COMMAND $PISM_PATH/pism_ssa_test_j${EXT} -Mx 121 -My 121 $OPTS >> ${output}
 
 set +e
 

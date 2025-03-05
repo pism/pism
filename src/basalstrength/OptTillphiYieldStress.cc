@@ -113,7 +113,7 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
  * Initialize the last time tillphi was updated.
  */
 void OptTillphiYieldStress::init_t_last(const File &input_file) {
-  if (input_file.find_variable(m_time_name)) {
+  if (input_file.variable_exists(m_time_name)) {
     input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
   } else {
     m_t_last = time().current();
@@ -130,7 +130,7 @@ void OptTillphiYieldStress::init_usurf_target(const File &input_file) {
     m_usurf_target.regrid(filename, io::Default::Nil());
   } else {
     m_log->message(2, "* No file set to read target surface elevation from... using '%s'\n",
-                   input_file.filename().c_str());
+                   input_file.name().c_str());
 
     m_usurf_target.regrid(input_file, io::Default::Nil());
   }
@@ -274,7 +274,7 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
 void OptTillphiYieldStress::define_model_state_impl(const File &output) const {
   MohrCoulombYieldStress::define_model_state_impl(output);
 
-  if (not output.find_variable(m_time_name)) {
+  if (not output.variable_exists(m_time_name)) {
     output.define_variable(m_time_name, io::PISM_DOUBLE, {});
 
     output.write_attribute(m_time_name, "long_name",

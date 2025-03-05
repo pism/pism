@@ -1,0 +1,32 @@
+netcdf grid {
+dimensions:
+ x = 9 ;
+ y = 14 ;
+variables:
+ double x(x) ;
+  x:units = "km" ;
+  x:standard_name = "projection_x_coordinate" ;
+ double y(y) ;
+  y:units = "km" ;
+  y:standard_name = "projection_y_coordinate" ;
+ byte domain ;
+  domain:dimensions = "x y" ;
+  domain:grid_mapping = "mapping";
+  domain:long_name = "Greenland model domain definition" ;
+ byte mapping ;
+  mapping:grid_mapping_name = "polar_stereographic" ;
+  mapping:latitude_of_projection_origin = 90 ;
+  mapping:scale_factor_at_projection_origin = 1. ;
+  mapping:straight_vertical_longitude_from_pole = -45 ;
+  mapping:standard_parallel = 70 ;
+  mapping:false_northing = 0 ;
+  mapping:false_easting = 0 ;
+  :Conventions = "CF-1.8";
+data:
+ x = -700, -500, -300, -100, 100,
+      300, 500, 700, 900 ;
+ y = -3300, -3100, -2900, -2700,
+     -2500, -2300, -2100, -1900,
+     -1700, -1500, -1300, -1100,
+     -900, -700 ;
+}

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,10 +29,10 @@ namespace pism {
 /* Path to PISM's configuration file (${Pism_CONFIG_FILE}) */
 extern const char *config_file;
 
-/* PISM's revision string (${Pism_REVISION_TAG}) */
+/* PISM's revision string (${Pism_VERSION_LONG}) */
 extern const char *revision;
 
-/* Configuration flags used to build the PETSc library PISM is linked to (${Pism_PETSC_CONFIGURE_FLAGS}) */
+/* Configuration flags used to build the PETSc library PISM is linked to */
 extern const char *petsc_configure_flags;
 
 /* petsc4py version used to build PISM's Python bindings (${Pism_PETSC4PY_VERSION}) */
@@ -53,14 +53,14 @@ extern const char *cmake_version;
 /* Equal to 1 if PISM was built with PROJ, 0 otherwise. */
 #cmakedefine01 Pism_USE_PROJ
 
+/* Equal to 1 if PISM was built with YAC for interpolation, 0 otherwise. */
+#cmakedefine01 Pism_USE_YAC_INTERPOLATION
+
 /* Equal to 1 if PISM was built with parallel I/O support using NetCDF-4, 0 otherwise. */
 #cmakedefine01 Pism_USE_PARALLEL_NETCDF4
 
 /* Equal to 1 if PISM was built with PNetCDF's parallel I/O support. */
 #cmakedefine01 Pism_USE_PNETCDF
-
-/* Equal to 1 if PISM was built with NCAR's ParallelIO. */
-#cmakedefine01 Pism_USE_PIO
 
 /* Equal to 1 if PISM's Python bindings were built, 0 otherwise. */
 #cmakedefine01 Pism_BUILD_PYTHON_BINDINGS

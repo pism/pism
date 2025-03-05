@@ -27,37 +27,9 @@
 /* remove Vars::remove */
 %ignore pism::Vars::remove;
 
-%extend pism::Vars {
-  %pythoncode %{
-def get(self, key):
-    # try this first (a cell type mask is a mask, which is a scalar)
-    try:
-        return self.get_2d_cell_type(key)
-    except:
-        pass
-
-    try:
-        return self.get_2d_mask(key)
-    except:
-        pass
-  
-    try:
-        return self.get_2d_scalar(key)
-    except:
-        pass
-  
-    try:
-        return self.get_2d_vector(key)
-    except:
-        pass
-  
-    try:
-        return self.get_3d_scalar(key)
-    except:
-        pass
-  
-    return self._get(key)
-  %}
+%extend pism::Vars
+{
+  %pythoncode "Vars.py"
 }
 
 %include "util/Vars.hh"

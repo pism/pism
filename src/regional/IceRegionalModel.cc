@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -150,13 +150,13 @@ void IceRegionalModel::allocate_energy_model() {
 
   m_log->message(2, "# Allocating an energy balance model...\n");
 
-  if (m_config->get_flag("energy.enabled")) {
-    if (m_config->get_flag("energy.temperature_based")) {
-      throw RuntimeError(PISM_ERROR_LOCATION,
-                         "pismr -regional does not support the '-energy cold' mode.");
-    }
+  auto energy_model = m_config->get_string("energy.model");
 
+  if (energy_model == "enthalpy") {
     m_energy_model = std::make_shared<energy::EnthalpyModel_Regional>(m_grid, m_stress_balance);
+  } else if (energy_model == "cold") {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "pism -regional does not support the 'cold' energy.model");
   } else {
     m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
   }
@@ -217,7 +217,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
 
   // no_model_mask
   {
-    if (input_file.find_variable(m_no_model_mask.metadata().get_name())) {
+    if (input_file.variable_exists(m_no_model_mask.metadata().get_name())) {
       m_no_model_mask.regrid(input_file, io::Default::Nil());
     } else {
       // set using the no_model_strip parameter
@@ -315,7 +315,7 @@ public:
     : Diag<IceRegionalModel>(m) {
 
     m_vars = { { m_sys, "ch_temp", m_grid->z() } };
-    m_vars[0].long_name("temperature of the cryo-hydrologic system").units("Kelvin");
+    m_vars[0].long_name("temperature of the cryo-hydrologic system").units("kelvin");
   }
 
 protected:
@@ -366,7 +366,7 @@ public:
     : Diag<IceRegionalModel>(m) {
 
     m_vars = { { m_sys, "ch_heat_flux", m_grid->z() } };
-    m_vars[0].long_name("rate of cryo-hydrologic warming").units("W m-3");
+    m_vars[0].long_name("rate of cryo-hydrologic warming").units("W m^-3");
   }
 
 protected:

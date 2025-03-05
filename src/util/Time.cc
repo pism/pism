@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2022 Constantine Khroulev
+// Copyright (C) 2011-2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@ static std::string reference_date_from_file(const File &file,
                                             const std::string &default_value,
                                             bool stop_on_error) {
 
-  if (file.find_variable(time_name)) {
+  if (file.variable_exists(time_name)) {
     std::string time_units = file.read_text_attribute(time_name, "units");
 
     if (not time_units.empty()) {
@@ -59,17 +59,17 @@ static std::string reference_date_from_file(const File &file,
                                       "%s:units = \"%s\" in '%s' does not contain a reference date",
                                       time_name.c_str(),
                                       time_units.c_str(),
-                                      file.filename().c_str());
+                                      file.name().c_str());
       }
     } else if (stop_on_error) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "the '%s' variable in '%s' has no units",
-                                    time_name.c_str(), file.filename().c_str());
+                                    time_name.c_str(), file.name().c_str());
     }
   } else if (stop_on_error) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "'%s' variable is not present in '%s'.",
-                                    time_name.c_str(), file.filename().c_str());
+                                    time_name.c_str(), file.name().c_str());
   }
 
   return default_value;
@@ -81,7 +81,7 @@ static std::string calendar_from_file(const File &file,
                                       const std::string &default_value,
                                       bool stop_on_error) {
 
-  if (file.find_variable(time_name)) {
+  if (file.variable_exists(time_name)) {
     std::string calendar_name = file.read_text_attribute(time_name, "calendar");
 
     if (not calendar_name.empty()) {
@@ -91,13 +91,13 @@ static std::string calendar_from_file(const File &file,
     if (stop_on_error) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "the '%s' variable in '%s' has no calendar attribute",
-                                    time_name.c_str(), file.filename().c_str());
+                                    time_name.c_str(), file.name().c_str());
     }
 
   } else if (stop_on_error) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "'%s' variable is not present in '%s'.",
-                                  time_name.c_str(), file.filename().c_str());
+                                  time_name.c_str(), file.name().c_str());
   }
 
   return default_value;
@@ -131,7 +131,7 @@ static std::string reference_date(const File *input_file,
       log.message(2,
                   "WARNING: Using reference date %s\n"
                   "         instead of the one present in the input file '%s' (%s)\n",
-                  default_reference_date.c_str(), input_file->filename().c_str(), ref_date.c_str());
+                  default_reference_date.c_str(), input_file->name().c_str(), ref_date.c_str());
     }
 
     return ref_date;
@@ -167,7 +167,7 @@ static std::string calendar(const File *input_file,
       log.message(2,
                   "WARNING: Using calendar %s\n"
                   "         instead of the one present in the input file '%s' (%s)\n",
-                  default_calendar.c_str(), input_file->filename().c_str(), calendar.c_str());
+                  default_calendar.c_str(), input_file->name().c_str(), calendar.c_str());
     }
 
     return default_calendar;
@@ -255,8 +255,9 @@ static double parse_date(const std::string &input,
   std::string spec = string_strip(input);
 
   if (spec.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "got an empty date specification");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "got an empty date specification: '%s'",
+                                  input.c_str());
   }
 
   // We need to remember if the year was negative in the input string: split() will ignore
@@ -346,7 +347,6 @@ static double parse_date(const std::string &input,
  * Return the start time.
  */
 static double start_time(const Config &config,
-                         const Logger &log,
                          const File *file,
                          const std::string &reference_date,
                          const std::string &calendar,
@@ -372,23 +372,19 @@ static double start_time(const Config &config,
   if (file_calendar != calendar) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "calendar in '%s' (%s) does not match the selected calendar (%s)",
-                                  file->filename().c_str(), file_calendar.c_str(), calendar.c_str());
+                                  file->name().c_str(), file_calendar.c_str(), calendar.c_str());
   }
 
   if (ref_date != reference_date) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "reference date in '%s' (%s) does not match the selected date (%s)",
-                                  file->filename().c_str(), ref_date.c_str(), reference_date.c_str());
+                                  file->name().c_str(), ref_date.c_str(), reference_date.c_str());
   }
 
   // FIXME: it would make sense to get the length of the time dimension and read the last
   // number instead.
   if (file->dimension_length(time_name) > 0) {
-    VariableMetadata time_axis(time_name, time_units.system());
-    time_axis["units"] = time_units.format();
-
-    std::vector<double> time{};
-    io::read_timeseries(*file, time_axis, log, time);
+    auto time = io::read_1d_variable(*file, time_name, time_units.format(), time_units.system());
 
     return time.back();
   }
@@ -718,7 +714,6 @@ Time::Time(MPI_Comm com,
   m_simple_calendar = member(m_calendar_string, {"360_day", "365_day", "no_leap"});
 
   m_run_start = start_time(*config,
-                           log,
                            file.get(),
                            ref_date,
                            m_calendar_string,
@@ -791,16 +786,10 @@ void Time::init_from_file(MPI_Comm com,
     std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
     if (not time_bounds_name.empty()) {
       // use the time bounds
-      VariableMetadata bounds(time_bounds_name, m_unit_system);
-      bounds["units"] = m_time_units.format();
-
-      io::read_time_bounds(file, bounds, log, time);
+      time = io::read_bounds(file, time_bounds_name, m_time_units.format(), m_unit_system);
     } else {
       // use the time axis
-      VariableMetadata time_axis(time_name, m_unit_system);
-      time_axis["units"] = m_time_units.format();
-
-      io::read_timeseries(file, time_axis, log, time);
+      time = io::read_1d_variable(file, time_name, m_time_units.format(), m_unit_system);
     }
 
     // Set time.

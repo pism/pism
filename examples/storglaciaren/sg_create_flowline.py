@@ -56,7 +56,7 @@ usurf_var[:] = topg + thk
 
 qgeo = 0.042
 bheatflx_var = nc.createVariable("bheatflx", 'f', dimensions=("x",))
-bheatflx_var.units = "W m-2"
+bheatflx_var.units = "W m^-2"
 bheatflx_var[:] = qgeo * np.ones_like(x)
 
 # generate (somewhat) reasonable acab
@@ -70,7 +70,7 @@ acab[105:] = acab_min
 
 ice_density = 910.0             # kg m-3
 acab_var = nc.createVariable("climatic_mass_balance", 'f', dimensions=("x",))
-acab_var.units = "kg m-2 year-1"
+acab_var.units = "kg m^-2 year^-1"
 acab_var.standard_name = "land_ice_surface_specific_mass_balance_flux"
 # convert from m/year ice equivalent into [kg m-2 year-1]:
 acab_var[:] = acab * ice_density

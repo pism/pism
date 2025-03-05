@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2024 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -133,6 +133,15 @@ void IceModel::model_state_setup() {
     input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
   }
 
+  // Compute latitudes and longitudes *before* they might be needed.
+  compute_lat_lon();
+
+  if (use_input_file) {
+    std::string history = input_file->read_text_attribute("PISM_GLOBAL", "history");
+    m_output_global_attributes["history"] =
+        history + m_output_global_attributes.get_string("history");
+  }
+
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
   {
     switch (input.type) {
@@ -148,30 +157,6 @@ void IceModel::model_state_setup() {
     }
 
     regrid();
-  }
-
-  // Get projection information and compute latitudes and longitudes *before* a component
-  // decides to use them...
-  {
-    if (use_input_file) {
-      std::string mapping_name = m_grid->get_mapping_info().mapping.get_name();
-      MappingInfo info = get_projection_info(*input_file, mapping_name,
-                                             m_ctx->unit_system());
-
-      if (not info.proj.empty()) {
-        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
-                       info.proj.c_str(), input.filename.c_str());
-      }
-
-      m_output_global_attributes["proj"] = info.proj;
-      m_grid->set_mapping_info(info);
-
-      std::string history = input_file->read_text_attribute("PISM_GLOBAL", "history");
-      m_output_global_attributes["history"] = history + m_output_global_attributes.get_string("history");
-
-    }
-
-    compute_lat_lon();
   }
 
   m_sea_level->init(m_geometry);
@@ -346,6 +331,9 @@ void IceModel::model_state_setup() {
                                  pism::revision, (int)m_grid->size());
     prepend_history(startstr + args_string());
   }
+
+  // forget stored interpolation weights to free up some RAM
+  m_grid->forget_interpolations();
 }
 
 //! Initialize 2D model state fields managed by IceModel from a file (for re-starting).
@@ -354,7 +342,7 @@ void IceModel::model_state_setup() {
  * processes are handled by sub-models.
  */
 void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
-  std::string filename = input_file.filename();
+  std::string filename = input_file.name();
 
   m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
@@ -365,11 +353,11 @@ void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
 
 void IceModel::bootstrap_2d(const File &input_file) {
 
-  m_log->message(2, "bootstrapping from file '%s'...\n", input_file.filename().c_str());
+  m_log->message(2, "bootstrapping from file '%s'...\n", input_file.name().c_str());
 
   auto usurf = input_file.find_variable("usurf", "surface_altitude");
 
-  bool mask_found = input_file.find_variable("mask");
+  bool mask_found = input_file.variable_exists("mask");
 
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately
@@ -385,25 +373,17 @@ void IceModel::bootstrap_2d(const File &input_file) {
   m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
   // longitude
-  {
+  if (m_geometry.longitude.metadata().has_attribute("initialized")) {
+    m_geometry.longitude.metadata()["initialized"] = "";
+  } else {
     m_geometry.longitude.regrid(input_file, io::Default(0.0));
-
-    auto lon = input_file.find_variable("lon", "longitude");
-
-    if (not lon.exists) {
-      m_geometry.longitude.metadata()["missing_at_bootstrap"] = "true";
-    }
   }
 
   // latitude
-  {
+  if (m_geometry.latitude.metadata().has_attribute("initialized")) {
+    m_geometry.latitude.metadata()["initialized"] = "";
+  } else {
     m_geometry.latitude.regrid(input_file, io::Default(0.0));
-
-    auto lat = input_file.find_variable("lat", "latitude");
-
-    if (not lat.exists) {
-      m_geometry.latitude.metadata()["missing_at_bootstrap"] = "true";
-    }
   }
 
   m_geometry.ice_thickness.regrid(
@@ -589,12 +569,11 @@ void IceModel::allocate_energy_model() {
 
   m_log->message(2, "# Allocating an energy balance model...\n");
 
-  if (m_config->get_flag("energy.enabled")) {
-    if (m_config->get_flag("energy.temperature_based")) {
-      m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance);
-    } else {
-      m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance);
-    }
+  auto energy_model = m_config->get_string("energy.model");
+  if (energy_model == "enthalpy") {
+    m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance);
+  } else if (energy_model == "cold") {
+    m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance);
   } else {
     m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
   }
@@ -806,7 +785,7 @@ void IceModel::misc_setup() {
 
 #if (Pism_USE_PROJ==1)
   {
-    std::string proj_string = m_grid->get_mapping_info().proj;
+    std::string proj_string = m_grid->get_mapping_info().proj_string;
     if (not proj_string.empty()) {
       m_output_vars.insert("lon_bnds");
       m_output_vars.insert("lat_bnds");
@@ -1094,17 +1073,28 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
 
 void IceModel::compute_lat_lon() {
 
-  std::string projection = m_grid->get_mapping_info().proj;
+  std::string projection = m_grid->get_mapping_info().proj_string;
 
-  if (m_config->get_flag("grid.recompute_longitude_and_latitude") and
-      not projection.empty()) {
-    m_log->message(2,
-                   "* Computing longitude and latitude using projection parameters...\n");
+  const char *compute_lon_lat = "grid.recompute_longitude_and_latitude";
 
+  if (m_config->get_flag(compute_lon_lat) and not projection.empty()) {
+    m_log->message(2, "* Computing longitude and latitude using projection parameters...\n");
+
+#if (Pism_USE_PROJ==1)
     compute_longitude(projection, m_geometry.longitude);
-    m_geometry.longitude.metadata()["missing_at_bootstrap"] = "";
     compute_latitude(projection, m_geometry.latitude);
-    m_geometry.latitude.metadata()["missing_at_bootstrap"] = "";
+#else
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Cannot compute longitude and latitude.\n"
+                                  "Please rebuild PISM with PROJ\n"
+                                  "or set '%s' to 'false'.",
+                                  compute_lon_lat);
+#endif
+
+    // IceModel::bootstrap_2d() uses these attributes to determine if it needs to regrid
+    // longitude and latitude.
+    m_geometry.longitude.metadata()["initialized"] = "true";
+    m_geometry.latitude.metadata()["initialized"] = "true";
   }
 }
 

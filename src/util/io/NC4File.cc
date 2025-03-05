@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -155,36 +155,22 @@ void NC4File::def_var_chunking_impl(const std::string &name,
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4File::get_varm_double_impl(const std::string &variable_name,
-                                  const std::vector<unsigned int> &start,
-                                  const std::vector<unsigned int> &count,
-                                  const std::vector<unsigned int> &imap, double *op) const {
-  return this->get_put_var_double(variable_name,
-                                  start, count, imap, op,
-                                  true /*get*/,
-                                  true /*transposed*/);
-}
-
 void NC4File::get_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
                                   const std::vector<unsigned int> &count,
                                   double *op) const {
-  std::vector<unsigned int> dummy;
   return this->get_put_var_double(variable_name,
-                                  start, count, dummy, op,
-                                  true /*get*/,
-                                  false /*not transposed*/);
+                                  start, count, op,
+                                  true /*get*/);
 }
 
 void NC4File::put_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
                                   const std::vector<unsigned int> &count,
                                   const double *op) const {
-  std::vector<unsigned int> dummy;
   return this->get_put_var_double(variable_name,
-                                  start, count, dummy, const_cast<double*>(op),
-                                  false /*put*/,
-                                  false /*not transposed*/);
+                                  start, count, const_cast<double*>(op),
+                                  false /*put*/);
 }
 
 
@@ -403,61 +389,35 @@ void NC4File::set_fill_impl(int fillmode, int &old_modep) const {
   int stat = nc_set_fill(m_file_id, fillmode, &old_modep); check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4File::set_access_mode(int /*unused*/, bool /*unused*/) const {
+void NC4File::set_access_mode(int /*unused*/) const {
   // empty
 }
 
 void NC4File::get_put_var_double(const std::string &variable_name,
                                 const std::vector<unsigned int> &start,
                                 const std::vector<unsigned int> &count,
-                                const std::vector<unsigned int> &imap_input,
                                 double *op,
-                                bool get,
-                                bool transposed) const {
+                                bool get) const {
   int stat, varid, ndims = static_cast<int>(start.size());
-  std::vector<unsigned int> imap = imap_input;
-
-  if (not transposed) {
-    imap.resize(ndims);
-  }
 
   std::vector<size_t> nc_start(ndims), nc_count(ndims);
-  std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
 
   stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
 
   for (int j = 0; j < ndims; ++j) {
     nc_start[j]  = start[j];
     nc_count[j]  = count[j];
-    nc_imap[j]   = imap[j];
-    nc_stride[j] = 1;
   }
 
-  if (transposed) {
-
-    set_access_mode(varid, transposed);
-
-    if (get) {
-      stat = nc_get_varm_double(m_file_id, varid,
-                                nc_start.data(), nc_count.data(), nc_stride.data(), nc_imap.data(),
-                                op); check(PISM_ERROR_LOCATION, stat);
-    } else {
-      stat = nc_put_varm_double(m_file_id, varid,
-                                nc_start.data(), nc_count.data(), nc_stride.data(), nc_imap.data(),
-                                op); check(PISM_ERROR_LOCATION, stat);
-    }
-  } else {
-
-    set_access_mode(varid, transposed);
+  {
+    set_access_mode(varid);
 
     if (get) {
-      stat = nc_get_vara_double(m_file_id, varid,
-                                nc_start.data(), nc_count.data(),
-                                op); check(PISM_ERROR_LOCATION, stat);
+      stat = nc_get_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(), op);
+      check(PISM_ERROR_LOCATION, stat);
     } else {
-      stat = nc_put_vara_double(m_file_id, varid,
-                                nc_start.data(), nc_count.data(),
-                                op); check(PISM_ERROR_LOCATION, stat);
+      stat = nc_put_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(), op);
+      check(PISM_ERROR_LOCATION, stat);
     }
   }
 }

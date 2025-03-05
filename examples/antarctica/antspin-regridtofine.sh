@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2023  PISM authors
+# Copyright (C) 2009-2015, 2017, 2023, 2024  PISM authors
 ##################################################################################
 # Complete spinup of Antarctic ice sheet model by regriding to a finer resolution (~15 km).
 ##################################################################################
@@ -15,10 +15,12 @@ echo "${SCRIPTNAME} ${*}"
 
 set -e  # exit on error
 
+USE_PROJ=${USE_PROJ:-false}
+
 # naming files, directories, executables
 RESDIR=
 BOOTDIR=
-PISM_EXEC=pismr
+PISM_EXEC=pism
 PISM_MPIDO="mpiexec -n "
 
 # input data:
@@ -70,15 +72,27 @@ expackage="-extra_times 0:10:$RUN_LENGTH -extra_vars $exvars"
 # Note: switching to a finer grid may produce very high SIA diffusivities
 echo
 log "continue but regrid to $GRIDNAME and run for 2000 a"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP \
-    -i $PISM_INDATANAME -bootstrap $GRID \
-    -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,basal_melt_rate_grounded \
-    $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
-    -stress_balance.sia.max_diffusivity 1e5 \
-    -ys 0 -y $RUN_LENGTH \
-    -ts_file $TSNAME -ts_times 0:1:$RUN_LENGTH \
-    -extra_file $EXTRANAME $expackage \
-    -o $RESNAME -o_size big"
+cmd="$PISM_MPIDO $NN $PISM_EXEC
+  -grid.recompute_longitude_and_latitude ${USE_PROJ}
+  -skip
+  -skip_max $SKIP
+  -i $PISM_INDATANAME
+  -bootstrap $GRID
+  -regrid_file $INNAME
+  -regrid_vars litho_temp,thk,enthalpy,tillwat,basal_melt_rate_grounded
+   $SIA_ENHANCEMENT
+   $PIKPHYS_COUPLING
+   $PIKPHYS
+   $FULLPHYS
+  -stress_balance.sia.max_diffusivity 1e5
+  -ys 0
+  -y $RUN_LENGTH
+  -ts_file $TSNAME
+  -ts_times 1
+  -extra_file $EXTRANAME
+   $expackage
+  -o $RESNAME
+  -o_size big"
 
 $DO $cmd
 

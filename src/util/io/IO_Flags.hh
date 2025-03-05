@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2018, 2019, 2020, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2018, 2019, 2020, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,11 +57,7 @@ enum Backend : int {
   PISM_NETCDF3,
   PISM_NETCDF4_SERIAL,
   PISM_NETCDF4_PARALLEL,
-  PISM_PNETCDF,
-  PISM_PIO_PNETCDF,
-  PISM_PIO_NETCDF,
-  PISM_PIO_NETCDF4C,
-  PISM_PIO_NETCDF4P
+  PISM_PNETCDF
 };
 
 // This is a subset of NetCDF file modes. Use values that don't match

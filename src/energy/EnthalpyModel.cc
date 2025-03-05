@@ -38,7 +38,7 @@ EnthalpyModel::EnthalpyModel(std::shared_ptr<const Grid> grid,
 void EnthalpyModel::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the enthalpy-based energy balance model from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   m_basal_melt_rate.read(input_file, record);
   init_enthalpy(input_file, false, record);
@@ -54,7 +54,7 @@ void EnthalpyModel::bootstrap_impl(const File &input_file,
                                    const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   m_basal_melt_rate.regrid(input_file,
                            io::Default(m_config->get_number("bootstrapping.defaults.bmelt")));

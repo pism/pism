@@ -32,7 +32,7 @@ experiments.  Running `run.py --help` produces the following:
       --Mx=MX               Custom grid size; use with --mode=3
       --model=MODEL         Models: 1 - SSA only; 2 - SIA+SSA
       --executable=EXECUTABLE
-                            Executable to run, e.g. 'mpiexec -n 4 pismr'
+                            Executable to run, e.g. 'mpiexec -n 4 pism'
 
 For example, to set up MISMIP experiment `1a` using grid mode 1, a 12 km grid, run
 
@@ -55,7 +55,7 @@ do the run later.  For such application, the script helpfully uses environment v
 
 will use `aprun` on 32 cores.  Alternatively, you can use
 
-    ./run.py -e 1a --mode=1 --executable="aprun -n 32 pismr"
+    ./run.py -e 1a --mode=1 --executable="aprun -n 32 pism"
 
 or similar to skip the "preamble" handling environment variables and get "raw"
 commands.

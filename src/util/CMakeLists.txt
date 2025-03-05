@@ -29,7 +29,6 @@ add_library (util OBJECT
   array/Array3D.cc
   array/Scalar.cc
   array/Staggered.cc
-  interpolation.cc
   io/LocalInterpCtx.cc
   io/File.cc
   io/NC_Serial.cc
@@ -53,10 +52,24 @@ add_library (util OBJECT
   pism_utilities.cc
   projection.cc
   fftw_utilities.cc
-  label_components.cc
-  connected_components.cc
+  connected_components/label_components_parallel.cc
+  connected_components/label_components_serial.cc
   ScalarForcing.cc
+  Interpolation1D.cc
+  InputInterpolation.cc
 )
+
+if(Pism_USE_YAC_INTERPOLATION)
+  set_source_files_properties(InputInterpolationYAC.cc
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")
+  target_sources(util PRIVATE InputInterpolationYAC.cc)
+
+  set_source_files_properties(yaxt_wrapper.c
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${YAXT_INCLUDE_DIRS}")
+  target_sources(util PRIVATE yaxt_wrapper.c)
+endif()
 
 if(Pism_DEBUG)
   target_sources(util PRIVATE Poisson.cc)
@@ -74,9 +87,4 @@ endif()
 # Check if PnetCDF parallel I/O is enabled and add a source code file if necessary.
 if (Pism_USE_PNETCDF)
   target_sources(util PRIVATE io/PNCFile.cc)
-endif()
-
-# Check if PnetCDF parallel I/O is enabled and add a source code file if necessary.
-if (Pism_USE_PIO)
-  target_sources(util PRIVATE io/ParallelIO.cc)
 endif()

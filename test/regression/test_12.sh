@@ -18,7 +18,7 @@ TS_OPTS="-ts_file ice_volume-12.nc -ts_vars ice_volume -ts_times 1000:25:1e4"
 
 set -x
 
-$MPIEXEC -n 2 $PISM_PATH/pismv -test B $GRID $OPTS $TS_OPTS
+$MPIEXEC -n 2 $PISM_PATH/pism -test B $GRID $OPTS $TS_OPTS
 
 set +x
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021, 2024 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -135,7 +135,8 @@ private:
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;
 
-  void tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx, int Ny, double time);
+  void tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx, int Ny);
+  const double m_t_infty;
 
   Logger::ConstPtr m_log;
 };

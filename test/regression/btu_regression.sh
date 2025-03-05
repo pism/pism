@@ -13,8 +13,8 @@ set -e -x
 OPTS="-verbose 1 -ys 0.0 -ye 1.0 -dt 0.1 -o_size none"
 
 # do stuff: test with a litho_temp state variable, and without
-$PISM_PATH/btutest -Mbz 11 -Lbz 1000 $OPTS > ${output}
-$PISM_PATH/btutest -Mbz 1 $OPTS >> ${output}
+$PISM_PATH/pism_btutest -Mbz 11 -Lbz 1000 $OPTS > ${output}
+$PISM_PATH/pism_btutest -Mbz 1 $OPTS >> ${output}
 
 set +e
 

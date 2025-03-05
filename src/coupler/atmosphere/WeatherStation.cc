@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -61,8 +61,8 @@ WeatherStation::WeatherStation(std::shared_ptr<const Grid> grid)
   m_air_temp_timeseries = std::make_shared<ScalarForcing>(ctx,
                                                           filename,
                                                           "air_temp",
-                                                          "Kelvin",
-                                                          "Kelvin",
+                                                          "kelvin",
+                                                          "kelvin",
                                                           "near-surface air temperature",
                                                           periodic);
 

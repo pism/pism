@@ -1,15 +1,17 @@
 if (Pism_BUILD_PYTHON_BINDINGS)
 
-  if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
-    # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
-    cmake_policy(SET CMP0078 NEW)       #controls names of SWIG targets
-  endif()
+  # ``UseSWIG`` generates standard target names.
+  cmake_policy(SET CMP0078 NEW)
+
+  # ``UseSWIG`` honors ``SWIG_MODULE_NAME`` via ``-module`` flag.
+  cmake_policy(SET CMP0086 NEW)
 
   include(${SWIG_USE_FILE})
 
-  include_directories (. ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDE_DIRS} ${Pism_SOURCE_DIR}/src)
+  include_directories (BEFORE SYSTEM ${PETSC4PY_INCLUDES} ${Python3_INCLUDE_DIRS})
+  include_directories (. ${Pism_SOURCE_DIR}/src)
 
-  set(PISM_PYTHON_BINDING_LIBRARIES "pism")
+  set(PISM_PYTHON_BINDING_LIBRARIES "libpism")
 
   list(APPEND PISM_Python_deps
     AgeModel.i
@@ -61,14 +63,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   # has to be set *before* calling SWIG_ADD_MODULE
   set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps})
 
-  if (${CMAKE_VERSION} VERSION_LESS "3.8.0")
-    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc)
-  else()
-    SWIG_ADD_LIBRARY(cpp
-      LANGUAGE python
-      SOURCES PISM.i pism_python.cc)
-  endif()
-  SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARIES} ${PISM_PYTHON_BINDING_LIBRARIES})
+  SWIG_ADD_LIBRARY(cpp
+    LANGUAGE python
+    SOURCES PISM.i pism_python.cc)
+
+  SWIG_LINK_LIBRARIES(cpp ${Python3_LIBRARIES} ${PISM_PYTHON_BINDING_LIBRARIES})
 
   # Disable compiler warnings:
   SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
@@ -88,20 +87,18 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   # value *before* importing PISM.cpp.
   configure_file(version_info.py.in version_info.py ESCAPE_QUOTES)
 
-  if(${CMAKE_VERSION} VERSION_LESS "3.13")
-    set(TARGET_FILE $<TARGET_FILE:_cpp>)
-    set(CPP_REAL_NAME ${SWIG_MODULE_cpp_REAL_NAME})
-  else()
-    set(TARGET_FILE $<TARGET_FILE:cpp>)
-    set(CPP_REAL_NAME cpp)
-  endif()
+  set(TARGET_FILE $<TARGET_FILE:cpp>)
+
+  install(TARGETS cpp
+    DESTINATION ${PISM_PYTHON_MODULE_DIR}/PISM
+    COMPONENT RuntimeLibraries
+    )
 
   # Install Python .py files
   install(FILES
-    ${TARGET_FILE}
     ${CMAKE_CURRENT_BINARY_DIR}/cpp.py
     ${CMAKE_CURRENT_BINARY_DIR}/version_info.py
-    DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}/PISM
+    DESTINATION ${PISM_PYTHON_MODULE_DIR}/PISM
     COMPONENT RuntimeLibraries
     )
 
@@ -110,7 +107,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/version_info.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
     VERBATIM
-    DEPENDS ${CPP_REAL_NAME} install_site_packages_in_the_build_directory )
+    DEPENDS cpp install_site_packages_in_the_build_directory )
 
   # The Python code snippet below returns 1 if Python can import a PISM
   # and if the directory of said PISM matches the place we are about to
@@ -124,13 +121,13 @@ try:
 except:
     exit(0)
 
-if realpath(PISM.__file__) == realpath(join('${PISM_INSTALL_PYTHON_MODULE_DIR}', 'PISM', '__init__.pyc')):
+if realpath(PISM.__file__) == realpath(join('${PISM_PYTHON_MODULE_DIR}', 'PISM', '__init__.pyc')):
     exit(1)
 ")
 
-  install(CODE "EXEC_PROGRAM( ${PYTHON_EXECUTABLE} ARGS ${pism_test_py} RETURN_VALUE PISM_PYTHON_MATCHES OUTPUT_VARIABLE PYTHON_OUT )
+  install(CODE "EXEC_PROGRAM( ${Python3_EXECUTABLE} ARGS ${pism_test_py} RETURN_VALUE PISM_PYTHON_MATCHES OUTPUT_VARIABLE PYTHON_OUT )
 if(NOT PISM_PYTHON_MATCHES)
-    MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   export PYTHONPATH=${PISM_INSTALL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")
+    MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   export PYTHONPATH=${PISM_FULL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")
 endif()
 " )
 

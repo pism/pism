@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2023 PISM Authors
+// Copyright (C) 2011--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -88,11 +88,11 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
 
   m_air_temp_sd->metadata(0)
       .long_name("standard deviation of near-surface air temperature")
-      .units("Kelvin");
+      .units("kelvin");
 
   m_mass_flux.metadata(0)
       .long_name("instantaneous surface mass balance (accumulation/ablation) rate")
-      .units("kg m-2 s-1")
+      .units("kg m^-2 s^-1")
       .standard_name("land_ice_surface_specific_mass_balance_flux");
 
   m_mass_flux.metadata()["comment"] = "positive values correspond to ice gain";
@@ -267,10 +267,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
-  const array::Scalar *latitude = nullptr;
+  const array::Scalar *latitude = &geometry.latitude;
   if ((fausto_greve != nullptr) or sigmalapserate != 0.0) {
-    latitude = &geometry.latitude;
-
     list.add(*latitude);
   }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019, 2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,7 +37,7 @@ Signal `SIGTERM` makes PISM end, saving state under original `-o` name
 of the output NetCDF file.
 
 Signal `SIGUSR1` makes PISM save state under a filename based on the
-the name of the executable (e.g. `pismr` or `pismv`) and the current
+the name of the executable (e.g. `pism`) and the current
 model year.  In addition the time series (`-ts_file`, etc.) is flushed out
 There is no indication of these actions in the history attribute of the output (`-o`)
 NetCDF file because there is no effect on it, but there is an indication at `stdout`.
@@ -68,8 +68,7 @@ int IceModel::process_signals() {
     File file(m_grid->com,
               file_name,
               string_to_backend(m_config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE,
-              m_ctx->pio_iosys_id());
+              io::PISM_READWRITE_MOVE);
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
     // flush all the time-series buffers:

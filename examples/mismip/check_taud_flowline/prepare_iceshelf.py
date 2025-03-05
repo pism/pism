@@ -1,10 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+from netCDF4 import Dataset as NC
 
 import MISMIP
 
@@ -38,7 +34,6 @@ def bed_topography(x):
     return np.tile(bed, (3, 1))
 
 
-
 def surface_mass_balance(x):
     """Computes the surface mass balance."""
     return np.tile(np.zeros_like(x) + MISMIP.a()*0.0, (3, 1)) * MISMIP.rho_i()
@@ -50,7 +45,6 @@ def ice_surface_temp(x):
 
 
 def x(N=None):
-
     return np.linspace(0, MISMIP.L(), N)
 
 
@@ -196,13 +190,13 @@ def pism_bootstrap_file(filename, step,
     nc.write('thk', thk)
 
     nc.define_2d_field('climatic_mass_balance',
-                       attrs={'units': 'kg m-2 / s',
+                       attrs={'units': 'kg m^-2 / s',
                               'long_name': 'ice-equivalent surface mass balance (accumulation/ablation) rate',
                               'standard_name': 'land_ice_surface_specific_mass_balance_flux'})
     nc.write('climatic_mass_balance', smb)
 
     nc.define_2d_field('ice_surface_temp',
-                       attrs={'units': 'Kelvin',
+                       attrs={'units': 'kelvin',
                               'long_name': 'annual average ice surface temperature, below firn processes'})
     nc.write('ice_surface_temp', temp)
 

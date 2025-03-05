@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -65,36 +65,27 @@ private:
   std::shared_ptr<array::Forcing> m_theta_ocean;
   std::shared_ptr<array::Forcing> m_salinity_ocean;
 
-  void pointwise_update(const Constants &constants,
-                        double sea_water_salinity,
-                        double sea_water_potential_temperature,
-                        double ice_thickness,
-                        double *shelf_base_temperature_out,
-                        double *shelf_base_melt_rate_out);
+  static void pointwise_update(const Constants &constants, double sea_water_salinity,
+                               double sea_water_potential_temperature, double ice_thickness,
+                               double *shelf_base_temperature_out,
+                               double *shelf_base_melt_rate_out);
 
-  void subshelf_salinity(const Constants &constants,
-                         double sea_water_salinity,
-                         double sea_water_potential_temperature,
-                         double ice_thickness,
-                         double *shelf_base_salinity);
+  static void subshelf_salinity(const Constants &constants, double sea_water_salinity,
+                                double sea_water_potential_temperature, double ice_thickness,
+                                double *shelf_base_salinity);
 
-  void subshelf_salinity_melt(const Constants &constants,
-                              double sea_water_salinity,
-                              double sea_water_potential_temperature,
-                              double ice_thickness,
-                              double *shelf_base_salinity);
+  static void subshelf_salinity_melt(const Constants &constants, double sea_water_salinity,
+                                     double sea_water_potential_temperature, double ice_thickness,
+                                     double *shelf_base_salinity);
 
-  void subshelf_salinity_freeze_on(const Constants &constants,
-                                   double sea_water_salinity,
-                                   double sea_water_potential_temperature,
-                                   double ice_thickness,
-                                   double *shelf_base_salinity);
+  static void subshelf_salinity_freeze_on(const Constants &constants, double sea_water_salinity,
+                                          double sea_water_potential_temperature,
+                                          double ice_thickness, double *shelf_base_salinity);
 
-  void subshelf_salinity_diffusion_only(const Constants &constants,
-                                        double sea_water_salinity,
-                                        double sea_water_potential_temperature,
-                                        double ice_thickness,
-                                        double *shelf_base_salinity);
+  static void subshelf_salinity_diffusion_only(const Constants &constants,
+                                               double sea_water_salinity,
+                                               double sea_water_potential_temperature,
+                                               double ice_thickness, double *shelf_base_salinity);
 };
 
 } // end of namespace ocean

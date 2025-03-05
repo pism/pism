@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -75,7 +75,7 @@ BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
 
     m_temp->metadata(0)
         .long_name("lithosphere (bedrock) temperature, in BTU_Full")
-        .units("K");
+        .units("kelvin");
     m_temp->metadata(0)["valid_min"] = {0.0};
   }
 
@@ -99,7 +99,7 @@ void BTU_Full::init_impl(const InputOptions &opts) {
     if (opts.type == INIT_RESTART) {
       File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
 
-      if (input_file.find_variable("litho_temp")) {
+      if (input_file.variable_exists("litho_temp")) {
         m_temp->read(input_file, opts.record);
       }
       // otherwise the bedrock temperature is either interpolated from a -regrid_file or filled
@@ -183,7 +183,7 @@ void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
       for (unsigned int k = 0; k < m_Mbz; ++k) {
         if (T[k] <= 0.0) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "invalid bedrock temperature: %f Kelvin at %d,%d,%d",
+                                        "invalid bedrock temperature: %f kelvin at %d,%d,%d",
                                         T[k], i, j, k);
         }
       }

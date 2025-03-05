@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -73,7 +73,7 @@ bool BlatterTestvanderVeen::marine_boundary(int face,
   (void) ice_bottom;
   (void) sea_level;
 
-  auto nodes = fem::q13d::incident_nodes[face];
+  const auto *nodes = fem::q13d::incident_nodes[face];
 
   // number of nodes per face
   int N = 4;
@@ -139,7 +139,7 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
   }
 
   // loop over all quadrature points
-  for (int q = 0; q < face.n_pts(); ++q) {
+  for (unsigned int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q) / m_scaling;
 
     // the normal direction (1, 0, 0) is hard-wired here
@@ -176,7 +176,7 @@ void BlatterTestvanderVeen::residual_surface(const fem::Q1Element3 &element,
     face.evaluate(x_nodal, x);
   }
 
-  for (int q = 0; q < face.n_pts(); ++q) {
+  for (unsigned int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q) / m_scaling;
 
     auto F = blatter_xz_vanderveen_source_surface(x[q], m_alpha, m_H0, Q0,

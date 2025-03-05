@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -145,13 +145,13 @@ StressBalance::StressBalance(std::shared_ptr<const Grid> g,
 
   m_w.metadata(0)
       .long_name("vertical velocity of ice, relative to base of ice directly below")
-      .units("m s-1")
-      .output_units("m year-1")
+      .units("m s^-1")
+      .output_units("m year^-1")
       .set_time_independent(false);
 
   m_strain_heating.metadata(0)
       .long_name("rate of strain heating in ice (dissipation heating)")
-      .units("W m-3");
+      .units("W m^-3");
 }
 
 StressBalance::~StressBalance() {
@@ -703,7 +703,7 @@ void compute_2D_principal_strain_rates(const array::Vector1 &V,
     auto m = mask.star(i,j);
     auto U = V.star(i,j);
 
-    // strain in units s-1
+    // strain in units s^-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
       east = 1, west = 1, south = 1, north = 1;
 
@@ -788,7 +788,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
     auto m = cell_type.star(i,j);
     auto U = velocity.star(i,j);
 
-    // strain in units s-1
+    // strain in units s^-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
       east = 1, west = 1, south = 1, north = 1;
 

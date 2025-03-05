@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2021 PISM authors
+# Copyright (C) 2021, 2024 PISM authors
 # created by torsten.albrecht@pik-potsdam.de
 
 set -e
@@ -30,7 +30,6 @@ mask=basins * 0;
 mask@units="";
 mask@flag_values="0, 2, 3, 4";
 mask@long_name="ice-type (ice-free/grounded/floating/ocean) integer mask";
-mask@pism_intent="diagnostic";
 
 where(thk >  topg / (-910.0 / 1028.0)) mask=2;
 where(thk <= topg / (-910.0 / 1028.0)) mask=3;
@@ -86,7 +85,7 @@ for testcase in "01" "02" "03";
 do
   echo Test $testcase:
 
-  ${PISM_PATH}/pismr -verbose 2 -i input_${testcase}.nc \
+  ${PISM_PATH}/pism -verbose 2 -i input_${testcase}.nc \
               -config ${PISM_PATH}/pism_config.nc \
               $grid \
               $stressbalance \

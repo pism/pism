@@ -116,12 +116,12 @@ def create_pism_input(filename):
 
         ice_density = 910.0
         M = f.createVariable("climatic_mass_balance", np.float64, ('y', 'x'))
-        M.units = "kg m-2 year-1"
+        M.units = "kg m^-2 year^-1"
         M.standard_name = "land_ice_surface_specific_mass_balance_flux"
         M[:] = tile(accumulation(np.abs(x))) * ice_density
 
         T = f.createVariable("ice_surface_temp", np.float64, ('y', 'x'))
-        T.units = "Celsius"
+        T.units = "degree_Celsius"
         T.long_name = "ice surface temperature"
         T[:] = 0.0
 

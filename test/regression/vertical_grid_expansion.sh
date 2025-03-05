@@ -15,35 +15,35 @@ set -e
 rm -f $files
 
 # create an input file
-${PISM_PATH}/pismr -eisII A -y 0 -o input-vertical-grid.nc ${short_grid}
+${PISM_PATH}/pism -eisII A -y 0 -Mx 5 -My 5 -o input-vertical-grid.nc ${short_grid}
 
 # run in two steps: using the short grid and then re-starting with a better one
 set +e
-${PISM_PATH}/pismr -i input-vertical-grid.nc -bootstrap ${short_grid} \
+${PISM_PATH}/pism -i input-vertical-grid.nc -bootstrap ${short_grid} \
         -y 3e3 \
         -o too-short-vertical-grid.nc
 set -e
-${PISM_PATH}/pismr -i too-short-vertical-grid_max_thickness.nc -bootstrap \
+${PISM_PATH}/pism -i too-short-vertical-grid_max_thickness.nc -bootstrap \
         -regrid_file too-short-vertical-grid_max_thickness.nc -allow_extrapolation \
         ${tall_grid} \
         -ye 3e3 \
         -o fixed-vertical-grid.nc
 
 # run using the tall grid right away
-${PISM_PATH}/pismr -i input-vertical-grid.nc -bootstrap \
+${PISM_PATH}/pism -i input-vertical-grid.nc -bootstrap \
         ${tall_grid} \
         -y 3e3 \
         -o ok-vertical-grid.nc
 
 # compare results (use relative tolerance)
-$PISM_PATH/nccmp.py -x -v timestamp -r -t 1e-7 fixed-vertical-grid.nc ok-vertical-grid.nc
+$PISM_PATH/pism_nccmp -x -v timestamp -r -t 1e-7 fixed-vertical-grid.nc ok-vertical-grid.nc
 if [ $? != 0 ];
 then
     exit 1
 fi
 
 # compare results again (some variables should match exactly)
-$PISM_PATH/nccmp.py -v thk,enthalpy fixed-vertical-grid.nc ok-vertical-grid.nc
+$PISM_PATH/pism_nccmp -v thk,enthalpy fixed-vertical-grid.nc ok-vertical-grid.nc
 if [ $? != 0 ];
 then
     exit 1

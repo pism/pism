@@ -48,15 +48,15 @@ ShallowStressBalance::ShallowStressBalance(std::shared_ptr<const Grid> g)
 
   m_velocity.metadata(0)
       .long_name("thickness-advective ice velocity (x-component)")
-      .units("m s-1");
+      .units("m s^-1");
   m_velocity.metadata(1)
       .long_name("thickness-advective ice velocity (y-component)")
-      .units("m s-1");
+      .units("m s^-1");
 
   m_basal_frictional_heating.metadata(0)
       .long_name("basal frictional heating")
-      .units("W m-2")
-      .output_units("mW m-2");
+      .units("W m^-2")
+      .output_units("mW m^-2");
 }
 
 ShallowStressBalance::~ShallowStressBalance() {

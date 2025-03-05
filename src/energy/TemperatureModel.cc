@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,7 +36,7 @@ TemperatureModel::TemperatureModel(
 
   m_ice_temperature.metadata(0)
       .long_name("ice temperature")
-      .units("K")
+      .units("kelvin")
       .standard_name("land_ice_temperature");
   m_ice_temperature.metadata()["valid_min"] = {0.0};
 }
@@ -48,13 +48,13 @@ const array::Array3D & TemperatureModel::temperature() const {
 void TemperatureModel::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the temperature-based energy balance model from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   m_basal_melt_rate.read(input_file, record);
 
   const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  if (input_file.find_variable(m_ice_temperature.metadata().get_name())) {
+  if (input_file.variable_exists(m_ice_temperature.metadata().get_name())) {
     m_ice_temperature.read(input_file, record);
   } else {
     init_enthalpy(input_file, false, record);
@@ -74,7 +74,7 @@ void TemperatureModel::bootstrap_impl(const File &input_file,
                                       const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   m_basal_melt_rate.regrid(input_file,
                            io::Default(m_config->get_number("bootstrapping.defaults.bmelt")));
@@ -281,7 +281,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
                       "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
                       " proc %d; mask=%d; w=%f m year-1]]\n",
                       Tnew[k], i, j, k, m_grid->rank(), mask,
-                      units::convert(m_sys, system.w(k), "m second-1", "m year-1"));
+                      units::convert(m_sys, system.w(k), "m second^-1", "m year^-1"));
 
           m_stats.low_temperature_counter++;
         }
@@ -315,7 +315,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
                       "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                       " proc %d; mask=%d; w=%f]]\n",
                       Tnew[0],i,j,m_grid->rank(), mask,
-                      units::convert(m_sys, system.w(0), "m second-1", "m year-1"));
+                      units::convert(m_sys, system.w(0), "m second^-1", "m year^-1"));
 
           m_stats.low_temperature_counter++;
         }

@@ -11,13 +11,13 @@ OPTS="-o_size small "
 set -e -x
 
 # Create a file to start from:
-$MPIEXEC -n 2 $PISM_PATH/pismr -eisII A -energy enthalpy -y 1000 $OPTS -o foo-03.nc -Mx 31 -My 41
+$MPIEXEC -n 2 $PISM_PATH/pism -eisII A -energy enthalpy -y 1000 $OPTS -o foo-03.nc -Mx 31 -My 41
 
 # Run for 0 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr -i foo-03.nc -y 0 $OPTS -o bar-03.nc
+$MPIEXEC -n 2 $PISM_PATH/pism -i foo-03.nc -y 0 $OPTS -o bar-03.nc
 
 # Compare, excluding irrelevant diagnostic variables:
-$PISM_PATH/nccmp.py -x -v timestamp foo-03.nc bar-03.nc
+$PISM_PATH/pism_nccmp -x -v timestamp foo-03.nc bar-03.nc
 if [ $? != 0 ];
 then
     exit 1

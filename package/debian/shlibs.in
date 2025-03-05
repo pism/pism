@@ -1,0 +1,1 @@
+libpism ${Pism_VERSION} pism (= ${Pism_VERSION})

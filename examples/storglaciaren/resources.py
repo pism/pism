@@ -33,7 +33,7 @@ def generate_domain(domain):
     '''
 
     if domain.lower() in ('storglaciaren'):
-        pism_exec = 'pismr -regional -no_model_strip 0'
+        pism_exec = 'pism -regional -no_model_strip 0'
     else:
         print(('Domain {} not recognized, exiting'.format(domain)))
         import sys

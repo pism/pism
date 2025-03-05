@@ -24,8 +24,10 @@ ctx.log.set_threshold(0)
 def create_dummy_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.ownership_ranges_from_options(ctx.size)
+    Mx = 5
+    Lx = 1e3
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
     return PISM.Grid(ctx.ctx, params)
 
 
@@ -73,8 +75,8 @@ def printing_test():
 
 def random_vec_test():
     "Test methods creating random fields"
-    grid = PISM.Grid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
-                                PISM.NOT_PERIODIC, PISM.CELL_CENTER)
+    grid = PISM.Grid.Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
+                             PISM.NOT_PERIODIC, PISM.CELL_CENTER)
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
     vec_vector = PISM.vec.randVectorV(grid, 2.0)
@@ -154,11 +156,15 @@ def grid_from_file_test():
 
     file_name = filename("grid_from_file")
     try:
-        pio = PISM.util.prepare_output(file_name)
+        F = PISM.util.prepare_output(file_name)
 
-        enthalpy.write(pio)
+        enthalpy.write(F)
 
-        grid2 = PISM.Grid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
+        F.close()
+
+        input_file = PISM.File(ctx.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+
+        grid2 = PISM.Grid.FromFile(ctx.ctx, input_file, ["enthalpy"], PISM.CELL_CORNER)
     finally:
         os.remove(file_name)
 
@@ -306,8 +312,8 @@ def modelvecs_test():
     # test write()
     output_file = filename("test_ModelVecs")
     try:
-        pio = PISM.util.prepare_output(output_file)
-        pio.close()
+        F = PISM.util.prepare_output(output_file)
+        F.close()
 
         vecs.write(output_file)
 
@@ -319,16 +325,14 @@ def modelvecs_test():
 def sia_test():
     "Test the PISM.sia module"
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.Lx = 1e5
-    params.Ly = 1e5
+    Mx = 100
+    Lx = 1e5
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
     params.Lz = 1000
-    params.Mx = 100
-    params.My = 100
     params.Mz = 11
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
-    params.ownership_ranges_from_options(ctx.size)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
     grid = PISM.Grid(ctx.ctx, params)
 
     enthalpyconverter = PISM.EnthalpyConverter(ctx.config)
@@ -367,8 +371,8 @@ def util_test():
 
     output_file = filename("test_pism_util")
     try:
-        pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
-        pio.close()
+        F = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
+        F.close()
 
         PISM.util.writeProvenance(output_file)
         PISM.util.writeProvenance(output_file, message="history string")
@@ -548,7 +552,7 @@ def linear_interpolation_test(plot=False):
 
     values = F(x_input)
 
-    i = PISM.Interpolation(PISM.LINEAR, x_input, x_output)
+    i = PISM.Interpolation1D(PISM.LINEAR, x_input, x_output)
 
     F_interpolated = i.interpolate(values)
 
@@ -765,10 +769,10 @@ def regridding_test():
     import numpy as np
 
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.Mx = 3
-    params.My = 3
-    params.ownership_ranges_from_options(1)
+    Mx = 3
+    Lx = 1e5
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
+    params.ownership_ranges_from_options(ctx.config, 1)
 
     grid = PISM.Grid(ctx.ctx, params)
 
@@ -823,10 +827,10 @@ def interpolation_weights_test():
     Lx = 20
     Ly = 10
 
-    grid = PISM.Grid_Shallow(PISM.Context().ctx,
-                                Lx, Ly, 0, 0, Mx, My,
-                                PISM.CELL_CORNER,
-                                PISM.NOT_PERIODIC)
+    grid = PISM.Grid.Shallow(PISM.Context().ctx,
+                             Lx, Ly, 0, 0, Mx, My,
+                             PISM.CELL_CORNER,
+                             PISM.NOT_PERIODIC)
 
     x = grid.x()
     y = grid.y()
@@ -849,16 +853,14 @@ def vertical_extrapolation_during_regridding_test():
     "Test extrapolation in the vertical direction"
     # create a grid with 11 levels, 1000m thick
     ctx = PISM.Context()
-    params = PISM.GridParameters(ctx.config)
-    params.Lx = 1e5
-    params.Ly = 1e5
-    params.Mx = 3
-    params.My = 3
+    Mx = 3
+    Lx = 1e5
+    params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
     params.Mz = 11
     params.Lz = 1000
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
-    params.ownership_ranges_from_options(ctx.size)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
 
     z = np.linspace(0, params.Lz, params.Mz)
     params.z[:] = z
@@ -972,7 +974,7 @@ class PrincipalStrainRates(TestCase):
                                                       PISM.WITHOUT_GHOSTS)
 
         PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
-        rates = strain_rates.numpy()
+        rates = strain_rates.to_numpy()
 
         e1 = rates[:,:,0]
         e2 = rates[:,:,1]
@@ -1058,7 +1060,7 @@ def test_interpolation_other():
     x = [0.0, 10.0]
 
     try:
-        PISM.Interpolation(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
+        PISM.Interpolation1D(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
         assert False, "failed to detect non-increasing times"
     except RuntimeError as e:
         print(e)
@@ -1078,7 +1080,7 @@ def test_interpolation_other():
         print(e)
         pass
 
-    I = PISM.Interpolation(PISM.LINEAR, [0, 1, 2], [0.5, 1.5])
+    I = PISM.Interpolation1D(PISM.LINEAR, [0, 1, 2], [0.5, 1.5])
     np.testing.assert_almost_equal(I.left(), [0, 1])
     np.testing.assert_almost_equal(I.right(), [1, 2])
     np.testing.assert_almost_equal(I.alpha(), [0.5, 0.5])
@@ -1091,7 +1093,7 @@ def test_nearest_neighbor():
     xx = np.linspace(-0.9, 0.9, 10)
     yy = np.ones_like(xx) * (xx > 0)
 
-    zz = PISM.Interpolation(PISM.NEAREST, x, xx).interpolate(y)
+    zz = PISM.Interpolation1D(PISM.NEAREST, x, xx).interpolate(y)
 
     np.testing.assert_almost_equal(yy, zz)
 
@@ -1102,8 +1104,10 @@ class AgeModel(TestCase):
 
     def create_dummy_grid(self):
         "Create a dummy grid"
-        params = PISM.GridParameters(ctx.config)
-        params.ownership_ranges_from_options(ctx.size)
+        Mx = 61
+        Lx = 1e3
+        params = PISM.GridParameters(ctx.config, Mx, Mx, Lx, Lx)
+        params.ownership_ranges_from_options(ctx.config, ctx.size)
         return PISM.Grid(ctx.ctx, params)
 
     def test_age_model_runs(self):
@@ -1232,36 +1236,36 @@ class ScalarForcing(TestCase):
 
         # good input
         PISM.testing.create_scalar_forcing(self.filename,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            self.values, self.times, time_bounds)
 
         # non-increasing times
         PISM.testing.create_scalar_forcing(self.filename_decreasing,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            [0, 1], [1, 0], time_bounds=[1, 2, 0, 1])
 
         # wrong time bounds
         PISM.testing.create_scalar_forcing(self.filename_wrong_bounds,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            [0, 1], [0, 1], time_bounds=[0, 2, 2, 3])
         # invalid number of dimensions
         grid = create_dummy_grid()
         PISM.testing.create_forcing(grid,
                                     self.filename_2d,
                                     "delta_T",
-                                    "Kelvin",
+                                    "kelvin",
                                     [0, 1],
                                     "seconds since 1-1-1",
                                     times=[0, 1])
 
         # only one value
         PISM.testing.create_scalar_forcing(self.filename_1,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            [1], [0], time_bounds=[0, 4])
 
         # no time bounds
         PISM.testing.create_scalar_forcing(self.filename_no_bounds,
-                                           "delta_T", "Kelvin",
+                                           "delta_T", "kelvin",
                                            [1], [0], time_bounds=None)
 
     def tearDown(self):
@@ -1280,15 +1284,15 @@ class ScalarForcing(TestCase):
             return PISM.ScalarForcing(ctx.ctx,
                                       filename,
                                       "delta_T",
-                                      "K",
-                                      "K",
+                                      "kelvin",
+                                      "kelvin",
                                       "temperature offsets", periodic)
 
         return PISM.ScalarForcing(ctx.ctx,
                                   "surface.delta_T",
                                   "delta_T",
-                                  "K",
-                                  "K",
+                                  "kelvin",
+                                  "kelvin",
                                   "temperature offsets")
 
     def test_file_not_set(self):
@@ -1380,7 +1384,7 @@ class ScalarForcing(TestCase):
         def compute_average(times, time_bounds, values, t, dt, periodic=False):
             filename = PISM.testing.filename("forcing-")
             try:
-                PISM.testing.create_scalar_forcing(filename, "delta_T", "Kelvin",
+                PISM.testing.create_scalar_forcing(filename, "delta_T", "kelvin",
                                                    values, times, time_bounds)
 
                 F = self.create(filename, periodic)
@@ -1486,7 +1490,7 @@ def thickness_calving_test():
                          [200., 150., 150.,   0.,   0.],
                          [200., 150., 150.,   0.,   0.]])
 
-        np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref1)
+        np.testing.assert_almost_equal(geometry.ice_thickness.to_numpy(), ref1)
 
         calving.update(30*day, 60*day, geometry.cell_type, geometry.ice_thickness)
 
@@ -1496,7 +1500,7 @@ def thickness_calving_test():
                          [200., 150.,   0.,   0.,   0.],
                          [200., 150.,   0.,   0.,   0.]])
 
-        np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref2)
+        np.testing.assert_almost_equal(geometry.ice_thickness.to_numpy(), ref2)
 
     finally:
         # clean up
@@ -1562,12 +1566,12 @@ def grounding_line_flux_test():
     geometry_evolution.flow_step(geometry, dt, velocity, sia_flux, thk_bc_mask)
 
     gl_flux = PISM.Scalar(grid, "grounding_line_flux")
+    gl_flux.set(0.0)
 
-    PISM.grounding_line_flux(geometry.cell_type,
-                             geometry_evolution.flux_staggered(),
-                             dt,
-                             False, # replace values instead of adding
-                             gl_flux)
+    PISM.ice_flow_rate_across_grounding_line(geometry.cell_type,
+                                             geometry_evolution.flux_staggered(),
+                                             dt,
+                                             gl_flux)
 
     NORM_INFINITY = 3
     np.testing.assert_almost_equal(gl_flux.norm(NORM_INFINITY), 0.0)

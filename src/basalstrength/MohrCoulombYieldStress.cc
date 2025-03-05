@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2023 PISM Authors
+// Copyright (C) 2004--2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #include "pism/basalstrength/MohrCoulombPointwise.hh"
 
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -162,12 +161,12 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
 
     m_log->message(2, "  creating till friction angle map from bed elevation...\n");
 
-    if (input_file.find_variable(m_till_phi.metadata().get_name())) {
+    if (input_file.variable_exists(m_till_phi.metadata().get_name())) {
       // till_phi is present in the input file
       m_log->message(2,
                      "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
                      "              present in the input file '%s'!\n",
-                     m_till_phi.metadata().get_name().c_str(), input_file.filename().c_str());
+                     m_till_phi.metadata().get_name().c_str(), input_file.name().c_str());
     }
 
     till_friction_angle(inputs.geometry->bed_elevation, m_till_phi);
@@ -427,9 +426,7 @@ void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &basal_yiel
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i, j)) {
-      // no change
-    } else if (cell_type.ice_free(i, j)) {
+    if (cell_type.ocean(i, j) or cell_type.ice_free(i, j)) {
       // no change
     } else { // grounded and there is some ice
       double P_overburden = ice_density * standard_gravity * ice_thickness(i, j);

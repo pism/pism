@@ -15,6 +15,8 @@ config = PISM.Context().config
 config.set_number("grid.Mx", 3)
 config.set_number("grid.My", 3)
 config.set_number("grid.Mz", 5)
+config.set_number("grid.Lx", 1e2) # in km
+config.set_number("grid.Ly", 1e2) # in km
 
 log = PISM.Context().log
 # silence models' initialization messages
@@ -41,7 +43,7 @@ def create_geometry(grid):
     return geometry
 
 def sample(vec):
-    return vec.numpy()[0,0]
+    return vec.to_numpy()[0,0]
 
 def create_dummy_forcing_file(filename, variable_name, units, value):
     f = netCDF4.Dataset(filename, "w")
@@ -58,14 +60,14 @@ def create_grid():
     "Create a dummy grid"
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config)
-    params.ownership_ranges_from_options(ctx.size)
+    params.ownership_ranges_from_options(ctx.config, ctx.size)
     return PISM.Grid(ctx.ctx, params)
 
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
     T = PISM.Scalar(grid, "shelfbtemp")
-    T.set_attrs("climate", "shelf base temperature", "Kelvin", "Kelvin", "", 0)
+    T.set_attrs("climate", "shelf base temperature", "kelvin", "kelvin", "", 0)
     T.set(temperature)
     T.write(filename)
 
@@ -133,7 +135,7 @@ class DischargeRoutingTest(TestCase):
         self.theta.set(self.potential_temperature)
 
         self.Qsg = PISM.Scalar(self.grid, "subglacial_water_flux")
-        self.Qsg.metadata(0).long_name("subglacial water flux").units("m2 / s")
+        self.Qsg.metadata(0).long_name("subglacial water flux").units("m^2 / s")
 
         grid_spacing = 0.5 * (self.grid.dx() + self.grid.dy())
         cross_section_area = self.depth * grid_spacing

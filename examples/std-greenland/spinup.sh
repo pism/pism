@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020, 2021 The PISM Authors
+# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020, 2021, 2024, 2025 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -54,17 +54,17 @@ consider setting optional environment variables (see script for meaning):
     PARAM_NOSGL  if set, DON'T use -tauc_slippery_grounding_lines
     PISM_DO      set to 'echo' if no run desired; defaults to empty
     PISM_MPIDO   defaults to 'mpiexec -n'
-    PISM_BIN  set to path to pismr executable if desired; defaults to empty
-    PISM_EXEC    defaults to 'pismr'
+    PISM_BIN  set to path to pism executable if desired; defaults to empty
+    PISM_EXEC    defaults to 'pism'
     REGRIDFILE   set to file name to regrid from; defaults to empty (no regrid)
     REGRIDVARS   desired -regrid_vars; applies *if* REGRIDFILE set;
                    defaults to 'basal_melt_rate_grounded,enthalpy,litho_temp,thk,tillwat'
 
 example usage 1:
 
-    $ ./spinup.sh 4 const 1000 20 sia
+    $ ./spinup.sh 8 const 1000 20 sia
 
-  Does spinup with 4 processors, constant-climate, 1000 year run, 20 km
+  Does spinup with 8 processors, constant-climate, 1000 year run, 20 km
   grid, and non-sliding SIA stress balance.  Bootstraps from and outputs to
   default files.
 
@@ -118,48 +118,39 @@ FINEVGRID="-Mz 201 -Mbz 21 -z_spacing equal ${VDIMS} ${FINESKIP}"
 FINESTVGRID="-Mz 401 -Mbz 41 -z_spacing equal ${VDIMS} ${FINESTSKIP}"
 if [ "$4" -eq "40" ]; then
   dx=40
-  myMx=38
-  myMy=71
   vgrid=$COARSEVGRID
 elif [ "$4" -eq "20" ]; then
   dx=20
-  myMx=76
-  myMy=141
   vgrid=$COARSEVGRID
 elif [ "$4" -eq "10" ]; then
   dx=10
-  myMx=151
-  myMy=281
   vgrid=$FINEVGRID
 elif [ "$4" -eq "5" ]; then
   # "native" resolution in data file, with 561 x 301 grid
   dx=5
-  myMx=301
-  myMy=561
   vgrid=$FINEVGRID
 elif [ "$4" -eq "3" ]; then
   dx=3
-  myMx=501
-  myMy=934
   vgrid=$FINEVGRID
 elif [ "$4" -eq "2" ]; then
   dx=2
-  myMx=750
-  myMy=1400
   vgrid=$FINESTVGRID
 else
   echo "invalid fourth argument: must be in $GRIDLIST"
   exit
 fi
 
-grid="-Mx $myMx -My $myMy $vgrid -grid.recompute_longitude_and_latitude false -grid.registration corner"
+grid="-grid.registration corner -dx ${dx}km -dy ${dx}km $vgrid -grid.recompute_longitude_and_latitude false"
+
+PHYS="-front_retreat_file ${PISM_DATANAME}"
 
 # set stress balance from argument 5
 if [ -n "${PARAM_SIAE:+1}" ] ; then  # check if env var is already set
-  PHYS="-front_retreat_file ${PISM_DATANAME} -sia_e ${PARAM_SIAE}"
+  PHYS="${PHYS} -sia_e ${PARAM_SIAE}"
 else
-  PHYS="-front_retreat_file ${PISM_DATANAME} -sia_e 3.0"
+  PHYS="${PHYS} -sia_e 3.0"
 fi
+
 if [ -n "${USEPIK:+1}" ] ; then  # check if env var is already set
   PHYS="${PHYS} -pik -subgl"
 fi
@@ -167,7 +158,7 @@ fi
 # done forming $PHYS if "$5" = "sia"
 if [ "$5" = "hybrid" ]; then
   if [ -z "${PARAM_TTPHI}" ] ; then  # check if env var is NOT set
-    PARAM_TTPHI="15.0,40.0,-300.0,700.0"
+    PARAM_TTPHI="-phi_min 15.0 -phi_max 40.0 -topg_min -300.0 -topg_max 700.0"
   fi
   if [ -z "${PARAM_PPQ}" ] ; then  # check if env var is NOT set
     PARAM_PPQ="0.25"
@@ -254,11 +245,11 @@ fi
 PISM_BIN=${PISM_BIN:+${PISM_BIN%/}/}
 
 # set PISM_EXEC if using different executables, for example:
-#  $ export PISM_EXEC="pismr -energy cold"
+#  $ export PISM_EXEC="pism -energy cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
-  PISM_EXEC="pismr"
+  PISM_EXEC="pism"
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 
@@ -309,7 +300,7 @@ if [ -z "${NODIAGS}" ] ; then  # check if env var is NOT set
   TSTIMES=-$DURATION:yearly:0
   EXNAME=ex_$OUTNAME
   EXTIMES=-$DURATION:$EXSTEP:0
-  # check_stationarity.py can be applied to $EXNAME
+  # pism_check_stationarity can be applied to $EXNAME
   DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -extra_file $EXNAME -extra_times $EXTIMES -extra_vars $EXVARS"
 else
   DIAGNOSTICS=""

@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021, 2022, 2023 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2024 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,8 +32,8 @@ DischargeGiven::DischargeGiven(std::shared_ptr<const Grid> grid)
 
   m_frontal_melt_rate.metadata(0)
       .long_name("frontal melt rate")
-      .units("m s-1")
-      .output_units("m day-1");
+      .units("m s^-1")
+      .output_units("m day^-1");
 
   m_log->message(2, "* Initializing the frontal melt model\n"
                     "  UAF-UT\n");
@@ -64,14 +64,14 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 
   m_theta_ocean->metadata(0)
       .long_name("potential temperature of the adjacent ocean")
-      .units("Celsius");
+      .units("degree_Celsius");
 
   m_theta_ocean->init(opt.filename, opt.periodic);
 
   m_subglacial_discharge->metadata(0)
       .long_name("subglacial discharge")
-      .units("kg m-2 s-1")
-      .output_units("kg m-2 year-1");
+      .units("kg m^-2 s^-1")
+      .output_units("kg m^-2 year^-1");
 
   m_subglacial_discharge->init(opt.filename, opt.periodic);
 }

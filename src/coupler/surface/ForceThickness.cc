@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/io/File.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 
 namespace pism {
 namespace surface {
@@ -74,8 +74,8 @@ void ForceThickness::init_impl(const Geometry &geometry) {
       2,
       "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
       "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
-      units::convert(m_sys, m_alpha, "s-1", "year-1"),
-      m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "year-1"),
+      units::convert(m_sys, m_alpha, "s^-1", "year^-1"),
+      m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s^-1", "year^-1"),
       m_ice_free_thickness_threshold);
 
   // check of the input file is really there and regrid the target thickness
@@ -176,11 +176,11 @@ else
 fi
 
 # set PISM_EXEC if using different executables, for example:
-#  $ export PISM_EXEC="pismr -energy cold"
+#  $ export PISM_EXEC="pism -energy cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
-  PISM_EXEC="pismr"
+  PISM_EXEC="pism"
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 

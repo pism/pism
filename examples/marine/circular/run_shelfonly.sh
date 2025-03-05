@@ -15,7 +15,7 @@ extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,v
 
 pismopts="-i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_dirichlet_bc"
 
-doit="mpiexec -n $N pismr $pismopts"
+doit="mpiexec -n $N pism $pismopts"
 
 # run with strength extension, the old PISM method
 #$doit $pismopts -y $length -o so_old.nc

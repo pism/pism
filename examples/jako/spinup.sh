@@ -38,11 +38,11 @@ else
 fi
 
 # set PISM_EXEC if using different executables, for example:
-#  $ export PISM_EXEC="pismr -energy cold"
+#  $ export PISM_EXEC="pism -energy cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
-  PISM_EXEC="pismr -regional"
+  PISM_EXEC="pism -regional"
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 
@@ -58,7 +58,7 @@ CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thick
 #   '-pseudo_plastic -pseudo_plastic_q 0.25' plus '-tauc_slippery_grounding_lines'
 #   matches default choices in spinup.sh in examples/std-greenland/
 # but here we do not use -sia_e 3.0 but instead -sia_e 1.0
-PHYS="-front_retreat_file $BOOT -pik -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines"
+PHYS="-front_retreat_file $BOOT -pik -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi -phi_min 15.0 -phi_max 40.0 -topg_min -300.0 -topg_max 700.0 -till_effective_fraction_overburden 0.02 -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines"
 
 SKIP=5
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NN=4
+NN=8
 DURATION=1000
 START=g10km_gridseq.nc
 for PPQ in 0.1 0.5 1.0 ; do

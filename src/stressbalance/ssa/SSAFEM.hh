@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2020, 2021, 2022, 2023 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2020, 2021, 2022, 2023, 2024, 2025 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,8 @@
 #define _SSAFEM_H_
 
 #include "pism/stressbalance/ssa/SSA.hh"
-#include "pism/util/fem/FEM.hh"
+#include "pism/util/fem/Element.hh"
+#include "pism/util/fem/ElementIterator.hh"
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/Mask.hh"
@@ -28,9 +29,6 @@
 namespace pism {
 
 namespace stressbalance {
-
-//! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(std::shared_ptr<const Grid> grid);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
@@ -75,20 +73,18 @@ protected:
 
   array::Array2D<Coefficients> m_coefficients;
 
-  void quad_point_values(const fem::Element &Q,
+  void quad_point_values(const fem::Element &E,
                          const Coefficients *x,
                          int *mask,
                          double *thickness,
                          double *tauc,
                          double *hardness) const;
 
-  void explicit_driving_stress(const fem::Element &E,
-                               const Coefficients *x,
-                               Vector2d *driving_stress) const;
+  static void explicit_driving_stress(const fem::Element &E,
+                                      const Coefficients *x,
+                                      Vector2d *result);
 
-  void driving_stress(const fem::Element &E,
-                      const Coefficients *x,
-                      Vector2d *driving_stress) const;
+  void driving_stress(const fem::Element &E, const Coefficients *x, Vector2d *result) const;
 
   void PointwiseNuHAndBeta(double thickness,
                            double hardness,
@@ -100,10 +96,10 @@ protected:
                            double *nuH, double *dnuH,
                            double *beta, double *dbeta);
 
-  void compute_local_function(Vector2d const *const *const velocity,
+  void compute_local_function(Vector2d const *const * velocity,
                               Vector2d **residual);
 
-  void compute_local_jacobian(Vector2d const *const *const velocity, Mat J);
+  void compute_local_jacobian(Vector2d const *const * velocity, Mat J);
 
   virtual void solve(const Inputs &inputs);
 
@@ -148,17 +144,17 @@ protected:
 private:
   void cache_residual_cfbc(const Inputs &inputs);
   void monitor_jacobian(Mat Jac);
-  void monitor_function(Vector2d const *const *const velocity_global,
-                        Vector2d const *const *const residual_global);
+  void monitor_function(Vector2d const *const * velocity_global,
+                        Vector2d const *const * residual_global);
 
   //! SNES callbacks.
   /*! These simply forward the call on to the SSAFEM member of the CallbackData */
   static PetscErrorCode function_callback(DMDALocalInfo *info,
-                                          Vector2d const *const *const velocity,
+                                          Vector2d const *const * velocity,
                                           Vector2d **residual,
                                           CallbackData *fe);
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
-                                          Vector2d const *const *const xg,
+                                          Vector2d const *const * velocity,
                                           Mat A, Mat J, CallbackData *fe);
 };
 

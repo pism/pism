@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2023 PISM Authors
+// Copyright (C) 2011--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,8 +33,8 @@ Delta_P::Delta_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
     prefix         = "atmosphere.delta_P",
     variable_name  = "delta_P",
     long_name      = "precipitation offsets",
-    units          = "kg m-2 second-1",
-    external_units = "kg m-2 year-1";
+    units          = "kg m^-2 second^-1",
+    external_units = "kg m^-2 year^-1";
 
   ForcingOptions opt(*m_grid->ctx(), prefix);
 
@@ -127,16 +127,7 @@ void Delta_P::update_impl(const Geometry &geometry, double t, double dt) {
     m_2d_offsets->update(t, dt);
     m_2d_offsets->average(t, dt);
 
-    auto &P = *m_precipitation;
-    const auto &delta = *m_2d_offsets;
-
-    array::AccessScope list{&P, &delta};
-
-    for (auto p = m_grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      P(i, j) += delta(i, j);
-    }
+    m_precipitation->add(1.0, *m_2d_offsets);
   }
 }
 

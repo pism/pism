@@ -149,7 +149,7 @@ def preprocess_albmap():
     acab.units = "kg m-2 / year"
 
     # fix artm and topg
-    nc.variables[temp_name].units = "Celsius"
+    nc.variables[temp_name].units = "degree_Celsius"
     nc.variables["topg"].standard_name = "bedrock_altitude"
 
     # compute ice thickness

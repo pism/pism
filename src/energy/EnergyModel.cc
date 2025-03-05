@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -115,14 +115,14 @@ EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
   // POSSIBLE standard name = land_ice_enthalpy
   m_ice_enthalpy.metadata(0)
       .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
-      .units("J kg-1");
+      .units("J kg^-1");
 
   {
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.metadata(0)
         .long_name(
             "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)")
-        .units("m s-1");
+        .units("m s^-1");
     // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
     // have this standard name.
     m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
@@ -134,13 +134,13 @@ EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
 
 void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record) {
 
-  if (input_file.find_variable("enthalpy")) {
+  if (input_file.variable_exists("enthalpy")) {
     if (do_regrid) {
       m_ice_enthalpy.regrid(input_file, io::Default::Nil());
     } else {
       m_ice_enthalpy.read(input_file, record);
     }
-  } else if (input_file.find_variable("temp")) {
+  } else if (input_file.variable_exists("temp")) {
     array::Array3D &temp = m_work, &liqfrac = m_ice_enthalpy;
 
     {
@@ -148,7 +148,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
       temp.metadata(0).set_name("temp");
       temp.metadata(0)
           .long_name("ice temperature")
-          .units("Kelvin")
+          .units("kelvin")
           .standard_name("land_ice_temperature");
 
       if (do_regrid) {
@@ -160,7 +160,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
 
     const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-    if (input_file.find_variable("liqfrac")) {
+    if (input_file.variable_exists("liqfrac")) {
       SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
 
       liqfrac.set_name("liqfrac");
@@ -189,7 +189,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "neither enthalpy nor temperature was found in '%s'.\n",
-                                  input_file.filename().c_str());
+                                  input_file.name().c_str());
   }
 }
 
@@ -314,7 +314,7 @@ public:
   LiquifiedIceFlux(const EnergyModel *m)
     : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
 
-    set_units("m3 / second", "m3 / year");
+    set_units("m^3 / second", "m^3 / year");
     m_variable["long_name"] =
       "rate of ice loss due to liquefaction, averaged over the reporting interval";
     m_variable["comment"]      = "positive means ice loss";

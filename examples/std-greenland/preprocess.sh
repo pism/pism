@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014, 2016, 2017, 2018, 2019, 2020, 2023 The PISM Authors
+# Copyright (C) 2009-2014, 2016, 2017, 2018, 2019, 2020, 2023, 2024, 2025 The PISM Authors
 
 # Downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts
 # metadata, and saves under new name ready for PISM.  See README.md.
@@ -17,7 +17,7 @@ echo
 
 # get file; see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 DATAVERSION=1.1
-DATAURL=https://github.com/pism/example-inputs/raw/main/std-greenland/
+DATAURL=https://zenodo.org/records/10179093/files/
 DATANAME=Greenland_5km_v$DATAVERSION.nc
 
 echo "fetching master file ... "
@@ -32,13 +32,13 @@ ncks -O -v mapping,lat,lon,bheatflx,topg,thk,presprcp,smb,airtemp2m $DATANAME $P
 # convert from water equivalent thickness rate ("m year-1") to "kg m-2 year-1".
 # Assumes water density of 1000.0 kg m-3
 ncap2 -O -s "precipitation=presprcp*1000.0" $PISMVERSION $PISMVERSION
-ncatted -O -a units,precipitation,m,c,"kg m-2 year-1" $PISMVERSION
+ncatted -O -a units,precipitation,m,c,"kg m^-2 year^-1" $PISMVERSION
 ncatted -O -a long_name,precipitation,c,c,"mean annual precipitation rate" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION
 # use pism-recognized name for 2m air temp
 ncrename -O -v airtemp2m,ice_surface_temp $PISMVERSION
-ncatted -O -a units,ice_surface_temp,c,c,"Celsius" $PISMVERSION
+ncatted -O -a units,ice_surface_temp,c,c,"degree_Celsius" $PISMVERSION
 # use pism-recognized name and standard_name for surface mass balance, after
 # converting from liquid water equivalent thickness per year to [kg m-2 year-1]
 ncap2 -O -s "climatic_mass_balance=1000.0*smb" $PISMVERSION $PISMVERSION
@@ -47,7 +47,7 @@ ncap2 -O -s "climatic_mass_balance=1000.0*smb" $PISMVERSION $PISMVERSION
 # This is a *choice* of the model of surface mass balance in thk==0 areas.
 ncap2 -O -s "where(thk <= 0.0){climatic_mass_balance=-1000.0;}" $PISMVERSION $PISMVERSION
 ncatted -O -a standard_name,climatic_mass_balance,m,c,"land_ice_surface_specific_mass_balance_flux" $PISMVERSION
-ncatted -O -a units,climatic_mass_balance,m,c,"kg m-2 year-1" $PISMVERSION
+ncatted -O -a units,climatic_mass_balance,m,c,"kg m^-2 year^-1" $PISMVERSION
 # de-clutter by only keeping vars we want
 ncks -O -v mapping,lat,lon,bheatflx,topg,thk,precipitation,ice_surface_temp,climatic_mass_balance \
   $PISMVERSION $PISMVERSION
@@ -89,7 +89,7 @@ ncpdq -O --rdr=-time $TEMPSERIES $TEMPSERIES
 ncap2 -O -s "time=-time" $TEMPSERIES $TEMPSERIES
 ncatted -O -a units,time,m,c,"common_years since 1-1-1" $TEMPSERIES
 ncatted -O -a calendar,time,c,c,"365_day" $TEMPSERIES
-ncatted -O -a units,delta_T,m,c,"Kelvin" $TEMPSERIES
+ncatted -O -a units,delta_T,m,c,"kelvin" $TEMPSERIES
 ncap2 -O -S ${script} $TEMPSERIES  $TEMPSERIES
 echo "done."
 echo

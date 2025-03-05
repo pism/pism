@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,6 +37,7 @@
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh" // pism::printf()
+#include "pism/util/fem/Quadrature.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -284,12 +285,12 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
     m_u_sigma = std::make_shared<array::Array3D>(grid, "uvel_sigma", array::WITHOUT_GHOSTS, sigma);
     m_u_sigma->metadata(0)
         .long_name("u velocity component on the sigma grid")
-        .units("m s-1");
+        .units("m s^-1");
 
     m_v_sigma = std::make_shared<array::Array3D>(grid, "vvel_sigma", array::WITHOUT_GHOSTS, sigma);
     m_v_sigma->metadata(0)
         .long_name("v velocity component on the sigma grid")
-        .units("m s-1");
+        .units("m s^-1");
 
     std::map<std::string,std::string> z_attrs =
       {{"axis", "Z"},
@@ -668,8 +669,8 @@ void Blatter::init_impl() {
 
   if (opts.type == INIT_RESTART) {
     File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
-    bool u_sigma_found = input_file.find_variable("uvel_sigma");
-    bool v_sigma_found = input_file.find_variable("vvel_sigma");
+    bool u_sigma_found = input_file.variable_exists("uvel_sigma");
+    bool v_sigma_found = input_file.variable_exists("vvel_sigma");
     unsigned int start = input_file.nrecords() - 1;
 
     if (u_sigma_found and v_sigma_found) {

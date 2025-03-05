@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,6 +16,8 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
+
+#include <functional>
 
 #include "pism/geometry/Geometry.hh"
 
@@ -78,7 +80,7 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
 
   ice_area_specific_volume.metadata(0)
       .long_name("ice-volume-per-area in partially-filled grid cells")
-      .units("m3/m2");
+      .units("m^3/m^2");
   ice_area_specific_volume.metadata()["comment"] =
       "this variable represents the amount of ice in a partially-filled cell and not "
       "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
@@ -195,8 +197,7 @@ void Geometry::dump(const char *filename) const {
 
   File file(grid->com, filename,
             string_to_backend(grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE_CLOBBER,
-            grid->ctx()->pio_iosys_id());
+            io::PISM_READWRITE_CLOBBER);
 
   io::define_time(file, *grid->ctx());
   io::append_time(file, *grid->ctx()->config(), 0.0);
@@ -307,79 +308,53 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
       sea_level = geometry.sea_level_elevation(i, j);
 
     if (geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
-      const double cell_ice_volume = thickness * cell_area;
-      if (bed > sea_level) {
-        volume += cell_ice_volume;
-      } else {
-        const double max_floating_volume = (sea_level - bed) * cell_area * (sea_water_density / ice_density);
-        volume += cell_ice_volume - max_floating_volume;
-      }
+      double max_floating_thickness =
+          std::max(sea_level - bed, 0.0) * (sea_water_density / ice_density);
+      volume += cell_area * (thickness - max_floating_thickness);
     }
   } // end of the loop over grid points
 
   return GlobalSum(grid->com, volume);
 }
 
-//! Computes ice area, in m^2.
-double ice_area(const Geometry &geometry, double thickness_threshold) {
-  auto grid = geometry.ice_thickness.grid();
-
+static double compute_area(const Grid &grid, std::function<bool(int, int)> condition) {
+  double cell_area = grid.cell_area();
   double area = 0.0;
 
-  auto cell_area = grid->cell_area();
-
-  array::AccessScope list{&geometry.ice_thickness};
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (geometry.ice_thickness(i, j) >= thickness_threshold) {
+    if (condition(i, j)) {
       area += cell_area;
     }
   }
 
-  return GlobalSum(grid->com, area);
+  return GlobalSum(grid.com, area);
+}
+
+//! Computes ice area, in m^2.
+double ice_area(const Geometry &geometry, double thickness_threshold) {
+  array::AccessScope list{ &geometry.ice_thickness };
+  return compute_area(*geometry.ice_thickness.grid(), [&](int i, int j) {
+    return geometry.ice_thickness(i, j) >= thickness_threshold;
+  });
 }
 
 //! Computes grounded ice area, in m^2.
 double ice_area_grounded(const Geometry &geometry, double thickness_threshold) {
-  auto grid = geometry.ice_thickness.grid();
-
-  double area = 0.0;
-
-  auto cell_area = grid->cell_area();
-
-  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
-  for (auto p = grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (geometry.cell_type.grounded(i, j) and
-        geometry.ice_thickness(i, j) >= thickness_threshold) {
-      area += cell_area;
-    }
-  }
-
-  return GlobalSum(grid->com, area);
+  array::AccessScope list{ &geometry.cell_type, &geometry.ice_thickness };
+  return compute_area(*geometry.ice_thickness.grid(), [&](int i, int j) {
+    return (geometry.cell_type.grounded(i, j) and
+            geometry.ice_thickness(i, j) >= thickness_threshold);
+  });
 }
 
 //! Computes floating ice area, in m^2.
 double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
-  auto grid = geometry.ice_thickness.grid();
-
-  double area = 0.0;
-
-  auto cell_area = grid->cell_area();
-
-  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
-  for (auto p = grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (geometry.cell_type.ocean(i, j) and
-        geometry.ice_thickness(i, j) >= thickness_threshold) {
-      area += cell_area;
-    }
-  }
-
-  return GlobalSum(grid->com, area);
+  array::AccessScope list{ &geometry.cell_type, &geometry.ice_thickness };
+  return compute_area(*geometry.ice_thickness.grid(), [&](int i, int j) {
+    return (geometry.cell_type.ocean(i, j) and geometry.ice_thickness(i, j) >= thickness_threshold);
+  });
 }
 
 

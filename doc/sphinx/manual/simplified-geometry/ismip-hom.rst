@@ -82,7 +82,7 @@ Experiment E
 
 Unlike simplified-geometry experiments A--D, the diagnostic simulation of the flow along
 the central flowline of Haut Glacier d'Arolla does not require any code modifications and
-uses the ``pismr`` executable. Please see ``examples/ismip-hom/e-arolla`` for details.
+uses the ``pism`` executable. Please see ``examples/ismip-hom/e-arolla`` for details.
 
 The complete script used to produce data for :numref:`fig-ismiphom-e-surface`,
 :numref:`fig-ismiphom-e-no-slip`, and :numref:`fig-ismiphom-e-sliding` is below:
@@ -106,7 +106,7 @@ The complete script used to produce data for :numref:`fig-ismiphom-e-surface`,
 
    echo "Using ${bp_Mz} vertical levels..."
 
-   mpiexec -n 8 pismr -i ${input} -bootstrap \
+   mpiexec -n 8 pism -i ${input} -bootstrap \
          -Mx ${Mx} \
          -Mz 216 \
          -Lz 215 \

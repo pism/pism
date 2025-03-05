@@ -3,12 +3,10 @@
 PISM |version| documentation
 ============================
 
-This *Manual* was built using revision |git-revision| committed on |git-date|.
-
 .. toctree::
    :maxdepth: 3
 
-   acknowledgements.rst
+   acknowledgments.rst
 
    installation/index.rst
 
@@ -21,5 +19,9 @@ This *Manual* was built using revision |git-revision| committed on |git-date|.
    contributing/index.rst
 
    authorship.rst
+
+   citing/index.rst
+
+   publishing.rst
 
    zzz_references_html.rst

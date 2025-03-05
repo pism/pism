@@ -41,12 +41,12 @@ def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
     T = PISM.Scalar(grid, "shelfbtemp")
-    T.metadata(0).long_name("shelf base temperature").units("Kelvin")
+    T.metadata(0).long_name("shelf base temperature").units("kelvin")
     T.set(temperature)
     T.write(filename)
 
     M = PISM.Scalar(grid, "shelfbmassflux")
-    M.metadata(0).long_name("shelf base mass flux").units("kg m-2 s-1")
+    M.metadata(0).long_name("shelf base mass flux").units("kg m^-2 s^-1")
     M.set(mass_flux)
     M.write(filename)
 
@@ -198,7 +198,7 @@ class GivenTHTest(TestCase):
         PISM.util.prepare_output(filename)
 
         Th = PISM.Scalar(self.grid, "theta_ocean")
-        Th.metadata(0).long_name("potential temperature").units("Kelvin")
+        Th.metadata(0).long_name("potential temperature").units("kelvin")
         Th.set(potential_temperature)
         Th.write(filename)
 
@@ -234,7 +234,7 @@ class DeltaT(TestCase):
         self.model = PISM.OceanConstant(self.grid)
         self.dT = -5.0
 
-        PISM.testing.create_scalar_forcing(self.filename, "delta_T", "Kelvin",
+        PISM.testing.create_scalar_forcing(self.filename, "delta_T", "kelvin",
                                            [self.dT], [0], time_bounds=[0, 1])
 
     def test_ocean_delta_t(self):
@@ -292,7 +292,7 @@ class AnomalyBMB(TestCase):
         self.dBMB = -5.0
 
         delta_BMB = PISM.Scalar(self.grid, "shelf_base_mass_flux_anomaly")
-        delta_BMB.metadata(0).long_name("2D shelf base mass flux anomaly").units("kg m-2 s-1")
+        delta_BMB.metadata(0).long_name("2D shelf base mass flux anomaly").units("kg m^-2 s^-1")
         delta_BMB.set(self.dBMB)
 
         delta_BMB.dump(self.filename)
@@ -452,7 +452,7 @@ class Cache(TestCase):
         self.constant = PISM.OceanConstant(self.grid)
 
         time_bounds = np.array([0, 1, 1, 2, 2, 3, 3, 4]) * seconds_per_year
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin", [1, 2, 3, 4],
+        create_scalar_forcing(self.filename, "delta_T", "kelvin", [1, 2, 3, 4],
                               times=None, time_bounds=time_bounds)
 
         config.set_string("ocean.delta_T.file", self.filename)

@@ -73,7 +73,7 @@ PISM command are
 
 .. code-block:: none
 
-   pismr -i ../Ross_combined.nc -bootstrap -Mx 211 -My 211 -Mz 3 -Lz 3000 -z_spacing equal \
+   pism -i ../Ross_combined.nc -bootstrap -Mx 211 -My 211 -Mz 3 -Lz 3000 -z_spacing equal \
        -surface given -stress_balance ssa -energy none -no_mass -yield_stress constant -tauc 1e6 \
        -pik -ssa_dirichlet_bc -y 1.0 -ssa_e 0.6 -ssafd_ksp_monitor
 
@@ -92,7 +92,7 @@ options,
   fields in this setup are not periodic. Turning off SIA avoids operations such as
   differencing surface elevation across the domain edges. For a more complete solution to
   this technical issue see section :ref:`sec-jako` about a regional model using PISM's
-  "regional mode" ``pismr -regional`` and the option :opt:`-no_model_strip`.
+  "regional mode" ``pism -regional`` and the option :opt:`-no_model_strip`.
 
 - Option ``-y 1.0 -no_mass -energy none`` chooses a "diagnostic" run: in absence of
   geometry evolution and stability restrictions of the energy balance model a
@@ -194,7 +194,7 @@ The PISM command done here is (essentially, and without showing diagnostic outpu
 
 .. code-block:: none
 
-   pismr -i startfile_Mx211.nc -surface given -stress_balance ssa \
+   pism -i startfile_Mx211.nc -surface given -stress_balance ssa \
        -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e 0.6 \
        -y 100 -o prog_Mx211_yr100.nc -o_size big \
        -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \

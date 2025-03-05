@@ -44,8 +44,8 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
 
   m_shelf_base_mass_flux_anomaly->metadata(0)
       .long_name("anomaly of the shelf base mass flux rate")
-      .units("kg m-2 s-1")
-      .output_units("kg m-2 year-1");
+      .units("kg m^-2 s^-1")
+      .output_units("kg m^-2 year^-1");
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 

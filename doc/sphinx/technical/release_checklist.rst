@@ -11,8 +11,7 @@ Release checklist
 #. Run ``make`` in the ``doc`` directory to update funding sources.
 #. Create a "pre-release" branch starting from the "``dev``" branch and remove code that
    should not be a part of the release.
-#. Set ``Pism_BRANCH`` in ``CMakeLists.txt`` to "``stable``".
-#. Update ``version``, ``release``, and ``copyright`` in ``doc/sphinx/conf.py``.
+#. Update PISM version in ``VERSION``.
 #. Update ``CHANGES.rst``.
 #. Tag.
 
@@ -37,3 +36,6 @@ Release checklist
 #. Send an e-mail to CRYOLIST.
 #. Tell more people, if desired.
 #. Create a new "release" on https://github.com/pism/pism/releases
+
+   Add the phrase "Follow https://doi.org/10.5281/zenodo.1199019 to the zenodo DOI for
+   this release." to the release notes on GitHub to make it easier to find the right DOI.

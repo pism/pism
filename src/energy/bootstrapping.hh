@@ -38,7 +38,7 @@ namespace energy {
  * @param[in] EC enthalpy converter
  * @param[in] H ice thickness
  * @param[in] z height above the base of the ice, `0 <= z <= H`
- * @param[in] T_surface surface temperature, in Kelvin
+ * @param[in] T_surface surface temperature, in kelvin
  * @param[in] G upward basal heat flux, in `W / meter^2`
  * @param[in] ice_k thermal conductivity of ice
  */
@@ -53,7 +53,7 @@ double ice_temperature_guess(EnthalpyConverter::Ptr EC,
  * @param[in] EC enthalpy converter
  * @param[in] H ice thickness
  * @param[in] z height above the base of the ice, `0 <= z <= H`
- * @param[in] T_surface surface temperature, in Kelvin
+ * @param[in] T_surface surface temperature, in kelvin
  * @param[in] G upward basal heat flux, in `W / meter^2`
  * @param[in] ice_k thermal conductivity of ice
  * @param[in] K temperature diffusivity in ice, ice_k / (ice_density * ice_c), where ice_c is the

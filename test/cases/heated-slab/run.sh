@@ -8,7 +8,7 @@ run_length=300000
 output_file=out.nc
 grid="-Mx 3 -My 3 -Mz 100 -Lz 1000 -Mbz 1 -Lbz 0 -z_spacing equal"
 
-pismr \
+pism \
   $grid \
   -atmosphere uniform,delta_T \
   -atmosphere.delta_T.file slab_dT.nc \

@@ -75,7 +75,7 @@ def generate_config():
 def run_pism(opts):
     Mx = 21
     My = Mx
-    cmd = "{pism_path}/pismr -config_override testPconfig.nc -i inputforP_regression.nc -bootstrap -Mx {Mx} -My {My} -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc -verbose 1".format(pism_path=opts.PISM_PATH, Mx=Mx, My=My)
+    cmd = "{pism_path}/pism -config_override testPconfig.nc -i inputforP_regression.nc -bootstrap -Mx {Mx} -My {My} -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc -verbose 1".format(pism_path=opts.PISM_PATH, Mx=Mx, My=My)
 
     print(cmd)
     subprocess.call(shlex.split(cmd))

@@ -16,13 +16,13 @@ set -e
 set -x
 
 # prepare input files with temp and liqfrac and with temp only
-$PISM_PATH/pismr -eisII A -Mx 3 -My 3 -energy enthalpy -y 10 -o temp-liqfrac.nc -o_size big
+$PISM_PATH/pism -eisII A -Mx 3 -My 3 -energy enthalpy -y 10 -o temp-liqfrac.nc -o_size big
 ncks -x -v enthalpy -O temp-liqfrac.nc temp-liqfrac.nc
 ncks -x -v liqfrac -O temp-liqfrac.nc temp.nc
 
 # try initializing from these:
-$PISM_PATH/pismr -i temp-liqfrac.nc -o output-1.nc -y 10 -options_left
-$PISM_PATH/pismr -i temp.nc -o output-2.nc -y 10 -options_left
+$PISM_PATH/pism -i temp-liqfrac.nc -o output-1.nc -y 10 -options_left
+$PISM_PATH/pism -i temp.nc -o output-2.nc -y 10 -options_left
 
 if [[ -f output-1.nc && -f output-2.nc ]];
 then

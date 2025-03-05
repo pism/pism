@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2023 PISM Authors
+// Copyright (C) 2012-2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -38,8 +38,8 @@ public:
     m_vars = { { m_sys, "tendency_of_subglacial_water_mass" } };
     m_vars[0]
         .long_name("rate of change of the total mass of subglacial water")
-        .units("kg second-1")
-        .output_units("Gt year-1");
+        .units("kg second^-1")
+        .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
@@ -65,8 +65,8 @@ public:
     m_vars = { { m_sys, "subglacial_water_input_rate_from_surface" } };
     m_vars[0]
         .long_name("water input rate from the ice surface into the subglacial water system")
-        .units("m second-1")
-        .output_units("m year-1");
+        .units("m second^-1")
+        .output_units("m year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
     m_vars[0]["comment"]      = "positive flux corresponds to water gain";
@@ -89,8 +89,8 @@ public:
     m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_input" } };
     m_vars[0]
         .long_name("subglacial water flux due to input")
-        .units("kg second-1")
-        .output_units("Gt year-1");
+        .units("kg second^-1")
+        .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
     m_vars[0]["comment"] = "positive flux corresponds to water gain";
@@ -110,19 +110,19 @@ public:
     : DiagAverageRate<Hydrology>(m, "subglacial_water_flux", RATE),
       m_flux_magnitude(m_grid, "flux_magnitude"){
 
-    m_accumulator.metadata()["units"] = "m2";
+    m_accumulator.metadata()["units"] = "m^2";
 
     m_vars = { { m_sys, "subglacial_water_flux" } };
     m_vars[0]
         .long_name("magnitude of the subglacial water flux")
-        .units("m2 second-1")
-        .output_units("m2 year-1");
+        .units("m^2 second^-1")
+        .output_units("m^2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
 
     m_flux_magnitude.metadata(0)
         .long_name("magnitude of the subglacial water flux")
-        .units("m2 s-1");
+        .units("m^2 s^-1");
   }
 
 protected:
@@ -150,8 +150,8 @@ public:
     m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_grounded_margins" } };
     m_vars[0]
         .long_name("subglacial water flux at grounded ice margins")
-        .units("kg second-1")
-        .output_units("Gt year-1");
+        .units("kg second^-1")
+        .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
     m_vars[0]["comment"]    = "positive flux corresponds to water gain";
@@ -175,8 +175,8 @@ public:
     m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_grounding_line" } };
     m_vars[0]
         .long_name("subglacial water flux at grounding lines")
-        .units("kg second-1")
-        .output_units("Gt year-1");
+        .units("kg second^-1")
+        .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
     m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
@@ -202,8 +202,8 @@ public:
     m_vars[0]
         .long_name(
             "subglacial water flux due to conservation error (mass added to preserve non-negativity)")
-        .units("kg second-1")
-        .output_units("Gt year-1");
+        .units("kg second^-1")
+        .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
     m_vars[0]["comment"]    = "positive flux corresponds to water gain";
@@ -227,8 +227,8 @@ public:
     m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary" } };
     m_vars[0]
         .long_name("subglacial water flux at domain boundary (in regional model configurations)")
-        .units("kg second-1")
-        .output_units("Gt year-1");
+        .units("kg second^-1")
+        .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
     m_vars[0]["comment"]      = "positive flux corresponds to water gain";
@@ -252,8 +252,8 @@ public:
     m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_flow" } };
     m_vars[0]
         .long_name("rate of change subglacial water mass due to lateral flow")
-        .units("kg second-1")
-        .output_units("Gt year-1");
+        .units("kg second^-1")
+        .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
     m_vars[0]["comment"]      = "positive flux corresponds to water gain";
@@ -294,11 +294,11 @@ Hydrology::Hydrology(std::shared_ptr<const Grid> g)
 
   m_surface_input_rate.metadata(0)
       .long_name("hydrology model workspace for water input rate from the ice surface")
-      .units("m s-1");
+      .units("m s^-1");
 
   m_basal_melt_rate.metadata(0)
       .long_name("hydrology model workspace for water input rate due to basal melt")
-      .units("m s-1");
+      .units("m s^-1");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
   m_Wtill.metadata(0)
@@ -317,8 +317,8 @@ Hydrology::Hydrology(std::shared_ptr<const Grid> g)
 
   m_Q.metadata(0)
       .long_name("advective subglacial water flux")
-      .units("m2 s-1")
-      .output_units("m2 day-1");
+      .units("m^2 s^-1")
+      .output_units("m^2 day^-1");
   m_Q.set(0.0);
 
   // storage for water conservation reporting quantities

@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023, 2024 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,6 +33,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/InputInterpolation.hh"
 
 namespace pism {
 namespace array {
@@ -257,21 +258,13 @@ void Array3D::regrid_impl(const File &file, io::Default default_value) {
 
   petsc::TemporaryGlobalVec tmp(dm());
 
-  if (not V.exists) {
-    set_default_value_or_stop(file.filename(), variable, default_value, *log, tmp);
+  if (V.exists) {
+    auto interp = grid()->get_interpolation(levels(), file, V.name, m_impl->interpolation_type);
+
+    int last_record = -1;
+    interp->regrid(variable, file, last_record, *grid(), tmp);
   } else {
-    grid::InputGridInfo input_grid(file, V.name, variable.unit_system(), grid()->registration());
-
-    input_grid.report(*log, 4, variable.unit_system());
-
-    io::check_input_grid(input_grid, *grid(), levels());
-
-    LocalInterpCtx lic(input_grid, *grid(), levels(), m_impl->interpolation_type);
-
-    // Note: this call will read the last time record (the index is set in `lic` based on
-    // info in `input_grid`).
-    petsc::VecArray tmp_array(tmp);
-    io::regrid_spatial_variable(variable, *grid(), lic, file, tmp_array.get());
+    set_default_value_or_stop(variable, default_value, *log, tmp);
   }
 
   if (m_impl->ghosted) {

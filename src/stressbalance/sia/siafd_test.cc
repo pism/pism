@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -252,10 +252,10 @@ static void reportErrors(const Grid &grid,
   log->message(1,
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
   log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
-               units::convert(unit_system, maxUerr, "m second-1", "m year-1"),
-               units::convert(unit_system, avUerr,  "m second-1", "m year-1"),
-               units::convert(unit_system, maxWerr, "m second-1", "m year-1"),
-               units::convert(unit_system, avWerr,  "m second-1", "m year-1"));
+               units::convert(unit_system, maxUerr, "m second^-1", "m year^-1"),
+               units::convert(unit_system, avUerr,  "m second^-1", "m year^-1"),
+               units::convert(unit_system, maxWerr, "m second^-1", "m year^-1"),
+               units::convert(unit_system, avWerr,  "m second^-1", "m year^-1"));
 }
 
 } // end of namespace pism
@@ -298,16 +298,15 @@ int main(int argc, char *argv[]) {
     grid::Parameters P(*config);
     P.Lx = 900e3;
     P.Ly = P.Lx;
-    P.horizontal_size_from_options();
 
     double Lz = 4000.0;
     unsigned int Mz = config->get_number("grid.Mz");
 
     P.z = grid::compute_vertical_levels(Lz, Mz, grid::EQUAL);
-    P.ownership_ranges_from_options(ctx->size());
+    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
 
     // create grid and set defaults
-    std::shared_ptr<Grid> grid(new Grid(ctx, P));
+    auto grid = std::make_shared<Grid>(ctx, P);
     grid->report_parameters();
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
@@ -328,7 +327,7 @@ int main(int argc, char *argv[]) {
     // enthalpy in the ice
     enthalpy.metadata(0)
         .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
-        .units("J kg-1");
+        .units("J kg^-1");
     //
     enthalpy.set(EC->enthalpy(263.15, 0.0, EC->pressure(1000.0)));
 

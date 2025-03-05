@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2023 Constantine Khroulev
+// Copyright (C) 2010--2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,12 +56,12 @@ public:
         m_interval_length(0.0) {
 
     std::string name = "tendency_of_ice_amount", long_name = "rate of change of the ice amount",
-                internal_units = "kg m-2 second-1", external_units = "kg m-2 year-1";
+                internal_units = "kg m^-2 second^-1", external_units = "kg m^-2 year^-1";
     if (kind == MASS) {
       name           = "tendency_of_ice_mass";
       long_name      = "rate of change of the ice mass";
-      internal_units = "kg second-1";
-      external_units = "Gt year-1";
+      internal_units = "kg second^-1";
+      external_units = "Gt year^-1";
     }
 
     // set metadata:
@@ -136,7 +136,6 @@ protected:
     m_interval_length += dt;
   }
 
-protected:
   AmountKind m_kind;
   array::Scalar m_last_amount;
   double m_interval_length;
@@ -156,15 +155,15 @@ public:
 
     std::string name              = "tendency_of_ice_amount_due_to_flow",
                 long_name         = "rate of change of ice amount due to flow",
-                accumulator_units = "kg m-2", internal_units = "kg m-2 second-1",
-                external_units = "kg m-2 year-1";
+                accumulator_units = "kg m^-2", internal_units = "kg m^-2 second^-1",
+                external_units = "kg m^-2 year^-1";
 
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_flow";
       long_name         = "rate of change of ice mass due to flow";
       accumulator_units = "kg";
-      internal_units    = "kg second-1";
-      external_units    = "Gt year-1";
+      internal_units    = "kg second^-1";
+      external_units    = "Gt year^-1";
     }
 
     m_factor = m_config->get_number("constants.ice.density");
@@ -215,14 +214,14 @@ public:
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
     std::string name = ismip6 ? "acabf" : "tendency_of_ice_amount_due_to_surface_mass_flux",
-                accumulator_units = "kg m-2",
+                accumulator_units = "kg m^-2",
                 long_name         = "average surface mass flux over reporting interval",
                 standard_name     = "land_ice_surface_specific_mass_balance_flux",
-                internal_units = "kg m-2 s-1", external_units = "kg m-2 year-1";
+                internal_units = "kg m^-2 s^-1", external_units = "kg m^-2 year^-1";
     if (kind == MASS) {
       name = "tendency_of_ice_mass_due_to_surface_mass_flux", accumulator_units = "kg",
       long_name = "average surface mass flux over reporting interval", standard_name = "",
-      internal_units = "kg second-1", external_units = "Gt year-1";
+      internal_units = "kg second^-1", external_units = "Gt year^-1";
     }
 
     m_accumulator.metadata()["units"] = accumulator_units;
@@ -271,14 +270,14 @@ public:
     m_factor = m_config->get_number("constants.ice.density");
 
     std::string name              = "tendency_of_ice_amount_due_to_basal_mass_flux",
-                accumulator_units = "kg m-2",
+                accumulator_units = "kg m^-2",
                 long_name      = "average basal mass flux over reporting interval", standard_name,
-                internal_units = "kg m-2 second-1", external_units = "kg m-2 year-1";
+                internal_units = "kg m^-2 second^-1", external_units = "kg m^-2 year^-1";
     if (kind == MASS) {
       name = "tendency_of_ice_mass_due_to_basal_mass_flux", accumulator_units = "kg",
       long_name      = "average basal mass flux over reporting interval",
       standard_name  = "tendency_of_land_ice_mass_due_to_basal_mass_balance",
-      internal_units = "kg second-1", external_units = "Gt year-1";
+      internal_units = "kg second^-1", external_units = "Gt year^-1";
     }
     m_accumulator.metadata()["units"] = accumulator_units;
 
@@ -326,13 +325,13 @@ public:
     m_factor = m_config->get_number("constants.ice.density");
 
     std::string name              = "tendency_of_ice_amount_due_to_conservation_error",
-                accumulator_units = "kg m-2",
+                accumulator_units = "kg m^-2",
                 long_name         = "average mass conservation error flux over reporting interval",
-                internal_units = "kg m-2 second-1", external_units = "kg m-2 year-1";
+                internal_units = "kg m^-2 second^-1", external_units = "kg m^-2 year^-1";
     if (kind == MASS) {
       name = "tendency_of_ice_mass_due_to_conservation_error", accumulator_units = "kg",
       long_name     = "average mass conservation error flux over reporting interval",
-      internal_units = "kg second-1", external_units = "Gt year-1";
+      internal_units = "kg second^-1", external_units = "Gt year^-1";
     }
 
     m_accumulator.metadata()["units"] = accumulator_units;
@@ -427,16 +426,16 @@ public:
 
     std::string name      = ismip6 ? "lifmassbf" : "tendency_of_ice_amount_due_to_discharge",
                 long_name = "discharge flux (calving, frontal melt, forced retreat)",
-                accumulator_units = "kg m-2",
+                accumulator_units = "kg m^-2",
                 standard_name  = "land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting",
-                internal_units = "kg m-2 s-1", external_units = "kg m-2 year-1";
+                internal_units = "kg m^-2 s^-1", external_units = "kg m^-2 year^-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_discharge";
       long_name         = "discharge flux (calving, frontal melt, forced retreat)";
       accumulator_units = "kg";
       standard_name     = "";
-      internal_units    = "kg second-1";
-      external_units    = "Gt year-1";
+      internal_units    = "kg second^-1";
+      external_units    = "Gt year^-1";
     }
 
     m_accumulator.metadata()["units"] = accumulator_units;
@@ -483,17 +482,17 @@ public:
     std::string
       name              = ismip6 ? "licalvf" : "tendency_of_ice_amount_due_to_calving",
       long_name         = "calving flux",
-      accumulator_units = "kg m-2",
+      accumulator_units = "kg m^-2",
       standard_name     = "land_ice_specific_mass_flux_due_to_calving",
-      internal_units    = "kg m-2 s-1",
-      external_units    = "kg m-2 year-1";
+      internal_units    = "kg m^-2 s^-1",
+      external_units    = "kg m^-2 year^-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_calving";
       long_name         = "calving flux";
       accumulator_units = "kg";
       standard_name     = "";
-      internal_units    = "kg second-1";
-      external_units    = "Gt year-1";
+      internal_units    = "kg second^-1";
+      external_units    = "Gt year^-1";
     }
 
     m_accumulator.metadata().units(accumulator_units);
@@ -537,13 +536,13 @@ public:
 
     m_factor = m_config->get_number("constants.ice.density");
 
-    std::string name = "tendency_of_ice_amount_due_to_frontal_melt", accumulator_units = "kg m-2",
-                internal_units = "kg m-2 s-1", external_units = "kg m-2 year-1";
+    std::string name = "tendency_of_ice_amount_due_to_frontal_melt", accumulator_units = "kg m^-2",
+                internal_units = "kg m^-2 s^-1", external_units = "kg m^-2 year^-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_frontal_melt";
       accumulator_units = "kg";
-      internal_units    = "kg second-1";
-      external_units    = "Gt year-1";
+      internal_units    = "kg second^-1";
+      external_units    = "Gt year^-1";
     }
 
     m_accumulator.metadata().units(accumulator_units);
@@ -581,13 +580,13 @@ public:
 
     m_factor = m_config->get_number("constants.ice.density");
 
-    std::string name = "tendency_of_ice_amount_due_to_forced_retreat", accumulator_units = "kg m-2",
-                internal_units = "kg m-2 s-1", external_units = "kg m-2 year-1";
+    std::string name = "tendency_of_ice_amount_due_to_forced_retreat", accumulator_units = "kg m^-2",
+                internal_units = "kg m^-2 s^-1", external_units = "kg m^-2 year^-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_forced_retreat";
       accumulator_units = "kg";
-      internal_units    = "kg second-1";
-      external_units    = "Gt year-1";
+      internal_units    = "kg second^-1";
+      external_units    = "Gt year^-1";
     }
 
     m_accumulator.metadata().units(accumulator_units);
@@ -619,6 +618,120 @@ protected:
 } // end of namespace pism
 
 namespace pism {
+
+namespace details {
+enum IceKind {ICE_COLD, ICE_TEMPERATE};
+
+static double ice_volume(const array::Scalar &ice_thickness,
+                         const array::Array3D &ice_enthalpy,
+                         IceKind kind,
+                         double thickness_threshold) {
+
+  auto grid = ice_thickness.grid();
+  auto ctx = grid->ctx();
+  auto EC = ctx->enthalpy_converter();
+
+  auto cell_area = grid->cell_area();
+  const auto& z = grid->z();
+
+  double volume = 0.0;
+
+  // count the volume of a 3D grid cell if
+  //
+  // - it is temperate and we're asked for the temperate ice volume
+  // - it is cold and we're asked for the cold ice volume
+  //
+  // return zero otherwise
+  //
+  // uses the depth at the *bottom* of a cell to compute pressure
+  auto volume_counter = [EC, kind, cell_area](double z_min, double z_max, double H, double E) {
+    double depth = H - z_min;
+    double P = EC->pressure(depth);
+    double V = cell_area * (z_max - z_min);
+    bool temperate = EC->is_temperate_relaxed(E, P); // FIXME issue #15
+
+    switch (kind) {
+    case ICE_TEMPERATE:
+      return temperate ? V : 0.0;
+    default:
+    case ICE_COLD:
+      return (not temperate) ? V : 0.0;
+    }
+  };
+
+  array::AccessScope list{&ice_thickness, &ice_enthalpy};
+  ParallelSection loop(grid->com);
+  try {
+    for (auto p = grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double H = ice_thickness(i, j);
+
+      if (H >= thickness_threshold) {
+        auto ks = grid->kBelowHeight(H);
+        const double *E = ice_enthalpy.get_column(i, j);
+
+        for (unsigned int k = 0; k < ks; ++k) {
+          volume += volume_counter(z[k], z[k + 1], H, E[k]);
+        }
+
+        volume += volume_counter(z[ks], H, H, E[ks]);
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return GlobalSum(grid->com, volume);
+}
+
+static double base_area(const array::Scalar &ice_thickness,
+                        const array::Array3D &ice_enthalpy,
+                        IceKind kind,
+                        double thickness_threshold) {
+
+  auto grid = ice_thickness.grid();
+  auto ctx = grid->ctx();
+  auto EC = ctx->enthalpy_converter();
+
+  auto cell_area = grid->cell_area();
+
+  double area = 0.0;
+
+  array::AccessScope list{&ice_thickness, &ice_enthalpy};
+  ParallelSection loop(grid->com);
+  try {
+    for (auto p = grid->points(); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double thickness = ice_thickness(i, j);
+
+      if (thickness >= thickness_threshold) {
+        double basal_enthalpy = ice_enthalpy.get_column(i, j)[0];
+
+        bool temperate = EC->is_temperate_relaxed(basal_enthalpy,
+                                                  EC->pressure(thickness)); // FIXME issue #15
+
+        switch (kind) {
+        case ICE_TEMPERATE:
+          area += temperate ? cell_area : 0.0;
+          break;
+        default:
+        case ICE_COLD:
+          area += (not temperate) ? cell_area : 0.0;
+        }
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return GlobalSum(grid->com, area);
+}
+
+} // end of namespace details
 
 // Horrendous names used by InitMIP (and ISMIP6, and CMIP5). Ugh.
 static const char* land_ice_area_fraction_name           = "sftgif";
@@ -729,14 +842,14 @@ public:
       standard_name = ismip6 ? "land_ice_basal_specific_mass_balance_flux" : "";
     }
 
-    m_accumulator.metadata()["units"] = "kg m-2";
+    m_accumulator.metadata()["units"] = "kg m^-2";
 
     m_vars = { { m_sys, name } };
     m_vars[0]
         .long_name(description)
         .standard_name(standard_name)
-        .units("kg m-2 s-1")
-        .output_units("kg m-2 year-1");
+        .units("kg m^-2 s^-1")
+        .output_units("kg m^-2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
@@ -824,7 +937,7 @@ std::shared_ptr<array::Array> HardnessAverage::compute_impl() const {
       const double H    = ice_thickness(i, j);
       if (cell_type.icy(i, j)) {
         (*result)(i, j) = rheology::averaged_hardness(*flow_law, H, m_grid->kBelowHeight(H),
-                                                      &(m_grid->z()[0]), Eij);
+                                                      m_grid->z().data(), Eij);
       } else { // put negative value below valid range
         (*result)(i, j) = m_fill_value;
       }
@@ -910,7 +1023,7 @@ Temperature::Temperature(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]
       .long_name("ice temperature")
       .standard_name("land_ice_temperature")
-      .units("K");
+      .units("kelvin");
   m_vars[0]["valid_min"] = { 0.0 };
 }
 
@@ -971,7 +1084,7 @@ TemperaturePA::TemperaturePA(const IceModel *m)
 }
 
 std::shared_ptr<array::Array> TemperaturePA::compute_impl() const {
-  bool cold_mode = m_config->get_flag("energy.temperature_based");
+  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Array3D>(m_grid, "temp_pa", array::WITHOUT_GHOSTS, m_grid->z());
@@ -1030,12 +1143,12 @@ protected:
 TemperaturePABasal::TemperaturePABasal(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = { { m_sys, "temppabase" } };
-  m_vars[0].long_name("pressure-adjusted ice temperature at the base of ice").units("Celsius");
+  m_vars[0].long_name("pressure-adjusted ice temperature at the base of ice").units("degree_Celsius");
 }
 
 std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
 
-  bool cold_mode = m_config->get_flag("energy.temperature_based");
+  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Scalar>(m_grid, "temp_pa_base");
@@ -1053,7 +1166,7 @@ std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
     for (auto pt = m_grid->points(); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
-      auto Enthij = enthalpy.get_column(i,j);
+      const auto *Enthij = enthalpy.get_column(i,j);
 
       const double depth = thickness(i,j),
         p = EC->pressure(depth);
@@ -1088,7 +1201,7 @@ protected:
 IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = { { m_sys, "enthalpysurf" } };
-  m_vars[0].long_name("ice enthalpy at 1m below the ice surface").units("J kg-1");
+  m_vars[0].long_name("ice enthalpy at 1m below the ice surface").units("J kg^-1");
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
 
@@ -1135,7 +1248,7 @@ protected:
 IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = {{m_sys, "enthalpybase"}};
-  m_vars[0].long_name("ice enthalpy at the base of ice").units("J kg-1");
+  m_vars[0].long_name("ice enthalpy at the base of ice").units("J kg^-1");
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
 
@@ -1155,7 +1268,7 @@ std::shared_ptr<array::Array> IceEnthalpyBasal::compute_impl() const {
 class TemperatureBasal : public Diag<IceModel>
 {
 public:
-  TemperatureBasal(const IceModel *m, AreaType flag);
+  TemperatureBasal(const IceModel *m, AreaType area_type);
 private:
   std::shared_ptr<array::Array> compute_impl() const;
 
@@ -1185,7 +1298,7 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
   }
 
   m_vars = { { m_sys, name } };
-  m_vars[0].long_name(long_name).standard_name(standard_name).units("K");
+  m_vars[0].long_name(long_name).standard_name(standard_name).units("kelvin");
   m_vars[0]["_FillValue"] = { m_fill_value };
 }
 
@@ -1242,7 +1355,7 @@ TemperatureSurface::TemperatureSurface(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]
       .long_name("ice temperature at 1m below the ice surface")
       .standard_name("temperature_at_ground_level_in_snow_or_firn") // InitMIP "standard" name
-      .units("K");
+      .units("kelvin");
   m_vars[0]["_FillValue"] = { m_fill_value };
 }
 
@@ -1302,7 +1415,7 @@ std::shared_ptr<array::Array> LiquidFraction::compute_impl() const {
       new array::Array3D(m_grid, "liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  bool cold_mode = m_config->get_flag("energy.temperature_based");
+  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
 
   if (cold_mode) {
     result->set(0.0);
@@ -1490,7 +1603,7 @@ public:
   IceVolumeGlacierized(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized") {
 
-    set_units("m3", "m3");
+    set_units("m^3", "m^3");
     m_variable["long_name"] = "volume of the ice in glacierized areas";
     m_variable["valid_min"] = { 0.0 };
   }
@@ -1505,7 +1618,7 @@ class IceVolume : public TSDiag<TSSnapshotDiagnostic, IceModel> {
 public:
   IceVolume(IceModel *m) : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume") {
 
-    set_units("m3", "m3");
+    set_units("m^3", "m^3");
     m_variable["long_name"] = "volume of the ice, including seasonal cover";
     m_variable["valid_min"] = { 0.0 };
   }
@@ -1538,7 +1651,7 @@ public:
   IceVolumeRateOfChangeGlacierized(IceModel *m)
       : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_volume_glacierized") {
 
-    set_units("m3 s-1", "m3 year-1");
+    set_units("m^3 s^-1", "m^3 year^-1");
     m_variable["long_name"] = "rate of change of the ice volume in glacierized areas";
   }
 
@@ -1554,7 +1667,7 @@ public:
   IceVolumeRateOfChange(IceModel *m)
       : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_volume") {
 
-    set_units("m3 s-1", "m3 year-1");
+    set_units("m^3 s^-1", "m^3 year^-1");
     m_variable["long_name"] = "rate of change of the ice volume, including seasonal cover";
   }
 
@@ -1569,7 +1682,7 @@ public:
   IceAreaGlacierized(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized") {
 
-    set_units("m2", "m2");
+    set_units("m^2", "m^2");
     m_variable["long_name"] = "glacierized area";
     m_variable["valid_min"] = { 0.0 };
   }
@@ -1647,7 +1760,7 @@ public:
   IceMassRateOfChangeGlacierized(IceModel *m)
       : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass_glacierized") {
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"] = "rate of change of the ice mass in glacierized areas";
   }
 
@@ -1668,7 +1781,7 @@ public:
   IceMassRateOfChangeDueToFlow(IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_flow") {
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"] = "rate of change of the mass of ice due to flow"
                               " (i.e. prescribed ice thickness)";
   }
@@ -1701,7 +1814,7 @@ class IceMassRateOfChange : public TSDiag<TSRateDiagnostic, IceModel> {
 public:
   IceMassRateOfChange(IceModel *m) : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass") {
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"] = "rate of change of the mass of ice, including seasonal cover";
   }
 
@@ -1718,13 +1831,16 @@ public:
   IceVolumeGlacierizedTemperate(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized_temperate") {
 
-    set_units("m3", "m3");
+    set_units("m^3", "m^3");
     m_variable["long_name"] = "volume of temperate ice in glacierized areas";
     m_variable["valid_min"] = { 0.0 };
   }
 
   double compute() {
-    return model->ice_volume_temperate(m_config->get_number("output.ice_free_thickness_standard"));
+    auto thickness_threshold = m_config->get_number("output.ice_free_thickness_standard");
+    return details::ice_volume(model->geometry().ice_thickness,
+                               model->energy_balance_model()->enthalpy(), details::ICE_TEMPERATE,
+                               thickness_threshold);
   }
 };
 
@@ -1734,13 +1850,15 @@ public:
   IceVolumeTemperate(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_temperate") {
 
-    set_units("m3", "m3");
+    set_units("m^3", "m^3");
     m_variable["long_name"] = "volume of temperate ice, including seasonal cover";
     m_variable["valid_min"] = { 0.0 };
   }
 
   double compute() {
-    return model->ice_volume_temperate(0.0);
+    return details::ice_volume(model->geometry().ice_thickness,
+                               model->energy_balance_model()->enthalpy(), details::ICE_TEMPERATE,
+                               0.0);
   }
 };
 
@@ -1750,13 +1868,16 @@ public:
   IceVolumeGlacierizedCold(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized_cold") {
 
-    set_units("m3", "m3");
+    set_units("m^3", "m^3");
     m_variable["long_name"] = "volume of cold ice in glacierized areas";
     m_variable["valid_min"] = { 0.0 };
   }
 
   double compute() {
-    return model->ice_volume_cold(m_config->get_number("output.ice_free_thickness_standard"));
+    auto thickness_threshold = m_config->get_number("output.ice_free_thickness_standard");
+    return details::ice_volume(model->geometry().ice_thickness,
+                               model->energy_balance_model()->enthalpy(), details::ICE_COLD,
+                               thickness_threshold);
   }
 };
 
@@ -1765,13 +1886,15 @@ class IceVolumeCold : public TSDiag<TSSnapshotDiagnostic, IceModel> {
 public:
   IceVolumeCold(IceModel *m) : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_cold") {
 
-    set_units("m3", "m3");
+    set_units("m^3", "m^3");
     m_variable["long_name"] = "volume of cold ice, including seasonal cover";
     m_variable["valid_min"] = { 0.0 };
   }
 
   double compute() {
-    return model->ice_volume_cold(0.0);
+    return details::ice_volume(model->geometry().ice_thickness,
+                               model->energy_balance_model()->enthalpy(), details::ICE_COLD,
+                               0.0);
   }
 };
 
@@ -1781,13 +1904,16 @@ public:
   IceAreaGlacierizedTemperateBase(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_temperate_base") {
 
-    set_units("m2", "m2");
+    set_units("m^2", "m^2");
     m_variable["long_name"] = "glacierized area where basal ice is temperate";
     m_variable["valid_min"] = { 0.0 };
   }
 
   double compute() {
-    return model->temperate_base_area(m_config->get_number("output.ice_free_thickness_standard"));
+    auto thickness_threshold = m_config->get_number("output.ice_free_thickness_standard");
+    return details::base_area(model->geometry().ice_thickness,
+                              model->energy_balance_model()->enthalpy(), details::ICE_TEMPERATE,
+                              thickness_threshold);
   }
 };
 
@@ -1797,13 +1923,16 @@ public:
   IceAreaGlacierizedColdBase(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_cold_base") {
 
-    set_units("m2", "m2");
+    set_units("m^2", "m^2");
     m_variable["long_name"] = "glacierized area where basal ice is cold";
     m_variable["valid_min"] = { 0.0 };
   }
 
   double compute() {
-    return model->cold_base_area(m_config->get_number("output.ice_free_thickness_standard"));
+    auto thickness_threshold = m_config->get_number("output.ice_free_thickness_standard");
+    return details::base_area(model->geometry().ice_thickness,
+                              model->energy_balance_model()->enthalpy(), details::ICE_COLD,
+                              thickness_threshold);
   }
 };
 
@@ -1851,7 +1980,7 @@ public:
       m_variable.set_name("iareagr");
     }
 
-    set_units("m2", "m2");
+    set_units("m^2", "m^2");
     m_variable["long_name"]     = "area of grounded ice in glacierized areas";
     m_variable["standard_name"] = "grounded_ice_sheet_area";
     m_variable["valid_min"]     = { 0.0 };
@@ -1873,7 +2002,7 @@ public:
       m_variable.set_name("iareafl");
     }
 
-    set_units("m2", "m2");
+    set_units("m^2", "m^2");
     m_variable["long_name"]     = "area of ice shelves in glacierized areas";
     m_variable["standard_name"] = "floating_ice_shelf_area";
     m_variable["valid_min"]     = { 0.0 };
@@ -1891,7 +2020,7 @@ public:
   IceVolumeGlacierizedGrounded(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized_grounded") {
 
-    set_units("m3", "m3");
+    set_units("m^3", "m^3");
     m_variable["long_name"] = "volume of grounded ice in glacierized areas";
     m_variable["valid_min"] = { 0.0 };
   }
@@ -1927,7 +2056,7 @@ public:
   IceVolumeGlacierizedShelf(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_volume_glacierized_floating") {
 
-    set_units("m3", "m3");
+    set_units("m^3", "m^3");
     m_variable["long_name"] = "volume of ice shelves in glacierized areas";
     m_variable["valid_min"] = { 0.0 };
   }
@@ -2011,7 +2140,7 @@ class MaxDiffusivity : public TSDiag<TSSnapshotDiagnostic, IceModel> {
 public:
   MaxDiffusivity(const IceModel *m) : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "max_diffusivity") {
 
-    set_units("m2 s-1", "m2 s-1");
+    set_units("m^2 s^-1", "m^2 s^-1");
     m_variable["long_name"] = "maximum diffusivity of the flow (usually from the SIA model)";
     m_variable["valid_min"] = { 0.0 };
   }
@@ -2037,7 +2166,7 @@ public:
   MaxHorizontalVelocity(const IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "max_horizontal_vel") {
 
-    set_units("m second-1", "m year-1");
+    set_units("m second^-1", "m year^-1");
     m_variable["long_name"] = "max(max(abs(u)), max(abs(v))) for the horizontal velocity of ice"
                               " over volume of the ice in last time step during time-series reporting interval";
     m_variable["valid_min"] = { 0.0 };
@@ -2140,7 +2269,7 @@ public:
       m_variable.set_name("tendlibmassbf");
     }
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"]     = "total over ice domain of bottom surface ice mass flux";
     m_variable["standard_name"] = "tendency_of_land_ice_mass_due_to_basal_mass_balance";
     m_variable["comment"]       = "positive means ice gain";
@@ -2161,7 +2290,7 @@ public:
       m_variable.set_name("tendacabf");
     }
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"]     = "total over ice domain of top surface ice mass flux";
     m_variable["standard_name"] = "tendency_of_land_ice_mass_due_to_surface_mass_balance";
     m_variable["comment"]       = "positive means ice gain";
@@ -2178,7 +2307,7 @@ public:
   IceMassFluxBasalGrounded(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_grounded") {
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"]     = "total over grounded ice domain of basal mass flux";
     m_variable["standard_name"] = "tendency_of_land_ice_mass_due_to_basal_mass_balance";
     m_variable["comment"]       = "positive means ice gain";
@@ -2199,7 +2328,7 @@ public:
       m_variable.set_name("tendlibmassbffl");
     }
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"]     = "total sub-shelf ice flux";
     m_variable["standard_name"] = "tendency_of_land_ice_mass_due_to_basal_mass_balance";
     m_variable["comment"]       = "positive means ice gain";
@@ -2217,7 +2346,7 @@ public:
   IceMassFluxConservationError(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_conservation_error") {
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"] = "total numerical flux needed to preserve non-negativity"
                               " of ice thickness";
     m_variable["comment"]   = "positive means ice gain";
@@ -2238,7 +2367,7 @@ public:
       m_variable.set_name("tendlifmassbf");
     }
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"]     = "discharge flux (frontal melt, calving, forced retreat)";
     m_variable["standard_name"] = "tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting";
     m_variable["comment"]       = "positive means ice gain";
@@ -2278,7 +2407,7 @@ public:
       m_variable.set_name("tendlicalvf");
     }
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"]     = "calving flux";
     m_variable["standard_name"] = "tendency_of_land_ice_mass_due_to_calving";
     m_variable["comment"]       = "positive means ice gain";
@@ -2317,7 +2446,7 @@ public:
       m_variable["standard_name"] = "tendency_of_grounded_ice_mass";
     }
 
-    set_units("kg s-1", "Gt year-1");
+    set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"] = "total ice flux across the grounding line";
     m_variable["comment"]   = "negative flux corresponds to ice loss into the ocean";
   }
@@ -2344,8 +2473,8 @@ public:
     m_vars[0]
         .long_name("ice thickness rate of change")
         .standard_name("tendency_of_land_ice_thickness")
-        .units("m s-1")
-        .output_units("m year-1");
+        .units("m s^-1")
+        .output_units("m year^-1");
 
     auto large_number = to_internal(1e6);
 
@@ -2385,7 +2514,6 @@ protected:
     m_interval_length += dt;
   }
 
-protected:
   array::Scalar m_last_thickness;
   double m_interval_length;
 };
@@ -3050,7 +3178,7 @@ class GroundingLineFlux : public DiagAverageRate<IceModel> {
 public:
   GroundingLineFlux(const IceModel *m) : DiagAverageRate<IceModel>(m, "grounding_line_flux", RATE) {
 
-    m_accumulator.metadata()["units"] = "kg m-2";
+    m_accumulator.metadata()["units"] = "kg m^-2";
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
@@ -3058,8 +3186,8 @@ public:
 
     m_vars[0]
         .long_name("grounding line flux")
-        .units("kg m-2 second-1")
-        .output_units("kg m-2 year-1");
+        .units("kg m^-2 second^-1")
+        .output_units("kg m^-2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
@@ -3071,12 +3199,55 @@ public:
 
 protected:
   void update_impl(double dt) {
-    bool add_values = true;
-    grounding_line_flux(model->geometry().cell_type,
-                        model->geometry_evolution().flux_staggered(),
-                        dt,
-                        add_values,
-                        m_accumulator);
+    auto grid      = m_accumulator.grid();
+    auto cell_area = grid->cell_area(); // units: m^2
+    auto ice_density =
+        grid->ctx()->config()->get_number("constants.ice.density"); // units: kg / m^3
+
+    // factor used to convert from m^3/s to kg/m^2
+    double unit_conversion_factor = dt * (ice_density / cell_area); // units: kg * s / m^5
+
+    ice_flow_rate_across_grounding_line(model->geometry().cell_type,
+                                        model->geometry_evolution().flux_staggered(),
+                                        unit_conversion_factor, m_accumulator);
+
+    m_interval_length += dt;
+  }
+};
+
+class MassTransportAcrossGroundingLine : public DiagAverageRate<IceModel> {
+public:
+  MassTransportAcrossGroundingLine(const IceModel *m)
+      : DiagAverageRate<IceModel>(m, "ice_mass_transport_across_grounding_line", RATE) {
+
+    m_accumulator.metadata()["units"] = "kg";
+
+    m_vars = { { m_sys, "ice_mass_transport_across_grounding_line" } };
+
+    m_vars[0]
+        .long_name("ice mass flow rate across the grounding line")
+        .units("kg s^-1")
+        .output_units("Gt year^-1");
+    m_vars[0]["cell_methods"] = "time: mean";
+
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"] =
+        "Negative values correspond to mass moving from an icy grounded area into a lake or ocean."
+        " This convention makes it easier to compare to calving, frontal melt, and discharge fluxes.";
+  }
+
+protected:
+  void update_impl(double dt) {
+    auto grid = model->grid();
+    double ice_density =
+        grid->ctx()->config()->get_number("constants.ice.density"); // units: kg / m^3
+
+    // factor used to convert from m^3/s to kg
+    double unit_conversion_factor = dt * ice_density; // units: kg * s / m^3
+
+    ice_flow_rate_across_grounding_line(model->geometry().cell_type,
+                                        model->geometry_evolution().flux_staggered(),
+                                        unit_conversion_factor, m_accumulator);
 
     m_interval_length += dt;
   }
@@ -3181,13 +3352,14 @@ void IceModel::init_diagnostics() {
     {"dHdt",                     f(new ThicknessRateOfChange(this))},
     {"bmelt",                    d::wrap(m_basal_melt_rate)},
     {"grounding_line_flux",      f(new GroundingLineFlux(this))},
+    {"ice_mass_transport_across_grounding_line", f(new MassTransportAcrossGroundingLine(this))},
 
     // misc
     {"rank", f(new Rank(this))},
   };
 
 #if (Pism_USE_PROJ==1)
-  std::string proj = m_grid->get_mapping_info().proj;
+  std::string proj = m_grid->get_mapping_info().proj_string;
   if (not proj.empty()) {
     m_diagnostics["lat_bnds"] = f(new LatLonBounds(this, "lat", proj));
     m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj));
@@ -3271,7 +3443,7 @@ void IceModel::init_diagnostics() {
   }
 
   // get diagnostics from submodels
-  for (auto m : m_submodels) {
+  for (const auto& m : m_submodels) {
     m_diagnostics = pism::combine(m_diagnostics, m.second->diagnostics());
     m_ts_diagnostics = pism::combine(m_ts_diagnostics, m.second->ts_diagnostics());
   }
@@ -3372,7 +3544,7 @@ static Metadata diag_metadata(const std::map<std::string,Diagnostic::Ptr> &diags
 static Metadata ts_diag_metadata(const std::map<std::string,TSDiagnostic::Ptr> &ts_diags) {
   Metadata result;
 
-  for (auto d : ts_diags) {
+  for (const auto& d : ts_diags) {
     // always one variable per diagnostic
     result[d.first] = {d.second->metadata()};
   }
@@ -3450,7 +3622,7 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
   loop.check();
 
   // convert from m2 to km2
-  meltarea = units::convert(m_sys, meltarea, "m2", "km2");
+  meltarea = units::convert(m_sys, meltarea, "m^2", "km^2");
   // communication
   result = GlobalSum(m_grid->com, meltarea);
 
@@ -3495,8 +3667,8 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
       if (m_geometry.cell_type.icy(i, j)) {
         // accumulate volume of ice which is original
         const double *age = ice_age.get_column(i, j);
-        const int  ks = m_grid->kBelowHeight(m_geometry.ice_thickness(i,j));
-        for (int k = 1; k <= ks; k++) {
+        auto ks = m_grid->kBelowHeight(m_geometry.ice_thickness(i,j));
+        for (unsigned int k = 1; k <= ks; k++) {
           // ice in segment is original if it is as old as one year less than current time
           if (0.5 * (age[k - 1] + age[k]) > currtime - one_year) {
             original_ice_volume += a * 1.0e-3 * (m_grid->z(k) - m_grid->z(k - 1));
@@ -3520,144 +3692,6 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
     result = 0.0;
   }
   return result;
-}
-
-namespace details {
-enum IceKind {ICE_COLD, ICE_TEMPERATE};
-
-static double ice_volume(const array::Scalar &ice_thickness,
-                         const array::Array3D &ice_enthalpy,
-                         IceKind kind,
-                         double thickness_threshold) {
-
-  auto grid = ice_thickness.grid();
-  auto ctx = grid->ctx();
-  auto EC = ctx->enthalpy_converter();
-
-  auto cell_area = grid->cell_area();
-  const auto& z = grid->z();
-
-  double volume = 0.0;
-
-  // count the volume of a 3D grid cell if
-  //
-  // - it is temperate and we're asked for the temperate ice volume
-  // - it is cold and we're asked for the cold ice volume
-  //
-  // return zero otherwise
-  //
-  // uses the depth at the *bottom* of a cell to compute pressure
-  auto volume_counter = [EC, kind, cell_area](double z_min, double z_max, double H, double E) {
-    double depth = H - z_min;
-    double P = EC->pressure(depth);
-    double V = cell_area * (z_max - z_min);
-    bool temperate = EC->is_temperate_relaxed(E, P); // FIXME issue #15
-
-    switch (kind) {
-    case ICE_TEMPERATE:
-      return temperate ? V : 0.0;
-    default:
-    case ICE_COLD:
-      return (not temperate) ? V : 0.0;
-    }
-  };
-
-  array::AccessScope list{&ice_thickness, &ice_enthalpy};
-  ParallelSection loop(grid->com);
-  try {
-    for (auto p = grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double H = ice_thickness(i, j);
-
-      if (H >= thickness_threshold) {
-        const int ks = grid->kBelowHeight(H);
-        const double *E = ice_enthalpy.get_column(i, j);
-
-        for (int k = 0; k < ks; ++k) {
-          volume += volume_counter(z[k], z[k + 1], H, E[k]);
-        }
-
-        volume += volume_counter(z[ks], H, H, E[ks]);
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  return GlobalSum(grid->com, volume);
-}
-
-static double base_area(const array::Scalar &ice_thickness,
-                        const array::Array3D &ice_enthalpy,
-                        IceKind kind,
-                        double thickness_threshold) {
-
-  auto grid = ice_thickness.grid();
-  auto ctx = grid->ctx();
-  auto EC = ctx->enthalpy_converter();
-
-  auto cell_area = grid->cell_area();
-
-  double area = 0.0;
-
-  array::AccessScope list{&ice_thickness, &ice_enthalpy};
-  ParallelSection loop(grid->com);
-  try {
-    for (auto p = grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double thickness = ice_thickness(i, j);
-
-      if (thickness >= thickness_threshold) {
-        double basal_enthalpy = ice_enthalpy.get_column(i, j)[0];
-
-        bool temperate = EC->is_temperate_relaxed(basal_enthalpy,
-                                                  EC->pressure(thickness)); // FIXME issue #15
-
-        switch (kind) {
-        case ICE_TEMPERATE:
-          area += temperate ? cell_area : 0.0;
-          break;
-        default:
-        case ICE_COLD:
-          area += (not temperate) ? cell_area : 0.0;
-        }
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  return GlobalSum(grid->com, area);
-}
-
-} // end of namespace details
-
-//! Computes the temperate ice volume, in m^3.
-double IceModel::ice_volume_temperate(double thickness_threshold) const {
-  return details::ice_volume(m_geometry.ice_thickness, m_energy_model->enthalpy(),
-                             details::ICE_TEMPERATE, thickness_threshold);
-}
-
-//! Computes the cold ice volume, in m^3.
-double IceModel::ice_volume_cold(double thickness_threshold) const {
-  return details::ice_volume(m_geometry.ice_thickness, m_energy_model->enthalpy(),
-                             details::ICE_COLD, thickness_threshold);
-}
-
-//! Computes area of basal ice which is temperate, in m^2.
-double IceModel::temperate_base_area(double thickness_threshold) const {
-  return details::base_area(m_geometry.ice_thickness, m_energy_model->enthalpy(),
-                            details::ICE_TEMPERATE, thickness_threshold);
-}
-
-//! Computes area of basal ice which is cold, in m^2.
-double IceModel::cold_base_area(double thickness_threshold) const {
-  return details::base_area(m_geometry.ice_thickness, m_energy_model->enthalpy(),
-                            details::ICE_COLD, thickness_threshold);
 }
 
 } // end of namespace pism

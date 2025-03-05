@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,6 +34,22 @@ class Array3D;
 class Scalar;
 }
 
+/*!
+ * Return the string that describes a 2D grid present in a NetCDF file.
+ *
+ * Here `variable_name` is the name of a 2D variable used to extract
+ * grid information.
+ *
+ * We assume that a file may contain more than one grid, so the file
+ * name alone is not sufficient.
+ *
+ * Appends ":piecewise_constant" if `piecewise_constant` is true.
+ *
+ * The output has the form "input_file.nc:y:x".
+ */
+std::string grid_name(const File &file, const std::string &variable_name,
+                      units::System::Ptr sys, bool piecewise_constant);
+
 /*! @brief Convert a proj string with an EPSG code to a set of CF attributes. */
 /*!
  * Fails if `proj_string` does not contain an EPSG code.
@@ -42,21 +58,34 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
 
 class MappingInfo {
 public:
-  MappingInfo(const std::string &mapping_name, units::System::Ptr unit_system);
-  VariableMetadata mapping;
-  std::string proj;
+  MappingInfo(const std::string &mapping_variable_name, units::System::Ptr unit_system);
+  MappingInfo(const VariableMetadata &mapping_variable, const std::string &proj_string);
+
+  /*! @brief Get projection info from a file. */
+  static MappingInfo FromFile(const File &input_file, const std::string &variable_name,
+                              units::System::Ptr unit_system);
+
+  //! grid mapping description following CF conventions
+  VariableMetadata cf_mapping;
+
+  //! a projection definition string in a format recognized by PROJ 6.x+
+  std::string proj_string;
 };
+
+void write_mapping(const File &file, const pism::MappingInfo &info);
+
+/*!
+ * Parse a string "EPSG:XXXX", "epsg:XXXX", "+init=epsg:XXXX" and return the EPSG code
+ * (XXXX).
+ */
+int parse_epsg(const std::string &proj_string);
 
 /*! @brief Check consistency of the "mapping" variable with the EPSG code in the proj string. */
 /*!
  * If the consistency check fails, throws RuntimeError explaining the failure. Fails if `info.proj`
  * does not use an EPSG code.
  */
-void check_consistency_epsg(const MappingInfo &info);
-
-/*! @brief Get projection info from a file. */
-MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
-                                units::System::Ptr unit_system);
+void check_consistency_epsg(const VariableMetadata &cf_mapping, const std::string &proj_string);
 
 void compute_longitude(const std::string &projection, array::Scalar &result);
 void compute_latitude(const std::string &projection, array::Scalar &result);
@@ -65,22 +94,10 @@ void compute_lon_bounds(const std::string &projection, array::Array3D &result);
 void compute_lat_bounds(const std::string &projection, array::Array3D &result);
 
 /*!
- * Utility class converting `x,y` coordinates in a projection to a `lon,lat` pair.
- *
- * Requires the `PROJ` library.
+ * Convert Climate and Forecasting (CF) convention metadata to a PROJ.4 style projection
+ * definition.
  */
-class LonLatCalculator {
-public:
-  LonLatCalculator(const std::string &proj_string);
-  ~LonLatCalculator();
-
-  double lon(double x, double y) const;
-  double lat(double x, double y) const;
-  std::array<double, 2> lonlat(double x, double y) const;
-private:
-  struct Impl;
-  Impl *m_impl;
-};
+std::string cf_to_proj(const VariableMetadata &mapping);
 
 } // end of namespace pism
 

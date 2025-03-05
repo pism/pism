@@ -73,7 +73,7 @@ def run(dt, restart=False):
     add_disc_load(geometry.ice_thickness, disc_radius, disc_thickness)
 
     # do 1 step
-    model.step(geometry.ice_thickness, geometry.sea_level_elevation, dt)
+    model.step(geometry.ice_thickness, dt)
 
     if restart:
         # save the model state
@@ -96,14 +96,14 @@ def run(dt, restart=False):
             os.remove(filename)
 
     # do 1 more step
-    model.step(geometry.ice_thickness, geometry.sea_level_elevation, dt)
+    model.step(geometry.ice_thickness, dt)
 
     return model
 
 def compare_vec(v1, v2):
     "Compare two vecs."
     print("Comparing {}".format(v1.get_name()))
-    np.testing.assert_equal(v1.numpy(), v2.numpy())
+    np.testing.assert_equal(v1.to_numpy(), v2.to_numpy())
 
 def compare(model1, model2):
     "Compare two models"

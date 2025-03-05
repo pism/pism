@@ -6,17 +6,28 @@ if (SPHINX_EXECUTABLE)
   find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
   mark_as_advanced(NCGEN_PROGRAM)
 
+  # copy conf.py, changing some things along the way:
+  configure_file(conf.py conf.py)
+
   add_custom_command (OUTPUT pism_config.nc
     COMMAND ${NCGEN_PROGRAM} -o pism_config.nc ${Pism_SOURCE_DIR}/src/pism_config.cdl
     DEPENDS ${Pism_SOURCE_DIR}/src/pism_config.cdl)
 
-  add_custom_target (manual_html ALL
-    COMMAND ${SPHINX_EXECUTABLE} -W -n -b html -D pism_config_file=${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS pism_config.nc)
+  if (Pism_DEBIAN_SYSTEMWIDE)
+    configure_file(${Pism_SOURCE_DIR}/package/debian/fix_js_libraries.sh fix_js_libraries.sh COPYONLY)
+    add_custom_target (manual_html ALL
+      COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/manual_html
+      COMMAND ./fix_js_libraries.sh ${CMAKE_CURRENT_BINARY_DIR}/manual_html
+      COMMAND rm -f ${CMAKE_CURRENT_BINARY_DIR}/manual_html/.nojekyll
+      DEPENDS pism_config.nc)
+  else()
+    add_custom_target (manual_html ALL
+      COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -W -n -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/manual_html
+      DEPENDS pism_config.nc)
+  endif()
 
   add_custom_target (manual_linkcheck
-    COMMAND ${SPHINX_EXECUTABLE} -n -b linkcheck -D pism_config_file=${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${SPHINX_EXECUTABLE} -c ${CMAKE_CURRENT_BINARY_DIR} -n -b linkcheck ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS pism_config.nc)
 
@@ -25,18 +36,16 @@ if (SPHINX_EXECUTABLE)
 
   if (SPHINX_AUTOBUILD_EXECUTABLE)
     add_custom_target (manual_autobuild
-      COMMAND ${SPHINX_AUTOBUILD_EXECUTABLE} --open-browser --port 8080 ${CMAKE_CURRENT_SOURCE_DIR} -D pism_config_file=${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_BINARY_DIR}/manual-tmp
+      COMMAND ${SPHINX_AUTOBUILD_EXECUTABLE} --open-browser --port 8080 -c ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/manual-tmp
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       DEPENDS pism_config.nc)
   endif()
 
-  if (Pism_DOC_DIR)
-    install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/html"
-      DESTINATION ${Pism_DOC_DIR}
-      PATTERN ".doctrees" EXCLUDE
-      PATTERN ".buildinfo" EXCLUDE
-      PATTERN "objects.inv" EXCLUDE)
-  endif ()                      # if Pism_DOC_DIR
+  install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/manual_html"
+    DESTINATION ${CMAKE_INSTALL_DOCDIR}
+    PATTERN ".doctrees" EXCLUDE
+    PATTERN ".buildinfo" EXCLUDE
+    PATTERN "objects.inv" EXCLUDE)
 
 endif()
 
@@ -46,18 +55,16 @@ if (SPHINX_EXECUTABLE AND PDFLATEX_COMPILER)
   find_program (MAKE_EXECUTABLE NAMES make gmake)
 
   add_custom_command (OUTPUT pism_manual.pdf
-    COMMAND ${SPHINX_EXECUTABLE} -T -W -E -b latex -t latex -D pism_config_file=${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${SPHINX_EXECUTABLE} -T -W -E -b latex -t latex -c ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
     COMMAND ${MAKE_EXECUTABLE} -C ${CMAKE_CURRENT_BINARY_DIR} all
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
   add_custom_target(manual_pdf ALL
     DEPENDS pism_config.nc
     DEPENDS pism_manual.pdf
-    )
+  )
 
-  if (Pism_DOC_DIR)
-    install (FILES ${CMAKE_CURRENT_BINARY_DIR}/pism_manual.pdf
-      DESTINATION ${Pism_DOC_DIR})
-  endif ()                      # if Pism_DOC_DIR
+  install (FILES ${CMAKE_CURRENT_BINARY_DIR}/pism_manual.pdf
+    DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 endif()

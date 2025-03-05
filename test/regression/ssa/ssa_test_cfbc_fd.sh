@@ -30,8 +30,8 @@ OPTS="
 -stress_balance.ssa.epsilon 0"
 
 # do stuff
-$MPIEXEC_COMMAND $PISM_PATH/ssa_test_cfbc${EXT} -Mx 201 $OPTS > ${output}
-$MPIEXEC_COMMAND $PISM_PATH/ssa_test_cfbc${EXT} -Mx 401 $OPTS >> ${output}
+$MPIEXEC_COMMAND $PISM_PATH/pism_ssa_test_cfbc${EXT} -Mx 201 $OPTS > ${output}
+$MPIEXEC_COMMAND $PISM_PATH/pism_ssa_test_cfbc${EXT} -Mx 401 $OPTS >> ${output}
 
 set +e
 

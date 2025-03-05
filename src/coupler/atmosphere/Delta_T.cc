@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2023 PISM Authors
+// Copyright (C) 2011--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,8 +33,8 @@ Delta_T::Delta_T(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
     prefix         = "atmosphere.delta_T",
     variable_name  = "delta_T",
     long_name      = "near-surface air temperature offsets",
-    units          = "Kelvin",
-    external_units = "Kelvin";
+    units          = "kelvin",
+    external_units = "kelvin";
 
   ForcingOptions opt(*m_grid->ctx(), prefix);
 

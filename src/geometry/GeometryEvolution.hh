@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -52,7 +52,7 @@ public:
 
   void source_term_step(const Geometry &geometry, double dt,
                         const array::Scalar &thickness_bc_mask,
-                        const array::Scalar   &surface_mass_flux,
+                        const array::Scalar   &surface_mass_balance_rate,
                         const array::Scalar   &basal_melt_rate);
 
   void apply_flux_divergence(Geometry &geometry) const;
@@ -78,7 +78,7 @@ protected:
   virtual void init_impl(const InputOptions &opts);
 
   void update_in_place(double dt,
-                       const array::Scalar& bed_elevation,
+                       const array::Scalar& bed_topography,
                        const array::Scalar& sea_level,
                        const array::Scalar& flux_divergence,
                        array::Scalar& ice_thickness,
@@ -89,8 +89,8 @@ protected:
                                          array::Scalar1      &ice_surface_elevation,
                                          array::Scalar       &ice_thickness,
                                          array::CellType1    &cell_type,
-                                         array::Scalar       &Href,
-                                         array::Scalar       &H_residual,
+                                         array::Scalar       &area_specific_volume,
+                                         array::Scalar       &residual,
                                          bool                &done);
 
   virtual void compute_interface_fluxes(const array::CellType1 &cell_type,
@@ -100,10 +100,10 @@ protected:
                                         array::Staggered           &output);
 
   virtual void compute_flux_divergence(double dt,
-                                       const array::Staggered1 &flux_staggered,
+                                       const array::Staggered1 &flux,
                                        const array::Scalar &thickness_bc_mask,
                                        array::Scalar &conservation_error,
-                                       array::Scalar &flux_fivergence);
+                                       array::Scalar &output);
 
   virtual void ensure_nonnegativity(const array::Scalar &ice_thickness,
                                     const array::Scalar &area_specific_volume,
@@ -123,7 +123,7 @@ protected:
                                                       const array::Scalar        &basal_melt_rate,
                                                       array::Scalar              &effective_SMB,
                                                       array::Scalar              &effective_BMB);
-protected:
+
   struct Impl;
   Impl *m_impl;
 };
@@ -141,33 +141,36 @@ protected:
                                 const array::Staggered     &diffusive_flux,
                                 array::Staggered           &output);
 
-  void compute_surface_and_basal_mass_balance(double dt,
-                                              const array::Scalar      &thickness_bc_mask,
-                                              const array::Scalar        &ice_thickness,
+  void compute_surface_and_basal_mass_balance(double dt, const array::Scalar &thickness_bc_mask,
+                                              const array::Scalar &ice_thickness,
                                               const array::CellType &cell_type,
-                                              const array::Scalar        &surface_mass_flux,
-                                              const array::Scalar        &basal_melt_rate,
-                                              array::Scalar              &effective_SMB,
-                                              array::Scalar              &effective_BMB);
+                                              const array::Scalar &surface_mass_flux,
+                                              const array::Scalar &basal_melt_rate,
+                                              array::Scalar &effective_SMB,
+                                              array::Scalar &effective_BMB);
+
 private:
   array::Scalar1 m_no_model_mask;
 };
 
 /*!
- * Compute the grounding line flux.
+ * Compute the ice flow rate across the grounding line over a time step, adding to
+ * `output` to accumulate contributions from multiple time steps.
  *
- * The units of `result` are "kg m-2". Negative flux corresponds to ice moving into
- * the ocean, i.e. from grounded to floating areas.
+ * The units of `output` are "kg".
  *
- * This convention makes it easier to compare this quantity to the surface mass balance or
- * calving fluxes.
+ * Negative flux corresponds to ice moving into the ocean, i.e. from grounded to floating
+ * areas. (This convention makes it easier to compare this quantity to the surface mass
+ * balance or calving fluxes.)
  */
-void grounding_line_flux(const array::CellType1 &cell_type,
-                         const array::Staggered1 &flux,
-                         double dt,
-                         bool add_values,
-                         array::Scalar &result);
+void ice_flow_rate_across_grounding_line(const array::CellType1 &cell_type,
+                                         const array::Staggered1 &flux,
+                                         double unit_conversion_factor, array::Scalar &output);
 
+
+/*!
+ * Compute the total grounding line flux over a time step, in kg.
+ */
 double total_grounding_line_flux(const array::CellType1 &cell_type,
                                  const array::Staggered1 &flux,
                                  double dt);

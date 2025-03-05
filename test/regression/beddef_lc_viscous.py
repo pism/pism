@@ -92,7 +92,7 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, Nx, dt):
         if t + dt > t_end:
             dt = t_end - t
 
-        bed_model.step(ice_thickness, sea_level, dt)
+        bed_model.step(ice_thickness, dt)
 
         t += dt
         log.message(2, ".")
@@ -102,7 +102,7 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, Nx, dt):
     r = grid.x()[Nx-1:]
 
     # extract values along the x direction (along the radius of the disc)
-    z = bed_model.bed_elevation().numpy()[Ny-1, Nx-1:]
+    z = bed_model.bed_elevation().to_numpy()[Ny-1, Nx-1:]
 
     return r, z
 
@@ -144,7 +144,7 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, Nx):
     r = grid.x()[Nx-1:]
 
     # extract values along the x direction (along the radius of the disc)
-    z = bed_model.total_displacement().numpy()[Ny-1, Nx-1:]
+    z = bed_model.total_displacement().to_numpy()[Ny-1, Nx-1:]
 
     return r, z
 
@@ -192,10 +192,10 @@ def steady_state_test():
     Ns = 10 * np.arange(1, 5) + 1
     diff = np.array([compare_steady_state(n) for n in Ns])
 
-    stored = [[ 0.0399697,  15.71882867,  3.80458833],
-              [ 0.04592036, 11.43876195,  1.94967725],
-              [ 0.04357962,  9.7207298,   1.76262896],
-              [ 0.04019595,  7.71929661,  1.38746767]]
+    stored = [[ 0.04186454, 15.71693383,  3.80441607],
+              [ 0.04777426, 11.44061586,  1.94958897],
+              [ 0.04542247,  9.72257266,  1.76268841],
+              [ 0.04203377,  7.72113443,  1.38750658]]
 
     return np.testing.assert_almost_equal(diff, stored)
 

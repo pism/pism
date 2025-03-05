@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2024 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,7 @@ public:
   const array::Scalar *basal_melt_rate;
   const array::Scalar *basal_yield_stress;
   const array::Scalar *water_column_pressure;
-  const array::Scalar *fracture_density;
+  const array::Scalar1 *fracture_density;
 
   const array::Array3D  *enthalpy;
   const array::Array3D  *age;

@@ -23,7 +23,7 @@
 #include "pism/util/array/Vector.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/fem/Element.hh"
 
 namespace pism {
 namespace fem {

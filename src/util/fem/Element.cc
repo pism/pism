@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include <cmath>                // std::sqrt()
 
 #include "pism/util/fem/Element.hh"
+#include "pism/util/fem/Quadrature.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
@@ -110,6 +111,10 @@ Element::Element(const Grid &grid, int Nq, int n_chi, int block_size)
     m_Nq(Nq),
     m_block_size(block_size) {
 
+  assert(m_n_chi > 0);
+  assert(m_Nq >= 1);
+  assert(m_block_size >= 1);
+
   // get sub-domain information from the grid:
   auto da = grid.get_dm(1, 0);  // dof = 1, stencil_width = 0
   PetscErrorCode ierr = DMDAGetLocalInfo(*da, &m_grid);
@@ -128,6 +133,10 @@ Element::Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_si
   : m_n_chi(n_chi),
     m_Nq(Nq),
     m_block_size(block_size) {
+
+  assert(m_n_chi > 0);
+  assert(m_Nq >= 1);
+  assert(m_block_size >= 1);
 
   m_grid = grid_info;
   // reset da: we don't want to end up depending on it

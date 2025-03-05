@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,11 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <netcdf.h>
-#ifdef NC_HAVE_META_H
-#include <netcdf_meta.h>
-#endif
-
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/pism_utilities.hh"
@@ -30,16 +25,16 @@
 namespace pism {
 
 //! Computes the maximum time-step we can take and still hit all `-extra_times`.
-MaxTimestep IceModel::extras_max_timestep(double my_t) {
+MaxTimestep IceModel::extras_max_timestep(double t) {
 
-  if ((not m_save_extra) or
+  if (m_extra_filename.empty() or
       (not m_config->get_flag("time_stepping.hit_extra_times"))) {
     return MaxTimestep("reporting (-extra_times)");
   }
 
   double eps = m_config->get_number("time_stepping.resolution");
 
-  return reporting_max_timestep(m_extra_times, my_t, eps,
+  return reporting_max_timestep(m_extra_times, t, eps,
                                 "reporting (-extra_times)");
 }
 
@@ -133,7 +128,7 @@ void IceModel::init_extras() {
   }
 
   if (not extra_file_set and not times_set) {
-    m_save_extra = false;
+    m_extra_filename.clear();
     return;
   }
 
@@ -144,7 +139,7 @@ void IceModel::init_extras() {
     throw;
   }
 
-  if (m_extra_times.size() == 0) {
+  if (m_extra_times.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "output.extra.times cannot be empty");
   }
 
@@ -157,8 +152,9 @@ void IceModel::init_extras() {
     File file(m_grid->com, m_extra_filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     std::string time_name = m_config->get_string("time.dimension_name");
-    if (file.find_variable(time_name)) {
-      double time_max = vector_max(file.read_dimension(time_name));
+    if (file.variable_exists(time_name)) {
+      auto time = io::read_1d_variable(file, time_name, m_time->units_string(), m_sys);
+      double time_max = vector_max(time);
 
       while (m_next_extra + 1 < m_extra_times.size() && m_extra_times[m_next_extra + 1] < time_max) {
         m_next_extra++;
@@ -181,15 +177,12 @@ void IceModel::init_extras() {
     }
   }
 
-  m_save_extra          = true;
-  m_extra_file_is_ready = false;
-  m_split_extra         = false;
-
   if (split) {
     m_split_extra = true;
     m_log->message(2, "saving spatial time-series to '%s+year.nc'; ",
                m_extra_filename.c_str());
   } else {
+    m_split_extra = false;
     if (not ends_with(m_extra_filename, ".nc")) {
       m_log->message(2,
                  "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
@@ -206,21 +199,19 @@ void IceModel::init_extras() {
                "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
-#ifdef NC_HAVE_META_H
-  {
-    if (100 * NC_VERSION_MAJOR + 10 * NC_VERSION_MINOR + NC_VERSION_PATCH < 473) {
-      if (m_extra_times.size() > 5000 and m_config->get_string("output.format") == "netcdf4_parallel") {
-        throw RuntimeError(PISM_ERROR_LOCATION,
-                           "more than 5000 times requested."
-                           "Please use -extra_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
-                           "Alternatively\n"
-                           "- split this simulation into several runs and then concatenate results\n"
-                           "- select a different output.format value\n"
-                           "- upgrade NetCDF to 4.7.3");
-      }
+  if (pism::netcdf_version() > 0 and pism::netcdf_version() < 473) {
+    if (m_extra_times.size() > 5000 and
+        m_config->get_string("output.format") == "netcdf4_parallel") {
+      throw RuntimeError(
+          PISM_ERROR_LOCATION,
+          "more than 5000 times requested."
+          "Please use -extra_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
+          "Alternatively\n"
+          "- split this simulation into several runs and then concatenate results\n"
+          "- select a different output.format value\n"
+          "- upgrade NetCDF to 4.7.3");
     }
   }
-#endif
 
   if (not vars.empty()) {
     m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
@@ -238,10 +229,9 @@ void IceModel::write_extras() {
                                  // is only used if save_now == true, and in
                                  // this case saving_after is guaranteed to be
                                  // initialized. See the code below.
-  std::string filename;
   unsigned int current_extra;
   // determine if the user set the -save_at and -save_to options
-  if (not m_save_extra) {
+  if (m_extra_filename.empty()) {
     return;
   }
 
@@ -297,49 +287,41 @@ void IceModel::write_extras() {
     return;
   }
 
-  if (m_split_extra) {
-    m_extra_file_is_ready = false;        // each time-series record is written to a separate file
-    auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
-    filename = pism::printf("%s_%s.nc",
-                            m_extra_filename.c_str(),
-                            date_without_spaces.c_str());
-  } else {
-    filename = m_extra_filename;
-  }
-
-  m_log->message(3,
-                 "saving spatial time-series to %s at %s\n",
-                 filename.c_str(), m_time->date(m_time->current()).c_str());
-
-  // default behavior is to move the file aside if it exists already; option allows appending
-  bool append = m_config->get_flag("output.extra.append");
-  auto mode = m_extra_file_is_ready or append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
-
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
   {
-    if (not m_extra_file) {
-      m_extra_file.reset(new File(m_grid->com,
-                                  filename,
-                                  string_to_backend(m_config->get_string("output.format")),
-                                  mode,
-                                  m_ctx->pio_iosys_id()));
-    }
-
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    if (not m_extra_file_is_ready) {
+    VariableMetadata time_bounds("time_bounds", m_sys);
+    time_bounds.units(m_time->units_string());
+
+    if (m_extra_file == nullptr) {
+
+      // default behavior is to move the file aside if it exists already; option allows appending
+      auto mode =
+          m_config->get_flag("output.extra.append") ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
+
+      std::string filename = m_extra_filename;
+      if (m_split_extra) {
+        // each time-series record is written to a separate file
+        auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
+        filename = pism::printf("%s_%s.nc", m_extra_filename.c_str(), date_without_spaces.c_str());
+      }
+
+      m_extra_file.reset(new File(m_grid->com, filename,
+                                  string_to_backend(m_config->get_string("output.format")), mode));
+
       // Prepare the file:
       io::define_time(*m_extra_file, *m_ctx);
       m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
-      io::define_time_bounds(m_extra_bounds,
-                             time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
+      io::define_time_bounds(time_bounds, time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
 
       write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
-
-      m_extra_file_is_ready = true;
     }
+
+    m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
+                   m_time->date(m_time->current()).c_str());
 
     write_run_stats(*m_extra_file, run_stats());
 
@@ -354,7 +336,7 @@ void IceModel::write_extras() {
     unsigned int time_length = m_extra_file->dimension_length(time_name);
     size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
-    io::write_time_bounds(*m_extra_file, m_extra_bounds,
+    io::write_time_bounds(*m_extra_file, time_bounds,
                           time_start, {m_last_extra, current_time});
     // make sure all changes are written
     m_extra_file->sync();

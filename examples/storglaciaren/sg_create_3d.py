@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2011, 2014, 2018, 2019 Andy Aschwanden
+# Copyright (C) 2011, 2014, 2018, 2019, 2024 Andy Aschwanden
 #
 # This file is part of PISM.
 #
@@ -247,7 +247,7 @@ artm = T0 + Tma * (zcts + slope - m_bed) / (2.0 * slope)
 artm[m_bed < zcts-slope] = T0 + Tma
 artm[m_bed > zcts+slope] = T0
 
-artm_var = def_var(nc, "ice_surface_temp", "K", fill_value)
+artm_var = def_var(nc, "ice_surface_temp", "kelvin", fill_value)
 artm_var[:] = artm
 
 # set global attributes

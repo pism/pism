@@ -7,8 +7,8 @@ M = 3                           # grid size
 L = 1e5                         # domain size
 b0 = 0.0                        # bed elevation
 H0 = 200.0                      # ice thickness
-T_mean_annual = 268.15        # mean annual temperature, Kelvin
-T_amplitude = 6             # surface temperature aplitude, Kelvin
+T_mean_annual = 268.15        # mean annual temperature, kelvin
+T_amplitude = 6             # surface temperature aplitude, kelvin
 summer_peak_day = 365/2
 seconds_per_year = 365 * 86400
 M0 = 0.0                        # mass balance
@@ -63,15 +63,15 @@ b.long_name = "bed elevation"
 b[:] = b0
 
 T_s = f.createVariable("ice_surface_temp", np.float64, ("y", "x"))
-T_s.units = "Kelvin"
+T_s.units = "kelvin"
 T_s[:] = T_mean_annual
 
 M = f.createVariable("climatic_mass_balance", np.float64, ("y", "x"))
-M.units = "kg m-2 s-1"
+M.units = "kg m^-2 s^-1"
 M[:] = M0
 
 dT = f.createVariable("delta_T", np.float64, ("time",))
-dT.units = "Kelvin"
+dT.units = "kelvin"
 dT[:] = T_surface(time, 0.0, T_amplitude, summer_peak_day)
 
 f.close()

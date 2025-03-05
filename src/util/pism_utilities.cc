@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,10 +28,6 @@
 #include <fftw3.h>              // fftw_version
 #include <gsl/gsl_version.h>    // GSL_VERSION
 
-// All recent NetCDF versions depend on HDF5, so we should be able to include hdf5.h to
-// record the version used by PISM.
-#include <hdf5.h>               // H5_VERS_INFO
-
 #include "pism/pism_config.hh"  // Pism_USE_XXX, version info
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
@@ -40,6 +36,9 @@
 #define MPI_INCLUDED 1
 #endif
 #include <netcdf.h>             // nc_inq_libvers
+#ifdef NC_HAVE_META_H
+#include <netcdf_meta.h>        // NC_VERSION_MAJOR, etc
+#endif
 
 #if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"    // pj_release
@@ -250,7 +249,6 @@ std::string version() {
   result += buffer;
 #endif
 
-  result += pism::printf("%s\n", H5_VERS_INFO);
   result += pism::printf("NetCDF %s.\n", nc_inq_libvers());
   result += pism::printf("FFTW %s.\n", fftw_version);
   result += pism::printf("GSL %s.\n", GSL_VERSION);
@@ -269,6 +267,14 @@ std::string version() {
 #endif
 
   return result;
+}
+
+int netcdf_version() {
+#ifdef NC_HAVE_META_H
+  return 100 * NC_VERSION_MAJOR + 10 * NC_VERSION_MINOR + NC_VERSION_PATCH;
+#else
+  return 0;                    // unknown
+#endif
 }
 
 
@@ -570,6 +576,15 @@ double parse_number(const std::string &input) {
   return result;
 }
 
+std::vector<double> parse_number_list(const std::string &input) {
+  std::vector<double> result;
+
+  for (const auto &p : split(input, ',')) {
+    result.push_back(parse_number(p));
+  }
+  return result;
+}
+
 long int parse_integer(const std::string &input) {
   char *endptr = NULL;
   long int result = strtol(input.c_str(), &endptr, 10);
@@ -577,6 +592,15 @@ long int parse_integer(const std::string &input) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Can't parse %s (expected an integer)",
                                   input.c_str());
+  }
+  return result;
+}
+
+std::vector<long> parse_integer_list(const std::string &input) {
+  std::vector<long> result;
+
+  for (const auto &p : split(input, ',')) {
+    result.push_back(parse_integer(p));
   }
   return result;
 }

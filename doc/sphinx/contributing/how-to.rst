@@ -19,7 +19,7 @@ Create and use configuration flags and parameters
    pism_config:constants.standard_gravity = 9.81;
    pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid";
    pism_config:constants.standard_gravity_type = "scalar";
-   pism_config:constants.standard_gravity_units = "meter second-2";
+   pism_config:constants.standard_gravity_units = "meter second^-2";
 
 - One can access these parameters using the `Config` class. `IceModel` and all classes
   derived from `Component` have an pointer to an instance of this class as a data member
@@ -162,7 +162,7 @@ the time variable.
 .. code-block:: c++
 
    File file(m_grid->com, m_config->get_string("output.format"),
-            filename, PISM_READWRITE_CLOBBER, m_grid->ctx()->pio_iosys_id());
+            filename, PISM_READWRITE_CLOBBER);
 
    io::define_time(file, *m_grid->ctx());
    io::append_time(file, *m_grid->ctx()->config(), current_time);

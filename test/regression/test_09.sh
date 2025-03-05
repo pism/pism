@@ -3,35 +3,51 @@
 PISM_PATH=$1
 MPIEXEC=$2
 
-echo "Test # 9: 3D regridding from files with different variable orders."
-files="foo-09.nc bar-09.nc baz-09.nc"
+echo "Test # 9: 2D and 3D regridding from files with different variable orders."
 
-OPTS="-Mx 61 -My 61 -Mz 21 -Lz 4000 -regrid_file foo-09.nc -regrid_vars topg,litho_temp,thk,bwat,enthalpy -y 0"
+# create a temporary directory and set up automatic cleanup
+temp_dir=$(mktemp -d --tmpdir pism-test-09-XXXX)
+trap 'rm -rf "$temp_dir"' EXIT
+cd $temp_dir
 
-rm -f $files
+set -e
+set -x
 
-set -e -x
+PISM="$PISM_PATH/pism -config $PISM_PATH/pism_config.nc"
 
 # Create a file to bootstrap from (with a non-trivial bed topography):
-$MPIEXEC -n 1 $PISM_PATH/pismr -eisII A -Mx 51 -My 60 -Mz 21 -Mbz 21 -Lbz 1000 -y 0 -o foo-09.nc
+# Note: Mx, My, and Mz should all be different.
+$MPIEXEC -n 1 $PISM -eisII J -Mx 51 -My 60 -Mz 21 -Mbz 21 -Lbz 1000 -y 0 -o input-y,x,z.nc
 
-# Bootstrap from this file and run for 0 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr -i foo-09.nc -bootstrap $OPTS -o bar-09.nc
+# There are 6 possible variable orders.
+#
+# The y,x,z is the default that does not require transposing data. Note that this order is
+# handled by the first iteration, creating the output file to compare all the other
+# outputs to.
+for order in y,x,z y,z,x x,y,z x,z,y z,x,y z,y,x;
+do
+  echo ${order}
+  # Note: this is a no-op the first time through the loop.
+  ncpdq -4 -L1 -O -a ${order} input-y,x,z.nc input-${order}.nc
 
-# Change the variable order in foo-09.nc to z,y,x:
-ncpdq -O -a z,y,x foo-09.nc foo-09.nc
+  # We don't need to regrid all the possible variables: one 2D and one 3D variable is
+  # enough.
+  variables="topg,enthalpy"
 
-# Bootstrap from this file and run for 0 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr -i foo-09.nc -bootstrap $OPTS -o baz-09.nc
+  # Bootstrap from this file and run for 0 years:
+  $MPIEXEC -n 2 $PISM \
+           -Lz 4000 \
+           -Mx 61 \
+           -My 51 \
+           -Mz 41 \
+           -bootstrap \
+           -i input-${order}.nc \
+           -o o-${order}.nc \
+           -regrid_file input-${order}.nc \
+           -regrid_vars ${variables} \
+           -y 0 \
+           ""
 
-set +e
-set +x
-
-# Compare bar-09.nc and baz-09.nc:
-$PISM_PATH/nccmp.py -x -v timestamp bar-09.nc baz-09.nc
-if [ $? != 0 ];
-then
-    exit 1
-fi
-
-rm -f $files; exit 0
+  # Compare results
+  $PISM_PATH/pism_nccmp -v ${variables} o-y,x,z.nc o-${order}.nc
+done

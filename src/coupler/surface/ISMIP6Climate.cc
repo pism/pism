@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2019, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,8 +43,8 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
   {
     m_mass_flux_reference.metadata(0)
         .long_name("reference surface mass balance rate")
-        .units("kg m-2 s-1")
-        .output_units("kg m-2 year-1")
+        .units("kg m^-2 s^-1")
+        .output_units("kg m^-2 year^-1")
         .standard_name("land_ice_surface_specific_mass_balance_flux")
         .set_time_independent(true);
 
@@ -61,7 +61,7 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
 
     m_temperature_reference.metadata(0)
         .long_name("reference temperature")
-        .units("Kelvin")
+        .units("kelvin")
         .set_time_independent(true);
 
     m_temperature_reference.metadata()["valid_range"] = { 0.0, 373.15 };
@@ -83,8 +83,8 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
 
       m_mass_flux_anomaly->metadata(0)
           .long_name("surface mass balance rate anomaly")
-          .units("kg m-2 s-1")
-          .output_units("kg m-2 year-1");
+          .units("kg m^-2 s^-1")
+          .output_units("kg m^-2 year^-1");
     }
 
     {
@@ -95,8 +95,8 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
 
       m_mass_flux_gradient->metadata(0)
           .long_name("surface mass balance rate elevation lapse rate")
-          .units("kg m-2 s-1 m-1")
-          .output_units("kg m-2 year-1 m-1");
+          .units("kg m^-2 s^-1 m^-1")
+          .output_units("kg m^-2 year^-1 m^-1");
     }
 
     {
@@ -107,7 +107,7 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
 
       m_temperature_anomaly->metadata(0)
           .long_name("ice surface temperature anomaly")
-          .units("Kelvin");
+          .units("kelvin");
     }
 
     {
@@ -118,7 +118,7 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
 
       m_temperature_gradient->metadata(0)
           .long_name("ice surface temperature elevation lapse rate")
-          .units("Kelvin m-1");
+          .units("kelvin m^-1");
     }
   }
 }

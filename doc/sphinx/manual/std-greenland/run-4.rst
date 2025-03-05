@@ -32,10 +32,10 @@ relevant options are further documented in the :ref:`Climate Forcing Manual
 <sec-climate-forcing>`.
 
 As noted, one must compute melt in order to compute SMB. Here this is done using a
-temperature-index, :ref:`"positive degree-day" <sec-surface-pdd>` (PDD) model :cite:`Hock05`. Such a PDD model has
-parameters for how much snow and/or ice is melted when surface temperatures spend time
-near or above zero degrees. Again, see the :ref:`Climate Forcing Manual
-<sec-climate-forcing>` for relevant options.
+temperature-index, :ref:`"positive degree-day" <sec-surface-pdd>` (PDD) model
+:cite:`Hock05`. Such a PDD model has parameters for how much snow and/or ice is melted
+when surface temperatures spend time near or above zero degrees. Again, see the
+:ref:`Climate Forcing Manual <sec-climate-forcing>` for relevant options.
 
 To summarize the paleo-climate model applied here, temperature offsets from the GRIP core
 record affect the snow energy balance, and thus the rates of melting and runoff calculated
@@ -61,7 +61,7 @@ instead from a previously computed near-equilibrium result:
      -regrid_vars litho_temp,thk,enthalpy,tillwat,basal_melt_rate_grounded
 
 For more on regridding see section :ref:`sec-regridding`. Then we turn on the earth
-deformation model with option ``-bed_def lc``; see section :ref:`sec-beddef`. After
+deformation model with option ``-bed_def lc``; see section :ref:`sec-bed-def`. After
 that the atmosphere and surface (PDD) models are turned on and the files they need are
 identified:
 
@@ -85,7 +85,7 @@ at the LGM, do:
    :language: bash
    :lines: 3-
 
-This run should only take one or two hours, noting it is at a coarse 20 km resolution.
+This run should take less than an hour, noting it is at a coarse 20 km resolution.
 
 The fields ``usurf``, ``velsurf_mag``, and ``velbase_mag`` from file
 ``g20km_25ka_paleo.nc`` are sufficiently similar to those shown in

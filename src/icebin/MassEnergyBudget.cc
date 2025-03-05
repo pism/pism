@@ -41,20 +41,20 @@ MassEnergyBudget::MassEnergyBudget(std::shared_ptr<const pism::Grid> grid,
   // ----------- Heat generation of flows [vertical]
   // Postive means heat is flowing INTO the ice sheet.
 
-  basal_frictional_heating.metadata(0).long_name("Basal frictional heating").units("W m-2");
+  basal_frictional_heating.metadata(0).long_name("Basal frictional heating").units("W m^-2");
   add_enth(basal_frictional_heating, DELTA, "basal_frictional_heating");
 
-  strain_heating.metadata(0).long_name("Strain heating").units("W m-2");
+  strain_heating.metadata(0).long_name("Strain heating").units("W m^-2");
   add_enth(strain_heating, DELTA, "strain_heating"); //!< Total amount of strain heating [J/m^2]
 
   geothermal_flux.metadata(0)
       .long_name("Geothermal energy through (compare to upward_geothermal_flux?)")
-      .units("W m-2");
+      .units("W m^-2");
   add_enth(geothermal_flux, 0, "geothermal_flux"); //!< Total amount of geothermal energy [J/m^2]
 
   upward_geothermal_flux.metadata(0)
       .long_name("Geothermal energy through (compare to geothermal_flux?)")
-      .units("W m-2");
+      .units("W m^-2");
   // Total amount of geothermal energy [J/m^2]
   add_enth(upward_geothermal_flux, DELTA, "upward_geothermal_flux");
 
@@ -75,13 +75,13 @@ MassEnergyBudget::MassEnergyBudget(std::shared_ptr<const pism::Grid> grid,
   smb.set_attrs("smb", "m-2 s-1");
   add_massenth(smb, DELTA, "smb.mass", "smb.enth");
 
-  deltah.metadata(0).long_name("deltah").units("J m-2 s-1");
+  deltah.metadata(0).long_name("deltah").units("J m^-2 s^-1");
   add_enth(deltah, DELTA, "");
 
-  href_to_h.metadata(0).long_name("href_to_h").units("kg m-2 s-1");
+  href_to_h.metadata(0).long_name("href_to_h").units("kg m^-2 s^-1");
   add_mass(href_to_h, 0, "");
 
-  nonneg_rule.metadata(0).long_name("nonneg_rule").units("kg m-2 s-1");
+  nonneg_rule.metadata(0).long_name("nonneg_rule").units("kg m^-2 s^-1");
   add_mass(nonneg_rule, 0, "");
 
 

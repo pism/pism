@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2017, 2020 Andy Aschwanden
+# Copyright (C) 2017, 2020, 2024 Andy Aschwanden
 
 import numpy as np
 import time
@@ -71,7 +71,7 @@ time_bnds_var[:, 0] = bnds_interval_since_refdate[0:-1]
 time_bnds_var[:, 1] = bnds_interval_since_refdate[1::]
 
 var = 'delta_T'
-dT_var = def_var(nc, var, "K")
+dT_var = def_var(nc, var, "kelvin")
 T_0 = 0.
 
 temp = np.zeros_like(time_interval_since_refdate) + T_max

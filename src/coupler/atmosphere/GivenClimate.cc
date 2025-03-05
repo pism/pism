@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,14 +59,14 @@ Given::Given(std::shared_ptr<const Grid> g)
   {
     m_air_temp->metadata(0)
         .long_name("mean annual near-surface air temperature")
-        .units("Kelvin");
+        .units("kelvin");
     m_air_temp->metadata(0)["valid_range"] = { 0.0, 323.15 }; // (0 C, 50 C)
   }
   {
     m_precipitation->metadata(0)
         .long_name("precipitation rate")
-        .units("kg m-2 second-1")
-        .output_units("kg m-2 year-1")
+        .units("kg m^-2 second^-1")
+        .output_units("kg m^-2 year^-1")
         .standard_name("precipitation_flux");
   }
 }

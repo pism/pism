@@ -3,13 +3,13 @@
 # install location).
 file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
-# Copy nccmp.py into the build directory:
-configure_file (${PROJECT_SOURCE_DIR}/util/nccmp.py ${PROJECT_BINARY_DIR}/nccmp.py COPYONLY)
+# Copy pism_nccmp into the build directory:
+configure_file (${PROJECT_SOURCE_DIR}/util/pism_nccmp ${PROJECT_BINARY_DIR}/pism_nccmp COPYONLY)
 
 # Set the location of PISM regression test scripts
 set(PISM_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-set (MEMORYCHECK_COMMAND_OPTIONS "--dsymutil=yes --trace-children=yes --trace-children-skip=*python,*nccmp.py,*rm,*which,*env,*diff,*cp,*hydra_*")
+set (MEMORYCHECK_COMMAND_OPTIONS "--dsymutil=yes --trace-children=yes --trace-children-skip=*python,*pism_nccmp,*rm,*which,*env,*diff,*cp,*hydra_*")
 
 function(add_memcheck_test name binary)
   set(memcheck_command "${MEMORYCHECK_COMMAND} ${MEMORYCHECK_COMMAND_OPTIONS}")
@@ -29,36 +29,36 @@ macro(pism_test name script)
     set_memcheck_test_properties("${name}:${script}"
       PROPERTIES FAIL_REGULAR_EXPRESSION "ERROR SUMMARY: [^0]")
   endif()
-  if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16")
-    set_property(TEST "${name}:${script}" PROPERTY
-      SKIP_REGULAR_EXPRESSION
-      "ModuleNotFoundError: No module named"
-      "ncpdq: command not found"
-      "ncap2: command not found"
-      "ncks: command not found"
-      "ncrcat: command not found"
-    )
-  endif()
+
+  set_property(TEST "${name}:${script}" PROPERTY
+    SKIP_REGULAR_EXPRESSION
+    "ModuleNotFoundError: No module named"
+    "ncpdq: command not found"
+    "ncap2: command not found"
+    "ncks: command not found"
+    "ncrcat: command not found"
+    "cdo: command not found"
+  )
 endmacro()
 
 macro(pism_python_test name script)
-  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python ${PYTHON_EXECUTABLE})
+  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python ${Python3_EXECUTABLE})
 endmacro()
 
 # Tests themselves:
 pism_test (pism_testing_tools test_regression_tools.py)
 
-pism_test (pismr_exact_restartability_SIA_only test_01.sh)
+pism_test (pism_exact_restartability_SIA_only test_01.sh)
 
-pism_test (pismv_processor_independence test_02.sh)
+pism_test (pism_processor_independence test_02.sh)
 
-pism_test (pismr_zero_length_run test_03.sh)
+pism_test (pism_zero_length_run test_03.sh)
 
-pism_test (pismr_regridding_during_bootstrapping test_04.sh)
+pism_test (pism_regridding_during_bootstrapping test_04.sh)
 
-pism_test (pismr_bootstrap_variable_order test_05.sh)
+pism_test (pism_bootstrap_variable_order test_05.sh)
 
-pism_test (pismr_bootstrap_variable_ranges test_06.sh)
+pism_test (pism_bootstrap_variable_ranges test_06.sh)
 
 pism_test (regridding:bootstrap_vs_regrid_file test_07.sh)
 
@@ -102,6 +102,10 @@ pism_test (PICO:Split-and-merge pico_split/run_test.sh)
 
 if (Pism_USE_PROJ)
   pism_test (epsg_code_processing test_epsg_processing.py)
+endif()
+
+if (Pism_USE_YAC_INTERPOLATION)
+  pism_test (regridding:yac:inverted_y interpolation_inverted_y.sh)
 endif()
 
 if(Pism_BUILD_EXTRA_EXECS)
@@ -148,9 +152,11 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
         pism_python_test (Python:sia_forward.py test_33.sh)
 
+        pism_python_test (bed_deformation:load_averaging beddef_load_averaging.sh)
+
 # Inversion regression tests.
 
-        execute_process (COMMAND ${PYTHON_EXECUTABLE} -c "import siple"
+        execute_process (COMMAND ${Python3_EXECUTABLE} -c "import siple"
           RESULT_VARIABLE IMPORT_SIPLE_ERRCODE
           OUTPUT_QUIET ERROR_QUIET)
 

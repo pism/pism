@@ -33,7 +33,7 @@ def allocate_storage(grid):
 
 def spy_vec(vec, value):
     plt.title(vec.get_name())
-    plt.imshow(vec.numpy(), interpolation="nearest")
+    plt.imshow(vec.to_numpy(), interpolation="nearest")
 
 def init(H, vec):
 

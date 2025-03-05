@@ -55,7 +55,7 @@ It is also possible to run PISM for the duration of the available forcing data u
 
 .. code-block:: none
 
-   pismr -calendar gregorian -time_file forcing.nc
+   pism -calendar gregorian -time_file forcing.nc
 
 will extract the reference date and run length from ``forcing.nc``, respecting time
 bounds.
@@ -87,7 +87,8 @@ model validation.
 
 PISM uses CalCalcs_ by David W. Pierce to perform calendric computations. This lets us
 support all the `calendars <CF-Calendars_>`_ defined by the CF Metadata Conventions
-document except for the ``366_day`` (``all_leap``) calendar.
+document except for the ``366_day`` (``all_leap``) calendar. The "no calendar" option
+corresponding to the keyword ``none`` is not supported either.
 
 By default PISM uses the ``365_day`` calendar. This is appropriate for runs that do not
 require precise application of forcing data or reporting on particular dates
@@ -134,10 +135,10 @@ and ``-ye`` are ignored:
 .. code-block:: bash
 
    # This run gets killed but leaves backup.nc:
-   pismr -i input.nc -time_file time.nc -o output.nc
+   pism -i input.nc -time_file time.nc -o output.nc
    # This WILL NOT start from the time saved in backup.nc
    # and continue until the end time in time.nc
-   pismr -i backup.nc -time_file time.nc -o output.nc
+   pism -i backup.nc -time_file time.nc -o output.nc
 
 In this case we want to set the start time of the run from ``backup.nc``, but use the end
 time from ``time.nc``. To achieve this, use the option :opt:`-time_file_continue_run`.
@@ -145,9 +146,9 @@ time from ``time.nc``. To achieve this, use the option :opt:`-time_file_continue
 .. code-block:: bash
 
    # This run gets killed but leaves backup.nc:
-   pismr -i input.nc -time_file time.nc -o output.nc
+   pism -i input.nc -time_file time.nc -o output.nc
    # This WILL continue until the end time in time.nc, starting from backup.nc
-   pismr -i backup.nc -time_file time.nc -o output.nc -time_file_continue_run
+   pism -i backup.nc -time_file time.nc -o output.nc -time_file_continue_run
 
 .. _sec-diagnostic-computations:
 
@@ -166,8 +167,8 @@ As an example, consider these two runs:
 
 .. code-block:: none
 
-   pismr -eisII A -y 6000 -o foo.nc
-   pismr -i foo.nc -y 10hours -o bar.nc -o_size big
+   pism -eisII A -Mx 61 -My 61 -y 6000 -o foo.nc
+   pism -i foo.nc -y 10hours -o bar.nc -o_size big
 
 The result of the second (short) run is a NetCDF file ``bar.nc`` which contains the full
 three-dimensional velocity field in the scalar NetCDF variables ``uvel``, ``vvel``, and

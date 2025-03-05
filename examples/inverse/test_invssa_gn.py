@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2022 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2024 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -27,7 +27,7 @@ import os
 import math
 
 import PISM
-
+import PISM.invert.ssa
 
 def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
@@ -67,9 +67,8 @@ if __name__ == "__main__":
     # a) tauc from the input file (default)
     # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
     tauc_prior = PISM.model.createYieldStressVec(grid, 'tauc_prior')
-    tauc_prior.set_attrs("diagnostic",
-                         "initial guess for (pseudo-plastic) basal yield stress in an inversion",
-                         "Pa", "Pa", "", 0)
+    tauc_prior.metadata().long_name("initial guess for (pseudo-plastic) basal yield stress in an inversion").units("Pa")
+
     tauc = PISM.model.createYieldStressVec(grid)
     if use_tauc_prior:
         tauc_prior.regrid(inv_data_filename, critical=True)
@@ -81,7 +80,7 @@ if __name__ == "__main__":
         tauc.regrid(input_filename, True)
         tauc_prior.copy_from(tauc)
 
-    adjustTauc(vecs.ice_mask, tauc_prior)
+    adjustTauc(vecs.mask, tauc_prior)
 
     # Convert tauc_prior -> zeta_prior
     zeta = PISM.Scalar2(grid, "")
@@ -106,10 +105,10 @@ if __name__ == "__main__":
         vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata, sia_solver)
 
         vel_sia_observed.metadata(0).set_name('u_sia_observed')
-        vel_sia_observed.metadata(0).set_string('long_name', "x-component of the 'observed' SIA velocities")
+        vel_sia_observed.metadata(0).long_name("x-component of the 'observed' SIA velocities")
 
         vel_sia_observed.metadata(1).set_name('v_sia_observed')
-        vel_sia_observed.metadata(1).set_string('long_name', "y-component of the 'observed' SIA velocities")
+        vel_sia_observed.metadata(1).long_name("y-component of the 'observed' SIA velocities")
 
         vel_ssa_observed.copy_from(vel_surface_observed)
         vel_ssa_observed.add(-1, vel_sia_observed)

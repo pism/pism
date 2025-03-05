@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2023 PISM Authors
+// Copyright (C) 2012, 2014, 2015, 2016, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+#include <netcdf.h>
 
 #include "pism/util/io/IO_Flags.hh"
 

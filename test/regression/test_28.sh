@@ -15,23 +15,23 @@ set -e
 set -x
 
 # create a (complete) dataset to bootstrap from:
-$MPIEXEC -n 2 $PISM_PATH/pismr -eisII A -y 100 -o foo-28.nc
+$MPIEXEC -n 2 $PISM_PATH/pism -eisII A -Mx 61 -My 61 -y 100 -o foo-28.nc
 
 OPTS="-i foo-28.nc -bootstrap -Mx 61 -My 61 -Mz 11 -y 10 -Lz 1000"
 # bootstrap and run for 100 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o bar-28.nc
+$MPIEXEC -n 2 $PISM_PATH/pism $OPTS -o bar-28.nc
 
 # remove some variables
 ncks -x -v basal_melt_rate_grounded,tillwat,dbdt -O foo-28.nc foo-28.nc
 
 # bootstrap and run for 100 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o baz-28.nc
+$MPIEXEC -n 2 $PISM_PATH/pism $OPTS -o baz-28.nc
 
 set +e
 set +x
 
 # Check results:
-$PISM_PATH/nccmp.py -x -v timestamp bar-28.nc baz-28.nc
+$PISM_PATH/pism_nccmp -x -v timestamp bar-28.nc baz-28.nc
 if [ $? != 0 ];
 then
     exit 1

@@ -26,16 +26,28 @@ the parameter name. For example,
 sets the acceleration due to gravity (parameter :config:`constants.standard_gravity`) to
 `10`. Options listed below are *shortcuts*, added for convenience.
 
-The following are equivalent and choose the temperature-based (as opposed to
-enthalpy-based) energy balance model:
+In the example above (command-line option ``-constants.standard_gravity 10``), the
+provided value of acceleration due to gravity (`10`) is expected to use units listed in
+this section (here: meters per second squared).
+
+PISM also allows using other units supported by UDUNITS_. For example, the following
+command line options are equivalent:
 
 .. code-block:: none
 
-   -energy.temperature_based
-   -energy.temperature_based on
-   -energy.temperature_based yes
-   -energy.temperature_based true
-   -energy.temperature_based True
+   -grid.dx 5000
+   -grid.dx 5km
+   -dx "5e6 mm"
+
+The following are equivalent and enable solving the age equation:
+
+.. code-block:: none
+
+   -age.enabled
+   -age.enabled on
+   -age.enabled yes
+   -age.enabled true
+   -age.enabled True
 
 The following are also equivalent: they disable updating geometry by performing a step of
 the mass-continuity equation:

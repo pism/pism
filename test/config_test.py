@@ -8,7 +8,7 @@ def is_special(name):
     if name == "long_name":
         return True
 
-    for n in ["_doc", "_units", "_type", "_option", "_choices"]:
+    for n in ["_doc", "_units", "_type", "_option", "_choices", "_valid_min", "_valid_max"]:
         if name.endswith(n):
             return True
 

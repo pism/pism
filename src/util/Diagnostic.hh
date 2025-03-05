@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2023 PISM Authors
+// Copyright (C) 2010--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -199,13 +199,13 @@ public:
 
 protected:
   void init_impl(const File &input, unsigned int time) {
-    if (input.find_variable(m_accumulator.get_name())) {
+    if (input.variable_exists(m_accumulator.get_name())) {
       m_accumulator.read(input, time);
     } else {
       m_accumulator.set(0.0);
     }
 
-    if (input.find_variable(m_time_since_reset.get_name())) {
+    if (input.variable_exists(m_time_since_reset.get_name())) {
       input.read_variable(m_time_since_reset.get_name(), { time }, { 1 }, // start, count
                           &m_interval_length);
     } else {
@@ -231,7 +231,7 @@ protected:
   }
 
   virtual void update_impl(double dt) {
-    // Here the "factor" is used to convert units (from m to kg m-2, for example) and (possibly)
+    // Here the "factor" is used to convert units (from m to kg m^-2, for example) and (possibly)
     // integrate over the time interval using the rectangle method.
 
     double factor = m_factor * (m_input_kind == TOTAL_CHANGE ? 1.0 : dt);

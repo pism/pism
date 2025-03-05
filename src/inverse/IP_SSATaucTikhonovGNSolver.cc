@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012--2024  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -105,14 +105,15 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
   m_alpha = 1./m_eta;
   m_logalpha = log(m_alpha);
 
-  m_tikhonov_adaptive = options::Bool("-tikhonov_adaptive", "Tikhonov adaptive");
-
   m_iter_max = 1000;
   m_iter_max = options::Integer("-inv_gn_iter_max", "", m_iter_max);
 
-  m_tikhonov_atol = grid->ctx()->config()->get_number("inverse.tikhonov.atol");
-  m_tikhonov_rtol = grid->ctx()->config()->get_number("inverse.tikhonov.rtol");
-  m_tikhonov_ptol = grid->ctx()->config()->get_number("inverse.tikhonov.ptol");
+  auto config = grid->ctx()->config();
+
+  m_tikhonov_adaptive = config->get_flag("inverse.tikhonov.adaptive");
+  m_tikhonov_atol = config->get_number("inverse.tikhonov.atol");
+  m_tikhonov_rtol = config->get_number("inverse.tikhonov.rtol");
+  m_tikhonov_ptol = config->get_number("inverse.tikhonov.ptol");
 
   m_log = d0.grid()->ctx()->log();
 }
@@ -252,11 +253,11 @@ std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::check_convergence
     return std::shared_ptr<TerminationReason>(new GenericTerminationReason(1,"TIKHONOV_RTOL"));
   }
 
-  if (m_iter>m_iter_max) {
+  if (m_iter > m_iter_max) {
     return GenericTerminationReason::max_iter();
-  } else {
-    return GenericTerminationReason::keep_iterating();
   }
+
+  return GenericTerminationReason::keep_iterating();
 }
 
 std::shared_ptr<TerminationReason> IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient() {

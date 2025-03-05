@@ -3,7 +3,7 @@
 PISM_PATH=$1
 MPIEXEC=$2
 
-echo "Test # 2: pismv exact processor independence (SIA only; test G)."
+echo "Test # 2: PISM exact processor independence (SIA only; verification test G)."
 files="foo1-02.nc foo2-02.nc foo3-02.nc foo4-02.nc foo6-02.nc"
 
 set -e -x
@@ -13,7 +13,7 @@ NRANGE="1 2 3 4 6"
 # Create the files:
 for NN in $NRANGE;
 do 
-    $MPIEXEC -n $NN $PISM_PATH/pismv -test G -Mx 30 -My 40 -Mz 20 -y 1 -verbose 1 -o foo$NN-02.nc 
+    $MPIEXEC -n $NN $PISM_PATH/pism -test G -Mx 30 -My 40 -Mz 20 -y 1 -verbose 1 -o foo$NN-02.nc
 done
 
 set +e
@@ -25,7 +25,7 @@ do
     do
 	if [ $i -le $j ]; then continue; fi
 	
-	$PISM_PATH/nccmp.py -x -v rank,timestamp foo$i-02.nc foo$j-02.nc
+	$PISM_PATH/pism_nccmp -x -v rank,timestamp foo$i-02.nc foo$j-02.nc
 	if [ $? != 0 ];
 	then
 	    exit 1

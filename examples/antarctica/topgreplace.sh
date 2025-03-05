@@ -20,7 +20,4 @@ cmd="ncatted -O -a standard_name,topg,o,c,bedrock_altitude $NAME"
 $DO $cmd
 cmd="ncatted -O -a long_name,topg,d,, $NAME"
 $DO $cmd
-cmd="ncatted -O -a pism_intent,topg,d,, $NAME"
-$DO $cmd
 echo
-

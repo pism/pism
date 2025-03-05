@@ -13,7 +13,7 @@ jobs:
 
   build:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.7
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     parameters:
       version:                  # this parameter is needed to make a valid config (it is
@@ -36,71 +36,21 @@ jobs:
       CMAKE_PREFIX: << parameters.cmake_prefix >>
       PETSC_DIR: << parameters.petsc_dir >>
       BUILD_PYTHON_BINDINGS: << parameters.python >>
-      CCACHE_COMPRESS: 1
-      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - ccache-{{ .Branch }}
-      - run:
-          name: Create the build directory
-          command: mkdir -p build
-      - run:
-          name: Configure PISM
-          # CMAKE_BUILD_TYPE=Debug enables pedantic compiler warnings and one or two extra
-          # tests.
-          #
-          # CMAKE_CXX_FLAGS is set to treat all warnings as errors except for the one
-          # about the "noreturn" attribute.
-          #
-          # We need Python bindings and extra executables for many regression tests.
-          #
-          # PROJ, NetCDF built with parallel I/O, and PnetCDF are optional dependencies but
-          # we should build and test the code that uses them. The same applies to ICEBIN.
-          #
-          # CMAKE_FIND_ROOT_PATH points to HDF5 and NetCDF with support for parallel I/O.
-          command: >-
-            cd build &&
-            ${CMAKE_PREFIX}/bin/cmake ..
-            -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
-            -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
-            -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
-            -DCMAKE_C_FLAGS="-Werror"
-            -DCMAKE_CXX_FLAGS="-Werror"
-            -DPism_USE_PROJ=Yes
-            -DPism_USE_PARALLEL_NETCDF4=Yes
-            -DPism_USE_PNETCDF=Yes
-            -DPism_USE_PIO=Yes
-            -DPython_ADDITIONAL_VERSIONS=3
-            -DPism_BUILD_PYTHON_BINDINGS=${BUILD_PYTHON_BINDINGS}
-            -DPism_BUILD_EXTRA_EXECS=Yes
-            -DPism_BUILD_ICEBIN=Yes
-      - run:
-          name: Reset ccache stats
-          command: ccache -z
       - run:
           name: Build PISM
-          command: make --no-print-directory -C build -j ${N:-4} all
-      - run:
-          name: Print ccache stats
-          command: ccache -s
-      - save_cache:
-          key: ccache-{{ .Branch }}-{{ .BuildNum }}
-          paths:
-            - ~/.cache/ccache
+          command: >-
+            bash -x ./docker/ubuntu-ci/build.sh
       - run:
           name: Run regression tests
           command: >-
-            cd build &&
-            PYTHONPATH=~/project/build/site-packages:$PYTHONPATH
-            ${CMAKE_PREFIX}/bin/ctest -j ${N:-4} --output-on-failure
+            bash -x ./docker/ubuntu-ci/run-tests.sh
 
   build-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.7
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     parameters:
       cc:
@@ -113,15 +63,11 @@ jobs:
     environment:
       CC: << parameters.cc >>
       CXX: << parameters.cxx >>
-      CCACHE_COMPRESS: 1
       CMAKE_PREFIX: << parameters.cmake_prefix >>
-      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
+      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf;/home/builder/local/pnetcdf;/home/builder/local/parallelio"
 
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - ccache-minimal-{{ .Branch }}
       - run:
           name: Create the build directory
           command: mkdir -p build
@@ -132,24 +78,14 @@ jobs:
             ${CMAKE_PREFIX}/bin/cmake ..
             -DCMAKE_BUILD_TYPE=Debug
             -DCMAKE_CXX_FLAGS="-Werror"
-            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
-      - run:
-          name: Reset ccache stats
-          command: ccache -z
+            -DCMAKE_PREFIX_PATH=${LOCAL_LIBRARIES}
       - run:
           name: Build PISM
           command: make --no-print-directory -C build -j ${N:-4} all
-      - run:
-          name: Print ccache stats
-          command: ccache -s
-      - save_cache:
-          key: ccache-{{ .Branch }}-{{ .BuildNum }}
-          paths:
-            - ~/.cache/ccache
 
   manual-html:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.7
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     steps:
       - checkout
@@ -159,7 +95,7 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_html
-            mv build/sphinx/html ./manual_html
+            mv build/sphinx/manual_html ./manual_html
       - persist_to_workspace:
           root: .
           paths: manual_html
@@ -197,7 +133,7 @@ jobs:
 
   manual-pdf:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.7
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     steps:
       - checkout
@@ -244,12 +180,10 @@ jobs:
 
   doxygen:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.7
+      - image: ckhrulev/pism-ubuntu:0.1.13
 
     environment:
-      CC: mpicc
-      CXX: mpicxx
-      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
+      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf"
       PETSC_DIR: /home/builder/local/petsc
 
     steps:
@@ -258,7 +192,7 @@ jobs:
           name: Build the source code browser
           command: |
             mkdir -p build
-            cmake -B build -S . -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
+            cmake -B build -S . -DCMAKE_PREFIX_PATH=${LOCAL_LIBRARIES}
             make -C build browser
             mv build/doc/browser/html ./doxygen
             rm -f doxygen/*.md5
@@ -299,71 +233,153 @@ jobs:
             --message "Update the source code browser"
             --dist doxygen
 
+  build-and-test-with-ubuntu-libs:
+    docker:
+      - image: ckhrulev/pism-ubuntu-deb-package:0.1.2
+
+    environment:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      OMPI_MCA_rmaps_base_oversubscribe: yes
+
+    steps:
+      - checkout
+      - run:
+          name: Configure PISM
+          command: >-
+            cmake -S . -B build
+            -DCMAKE_BUILD_TYPE=Debug
+            -DPism_BUILD_EXTRA_EXECS=YES
+            -DPism_USE_PROJ=YES
+      - run:
+          name: Build PISM
+          command: make --no-print-directory -C build -j ${N:-4} package
+      - run:
+          name: Test PISM
+          command: cd build && ctest -j ${N:-4} --output-on-failure
+
+  build-deb-package:
+    docker:
+      - image: ckhrulev/pism-ubuntu-deb-package:0.1.2
+
+    steps:
+      - checkout
+      - run:
+          name: Build the PISM package
+          command: bash -x ./docker/ubuntu-deb-package/build-package.sh
+      - run:
+          name: Move the package
+          command: mkdir -p /tmp/package && mv build/*.deb /tmp/package/
+      - run:
+          name: Test the package
+          command: lintian /tmp/package/*.deb
+      - store_artifacts:
+          path: /tmp/package
+
+  build-and-test-with-intel-oneapi:
+    docker:
+      - image: ckhrulev/pism-ubuntu-intel:0.2.0
+
+    environment:
+      source_dir: /home/worker/project
+
+    steps:
+      - checkout
+      - run:
+          name: Build PISM
+          command: bash -x ./docker/ubuntu-ci-intel/build.sh
+      - run:
+          name: Run regression tests
+          command: bash -x ./docker/ubuntu-ci-intel/run-tests.sh
+
+  clang-static-analyzer:
+    docker:
+      - image: ckhrulev/pism-ubuntu:0.1.13
+
+    steps:
+      - checkout
+      - run:
+          name: Run Clang's static analyzer
+          command: bash -x ./docker/ubuntu-ci/static-analyzer.sh
+
 workflows:
   version: 2
   build-and-test:
     jobs:
       - build:
           name: gcc-<< matrix.version >>
-          cc: ccache mpicc -cc=gcc-<< matrix.version >>
-          cxx: ccache mpicxx -cxx=g++-<< matrix.version >>
+          cc: gcc-<< matrix.version >>
+          cxx: g++-<< matrix.version >>
           cmake_prefix: /usr
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
           matrix:
             parameters:
-              version: ["9", "10", "11", "12"]
+              version: ["9", "10", "11", "12", "13", "14"]
 
       - build:
           name: clang-<< matrix.version >>
-          cc: ccache mpicc -cc=clang-<< matrix.version >>
-          cxx: ccache mpicxx -cxx=clang++-<< matrix.version >>
+          cc: clang-<< matrix.version >>
+          cxx: clang++-<< matrix.version >>
           cmake_prefix: /usr
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
           matrix:
             parameters:
-              version: ["11", "12", "13", "14", "15"]
+              version: ["14", "15", "16", "17", "18"]
 
       - build:
           version: default
           name: old-petsc
-          cc: ccache mpicc -cc=clang
-          cxx: ccache mpicxx -cxx=clang++
+          cc: clang-18
+          cxx: clang++-18
           cmake_prefix: /usr
           petsc_dir: /home/builder/local/petsc-3.7.0
           python: "No"
 
       - build:
           version: default
+          name: petsc-64bit
+          cc: clang-18
+          cxx: clang++-18
+          cmake_prefix: /usr
+          petsc_dir: /home/builder/local/petsc-64bit
+          python: "Yes"
+
+      - build:
+          version: default
           name: old-cmake
-          cc: ccache mpicc -cc=clang
-          cxx: ccache mpicxx -cxx=clang++
-          cmake_prefix: /home/builder/local/cmake-3.7.0
+          cc: clang-18
+          cxx: clang++-18
+          cmake_prefix: /home/builder/local/cmake-3.16.0
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
 
       - build-minimal:
           name: gcc-minimal
-          cc: ccache mpicc -cc=gcc
-          cxx: ccache mpicxx -cxx=g++
+          cc: gcc-14
+          cxx: g++-14
           cmake_prefix: /usr
 
       - build-minimal:
           name: clang-minimal
-          cc: ccache mpicc -cc=clang
-          cxx: ccache mpicxx -cxx=clang++
+          cc: clang-18
+          cxx: clang++-18
           cmake_prefix: /usr
 
       - build-minimal:
           name: old-cmake-minimal
-          cc: ccache mpicc -cc=clang
-          cxx: ccache mpicxx -cxx=clang++
-          cmake_prefix: /home/builder/local/cmake-3.7.0
+          cc: clang-18
+          cxx: clang++-18
+          cmake_prefix: /home/builder/local/cmake-3.16.0
 
       - manual-html
       - manual-pdf
       - doxygen
+      - build-and-test-with-ubuntu-libs
+      - build-and-test-with-intel-oneapi
+      - build-deb-package
+      - clang-static-analyzer
 
       - deploy-p:
           requires:
@@ -371,19 +387,25 @@ workflows:
             - gcc-10
             - gcc-11
             - gcc-12
+            - gcc-13
+            - gcc-14
             - gcc-minimal
-            - clang-11
-            - clang-12
-            - clang-13
             - clang-14
             - clang-15
+            - clang-16
+            - clang-17
+            - clang-18
             - clang-minimal
+            - clang-static-analyzer
             - old-petsc
             - old-cmake
             - old-cmake-minimal
             - manual-html
             - manual-pdf
             - doxygen
+            - build-and-test-with-ubuntu-libs
+            - build-deb-package
+            - build-and-test-with-intel-oneapi
           filters:
             branches:
               only: main

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2024 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "array/Scalar.hh"
 #include <memory>
 using std::dynamic_pointer_cast;
 
@@ -152,45 +153,40 @@ const array::Array* Vars::get_internal(const std::string &name) const {
   return NULL;
 }
 
-const array::Scalar* Vars::get_2d_scalar(const std::string &name) const {
-  const array::Scalar *tmp = dynamic_cast<const array::Scalar*>(this->get_internal(name));
+template<class A>
+const A* get_(const Vars *vars, const std::string &name, const std::string &kind) {
+  auto tmp = dynamic_cast<const A*>(vars->get(name));
+
   if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D scalar variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s variable '%s' is not available",
+                                  kind.c_str(), name.c_str());
   }
+
   return tmp;
+}
+
+const array::Scalar* Vars::get_2d_scalar(const std::string &name) const {
+  return get_<array::Scalar>(this, name, "2D scalar");
+}
+
+const array::Scalar1* Vars::get_2d_scalar1(const std::string &name) const {
+  return get_<array::Scalar1>(this, name, "2D scalar (ghosted)");
+}
+
+const array::Scalar2* Vars::get_2d_scalar2(const std::string &name) const {
+  return get_<array::Scalar2>(this, name, "2D scalar (ghosted, stencil width=2)");
 }
 
 const array::Vector* Vars::get_2d_vector(const std::string &name) const {
-  const array::Vector *tmp = dynamic_cast<const array::Vector*>(this->get_internal(name));
-  if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D vector variable '%s' is not available", name.c_str());
-  }
-  return tmp;
-}
-
-const array::Scalar* Vars::get_2d_mask(const std::string &name) const {
-  const array::Scalar *tmp = dynamic_cast<const array::Scalar*>(this->get_internal(name));
-  if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D mask variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_<array::Vector>(this, name, "2D vector");
 }
 
 const array::CellType* Vars::get_2d_cell_type(const std::string &name) const {
-  const auto *tmp = dynamic_cast<const array::CellType*>(this->get_internal(name));
-  if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "2D cell type variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_<array::CellType>(this, name, "2D cell type");
 }
 
 const array::Array3D* Vars::get_3d_scalar(const std::string &name) const {
-  const array::Array3D* tmp = dynamic_cast<const array::Array3D*>(this->get_internal(name));
-  if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "3D scalar variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_<array::Array3D>(this, name, "3D scalar");
 }
 
 //! \brief Returns the set of keys (variable names) in the dictionary.
@@ -216,7 +212,7 @@ std::set<std::string> Vars::keys() const {
   return result;
 }
 
-void Vars::add_shared(VecPtr variable) {
+void Vars::add_shared(std::shared_ptr<array::Array> variable) {
 
   const SpatialVariableMetadata &m = variable->metadata();
   std::string name = variable->get_name();
@@ -243,7 +239,7 @@ void Vars::add_shared(VecPtr variable) {
 }
 
 
-void Vars::add_shared(VecPtr variable, const std::string &name) {
+void Vars::add_shared(std::shared_ptr<array::Array> variable, const std::string &name) {
 
   if (m_variables_shared.find(name) != m_variables_shared.end()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add_shared(): an array::Array with the name '%s'"
@@ -268,60 +264,51 @@ bool Vars::is_available_shared(const std::string &name) const {
   return (m_variables_shared.find(name) != m_variables_shared.end());
 }
 
+template <class A>
+std::shared_ptr<A> get_shared_(const Vars *vars, const std::string &name, const std::string &kind) {
+  auto tmp = dynamic_pointer_cast<A, array::Array>(vars->get_shared(name));
+
+  if (not(bool) tmp) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared %s variable '%s' is not available",
+                                  kind.c_str(), name.c_str());
+  }
+
+  return tmp;
+}
 
 std::shared_ptr<array::Array> Vars::get_shared(const std::string &name) const {
-  std::shared_ptr<array::Array> tmp = get_internal_shared(name);
+  auto tmp = get_internal_shared(name);
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
 
-
 std::shared_ptr<array::Scalar> Vars::get_2d_scalar_shared(const std::string &name) const {
-  std::shared_ptr<array::Scalar> tmp = dynamic_pointer_cast<array::Scalar,array::Array>(this->get_internal_shared(name));
-  if (not (bool)tmp) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D scalar variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_shared_<array::Scalar>(this, name, "2D scalar");
+}
+
+std::shared_ptr<array::Scalar1> Vars::get_2d_scalar1_shared(const std::string &name) const {
+  return get_shared_<array::Scalar1>(this, name, "2D scalar (ghosted)");
+}
+
+std::shared_ptr<array::Scalar2> Vars::get_2d_scalar2_shared(const std::string &name) const {
+  return get_shared_<array::Scalar2>(this, name, "2D scalar (ghosted, stencil width=2)");
 }
 
 
 std::shared_ptr<array::Vector> Vars::get_2d_vector_shared(const std::string &name) const {
-  std::shared_ptr<array::Vector> tmp = dynamic_pointer_cast<array::Vector,array::Array>(this->get_internal_shared(name));
-  if (not (bool)tmp) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D vector variable '%s' is not available", name.c_str());
-  }
-  return tmp;
-}
-
-
-std::shared_ptr<array::Scalar> Vars::get_2d_mask_shared(const std::string &name) const {
-  std::shared_ptr<array::Scalar> tmp = dynamic_pointer_cast<array::Scalar,array::Array>(this->get_internal_shared(name));
-  if (not (bool)tmp) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D mask variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_shared_<array::Vector>(this, name, "2D vector");
 }
 
 std::shared_ptr<array::CellType> Vars::get_2d_cell_type_shared(const std::string &name) const {
-  auto tmp = dynamic_pointer_cast<array::CellType,array::Array>(this->get_internal_shared(name));
-  if (not (bool)tmp) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "shared 2D cell type variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_shared_<array::CellType>(this, name, "2D cell type");
 }
 
 
 std::shared_ptr<array::Array3D> Vars::get_3d_scalar_shared(const std::string &name) const {
-  std::shared_ptr<array::Array3D> tmp = dynamic_pointer_cast<array::Array3D,array::Array>(this->get_internal_shared(name));
-  if (not (bool)tmp) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 3D scalar variable '%s' is not available", name.c_str());
-  }
-  return tmp;
+  return get_shared_<array::Array3D>(this, name, "3D scalar");
 }
-
 
 std::set<std::string> Vars::keys_shared() const {
 

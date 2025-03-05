@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019, 2021, 2022, 2023, 2024 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -106,7 +106,7 @@ void PIK::mass_flux(const array::Scalar &ice_thickness, array::Scalar &result) c
     c_p_ocean         = 3974.0, // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T           = 1e-4,   // m/s, thermal exchange velocity
     ocean_salinity    = 35.0,   // g/kg
-    T_ocean           = units::convert(m_sys, -1.7, "Celsius", "Kelvin"); //Default in PISM-PIK
+    T_ocean           = units::convert(m_sys, -1.7, "degree_Celsius", "kelvin"); //Default in PISM-PIK
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 
@@ -123,7 +123,7 @@ void PIK::mass_flux(const array::Scalar &ice_thickness, array::Scalar &result) c
     double
       shelfbaseelev = - (ice_density / sea_water_density) * ice_thickness(i,j),
       T_f           = 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
-    // add 273.15 to convert from Celsius to Kelvin
+    // add 273.15 to convert from Celsius to kelvin
 
     // compute ocean_heat_flux according to beckmann_goosse03
     // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice

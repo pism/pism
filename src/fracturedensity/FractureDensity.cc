@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,12 +49,12 @@ FractureDensity::FractureDensity(std::shared_ptr<const Grid> grid,
 
   m_growth_rate.metadata(0)
       .long_name("fracture growth rate")
-      .units("second-1");
+      .units("second^-1");
   m_growth_rate.metadata()["valid_min"] = { 0.0 };
 
   m_healing_rate.metadata(0)
       .long_name("fracture healing rate")
-      .units("second-1");
+      .units("second^-1");
 
   m_flow_enhancement.metadata(0)
       .long_name("fracture-induced flow enhancement");
@@ -70,12 +70,12 @@ FractureDensity::FractureDensity(std::shared_ptr<const Grid> grid,
   m_strain_rates.metadata(0).set_name("eigen1");
   m_strain_rates.metadata(0)
       .long_name("major principal component of horizontal strain-rate")
-      .units("second-1");
+      .units("second^-1");
 
   m_strain_rates.metadata(1).set_name("eigen2");
   m_strain_rates.metadata(1)
       .long_name("minor principal component of horizontal strain-rate")
-      .units("second-1");
+      .units("second^-1");
 
   m_deviatoric_stresses.metadata(0).set_name("sigma_xx");
   m_deviatoric_stresses.metadata(0).long_name("deviatoric stress in x direction").units("Pa");
@@ -89,7 +89,7 @@ FractureDensity::FractureDensity(std::shared_ptr<const Grid> grid,
 
 void FractureDensity::restart(const File &input_file, int record) {
   m_log->message(2, "* Restarting the fracture density model from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   m_density.read(input_file, record);
   m_age.read(input_file, record);
@@ -100,7 +100,7 @@ void FractureDensity::restart(const File &input_file, int record) {
 
 void FractureDensity::bootstrap(const File &input_file) {
   m_log->message(2, "* Bootstrapping the fracture density model from %s...\n",
-                 input_file.filename().c_str());
+                 input_file.name().c_str());
 
   m_density.regrid(input_file, io::Default(0.0));
   m_age.regrid(input_file, io::Default(0.0));
@@ -485,7 +485,7 @@ DiagnosticList FractureDensity::diagnostics_impl() const {
   };
 }
 
-const array::Scalar& FractureDensity::density() const {
+const array::Scalar1& FractureDensity::density() const {
   return m_density;
 }
 

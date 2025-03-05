@@ -102,8 +102,8 @@ FrontalMelt::FrontalMelt(std::shared_ptr<const Grid> g, std::shared_ptr<FrontalM
 
   m_retreat_rate.metadata(0)
       .long_name("retreat rate due to frontal melt")
-      .units("m s-1")
-      .output_units("m day-1");
+      .units("m s^-1")
+      .output_units("m day^-1");
 
   m_include_floating_ice = m_config->get_flag("frontal_melt.include_floating_ice");
 }
@@ -185,8 +185,8 @@ public:
     m_vars = { { m_sys, "frontal_melt_rate" } };
     m_vars[0]
         .long_name("frontal melt rate")
-        .units("m second-1")
-        .output_units("m day-1");
+        .units("m second^-1")
+        .output_units("m day^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
@@ -208,8 +208,8 @@ public:
     m_vars = { { m_sys, "frontal_melt_retreat_rate" } };
     m_vars[0]
         .long_name("retreat rate due to frontal melt")
-        .units("m second-1")
-        .output_units("m year-1");
+        .units("m second^-1")
+        .output_units("m year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
     m_vars[0]["comment"] = "takes into account what part of the front is submerged";

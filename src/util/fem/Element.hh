@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,7 @@
 
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/Vector2d.hh"
-#include "pism/util/petscwrappers/Mat.hh" // Mat, MatStencil
+#include <petscmat.h>
 
 
 namespace pism {
@@ -77,7 +77,7 @@ public:
   }
 
   //! Number of quadrature points
-  int n_pts() const {
+  unsigned int n_pts() const {
     return m_Nq;
   }
 
@@ -155,9 +155,9 @@ protected:
   std::vector<double> m_weights;
 private:
   Element()
-    : m_n_chi(0),
-      m_Nq(0),
-      m_block_size(0) {
+    : m_n_chi(1),
+      m_Nq(1),
+      m_block_size(1) {
     // empty
   }
 };
@@ -199,9 +199,16 @@ public:
       dy[q]   = 0.0;
       for (unsigned int k = 0; k < m_n_chi; k++) {
         const Germ &psi = m_germs[q * m_n_chi + k];
-        vals[q] += psi.val * x[k];
-        dx[q]   += psi.dx  * x[k];
-        dy[q]   += psi.dy  * x[k];
+#ifdef __clang_analyzer__
+        // suppress false positive Clang static analyzer warnings about x[k] below being
+        // garbage
+        [[clang::suppress]]
+#endif
+        {
+          vals[q] += psi.val * x[k];
+          dx[q] += psi.dx * x[k];
+          dy[q] += psi.dy * x[k];
+        }
       }
     }
   }
@@ -401,7 +408,7 @@ public:
   Q1Element3Face(double dx, double dy, const Quadrature &quadrature);
 
   //! Number of quadrature points
-  int n_pts() const {
+  unsigned int n_pts() const {
     return m_Nq;
   }
   double weight(unsigned int q) const {

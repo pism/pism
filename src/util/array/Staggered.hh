@@ -1,4 +1,4 @@
-/* Copyright (C) 2022, 2023 PISM Authors
+/* Copyright (C) 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,8 @@
 
 #ifndef PISM_STAGGERED_H
 #define PISM_STAGGERED_H
+
+#include <array>
 
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/stencils.hh"
@@ -64,7 +66,7 @@ public:
   Staggered1(std::shared_ptr<const Grid> grid, const std::string &name);
 
   //! Returns the values at interfaces of the cell i,j using the staggered grid.
-  /*! The ij member of the return value is set to 0, since it has no meaning in
+  /*! The central (c) member of the return value is set to 0, since it has no meaning in
     this context.
   */
   inline stencils::Star<double> star(int i, int j) const;

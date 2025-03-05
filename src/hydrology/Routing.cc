@@ -143,8 +143,8 @@ public:
     m_vars[0]
         .long_name("wall melt into subglacial hydrology layer from (turbulent)"
                    " dissipation of energy in transportable water")
-        .units("m s-1")
-        .output_units("m year-1");
+        .units("m s^-1")
+        .output_units("m year^-1");
   }
 
 protected:
@@ -166,8 +166,8 @@ public:
   BasalWaterVelocity(const Routing *m)
     : Diag<Routing>(m) {
     m_vars = { { m_sys, "bwatvel[0]" }, { m_sys, "bwatvel[1]" } };
-    m_vars[0].long_name("velocity of water in subglacial layer, i-offset").units("m s-1");
-    m_vars[1].long_name("velocity of water in subglacial layer, j-offset").units("m s-1");
+    m_vars[0].long_name("velocity of water in subglacial layer, i-offset").units("m s^-1");
+    m_vars[1].long_name("velocity of water in subglacial layer, j-offset").units("m s^-1");
   }
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const {
@@ -262,16 +262,16 @@ Routing::Routing(std::shared_ptr<const Grid> grid)
 
   m_Qstag.metadata(0)
       .long_name("cell face-centered (staggered) components of advective subglacial water flux")
-      .units("m2 s-1");
+      .units("m^2 s^-1");
 
   m_Qstag_average.metadata(0)
       .long_name("average (over time) advection flux on the staggered grid")
-      .units("m2 s-1");
+      .units("m^2 s^-1");
 
   m_Vstag.metadata(0)
       .long_name(
           "cell face-centered (staggered) components of water velocity in subglacial water layer")
-      .units("m s-1");
+      .units("m s^-1");
 
   // auxiliary variables which NEED ghosts
   m_Wstag.metadata(0)

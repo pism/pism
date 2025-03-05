@@ -22,7 +22,7 @@ common_options="
         -Mz 21
 "
 
-mpiexec -n ${N} pismr -eisII A \
+mpiexec -n ${N} pism -eisII A \
         -bootstrapping.defaults.geothermal_flux 0 \
         -grid.Lz 3500 \
         -grid.Mx ${M} \
@@ -33,7 +33,7 @@ mpiexec -n ${N} pismr -eisII A \
         -time.end 10.5e3 \
         ${common_options}
 
-mpiexec -n ${N} pismr \
+mpiexec -n ${N} pism \
         -i o_regrid_part1.nc \
         -bootstrap \
         -Mx $(( M * 2 - 1 )) \

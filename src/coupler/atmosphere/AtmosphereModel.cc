@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,7 +34,7 @@ std::shared_ptr<array::Scalar> AtmosphereModel::allocate_temperature(std::shared
 
   result->metadata(0)
       .long_name("mean annual near-surface air temperature")
-      .units("Kelvin");
+      .units("kelvin");
 
   return result;
 }
@@ -44,8 +44,8 @@ std::shared_ptr<array::Scalar> AtmosphereModel::allocate_precipitation(std::shar
 
   result->metadata(0)
       .long_name("precipitation rate")
-      .units("kg m-2 second-1")
-      .output_units("kg m-2 year-1")
+      .units("kg m^-2 second^-1")
+      .output_units("kg m^-2 year^-1")
       .standard_name("precipitation_flux");
 
   return result;
@@ -107,7 +107,7 @@ class AirTemperatureSnapshot : public Diag<AtmosphereModel> {
 public:
   AirTemperatureSnapshot(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
     m_vars = { { m_sys, "air_temp_snapshot" } };
-    m_vars[0].long_name("instantaneous value of the near-surface air temperature").units("Kelvin");
+    m_vars[0].long_name("instantaneous value of the near-surface air temperature").units("kelvin");
   }
 
 protected:
@@ -148,7 +148,7 @@ class AirTemperature : public Diag<AtmosphereModel> {
 public:
   AirTemperature(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
     m_vars = { { m_sys, "effective_air_temp" } };
-    m_vars[0].long_name("effective mean-annual near-surface air temperature").units("Kelvin");
+    m_vars[0].long_name("effective mean-annual near-surface air temperature").units("kelvin");
   }
 
 protected:
@@ -169,8 +169,8 @@ public:
     m_vars[0]
         .long_name("effective precipitation rate")
         .standard_name("precipitation_flux")
-        .units("kg m-2 second-1")
-        .output_units("kg m-2 year-1");
+        .units("kg m^-2 second^-1")
+        .output_units("kg m^-2 year^-1");
   }
 
 protected:

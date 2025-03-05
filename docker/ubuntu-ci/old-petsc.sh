@@ -8,7 +8,7 @@ set -x
 # ~/local/build/petsc-${version} as the build directory.
 
 # The default below corresponds to the oldest version supported by PISM.
-version=${version:-3.7.0}
+version=${version:-3.11.0}
 build_dir=~/local/build/petsc-${version}
 
 rm -rf ${build_dir}
@@ -25,7 +25,7 @@ petsc_prefix=$HOME/local/petsc-${version}
 PETSC_DIR=$PWD
 PETSC_ARCH="linux-opt"
 
-python2 ./configure \
+python3 ./configure \
   CFLAGS="-fPIC" \
   --prefix=${petsc_prefix} \
   --with-cc=mpicc \

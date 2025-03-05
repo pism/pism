@@ -37,7 +37,7 @@ where MX       is number of grid points,
 Example:  Try this diagnostic-only run:
   $ export MX=101 YY=0
   $ ./exactQ.py $MX $YY
-  $ pismr -o outQ$MX.nc -y $YY -i initQ$MX.nc -bootstrap -Mx $MX -My $MX -Mz 21 -Lz 1500 -z_spacing equal -surface given -stress_balance ssa -energy none -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -cfbc -part_grid -o_order zyx -ssa_e 1.0 -ssa_flow_law isothermal_glen
+  $ pism -o outQ$MX.nc -y $YY -i initQ$MX.nc -bootstrap -Mx $MX -My $MX -Mz 21 -Lz 1500 -z_spacing equal -surface given -stress_balance ssa -energy none -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -cfbc -part_grid -o_order zyx -ssa_e 1.0 -ssa_flow_law isothermal_glen
 """
 parser.description = "A script which runs Test Q."
 (options, args) = parser.parse_args()
@@ -167,7 +167,7 @@ climatic_mass_balance_var = def_var(nc, "climatic_mass_balance", "kg m-2 s-1", f
 climatic_mass_balance_var.standard_name = "land_ice_surface_specific_mass_balance"
 climatic_mass_balance_var[:] = climatic_mass_balance
 
-ice_surface_temp_var = def_var(nc, "ice_surface_temp", "K", fill_value)
+ice_surface_temp_var = def_var(nc, "ice_surface_temp", "kelvin", fill_value)
 ice_surface_temp_var[:] = ice_surface_temp
 
 u_bc_var = def_var(nc, "u_bc", "m s-1", fill_value)

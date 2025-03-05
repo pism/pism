@@ -10,7 +10,7 @@ combination of the options ``-ts_file``, ``-ts_times``, and ``-ts_vars``. For ex
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 1e4 -o output.nc \
+   pism -i foo.nc -y 1e4 -o output.nc \
          -ts_file time-series.nc -ts_times 0:1:1e4 \
          -ts_vars ice_volume_glacierized,ice_area_glacierized_grounded
 

@@ -38,19 +38,19 @@ SSB_Modifier::SSB_Modifier(std::shared_ptr<const Grid> g)
 
   m_u.metadata(0)
       .long_name("horizontal velocity of ice in the X direction")
-      .units("m s-1")
-      .output_units("m year-1")
+      .units("m s^-1")
+      .output_units("m year^-1")
       .standard_name("land_ice_x_velocity");
 
   m_v.metadata(0)
       .long_name("horizontal velocity of ice in the Y direction")
-      .units("m s-1")
-      .output_units("m year-1")
+      .units("m s^-1")
+      .output_units("m year^-1")
       .standard_name("land_ice_y_velocity");
 
   m_diffusive_flux.metadata(0)
       .long_name("diffusive (SIA) flux components on the staggered grid")
-      .units("m2 s-1");
+      .units("m^2 s^-1");
 }
 
 void SSB_Modifier::init() {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -194,7 +194,7 @@ void AgeModel::init(const InputOptions &opts) {
   if (opts.type == INIT_RESTART) {
     File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
 
-    if (input_file.find_variable("age")) {
+    if (input_file.variable_exists("age")) {
       m_ice_age.read(input_file, opts.record);
     } else {
       m_log->message(2,

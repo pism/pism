@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -210,7 +210,7 @@ void compute_cts(const array::Array3D &ice_enthalpy, const array::Scalar &ice_th
 
 //! Computes the total ice enthalpy in J.
 /*!
-  Units of the specific enthalpy field are J kg-1.  We integrate
+  Units of the specific enthalpy field are J kg^-1.  We integrate
   \f$E(t,x,y,z)\f$ over the entire ice fluid region \f$\Omega(t)\f$, multiplying
   by the density to get units of energy:
   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
@@ -356,7 +356,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
     K           = ice_k / (ice_density * ice_c),
     T_min       = config->get_number("energy.minimum_allowed_temperature"),
     T_melting   = config->get_number("constants.fresh_water.melting_point_temperature",
-                                     "Kelvin");
+                                     "kelvin");
 
   array::AccessScope list{&ice_surface_temp, &surface_mass_balance,
       &ice_thickness, &basal_heat_flux, &result};
@@ -388,7 +388,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
 
       if (T_surface < T_min) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "T_surface(%d,%d) = %f < T_min = %f Kelvin",
+                                      "T_surface(%d,%d) = %f < T_min = %f kelvin",
                                       i, j, T_surface, T_min);
       }
 
@@ -418,7 +418,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
       for (unsigned int k = 0; k < ks; k++) {
         if (T[k] < T_min) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "T(%d,%d,%d) = %f < T_min = %f Kelvin",
+                                        "T(%d,%d,%d) = %f < T_min = %f kelvin",
                                         i, j, k, T[k], T_min);
         }
       }

@@ -31,7 +31,7 @@ PROJECT_NAME           = "PISM, A Parallel Ice Sheet Model"
 # This could be handy for archiving the generated documentation or
 # if some version control system is used.
 
-PROJECT_NUMBER         = "${Pism_REVISION_TAG}"
+PROJECT_NUMBER         = "${Pism_VERSION_LONG}"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute)
 # base path where the generated documentation will be put.

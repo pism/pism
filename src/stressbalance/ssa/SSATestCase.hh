@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2021, 2022, 2023, 2024 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,15 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SSATESTCASE_H_
-#define _SSATESTCASE_H_
+#ifndef PISM_SSATESTCASE_H
+#define PISM_SSATESTCASE_H
 
 #include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
+#include <memory>
 
 namespace pism {
 
@@ -54,12 +54,9 @@ namespace stressbalance {
 class SSATestCase
 {
 public:
-  SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
-              double Lx, double Ly,
-              grid::Registration registration,
-              grid::Periodicity periodicity);
+  SSATestCase(std::shared_ptr<SSA> ssa);
 
-  virtual ~SSATestCase();
+  virtual ~SSATestCase() = default;
 
   virtual void init();
 
@@ -68,6 +65,13 @@ public:
   virtual void report(const std::string &testname);
 
   virtual void write(const std::string &filename);
+
+  static std::shared_ptr<Grid> grid(std::shared_ptr<Context> ctx, int Mx, int My, double Lx, double Ly,
+                                    grid::Registration registration, grid::Periodicity periodicity) {
+    return Grid::Shallow(ctx, Lx, Ly, 0.0, 0.0, Mx, My, registration, periodicity);
+  }
+
+  static std::shared_ptr<SSA> solver(std::shared_ptr<Grid> grid, const std::string &method);
 
 protected:
 
@@ -87,19 +91,12 @@ protected:
                      double avg_u,
                      double avg_v);
 
-  MPI_Comm m_com;
-  const std::shared_ptr<Context> m_ctx;
-  const Config::Ptr m_config;
+  std::shared_ptr<const pism::Grid> m_grid;
 
-  std::shared_ptr<Grid> m_grid;
+  const std::shared_ptr<const Context> m_ctx;
+  const Config::ConstPtr m_config;
 
   const units::System::Ptr m_sys;
-
-  //! "wide" stencil width
-  int m_stencil_width;
-
-  // SSA model variables.
-  EnthalpyConverter::Ptr m_enthalpyconverter;
 
   // SSA coefficient variables.
   array::Scalar1 m_tauc;
@@ -110,10 +107,10 @@ protected:
 
   Geometry m_geometry;
 
-  SSA *m_ssa;
+  std::shared_ptr<SSA> m_ssa;
 };
 
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SSATESTCASE_H_ */
+#endif /* PISM_SSATESTCASE_H */

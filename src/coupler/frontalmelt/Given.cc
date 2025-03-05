@@ -54,8 +54,8 @@ void Given::init_impl(const Geometry &geometry) {
 
   m_frontal_melt_rate->metadata(0)
       .long_name("frontal melt rate")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 
   m_frontal_melt_rate->init(opt.filename, opt.periodic);
 }

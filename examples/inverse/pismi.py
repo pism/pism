@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -44,14 +44,16 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
     def write(self, filename, append=False):
         if not append:
             PISM.invert.ssa.SSAForwardRunFromInputFile.write(self, filename)
-        else:
-            grid = self.grid
-            vecs = self.modeldata.vecs
 
-            pio = PISM.File(grid.com, filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE)
+        grid = self.grid
+        vecs = self.modeldata.vecs
 
-            self.modeldata.vecs.write(filename)
-            pio.close()
+        output = PISM.File(grid.com, filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE)
+
+        for name in grid.variables().keys():
+            grid.variables().get(name).write(output)
+
+        output.close()
 
 
 class InvSSAPlotListener(PISM.invert.listener.PlotListener):
@@ -304,7 +306,7 @@ def run():
 
     if (output_filename is not None) and (append_filename is not None):
         PISM.verbPrintf(1, com, "\nError: Only one of -a/-o is allowed.\n")
-        sys.edit(0)
+        sys.exit(0)
 
     if append_filename is not None:
         input_filename = append_filename
@@ -465,7 +467,12 @@ def run():
         design_true.regrid(inv_data_filename, True)
         try:
             f = PISM.File(com, inv_data_filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-            PISM.read_attributes(f, design_true.get_name(), design_true.metadata())
+            attrs = PISM.read_attributes(f, design_true.get_name(), context.unit_system)
+
+            for k,v in attrs.all_strings().items():
+                design_true.metadata().set_string(k,v)
+            for k,v in attrs.all_doubles().items():
+                design_true.metadata().set_numbers(k,v)
         finally:
             f.close()
         vecs.add(design_true, writing=saving_inv_data)
@@ -478,8 +485,8 @@ def run():
 
     # Prep the output file from the grid so that we can save zeta to it during the runs.
     if not append_mode:
-        pio = PISM.util.prepare_output(output_filename)
-        pio.close()
+        F = PISM.util.prepare_output(output_filename)
+        F.close()
     zeta.write(output_filename)
 
     # Log the command line to the output file now so that we have a record of
@@ -563,7 +570,7 @@ def run():
 
     r_mag = PISM.Scalar(grid, "inv_ssa_residual")
 
-    r_mag.metadata(0).long_name("magnitude of mismatch between observed surface velocities and their reconstrution by inversion").units("m s-1").output_units("m year-1")
+    r_mag.metadata(0).long_name("magnitude of mismatch between observed surface velocities and their reconstrution by inversion").units("m s^-1").output_units("m year^-1")
     r_mag.metadata().set_number("_FillValue", convert(-0.01, 'm/year', 'm/s'))
     r_mag.metadata().set_number("valid_min", 0.0)
 

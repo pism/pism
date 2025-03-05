@@ -77,7 +77,7 @@ class Experiment:
     My = 3
     Mz = 15
     initials = "ABC"
-    executable = "$PISM_DO $PISM_MPIDO $NN ${PISM_BIN}pismr"
+    executable = "$PISM_DO $PISM_MPIDO $NN ${PISM_BIN}pism"
 
     def __init__(self, experiment, model=1, mode=1, Mx=None, Mz=15, semianalytic=True,
                  initials="ABC", executable=None):
@@ -120,8 +120,7 @@ class Experiment:
             "-constants.ice.density {}".format(MISMIP.rho_i()),
             "-constants.sea_water.density {}".format(MISMIP.rho_w()),
             "-constants.standard_gravity {}".format(MISMIP.g()),
-            "-energy.enabled no",       # isothermal setup
-            "-energy.temperature_based", # use the temperature-based relaxed check for temperate ice
+            "-energy.model none",       # isothermal setup
             "-flow_law.isothermal_Glen.ice_softness {}".format(MISMIP.A(self.experiment, step)),
             "-geometry.front_retreat.prescribed.file {}".format(input_file), # prescribe the maximum ice extent
             "-geometry.part_grid.enabled", # sub-grid front motion parameterization
@@ -285,7 +284,7 @@ if __name__ == "__main__":
     parser.add_option("--model", dest="model", type="int", default=1,
                       help="Models: 1 - SSA only; 2 - SIA+SSA")
     parser.add_option("--executable", dest="executable", type="string",
-                      help="Executable to run, e.g. 'mpiexec -n 4 pismr'")
+                      help="Executable to run, e.g. 'mpiexec -n 4 pism'")
 
     (opts, args) = parser.parse_args()
 

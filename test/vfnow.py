@@ -4,14 +4,14 @@
 # \author Ed Bueler and Constantine Khroulev, University of Alaska Fairbanks, USA
 # \brief A script for verification of numerical schemes in PISM.
 # \details It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
-# pismv accordingly.
-# Copyright (C) 2007--2013, 2015, 2016, 2018, 2022 Ed Bueler and Constantine Khroulev
+# PISM accordingly.
+# Copyright (C) 2007--2013, 2015, 2016, 2018, 2022, 2024 Ed Bueler and Constantine Khroulev
 ##
 # Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in the user manual.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 ##
 # Examples:
 # - \verbatim vfnow.py \endverbatim use one processor and do three levels of refinement; this command is equivalent to \verbatim vfnow.py -n 2 -l 2 -t CGIJ \endverbatim,
-# - \verbatim vfnow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n' \endverbatim will use \verbatim aprun -n 8 bin/pismv \endverbatim as the command and do five levels (the maximum) of refinement only on test J,
+# - \verbatim vfnow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n' \endverbatim will use \verbatim aprun -n 8 bin/pism \endverbatim as the command and do five levels (the maximum) of refinement only on test J,
 # - \verbatim vfnow.py -n 2 -l 3 -t CEIJGKLO \endverbatim uses two processers (cores) and runs in about an hour,
 # - \verbatim vfnow.py -n 40 -l 5 -t ABCDEFGIJKLO \endverbatim will use forty processors to do all possible verification as managed by \c vfnow.py; don't run this unless you have a big computer and you are prepared to wait.
 # For a list of options do \verbatim test/vfnow.py --help \endverbatim.
@@ -44,7 +44,7 @@ class PISMVerificationTest:
     Mbz = [1] * N
     # extra options (such as -y, -ys, -ssafd_picard_rtol)
     opts = ""
-    executable = "pismv"
+    executable = "pism"
 
     def build_command(self, exec_prefix, level):
         M = list(zip(self.Mx, self.My, self.Mz, self.Mbz))
@@ -309,7 +309,7 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.description = """PISM verification script"""
 parser.add_argument("--eta", dest="eta", action="store_true",
-                    help="to add '-eta' option to pismv call")
+                    help="to add '-eta' option to pism flags")
 parser.add_argument("-l", dest="levels", type=int, default=2,
                     help="number of levels of verification; '-l 1' fast, '-l 5' slowest")
 parser.add_argument("--mpido", dest="mpido", default="mpiexec -np",
@@ -317,7 +317,7 @@ parser.add_argument("--mpido", dest="mpido", default="mpiexec -np",
 parser.add_argument("-n", dest="n", type=int, default=2,
                     help="number of processors to use")
 parser.add_argument("--prefix", dest="prefix", default="",
-                    help="path prefix to pismv executable")
+                    help="path prefix to pism executable")
 parser.add_argument("-r", dest="report_file", default="",
                     help="name of the NetCDF error report file")
 parser.add_argument("-t", dest="tests", nargs="+",
@@ -325,7 +325,7 @@ parser.add_argument("-t", dest="tests", nargs="+",
 parser.add_argument("-u", dest="unequal", action="store_true",
                     help="use quadratic vertical grid spacing")
 parser.add_argument("--debug", dest="debug", action="store_true",
-                    help="just print commands in sequence (do not run pismv)")
+                    help="just print commands in sequence (do not run PISM)")
 parser.add_argument("--manual", dest="manual", action="store_true",
                     help="run tests necessary to produce figures in the User's Manual")
 

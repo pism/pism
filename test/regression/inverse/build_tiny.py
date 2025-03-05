@@ -57,16 +57,14 @@ if __name__ == '__main__':
 
     config.set_number("grid.Mx", Mx, PISM.CONFIG_DEFAULT)
     config.set_number("grid.My", My, PISM.CONFIG_DEFAULT)
+    config.set_number("grid.Lx", Lx/1000, PISM.CONFIG_DEFAULT) # in km
+    config.set_number("grid.Ly", Ly/1000, PISM.CONFIG_DEFAULT) # in km
 
     # Build the grid.
     p = PISM.GridParameters(config)
-    p.Mx = int(config.get_number("grid.Mx"))
-    p.My = int(config.get_number("grid.My"))
-    p.Lx = Lx
-    p.Ly = Ly
     z = PISM.compute_vertical_levels(Lz, Mz, PISM.EQUAL, 4.0)
     p.z = PISM.DoubleVector(z)
-    p.ownership_ranges_from_options(context.size)
+    p.ownership_ranges_from_options(context.config, context.size)
     p.registration = PISM.CELL_CORNER
     p.periodicity = PISM.NOT_PERIODIC
     grid = PISM.Grid(context.ctx, p)
@@ -117,7 +115,7 @@ if __name__ == '__main__':
                 no_model_mask[i, j] = 1
 
     output_filename = config.get_string("output.file")
-    pio = PISM.util.prepare_output(output_filename)
-    pio.close()
+    F = PISM.util.prepare_output(output_filename)
+    F.close()
     vecs.writeall(output_filename)
     PISM.util.writeProvenance(output_filename)

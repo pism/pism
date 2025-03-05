@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2011-2014, 2017, 2019, 2021, 2023 the PISM authors
+# Copyright (C) 2011-2014, 2017, 2019, 2021, 2023, 2024 the PISM authors
 
 # downloads SeaRISE "1km Greenland data set" NetCDF file,
 # adjusts metadata, saves under new name with fields needed
@@ -64,12 +64,12 @@ CLIMATEFILE=g5km_climate.nc
 echo "creating PISM-readable climate file $CLIMATEFILE from airtemp2m and smb in data file ..."
 ncks -O -v mapping,smb,airtemp2m $DATANAME $CLIMATEFILE
 ncrename -O -v airtemp2m,ice_surface_temp $CLIMATEFILE
-ncatted -O -a units,ice_surface_temp,a,c,"Celsius" $CLIMATEFILE
+ncatted -O -a units,ice_surface_temp,a,c,"degree_Celsius" $CLIMATEFILE
 # convert SMB from liquid water equivalent thickness per year to [kg m-2 year-1];
 # assume water density of 1000.0 [kg m-3]
 ncap2 -O -s "climatic_mass_balance=1000.0*smb" \
       -s 'climatic_mass_balance@standard_name="land_ice_surface_specific_mass_balance_flux"' \
-      -s 'climatic_mass_balance@units="kg m-2 year-1"' \
+      -s 'climatic_mass_balance@units="kg m^-2 year^-1"' \
       $CLIMATEFILE $CLIMATEFILE
 ncks -O -x -v smb $CLIMATEFILE $CLIMATEFILE
 echo "... done"

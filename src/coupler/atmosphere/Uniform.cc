@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2023 PISM Authors
+/* Copyright (C) 2018, 2019, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,7 +35,7 @@ void Uniform::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing the test atmosphere model...\n");
 
-  m_temperature->set(m_config->get_number("atmosphere.uniform.temperature", "Kelvin"));
+  m_temperature->set(m_config->get_number("atmosphere.uniform.temperature", "kelvin"));
   m_precipitation->set(m_config->get_number("atmosphere.uniform.precipitation", "kg m-2 s-1"));
 }
 

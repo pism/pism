@@ -12,7 +12,7 @@ Sometimes the run needs to be stopped, but with the possibility of restarting. P
 implements these behaviors using "signals" from the POSIX standard, included in Linux and
 most flavors of Unix. :numref:`tab-signals` summarizes how PISM responds to signals.
 A convenient form of ``kill``, for Linux users, is ``pkill`` which will find processes by
-executable name. Thus "``pkill -USR1 pismr``" might be used to send all PISM processes the
+executable name. Thus "``pkill -USR1 pism``" might be used to send all PISM processes the
 same signal, avoiding an explicit list of |pid|.
 
 .. list-table:: Signalling running PISM processes.  "|pid|" stands for list of all identifiers of the PISM processes.
@@ -45,7 +45,7 @@ standard out redirected into a file:
 
 .. code-block:: none
 
-   pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &
+   pism -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &
 
 This run gets a Unix process id, which we assume is "8920". (Get it using ``ps`` or
 ``pgrep``.) If we want to observe the run without stopping it we send the ``USR1`` signal:
@@ -55,8 +55,8 @@ This run gets a Unix process id, which we assume is "8920". (Get it using ``ps``
 
    kill -USR1 8920
 
-(With ``pkill`` one can usually type "``pkill -usr1 pismv``".) Suppose it happens that we
-caught the run at year 31871.5. Then, for example, a NetCDF file ``pismv-31871.495.nc`` is
+(With ``pkill`` one can usually type "``pkill -usr1 pism``".) Suppose it happens that we
+caught the run at year 31871.5. Then, for example, a NetCDF file ``pism-31871.495.nc`` is
 produced. Note also that in the standard out log file ``log.txt`` the line
 
 .. code-block:: none

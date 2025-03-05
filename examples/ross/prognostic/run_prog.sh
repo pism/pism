@@ -20,7 +20,7 @@ PISMPREFIX=""
 
 # preliminary bootstrap and diagnostic run:
 STARTNAME=startfile_Mx${M}.nc
-cmd_diag="mpiexec -n $N_PROC ${PISMPREFIX}pismr -regional -i ../Ross_combined.nc -bootstrap -Mx $M -My $M \
+cmd_diag="mpiexec -n $N_PROC ${PISMPREFIX}pism -regional -i ../Ross_combined.nc -bootstrap -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given -stress_balance ssa \
   -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e $SSAE \
   $STRONGKSP -y 0.1 -ys 0.0 -o $STARTNAME -o_order zyx "
@@ -35,7 +35,7 @@ ECALV=1e18   #  constant for eigen_calving parameterization
 CTHICK=50.0  #  constant thickness for thickness_calving
 exdt=1
 exvars="thk,mask,velsurf_mag,strain_rates,tendency_of_ice_mass_due_to_flow,tendency_of_ice_mass_due_to_discharge"
-cmd_prog="mpiexec -n $N_PROC ${PISMPREFIX}pismr -regional -i $STARTNAME \
+cmd_prog="mpiexec -n $N_PROC ${PISMPREFIX}pism -regional -i $STARTNAME \
   -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik \
   -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -front_retreat_cfl \
   -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $RUN_LENGTH -o $NAME -o_size big \

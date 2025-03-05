@@ -320,8 +320,7 @@ void IBIceModel::prepare_outputs(double time_s) {
 
 void IBIceModel::dumpToFile(const std::string &filename) const {
   File file(m_grid->com, filename,
-            string_to_backend(m_config->get_string("output.format")), io::PISM_READWRITE_MOVE,
-            m_ctx->pio_iosys_id());
+            string_to_backend(m_config->get_string("output.format")), io::PISM_READWRITE_MOVE);
 
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
   write_run_stats(file, run_stats());

@@ -6,6 +6,8 @@ add_library (stressbalance OBJECT
   SSB_Modifier.cc
   ssa/SSA.cc
   ssa/SSAFD.cc
+  ssa/SSAFDBase.cc
+  ssa/SSAFD_SNES.cc
   ssa/SSAFEM.cc
   ssa/SSATestCase.cc
   sia/BedSmoother.cc
@@ -16,13 +18,13 @@ add_library (stressbalance OBJECT
 )
 
 if (Pism_BUILD_EXTRA_EXECS)
-  add_executable (siafd_test sia/siafd_test.cc)
+  add_executable (pism_siafd_test sia/siafd_test.cc)
 
-  target_link_libraries (siafd_test pism)
+  target_link_libraries (pism_siafd_test libpism)
 
   install (TARGETS
-    siafd_test
-    DESTINATION ${Pism_BIN_DIR})
+    pism_siafd_test
+    DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif ()
 
 add_subdirectory (ssa/tests)

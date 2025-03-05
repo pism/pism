@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2020, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,7 @@
 #include "pism/util/array/Vector.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
+#include <vector>
 
 namespace pism {
 
@@ -96,9 +97,11 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
 
   CFLData result;
 
-  result.u_max = GlobalMax(grid->com, u_max);
-  result.v_max = GlobalMax(grid->com, v_max);
-  result.w_max = GlobalMax(grid->com, w_max);
+  std::vector<double> data = {u_max, v_max, w_max}, tmp(3, 0.0);
+  GlobalMax(grid->com, data.data(), tmp.data(), 3);
+  result.u_max = tmp[0];
+  result.v_max = tmp[1];
+  result.w_max = tmp[2];
   result.dt_max = MaxTimestep(GlobalMin(grid->com, dt_max));
 
   return result;
@@ -150,8 +153,10 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
 
   CFLData result;
 
-  result.u_max = GlobalMax(grid->com, u_max);
-  result.v_max = GlobalMax(grid->com, v_max);
+  std::vector<double> data = {u_max, v_max}, tmp(2, 0.0);
+  GlobalMax(grid->com, data.data(), tmp.data(), 2);
+  result.u_max = tmp[0];
+  result.v_max = tmp[1];
   result.w_max = 0.0;
   result.dt_max = MaxTimestep(GlobalMin(grid->com, dt_max));
 

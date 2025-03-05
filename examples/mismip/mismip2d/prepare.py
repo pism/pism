@@ -99,13 +99,13 @@ def pism_bootstrap_file(filename, experiment, step, mode,
     nc.write('thk', ice_thickness)
 
     nc.define_2d_field('climatic_mass_balance',
-                       attrs={'units': 'kg m-2 / s',
+                       attrs={'units': 'kg m^-2 / s',
                               'long_name': 'ice-equivalent surface mass balance (accumulation/ablation) rate',
                               'standard_name': 'land_ice_surface_specific_mass_balance_flux'})
     nc.write('climatic_mass_balance', ice_surface_mass_balance)
 
     nc.define_2d_field('ice_surface_temp',
-                       attrs={'units': 'Kelvin',
+                       attrs={'units': 'kelvin',
                               'long_name': 'annual average ice surface temperature, below firn processes'})
     nc.write('ice_surface_temp', ice_surface_temperature)
 

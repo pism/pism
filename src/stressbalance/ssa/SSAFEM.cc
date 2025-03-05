@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2025 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,8 @@
 
 #include "pism/util/Grid.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/util/fem/FEM.hh"
+#include "pism/util/fem/Quadrature.hh"
+#include "pism/util/fem/DirichletData.hh"
 #include "pism/util/Mask.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLaw.hh"
@@ -30,7 +31,7 @@
 
 #include "pism/util/node_types.hh"
 #include "pism/util/pism_utilities.hh" // average_water_column_pressure()
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
@@ -72,10 +73,12 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
   PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian.
-  m_callback_data.da  = *m_da;
+  m_callback_data.da  = *m_velocity_global.dm();
   m_callback_data.ssa = this;
 
-  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
+  auto dm = m_velocity_global.dm();
+
+  ierr = DMDASNESSetFunctionLocal(*dm, INSERT_VALUES,
 #if PETSC_VERSION_LT(3,21,0)
                                   (DMDASNESFunction)function_callback,
 #else
@@ -84,7 +87,7 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
-  ierr = DMDASNESSetJacobianLocal(*m_da,
+  ierr = DMDASNESSetJacobianLocal(*dm,
 #if PETSC_VERSION_LT(3,21,0)
                                   (DMDASNESJacobian)jacobian_callback,
 #else
@@ -93,13 +96,13 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 
-  ierr = DMSetMatType(*m_da, "baij");
+  ierr = DMSetMatType(*dm, "baij");
   PISM_CHK(ierr, "DMSetMatType");
 
-  ierr = DMSetApplicationContext(*m_da, &m_callback_data);
+  ierr = DMSetApplicationContext(*dm, &m_callback_data);
   PISM_CHK(ierr, "DMSetApplicationContext");
 
-  ierr = SNESSetDM(m_snes, *m_da);
+  ierr = SNESSetDM(m_snes, *dm);
   PISM_CHK(ierr, "SNESSetDM");
 
   // Default of maximum 200 iterations; possibly overridden by command line options
@@ -118,10 +121,6 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
   // never assigned to and not communicated, though.
   m_boundary_integral.metadata(0).long_name(
       "residual contribution from lateral boundaries"); // no units or standard name
-}
-
-SSA *SSAFEMFactory(std::shared_ptr<const Grid> g) {
-  return new SSAFEM(g);
 }
 
 // Initialize the solver, called once by the client before use.
@@ -234,7 +233,6 @@ std::shared_ptr<TerminationReason> SSAFEM::solve_nocache() {
 
     // Extract the solution back from SSAX to velocity and communicate.
     m_velocity.copy_from(m_velocity_global);
-    m_velocity.update_ghosts();
 
     bool view_solution = options::Bool("-ssa_view_solution", "view solution of the SSA system");
     if (view_solution) {
@@ -270,7 +268,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
 
   // Make copies of BC mask and BC values: they are needed in SNES callbacks and
   // inputs.bc_{mask,values} are not available there.
-  if (inputs.bc_mask and inputs.bc_values) {
+  if ((inputs.bc_mask != nullptr) and (inputs.bc_values != nullptr)) {
     m_bc_mask.copy_from(*inputs.bc_mask);
     m_bc_values.copy_from(*inputs.bc_values);
   } else {
@@ -380,7 +378,7 @@ void SSAFEM::quad_point_values(const fem::Element &E,
 //! Uses explicitly-provided nodal values.
 void SSAFEM::explicit_driving_stress(const fem::Element &E,
                                      const Coefficients *x,
-                                     Vector2d *result) const {
+                                     Vector2d *result) {
   const unsigned int n = E.n_pts();
 
   for (unsigned int q = 0; q < n; q++) {
@@ -514,7 +512,7 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
 
   if (thickness < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
-    if (dnuH) {
+    if (dnuH != nullptr) {
       *dnuH = 0;
     }
   } else {
@@ -523,7 +521,7 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
 
     *nuH  = m_epsilon_ssa + *nuH * thickness;
 
-    if (dnuH) {
+    if (dnuH != nullptr) {
       *dnuH *= thickness;
     }
   }
@@ -537,7 +535,7 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
       *beta = m_beta_ice_free_bedrock;
     }
 
-    if (dbeta) {
+    if (dbeta != nullptr) {
       *dbeta = 0;
     }
   }
@@ -563,8 +561,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
     // interval length does not matter here
     fem::Gaussian2 Q(1.0);
 
-    for (int i : {0, 1}) {      // 2 functions
-      for (int j : {0, 1}) {    // 2 quadrature points
+    for (int i = 0; i < 2; ++i) {      // 2 functions
+      for (int j = 0; j < 2; ++j) {    // 2 quadrature points
         chi_b[i][j] = fem::linear::chi(i, Q.point(j)).val;
       }
     }

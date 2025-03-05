@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -113,13 +113,13 @@ IceCompModel::IceCompModel(std::shared_ptr<Grid> grid, std::shared_ptr<Context> 
   }
 
   if ((m_testname == 'F') || (m_testname == 'G') || (m_testname == 'K') || (m_testname == 'O')) {
-    m_config->set_flag("energy.enabled", true);
+    m_config->set_string("energy.model", "cold");
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
     m_config->set_number("energy.minimum_allowed_temperature", 0.0);
     m_config->set_number("energy.max_low_temperature_count", 1000000);
   } else {
-    m_config->set_flag("energy.enabled", false);
+    m_config->set_string("energy.model", "none");
   }
 
   // set sea level to -1e4 to ensure that all ice is grounded
@@ -138,7 +138,7 @@ IceCompModel::IceCompModel(std::shared_ptr<Grid> grid, std::shared_ptr<Context> 
     m_config->set_flag("geometry.update.use_basal_melt_rate", false);
 
     // this test is isothermal
-    m_config->set_flag("energy.enabled", false);
+    m_config->set_string("energy.model", "none");
 
     // use the SSA solver
     m_config->set_string("stress_balance_model", "ssa");
@@ -148,8 +148,6 @@ IceCompModel::IceCompModel(std::shared_ptr<Grid> grid, std::shared_ptr<Context> 
 
     m_config->set_flag("stress_balance.ssa.dirichlet_bc", true);
   }
-
-  m_config->set_flag("energy.temperature_based", true);
 }
 
 void IceCompModel::allocate_storage() {
@@ -158,7 +156,7 @@ void IceCompModel::allocate_storage() {
 
   m_strain_heating3_comp.metadata(0)
       .long_name("rate of compensatory strain heating in ice")
-      .units("W m-3");
+      .units("W m^-3");
 }
 
 void IceCompModel::allocate_bedrock_thermal_unit() {
@@ -258,9 +256,9 @@ void IceCompModel::allocate_couplers() {
   m_submodels["sea level forcing"] = m_sea_level.get();
 }
 
-void IceCompModel::bootstrap_2d(const File &input_file) {
-  (void) input_file;
-  throw RuntimeError(PISM_ERROR_LOCATION, "pismv (IceCompModel) does not support bootstrapping.");
+void IceCompModel::bootstrap_2d(const File &/*input_file*/) {
+  throw RuntimeError(PISM_ERROR_LOCATION,
+                     "PISM does not support bootstrapping in verification mode.");
 }
 
 void IceCompModel::initialize_2d() {
@@ -664,7 +662,7 @@ void IceCompModel::reportErrors() {
   if ((m_testname == 'F' or m_testname == 'G') and m_testname != 'V' and
       not FlowLawIsPatersonBuddCold(flow_law, *m_config, EC)) {
     m_log->message(1,
-                   "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
+                   "WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
                    "   for reported errors in test %c to be meaningful!\n",
                    m_testname);
   }
@@ -779,19 +777,19 @@ void IceCompModel::reportErrors() {
     }
 
     if ((m_testname == 'F') || (m_testname == 'G')) {
-      write(m_sys, file, start, "maximum_temperature", "Kelvin", "maximum ice temperature error", maxTerr);
-      write(m_sys, file, start, "average_temperature", "Kelvin", "average ice temperature error", avTerr);
-      write(m_sys, file, start, "maximum_basal_temperature", "Kelvin", "maximum basal temperature error", basemaxTerr);
-      write(m_sys, file, start, "average_basal_temperature", "Kelvin", "average basal temperature error", baseavTerr);
+      write(m_sys, file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
+      write(m_sys, file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
+      write(m_sys, file, start, "maximum_basal_temperature", "kelvin", "maximum basal temperature error", basemaxTerr);
+      write(m_sys, file, start, "average_basal_temperature", "kelvin", "average basal temperature error", baseavTerr);
 
       {
-        units::Converter c(m_sys, "J s-1 m-3", "1e6 J s-1 m-3");
+        units::Converter c(m_sys, "J s^-1 m^-3", "1e6 J s^-1 m^-3");
         write(m_sys, file, start, "maximum_sigma", "1e6 J s-1 m-3", "maximum strain heating error", c(max_strain_heating_error));
         write(m_sys, file, start, "average_sigma", "1e6 J s-1 m-3", "average strain heating error", c(av_strain_heating_error));
       }
 
       {
-        units::Converter c(m_sys, "m second-1", "m year-1");
+        units::Converter c(m_sys, "m second^-1", "m year^-1");
         write(m_sys, file, start, "maximum_surface_velocity", "m year-1", "maximum ice surface horizontal velocity error", c(maxUerr));
         write(m_sys, file, start, "average_surface_velocity", "m year-1", "average ice surface horizontal velocity error", c(avUerr));
         write(m_sys, file, start, "maximum_surface_w", "m year-1", "maximum ice surface vertical velocity error", c(maxWerr));
@@ -800,14 +798,14 @@ void IceCompModel::reportErrors() {
     }
 
     if ((m_testname == 'K') || (m_testname == 'O')) {
-      write(m_sys, file, start, "maximum_temperature", "Kelvin", "maximum ice temperature error", maxTerr);
-      write(m_sys, file, start, "average_temperature", "Kelvin", "average ice temperature error", avTerr);
-      write(m_sys, file, start, "maximum_bedrock_temperature", "Kelvin", "maximum bedrock temperature error", maxTberr);
-      write(m_sys, file, start, "average_bedrock_temperature", "Kelvin", "average bedrock temperature error", avTberr);
+      write(m_sys, file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
+      write(m_sys, file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
+      write(m_sys, file, start, "maximum_bedrock_temperature", "kelvin", "maximum bedrock temperature error", maxTberr);
+      write(m_sys, file, start, "average_bedrock_temperature", "kelvin", "average bedrock temperature error", avTberr);
     }
 
     if (m_testname == 'O') {
-      units::Converter c(m_sys, "m second-1", "m year-1");
+      units::Converter c(m_sys, "m second^-1", "m year^-1");
       write(m_sys, file, start, "maximum_basal_melt_rate", "m year -1", "maximum basal melt rate error", c(maxbmelterr));
     }
   }
@@ -818,26 +816,26 @@ void IceCompModel::reportErrors() {
 /*
  Try
 
- pismv -test V -y 1000 -part_grid -ssa_method fd -cfbc -o fig4-blue.nc
- pismv -test V -y 1000 -part_grid -ssa_method fd -o fig4-green.nc
+ pism -test V -y 1000 -part_grid -ssa_method fd -cfbc -o fig4-blue.nc
+ pism -test V -y 1000 -part_grid -ssa_method fd -o fig4-green.nc
 
  to try to reproduce Figure 4.
 
  Try
 
- pismv -test V -y 3000 -ssa_method fd -cfbc -o fig5.nc -thickness_calving_threshold 250 -part_grid
+ pism -test V -y 3000 -ssa_method fd -cfbc -o fig5.nc -thickness_calving_threshold 250 -part_grid
 
  with -Mx 51, -Mx 101, -Mx 201 for figure 5,
 
- pismv -test V -y 300 -ssa_method fd -o fig6-ab.nc
+ pism -test V -y 300 -ssa_method fd -o fig6-ab.nc
 
  for 6a and 6b,
 
- pismv -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-cd.nc
+ pism -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-cd.nc
 
  for 6c and 6d,
 
- pismv -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-ef.nc
+ pism -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-ef.nc
 
  for 6e and 6f.
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,9 +36,12 @@ protected:
   void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                  const array::Scalar &sea_level_elevation);
 
-  void update_impl(const array::Scalar &ice_thickness,
-                   const array::Scalar &sea_level_elevation,
-                   double t, double dt);
+  void bootstrap_impl(const array::Scalar &bed_elevation,
+                      const array::Scalar &bed_uplift,
+                      const array::Scalar &ice_thickness,
+                      const array::Scalar &sea_level_elevation);
+
+  void update_impl(const array::Scalar &load, double t, double dt);
 
   array::Scalar m_topg_reference;
 

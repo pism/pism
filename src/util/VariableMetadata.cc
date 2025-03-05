@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2024 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include <set>
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include "pism/util/VariableMetadata.hh"
 
@@ -26,6 +27,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism_utilities.hh"
 
 namespace pism {
 
@@ -157,42 +159,29 @@ const std::vector<double> &SpatialVariableMetadata::levels() const {
 }
 
 //! Report the range of a \b global Vec `v`.
-void VariableMetadata::report_range(const Logger &log, double min, double max,
-                                    bool found_by_standard_name) {
+void VariableMetadata::report_range(const Logger &log, double min, double max) const {
 
   // units::Converter constructor will make sure that units are compatible.
-  units::Converter c(m_unit_system, this->get_string("units"), this->get_string("output_units"));
+  units::Converter c(m_unit_system, get_string("units"), get_string("output_units"));
   min = c(min);
   max = c(max);
 
-  std::string spacer(get_name().size(), ' ');
+  std::string name = get_name();
+  std::string spacer(name.size(), ' ');
+  std::string info = get_string("long_name");
 
-  if (has_attribute("standard_name")) {
-
-    if (found_by_standard_name) {
-      log.message(2,
-                  "  FOUND "
-                  " %s / standard_name=%-10s\n"
-                  "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                  get_name().c_str(), get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                  get_string("output_units").c_str());
-    } else {
-      log.message(2,
-                  "  FOUND "
-                  " %s / WARNING! standard_name=%s is missing, found by short_name\n"
-                  "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                  get_name().c_str(), get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                  get_string("output_units").c_str());
-    }
-
+  std::string units = get_string("output_units");
+  std::string range;
+  if (min == max) {
+    range = pism::printf("constant %9.3f %s", min, units.c_str());
   } else {
-    log.message(2,
-                "  FOUND "
-                " %s / %-10s\n"
-                "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-                get_name().c_str(), get_string("long_name").c_str(), spacer.c_str(), min, max,
-                get_string("output_units").c_str());
+    range = pism::printf("min = %9.3f, max = %9.3f %s", min, max, units.c_str());
   }
+
+  log.message(2,
+              "  %s / %s\n"
+              "  %s \\ %s\n",
+              name.c_str(), info.c_str(), spacer.c_str(), range.c_str());
 }
 
 VariableMetadata &SpatialVariableMetadata::x() {

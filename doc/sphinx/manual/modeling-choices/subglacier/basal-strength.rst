@@ -247,7 +247,8 @@ unlikely to be a good modelling choice for real ice sheets.
        water, nor does this mechanism affect water conservation.
    * - :opt:`-plastic_phi` (degrees)
      - Use a constant till friction angle. The default is `30^{\circ}`.
-   * - :opt:`-topg_to_phi` (*list of 4 numbers*)
+   * - :opt:`-topg_to_phi` and :opt:`-phi_min`, :opt:`-phi_max`, :opt:`-topg_min`,
+       :opt:`-topg_max`
      - Compute `\phi` using equation :eq:`eq-phipiecewise`.
    * - :opt:`-yield_stress tillphi_opt`
      - Compute the till friction angle `\phi` in :eq:`eq-mohrcoulomb` iteratively in an
@@ -271,13 +272,12 @@ We find that an effective, though heuristic, way to determine `\phi` in
 :cite:`AschwandenAdalgeirsdottirKhroulev`, :cite:`Martinetal2011`,
 :cite:`Winkelmannetal2011`. This heuristic is motivated by hypothesis that basal material
 with a marine history should be weak :cite:`HuybrechtsdeWolde`. PISM has a mechanism
-setting `\phi` to be a *piece-wise linear* function of bed elevation. The
-option is
+setting `\phi` to be a *piece-wise linear* function of bed elevation. The corresponding
+command line options are
 
 .. code-block:: none
 
-   -topg_to_phi phimin,phimax,bmin,bmax
-
+   -topg_to_phi -phi_min phimin -phi_max phimax -topg_min bmin -topg_max bmax
 
 Thus the user supplies 4 parameters: `\phimin`, `\phimax`, `\bmin`, `\bmax`, where `b`
 stands for the bed elevation. To explain these, we define `M = (\phimax - \phimin) /
@@ -293,17 +293,17 @@ stands for the bed elevation. To explain these, we define `M = (\phimax - \phimi
      \phimax, & \bmax \le b(x,y).
    \end{cases}
 
-It is worth noting that an earth deformation model (see section :ref:`sec-beddef`) changes
+It is worth noting that an earth deformation model (see section :ref:`sec-bed-def`) changes
 `b(x,y)` (NetCDF variable :var:`topg`) used in :eq:`eq-phipiecewise`, so that a sequence
 of runs such as
 
 .. code-block:: bash
 
-   pismr -i foo.nc -bed_def lc -stress_balance ssa+sia \
-         -topg_to_phi 10,30,-50,0 ... -o bar.nc
+   pism -i foo.nc -bed_def lc -stress_balance ssa+sia \
+         -topg_to_phi -phi_min 10 -phi_max 30 -topg_min -50 -topg_max 0 ... -o bar.nc
 
-   pismr -i bar.nc -bed_def lc -stress_balance ssa+sia \
-         -topg_to_phi 10,30,-50,0 ... -o baz.nc
+   pism -i bar.nc -bed_def lc -stress_balance ssa+sia \
+         -topg_to_phi -phi_min 10 -phi_max 30 -topg_min -50 -topg_max 0 ... -o baz.nc
 
 will use *different* :var:`tillphi` fields in the first and second runs. PISM will print a
 warning during initialization of the second run:

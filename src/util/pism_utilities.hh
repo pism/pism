@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -136,6 +136,9 @@ int GlobalSum(MPI_Comm comm, int input);
 
 std::string version();
 
+//! return NetCDF version as an integer
+int netcdf_version();
+
 std::string printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
 void validate_format_string(const std::string &format);
@@ -156,7 +159,11 @@ void print_vector(MPI_Comm com,
 
 double parse_number(const std::string &input);
 
+std::vector<double> parse_number_list(const std::string &input);
+
 long int parse_integer(const std::string &input);
+
+std::vector<long> parse_integer_list(const std::string &input);
 
 } // end of namespace pism
 

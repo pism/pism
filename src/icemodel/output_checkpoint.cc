@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2019, 2022, 2023 PISM Authors
+/* Copyright (C) 2017, 2019, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -69,11 +69,12 @@ bool IceModel::write_checkpoint() {
   double checkpoint_start_time = get_time(m_grid->com);
   profiling.begin("io.checkpoint");
   {
+    // Note: we open a new file every time we write a checkpoint, moving the old file
+    // aside if it exists.
     File file(m_grid->com,
               m_checkpoint_filename,
               string_to_backend(m_config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE,
-              m_ctx->pio_iosys_id());
+              io::PISM_READWRITE_MOVE);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     write_run_stats(file, run_stats());

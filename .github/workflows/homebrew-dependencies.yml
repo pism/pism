@@ -1,0 +1,21 @@
+# Test installing PISM's dependencies using Homebrew and building PISM from sources
+name: Dependencies using Homebrew, PISM from sources
+
+on:
+  push:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-13, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          brew update
+          brew tap pism/pism
+          export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
+          brew install --only-dependencies pism
+      - run: cmake -B build -S . -DCMAKE_C_FLAGS="-Werror" -DCMAKE_CXX_FLAGS="-Werror"
+      - run: make -j -C build all

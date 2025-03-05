@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021, 2023 Constantine Khroulev
+// Copyright (C) 2010--2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,9 @@
 #include "pism/earth/LingleClark.hh"
 
 #include "pism/util/io/File.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/fftw_utilities.hh"
 #include "pism/earth/LingleClarkSerial.hh"
@@ -35,22 +32,10 @@ namespace pism {
 namespace bed {
 
 LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
-  : BedDef(grid),
+  : BedDef(grid, "Lingle-Clark"),
     m_total_displacement(m_grid, "bed_displacement"),
     m_relief(m_grid, "bed_relief"),
-    m_load_thickness(grid, "load_thickness"),
     m_elastic_displacement(grid, "elastic_bed_displacement") {
-
-  m_time_name = m_config->get_string("time.dimension_name") + "_lingle_clark";
-  m_t_last = time().current();
-  m_update_interval = m_config->get_number("bed_deformation.lc.update_interval", "seconds");
-  m_t_eps = m_config->get_number("time_stepping.resolution", "seconds");
-
-  if (m_update_interval < 1.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid bed_deformation.lc.update_interval = %f seconds",
-                                  m_update_interval);
-  }
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
@@ -118,7 +103,8 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
 }
 
 LingleClark::~LingleClark() {
-  // empty
+  // empty, but implemented here instead of using "= default" in the header to be able to
+  // use the forward declaration of LingleClarkSerial in LingleClark.hh
 }
 
 /*!
@@ -134,28 +120,28 @@ void LingleClark::bootstrap_impl(const array::Scalar &bed_elevation,
                                  const array::Scalar &bed_uplift,
                                  const array::Scalar &ice_thickness,
                                  const array::Scalar &sea_level_elevation) {
-  m_t_last = time().current();
 
-  m_topg_last.copy_from(bed_elevation);
+  auto load_proc0 = m_load.allocate_proc0_copy();
 
-  compute_load(bed_elevation, ice_thickness, sea_level_elevation,
-               m_load_thickness);
-
-  std::shared_ptr<petsc::Vec> thickness0 = m_load_thickness.allocate_proc0_copy();
+  auto &total_displacement = *m_work0;
 
   // initialize the plate displacement
   {
-    bed_uplift.put_on_proc0(*m_work0);
-    m_load_thickness.put_on_proc0(*thickness0);
+    auto &uplift_proc0 = *m_work0;
+    bed_uplift.put_on_proc0(uplift_proc0);
+
+    m_load.set(0.0);
+    accumulate_load(bed_elevation, ice_thickness, sea_level_elevation, 1.0, m_load);
+    m_load.put_on_proc0(*load_proc0);
 
     ParallelSection rank0(m_grid->com);
     try {
       if (m_grid->rank() == 0) {
         PetscErrorCode ierr = 0;
 
-        m_serial_model->bootstrap(*thickness0, *m_work0);
+        m_serial_model->bootstrap(*load_proc0, uplift_proc0);
 
-        ierr = VecCopy(m_serial_model->total_displacement(), *m_work0);
+        ierr = VecCopy(m_serial_model->total_displacement(), total_displacement);
         PISM_CHK(ierr, "VecCopy");
 
         ierr = VecCopy(m_serial_model->viscous_displacement(), *m_viscous_displacement0);
@@ -174,7 +160,7 @@ void LingleClark::bootstrap_impl(const array::Scalar &bed_elevation,
 
   m_elastic_displacement.get_from_proc0(*m_elastic_displacement0);
 
-  m_total_displacement.get_from_proc0(*m_work0);
+  m_total_displacement.get_from_proc0(total_displacement);
 
   // compute bed relief
   m_topg.add(-1.0, m_total_displacement, m_relief);
@@ -226,25 +212,6 @@ std::shared_ptr<array::Scalar> LingleClark::elastic_load_response_matrix() const
  */
 void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                             const array::Scalar &sea_level_elevation) {
-  m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
-
-  if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
-    File input_file(m_grid->com, opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
-
-    if (input_file.find_variable(m_time_name)) {
-      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
-    } else {
-      m_t_last = time().current();
-    }
-  } else {
-    m_t_last = time().current();
-  }
-
-  // Initialize bed topography and uplift maps.
-  BedDef::init_impl(opts, ice_thickness, sea_level_elevation);
-
-  m_topg_last.copy_from(m_topg);
-
   if (opts.type == INIT_RESTART) {
     // Set viscous displacement by reading from the input file.
     m_viscous_displacement->read(opts.filename, opts.record);
@@ -261,9 +228,6 @@ void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_t
          *m_viscous_displacement, REGRID_WITHOUT_REGRID_VARS);
   regrid("Lingle-Clark bed deformation model",
          m_elastic_displacement, REGRID_WITHOUT_REGRID_VARS);
-
-  compute_load(m_topg, ice_thickness, sea_level_elevation,
-               m_load_thickness);
 
   // Now that viscous displacement and elastic displacement are finally initialized,
   // put them on rank 0 and initialize the serial model itself.
@@ -293,29 +257,6 @@ void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_t
   m_topg.add(-1.0, m_total_displacement, m_relief);
 }
 
-MaxTimestep LingleClark::max_timestep_impl(double t) const {
-
-  if (t < m_t_last) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "time %f is less than the previous time %f",
-                                  t, m_t_last);
-  }
-
-  // Find the smallest time of the form m_t_last + k * m_update_interval that is greater
-  // than t
-  double k = ceil((t - m_t_last) / m_update_interval);
-
-  double
-    t_next = m_t_last + k * m_update_interval,
-    dt_max = t_next - t;
-
-  if (dt_max < m_t_eps) {
-    dt_max = m_update_interval;
-  }
-
-  return MaxTimestep(dt_max, "bed_def lc");
-}
-
 /*!
  * Get total bed displacement on the PISM grid.
  */
@@ -335,14 +276,10 @@ const array::Scalar& LingleClark::relief() const {
   return m_relief;
 }
 
-void LingleClark::step(const array::Scalar &ice_thickness,
-                       const array::Scalar &sea_level_elevation,
+void LingleClark::step(const array::Scalar &load_thickness,
                        double dt) {
 
-  compute_load(m_topg, ice_thickness, sea_level_elevation,
-               m_load_thickness);
-
-  m_load_thickness.put_on_proc0(*m_work0);
+  load_thickness.put_on_proc0(*m_work0);
 
   ParallelSection rank0(m_grid->com);
   try {
@@ -372,50 +309,21 @@ void LingleClark::step(const array::Scalar &ice_thickness,
   m_total_displacement.get_from_proc0(*m_work0);
 
   // Update bed elevation using bed displacement and relief.
-  {
-    m_total_displacement.add(1.0, m_relief, m_topg);
-    // Increment the topg state counter. SIAFD relies on this!
-    m_topg.inc_state_counter();
-  }
-
-  //! Finally, we need to update bed uplift and topg_last.
-  compute_uplift(m_topg, m_topg_last, dt, m_uplift);
-  m_topg_last.copy_from(m_topg);
+  m_total_displacement.add(1.0, m_relief, m_topg);
 }
 
 //! Update the Lingle-Clark bed deformation model.
-void LingleClark::update_impl(const array::Scalar &ice_thickness,
-                              const array::Scalar &sea_level_elevation,
-                              double t, double dt) {
-
-  double
-    t_next  = m_t_last + m_update_interval,
-    t_final = t + dt;
-
-  if (t_final < m_t_last) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "cannot go back in time");
-  }
-
-  if (std::abs(t_next - t_final) < m_t_eps) { // reached the next update time
-    double dt_beddef = t_final - m_t_last;
-    step(ice_thickness, sea_level_elevation, dt_beddef);
-    m_t_last = t_final;
-  }
+void LingleClark::update_impl(const array::Scalar &load, double /*t*/, double dt) {
+  step(load, dt);
+  // mark m_topg as "modified"
+  m_topg.inc_state_counter();
 }
 
 void LingleClark::define_model_state_impl(const File &output) const {
   BedDef::define_model_state_impl(output);
+
   m_viscous_displacement->define(output, io::PISM_DOUBLE);
   m_elastic_displacement.define(output, io::PISM_DOUBLE);
-
-  if (not output.find_variable(m_time_name)) {
-    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
-
-    output.write_attribute(m_time_name, "long_name",
-                        "time of the last update of the Lingle-Clark bed deformation model");
-    output.write_attribute(m_time_name, "calendar", time().calendar());
-    output.write_attribute(m_time_name, "units", time().units_string());
-  }
 }
 
 void LingleClark::write_model_state_impl(const File &output) const {
@@ -423,8 +331,6 @@ void LingleClark::write_model_state_impl(const File &output) const {
 
   m_viscous_displacement->write(output);
   m_elastic_displacement.write(output);
-
-  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
 }
 
 DiagnosticList LingleClark::diagnostics_impl() const {

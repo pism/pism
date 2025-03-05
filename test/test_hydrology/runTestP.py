@@ -179,15 +179,15 @@ def generate_pism_input(x, y, xx, yy):
                               "standard_name": "bedrock_altitude"})
     nc.define_2d_field("climatic_mass_balance", time_dependent=False,
                        attrs={"long_name": "climatic mass balance for -surface given",
-                              "units": "kg m-2 year-1",
+                              "units": "kg m^-2 year^-1",
                               "standard_name": "land_ice_surface_specific_mass_balance"})
     nc.define_2d_field("ice_surface_temp", time_dependent=False,
                        attrs={"long_name": "ice surface temp (K) for -surface given",
-                              "units": "Kelvin",
+                              "units": "kelvin",
                               "valid_min": 0.0})
     nc.define_2d_field("bmelt", time_dependent=False,
                        attrs={"long_name": "basal melt rate",
-                              "units": "m year-1",
+                              "units": "m year^-1",
                               "standard_name": "land_ice_basal_melt_rate"})
 
     nc.define_2d_field("bwat", time_dependent=False,
@@ -203,10 +203,10 @@ def generate_pism_input(x, y, xx, yy):
                        attrs={"long_name": "if =1, apply u_bc and v_bc as sliding velocity"})
     nc.define_2d_field("u_bc", time_dependent=False,
                        attrs={"long_name": "x-component of prescribed sliding velocity",
-                              "units": "m s-1"})
+                              "units": "m s^-1"})
     nc.define_2d_field("v_bc", time_dependent=False,
                        attrs={"long_name": "y-component of prescribed sliding velocity",
-                              "units": "m s-1"})
+                              "units": "m s^-1"})
 
     Phi0 = 0.20                           # 20 cm/year basal melt rate
     T_surface = 260                       # ice surface temperature, K
@@ -233,7 +233,7 @@ def generate_pism_input(x, y, xx, yy):
 def run_pism(opts):
     stderr.write("Testing: Test P verification of '-hydrology distributed'.\n")
 
-    cmd = "%s %s/pismr -config_override testPconfig.nc -i inputforP.nc -bootstrap -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc" % (
+    cmd = "%s %s/pism -config_override testPconfig.nc -i inputforP.nc -bootstrap -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc" % (
         opts.MPIEXEC, opts.PISM_PATH, opts.Mx, opts.Mx)
 
     stderr.write(cmd + "\n")

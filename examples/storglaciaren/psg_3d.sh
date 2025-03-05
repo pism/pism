@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2011, 2012, 2014, 2018 Andy Aschwanden and Ed Bueler
+# Copyright (C) 2011, 2012, 2014, 2018, 2024, 2025 Andy Aschwanden and Ed Bueler
 
 set -e # exit on error
 
@@ -45,11 +45,11 @@ else
 fi
 
 # set PISM_EXEC if using different executables, for example:
-#  $ export PISM_EXEC="pismr -energy cold"
+#  $ export PISM_EXEC="pism -energy cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
-  PISM_EXEC="pismr"
+  PISM_EXEC="pism"
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 
@@ -135,7 +135,7 @@ echo
 
 COUPLER_ELEV="-surface elevation,forcing -surface.force_to_thickness.file $PISM_DATANAME -ice_surface_temp -6,0,1395,1400 -climatic_mass_balance -3,2.5,1200,1450,1615 -climatic_mass_balance_limits -3,2 "
 
-PARAMS="-pseudo_plastic -pseudo_plastic_q 0.5 -pseudo_plastic_uthreshold 5.0 -yield_stress mohr_coulomb -topg_to_phi 10,40,1000,1500 -sia_e 0.1"
+PARAMS="-pseudo_plastic -pseudo_plastic_q 0.5 -pseudo_plastic_uthreshold 5.0 -yield_stress mohr_coulomb -topg_to_phi -phi_min 10 -phi_max 40 -topg_min 1000 -topg_max 1500 -sia_e 0.1"
 #PETSCSTUFF="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
 FULLPHYS="-stress_balance ssa+sia $PARAMS"
 

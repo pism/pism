@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,8 +30,8 @@ Delta_T::Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in
   m_forcing.reset(new ScalarForcing(*g->ctx(),
                                     "surface.delta_T",
                                     "delta_T",
-                                    "Kelvin",
-                                    "Kelvin",
+                                    "kelvin",
+                                    "kelvin",
                                     "ice-surface temperature offsets"));
 
   m_temperature = allocate_temperature(g);

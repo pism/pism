@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,13 +41,13 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
     m_mass_flux.metadata(0)
         .long_name(
             "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)")
-        .units("kg m-2 s-1")
+        .units("kg m^-2 s^-1")
         .set_time_independent(false);
 
     m_temperature.metadata(0)
         .long_name(
             "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)")
-        .units("Kelvin")
+        .units("kelvin")
         .set_time_independent(false);
 
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);

@@ -14,7 +14,7 @@ command-line option:
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 1000 -config my_config.nc
+   pism -i foo.nc -y 1000 -config my_config.nc
 
 The file ``my_config.nc`` has to contain *all* of the flags and parameters present in
 |config-file|.
@@ -47,7 +47,7 @@ acceleration due to gravity. Running
 
 .. code-block:: none
 
-   pismr -i input.nc -y 1e5 -o earth.nc <other PISM options>
+   pism -i input.nc -y 1e5 -o earth.nc <other PISM options>
 
 produces the "Earth" result, since PISM's defaults correspond to this planet. Next, we
 create ``mars.cdl`` containing the following:
@@ -67,7 +67,7 @@ Notice that the variable name is ``pism_overrides`` and not ``pism_config`` abov
 .. code-block:: none
 
    ncgen -o mars_config.nc mars.cdl
-   pismr -i input.nc -y 1e5 -config_override mars_config.nc -o mars.nc <other PISM options>
+   pism -i input.nc -y 1e5 -config_override mars_config.nc -o mars.nc <other PISM options>
 
 will create ``mars.nc``, the result of the "Mars" run. Then we can use ``ncdump`` to see
 what was different about ``mars.nc``:
@@ -103,7 +103,7 @@ choices, etc., without the need to keep run scripts around.
 
 .. rubric:: Footnotes
 
-.. [#] For ``pismr``, grid parameters ``Mx``, ``My``, that must be set at bootstrapping,
+.. [#] For ``pism``, grid parameters ``Mx``, ``My``, that must be set at bootstrapping,
        are exceptions.
 
        .. Note: This is because we don't have a way to tell if a parameter value is a

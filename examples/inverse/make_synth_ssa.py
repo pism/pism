@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2019, 2020, 2021, 2022, 2023 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2019, 2020, 2021, 2022, 2023, 2024 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -239,8 +239,8 @@ if __name__ == '__main__':
         final_velocity.add(convert(1.0, "m/year", "m/second"),
                            u_noise)
 
-    pio = PISM.util.prepare_output(output_file_name)
-    pio.close()
+    F = PISM.util.prepare_output(output_file_name)
+    F.close()
 
     vecs.write(output_file_name)
 

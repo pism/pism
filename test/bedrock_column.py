@@ -108,8 +108,8 @@ def errors(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 
     z = np.linspace(-Lz, 0, Mz)
 
-    T_base = 240.0              # Kelvin
-    T_surface = 260.0           # Kelvin
+    T_base = 240.0              # kelvin
+    T_surface = 260.0           # kelvin
     dT_base = (T_surface - T_base) / Lz
 
     T_steady = T_base + dT_base * (z - (-Lz))

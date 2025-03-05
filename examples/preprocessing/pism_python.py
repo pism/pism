@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2009-2015, 2018 the PISM Authors
+# Copyright (C) 2009-2015, 2018, 2024 the PISM Authors
 
 # @package pism_python
 # \author the PISM authors
@@ -11,7 +11,7 @@
 # Usage, including a minimal PISM call to bootstrap from this file:
 #
 # \verbatim $ pism_python.py  # creates foo.nc \endverbatim
-# \verbatim $ pismr -i foo.nc -bootstrap -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1 \endverbatim
+# \verbatim $ pism -i foo.nc -bootstrap -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1 \endverbatim
 
 import sys
 import time
@@ -85,7 +85,7 @@ acab_var = def_var(nc, "climatic_mass_balance", "m year-1", fill_value)
 acab_var.standard_name = "land_ice_surface_specific_mass_balance"
 acab_var[:] = acab
 
-artm_var = def_var(nc, "ice_surface_temp", "K", fill_value)
+artm_var = def_var(nc, "ice_surface_temp", "kelvin", fill_value)
 artm_var[:] = artm
 
 # set global attributes
@@ -97,4 +97,4 @@ setattr(nc, 'history', historystr)
 nc.close()
 print('  PISM-bootable NetCDF file %s written' % ncfile)
 print('  for example, run:')
-print('    $ pismr -i foo.nc -bootstrap -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')
+print('    $ pism -i foo.nc -bootstrap -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')

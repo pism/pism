@@ -24,7 +24,7 @@ options to control these choices.
 
    .. code-block:: bash
 
-      pismr -stress_balance blatter \
+      pism -stress_balance blatter \
             [other options] -help | grep "-bp_"
 
    to see the complete list of PETSc option controlling this solver.
@@ -325,7 +325,7 @@ Run PISM as follows to give this a try:
 
 .. code-block:: bash
 
-   mpiexec -n M pismr -Nx 1 -Ny M ...
+   mpiexec -n M pism -Nx 1 -Ny M ...
 
 This forces PISM to split the domain into `M` parts in the `y` direction instead of the
 default (approximately `\sqrt{M}` in both `x` and `y`).

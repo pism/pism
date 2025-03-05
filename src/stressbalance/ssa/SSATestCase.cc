@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2024 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,31 +17,33 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/stressbalance/ssa/SSATestCase.hh"
+#include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 
+#include "pism/stressbalance/ssa/SSAFD.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
+
 namespace pism {
 namespace stressbalance {
 
-SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My, double Lx, double Ly,
-                         grid::Registration registration, grid::Periodicity periodicity)
-    : m_com(ctx->com()),
-      m_ctx(ctx),
-      m_config(ctx->config()),
-      m_grid(Grid::Shallow(m_ctx, Lx, Ly, 0.0, 0.0, Mx, My, registration, periodicity)),
-      m_sys(ctx->unit_system()),
-      m_stencil_width(m_config->get_number("grid.max_stencil_width")),
-      m_tauc(m_grid, "tauc"),
-      m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), m_stencil_width),
-      m_bc_values(m_grid, "_bc"), // u_bc and v_bc
-      m_bc_mask(m_grid, "bc_mask"),
-      m_geometry(m_grid),
-      m_ssa(NULL) {
+SSATestCase::SSATestCase(std::shared_ptr<SSA> ssa)
+  : m_grid(ssa->grid()),
+    m_ctx(m_grid->ctx()),
+    m_config(m_ctx->config()),
+    m_sys(m_ctx->unit_system()),
+    m_tauc(m_grid, "tauc"),
+    m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), 1),
+    m_bc_values(m_grid, "_bc"), // u_bc and v_bc
+    m_bc_mask(m_grid, "bc_mask"),
+    m_geometry(m_grid),
+    m_ssa(ssa) {
+
   m_bc_mask.set_interpolation_type(NEAREST);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
@@ -52,24 +54,23 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My, double Lx
   // enthalpy
   m_ice_enthalpy.metadata(0)
       .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
-      .units("J kg-1");
+      .units("J kg^-1");
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
   m_bc_values.metadata(0)
       .long_name("X-component of the SSA velocity boundary conditions")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
   m_bc_values.metadata(1)
       .long_name("Y-component of the SSA velocity boundary conditions")
-      .units("m s-1")
-      .output_units("m year-1");
+      .units("m s^-1")
+      .output_units("m year^-1");
 
-  Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys  = m_grid->ctx()->unit_system();
   double fill_value =
-      units::convert(sys, config->get_number("output.fill_value"), "m year-1", "m second-1");
+      units::convert(sys, m_config->get_number("output.fill_value"), "m year^-1", "m second^-1");
 
-  auto large_number = units::convert(m_sys, 1e6, "m year-1", "m second-1");
+  auto large_number = units::convert(m_sys, 1e6, "m year^-1", "m second^-1");
 
   m_bc_values.metadata(0)["valid_range"] = { -large_number, large_number };
   m_bc_values.metadata(0)["_FillValue"]  = { fill_value };
@@ -86,8 +87,14 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My, double Lx
   m_bc_mask.metadata()["flag_meanings"] = "no_data ssa.dirichlet_bc_location";
 }
 
-SSATestCase::~SSATestCase() {
-  delete m_ssa;
+std::shared_ptr<SSA> SSATestCase::solver(std::shared_ptr<Grid> grid, const std::string &method) {
+  if (method == "fem") {
+    return std::make_shared<SSAFEM>(grid);
+  }
+  if (method == "fd") {
+    return std::make_shared<SSAFD>(grid, false);
+  }
+  return  std::make_shared<SSAFD_SNES>(grid, false);
 }
 
 //! Initialize the test case at the start of a run
@@ -249,7 +256,7 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
   }
   {
     VariableMetadata max_velocity{ "max_velocity", sys };
-    max_velocity.long_name("maximum ice velocity magnitude error").units("m year-1");
+    max_velocity.long_name("maximum ice velocity magnitude error").units("m year^-1");
     io::define_timeseries(max_velocity, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, max_velocity, start, { max_vector });
   }
@@ -261,25 +268,25 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
   }
   {
     VariableMetadata maximum_u{ "maximum_u", sys };
-    maximum_u.long_name("maximum error in the X-component of the ice velocity").units("m year-1");
+    maximum_u.long_name("maximum error in the X-component of the ice velocity").units("m year^-1");
     io::define_timeseries(maximum_u, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, maximum_u, start, { max_u });
   }
   {
     VariableMetadata maximum_v{ "maximum_v", sys };
-    maximum_v.long_name("maximum error in the Y-component of the ice velocity").units("m year-1");
+    maximum_v.long_name("maximum error in the Y-component of the ice velocity").units("m year^-1");
     io::define_timeseries(maximum_v, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, maximum_v, start, { max_v });
   }
   {
     VariableMetadata average_u{ "average_u", sys };
-    average_u.long_name("average error in the X-component of the ice velocity").units("m year-1");
+    average_u.long_name("average error in the X-component of the ice velocity").units("m year^-1");
     io::define_timeseries(average_u, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, average_u, start, { avg_u });
   }
   {
     VariableMetadata average_v{ "average_v", sys };
-    average_v.long_name("average error in the Y-component of the ice velocity").units("m year-1");
+    average_v.long_name("average error in the Y-component of the ice velocity").units("m year^-1");
     io::define_timeseries(average_v, "N", file, io::PISM_DOUBLE);
     io::write_timeseries(file, average_v, start, { avg_v });
   }
@@ -310,22 +317,52 @@ void SSATestCase::write(const std::string &filename) {
 
   m_ssa->velocity().write(file);
 
-  array::Vector exact(m_grid, "_exact");
-  exact.metadata(0)
-      .long_name("X-component of the SSA exact solution")
-      .units("m s-1");
-  exact.metadata(1)
-      .long_name("Y-component of the SSA exact solution")
-      .units("m s-1");
+  // write all diagnostics:
+  {
+    auto diagnostics = m_ssa->diagnostics();
 
-  array::AccessScope list(exact);
+    for (auto &p : diagnostics) {
+      try {
+        p.second->compute()->write(file);
+      } catch (RuntimeError &e) {
+        // ignore errors
+      }
+    }
+  }
+
+  array::Vector tmp(m_grid, "_exact");
+  tmp.metadata(0)
+      .long_name("X-component of the SSA exact solution")
+      .units("m s^-1");
+  tmp.metadata(1)
+      .long_name("Y-component of the SSA exact solution")
+      .units("m s^-1");
+
+  array::AccessScope list(tmp);
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     exactSolution(i, j, m_grid->x(i), m_grid->y(j),
-                  &(exact(i,j).u), &(exact(i,j).v));
+                  &(tmp(i,j).u), &(tmp(i,j).v));
   }
-  exact.write(file);
+  tmp.write(file);
+
+  tmp.metadata(0)
+    .set_name("u_error")
+    .long_name("X-component of the error (exact - computed)")
+    .units("m s^-1");
+  tmp.metadata(1)
+    .set_name("v_error")
+    .long_name("Y-component of the error (exact - computed)")
+    .units("m s^-1");
+
+  tmp.add(-1.0, m_ssa->velocity());
+  tmp.write(file);
+
+  array::Scalar error_mag(m_grid, "error_mag");
+  error_mag.metadata(0).long_name("magnitude of the error").units("m s^-1");
+  array::compute_magnitude(tmp, error_mag);
+  error_mag.write(file);
 
   file.close();
 }

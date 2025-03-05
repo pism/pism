@@ -106,13 +106,13 @@ def check_modifier(model, modifier, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
 
 def precipitation(grid, value):
     precip = PISM.Scalar(grid, "precipitation")
-    precip.metadata(0).long_name("precipitation").units("kg m-2 s-1").standard_name("precipitation_flux")
+    precip.metadata(0).long_name("precipitation").units("kg m^-2 s^-1").standard_name("precipitation_flux")
     precip.set(value)
     return precip
 
 def air_temperature(grid, value):
     temperature = PISM.Scalar(grid, "air_temp")
-    temperature.metadata(0).long_name("near-surface air temperature").units("Kelvin")
+    temperature.metadata(0).long_name("near-surface air temperature").units("kelvin")
     temperature.set(value)
     return temperature
 
@@ -172,7 +172,7 @@ class DeltaT1D(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.dT = -5.0
 
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin",
+        create_scalar_forcing(self.filename, "delta_T", "kelvin",
                               [self.dT], [0], time_bounds=[0, 1])
 
     def tearDown(self):
@@ -200,7 +200,7 @@ class DeltaT2D(TestCase):
         self.delta_T = 5.0
 
         delta_T = PISM.Scalar(self.grid, "delta_T")
-        delta_T.metadata(0).long_name("temperature offset").units("K")
+        delta_T.metadata(0).long_name("temperature offset").units("kelvin")
         delta_T.set(self.delta_T)
 
         try:
@@ -263,7 +263,7 @@ class DeltaP2D(TestCase):
         self.delta_P = 5.0
 
         delta_P = PISM.Scalar(self.grid, "delta_P")
-        delta_P.metadata(0).long_name("precipitation offset").units("kg m-2 s-1").output_units("kg m-2 s-1").standard_name("")
+        delta_P.metadata(0).long_name("precipitation offset").units("kg m^-2 s^-1").output_units("kg m^-2 s^-1").standard_name("")
         delta_P.set(self.delta_P)
 
         try:
@@ -363,12 +363,12 @@ class YearlyCycle(TestCase):
         precipitation(self.grid, self.P).write(output)
 
         T_mean = PISM.Scalar(self.grid, "air_temp_mean_annual")
-        T_mean.metadata(0).long_name("mean annual near-surface air temperature").units("K")
+        T_mean.metadata(0).long_name("mean annual near-surface air temperature").units("kelvin")
         T_mean.set(self.T_mean)
         T_mean.write(output)
 
         T_summer = PISM.Scalar(self.grid, "air_temp_mean_summer")
-        T_summer.metadata(0).long_name("mean summer near-surface air temperature").units("K")
+        T_summer.metadata(0).long_name("mean summer near-surface air temperature").units("kelvin")
         T_summer.set(self.T_summer)
         T_summer.write(output)
 
@@ -417,10 +417,10 @@ class OneStation(TestCase):
         output.write_attribute(time_name, "bounds", "time_bounds")
 
         output.define_variable("precipitation", PISM.PISM_DOUBLE, [time_name])
-        output.write_attribute("precipitation", "units", "kg m-2 s-1")
+        output.write_attribute("precipitation", "units", "kg m^-2 s^-1")
 
         output.define_variable("air_temp", PISM.PISM_DOUBLE, [time_name])
-        output.write_attribute("air_temp", "units", "Kelvin")
+        output.write_attribute("air_temp", "units", "kelvin")
 
         output.write_variable("precipitation", [0], [1], [self.P])
         output.write_variable("air_temp", [0], [1], [self.T])
@@ -476,11 +476,11 @@ class Anomaly(TestCase):
         self.dP = 20.0
 
         dT = PISM.Scalar(self.grid, "air_temp_anomaly")
-        dT.metadata(0).long_name("air temperature anomaly").units("Kelvin").output_units("Kelvin").standard_name("")
+        dT.metadata(0).long_name("air temperature anomaly").units("kelvin").output_units("kelvin").standard_name("")
         dT.set(self.dT)
 
         dP = PISM.Scalar(self.grid, "precipitation_anomaly")
-        dP.metadata(0).long_name("precipitation anomaly").units("kg m-2 s-1").output_units("kg m-2 s-1").standard_name("")
+        dP.metadata(0).long_name("precipitation anomaly").units("kg m^-2 s^-1").output_units("kg m^-2 s^-1").standard_name("")
         dP.set(self.dP)
 
         output = PISM.util.prepare_output(self.filename)
@@ -513,7 +513,7 @@ class PrecipScaling(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.dT = 5.0
 
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin",
+        create_scalar_forcing(self.filename, "delta_T", "kelvin",
                               [self.dT], [0], time_bounds=[0, 1])
 
         config.set_string("atmosphere.precip_scaling.file", self.filename)
@@ -609,12 +609,12 @@ class ElevationChange(TestCase):
     def setUp(self):
         self.filename = tmp_name("atmosphere_reference_surface")
         self.grid = shallow_grid()
-        self.dTdz = 1.0         # Kelvin per km
+        self.dTdz = 1.0         # kelvin per km
         self.dPdz = 1000.0      # (kg/m^2)/year per km
         self.dz = 1000.0        # m
         self.dT = -self.dTdz * self.dz / 1000.0
         self.dP = -PISM.util.convert(self.dPdz * self.dz / 1000.0, "kg m-2 year-1", "kg m-2 s-1")
-        self.precip_dTdz = 2.0  # Kelvin per km
+        self.precip_dTdz = 2.0  # kelvin per km
 
         self.geometry = PISM.Geometry(self.grid)
 

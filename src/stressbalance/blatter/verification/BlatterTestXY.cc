@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -89,7 +89,7 @@ void BlatterTestXY::residual_source_term(const fem::Q1Element3 &element,
   }
 
   // loop over all quadrature points
-  for (int q = 0; q < element.n_pts(); ++q) {
+  for (unsigned int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q) / m_scaling;
 
     // loop over all test functions

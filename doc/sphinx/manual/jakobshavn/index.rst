@@ -17,7 +17,7 @@ this ice flow is different from the ice streams in West Antarctica or Northeast 
 
 This section describes how to build a PISM regional model of this outlet glacier
 :cite:`DellaGiustina2011` using scripts from ``examples/jako/``. The same strategy should
-work for other outlet glaciers. We also demonstrate the PISM regional mode ``pismr
+work for other outlet glaciers. We also demonstrate the PISM regional mode ``pism
 -regional``, and Python `drainage-basin-delineation tools <regional-tools_>`_ which can be
 downloaded from the PISM source code website. Such regional models allow modest-size
 computers to run high resolution models [#]_ and large ensembles. Regional analysis is
@@ -249,7 +249,7 @@ processes:
 
 .. code-block:: none
 
-   ./spinup.sh 4 125 86 &> out.spin5km &
+   ./spinup.sh 8 125 86 &> out.spin5km &
 
 .. This takes 4.5055 proc-hours on bueler-gazelle
 
@@ -263,7 +263,7 @@ Some more comments on this run are appropriate:
 
   .. code-block:: none
   
-     PISM_DO=echo ./spinup.sh 4 125 86 | less
+     PISM_DO=echo ./spinup.sh 8 125 86 | less
 
 - We use ``-i jako.nc -bootstrap``, so we get to choose our grid, and (as usual in PISM
   with ``-bootstrap``) the fields are interpolated to our grid.
@@ -271,7 +271,7 @@ Some more comments on this run are appropriate:
 - A modestly-fine vertical grid with 20 m spacing is chosen, but even finer is
   recommended, especially to resolve the temperate ice layer in these outlet glaciers.
 
-- There is an option :opt:`-no_model_strip` ``10`` asking ``pismr -regional`` to put a 10
+- There is an option :opt:`-no_model_strip` ``10`` asking ``pism -regional`` to put a 10
   km strip around edge of the computational domain. This strip is entirely outside of the
   drainage basin defined by ``ftt_mask``. In this strip the thermodynamical spun-up
   variables ``bmelt,tillwat,enthalpy,litho_temp`` from ``g5km_bc.nc`` are held fixed and
@@ -342,8 +342,11 @@ combination
 
 .. code-block:: none
 
-      -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 \
-         -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines
+      -topg_to_phi -phi_min 15.0 -phi_max 40.0 -topg_min -300.0 -topg_max 700.0 \
+      -till_effective_fraction_overburden 0.02 \
+      -pseudo_plastic \
+      -pseudo_plastic_q 0.25 \
+      -tauc_slippery_grounding_lines
 
 are a topic for a parameter study (compare :cite:`AschwandenAdalgeirsdottirKhroulev`) or a
 study of their relation to inverse modeling results (e.g. :cite:`Habermannetal2013`).

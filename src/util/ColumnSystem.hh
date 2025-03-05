@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2019, 2021 PISM Authors
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2019, 2021, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -154,8 +154,8 @@ public:
   unsigned int ks() const;
   double dz() const;
   const std::vector<double>& z() const;
-  void fine_to_coarse(const std::vector<double> &fine, int i, int j,
-                      array::Array3D& coarse) const;
+  void fine_to_coarse(const std::vector<double> &input, int i, int j,
+                      array::Array3D& output) const;
 protected:
   TridiagonalSystem *m_solver;
 
@@ -186,7 +186,7 @@ protected:
 
   void init_fine_grid(const std::vector<double>& storage_grid);
 
-  void coarse_to_fine(const array::Array3D &coarse, int i, int j, double* fine) const;
+  void coarse_to_fine(const array::Array3D &input, int i, int j, double* output) const;
 };
 
 } // end of namespace pism

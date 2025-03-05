@@ -3,7 +3,7 @@ A minimal 3D setup using the parameterization of cryo-hydrological warming
 
 Run `run.sh` to tests a minimal cryo-hydrological warming setup.
 
-This example repeats the one-column test setup using `pismr -regional` instead of PISM's
+This example repeats the one-column test setup using `pism -regional` instead of PISM's
 Python bindings.
 
 .. note::

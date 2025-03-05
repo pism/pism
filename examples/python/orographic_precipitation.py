@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """This script attempts to reproduce Figure 4c from 'A linear theory of orographic
 precipitation' by Smith and Barstad, 2004.
@@ -28,11 +28,11 @@ def gaussian_bump_grid():
     Mx = int((x_max - x_min) / dx)
     My = int((y_max - y_min) / dy)
 
-    return PISM.Grid_Shallow(PISM.Context().ctx,
-                                Lx, Ly,
-                                x0, y0,
-                                Mx, My,
-                                PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    return PISM.Grid.Shallow(PISM.Context().ctx,
+                             Lx, Ly,
+                             x0, y0,
+                             Mx, My,
+                             PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
 def gaussian_bump(x, y, h_max=500.0,
                   x0=0.0, y0=0.0, sigma_x=15e3, sigma_y=15e3):
@@ -76,7 +76,7 @@ def synthetic_geometry(grid, orography):
     model.update(geometry, 0, 1)
 
     # convert from mm/s to mm/hour
-    return model.precipitation().numpy() * 3600
+    return model.precipitation().to_numpy() * 3600
 
 def input_file(filename):
 

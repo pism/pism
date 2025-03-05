@@ -10,19 +10,19 @@ run can be loaded with ":opt:`-i`":
 
 .. code-block:: none
 
-   pismr -eisII A -y 100 -o foo.nc
-   pismr -eisII A -i foo.nc -y 100 -o bar.nc
+   pism -eisII A -Mx 61 -My 61 -y 100 -o foo.nc
+   pism -eisII A -Mx 61 -My 61 -i foo.nc -y 100 -o bar.nc
 
 As noted, verification tests (section :ref:`sec-verif`) and simplified-geometry experiments
 (section :ref:`sec-simp`) do not need input files at all because they initialize from
 formulas in the source code. They can, however, be continued from saved model states using
 :opt:`-i`. Specifying the simplified geometry experiment or verification test *is*,
 however, necessary if the run is to continue with the climate inputs for that experiment
-or test. For example, based on the above ``pismr -eisII A`` runs, it is valid to do
+or test. For example, based on the above ``pism -eisII A`` runs, it is valid to do
 
 .. code-block:: none
 
-   pismr -i foo.nc -y 100 -o bar.nc
+   pism -i foo.nc -y 100 -o bar.nc
 
 but the climate and other parameters use PISM default values, and thus are not
 (necessarily) the values specified in EISMINT II.
@@ -32,24 +32,11 @@ but the climate and other parameters use PISM default values, and thus are not
 ``-i`` file format
 ^^^^^^^^^^^^^^^^^^
 
-PISM produces CF-1.5 compliant NetCDF files. The easiest way to learn the output format
+PISM produces CF-1.6 compliant NetCDF files. The easiest way to learn the output format
 *and* the :opt:`-i` format is to do a simple run and then look at the metadata in the
 resulting file, like this:
 
 .. code-block:: none
 
-   pismr -eisII A -y 10 -o foo.nc
+   pism -eisII A -Mx 61 -My 61 -y 10 -o foo.nc
    ncdump -h foo.nc | less
-
-Note that variables in the output file have a ``pism_intent`` attribute. When
-``pism_intent`` is ``diagnostic``, the variable can be deleted from the file without
-affecting whether PISM can use it as a :opt:`-i` input file. Variables with
-``pism_intent`` is ``model_state``, by contrast, must be present when using :opt:`-i`.
-
-The automatically-produced :var:`time` variable has a ``units`` attribute like ``"seconds
-since 1-1-1"`` because the CF metadata conventions require a reference date.
-
-.. FIXME: double-check the statement below
-
-By default PISM ignores this reference date except when it is used in unit conversions
-based on a calendar (see below).

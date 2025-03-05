@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -60,7 +60,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_sys(context->unit_system()),
       m_log(context->log()),
       m_time(context->time()),
-      m_wide_stencil(static_cast<int>(m_config->get_number("grid.max_stencil_width"))),
       m_output_global_attributes("PISM_GLOBAL", m_sys),
       m_geometry(m_grid),
       m_new_bed_elevation(true),
@@ -72,17 +71,10 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
       m_step_counter(0),
       m_thickness_change(grid),
-      m_ts_times(new std::vector<double>()),
-      m_extra_bounds("time_bounds", m_sys),
-      m_timestamp("timestamp", m_sys) {
+      m_ts_times(new std::vector<double>()) {
 
   m_velocity_bc_mask.set_interpolation_type(NEAREST);
   m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
-
-  m_extra_bounds["units"] = m_time->units_string();
-
-  m_timestamp["units"] = "hours";
-  m_timestamp["long_name"] = "wall-clock time since the beginning of the run";
 
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);
@@ -99,11 +91,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_output_global_attributes["Conventions"] = "CF-1.6";
   m_output_global_attributes["source"] = pism::version();
 
-  // Do not save snapshots by default:
-  m_save_snapshots = false;
-  // Do not save time-series by default:
-  m_save_extra     = false;
-
   m_fracture = nullptr;
 
   reset_counters();
@@ -115,7 +102,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_work2d.push_back(
           std::make_shared<array::Scalar2>(m_grid, pism::printf("work_vector_%d", j)));
     }
-    m_work2d_proc0 = m_work2d[0]->allocate_proc0_copy();
   }
 
   auto surface_input_file = m_config->get_string("hydrology.surface_input.file");
@@ -131,8 +117,8 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
                                          buffer_size, surface_input.periodic);
     m_surface_input_for_hydrology->metadata(0)
         .long_name("water input rate for the subglacial hydrology model")
-        .units("kg m-2 s-1")
-        .output_units("kg m-2 year-1");
+        .units("kg m^-2 s^-1")
+        .output_units("kg m^-2 year^-1");
     m_surface_input_for_hydrology->metadata()["valid_min"] = { 0.0 };
   }
 }
@@ -213,15 +199,15 @@ void IceModel::allocate_storage() {
   {
     m_bedtoptemp.metadata(0)
         .long_name("temperature at the top surface of the bedrock thermal layer")
-        .units("Kelvin");
+        .units("kelvin");
   }
 
   // basal melt rate
   m_basal_melt_rate.metadata(0)
       .long_name(
           "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time")
-      .units("m s-1")
-      .output_units("m year-1")
+      .units("m s^-1")
+      .output_units("m year^-1")
       .standard_name("land_ice_basal_melt_rate");
   m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   m_grid->variables().add(m_basal_melt_rate);
@@ -249,7 +235,7 @@ void IceModel::allocate_storage() {
     for (int j : { 0, 1 }) {
       m_velocity_bc_values.metadata(j)["valid_range"] = { -huge_value, huge_value };
       m_velocity_bc_values.metadata(j)["_FillValue"]  = { fill_value };
-      m_velocity_bc_values.metadata(j).units("m s-1");
+      m_velocity_bc_values.metadata(j).units("m s^-1");
     }
   }
 
@@ -387,22 +373,19 @@ YieldStressInputs IceModel::yield_stress_inputs() {
 
 std::string IceModel::save_state_on_error(const std::string &suffix,
                                           const std::set<std::string> &additional_variables) {
-  std::string output_file = m_config->get_string("output.file");
+  std::string filename = m_config->get_string("output.file");
 
-  if (output_file.empty()) {
+  if (filename.empty()) {
     m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.");
-    output_file = "unnamed.nc";
+    filename = "unnamed.nc";
   }
 
-  output_file = filename_add_suffix(output_file, suffix, "");
+  filename = filename_add_suffix(filename, suffix, "");
 
   File file(m_grid->com,
-            output_file,
+            filename,
             string_to_backend(m_config->get_string("output.format")),
-            io::PISM_READWRITE_MOVE,
-            m_ctx->pio_iosys_id());
-
-  run_stats();
+            io::PISM_READWRITE_MOVE);
 
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
@@ -413,7 +396,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
 
   save_variables(file, INCLUDE_MODEL_STATE, variables, m_time->current());
 
-  return output_file;
+  return filename;
 }
 
 //! The contents of the main PISM time-step.
@@ -768,7 +751,7 @@ IceModelTerminationReason IceModel::run() {
   const Profiling &profiling = m_ctx->profiling();
 
   bool do_mass_conserve = m_config->get_flag("geometry.update.enabled");
-  bool do_energy = m_config->get_flag("energy.enabled");
+  bool do_energy = member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
   bool do_skip = m_config->get_flag("time_stepping.skip.enabled");
 
   // de-allocate diagnostics that are not needed
@@ -880,6 +863,7 @@ void IceModel::init() {
   model_state_setup();
 
   //! 7) Report grid parameters:
+  m_log->message(2, "Computational domain and grid:\n");
   m_grid->report_parameters();
 
   //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the
@@ -995,11 +979,8 @@ void IceModel::prune_diagnostics() {
     available.insert(d.first);
   }
 
-  auto m_extra_stop = m_config->get_flag("output.extra.stop_missing");
-  warn_about_missing(*m_log, m_output_vars,     "output",     available, false);
-  warn_about_missing(*m_log, m_snapshot_vars,   "snapshot",   available, false);
-  warn_about_missing(*m_log, m_checkpoint_vars, "checkpoint", available, false);
-  warn_about_missing(*m_log, m_extra_vars,      "diagnostic", available, m_extra_stop);
+  auto extra_stop = m_config->get_flag("output.extra.stop_missing");
+  warn_about_missing(*m_log, m_extra_vars,      "diagnostic", available, extra_stop);
 
   // get the list of requested diagnostics
   auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');

@@ -79,8 +79,8 @@ and ``-sia_e 1``.
 
 We have not yet run PISM, but only asked one script to create nine others. We now have the
 option of running them sequentially or in parallel. Each script itself does a parallel
-run, over the ``NN=4`` processes specified by ``param.sh`` when generating the run
-scripts. If you have `4 \times 9 = 36` cores available then you can do the runs
+run, over the ``NN=8`` processes specified by ``param.sh`` when generating the run
+scripts. If you have `8 \times 9 = 72` cores available then you can do these runs
 fully in parallel (this is ``runparallel.sh`` in ``examples/std-greenland/``):
 
 .. literalinclude:: scripts/run-5-parallel.sh
@@ -92,7 +92,7 @@ Otherwise you should do them in sequence (this is ``runsequential.sh`` in
 .. literalinclude:: scripts/run-5-serial.sh
    :language: bash
 
-On the same old 2012-era 4 core laptop, ``runsequential.sh`` took a total of just under 7
+On the same old 2020-era 8 core laptop, ``runsequential.sh`` took a total of about 4
 hours to complete the whole parameter study. The runs with `q=0.1` (the more
 "plastic" end of the basal sliding spectrum) took up to four times longer than the
 `q=0.5` and `q=1.0` runs. Roughly speaking, values of `q` which are
@@ -105,7 +105,7 @@ determining run times.
 .. figure:: figures/p10km-comparison.png
    :name: fig-paramstudy
 
-   Surface speed ``velsurf_mag`` from a 10 km grid parameter study. Right-most subfigure
+   Surface speed ``velsurf_mag`` from a 10 km grid parameter study. Right-most sub-figure
    is observed data from ``Greenland_5km_v1.1.nc``. Top row: `q=0.1` and
    `e=1,3,6` (left-to-right). Middle row: `q=0.5`. Bottom row: `q=1.0`.
    All subfigures have common color scale (velocity m/year), as shown in the right-most
@@ -115,7 +115,7 @@ On a supercomputer, the ``runparallel.sh`` script generally should be modified t
 jobs to the scheduler. See example scripts ``advanced/paramspawn.sh`` and
 ``advanced/paramsubmit.sh`` for a parameter study that does this. (But see your system
 administrator if you don't know what a "job scheduler" is!) Of course, if you have a
-supercomputer then you can redo this parameter study on a 5 km grid.
+supercomputer then you can redo this parameter study using a finer grid.
 
 Results from these runs are seen in :numref:`fig-ivolparamstudy` and
 :numref:`fig-paramstudy`. In the former we see that the `(0.5,3)` run simply continues the
@@ -125,7 +125,7 @@ In all cases with `e=1` the flow slows and the sheet grows in volume as discharg
 decreases, while in all cases with `e=6` the flow accelerates and the sheet shrinks in
 volume as discharge increases.
 
-In :numref:`fig-paramstudy` we can compare the surface speed model results to
+In :numref:`fig-paramstudy` we can compare the modeled surface speed to
 observations. Roughly speaking, the ice softness parameter `e` has effects seen
 most-clearly by comparing the interior of the ice sheet; scan left-to-right for the
 `e=1,3,6` subfigures. The basal sliding exponent `q` has effects seen

@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2022  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2022, 2024  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
 
 #include "pism/inverse/functional/IPFunctional.hh"
-#include "pism/util/Mask.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 

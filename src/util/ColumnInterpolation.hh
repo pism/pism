@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,11 +29,11 @@ public:
   ColumnInterpolation(const std::vector<double> &z_coarse,
                       const std::vector<double> &z_fine);
 
-  void coarse_to_fine(const double *input, unsigned int ks, double *result) const;
+  void coarse_to_fine(const double *input, unsigned int k_max_result, double *result) const;
   void fine_to_coarse(const double *input, double *result) const;
 
   // These two methods allocate fresh storage for the output.
-  std::vector<double> coarse_to_fine(const std::vector<double> &input, unsigned int ks) const;
+  std::vector<double> coarse_to_fine(const std::vector<double> &input, unsigned int k_max_result) const;
   std::vector<double> fine_to_coarse(const std::vector<double> &input) const;
 
   unsigned int Mz_coarse() const;
@@ -54,8 +54,8 @@ private:
   bool m_use_linear_interpolation;
 
   void init_interpolation();
-  void coarse_to_fine_linear(const double *input, unsigned int ks, double *result) const;
-  void coarse_to_fine_quadratic(const double *input, unsigned int ks, double *result) const;
+  void coarse_to_fine_linear(const double *input, unsigned int k_max_result, double *result) const;
+  void coarse_to_fine_quadratic(const double *input, unsigned int k_max_result, double *result) const;
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,10 @@
 
 #include "pism/util/error_handling.hh"
 
+#if (Pism_USE_YAC_INTERPOLATION == 1)
+#include "pism/util/yaxt_wrapper.h"
+#endif
+
 namespace pism {
 namespace petsc {
 
@@ -45,14 +49,29 @@ Initializer::Initializer(int argc, char **argv, const char *help) {
       MPI_Abort(MPI_COMM_WORLD, -1);
     }
   }
+
+#if (Pism_USE_YAC_INTERPOLATION == 1)
+  int yaxt_initialized = pism_yaxt_initialized();
+  if (yaxt_initialized != 1) {
+    pism_yaxt_initialize(PETSC_COMM_WORLD);
+  }
+#endif
 }
 
 Initializer::~Initializer() {
-  PetscErrorCode ierr = 0;
-  PetscBool initialized = PETSC_FALSE;
-  ierr = PetscInitialized(&initialized); CHKERRCONTINUE(ierr);
 
-  if (initialized == PETSC_TRUE) {
+#if (Pism_USE_YAC_INTERPOLATION == 1)
+  int yaxt_initialized = pism_yaxt_initialized();
+  int yaxt_finalized = pism_yaxt_finalized();
+  if (yaxt_initialized == 1 and yaxt_finalized != 1) {
+    pism_yaxt_finalize();
+  }
+#endif
+
+  PetscBool petsc_initialized = PETSC_FALSE;
+  PetscErrorCode ierr = PetscInitialized(&petsc_initialized); CHKERRCONTINUE(ierr);
+
+  if (petsc_initialized == PETSC_TRUE) {
     // there is nothing we can do if this fails
     ierr = PetscFinalize(); CHKERRCONTINUE(ierr);
   }

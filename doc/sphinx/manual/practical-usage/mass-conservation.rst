@@ -41,7 +41,7 @@ Use a shortcut
 
 .. code-block:: none
 
-   pismr -extra_file ex.nc -extra_times N -extra_vars mass_fluxes,...
+   pism -extra_file ex.nc -extra_times N -extra_vars mass_fluxes,...
 
 to save all fluxes needed to "balance the books" in terms of ice mass.
 
@@ -58,7 +58,7 @@ To save these, use the shortcut
 
 .. code-block:: none
 
-   pismr -extra_file ex.nc -extra_times N -extra_vars amount_fluxes,...
+   pism -extra_file ex.nc -extra_times N -extra_vars amount_fluxes,...
 
 .. rubric:: Comments
 
@@ -130,7 +130,7 @@ Use a shortcut
 
 .. code-block:: none
 
-   pismr -extra_file ex.nc -extra_times N -extra_vars hydrology_fluxes,...
+   pism -extra_file ex.nc -extra_times N -extra_vars hydrology_fluxes,...
 
 to save all diagnostics mentioned above.
 

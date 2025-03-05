@@ -34,30 +34,26 @@ Use
 
 .. code:: bash
 
-   pismr -regional ...
+   pism -regional ...
 
 to enable PISM's "regional mode."
 
-To run a regional mode simulation using a subset of the grid in an input file, use
+To run a regional mode simulation using a subset of the grid in an input file, create a
+:ref:`grid definition file <sec-grid-file>` and then use
 
 .. code-block:: bash
 
-   pismr -regional -bootstrap -i input.NYC \
-         -x_range x_min,x_max \
-         -y_range y_min,y_max
+   pism -regional -bootstrap -i input.nc \
+        -grid.file grid_definition.nc ...
 
-where `x_{\text{min}}`, `x_{\text{max}}`, etc (in meters) define a bounding box for a
-sub-domain.
-
-To use the same subset of the domain, but at a higher resolution, add
-:opt:`-refinement_factor N` for a grid `N` times finer than the one in ``input.nc``:
+It is also possible to use the grid covering same subset of the domain but at a different
+resolution by setting :config:`grid.dx` and :config:`grid.dy`, for example:
 
 .. code-block:: bash
 
-   pismr -regional -bootstrap -i input.NYC \
-         -x_range x_min,x_max \
-         -y_range y_min,y_max \
-         -refinement_factor N
+   pism -regional -bootstrap -i input.nc \
+        -grid.file grid_definition.nc \
+        -dx 1km -dy 1km ...
 
 Ideally, modeling a region containing an ice mass extending to the edge of the domain
 would use the following time-dependent lateral boundary conditions
@@ -117,7 +113,7 @@ To use *zero* surface elevation and thickness gradients, set
 .. warning::
 
    High surface elevation and ice thickness gradients near the domain boundary *will*
-   affect time-stepping even if they do now affect model evolution.
+   affect time-stepping even if they do not affect model evolution.
 
    The resulting high SIA diffusivity will force PISM to take unreasonably short time
    steps, wasting computational time.

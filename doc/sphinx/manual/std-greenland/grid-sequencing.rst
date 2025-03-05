@@ -7,7 +7,7 @@ Grid sequencing
 
 The previous sections were not very ambitious. We were just getting started! Now we
 demonstrate a serious PISM capability, the ability to change, specifically to *refine*,
-the grid resolution at runtime.
+the grid resolution at run time.
 
 One can of course do the longest model runs using a coarse grid, like the 20 km grid used
 first. It is, however, only possible to pick up detail from high quality data, for
@@ -26,7 +26,7 @@ Consider the following command and compare it to the :ref:`first one <firstcomma
 
 .. code-block:: none
 
-   mpiexec -n 4 pismr \
+   mpiexec -n 8 pism \
            -bootstrap -i pism_Greenland_5km_v1.1.nc \
            -Mx 301 -My 561 \
            -Mz 201 -Lz 4000 -z_spacing equal \
@@ -39,7 +39,7 @@ Instead of a 20 km grid in the horizontal (``-Mx 76 -My 141``) we ask for a 5 km
 (``-Mx 301 -My 561``). Instead of vertical grid resolution of 40 m (``-Mz 101 -z_spacing
 equal -Lz 4000``) we ask for a vertical resolution of 20 m (``-Mz 201 -z_spacing equal -Lz
 4000``).\ [#bootstrapping-grid]_ Most significantly, however, we say ``-regrid_file
-g20km_10ka_hy.nc`` to regrid --- specifically, to bilinearly-interpolate --- fields from a
+g20km_10ka_hy.nc`` to regrid --- to interpolate --- fields from a
 model result computed on the coarser 20 km grid. The regridded fields (``-regrid_vars
 litho_temp,...``) are the evolving mass and energy state variables which are already
 approximately at equilibrium on the coarse grid. Because we are bootstrapping (i.e. using
@@ -75,18 +75,47 @@ options:
 .. code-block:: bash
 
    #!/bin/bash
-   NN=4
+   NN=8
    export PARAM_PPQ=0.5
-   export REGRIDFILE=g20km_10ka_hy.nc
-   export EXSTEP=100
-   ./spinup.sh $NN const 2000  10 hybrid g10km_gridseq.nc
-   export REGRIDFILE=g10km_gridseq.nc
-   export EXSTEP=10
-   ./spinup.sh $NN const 200    5 hybrid  g5km_gridseq.nc
+
+   export REGRIDFILE=g20km_10ka_hy.nc EXSTEP=100
+   ./spinup.sh $NN const 2000 10 hybrid g10km_gridseq.nc
+
+   export REGRIDFILE=g10km_gridseq.nc EXSTEP=10
+   export PISM_EXEC="pism -stress_balance.sia.max_diffusivity 1000"
+   ./spinup.sh $NN const 30days 5 hybrid g5km_smoothing.nc
+
+   export PISM_EXEC=pism
+   export REGRIDFILE=g5km_smoothing.nc EXSTEP=10
+   ./spinup.sh $NN const 200 5 hybrid g5km_gridseq.nc
 
 Environment variable ``EXSTEP`` specifies the time in years between writing the
 spatially-dependent, and large-file-size-generating, frames for the ``-extra_file ...``
 diagnostic output.
+
+.. note::
+
+   As mentioned in section :ref:`sec-sia`, PISM checks if the maximum SIA diffusivity of
+   the flow exceeds the limit set by :config:`stress_balance.sia.max_diffusivity` and
+   stops the run if it does. This protects you (the user) from wasting CPU hours on a
+   possibly flawed simulation -- very high values of SIA diffusivity force PISM's adaptive
+   time stepping mechanism to take very small time steps, significantly increasing the
+   computational cost of a simulation.
+
+   Very high SIA diffusivity can be caused by artifacts in some input fields (bed
+   topography, for example), an incompatibility between some of the inputs (for example:
+   ice thickness and bed topography) or an incompatibility between an input and PISM's
+   modeling assumptions (for example: bed topography or ice thickness representing an ice
+   mass that is not "shallow") -- among other reasons.
+
+   PISM has to deal with such incompatibilities at the start of many interesting
+   simulations. Moreover, we *expect* it to happen during the first few time steps of most
+   non-trivial setups that use realistic ice geometry.
+
+   To allow PISM to proceed until SIA diffusivity decreases to within a reasonable range
+   *without* completely disabling this warning mechanism we add a very short (30 model
+   days) "smoothing" run with :config:`stress_balance.sia.max_diffusivity` set to a very
+   large number.
 
 .. warning::
 
@@ -104,8 +133,8 @@ Run the script like this:
 
    ./gridseq.sh &> out.gridseq &
 
-The 10 km run takes under two wall-clock hours (8 processor-hours) and the 5 km run takes
-about 6 wall-clock hours (24 processor-hours).
+The 10 km run takes about two thirds of a wall-clock hour (about 5 processor-hours) and
+the 5 km run takes about 1.3 wall-clock hours (about 11 processor-hours).
 
 .. figure:: figures/g40-20-10-5km-detail.png
    :name: fig-gridseqdetail

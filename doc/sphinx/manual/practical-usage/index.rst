@@ -15,6 +15,8 @@ code modifications; see the following sub-sections for details.
 
    input-output.rst
 
+   interpolation.rst
+
    time-stepping.rst
 
    saving-time-series.rst

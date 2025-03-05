@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2023 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -169,8 +169,7 @@ void PNCFile::def_var_impl(const std::string &name, io::Type nctype,
 void PNCFile::get_vara_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,
                                    const std::vector<unsigned int> &count, double *ip) const {
-  std::vector<unsigned int> dummy;
-  return this->get_var_double(variable_name, start, count, dummy, ip, false);
+  return this->get_var_double(variable_name, start, count, ip);
 }
 
 
@@ -179,7 +178,7 @@ void PNCFile::put_vara_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &count, const double *op) const {
   int stat, varid, ndims = static_cast<int>(start.size());
 
-  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims), nc_stride(ndims);
+  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims);
 
   stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid);
   check(PISM_ERROR_LOCATION, stat);
@@ -187,21 +186,11 @@ void PNCFile::put_vara_double_impl(const std::string &variable_name,
   for (int j = 0; j < ndims; ++j) {
     nc_start[j]  = start[j];
     nc_count[j]  = count[j];
-    nc_stride[j] = 1;
   }
 
   stat = ncmpi_put_vara_double_all(m_file_id, varid, nc_start.data(), nc_count.data(), op);
   check(PISM_ERROR_LOCATION, stat);
 }
-
-
-void PNCFile::get_varm_double_impl(const std::string &variable_name,
-                                   const std::vector<unsigned int> &start,
-                                   const std::vector<unsigned int> &count,
-                                   const std::vector<unsigned int> &imap, double *ip) const {
-  return this->get_var_double(variable_name, start, count, imap, ip, true);
-}
-
 
 void PNCFile::inq_nvars_impl(int &result) const {
   int stat;
@@ -405,38 +394,21 @@ void PNCFile::set_fill_impl(int fillmode, int &old_modep) const {
 
 void PNCFile::get_var_double(const std::string &variable_name,
                              const std::vector<unsigned int> &start,
-                             const std::vector<unsigned int> &count,
-                             const std::vector<unsigned int> &imap_input, double *ip,
-                             bool transposed) const {
-  std::vector<unsigned int> imap = imap_input;
+                             const std::vector<unsigned int> &count, double *ip) const {
   int stat, varid, ndims = static_cast<int>(start.size());
 
-  if (not transposed) {
-    imap.resize(ndims);
-  }
-
-  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims), nc_imap(ndims), nc_stride(ndims);
+  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims);
 
   stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid);
   check(PISM_ERROR_LOCATION, stat);
 
   for (int j = 0; j < ndims; ++j) {
-    nc_start[j]  = start[j];
-    nc_count[j]  = count[j];
-    nc_imap[j]   = imap[j];
-    nc_stride[j] = 1;
+    nc_start[j] = start[j];
+    nc_count[j] = count[j];
   }
 
-  if (transposed) {
-    stat = ncmpi_get_varm_double_all(m_file_id, varid, nc_start.data(), nc_count.data(),
-                                     nc_stride.data(), nc_imap.data(), ip);
-    check(PISM_ERROR_LOCATION, stat);
-  } else {
-    stat = ncmpi_get_vara_double_all(m_file_id, varid,
-                                     nc_start.data(), nc_count.data(),
-                                     ip);
-    check(PISM_ERROR_LOCATION, stat);
-  }
+  stat = ncmpi_get_vara_double_all(m_file_id, varid, nc_start.data(), nc_count.data(), ip);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 void PNCFile::init_hints() {

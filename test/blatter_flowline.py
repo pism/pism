@@ -110,13 +110,13 @@ class BlatterFlowline(object):
         return np.array(self.grid.x())
 
     def bed(self):
-        return self.geometry.bed_elevation.numpy()[1, :]
+        return self.geometry.bed_elevation.to_numpy()[1, :]
 
     def surface(self):
-        return self.geometry.ice_surface_elevation.numpy()[1, :]
+        return self.geometry.ice_surface_elevation.to_numpy()[1, :]
 
     def ice_thickness(self):
-        return self.geometry.ice_thickness.numpy()[1, :]
+        return self.geometry.ice_thickness.to_numpy()[1, :]
 
     def velocity(self):
-        return self.model.velocity_u_sigma().numpy()[1, :, :]
+        return self.model.velocity_u_sigma().to_numpy()[1, :, :]

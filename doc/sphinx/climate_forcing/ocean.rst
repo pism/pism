@@ -36,7 +36,7 @@ Reading forcing data from a file
 ++++++++++++++++++++++++++++++++
 
 :|options|: ``-ocean given``
-:|variables|: :var:`shelfbtemp` Kelvin,
+:|variables|: :var:`shelfbtemp` kelvin,
               :var:`shelfbmassflux`  |flux|
 :|implementation|: ``pism::ocean::Given``
 
@@ -79,7 +79,7 @@ Basal melt rate and temperature from thermodynamics in boundary layer
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: ``-ocean th``
-:|variables|: :var:`theta_ocean` (absolute potential ocean temperature), [Kelvin],
+:|variables|: :var:`theta_ocean` (absolute potential ocean temperature), [kelvin],
               :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg]
 :|implementation|: ``pism::ocean::GivenTH``
 
@@ -91,15 +91,13 @@ equations describing
 #. the salt flux balance,
 #. the pressure and salinity dependent freezing point in the boundary layer.
 
-This model is described in :cite:`HollandJenkins1999` and :cite:`Hellmeretal1998`.
+Sub-shelf circulation is not modeled. This model is described in
+:cite:`HollandJenkins1999` and :cite:`Hellmeretal1998`.
 
 Inputs are two-dimensional, possibly time-dependent potential temperature (variable
 :var:`theta_ocean`) and salinity (variable :var:`salinity_ocean`) read from a file
 :config:`ocean.th.file`. A constant salinity (see :config:`constants.sea_water.salinity`)
 is used if the input file does not contain :var:`salinity_ocean`.
-
-No ocean circulation is modeled, so melt water computed by this model is not fed back into
-the surrounding ocean.
 
 This implementation uses different approximations of the temperature gradient at the base
 of an ice shelf column depending on whether there is sub-shelf melt, sub-shelf freeze-on,
@@ -128,7 +126,7 @@ PICO
 ++++
 
 :|options|: ``-ocean pico``
-:|variables|: :var:`theta_ocean` (potential ocean temperature), [Kelvin],
+:|variables|: :var:`theta_ocean` (potential ocean temperature), [kelvin],
 
               :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg],
 
@@ -230,7 +228,7 @@ Scalar sub-shelf temperature offsets
 
 
 :|options|: :opt:`-ocean ...,delta_T`
-:|variables|: :var:`delta_T` (Kelvin)
+:|variables|: :var:`delta_T` (kelvin)
 :|implementation|: ``pism::ocean::Delta_T``
 
 This modifier implements forcing using sub-shelf ice temperature offsets.

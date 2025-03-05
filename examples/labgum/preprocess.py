@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2013, 2014, 2016, 2018, 2020 the PISM Authors
+# Copyright (C) 2013, 2014, 2016, 2018, 2020, 2024 the PISM Authors
 
 # This script sets up the bootstrap file.
 # See also preprocess.sh.
@@ -160,7 +160,7 @@ smb_var = def_var(nc, "climatic_mass_balance", "kg m-2 s-1", fill_value)
 smb_var.standard_name = "land_ice_surface_specific_mass_balance_flux"
 smb_var[:] = smb
 
-artm_var = def_var(nc, "ice_surface_temp", "K", fill_value)
+artm_var = def_var(nc, "ice_surface_temp", "kelvin", fill_value)
 artm_var[:] = artm
 
 # set global attributes

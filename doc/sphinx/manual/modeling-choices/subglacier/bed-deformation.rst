@@ -1,6 +1,6 @@
 .. include:: ../../../global.txt
 
-.. _sec-beddef:
+.. _sec-bed-def:
 
 Earth deformation models
 ------------------------
@@ -8,6 +8,18 @@ Earth deformation models
 The option :opt:`-bed_def` ``[iso, lc, given]`` (flag :config:`bed_deformation.model`) turns one
 of the three available bed deformation models.
 
+Bed deformation timescale is longer than that of ice flow; this makes it possible to use
+*asynchronous* coupling between bed deformation and ice dynamics sub-models of PISM. The
+parameter :config:`bed_deformation.update_interval` controls the coupling interval. Update
+interval of zero corresponds to synchronous coupling.
+
+When performing a step of a bed deformation model PISM uses the *average* of the load over
+the time interval since the last update. This is necessary to avoid temporal aliasing of
+"high-frequency" variations in the ice thickness due to the annual cycle of the surface
+mass balance when sampled at a lower frequency of bed deformation updates.
+
+Here only *grounded* ice contributes to the load on the bed. We ignore the contribution of
+floating shelves and the pressure of the column of water in the ocean.
 
 .. _sec-bed-def-iso:
 
@@ -61,9 +73,9 @@ Here are minimal example runs to compare these models:
 
 .. code-block:: none
 
-   mpiexec -n 4 pismr -eisII A -y 8000 -o eisIIA_nobd.nc
-   mpiexec -n 4 pismr -eisII A -bed_def iso -y 8000 -o eisIIA_bdiso.nc
-   mpiexec -n 4 pismr -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
+   mpiexec -n 4 pism -eisII A -Mx 61 -My 61 -y 8000 -o eisIIA_nobd.nc
+   mpiexec -n 4 pism -eisII A -Mx 61 -My 61 -bed_def iso -y 8000 -o eisIIA_bdiso.nc
+   mpiexec -n 4 pism -eisII A -Mx 61 -My 61 -bed_def lc -y 8000 -o eisIIA_bdlc.nc
 
 Compare the :var:`topg`, :var:`usurf`, and :var:`dbdt` variables in the resulting output
 files. See also the comparison done in :cite:`BLKfastearth`.

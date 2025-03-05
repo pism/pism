@@ -189,7 +189,7 @@ Run PISM like this
 
 .. code-block:: bash
 
-   pismr -fp_trap -on_error_attach_debugger [other options]
+   pism -fp_trap -on_error_attach_debugger [other options]
 
 to catch floating point exceptions (division by zero, operations with a not-a-number or
 infinity, square root of a negative number, etc).

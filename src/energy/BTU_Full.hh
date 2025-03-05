@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -107,7 +107,7 @@ protected:
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
 protected:
-  //! bedrock thermal layer temperature, in degrees Kelvin; part of state; uses equally-spaced
+  //! bedrock thermal layer temperature, in kelvin; part of state; uses equally-spaced
   //! layers.
   std::shared_ptr<array::Array3D> m_temp;
 

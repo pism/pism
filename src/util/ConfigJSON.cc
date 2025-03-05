@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2016, 2018, 2023 PISM Authors
+/* Copyright (C) 2014, 2016, 2018, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,7 +41,7 @@ static json_t* find_json_value(json_t *root, const std::string &name) {
   }
 
   json_t *object = root;
-  for (auto object_name : split(name, '.')) {
+  for (const auto& object_name : split(name, '.')) {
 
     object = json_object_get(object, object_name.c_str());
 
@@ -170,10 +170,10 @@ static PISMType get_value(json_t *object, const std::string &name,
   TMPType tmp;
   if (json_unpack(value, fmt, &tmp) == 0) {
     return tmp;
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "failed to convert %s to a %s", name.c_str(), type_name);
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to convert %s to a %s", name.c_str(),
+                                type_name);
 }
 
 /*! Store a 'value' corresponding to the key 'name' in the database 'data'.
@@ -185,7 +185,7 @@ static PISMType get_value(json_t *object, const std::string &name,
  */
 static void set_value(json_t *data, const std::string &name, json_t *value) {
   std::vector<std::string> path = split(name, '.');
-  if (path.size() == 0) {
+  if (path.empty()) {
     // stop if 'name' is empty
     return;
   }
@@ -353,11 +353,7 @@ void ConfigJSON::write_impl(const File &nc) const {
 }
 
 bool ConfigJSON::is_set_impl(const std::string &name) const {
-  if (find_json_value(m_data, name) == NULL) {
-    return false;
-  } else {
-    return true;
-  }
+  return find_json_value(m_data, name) != NULL;
 }
 
 } // end of namespace pism

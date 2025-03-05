@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -204,7 +204,7 @@ enum ElementType {ELEMENT_Q = -1,
                   ELEMENT_P0 = 0, ELEMENT_P1 = 1, ELEMENT_P2 = 2, ELEMENT_P3 = 3,
                   ELEMENT_EXTERIOR};
 
-ElementType element_type(int node_type[q1::n_chi]);
+ElementType element_type(const int node_type[q1::n_chi]);
 
 //! Q1 element information.
 namespace q13d {
@@ -240,13 +240,5 @@ enum ElementFace {FACE_LEFT   = 0,
 
 } // end of namespace fem
 } // end of namespace pism
-
-#include "pism/util/fem/DirichletData.hh"
-
-#include "pism/util/fem/Element.hh"
-
-#include "pism/util/fem/ElementIterator.hh"
-
-#include "pism/util/fem/Quadrature.hh"
 
 #endif /* PISM_FEM_H */

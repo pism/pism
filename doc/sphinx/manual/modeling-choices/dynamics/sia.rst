@@ -94,12 +94,12 @@ There are two associated parameters:
 
 - :config:`stress_balance.sia.bed_smoother.range` gives the half-width of the square
   smoothing domain in meters. If zero is given then the mechanism is turned off. The
-  mechanism is on by default using executable ``pismr``, with the half-width set to 5 km,
-  giving Schoof's recommended smoothing size of 10 km :cite:`Schoofbasaltopg2003`.
+  mechanism is on by default with the half-width set to 5 km, giving Schoof's recommended
+  smoothing size of 10 km :cite:`Schoofbasaltopg2003`.
 - :config:`stress_balance.sia.bed_smoother.theta_min` is the minimum value of `\theta` in
   the parameterization.
 
-This mechanism is turned off by default in ``pismv``.
+This mechanism is turned off by default in verification tests (``pism -test ...``).
 
 Under the default :config:`output.size` (``medium``), PISM writes fields :var:`topgsmooth`
 and :var:`schoofs_theta` from this mechanism. The thickness relative to the smoothed

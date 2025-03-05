@@ -30,7 +30,7 @@ misc_options="-cfbc -part_grid -o_order zyx"
 
 pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $extra $ts $misc_options"
 
-doit="mpiexec -n $N pismr $pismopts"
+doit="mpiexec -n $N pism $pismopts"
 
 set -x
 # run with CFBC and part_grid

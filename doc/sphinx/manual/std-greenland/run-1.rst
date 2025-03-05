@@ -43,14 +43,12 @@ like this:
 
 Let's briefly deconstruct this run.
 
-At the front is "``mpiexec -n 4 pismr``". This means that the PISM executable ``pismr`` is
+At the front is "``mpiexec -n 4 pism``". This means that the PISM executable ``pism`` is
 run in parallel using four processes (usually one per CPU core) under the `Message Passing
 Interface <MPI_>`_. Though we are assuming you have a workstation or laptop with at least
 4 cores, this example will work with 1 to about 50 processors, with reasonably good
 scaling in speed. Scaling can be good with more processors if we run at higher spatial
-resolution :cite:`BBssasliding`, :cite:`DickensMorey2013`. The executable name "``pismr``"
-stands for the standard "run" mode of PISM (in contrast to specialized modes described
-later in sections :ref:`sec-verif` and :ref:`sec-simp`).
+resolution :cite:`BBssasliding`, :cite:`DickensMorey2013`.
 
 Next, the proposed run uses option ``-bootstrap`` to start the run by "bootstrapping."
 This term describes the creation, by heuristics and highly-simplified models, of the
@@ -93,7 +91,7 @@ The terminating "``&``", which is optional, asks the system to run the command i
 background so we can keep working in the current shell. Because we have re-directed the
 text output ("``&> out.g20km_10ka``"), PISM will show what it is doing in the text file
 ``out.g20km_10ka``. Using ``less`` is a good way to watch such a growing text-output file.
-This run should take around 20 minutes.
+This run should take less than 10 minutes.
 
 .. rubric:: Footnotes
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016--2023 PISM Authors
+/* Copyright (C) 2016--2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/geometry/flux_limiter.hh"
@@ -126,17 +126,17 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
     // This is the only reported field that is ghosted (we need ghosts to compute flux divergence).
     flux_staggered.metadata(0)
         .long_name("fluxes through cell interfaces (sides) on the staggered grid (x-offset)")
-        .units("m2 s-1")
-        .output_units("m2 year-1");
+        .units("m^2 s^-1")
+        .output_units("m^2 year^-1");
     flux_staggered.metadata(1)
         .long_name("fluxes through cell interfaces (sides) on the staggered grid (y-offset)")
-        .units("m2 s-1")
-        .output_units("m2 year-1");
+        .units("m^2 s^-1")
+        .output_units("m^2 year^-1");
 
     flux_divergence.metadata(0)
         .long_name("flux divergence")
-        .units("m s-1")
-        .output_units("m year-1");
+        .units("m s^-1")
+        .output_units("m year^-1");
 
     conservation_error.metadata(0)
         .long_name(
@@ -155,7 +155,7 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
 
     ice_area_specific_volume_change.metadata(0)
         .long_name("change in area-specific volume due to flow")
-        .units("meters3 / meters2");
+        .units("meters^3 / meters^2");
   }
 
   // internal storage
@@ -174,7 +174,7 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
 
     area_specific_volume.metadata(0)
         .long_name("working (ghosted) copy of the area specific volume")
-        .units("meters3 / meters2");
+        .units("meters^3 / meters^2");
 
     surface_elevation.metadata(0)
         .long_name("working (ghosted) copy of the surface elevation")
@@ -182,7 +182,7 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
 
     cell_type.metadata(0).long_name("working (ghosted) copy of the cell type mask");
 
-    residual.metadata(0).long_name("residual area specific volume").units("meters3 / meters2");
+    residual.metadata(0).long_name("residual area specific volume").units("meters^3 / meters^2");
 
     thickness.metadata(0).long_name("thickness (temporary storage)").units("meters");
   }
@@ -584,10 +584,10 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
   try {
     // compute advective fluxes and put them in output
     for (auto p = m_grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j(), M = cell_type(i, j);
+      const int i = p.i(), j = p.j(), M = cell_type.as_int(i, j);
 
       const double H   = ice_thickness(i, j);
-      const Vector2d V = velocity(i, j);
+      const Vector2d& V = velocity(i, j);
 
       for (int n = 0; n < 2; ++n) {
         const int oi = 1 - n,  // offset in the i direction
@@ -595,13 +595,13 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
             i_n      = i + oi, // i index of a neighbor
             j_n      = j + oj; // j index of a neighbor
 
-        const int M_n = cell_type(i_n, j_n);
+        const int M_n = cell_type.as_int(i_n, j_n);
 
         // advective velocity at the current interface
         double v = 0.0;
         {
-          Vector2d V_n = velocity(i_n, j_n);
-          int W = icy(M), W_n = icy(M_n);
+          const Vector2d& V_n = velocity(i_n, j_n);
+          int W = static_cast<int>(icy(M)), W_n = static_cast<int>(icy(M_n));
 
           auto v_staggered = (W * V + W_n * V_n) / std::max(W + W_n, 1);
           v                = n == 0 ? v_staggered.u : v_staggered.v;
@@ -617,7 +617,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
 
     // limit the advective flux and add the diffusive flux to it to get the total
     for (auto p = m_grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j(), M = cell_type(i, j);
+      const int i = p.i(), j = p.j(), M = cell_type.as_int(i, j);
 
       for (int n = 0; n < 2; ++n) {
         const int oi = 1 - n,  // offset in the i direction
@@ -625,7 +625,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
             i_n      = i + oi, // i index of a neighbor
             j_n      = j + oj; // j index of a neighbor
 
-        const int M_n = cell_type(i_n, j_n);
+        const int M_n = cell_type.as_int(i_n, j_n);
 
         // diffusive flux
         const double Q_diffusive = limit_diffusive_flux(M, M_n, diffusive_flux(i, j, n)),
@@ -780,7 +780,7 @@ void GeometryEvolution::update_in_place(double dt, const array::Scalar &bed_topo
     See [@ref Albrechtetal2011].
   */
   if (m_impl->use_part_grid) {
-    const int max_n_iterations = m_config->get_number("geometry.part_grid.max_iterations");
+    const int max_n_iterations = (int)m_config->get_number("geometry.part_grid.max_iterations");
 
     bool done = false;
     for (int i = 0; i < max_n_iterations and not done; ++i) {
@@ -844,7 +844,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
         continue;
       }
 
-      auto m = cell_type.star(i, j);
+      auto m = cell_type.star_int(i, j);
 
       int N = 0; // number of empty or partially filled neighbors
       for (auto d : { North, East, South, West }) {
@@ -929,11 +929,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
   // check if redistribution should be run once more
   remaining_residual = GlobalSum(m_grid->com, remaining_residual);
 
-  if (remaining_residual > 0.0) {
-    done = false;
-  } else {
-    done = true;
-  }
+  done = remaining_residual <= 0.0;
 
   ice_thickness.update_ghosts();
 }
@@ -1017,11 +1013,11 @@ static inline double effective_change(double H, double dH) {
  */
 void GeometryEvolution::compute_surface_and_basal_mass_balance(
     double dt, const array::Scalar &thickness_bc_mask, const array::Scalar &ice_thickness,
-    const array::CellType &cell_type, const array::Scalar &smb_flux,
+    const array::CellType &cell_type, const array::Scalar &surface_mass_flux,
     const array::Scalar &basal_melt_rate, array::Scalar &effective_SMB,
     array::Scalar &effective_BMB) {
 
-  array::AccessScope list{ &ice_thickness,     &smb_flux,      &basal_melt_rate, &cell_type,
+  array::AccessScope list{ &ice_thickness,     &surface_mass_flux,      &basal_melt_rate, &cell_type,
                            &thickness_bc_mask, &effective_SMB, &effective_BMB };
 
   ParallelSection loop(m_grid->com);
@@ -1041,7 +1037,7 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(
       // Thickness change due to the surface mass balance
       //
       // Note that here we convert surface mass balance from [kg m-2 s-1] to [m s-1].
-      double dH_SMB = effective_change(H, dt * smb_flux(i, j) / m_impl->ice_density);
+      double dH_SMB = effective_change(H, dt * surface_mass_flux(i, j) / m_impl->ice_density);
 
       // Thickness change due to the basal mass balance
       //
@@ -1089,25 +1085,7 @@ protected:
   std::shared_ptr<array::Array> compute_impl() const {
     auto result = allocate<array::Staggered>("flux_staggered");
 
-    const array::Staggered &input = model->flux_staggered();
-    array::Staggered &output      = *result;
-
-    // FIXME: implement array::Staggered::copy_from()
-
-    array::AccessScope list{ &input, &output };
-
-    ParallelSection loop(m_grid->com);
-    try {
-      for (auto p = m_grid->points(); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        output(i, j, 0) = input(i, j, 0);
-        output(i, j, 1) = input(i, j, 1);
-      }
-    } catch (...) {
-      loop.failed();
-    }
-    loop.check();
+    result->copy_from(model->flux_staggered());
 
     return result;
   }
@@ -1227,26 +1205,69 @@ void GeometryEvolution::set_no_model_mask_impl(const array::Scalar &mask) {
   (void) mask;
   // the default implementation is a no-op
 }
-
-void grounding_line_flux(const array::CellType1 &cell_type,
-                         const array::Staggered1 &flux,
-                         double dt,
-                         bool add_values,
-                         array::Scalar &output) {
-
+/*!
+ * Return the volumetric ice flow rate from land to water (across the grounding line), in
+ * m^3 / s. Positive values correspond to ice moving from the grounded side to the
+ * floating (ocean) side.
+ *
+ * Mass continuity equation without source terms:
+ *
+ * dH/dt = - div(Q)
+ *
+ * Approximating the flux divergence, we get
+ *
+ * - div(Q) ~= - ((Q.e - Q.w) / dx + (Q.n - Q.s) / dy)
+ *
+ * Multiplying by the cell area we get the volume flow rate
+ *
+ * dV/dt = - dx *dy * div(Q)
+ *
+ * which can be approximated by
+ *
+ * - (dy * (Q.e - Q.w) + dx * (Q.n - Q.s)) = dy * (Q.w - Q.e) + dx * (Q.s - Q.n)
+ */
+static double volume_flow_rate_from_land_to_water(const stencils::Star<int> &cell_type,
+                                                  const stencils::Star<double> &flux, double dx,
+                                                  double dy) {
   using mask::grounded;
 
+  auto Q = flux; // units: m^2 / s
+
+  // zero out fluxes between the current (floating or ocean) cell and other (floating or
+  // ocean) cells
+  Q.n *= (int)grounded(cell_type.n);
+  Q.e *= (int)grounded(cell_type.e);
+  Q.s *= (int)grounded(cell_type.s);
+  Q.w *= (int)grounded(cell_type.w);
+
+  return dy * (Q.w - Q.e) + dx * (Q.s - Q.n); // units: m^3 / s
+}
+
+/*!
+ * Compute the ice flow rate across the grounding line, adding to `output` to accumulate
+ * contributions from multiple time steps.
+ *
+ * When `unit_conversion_factor` is 1 the units of `output` are "m^3 / s".
+ *
+ * Negative flux corresponds to ice moving into the ocean, i.e. from grounded to floating
+ * areas. (This convention makes it easier to compare this quantity to the surface mass
+ * balance or calving fluxes.)
+ *
+ * Different choices of the `unit_conversion_factor` make it possible to use this in
+ *
+ * - the grounding line flux diagnostic (in kg / (m^2 s)),
+ * - the volume flow rate diagnostic (in m^3 / s),
+ * - or the mass flow rate diagnostic (in kg / s).
+ */
+void ice_flow_rate_across_grounding_line(const array::CellType1 &cell_type,
+                                         const array::Staggered1 &flux,
+                                         double unit_conversion_factor, array::Scalar &output) {
   auto grid = output.grid();
 
-  const double
-    dx = grid->dx(),
-    dy = grid->dy();
+  const double dx = grid->dx(), // units: m
+      dy          = grid->dy(); // units: m
 
-  auto cell_area = grid->cell_area();
-
-  auto ice_density = grid->ctx()->config()->get_number("constants.ice.density");
-
-  array::AccessScope list{&cell_type, &flux, &output};
+  array::AccessScope list{ &cell_type, &flux, &output };
 
   ParallelSection loop(grid->com);
   try {
@@ -1255,35 +1276,19 @@ void grounding_line_flux(const array::CellType1 &cell_type,
 
       double result = 0.0;
 
-      if (cell_type.ocean(i ,j)) {
-        auto M = cell_type.star(i, j);
-        auto Q = flux.star(i, j);
+      if (cell_type.ocean(i, j)) {
+        auto M = cell_type.star_int(i, j);
+        auto Q = flux.star(i, j); // units: m^2 / s
 
-        if (grounded(M.n)) {
-          result += Q.n * dx;
-        }
+        // note the sign change: here *negative* values correspond to ice moving from
+        // grounded to floating areas since it can sometimes be interpreted as "mass loss"
+        result = -volume_flow_rate_from_land_to_water(M, Q, dx, dy); // units: m^3 / s
 
-        if (grounded(M.e)) {
-          result += Q.e * dy;
-        }
-
-        if (grounded(M.s)) {
-          result -= Q.s * dx;
-        }
-
-        if (grounded(M.w)) {
-          result -= Q.w * dy;
-        }
-
-        // convert from "m^3 / s" to "kg / m^2"
-        result *= dt * (ice_density / cell_area);
+        // convert from "m^3 / s" to "kg"
+        result *= unit_conversion_factor;
       }
 
-      if (add_values) {
-        output(i, j) += result;
-      } else {
-        output(i, j) = result;
-      }
+      output(i, j) += result;
     }
   } catch (...) {
     loop.failed();
@@ -1291,21 +1296,18 @@ void grounding_line_flux(const array::CellType1 &cell_type,
   loop.check();
 }
 
-/*!
- * Compute the total grounding line flux over a time step, in kg.
- */
 double total_grounding_line_flux(const array::CellType1 &cell_type,
                                  const array::Staggered1 &flux,
                                  double dt) {
-  using mask::grounded;
-
   auto grid = cell_type.grid();
 
   const double
-    dx = grid->dx(),
-    dy = grid->dy();
+    dx = grid->dx(),            // units: m
+    dy = grid->dy();            // units: m
 
-  auto ice_density = grid->ctx()->config()->get_number("constants.ice.density");
+  auto ice_density = grid->ctx()->config()->get_number("constants.ice.density"); // units: kg / m^3
+
+  double conversion_factor = dt * ice_density;
 
   double total_flux = 0.0;
 
@@ -1316,31 +1318,16 @@ double total_grounding_line_flux(const array::CellType1 &cell_type,
     for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double volume_flux = 0.0;
+      if (cell_type.ocean(i, j)) {
+        auto M = cell_type.star_int(i, j);
+        auto Q = flux.star(i, j); // units: m^2 / s
 
-      if (cell_type.ocean(i ,j)) {
-        auto M = cell_type.star(i, j);
-        auto Q = flux.star(i, j); // m^2 / s
-
-        if (grounded(M.n)) {
-          volume_flux += Q.n * dx;
-        }
-
-        if (grounded(M.e)) {
-          volume_flux += Q.e * dy;
-        }
-
-        if (grounded(M.s)) {
-          volume_flux -= Q.s * dx;
-        }
-
-        if (grounded(M.w)) {
-          volume_flux -= Q.w * dy;
-        }
+        // note the sign change: here *negative* values correspond to ice moving from
+        // grounded to floating areas since it can sometimes be interpreted as "mass loss"
+        double volume_flux = -volume_flow_rate_from_land_to_water(M, Q, dx, dy); // units: m^3 / s
+        // convert from "m^3 / s" to "kg" and sum up
+        total_flux += volume_flux * conversion_factor;
       }
-
-      // convert from "m^3 / s" to "kg" and sum up
-      total_flux += volume_flux * dt * ice_density;
     }
   } catch (...) {
     loop.failed();

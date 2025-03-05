@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016, 2023 PISM Authors
+// Copyright (C) 2008-2016, 2023, 2024 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,21 +33,21 @@ IBSurfaceModel::IBSurfaceModel(std::shared_ptr<const pism::Grid> grid)
 
   massxfer.metadata(0)
       .long_name("Mass of ice being transferred Stieglitz --> Icebin")
-      .units("kg m-2 s-1")
+      .units("kg m^-2 s^-1")
       .standard_name("land_ice_surface_specific_mass_balance");
 
   enthxfer.metadata(0)
       .long_name("Enthalpy of ice being transferred Stieglitz --> Icebin")
-      .units("W m-2");
+      .units("W m^-2");
 
   // ------- Used only for mass/energy budget
   deltah.metadata(0)
       .long_name(
           "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate")
-      .units("W m-2");
+      .units("W m^-2");
 
   // ------- Dirichlet Bondary condition derived from deltah
-  ice_top_bc_temp.metadata(0).long_name("Temperature of the Dirichlet B.C.").units("K");
+  ice_top_bc_temp.metadata(0).long_name("Temperature of the Dirichlet B.C.").units("kelvin");
   ice_top_bc_wc.metadata(0).long_name("Water content of the Dirichlet B.C.").units("1");
 }
 

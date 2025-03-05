@@ -142,7 +142,7 @@ class ForcingInput(unittest.TestCase):
 
         for t, v in zip(ts, vs):
             F.interp(t)
-            V = F.numpy()[0, 0]
+            V = F.to_numpy()[0, 0]
             numpy.testing.assert_almost_equal(V, v)
 
     def test_interp_linear(self):
@@ -151,7 +151,7 @@ class ForcingInput(unittest.TestCase):
 
         for t, v in zip(self.times_linear, self.values_linear):
             F.interp(t)
-            V = F.numpy()[0, 0]
+            V = F.to_numpy()[0, 0]
             numpy.testing.assert_almost_equal(V, v)
 
     def test_missing_file(self):
@@ -396,14 +396,14 @@ class ForcingInput(unittest.TestCase):
         forcing.average(t, dt)
         # the forcing consists of 6 zeros and 6 ones, equally spaced in time. The average
         # should be zero
-        numpy.testing.assert_almost_equal(forcing.numpy()[0,0], 0.0)
+        numpy.testing.assert_almost_equal(forcing.to_numpy()[0,0], 0.0)
 
         # the average over three periods should be zero as well
         forcing.average(t, 3*dt)
-        numpy.testing.assert_almost_equal(forcing.numpy()[0,0], 0.0)
+        numpy.testing.assert_almost_equal(forcing.to_numpy()[0,0], 0.0)
 
         # averaging over a part of the period (also zero in this case)
         t = seconds(self.t[0])
         dt = seconds(self.t[-1]) - t
         forcing.average(t, dt)
-        numpy.testing.assert_almost_equal(forcing.numpy()[0,0], 0.0)
+        numpy.testing.assert_almost_equal(forcing.to_numpy()[0,0], 0.0)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2024 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -59,17 +59,6 @@ namespace fem {
 class ElementIterator {
 public:
   ElementIterator(const Grid &g);
-
-  /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
-  int element_count() {
-    return xm*ym;
-  }
-
-  /*!\brief Convert an element index (`i`,`j`) into a flattened (1-d) array index, with the first
-    element (`i`, `j`) to be iterated over corresponding to flattened index 0. */
-  int flatten(int i, int j) {
-    return (i-xs) + (j-ys)*xm;
-  }
 
   //! x-coordinate of the first element to loop over.
   int xs;

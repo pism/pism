@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,61 +45,38 @@ void Elevation::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing the constant-in-time surface processes model Elevation. Setting...\n");
 
-  units::Converter K(m_sys, "Celsius", "Kelvin");
-  // options
   {
     // ice surface temperature
     {
-      options::RealList IST("-ice_surface_temp", "ice surface temperature parameterization",
-                            {-5.0, 0.0, 1325.0, 1350.0});
-
-      if (IST->size() != 4) {
-        throw RuntimeError(PISM_ERROR_LOCATION, "option -ice_surface_temp requires an argument"
-                           " (comma-separated list of 4 numbers)");
-      }
-      m_T_min   = K(IST[0]);
-      m_T_max   = K(IST[1]);
-      m_z_T_min = IST[2];
-      m_z_T_max = IST[3];
+      m_T_min   = m_config->get_number("surface.elevation_dependent.T_min", "kelvin");
+      m_T_max   = m_config->get_number("surface.elevation_dependent.T_max", "kelvin");
+      m_z_T_min = m_config->get_number("surface.elevation_dependent.z_T_min");
+      m_z_T_max = m_config->get_number("surface.elevation_dependent.z_T_max");
     }
 
     // climatic mass balance
-    units::Converter meter_per_second(m_sys, "m year-1", "m second-1");
     {
-      options::RealList CMB("-climatic_mass_balance",
-                            "climatic mass balance parameterization",
-                            {-3.0, 4.0, 1100.0, 1450.0, 1700.0});
-      if (CMB->size() != 5) {
-        throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance requires an argument"
-                           " (comma-separated list of 5 numbers)");
-      }
-      m_M_min   = meter_per_second(CMB[0]);
-      m_M_max   = meter_per_second(CMB[1]);
-      m_z_M_min = CMB[2];
-      m_z_ELA   = CMB[3];
-      m_z_M_max = CMB[4];
+      m_M_min   = m_config->get_number("surface.elevation_dependent.M_min", "m s^-1");
+      m_M_max   = m_config->get_number("surface.elevation_dependent.M_max", "m s^-1");
+      m_z_M_min = m_config->get_number("surface.elevation_dependent.z_M_min");
+      m_z_ELA   = m_config->get_number("surface.elevation_dependent.z_ELA");
+      m_z_M_max = m_config->get_number("surface.elevation_dependent.z_M_max");
     }
 
     // limits of the climatic mass balance
     {
-      options::RealList limits("-climatic_mass_balance_limits",
-                               "lower and upper limits of the climatic mass balance", {});
-      limits_set = limits.is_set();
-      if (limits.is_set()) {
-        if (limits->size() != 2) {
-          throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance_limits requires an argument"
-                             " (a comma-separated list of 2 numbers)");
-        }
-        m_M_limit_min = meter_per_second(limits[0]);
-        m_M_limit_max = meter_per_second(limits[1]);
-      } else {
+      m_M_limit_min = m_config->get_number("surface.elevation_dependent.M_limit_min", "m s^-1");
+      m_M_limit_max = m_config->get_number("surface.elevation_dependent.M_limit_max", "m s^-1");
+
+      double eps = 1e-16;
+      if (std::fabs(m_M_limit_min - m_M_limit_max) < eps) {
         m_M_limit_min = m_M_min;
         m_M_limit_max = m_M_max;
       }
     }
   }
 
-  units::Converter meter_per_year(m_sys, "m second-1", "m year-1");
+  units::Converter meter_per_year(m_sys, "m second^-1", "m year^-1");
   m_log->message(3,
                  "     temperature at %.0f m a.s.l. = %.2f deg C\n"
                  "     temperature at %.0f m a.s.l. = %.2f deg C\n"

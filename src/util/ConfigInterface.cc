@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,8 +18,7 @@
 */
 
 #include <mpi.h>
-#include <cmath>
-#include <climits>              // PATH_MAX
+#include <cmath>                // std::round()
 #include <cstdlib>              // realpath()
 
 
@@ -74,7 +73,7 @@ void Config::read(MPI_Comm com, const std::string &filename) {
 void Config::read(const File &file) {
   this->read_impl(file);
 
-  m_impl->filename = file.filename();
+  m_impl->filename = file.name();
 }
 
 void Config::write(const File &file) const {
@@ -141,10 +140,11 @@ void Config::resolve_filenames() {
     auto last_token = pism::split(parameter, '.').back();
 
     if (last_token == "file") {
-      char resolved_path[PATH_MAX];
+      char *resolved_path = realpath(value.c_str(), NULL);
 
-      if (realpath(value.c_str(), resolved_path) != NULL) {
+      if (resolved_path != NULL) {
         set_string(parameter, resolved_path, CONFIG_USER);
+        free(resolved_path);
       }
       // Note: we keep the old value if `realpath()` failed
     }
@@ -167,11 +167,82 @@ Config::Doubles Config::all_doubles() const {
   return this->all_doubles_impl();
 }
 
-double Config::get_number(const std::string &name, UseFlag flag) const {
-  if (flag == REMEMBER_THIS_USE) {
-    m_impl->parameters_used.insert(name);
+bool Config::is_valid_number(const std::string &name) const {
+  auto value = get_number(name, FORGET_THIS_USE);
+  auto min = valid_min(name);
+
+  if (std::get<0>(min)) {
+    auto valid_min = std::get<1>(min);
+
+    if (value < valid_min) {
+      return false;
+    }
   }
-  return this->get_number_impl(name);
+
+  auto max = valid_max(name);
+  if (std::get<0>(max)) {
+    auto valid_max = std::get<1>(max);
+
+    if (value > valid_max) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+double Config::get_number(const std::string &name, UseFlag flag) const {
+  auto value = get_number_impl(name);
+
+  if (flag == REMEMBER_THIS_USE) {
+    // check the valid range (if set) and remember that this parameter was used
+    //
+    // note that we don't check the valid range when flag == FORGET_THIS_USE. This way we
+    // can get the default value of a parameter. Parameters without a default value should
+    // be set to values outside of their respective valid ranges (if possible).
+    m_impl->parameters_used.insert(name);
+
+    if (type(name) == "integer" and std::round(value) != value) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "integer parameter '%s' was set to a number with a non-zero fractional part (%f)",
+          name.c_str(), value);
+    }
+
+    auto min = valid_min(name);
+    if (std::get<0>(min)) {
+      auto valid_min = std::get<1>(min);
+
+      if (value < valid_min) {
+        if (type(name) == "integer") {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Please set '%s' to a number greater than or equal to %d",
+                                        name.c_str(), (int)valid_min);
+        }
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Please set '%s' to a number greater than or equal to %f",
+                                      name.c_str(), valid_min);
+      }
+    }
+
+    auto max = valid_max(name);
+    if (std::get<0>(max)) {
+      auto valid_max = std::get<1>(max);
+
+      if (value > valid_max) {
+        if (type(name) == "integer") {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Please set '%s' to a number less than or equal to %d",
+                                        name.c_str(), (int)valid_max);
+        }
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Please set '%s' to a number less than or equal to %f",
+                                      name.c_str(), valid_max);
+      }
+    }
+  }
+
+  return value;
 }
 
 double Config::get_number(const std::string &name,
@@ -308,7 +379,7 @@ void Config::set_flag(const std::string& name, bool value,
 }
 
 static bool special_parameter(const std::string &name) {
-  for (const auto &suffix : {"_doc", "_units", "_type", "_option", "_choices"}) {
+  for (const auto &suffix : {"_doc", "_units", "_type", "_option", "_choices", "_valid_min", "_valid_max"}) {
     if (ends_with(name, suffix)) {
       return true;
     }
@@ -370,6 +441,10 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
   for (auto d : config.all_doubles()) {
     std::string name  = d.first;
     double      value = d.second[0];
+
+    if (special_parameter(name)) {
+      continue;
+    }
 
     std::string units = config.units(name); // will be empty if not set
     std::string padding(max_name_size - name.size(), ' ');
@@ -510,83 +585,27 @@ void set_flag_from_option(Config &config, const std::string &option,
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-void set_number_from_option(units::System::Ptr unit_system, Config &config, const std::string &name,
+void set_number_from_option(units::System::Ptr unit_system, Config &config, const std::string &option,
                             const std::string &parameter) {
-  options::Real option(unit_system, "-" + name, config.doc(parameter), config.units(parameter),
-                       config.get_number(parameter, Config::FORGET_THIS_USE));
-  if (option.is_set()) {
-    config.set_number(parameter, option, CONFIG_USER);
+  options::Real opt(unit_system, "-" + option, config.doc(parameter), config.units(parameter),
+                    config.get_number(parameter, Config::FORGET_THIS_USE));
+  if (opt.is_set()) {
+    config.set_number(parameter, opt, CONFIG_USER);
   }
 }
 
-/*!
- * Use a command-line option -option to set a parameter that is a list of numbers.
- *
- * The length of the list given as an argument to the command-line option has to be the
- * same as the length of the default value of the parameter *unless* the length of the
- * default value is less than 2. This default value length is used to disable this check.
- */
-void set_number_list_from_option(Config &config, const std::string &option,
-                                 const std::string &parameter) {
-  auto default_value = config.get_numbers(parameter, Config::FORGET_THIS_USE);
-  options::RealList list("-" + option, config.doc(parameter), default_value);
-
-  if (list.is_set()) {
-    if (default_value.size() < 2 and list->size() != default_value.size()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Option -%s requires a list of %d numbers (got %d instead).",
-                                    option.c_str(), (int)default_value.size(), (int)list->size());
-    }
-
-    config.set_numbers(parameter, list, CONFIG_USER);
-  }
-}
-
-/*!
- * Use a command-line option -option to set a parameter that is a list of integers.
- *
- * The length of the list given as an argument to the command-line option has to be the
- * same as the length of the default value of the parameter *unless* the length of the
- * default value is less than 2. This default value length is used to disable this check.
- */
-void set_integer_list_from_option(Config &config, const std::string &option,
-                                  const std::string &parameter) {
-  std::vector<int> default_value;
-
-  for (auto v : config.get_numbers(parameter, Config::FORGET_THIS_USE)) {
-    default_value.push_back(v);
-  }
-
-  options::IntegerList list("-" + option, config.doc(parameter), default_value);
-
-  std::vector<double> value;
-  for (auto v : list.value()) {
-    value.push_back(v);
-  }
-
-  if (list.is_set()) {
-    if (default_value.size() < 2 and value.size() != default_value.size()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Option -%s requires a list of %d integers (got %d instead).",
-                                    option.c_str(), (int)default_value.size(), (int)value.size());
-    }
-
-    config.set_numbers(parameter, value, CONFIG_USER);
-  }
-}
-
-void set_integer_from_option(Config &config, const std::string &name,
+void set_integer_from_option(Config &config, const std::string &option,
                              const std::string &parameter) {
-  options::Integer option("-" + name, config.doc(parameter),
-                          (int)config.get_number(parameter, Config::FORGET_THIS_USE));
-  if (option.is_set()) {
-    config.set_number(parameter, option, CONFIG_USER);
+  options::Integer opt("-" + option, config.doc(parameter),
+                       (int)config.get_number(parameter, Config::FORGET_THIS_USE));
+  if (opt.is_set()) {
+    config.set_number(parameter, opt, CONFIG_USER);
   }
 }
 
-void set_string_from_option(Config &config, const std::string &name, const std::string &parameter) {
+void set_string_from_option(Config &config, const std::string &option, const std::string &parameter) {
 
-  options::String value("-" + name, config.doc(parameter),
+  options::String value("-" + option, config.doc(parameter),
                         config.get_string(parameter, Config::FORGET_THIS_USE));
   if (value.is_set()) {
     config.set_string(parameter, value, CONFIG_USER);
@@ -599,10 +618,10 @@ void set_string_from_option(Config &config, const std::string &name, const std::
  * option. This option requires an argument, which has to match one of the
  * keyword given in a comma-separated list "choices_list".
  */
-void set_keyword_from_option(Config &config, const std::string &name, const std::string &parameter,
+void set_keyword_from_option(Config &config, const std::string &option, const std::string &parameter,
                              const std::string &choices) {
 
-  options::Keyword keyword("-" + name, config.doc(parameter), choices,
+  options::Keyword keyword("-" + option, config.doc(parameter), choices,
                            config.get_string(parameter, Config::FORGET_THIS_USE));
 
   if (keyword.is_set()) {
@@ -670,60 +689,6 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
     set_parameter_from_options(unit_system, config, b.first);
   }
 
-  // Energy modeling
-  {
-    options::Keyword energy("-energy",
-                            "choose the energy model (one of 'none', 'cold', 'enthalpy')",
-                            "none,cold,enthalpy", "enthalpy");
-
-    if (energy.is_set()) {
-      if (energy == "none") {
-        config.set_flag("energy.enabled", false, CONFIG_USER);
-        // Allow selecting cold ice flow laws in isothermal mode.
-        config.set_flag("energy.temperature_based", true, CONFIG_USER);
-      } else if (energy == "cold") {
-        config.set_flag("energy.enabled", true, CONFIG_USER);
-        config.set_flag("energy.temperature_based", true, CONFIG_USER);
-      } else if (energy == "enthalpy") {
-        config.set_flag("energy.enabled", true, CONFIG_USER);
-        config.set_flag("energy.temperature_based", false, CONFIG_USER);
-      } else {
-        throw RuntimeError(PISM_ERROR_LOCATION,
-                           "this can't happen: options::Keyword validates input");
-      }
-    }
-  }
-
-  // -topg_to_phi
-  {
-    std::vector<double> defaults = {
-      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
-      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
-      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
-      config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max")
-    };
-
-    options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max", defaults);
-    if (topg_to_phi.is_set()) {
-      if (topg_to_phi->size() != 4) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "option -topg_to_phi expected 4 numbers; got %d",
-                                      (int)topg_to_phi->size());
-      }
-      config.set_flag("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
-      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
-      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
-      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
-      config.set_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
-    }
-  }
-  // Ice shelves
-
-  bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
-  if (nu_bedrock) {
-    config.set_flag("stress_balance.ssa.fd.lateral_drag.enabled", true, CONFIG_USER);
-  }
-
   // Shortcuts
 
   // option "-pik" turns on a suite of PISMPIK effects (but NOT a calving choice,
@@ -752,15 +717,6 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
     config.set_flag("geometry.part_grid.enabled", true, CONFIG_USER);
   }
 
-  bool test_climate_models =
-      options::Bool("-test_climate_models", "Disable ice dynamics to test climate models");
-  if (test_climate_models) {
-    config.set_string("stress_balance.model", "none", CONFIG_USER);
-    config.set_flag("energy.enabled", false, CONFIG_USER);
-    config.set_flag("age.enabled", false, CONFIG_USER);
-    // let the user decide if they want to use "-no_mass" or not
-  }
-
   // If frontal melt code includes floating ice, routing hydrology should include it also.
   if (config.get_string("hydrology.model") == "routing") {
     if (config.get_flag("frontal_melt.include_floating_ice")) {
@@ -772,17 +728,77 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
     // use MKS units in ISMIP6 mode
     config.set_flag("output.use_MKS", true);
   }
+
+  // Special command-line options for "-surface elevation,...":
+  {
+    options::String T("-ice_surface_temp", "ice surface temperature parameterization");
+
+    if (T.is_set()) {
+      auto IST = parse_number_list(T);
+
+      if (IST.size() != 4) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "option -ice_surface_temp requires an argument"
+                                                " (comma-separated list of 4 numbers)");
+      }
+
+      config.set_number("surface.elevation_dependent.T_min", IST[0]);
+      config.set_number("surface.elevation_dependent.T_max", IST[1]);
+      config.set_number("surface.elevation_dependent.z_T_min", IST[2]);
+      config.set_number("surface.elevation_dependent.z_T_max", IST[3]);
+    }
+
+    options::String M("-climatic_mass_balance", "climatic mass balance parameterization");
+
+    if (M.is_set()) {
+      auto CMB = parse_number_list(M);
+
+      if (CMB.size() != 5) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance requires an argument"
+                                                " (comma-separated list of 5 numbers)");
+      }
+
+      config.set_number("surface.elevation_dependent.M_min", CMB[0]);
+      config.set_number("surface.elevation_dependent.M_max", CMB[1]);
+      config.set_number("surface.elevation_dependent.z_M_min", CMB[2]);
+      config.set_number("surface.elevation_dependent.z_ELA", CMB[3]);
+      config.set_number("surface.elevation_dependent.z_M_max", CMB[4]);
+    }
+
+    options::String limits("-climatic_mass_balance_limits",
+                           "lower and upper limits of the climatic mass balance");
+
+    if (limits.is_set()) {
+
+      auto L = parse_number_list(limits);
+
+      if (L.size() != 2) {
+        throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance_limits requires an argument"
+                                                " (a comma-separated list of 2 numbers)");
+      }
+
+      units::Converter meter_per_second(unit_system, "m year^-1", "m second^-1");
+
+      config.set_number("surface.elevation_dependent.M_limit_min", meter_per_second(L[0]));
+      config.set_number("surface.elevation_dependent.M_limit_max", meter_per_second(L[1]));
+    }
+  }
 }
 
 //! Create a configuration database using command-line options.
 Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system) {
 
-  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system)),
-      overrides(new DefaultConfig(com, "pism_overrides", "-config_override", unit_system));
+  using T         = DefaultConfig;
+  auto  config    = std::make_shared<T>(com, "pism_config", "-config", unit_system);
+  auto  overrides = std::make_shared<T>(com, "pism_overrides", "-config_override", unit_system);
+
   overrides->init(log);
+
   config->init_with_default(log);
+
   config->import_from(*overrides);
+
   set_config_from_options(unit_system, *config);
+
   config->resolve_filenames();
 
   return config;
@@ -855,6 +871,18 @@ std::string Config::choices(const std::string &parameter) const {
   return this->get_string(parameter + "_choices", Config::FORGET_THIS_USE);
 }
 
+std::pair<bool, double> Config::valid_min(const std::string &parameter) const {
+  if (is_set(parameter + "_valid_min")) {
+    return { true, get_number(parameter + "_valid_min", Config::FORGET_THIS_USE) };
+  }
+  return { false, {} };
+}
 
+std::pair<bool, double> Config::valid_max(const std::string &parameter) const {
+  if (is_set(parameter + "_valid_max")) {
+    return { true, get_number(parameter + "_valid_max", Config::FORGET_THIS_USE) };
+  }
+  return { false, {} };
+}
 
 } // end of namespace pism

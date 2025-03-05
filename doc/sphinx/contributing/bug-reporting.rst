@@ -14,7 +14,7 @@ e-mail to |pism-email|.
 Please include the following information in **all** bug-reports and questions about
 particular PISM's behavior:
 
-- the PISM version (the output of `pismr -version`),
+- the PISM version (the output of `pism -version`),
 - the **full** command necessary to reproduce the bug,
 - the input files used by the run reproducing the bug,
 - a description of what PISM does wrong.

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,13 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <petscconf.h>
+#include <petscconfiginfo.h>
+
 namespace pism {
+
+#if !defined(PETSC_USE_REAL_DOUBLE)
+#error "PISM requires PETSc built with PetscScalar == double"
+#endif
 
 const char *config_file = "${Pism_CONFIG_FILE}";
 
-const char *revision = "${Pism_REVISION_TAG}";
+const char *revision = "${Pism_VERSION_LONG}";
 
-const char *petsc_configure_flags = "${Pism_PETSC_CONFIGURE_FLAGS}";
+const char *petsc_configure_flags = petscconfigureoptions;
 
 const char *petsc4py_version = "${Pism_PETSC4PY_VERSION}";
 

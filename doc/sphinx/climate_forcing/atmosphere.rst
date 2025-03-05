@@ -166,7 +166,7 @@ One weather station
 
 :|options|: :opt:`-atmosphere one_station`
             :opt:`-atmosphere_one_station_file`
-:|variables|: :var:`air_temp` [Kelvin],
+:|variables|: :var:`air_temp` [kelvin],
               :var:`precipitation` |flux|
 :|implementation|: ``pism::atmosphere::WeatherStation``
 
@@ -191,7 +191,7 @@ Scalar temperature offsets
 This modifier applies scalar time-dependent air temperature offsets to the output of an
 atmosphere model.
 
-Please make sure that :var:`delta_T` has the units of "``Kelvin``".
+Please make sure that :var:`delta_T` has the units of "``kelvin``".
 
 .. rubric:: Parameters
 
@@ -251,7 +251,7 @@ Precipitation correction using scalar temperature offsets
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: ``-atmosphere ...,precip_scaling``
-:|variables|: :var:`delta_T` [degrees Kelvin]
+:|variables|: :var:`delta_T` [kelvin]
 :|implementation|: ``pism::atmosphere::PrecipitationScaling``
 
 This modifier implements the SeaRISE-Greenland formula for a precipitation correction from
@@ -386,8 +386,27 @@ equation 49 in :cite:`SmithBarstad2004` or equation 3 in :cite:`SmithBarstadBonn
 where `h` is the surface elevation, `C_w = \rho_{S_{\text{ref}}} \Gamma_m / \gamma`
 relates the condensation rate to vertical motion (see the appendix of
 :cite:`SmithBarstad2004`), `m` is the vertical wavenumber (see equation 6 in
-:cite:`SmithBarstadBonneau2005`), and `\sigma` is the intrinsic frequency. The rest of the
-constants are defined below.
+:cite:`SmithBarstadBonneau2005`), and `\sigma = U k + V l` is the intrinsic frequency.
+Here `U` and `V` are components of the wind velocity, `\phi` is the wind direction angle
+in degrees and `W` is the wind speed:
+
+.. math::
+
+   U &= -\sin(\phi \cdot \pi / 180) \cdot W,
+
+   V &= -\cos(\phi \cdot \pi / 180) \cdot W.
+
+.. note::
+
+   The angle `\phi` is measured clockwise from the `y` direction of PISM's coordinate
+   system, i.e. `\phi=270^\circ` corresponds to the wind blowing along the `x` axis of the
+   grid.
+
+   Depending on the coordinate reference system in use this may or may not coincide with
+   the north-based azimuth.
+
+
+The rest of the constants are defined below.
 
 The spatial pattern of precipitation is recovered using an inverse Fourier transform
 followed by post-processing:

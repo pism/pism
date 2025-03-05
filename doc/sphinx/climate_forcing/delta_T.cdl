@@ -5,14 +5,14 @@ dimensions:
 variables:
   double nv(nv) ;
   double time(time) ;
-    time:units = "365 days since 1-1-1" ;
+    time:units = "common_year since 1-1-1" ;
     time:axis = "T" ;
     time:bounds = "time_bounds" ;
     time:calendar = "365_day" ;
     time:long_name = "time" ;
   double time_bounds(time, nv) ;
   double delta_T(time) ;
-    delta_T:units = "Kelvin" ;
+    delta_T:units = "kelvin" ;
     delta_T:long_name = "temperature offsets" ;
 data:
 

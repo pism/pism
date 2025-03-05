@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2021, 2023 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2021, 2023, 2024 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@ void IceBasalResistancePlasticLaw::print_info(const Logger &log,
                                               int threshold,
                                               units::System::Ptr system) const {
   log.message(threshold, "Using purely plastic till with eps = %10.5e m year-1.\n",
-              units::convert(system, m_plastic_regularize, "m second-1", "m year-1"));
+              units::convert(system, m_plastic_regularize, "m second^-1", "m year^-1"));
 }
 
 
@@ -72,26 +72,28 @@ void IceBasalResistancePlasticLaw::drag_with_derivative(double tauc, double vx, 
 
 IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const Config &config)
   : IceBasalResistancePlasticLaw(config) {
-  m_pseudo_q = config.get_number("basal_resistance.pseudo_plastic.q");
-  m_pseudo_u_threshold = config.get_number("basal_resistance.pseudo_plastic.u_threshold", "m second-1");
+  m_q = config.get_number("basal_resistance.pseudo_plastic.q");
+  m_u_threshold = config.get_number("basal_resistance.pseudo_plastic.u_threshold", "m second-1");
   m_sliding_scale_factor_reduces_tauc = config.get_number("basal_resistance.pseudo_plastic.sliding_scale_factor");
+
+  m_u_threshold_factor = pow(m_u_threshold, -m_q);
 }
 
 void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
                                                     int threshold,
                                                     units::System::Ptr system) const {
 
-  if (m_pseudo_q == 1.0) {
+  if (m_q == 1.0) {
     log.message(threshold,
                  "Using linearly viscous till with u_threshold = %.2f m year-1.\n",
-                 units::convert(system, m_pseudo_u_threshold, "m second-1", "m year-1"));
+                 units::convert(system, m_u_threshold, "m second^-1", "m year^-1"));
   } else {
     log.message(threshold,
                  "Using pseudo-plastic till with eps = %10.5e m year-1, q = %.4f,"
                  " and u_threshold = %.2f m year-1.\n",
-                 units::convert(system, m_plastic_regularize, "m second-1", "m year-1"),
-                 m_pseudo_q,
-                 units::convert(system, m_pseudo_u_threshold, "m second-1", "m year-1"));
+                 units::convert(system, m_plastic_regularize, "m second^-1", "m year^-1"),
+                 m_q,
+                 units::convert(system, m_u_threshold, "m second^-1", "m year^-1"));
   }
 }
 
@@ -154,10 +156,10 @@ double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double v
   double Aq = 1.0;
 
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
-    Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
+    Aq = pow(m_sliding_scale_factor_reduces_tauc, m_q);
   }
 
-  return (tauc / Aq) * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
+  return (tauc / Aq) * pow(magreg2, 0.5*(m_q - 1)) * m_u_threshold_factor;
 }
 
 
@@ -175,14 +177,14 @@ void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, doubl
   const double magreg2 = square(m_plastic_regularize) + square(vx) + square(vy);
 
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
-    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
-    *beta = (tauc / Aq) * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
+    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_q);
+    *beta = (tauc / Aq) * pow(magreg2, 0.5*(m_q - 1)) * m_u_threshold_factor;
   } else {
-    *beta =  tauc * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
+    *beta =  tauc * pow(magreg2, 0.5*(m_q - 1)) * m_u_threshold_factor;
   }
 
   if (dbeta) {
-    *dbeta = (m_pseudo_q - 1) * (*beta) / magreg2;
+    *dbeta = (m_q - 1) * (*beta) / magreg2;
   }
 
 }
@@ -191,8 +193,8 @@ void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, doubl
 
 IceBasalResistanceRegularizedLaw::IceBasalResistanceRegularizedLaw(const Config &config)
   : IceBasalResistancePlasticLaw(config) {
-  m_pseudo_q = config.get_number("basal_resistance.pseudo_plastic.q");
-  m_pseudo_u_threshold = config.get_number("basal_resistance.pseudo_plastic.u_threshold", "m second-1");
+  m_q = config.get_number("basal_resistance.pseudo_plastic.q");
+  m_u_threshold = config.get_number("basal_resistance.pseudo_plastic.u_threshold", "m second-1");
   m_sliding_scale_factor_reduces_tauc = config.get_number("basal_resistance.pseudo_plastic.sliding_scale_factor");
 }
 
@@ -202,19 +204,19 @@ void IceBasalResistanceRegularizedLaw::print_info(const Logger &log,
   log.message(threshold,
               "Using regularized Coulomb till with eps = %10.5e m year-1, q = %.4f,"
               " and u_threshold = %.2f m year-1.\n",
-              units::convert(system, m_plastic_regularize, "m second-1", "m year-1"),
-              m_pseudo_q,
-              units::convert(system, m_pseudo_u_threshold, "m second-1", "m year-1"));
+              units::convert(system, m_plastic_regularize, "m second^-1", "m year^-1"),
+              m_q,
+              units::convert(system, m_u_threshold, "m second^-1", "m year^-1"));
 }
 
 double IceBasalResistanceRegularizedLaw::drag(double tauc, double vx, double vy) const {
   const double magreg2sqr = sqrt(square(m_plastic_regularize) + square(vx) + square(vy));
 
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
-    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
-    return (tauc / Aq) * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_q);
+    return (tauc / Aq) * pow(magreg2sqr, (m_q - 1)) * pow((magreg2sqr + m_u_threshold), -m_q);
   } else {
-    return tauc * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+    return tauc * pow(magreg2sqr, (m_q - 1)) * pow((magreg2sqr + m_u_threshold), -m_q);
   }
 }
 
@@ -234,14 +236,14 @@ void IceBasalResistanceRegularizedLaw::drag_with_derivative(double tauc, double 
                magreg2sqr = sqrt(magreg2);
 
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
-    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
-    *beta = (tauc / Aq) * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_q);
+    *beta = (tauc / Aq) * pow(magreg2sqr, (m_q - 1)) * pow((magreg2sqr + m_u_threshold), -m_q);
   } else {
-    *beta =  tauc * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+    *beta =  tauc * pow(magreg2sqr, (m_q - 1)) * pow((magreg2sqr + m_u_threshold), -m_q);
   }
 
   if (dbeta) {
-    *dbeta = (((m_pseudo_q - 1) / magreg2) - (m_pseudo_q / (magreg2sqr * (magreg2sqr + m_pseudo_u_threshold)))) * (*beta);
+    *dbeta = (((m_q - 1) / magreg2) - (m_q / (magreg2sqr * (magreg2sqr + m_u_threshold)))) * (*beta);
   }
 }
 

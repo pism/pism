@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -113,11 +113,11 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
 
   m_air_temp_sd->metadata(0)
       .long_name("standard deviation of near-surface air temperature")
-      .units("Kelvin");
+      .units("kelvin");
 
   m_mass_flux.metadata(0)
       .long_name("instantaneous surface mass balance (accumulation/ablation) rate")
-      .units("kg m-2 s-1")
+      .units("kg m^-2 s^-1")
       .standard_name("land_ice_surface_specific_mass_balance_flux");
   m_mass_flux.metadata().set_string("comment", "positive values correspond to ice gain");
 
@@ -131,17 +131,17 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
 
     m_temperature_driven_melt.metadata(0)
         .long_name("temperature-driven melt in dEBM-simple")
-        .units("kg m-2");
+        .units("kg m^-2");
     m_temperature_driven_melt.set(0.0);
 
     m_insolation_driven_melt.metadata(0)
         .long_name("insolation-driven melt in dEBM-simple")
-        .units("kg m-2");
+        .units("kg m^-2");
     m_insolation_driven_melt.set(0.0);
 
     m_offset_melt.metadata(0)
         .long_name("offset melt in dEBM-simple")
-        .units("kg m-2");
+        .units("kg m^-2");
     m_offset_melt.set(0.0);
   }
 
@@ -278,7 +278,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
-  std::vector<DEBMSimplePointwise::OrbitalParameters> orbital(N);
+  std::vector<DEBMSimpleOrbitalParameters> orbital(N);
 
   for (int k = 0; k < N; ++k) {
     ts[k] = t + k * dtseries;
@@ -419,7 +419,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           DEBMSimpleMelt melt_info{};
           if (not mask::ice_free_ocean(cell_type)) {
 
-            melt_info = m_model.melt(orbital[k].declination,
+            melt_info = m_model.melt(orbital[k].solar_declination,
                                      orbital[k].distance_factor,
                                      dtseries,
                                      S[k],
@@ -573,7 +573,7 @@ public:
     m_vars[0]
         .long_name(
             "mean top of atmosphere insolation during the period when the sun is above the critical angle Phi")
-        .units("W m-2");
+        .units("W m^-2");
   }
 
 protected:
@@ -594,9 +594,9 @@ protected:
       for (auto p = m_grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        (*result)(i, j) = M.insolation(orbital.declination,
-                                       orbital.distance_factor,
-                                       (*latitude)(i, j));
+        (*result)(i, j) = M.insolation_diagnostic(orbital.solar_declination,
+                                                  orbital.distance_factor,
+                                                  (*latitude)(i, j));
       }
     }
 
@@ -621,14 +621,14 @@ public:
     std::string
       name          = "debm_insolation_driven_melt_flux",
       long_name     = "surface insolation melt, averaged over the reporting interval",
-      accumulator_units = "kg m-2",
-      internal_units = "kg m-2 second-1",
-      external_units = "kg m-2 year-1";
+      accumulator_units = "kg m^-2",
+      internal_units = "kg m^-2 second^-1",
+      external_units = "kg m^-2 year^-1";
     if (kind == MASS) {
       name          = "debm_insolation_driven_melt_rate";
       accumulator_units = "kg";
-      internal_units = "kg second-1";
-      external_units = "Gt year-1";
+      internal_units = "kg second^-1";
+      external_units = "Gt year^-1";
     }
 
     m_accumulator.metadata().units(accumulator_units);
@@ -677,14 +677,14 @@ public:
     std::string
       name          = "debm_temperature_driven_melt_flux",
       long_name     = "temperature-driven melt, averaged over the reporting interval",
-      accumulator_units = "kg m-2",
-      internal_units = "kg m-2 second-1",
-      external_units = "kg m-2 year-1";
+      accumulator_units = "kg m^-2",
+      internal_units = "kg m^-2 second^-1",
+      external_units = "kg m^-2 year^-1";
     if (kind == MASS) {
       name          = "debm_temperature_driven_melt_rate";
       accumulator_units = "kg";
-      internal_units = "kg second-1";
-      external_units = "Gt year-1";
+      internal_units = "kg second^-1";
+      external_units = "Gt year^-1";
     }
 
     m_accumulator.metadata().units(accumulator_units);
@@ -730,15 +730,15 @@ public:
 
     std::string name              = "debm_offset_melt_flux",
                 long_name         = "offset melt, averaged over the reporting interval",
-                accumulator_units = "kg m-2",
-                internal_units    = "kg m-2 second-1",
-                external_units    = "kg m-2 year-1";
+                accumulator_units = "kg m^-2",
+                internal_units    = "kg m^-2 second^-1",
+                external_units    = "kg m^-2 year^-1";
 
     if (kind == MASS) {
       name              = "debm_offset_melt_rate";
       accumulator_units = "kg";
-      internal_units    = "kg second-1";
-      external_units    = "Gt year-1";
+      internal_units    = "kg second^-1";
+      external_units    = "Gt year^-1";
     }
     m_accumulator.metadata().units(accumulator_units);
 

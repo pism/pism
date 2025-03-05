@@ -31,7 +31,7 @@ set +u
 
 if [[ -n ${present_day} ]];
 then
-  pismr \
+  pism \
     ${common_options} \
     -surface debm_simple \
     ;
@@ -40,7 +40,7 @@ fi
 if [[ -n ${paleo} ]];
 then
   orbital_parameters=${3:-}
-  pismr \
+  pism \
     ${common_options} \
     -surface debm_simple \
     -surface.debm_simple.paleo.enabled \
@@ -51,7 +51,7 @@ fi
 if [[ -n ${albedo} ]];
 then
   albedo_file=${3:-}
-  pismr \
+  pism \
     ${common_options} \
     -surface debm_simple \
     -surface.debm_simple.albedo_input.file ${albedo_file} \

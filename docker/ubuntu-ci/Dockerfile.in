@@ -1,67 +1,85 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required packages listed in the manual. This is done separately so that we can
 # re-use this fs layer.
 RUN set -eux; \
-        apt-get update && apt-get install -y \
+        apt-get update && apt-get install -y --no-install-recommends \
         ${PISM_DEBIAN_PACKAGE_LIST} \
         ; \
         rm -rf /var/lib/apt/lists/*
 
 # Install tools:
-# - ccache and lld to speed up builds,
-# - Cython to build PETSc
+# - Cython to build PETSc with petsc4py
+# - python3-setuptools is needed to build PETSc with petsc4py
 # - wget to download sources of I/O libraries
 # - NumPy is used by petsc4py and PISM's scripts
 # - SciPy is used by at least one regression test
-# - python-netcdf4 is use by many regression tests
+# - python-netcdf4 is used by many regression tests
 # - NCO is used by many regression tests
 # - PROJ is used by PISM's code computing lon,lat coordinates
 # - python3-dev is needed to build Python bindings
 # - python3-nose is used to run some regression tests
 # - SWIG is needed to build Python bindings
-# - MPICH is needed to build PETSc and PISM
+# - OpenMPI is needed to build PETSc and PISM
 # - doxygen and graphviz are needed to build the source code browser
-# - python2 is needed to install old PETSc
-# - gcc-10 and g++-10 are needed to build old CMake and for testing
+# - various versions of GCC and Clang are used to catch compilation issues
+# - latexmk is needed to build the PDF version of the manual
+# - Sphinx and sphinxcontrib-bibtex are needed to build the manual
+# - build-essential is needed to build .deb packages
+# - cdo is used by a regression test
+# - ccache used to speed up re-compilation when running tests locally
 RUN set -eux; \
-    apt-get update && apt-get install -y \
+    apt-get update && apt-get install -y --no-install-recommends \
     apt-utils \
+    autoconf \
+    automake \
+    build-essential \
     ccache \
-    clang \
-    clang-11 \
-    clang-12 \
-    clang-13 \
+    cdo \
     clang-14 \
     clang-15 \
+    clang-16 \
+    clang-17 \
+    clang-18 \
+    clang-tools-18 \
     cython3 \
     doxygen \
     g++-10 \
     g++-11 \
     g++-12 \
+    g++-13 \
+    g++-14 \
     g++-9 \
     gcc-10 \
     gcc-11 \
     gcc-12 \
+    gcc-13 \
+    gcc-14 \
     gcc-9 \
+    gfortran \
     graphviz \
     latexmk \
-    libmpich-dev \
+    libfyaml-dev \
+    libopenmpi-dev \
     libproj-dev \
+    libtool \
     lld \
     m4 \
+    make \
     nco \
-    python2 \
+    pkg-config \
     python3-dev \
     python3-netcdf4 \
     python3-nose \
     python3-numpy \
-    python3-pip \
     python3-scipy \
+    python3-setuptools \
     python3-sphinx \
     python3-sphinxcontrib.bibtex \
     swig \
+    tex-gyre \
+    texlive-fonts-recommended \
     texlive-latex-extra \
     texlive-latex-recommended \
     wget \
@@ -71,7 +89,7 @@ RUN set -eux; \
 RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
 
-# Install parallel HDF5, NetCDF, PnetCDF, and ParallelIO by building them from sources.
+# Install parallel HDF5, NetCDF and PnetCDF by building them from sources.
 #
 # Uses wget installed above.
 #
@@ -79,17 +97,41 @@ USER builder
 # manual. Re-using them here makes it easier to keep this part of the manual up to date.
 
 COPY hdf5.sh /tmp/
-COPY netcdf.sh /tmp/
-COPY pnetcdf.sh /tmp/
-COPY parallelio.sh /tmp/
+RUN <<EOF
+    set -eux
+    cd /tmp
+    ./hdf5.sh
+    rm -rf ~/local/build
+EOF
 
-RUN set -eux; \
+COPY pnetcdf.sh /tmp/
+RUN <<EOF
+    set -eux
+    cd /tmp
+    ./pnetcdf.sh
+    rm -rf ~/local/build
+EOF
+
+COPY netcdf.sh /tmp/
+RUN <<EOF
+    set -eux
+    cd /tmp
+    ./netcdf.sh
+    rm -rf ~/local/build
+EOF
+
+# Build the oldest supported CMake version
+COPY cmake-3_16_0.sh /tmp/
+RUN set -eux;\
         cd /tmp && \
-        ./hdf5.sh && \
-        ./netcdf.sh && \
-        ./pnetcdf.sh && \
-        ./parallelio.sh && \
-        rm -rf ~/local/build
+        ./cmake-3_16_0.sh
+
+# Build YAXT and YAC
+COPY yac.sh /tmp/
+RUN set -eux;\
+    cd /tmp && \
+    ./yac.sh && \
+    rm -rf yaxt yac
 
 # Build the current PETSc version
 COPY petsc.sh /tmp/
@@ -99,20 +141,23 @@ RUN set -eux;\
         rm -rf ~/local/build
 
 # Build the oldest supported PETSc version. The goal is to check if PISM's C++ code
-# compiles with PETSc 3.7. We do not support PISM's Python bindings with old PETSc
+# compiles with PETSc 3.11. We do not support PISM's Python bindings with old PETSc
 # versions, so we build PETSc without petsc4py here.
 COPY old-petsc.sh /tmp/
 RUN set -eux;\
         cd /tmp && \
-        version=3.7.0 ./old-petsc.sh && \
+        version=3.11.0 ./old-petsc.sh && \
         rm -rf ~/local/build
 
-# Build the oldest supported CMake version
-COPY cmake-3_7_0.sh /tmp/
+# Build the current PETSc version with 64-bit indices
+COPY petsc-64bit.sh /tmp/
 RUN set -eux;\
         cd /tmp && \
-        ./cmake-3_7_0.sh && \
+        ./petsc-64bit.sh && \
         rm -rf ~/local/build
 
+# OMPI_MCA_plm_rsh_agent="" is needed to silence OpenMPI
 ENV PETSC_DIR="/home/builder/local/petsc" \
-    PYTHONPATH="/home/builder/local/petsc/lib"
+    PYTHONPATH="/home/builder/local/petsc/lib" \
+    OMPI_MCA_plm_rsh_agent="" \
+    OMPI_MCA_rmaps_base_oversubscribe=yes

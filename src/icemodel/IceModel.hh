@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -141,11 +141,6 @@ public:
   const array::Scalar &frontal_melt() const;
   const array::Scalar &forced_retreat() const;
 
-  double ice_volume_temperate(double thickness_threshold) const;
-  double ice_volume_cold(double thickness_threshold) const;
-  double temperate_base_area(double thickness_threshold) const;
-  double cold_base_area(double thickness_threshold) const;
-
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
   const energy::BedThermalUnit* bedrock_thermal_model() const;
@@ -240,17 +235,15 @@ protected:
   //! Computational grid
   const std::shared_ptr<Grid> m_grid;
   //! Configuration flags and parameters
-  const Config::Ptr m_config;
+  Config::Ptr m_config;
   //! Execution context
-  const std::shared_ptr<Context> m_ctx;
+  std::shared_ptr<Context> m_ctx;
   //! Unit system
   const units::System::Ptr m_sys;
   //! Logger
   const Logger::Ptr m_log;
   //! Time manager
   const Time::Ptr m_time;
-
-  const int m_wide_stencil;
 
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
@@ -356,7 +349,14 @@ protected:
   enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
   void enforce_consistency_of_geometry(ConsistencyFlag flag);
 
-  void identify_open_ocean(const array::CellType &cell_type, array::Scalar &result);
+  /*!
+   * Compute the mask (`result`) identifying "open ocean" cells, i.e. "ice free ocean"
+   * cells that are reachable from open ocean cells at an edge of the domain.
+   *
+   * Here `result` is ghosted so that we can pass it to the connected component labeling
+   * algorithm.
+   */
+  void identify_open_ocean(const array::CellType &cell_type, array::Scalar1 &result);
 
   virtual void front_retreat_step();
 
@@ -392,8 +392,6 @@ protected:
   static const int m_n_work2d = 4;
   mutable std::vector<std::shared_ptr<array::Scalar2>> m_work2d;
 
-  std::shared_ptr<petsc::Vec> m_work2d_proc0;
-
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
   struct ThicknessChanges {
@@ -425,7 +423,8 @@ protected:
 
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
-  bool m_save_snapshots, m_snapshots_file_is_ready, m_split_snapshots;
+  std::shared_ptr<File> m_snapshot_file;
+  bool m_split_snapshots;
   std::vector<double> m_snapshot_times;
   std::set<std::string> m_snapshot_vars;
   unsigned int m_current_snapshot;
@@ -443,13 +442,12 @@ protected:
   MaxTimestep ts_max_timestep(double my_t);
 
   // spatially-varying time-series
-  bool m_save_extra, m_extra_file_is_ready, m_split_extra;
+  bool m_split_extra;
   std::string m_extra_filename;
   std::vector<double> m_extra_times;
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
-  VariableMetadata m_extra_bounds;
   std::unique_ptr<File> m_extra_file;
   void init_extras();
   void write_extras();
@@ -473,11 +471,9 @@ protected:
            std::vector<std::shared_ptr<petsc::Viewer> > > m_viewers;
 
 private:
-  VariableMetadata m_timestamp;
   double m_start_time;    // this is used in the wall-clock-time checkpoint code
 };
 
-void write_mapping(const File &file, const pism::MappingInfo &info);
 void write_run_stats(const File &file, const pism::VariableMetadata &stats);
 
 MaxTimestep reporting_max_timestep(const std::vector<double> &times,

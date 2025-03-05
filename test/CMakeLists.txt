@@ -1,5 +1,7 @@
+find_package(Python3 COMPONENTS Interpreter)
+
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import nose"
+  COMMAND ${Python3_EXECUTABLE} -c "import nose"
   RESULT_VARIABLE PISM_NOSE
   OUTPUT_QUIET ERROR_QUIET
 )
@@ -27,7 +29,7 @@ if (Pism_BUILD_PYTHON_BINDINGS AND Pism_USE_NOSE_TESTS)
   macro(pism_nose_test name executable)
     string(CONCAT test_name "Python:nose:" ${name})
     add_test(NAME ${test_name}
-      COMMAND ${PYTHON_EXECUTABLE} "-m" "nose" "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/${executable}
+      COMMAND ${Python3_EXECUTABLE} "-m" "nose" "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/${executable}
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
   endmacro()
 
