@@ -29,7 +29,7 @@ Release checklist
 
    ::
 
-      git push --tags
+      git push origin tag v2.X
 
 #. Write a news item for ``pism.io``.
 #. Update the current PISM version on ``pism.io``.
