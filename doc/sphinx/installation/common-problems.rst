@@ -22,7 +22,7 @@ Here are some issues and workarounds we know about.
 - You can set ``Pism_LOOK_FOR_LIBRARIES`` to "``OFF``" to disable all heuristics and set
   compiler flags by hand. See `PISM builds <pism-builds_>`_ for examples.
 
-- When linking PISM to *shared* `prerequisite libraries <sec-install-prerequisites>`_ it
+- When linking PISM to *shared* :ref:`prerequisite libraries <sec-install-prerequisites>` it
   is usually sufficient to link to a library (e.g. NetCDF) and the linker will
   automatically include its dependencies (for NetCDF: HDF5, ``libz``, ``libm``, MPI) using
   the ``NEEDED`` and ``RUNPATH`` headers of its object file. On some systems these headers

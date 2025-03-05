@@ -58,18 +58,18 @@
 .. _Enthought: https://www.enthought.com/
 .. _FFTW: http://www.fftw.org/
 .. _Fink: https://www.finkproject.org/
-.. _GDAL: https://gdal.org/index.html
+.. _GDAL: https://gdal.org/en/stable/index.html
 .. _GSL: http://www.gnu.org/software/gsl/
 .. _Git: https://git-scm.com/
 .. _Git documentation: https://git-scm.com/doc
 .. _Homebrew: https://brew.sh/
 .. _IDV: https://www.unidata.ucar.edu/software/idv/
 .. _LaTeX: https://www.latex-project.org/
-.. _latexmk: http://personal.psu.edu/jcc8//software/latexmk-jcc/
+.. _latexmk: https://personal.psu.edu/jcc8//software/latexmk-jcc/
 .. _MPI: https://www.mcs.anl.gov/research/projects/mpi/
 .. _MacPorts: https://www.macports.org/
-.. _measures-ross: https://nsidc.org/data/NSIDC-0484
-.. _NSIDC: https://nsidc.org
+.. _measures-ross: https://nsidc.org/data/nsidc-0484/versions/2
+.. _NSIDC: https://nsidc.org/home
 .. _NCL: https://www.ncl.ucar.edu
 .. _NCO: https://nco.sourceforge.net/
 .. _NetCDF: https://www.unidata.ucar.edu/software/netcdf/
@@ -81,7 +81,7 @@
 .. _PETSc: https://petsc.org/release/
 .. _hypre: https://hypre.readthedocs.io/en/latest/
 .. _MUMPS: https://mumps-solver.org/
-.. _PROJ: https://proj.org/
+.. _PROJ: https://proj.org/en/stable/
 .. _PnetCDF: https://parallel-netcdf.github.io/
 .. _Python: https://www.python.org
 .. _Sphinx: https://www.sphinx-doc.org/en/master/usage/installation.html
@@ -108,7 +108,7 @@
 .. _Valgrind: https://valgrind.org/
 .. _ccache: https://ccache.dev/
 
-.. _github-help-fork: https://docs.github.com/en/get-started/quickstart/fork-a-repo
+.. _github-help-fork: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo
 .. _github-pull-request-create: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request
 .. _github-pull-request-allow-edits: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/allowing-changes-to-a-pull-request-branch-created-from-a-fork
 
@@ -127,7 +127,7 @@
 .. _KDevelop: https://kdevelop.org/
 .. _Kaye and Laby: https://web.archive.org/web/20190506031327/http://www.kayelaby.npl.co.uk/
 
-.. _Ismip6-greenland: https://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland
+.. _Ismip6-greenland: https://theghub.org/groups/ismip6/wiki/ISMIP6-Projections-Greenland
 
 .. _HDF5: https://portal.hdfgroup.org/display/HDF5/HDF5
 .. _Lustre: https://www.lustre.org/
