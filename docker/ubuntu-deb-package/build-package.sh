@@ -6,6 +6,8 @@ set -x
 
 source_dir=${source_dir:-.}
 
+git config --global --add safe.directory ${source_dir}
+
 cmake -S ${source_dir} -B build \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX=/usr \
