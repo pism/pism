@@ -124,6 +124,7 @@
 .. _MPICH: https://www.mpich.org/
 .. _Spack: https://spack.io/
 .. _Spack documentation: https://spack.readthedocs.io/en/latest/
+.. _Spack PISM package: https://packages.spack.io/package.html?name=pism
 .. _KDevelop: https://kdevelop.org/
 .. _Kaye and Laby: https://web.archive.org/web/20190506031327/http://www.kayelaby.npl.co.uk/
 
