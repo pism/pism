@@ -4,12 +4,8 @@
 Changes since v2.1
 ==================
 
-- All executables and scripts installed in the `bin` sub-directory of PISM's installation
-  location start with "pism" to make it easier to recognize ones that belong to PISM,
-  especially when using a `.deb` package to install it.
 - Rename the `pismr` executable to `pism`.
 - Remove the `pismv` executable. Use `pism -test X` to run a verification test `X`.
-- Add some automatic testing on macOS.
 - Use `pkg-config` to look for all the dependencies that support it.
 - Add the CMake flag `Pism_PKG_CONFIG_STATIC` to tell CMake to use the `--static` flag
   when using `pkg-config`. See `issue 529`_.
@@ -47,8 +43,10 @@ Changes since v2.1
   plus side, we get the ability to compute and save the SSAFD residual, which may help one
   analyze the quality of a velocity approximation produced by the SSAFD solver.
 - Create a Debian (Ubuntu) PISM package. This work required a number of changes to follow
-  best practices when installing software in a standard location. For example: Python
-  scripts in `util/` are installed in `/usr/share/pism/bin`.
+  best practices when installing software in a standard location. For example: all
+  executables and scripts installed in the `bin` sub-directory of PISM's installation
+  location start with "`pism_`" to make it easier to recognize ones that belong to PISM,
+  especially when using a `.deb` package to install it.
 - Add a configuration flag `stress_balance.ssa.fd.upstream_surface_slope_approximation`.
   If "yes" (the default), use the first order "upstream" (more accurately: "uphill")
   biased FD approximation. This reduces oscillations of velocity approximations produced
