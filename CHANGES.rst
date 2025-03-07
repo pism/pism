@@ -1,6 +1,18 @@
 .. default-role:: literal
 
 
+Changes since v2.2.0
+====================
+
+- Fixed a minor bug: EISMINT II simplified geometry experiments should use the "cold"
+  (temperature-based) energy conservation model. In PISM 2.2.0 the EISMINT II default of
+  `energy.model` was mistakenly set to "none", i.e. isothermal mode without energy
+  conservation.
+
+  To get correct behavior with PISM 2.2.0 run `pism -energy cold -eisII ...` instead of
+  `pism -eisII ...`.
+
+
 Changes since v2.1
 ==================
 

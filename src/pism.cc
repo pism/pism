@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ static void set_config_defaults(Config &config) {
   config.set_string("grid.registration", "corner");
   config.set_string("stress_balance.sia.flow_law", "pb");
 
-  config.set_string("energy.model", "none");
+  config.set_string("energy.model", "cold");
 
   // Set sea level elevation to -1e4 meters to remove ocean interaction
   config.set_number("sea_level.constant.value", -1e4);
