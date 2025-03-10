@@ -17,15 +17,12 @@ add_library (stressbalance OBJECT
   factory.cc
 )
 
-if (Pism_BUILD_EXTRA_EXECS)
-  add_executable (pism_siafd_test sia/siafd_test.cc)
+add_executable (pism_siafd_test sia/siafd_test.cc)
+target_link_libraries (pism_siafd_test libpism)
 
-  target_link_libraries (pism_siafd_test libpism)
-
-  install (TARGETS
-    pism_siafd_test
-    DESTINATION ${CMAKE_INSTALL_BINDIR})
-endif ()
+install (TARGETS
+  pism_siafd_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 add_subdirectory (ssa/tests)
 

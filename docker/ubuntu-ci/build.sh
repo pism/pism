@@ -50,7 +50,6 @@ ${CMAKE_PREFIX}/bin/cmake -S ${source_dir} \
                -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" \
                -DCMAKE_PREFIX_PATH="${hdf5_dir};${netcdf_dir};${pnetcdf_dir};${yac_dir}" \
                -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" \
-               -DPism_BUILD_EXTRA_EXECS=YES \
                -DPism_BUILD_ICEBIN=YES \
                -DPism_BUILD_PYTHON_BINDINGS=${python} \
                -DPism_PEDANTIC_WARNINGS=YES \

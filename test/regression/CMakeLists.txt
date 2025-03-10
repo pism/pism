@@ -108,29 +108,15 @@ if (Pism_USE_YAC_INTERPOLATION)
   pism_test (regridding:yac:inverted_y interpolation_inverted_y.sh)
 endif()
 
-if(Pism_BUILD_EXTRA_EXECS)
-  # These tests require special executables. They are disabled unless
-  # these executables are built. This way we don't need to explain why
-  # "make && make test" shows some test failures when PISM is built
-  # with default settings.
-  pism_test (Verification:PISMBedThermalUnit_test_K btu_regression.sh)
-
-  pism_test (Verification:test_V_SSAFD_CFBC ssa/ssa_test_cfbc_fd.sh)
-
-  pism_test (Verification:test_V_SSAFEM_CFBC ssa/ssa_test_cfbc_fem.sh)
-
-  pism_test (Verification:test_I_SSAFD ssa/ssa_testi_fd.sh)
-
-  pism_test (Verification:test_I_SSAFEM ssa/ssa_testi_fem.sh)
-
-  pism_test (Verification:test_J_SSAFD ssa/ssa_testj_fd.sh)
-
-  pism_test (Verification:test_J_SSAFEM ssa/ssa_testj_fem.sh)
-
-  pism_test (Verification:SSAFEM_linear_flow ssa/ssafem_test_linear.sh)
-
-  pism_test (Verification:SSAFEM_plug_flow ssa/ssafem_test_plug.sh)
-endif()
+pism_test (Verification:PISMBedThermalUnit_test_K btu_regression.sh)
+pism_test (Verification:test_V_SSAFD_CFBC ssa/ssa_test_cfbc_fd.sh)
+pism_test (Verification:test_V_SSAFEM_CFBC ssa/ssa_test_cfbc_fem.sh)
+pism_test (Verification:test_I_SSAFD ssa/ssa_testi_fd.sh)
+pism_test (Verification:test_I_SSAFEM ssa/ssa_testi_fem.sh)
+pism_test (Verification:test_J_SSAFD ssa/ssa_testj_fd.sh)
+pism_test (Verification:test_J_SSAFEM ssa/ssa_testj_fem.sh)
+pism_test (Verification:SSAFEM_linear_flow ssa/ssafem_test_linear.sh)
+pism_test (Verification:SSAFEM_plug_flow ssa/ssafem_test_plug.sh)
 
 if(Pism_BUILD_PYTHON_BINDINGS)
 

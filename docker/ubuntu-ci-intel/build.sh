@@ -34,7 +34,6 @@ cmake -S ${source_dir} \
       -DCMAKE_C_FLAGS="-Werror -Rno-debug-disables-optimization" \
       -DCMAKE_INSTALL_PREFIX=${install_dir} \
       -DCMAKE_PREFIX_PATH="${hdf5_dir};${netcdf_dir};${pnetcdf_dir};${yac_dir}" \
-      -DPism_BUILD_EXTRA_EXECS=YES \
       -DPism_BUILD_ICEBIN=YES \
       -DPism_BUILD_PYTHON_BINDINGS=YES \
       -DPism_PEDANTIC_WARNINGS=YES \

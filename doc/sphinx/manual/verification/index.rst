@@ -123,10 +123,9 @@ name of a test and there are additional executables for SSA-related verification
 of these exact solutions are solutions of *free boundary problems* for partial
 differential equations; only Tests A, E, J, K are fixed boundary value problems.
 
-:numref:`tab-tests-exec` shows how to run each of them on a coarse grids. Note that tests
-I and J require special executables ``ssa_testi,ssa_testj`` which are built with
-configuration flag ``Pism_BUILD_EXTRA_EXECS`` equal to ``ON``. :numref:`tab-pism-verification-options`
-gives the special verification-related options used by ``pism -test``.
+:numref:`tab-tests-exec` shows how to run each of them on a coarse grids.
+:numref:`tab-pism-verification-options` gives the special verification-related options
+used by ``pism -test``.
 
 Numerical errors are not, however, the dominant reasons why ice sheet models give
 imperfect results. The largest sources of errors include those from using the wrong (e.g.

@@ -18,7 +18,6 @@ CC=mpicc CXX=mpicxx cmake -S ${source_dir} -B ${build_dir} \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DPism_BUILD_DOCS=YES \
-    -DPism_BUILD_EXTRA_EXECS=NO \
     -DPism_BUILD_PYTHON_BINDINGS=NO \
     -DPism_USE_PROJ=YES
 

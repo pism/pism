@@ -40,8 +40,7 @@ correctly.
    Also ``-drawpause 0.1`` or similar may be needed if the figures are refreshing too fast.
 
 #. Run a basic suite of software tests. To do this, make sure that NCO_ and Python
-   packages NumPy_ and netcdf4-python_ are installed. Also, the CMake flag
-   ``Pism_BUILD_EXTRA_EXECS`` should be ``ON``. Then run:
+   packages NumPy_ and netcdf4-python_ are installed. Then run:
 
    .. code-block:: bash
 

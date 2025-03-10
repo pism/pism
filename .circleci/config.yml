@@ -249,7 +249,6 @@ jobs:
           command: >-
             cmake -S . -B build
             -DCMAKE_BUILD_TYPE=Debug
-            -DPism_BUILD_EXTRA_EXECS=YES
             -DPism_USE_PROJ=YES
       - run:
           name: Build PISM

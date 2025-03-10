@@ -22,7 +22,6 @@ CC=mpicc CXX=mpicxx cmake \
     -DCMAKE_INSTALL_PREFIX=${prefix}/pism \
     -DCMAKE_C_FLAGS="-march=native -mtune=native" \
     -DCMAKE_CXX_FLAGS="-march=native -mtune=native" \
-    -DPism_BUILD_EXTRA_EXECS=YES \
     -DPism_BUILD_PYTHON_BINDINGS=YES \
     -DPism_USE_PNETCDF=YES \
     -DPism_USE_PROJ=YES \

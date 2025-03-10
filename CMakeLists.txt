@@ -67,7 +67,6 @@ mark_as_advanced (Pism_CONFIG_FILE)
 file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 # The default options cache
-option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
 option (Pism_DEBIAN_SYSTEMWIDE "Use settings appropriate when installing in a system-wide location on Debian/Ubuntu or building a package" OFF)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)

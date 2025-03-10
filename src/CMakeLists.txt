@@ -172,17 +172,14 @@ install (FILES
   DESTINATION ${CMAKE_INSTALL_DATADIR}/pism)
 
 # miscellaneous executables needed by software tests
-if (Pism_BUILD_EXTRA_EXECS)
-  add_executable (pism_btutest energy/btutest.cc)
-  target_link_libraries (pism_btutest libpism)
-  list (APPEND EXTRA_EXECS pism_btutest)
+add_executable (pism_btutest energy/btutest.cc)
+target_link_libraries (pism_btutest libpism)
 
-  install (TARGETS
-    ${EXTRA_EXECS}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-endif (Pism_BUILD_EXTRA_EXECS)
+install (TARGETS
+  pism_btutest
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 
 # ------------ Header Files

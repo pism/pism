@@ -67,7 +67,6 @@ Configure PISM with debugging symbols enabled.
 
    CC=mpicc CXX=mpicxx cmake \
        -DCMAKE_BUILD_TYPE=Debug \
-       -DPism_BUILD_EXTRA_EXECS=YES \
        -DPism_BUILD_PYTHON_BINDINGS=YES \
        -DPism_DEBUG=YES \
        ${pism_source_dir}
@@ -80,8 +79,6 @@ Configure PISM with debugging symbols enabled.
      - Meaning
    * - `-DCMAKE_BUILD_TYPE=Debug`
      - Enables pedantic compiler warnings
-   * - `-DPism_BUILD_EXTRA_EXECS=YES`
-     - Build extra testing executables (needed by some of regression test)
    * - `-DPism_BUILD_PYTHON_BINDINGS=YES`
      - Build PISM's Python bindings (used by many regression tests)
    * - `-DPism_DEBUG=YES`

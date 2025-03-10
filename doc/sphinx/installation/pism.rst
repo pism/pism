@@ -139,7 +139,6 @@ enabled when building PISM. This section lists important build-time options.
    ``BUILD_SHARED_LIBS``, build shared (as opposed to static) libraries (this is the default)
    ``Pism_LINK_STATICALLY``, set CMake flags to try to ensure that everything is linked statically
    ``Pism_LOOK_FOR_LIBRARIES``, specifies whether PISM should look for libraries (disable this on Crays)
-   ``Pism_BUILD_EXTRA_EXECS``, build additional executables (needed to run ``make test``)
    ``Pism_BUILD_PYTHON_BINDINGS``, build PISM's Python bindingd; requires ``petsc4py``
    ``Pism_USE_PROJ``, use the PROJ_ library to compute latitudes and longitudes of grid points
    ``Pism_USE_PARALLEL_NETCDF4``, use NetCDF_ for parallel file I/O
