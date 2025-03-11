@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PISMCONFIGINTERFACE_H_
-#define _PISMCONFIGINTERFACE_H_
+#ifndef _PISM_CONFIG_H_
+#define _PISM_CONFIG_H_
 
 #include <memory>
 #include <set>
@@ -53,9 +53,6 @@ enum ConfigSettingFlag {CONFIG_DEFAULT = 0, CONFIG_FORCE = 1, CONFIG_USER = 2};
 //! A class for storing and accessing PISM configuration flags and parameters.
 class Config {
 public:
-  typedef std::shared_ptr<Config> Ptr;
-  typedef std::shared_ptr<const Config> ConstPtr;
-
   Config(units::System::Ptr unit_system);
   virtual ~Config();
 
@@ -161,7 +158,7 @@ private:
 
 class ConfigWithPrefix {
 public:
-  ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix);
+  ConfigWithPrefix(std::shared_ptr<const Config> c, const std::string &prefix);
 
   double get_number(const std::string &name) const;
   double get_number(const std::string &name, const std::string &units) const;
@@ -174,10 +171,11 @@ public:
 
 private:
   std::string m_prefix;
-  Config::ConstPtr m_config;
+  std::shared_ptr<const Config> m_config;
 };
 
-Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system);
+std::shared_ptr<Config> config_from_options(MPI_Comm com, const Logger &log,
+                                            units::System::Ptr unit_system);
 
 //! Set configuration parameters using command-line options.
 void set_config_from_options(units::System::Ptr unit_system, Config &config);
@@ -211,4 +209,4 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
 
 } // end of namespace pism
 
-#endif /* _PISMCONFIGINTERFACE_H_ */
+#endif /* _PISM_CONFIG_H_ */

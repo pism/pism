@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include <petsc.h>
 
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 
 namespace pism {
 
@@ -99,7 +99,7 @@ public:
   const array::Scalar& smoothed_bed() const;
 protected:
   std::shared_ptr<const Grid> m_grid;
-  const Config::ConstPtr m_config;
+  std::shared_ptr<const Config> m_config;
 
   //! smoothed bed elevation; set by calling preprocess_bed()
   array::Scalar2 m_topgsmooth;

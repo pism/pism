@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018, 2020, 2021, 2022, 2023, 2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Diagnostic.hh"
@@ -65,7 +65,7 @@ struct InputOptions {
   unsigned int record;
 };
 
-InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config);
+InputOptions process_input_options(MPI_Comm com, std::shared_ptr<const Config> config);
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
@@ -155,7 +155,7 @@ protected:
   //! grid used by this component
   const std::shared_ptr<const Grid> m_grid;
   //! configuration database used by this component
-  const Config::ConstPtr m_config;
+  std::shared_ptr<const Config> m_config;
   //! unit system used by this component
   const units::System::Ptr m_sys;
   //! logger (for easy access)

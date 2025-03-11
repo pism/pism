@@ -224,7 +224,7 @@ pism_class(pism::Logger, "pism/util/Logger.hh");
 
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
-%include "util/ConfigInterface.hh"
+%include "util/Config.hh"
 %include "util/NetCDFConfig.hh"
 
 #if (Pism_USE_JANSSON==1)

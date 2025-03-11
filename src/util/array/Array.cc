@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2024 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2025 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@
 #include "pism/util/array/Array.hh"
 #include "pism/util/array/Array_impl.hh"
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024, 2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include "pism/earth/BedDef.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 
 namespace pism {
 namespace bed {

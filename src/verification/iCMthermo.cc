@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/earth/BedDef.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/TemperatureModel.hh"

@@ -1,4 +1,4 @@
-// Copyright (C) 2012--2024  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012--2025  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "pism/inverse/IP_SSATaucTikhonovGNSolver.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/Vec.hh"

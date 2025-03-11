@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@
 #include "pism/hydrology/SteadyState.hh"
 #include "pism/hydrology/Distributed.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"

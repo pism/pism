@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 Constantine Khroulev
+// Copyright (C) 2009--2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"

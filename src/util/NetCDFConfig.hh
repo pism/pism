@@ -23,7 +23,7 @@
 #include <string>
 #include <set>
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/VariableMetadata.hh"
 
 namespace pism {

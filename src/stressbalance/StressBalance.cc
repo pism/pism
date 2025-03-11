@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/array/CellType.hh"

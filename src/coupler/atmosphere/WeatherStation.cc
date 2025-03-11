@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,7 +18,7 @@
  */
 
 #include "pism/coupler/atmosphere/WeatherStation.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"

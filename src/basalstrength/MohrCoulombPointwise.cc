@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2023 PISM Authors
+/* Copyright (C) 2019, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 
 namespace pism {
 
-MohrCoulombPointwise::MohrCoulombPointwise(Config::ConstPtr config) {
+MohrCoulombPointwise::MohrCoulombPointwise(std::shared_ptr<const Config> config) {
   m_W_till_max                   = config->get_number("hydrology.tillwat_max");
   m_till_cohesion                = config->get_number("basal_yield_stress.mohr_coulomb.till_cohesion");
   m_reference_effective_pressure = config->get_number("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure");

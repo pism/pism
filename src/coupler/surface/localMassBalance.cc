@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023, 2024 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023, 2024, 2025 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <algorithm>
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/coupler/surface/localMassBalance.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Context.hh"
@@ -41,7 +41,7 @@ LocalMassBalance::Changes::Changes() {
   smb           = 0.0;
 }
 
-LocalMassBalance::LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system)
+LocalMassBalance::LocalMassBalance(std::shared_ptr<const Config> myconfig, units::System::Ptr system)
   : m_config(myconfig), m_unit_system(system),
     m_seconds_per_day(86400) {
   // empty
@@ -51,7 +51,7 @@ std::string LocalMassBalance::method() const {
   return m_method;
 }
 
-PDDMassBalance::PDDMassBalance(Config::ConstPtr config, units::System::Ptr system)
+PDDMassBalance::PDDMassBalance(std::shared_ptr<const Config> config, units::System::Ptr system)
   : LocalMassBalance(config, system) {
   precip_as_snow     = m_config->get_flag("surface.pdd.interpret_precip_as_snow");
   Tmin               = m_config->get_number("surface.pdd.air_temp_all_precip_as_snow");
@@ -297,7 +297,7 @@ Initializes the random number generator (RNG).  The RNG is GSL's recommended def
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
-PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::Ptr system,
+PDDrandMassBalance::PDDrandMassBalance(std::shared_ptr<const Config> config, units::System::Ptr system,
                                        Kind kind)
   : PDDMassBalance(config, system),
     m_impl(new Impl)

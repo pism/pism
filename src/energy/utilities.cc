@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #include "pism/energy/utilities.hh"
 
 #include "pism/energy/bootstrapping.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Grid.hh"
@@ -221,7 +221,7 @@ double total_ice_enthalpy(double thickness_threshold,
   double enthalpy_sum = 0.0;
 
   auto grid = ice_enthalpy.grid();
-  Config::ConstPtr config = grid->ctx()->config();
+  auto config = grid->ctx()->config();
 
   auto cell_area = grid->cell_area();
 

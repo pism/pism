@@ -1,4 +1,4 @@
-/* Copyright (C) 2015--2024 PISM Authors
+/* Copyright (C) 2015--2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"

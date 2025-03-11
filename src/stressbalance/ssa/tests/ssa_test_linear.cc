@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021, 2022, 2024 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2024, 2025 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_linear");
-    Config::Ptr config = ctx->config();
+    auto config = ctx->config();
 
     std::string usage = "\n"
       "usage:\n"

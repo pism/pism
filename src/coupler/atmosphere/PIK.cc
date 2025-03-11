@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018, 2023 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
+// Copyright (C) 2009-2018, 2023, 2025 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include "pism/coupler/atmosphere/PIK.hh"
 
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/error_handling.hh"

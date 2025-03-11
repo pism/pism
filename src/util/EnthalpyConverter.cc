@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"

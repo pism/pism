@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2024 PISM Authors
+// Copyright (C) 2010--2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 
 #include "pism/util/io/File.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/fftw_utilities.hh"

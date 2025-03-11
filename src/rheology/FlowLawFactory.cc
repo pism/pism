@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2018, 2023, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <cassert>
 
 #include "pism/rheology/FlowLawFactory.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 
 #include "pism/rheology/IsothermalGlen.hh"
@@ -69,7 +69,7 @@ FlowLaw* create_goldsby_kohlstedt(const std::string &pre,
 }
 
 FlowLawFactory::FlowLawFactory(const std::string &prefix,
-                               Config::ConstPtr conf,
+                               std::shared_ptr<const Config> conf,
                                EnthalpyConverter::Ptr my_EC)
   : m_config(conf), m_EC(my_EC) {
 

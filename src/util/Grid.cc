@@ -33,7 +33,7 @@
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/InputInterpolation.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"

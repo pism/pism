@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023, 2024 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023, 2024, 2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 
 #include "pism/util/array/Array3D.hh"
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/VariableMetadata.hh"

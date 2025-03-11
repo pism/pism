@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2024 PISM Authors
+// Copyright (C) 2010--2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <string>
 
 #include "pism/earth/BedDef.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -301,7 +301,7 @@ double compute_load(double bed, double ice_thickness, double sea_level,
 void accumulate_load(const array::Scalar &bed_elevation, const array::Scalar &ice_thickness,
                      const array::Scalar &sea_level_elevation, double C, array::Scalar &result) {
 
-  Config::ConstPtr config = result.grid()->ctx()->config();
+  auto config = result.grid()->ctx()->config();
 
   const double ice_density   = config->get_number("constants.ice.density"),
                ocean_density = config->get_number("constants.sea_water.density");

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Units.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 
 namespace pism {
 
@@ -54,7 +54,7 @@ inline bool pism_is_valid_calendar_name(const std::string &name) {
 class Time
 {
 public:
-  Time(MPI_Comm com, Config::ConstPtr config,
+  Time(MPI_Comm com, std::shared_ptr<const Config> config,
        const Logger &log,
        units::System::Ptr unit_system);
   virtual ~Time() = default;
@@ -148,7 +148,7 @@ protected:
   double seconds_to_years(double input) const;
 
 protected:
-  const Config::ConstPtr m_config;
+  std::shared_ptr<const Config> m_config;
   const units::System::Ptr m_unit_system;
   units::Unit m_time_units;
 

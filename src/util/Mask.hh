@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2025 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _MASK_H_
 
 // the following three includes are needed here because of inlined code
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {

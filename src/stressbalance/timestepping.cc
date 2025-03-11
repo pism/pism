@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2020, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2020, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,7 +49,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
                             const array::Array3D &w3) {
 
   auto grid = ice_thickness.grid();
-  Config::ConstPtr config = grid->ctx()->config();
+  auto config = grid->ctx()->config();
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
 
@@ -122,7 +122,7 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
                             const array::Vector &velocity) {
 
   auto grid = ice_thickness.grid();
-  Config::ConstPtr config = grid->ctx()->config();
+  auto config = grid->ctx()->config();
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
 

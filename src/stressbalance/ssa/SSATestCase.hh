@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2021, 2022, 2023, 2024 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2021, 2022, 2023, 2024, 2025 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -94,7 +94,7 @@ protected:
   std::shared_ptr<const pism::Grid> m_grid;
 
   const std::shared_ptr<const Context> m_ctx;
-  const Config::ConstPtr m_config;
+  const std::shared_ptr<const Config> m_config;
 
   const units::System::Ptr m_sys;
 

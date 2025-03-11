@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -113,7 +113,7 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
 
 void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   auto grid = ice_thickness.grid();
-  Config::ConstPtr config = grid->ctx()->config();
+  auto config = grid->ctx()->config();
 
   array::AccessScope list{&sea_level_elevation, &bed_elevation,
       &ice_thickness, &ice_area_specific_volume,

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019, 2021, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021, 2023, 2024, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 
 #include "pism/util/Grid.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Time.hh"
 
 #include "pism/util/pism_utilities.hh"

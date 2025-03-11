@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015, 2017, 2018, 2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2015, 2017, 2018, 2021, 2023, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include <memory>
 
 #include "pism/rheology/FlowLaw.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 
 namespace pism {
 namespace rheology {
@@ -43,7 +43,7 @@ typedef FlowLaw*(*FlowLawCreator)(const std::string &,
 class FlowLawFactory {
 public:
   FlowLawFactory(const std::string &prefix,
-                 Config::ConstPtr conf,
+                 std::shared_ptr<const Config> conf,
                  EnthalpyConverter::Ptr my_EC);
   ~FlowLawFactory() = default;
   void set_default(const std::string &name);
@@ -53,7 +53,7 @@ public:
 private:
   std::string m_type_name, m_prefix;
   std::map<std::string, FlowLawCreator> m_flow_laws;
-  const Config::ConstPtr m_config;
+  std::shared_ptr<const Config> m_config;
   EnthalpyConverter::Ptr m_EC;
 };
 

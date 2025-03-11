@@ -27,7 +27,7 @@ static char help[] =
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 
 #include "pism/verification/tests/exactTestK.h"
 

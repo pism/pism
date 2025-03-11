@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 #include "pism/earth/greens.hh"
 #include "pism/earth/LingleClarkSerial.hh"
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/fftw_utilities.hh"

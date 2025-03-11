@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2025  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include "pism/inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include <memory>
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2022, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2022, 2023, 2025 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -24,7 +24,7 @@
 
 #include "pism/coupler/atmosphere/SeariseGreenland.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/error_handling.hh"

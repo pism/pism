@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@
 
 // IceModel owns a bunch of fields, so we have to include this.
 #include "pism/util/array/Vector.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Time.hh"
@@ -235,7 +235,7 @@ protected:
   //! Computational grid
   const std::shared_ptr<Grid> m_grid;
   //! Configuration flags and parameters
-  Config::Ptr m_config;
+  std::shared_ptr<Config> m_config;
   //! Execution context
   std::shared_ptr<Context> m_ctx;
   //! Unit system

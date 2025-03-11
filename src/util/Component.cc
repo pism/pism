@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020, 2022, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2020, 2022, 2023, 2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/VariableMetadata.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Context.hh"
@@ -40,7 +40,7 @@ InputOptions::InputOptions(InitializationType t, const std::string &file, unsign
 /*! Process command-line options -i and -bootstrap.
  *
  */
-InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
+InputOptions process_input_options(MPI_Comm com, std::shared_ptr<const Config> config) {
   InitializationType type = INIT_OTHER;
   unsigned int record     = 0;
 

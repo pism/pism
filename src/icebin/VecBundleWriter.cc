@@ -3,7 +3,7 @@
 
 #include "pism/icebin/VecBundleWriter.hh"
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Array.hh"

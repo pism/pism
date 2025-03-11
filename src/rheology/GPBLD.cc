@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,7 +18,7 @@
  */
 
 #include "pism/rheology/GPBLD.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 
 namespace pism {
 namespace rheology {

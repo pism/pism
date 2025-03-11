@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/Grid.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"

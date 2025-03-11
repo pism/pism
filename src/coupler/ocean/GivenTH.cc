@@ -22,7 +22,7 @@
 #include "pism/coupler/ocean/GivenTH.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/array/Forcing.hh"

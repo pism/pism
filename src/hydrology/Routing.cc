@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2023 PISM Authors
+// Copyright (C) 2012-2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -192,7 +192,7 @@ void hydraulic_potential(const array::Scalar &W,
 
   auto grid = result.grid();
 
-  Config::ConstPtr config = grid->ctx()->config();
+  auto config = grid->ctx()->config();
 
   double
     ice_density       = config->get_number("constants.ice.density"),
@@ -530,7 +530,7 @@ void wall_melt(const Routing &model,
 
   auto grid = result.grid();
 
-  Config::ConstPtr config = grid->ctx()->config();
+  auto config = grid->ctx()->config();
 
   const double
     k     = config->get_number("hydrology.hydraulic_conductivity"),

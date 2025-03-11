@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2024 Constantine Khroulev
+// Copyright (C) 2011-2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 
 #include "pism/external/calcalcs/calcalcs.h"
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
@@ -682,7 +682,7 @@ double Time::convert_time_interval(double T, const std::string &units) const {
   for more details about supported calendars.
  */
 Time::Time(MPI_Comm com,
-           Config::ConstPtr config,
+           std::shared_ptr<const Config> config,
            const Logger &log,
            units::System::Ptr unit_system)
   : m_config(config),

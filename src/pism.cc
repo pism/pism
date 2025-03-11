@@ -110,7 +110,7 @@ std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix) {
   return std::make_shared<Context>(com, sys, config, EC, time, logger, prefix);
 }
 
-grid::Parameters grid_defaults(Config::Ptr config, char testname) {
+grid::Parameters grid_defaults(std::shared_ptr<Config> config, char testname) {
   // This sets the defaults for each test; command-line options can override this.
 
   int Mx = 61, My = 61;

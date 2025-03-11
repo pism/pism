@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "pism/energy/BedThermalUnit.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/io/File.hh"
 
@@ -38,7 +38,7 @@ BTUGrid::BTUGrid(std::shared_ptr<const Context> ctx) {
 BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   BTUGrid result(ctx);
 
-  Config::ConstPtr config = ctx->config();
+  auto config = ctx->config();
   InputOptions opts = process_input_options(ctx->com(), config);
 
   if (opts.type == INIT_RESTART) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2024 PISM Authors
+// Copyright (C) 2011--2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include "pism/coupler/atmosphere/Delta_P.hh"
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/ScalarForcing.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/util/array/Forcing.hh"

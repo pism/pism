@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021, 2023 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2021, 2023, 2025 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include "pism/icemodel/IceModel.hh"
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 
 #include "pism/frontretreat/FrontRetreat.hh"

@@ -19,7 +19,7 @@
 #ifndef MOHRCOULOMBPOINTWISE_H
 #define MOHRCOULOMBPOINTWISE_H
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 
 namespace pism {
 
@@ -28,7 +28,7 @@ namespace pism {
  */
 class MohrCoulombPointwise {
 public:
-  MohrCoulombPointwise(Config::ConstPtr config);
+  MohrCoulombPointwise(std::shared_ptr<const Config> config);
 
   /*!
    * Compute basal yield stress

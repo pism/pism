@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2021, 2023, 2024 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2021, 2023, 2024, 2025 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 
 #include "pism/basalstrength/basal_resistance.hh"
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Logger.hh"
 
 namespace pism {

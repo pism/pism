@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2021, 2023 PISM Authors
+/* Copyright (C) 2018, 2019, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #include "pism/coupler/util/options.hh"
 
 #include "pism/util/Context.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Component.hh"
 

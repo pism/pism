@@ -18,7 +18,7 @@
 
 #include "pism/inverse/IP_SSAHardavForwardProblem.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/rheology/FlowLaw.hh"

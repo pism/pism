@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020, 2023, 2024 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2020, 2023, 2024, 2025 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -25,7 +25,7 @@
 #include "pism/coupler/atmosphere/YearlyCycle.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"

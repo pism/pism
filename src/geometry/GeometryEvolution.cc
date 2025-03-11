@@ -110,7 +110,7 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
       residual(grid, "residual"),
       thickness(grid, "thickness") {
 
-  Config::ConstPtr config = grid->ctx()->config();
+  auto config = grid->ctx()->config();
 
   gc.set_icefree_thickness(config->get_number("geometry.ice_free_thickness_standard"));
 

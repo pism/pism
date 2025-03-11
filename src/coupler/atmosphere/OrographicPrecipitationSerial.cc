@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020, 2021, 2023 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2020, 2021, 2023, 2025 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include <cassert>        // assert()
 #include <cmath>          // std::exp()
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/fftw_utilities.hh"
 

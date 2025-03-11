@@ -13,7 +13,7 @@ add_library (util OBJECT
   MaxTimestep.cc
   Component.cc
   NetCDFConfig.cc
-  ConfigInterface.cc
+  Config.cc
   Diagnostic.cc
   Time.cc
   Units.cc

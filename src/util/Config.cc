@@ -24,7 +24,7 @@
 
 #include "pism/pism_config.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
@@ -786,7 +786,8 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
 }
 
 //! Create a configuration database using command-line options.
-Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system) {
+std::shared_ptr<Config> config_from_options(MPI_Comm com, const Logger &log,
+                                            units::System::Ptr unit_system) {
 
   using T         = NetCDFConfig;
   auto  config    = std::make_shared<T>(com, "pism_config", unit_system);
@@ -812,7 +813,7 @@ Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::
   return config;
 }
 
-ConfigWithPrefix::ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix)
+ConfigWithPrefix::ConfigWithPrefix(std::shared_ptr<const Config> c, const std::string &prefix)
     : m_prefix(prefix), m_config(c) {
   // empty
 }

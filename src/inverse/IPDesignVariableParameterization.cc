@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023, 2025 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include "pism/util/array/Scalar.hh"
 #include "pism/inverse/IPDesignVariableParameterization.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"

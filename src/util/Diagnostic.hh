@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2024 PISM Authors
+// Copyright (C) 2010--2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include <memory>
 #include <string>
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/array/Scalar.hh"
@@ -115,7 +115,7 @@ protected:
   //! the unit system
   const units::System::Ptr m_sys;
   //! Configuration flags and parameters
-  const Config::ConstPtr m_config;
+  std::shared_ptr<const Config> m_config;
   //! metadata corresponding to NetCDF variables
   std::vector<SpatialVariableMetadata> m_vars;
   //! fill value (used often enough to justify storing it)
@@ -310,7 +310,7 @@ protected:
   //! the grid
   std::shared_ptr<const Grid> m_grid;
   //! Configuration flags and parameters
-  const Config::ConstPtr m_config;
+  std::shared_ptr<const Config> m_config;
   //! the unit system
   const units::System::Ptr m_sys;
 

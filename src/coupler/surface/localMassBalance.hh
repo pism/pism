@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020, 2021, 2022, 2023, 2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define __localMassBalance_hh
 
 #include "pism/util/array/Scalar.hh"  // only needed for FaustoGrevePDDObject
-#include "pism/util/ConfigInterface.hh" // needed to get Config::ConstPtr
+#include "pism/util/Config.hh"
 
 namespace pism {
 namespace surface {
@@ -67,7 +67,7 @@ public:
     double refreeze_fraction;
   };
 
-  LocalMassBalance(Config::ConstPtr config, units::System::Ptr system);
+  LocalMassBalance(std::shared_ptr<const Config> config, units::System::Ptr system);
   virtual ~LocalMassBalance() = default;
 
   std::string method() const;
@@ -116,7 +116,7 @@ public:
 protected:
   std::string m_method;
 
-  const Config::ConstPtr m_config;
+  std::shared_ptr<const Config> m_config;
   const units::System::Ptr m_unit_system;
   const double m_seconds_per_day;
 };
@@ -131,7 +131,7 @@ protected:
 class PDDMassBalance : public LocalMassBalance {
 
 public:
-  PDDMassBalance(Config::ConstPtr config, units::System::Ptr system);
+  PDDMassBalance(std::shared_ptr<const Config> config, units::System::Ptr system);
   virtual ~PDDMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt);
@@ -181,7 +181,7 @@ public:
 
   enum Kind {NOT_REPEATABLE = 0, REPEATABLE = 1};
 
-  PDDrandMassBalance(Config::ConstPtr config,
+  PDDrandMassBalance(std::shared_ptr<const Config> config,
                      units::System::Ptr system,
                      Kind kind);
   virtual ~PDDrandMassBalance();
@@ -228,7 +228,7 @@ public:
 
 protected:
   std::shared_ptr<const Grid> m_grid;
-  const Config::ConstPtr m_config;
+  std::shared_ptr<const Config> m_config;
 
   double m_beta_ice_w;
   double m_beta_snow_w;

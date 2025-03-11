@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022, 2023, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 
 #include "pism/icemodel/IceModel.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/stressbalance/StressBalance.hh"

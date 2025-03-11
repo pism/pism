@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,7 @@
 
 #include <gsl/gsl_spline.h>
 
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"

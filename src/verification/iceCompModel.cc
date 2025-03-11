@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/sia/SIAFD.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Grid.hh"
