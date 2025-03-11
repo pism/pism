@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2025 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/stressbalance/ssa/SSATestCase.hh"
+#include "pism/stressbalance/ssa/tests/SSATestCase.hh"
 #include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Context.hh"

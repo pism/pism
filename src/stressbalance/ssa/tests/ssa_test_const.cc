@@ -41,7 +41,7 @@ static char help[] =
 #include "pism/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/stressbalance/ssa/SSATestCase.hh"
+#include "pism/stressbalance/ssa/tests/SSATestCase.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"

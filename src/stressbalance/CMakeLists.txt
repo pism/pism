@@ -9,7 +9,6 @@ add_library (stressbalance OBJECT
   ssa/SSAFDBase.cc
   ssa/SSAFD_SNES.cc
   ssa/SSAFEM.cc
-  ssa/SSATestCase.cc
   sia/BedSmoother.cc
   sia/SIAFD.cc
   sia/SIAFD_diagnostics.cc

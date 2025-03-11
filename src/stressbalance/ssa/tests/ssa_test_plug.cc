@@ -33,7 +33,7 @@ static char help[] =
 
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/stressbalance/ssa/SSATestCase.hh"
+#include "pism/stressbalance/ssa/tests/SSATestCase.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"

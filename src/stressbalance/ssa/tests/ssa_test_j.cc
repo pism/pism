@@ -25,7 +25,7 @@ static char help[] =
 
 #include <petscsys.h>
 
-#include "pism/stressbalance/ssa/SSATestCase.hh"
+#include "pism/stressbalance/ssa/tests/SSATestCase.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
