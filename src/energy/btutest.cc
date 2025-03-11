@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -47,10 +47,11 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   units::System::Ptr sys(new units::System);
 
   // logger
-  Logger::Ptr logger = logger_from_options(com);
+  auto logger = std::make_shared<Logger>(com, 1);
 
-  // configuration parameters
-  Config::Ptr config = config_from_options(com, *logger, sys);
+  auto config = config_from_options(com, *logger, sys);
+
+  logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
 
   int Mx = 3;
   double Lx = 1500;

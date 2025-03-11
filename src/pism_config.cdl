@@ -1874,6 +1874,8 @@ netcdf pism_config {
     pism_config:output.compression_level_doc = "Compression level for 2D and 3D output variables (if supported by :config:`output.format`)";
     pism_config:output.compression_level_type = "integer";
     pism_config:output.compression_level_units = "none";
+    pism_config:output.compression_level_valid_max = 9;
+    pism_config:output.compression_level_valid_min = 0;
 
     pism_config:output.extra.append = "no";
     pism_config:output.extra.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.extra.split` is set.";
@@ -1939,6 +1941,14 @@ netcdf pism_config {
     pism_config:output.runtime.time_use_calendar = "yes";
     pism_config:output.runtime.time_use_calendar_doc = "Whether to use the current calendar when printing model time in summary to stdout.";
     pism_config:output.runtime.time_use_calendar_type = "flag";
+
+    pism_config:output.runtime.verbosity = 2;
+    pism_config:output.runtime.verbosity_doc = "default logging verbosity";
+    pism_config:output.runtime.verbosity_option = "verbose";
+    pism_config:output.runtime.verbosity_type = "integer";
+    pism_config:output.runtime.verbosity_units = "none";
+    pism_config:output.runtime.verbosity_valid_max = 5;
+    pism_config:output.runtime.verbosity_valid_min = 1;
 
     pism_config:output.runtime.viewer.size = 320;
     pism_config:output.runtime.viewer.size_doc = "default diagnostic viewer size (number of pixels of the longer side)";

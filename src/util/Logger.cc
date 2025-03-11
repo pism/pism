@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2017, 2021, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <memory>
 #include <unistd.h>
 #include <sstream>
 #include <stdarg.h>
@@ -102,17 +103,6 @@ void Logger::disable() const {
 
 void Logger::enable() const {
   m_impl->enabled = true;
-}
-
-Logger::Ptr logger_from_options(MPI_Comm com) {
-  Logger::Ptr result(new Logger(com, 2));
-
-  options::Integer verbosity("-verbose", "set logger verbosity threshold",
-                             result->get_threshold());
-
-  result->set_threshold(verbosity);
-
-  return result;
 }
 
 struct StringLogger::Impl {

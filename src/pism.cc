@@ -88,10 +88,12 @@ std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix) {
   auto sys = std::make_shared<units::System>();
 
   // logger
-  auto logger = logger_from_options(com);
+  auto logger = std::make_shared<Logger>(com, 1);
 
   // configuration parameters
   auto config = config_from_options(com, *logger, sys);
+
+  logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
 
   config->set_string("grid.periodicity", "none");
   config->set_string("grid.registration", "corner");
@@ -230,8 +232,8 @@ int main(int argc, char *argv[]) {
       ctx = context_from_options(com, "pism", false);
     }
 
-    Logger::Ptr log = ctx->log();
-    Config::Ptr config = ctx->config();
+    auto log = ctx->log();
+    auto config = ctx->config();
 
     std::vector<std::string> required_options{};
     if (eisII.is_set()) {

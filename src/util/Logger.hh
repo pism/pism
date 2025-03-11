@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -99,8 +99,6 @@ private:
   struct Impl;
   Impl *m_impl;
 };
-
-Logger::Ptr logger_from_options(MPI_Comm com);
 
 } // end of namespace pism
 
