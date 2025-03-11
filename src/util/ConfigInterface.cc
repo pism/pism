@@ -22,6 +22,7 @@
 #include <cstdlib>              // realpath()
 
 
+#include "pism/pism_config.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Units.hh"
@@ -30,7 +31,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
 
-// include an implementation header so that we can allocate a DefaultConfig instance in
+// include an implementation header so that we can allocate a NetCDFConfig instance in
 // config_from_options()
 #include "pism/util/Config.hh"
 #include "pism/util/Logger.hh"
@@ -787,15 +788,22 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
 //! Create a configuration database using command-line options.
 Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system) {
 
-  using T         = DefaultConfig;
-  auto  config    = std::make_shared<T>(com, "pism_config", "-config", unit_system);
-  auto  overrides = std::make_shared<T>(com, "pism_overrides", "-config_override", unit_system);
+  using T         = NetCDFConfig;
+  auto  config    = std::make_shared<T>(com, "pism_config", unit_system);
+  auto  overrides = std::make_shared<T>(com, "pism_overrides", unit_system);
 
-  overrides->init(log);
+  options::String config_filename("-config", "Config file name", pism::config_file);
+  options::String override_filename("-config_override", "Config override file name");
 
-  config->init_with_default(log);
+  // config_filename is always non-empty because it has a default value
+  // (pism::config_file).
+  config->read(com, config_filename);
 
-  config->import_from(*overrides);
+  // override_filename may be empty if -config_override was not set
+  if (override_filename.is_set()) {
+    overrides->read(com, override_filename);
+    config->import_from(*overrides);
+  }
 
   set_config_from_options(unit_system, *config);
 

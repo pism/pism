@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021, 2024 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -59,34 +59,11 @@ protected:
   Flags all_flags_impl() const;
   bool get_flag_impl(const std::string& name) const;
   void set_flag_impl(const std::string& name, bool value);
-protected:
+private:
   MPI_Comm m_com;
   VariableMetadata m_data;
-private:
   //! @brief the name of the file this config database was initialized from
   std::string m_config_filename;
-};
-
-//! @brief Default PISM configuration database: uses NetCDF files; can be initialized from a file
-//! specified using a command-line option.
-class DefaultConfig : public NetCDFConfig {
-public:
-  DefaultConfig(MPI_Comm com,
-                const std::string &variable_name,
-                const std::string &option,
-                units::System::Ptr unit_system);
-  ~DefaultConfig() = default;
-
-  typedef std::shared_ptr<DefaultConfig> Ptr;
-  typedef std::shared_ptr<const DefaultConfig> ConstPtr;
-
-  //! Initialize (use default path if no option was set).
-  void init_with_default(const Logger &log);
-  //! Initialize (leave empty if no option was set).
-  void init(const Logger &log);
-private:
-  void init(const Logger &log, bool use_default_path);
-  std::string m_option;
 };
 
 } // end of namespace pism

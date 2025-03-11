@@ -241,12 +241,16 @@ int main(int argc, char *argv[]) {
       eismint2::set_config_defaults(*config);
 
       // process -config_override
-      DefaultConfig::Ptr overrides(new DefaultConfig(com,
-                                                     "pism_overrides",
-                                                     "-config_override",
-                                                     ctx->unit_system()));
-      overrides->init(*ctx->log());
-      config->import_from(*overrides);
+      auto overrides = std::make_shared<NetCDFConfig>(com, "pism_overrides",
+                                                      ctx->unit_system());
+
+      options::String override_filename("-config_override", "Config override file name");
+
+      if (override_filename.is_set()) {
+        overrides->read(com, override_filename);
+        config->import_from(*overrides);
+      }
+
       // process command-line options
       set_config_from_options(ctx->unit_system(), *config);
       config->resolve_filenames();

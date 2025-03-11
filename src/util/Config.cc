@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2019, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2019, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,7 @@
 #include "pism/util/Logger.hh"
 #include "pism/pism_config.hh"  // pism::config_file
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -204,36 +205,6 @@ void NetCDFConfig::write_impl(const File &file) const {
   }
 
   io::write_attributes(file, m_data, io::PISM_DOUBLE);
-}
-
-
-//! Config that respects command-line options and stores data in a NetCDF variable.
-DefaultConfig::DefaultConfig(MPI_Comm com,
-                             const std::string &variable_name,
-                             const std::string &option,
-                             units::System::Ptr system)
-  : NetCDFConfig(com, variable_name, system),
-    m_option(option) {
-  // empty
-}
-
-void DefaultConfig::init(const Logger &log, bool use_default_path) {
-  options::String file(m_option,
-                       "Name of the file to read " + m_data.get_name() + " from",
-                       pism::config_file);
-  if (use_default_path or file.is_set()) {
-    this->read(m_com, file);
-    log.message(2, "Reading configuration parameters (%s) from file '%s'.\n",
-                m_data.get_name().c_str(), file->c_str());
-  }
-}
-
-void DefaultConfig::init_with_default(const Logger &log) {
-  this->init(log, true);
-}
-
-void DefaultConfig::init(const Logger &log) {
-  this->init(log, false);
 }
 
 } // end of namespace pism

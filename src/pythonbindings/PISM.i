@@ -224,7 +224,6 @@ pism_class(pism::Logger, "pism/util/Logger.hh");
 
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
-%shared_ptr(pism::DefaultConfig);
 %include "util/ConfigInterface.hh"
 %include "util/Config.hh"
 

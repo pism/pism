@@ -296,8 +296,8 @@ class Elevation(TestCase):
 
         # make a copy of the configuration database so we can re-initialize it from
         # options and then restore it
-        self.config = PISM.DefaultConfig(ctx.com, "pism_config", "-config", ctx.unit_system)
-        self.config.init_with_default(ctx.log)
+        self.config = PISM.NetCDFConfig(ctx.com, "pism_config", ctx.unit_system)
+        self.config.read(ctx.com, PISM.config_file)
         self.config.import_from(ctx.config)
 
     def tearDown(self):
