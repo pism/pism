@@ -33,7 +33,7 @@
 
 // include an implementation header so that we can allocate a NetCDFConfig instance in
 // config_from_options()
-#include "pism/util/Config.hh"
+#include "pism/util/NetCDFConfig.hh"
 #include "pism/util/Logger.hh"
 
 namespace pism {

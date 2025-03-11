@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2016, 2017, 2018, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 
 #include <jansson.h>
 
-#include "pism/util/Config.hh"
+#include "pism/util/ConfigInterface.hh"
 
 namespace pism {
 

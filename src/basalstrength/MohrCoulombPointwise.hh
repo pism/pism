@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 #ifndef MOHRCOULOMBPOINTWISE_H
 #define MOHRCOULOMBPOINTWISE_H
 
-#include "pism/util/Config.hh"
+#include "pism/util/ConfigInterface.hh"
 
 namespace pism {
 

@@ -12,7 +12,7 @@ add_library (util OBJECT
   Mask.cc
   MaxTimestep.cc
   Component.cc
-  Config.cc
+  NetCDFConfig.cc
   ConfigInterface.cc
   Diagnostic.cc
   Time.cc

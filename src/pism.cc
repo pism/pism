@@ -27,7 +27,7 @@ static char help[] =
 #include "pism/icemodel/IceModel.hh"
 #include "pism/icemodel/IceEISModel.hh"
 #include "pism/verification/iceCompModel.hh"
-#include "pism/util/Config.hh"
+#include "pism/util/NetCDFConfig.hh"
 #include "pism/util/Grid.hh"
 
 #include "pism/util/Context.hh"

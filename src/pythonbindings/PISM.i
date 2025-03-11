@@ -47,7 +47,7 @@
 #include "basalstrength/MohrCoulombYieldStress.hh"
 #include "util/error_handling.hh"
 #include "util/Diagnostic.hh"
-#include "util/Config.hh"
+#include "util/NetCDFConfig.hh"
 
 #if (Pism_USE_JANSSON==1)
 #include "util/ConfigJSON.hh"
@@ -225,7 +225,7 @@ pism_class(pism::Logger, "pism/util/Logger.hh");
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
 %include "util/ConfigInterface.hh"
-%include "util/Config.hh"
+%include "util/NetCDFConfig.hh"
 
 #if (Pism_USE_JANSSON==1)
 %shared_ptr(pism::ConfigJSON);
