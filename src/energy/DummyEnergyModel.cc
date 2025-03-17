@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,7 @@
 
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace energy {

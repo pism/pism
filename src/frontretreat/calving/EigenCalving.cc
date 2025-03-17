@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace calving {

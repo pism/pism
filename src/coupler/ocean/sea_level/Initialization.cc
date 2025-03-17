@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "pism/coupler/ocean/sea_level/Initialization.hh"
 
 #include "pism/coupler/util/init_step.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace ocean {

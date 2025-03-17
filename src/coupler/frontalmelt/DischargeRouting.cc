@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2024 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2024, 2025 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 #include "pism/coupler/util/options.hh"
 #include "pism/coupler/frontalmelt/FrontalMeltPhysics.hh"
 #include "pism/util/array/Forcing.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace frontalmelt {

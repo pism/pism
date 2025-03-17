@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,6 +26,7 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace ocean {

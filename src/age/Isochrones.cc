@@ -1,4 +1,4 @@
-/* Copyright (C) 2023, 2024 PISM Authors
+/* Copyright (C) 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,6 +34,7 @@
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

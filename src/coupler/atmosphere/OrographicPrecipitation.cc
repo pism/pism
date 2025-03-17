@@ -23,6 +23,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace atmosphere {

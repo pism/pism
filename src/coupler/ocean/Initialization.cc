@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,7 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace ocean {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2024 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2025 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -27,8 +27,8 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {

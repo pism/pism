@@ -26,6 +26,7 @@
 #include "pism/coupler/util/options.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace ocean {

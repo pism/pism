@@ -241,7 +241,7 @@ protected:
   //! Unit system
   const units::System::Ptr m_sys;
   //! Logger
-  const Logger::Ptr m_log;
+  std::shared_ptr<Logger> m_log;
   //! Time manager
   const Time::Ptr m_time;
 

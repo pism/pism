@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016, 2023, 2024 PISM Authors
+// Copyright (C) 2008-2016, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/io/File.hh"
 #include "pism/icebin/IBSurfaceModel.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace icebin {

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019, 2023 PISM Authors
+// Copyright (C) 2008-2019, 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,11 +18,10 @@
 
 #include "pism/coupler/surface/ConstantPIK.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace surface {

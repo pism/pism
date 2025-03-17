@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <memory>
+#include <petsc.h>
+
 static char help[] =
   "\nSSA_TESTI\n"
   "  Testing program for the finite element implementation of the SSA.\n"

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2018, 2021, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {

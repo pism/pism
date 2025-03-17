@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
   try {
     std::shared_ptr<Context> ctx = btutest_context(com, "pism_btutest");
-    Logger::Ptr log = ctx->log();
+    auto log = ctx->log();
 
     std::string usage =
       "  pism_btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 #include "pism/coupler/util/lapse_rates.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/array/Forcing.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace surface {

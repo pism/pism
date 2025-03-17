@@ -29,6 +29,7 @@
 #include "pism/util/array/Forcing.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

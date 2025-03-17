@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2024 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 
 #include "pism/coupler/ocean/Runoff_SMB.hh"
 #include "pism/util/ScalarForcing.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace ocean {

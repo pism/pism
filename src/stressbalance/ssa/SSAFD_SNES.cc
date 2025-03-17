@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 PISM Authors
+/* Copyright (C) 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,11 +16,12 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <algorithm>            // std::max()
 
 #include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/StressBalance.hh" // Inputs
 #include "pism/util/petscwrappers/Vec.hh"
-#include <algorithm>            // std::max()
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {

@@ -26,6 +26,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Interpolation1D.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace surface {

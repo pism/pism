@@ -415,7 +415,7 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
 
   auto reason = m_forward.linearize_at(*m_d);
   if (reason->failed()) {
-    Logger::ConstPtr log = m_grid->ctx()->log();
+    auto log = m_grid->ctx()->log();
     log->message(2,
                  "IPTaoTikhonovProblem::evaluateObjectiveAndGradient"
                  " failure in forward solve\n%s\n", reason->description().c_str());

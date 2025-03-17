@@ -39,6 +39,7 @@ static char help[] =
 #include "pism/verification/tests/exactTestsFG.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 
@@ -227,7 +228,7 @@ static void reportErrors(const Grid &grid,
                          const array::Array3D &w_sia,
                          const array::Array3D &strain_heating) {
 
-  Logger::ConstPtr log = grid.ctx()->log();
+  auto log = grid.ctx()->log();
 
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
   double max_strain_heating_error, av_strain_heating_error;

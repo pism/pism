@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "pism/regional/SIAFD_Regional.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

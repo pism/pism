@@ -24,6 +24,7 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace surface {

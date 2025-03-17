@@ -21,9 +21,7 @@
 
 #include <string>
 
-#include "pism/util/Config.hh"
 #include "pism/util/Units.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/Diagnostic.hh"
 
 namespace pism {
@@ -34,6 +32,7 @@ class Geometry;
 class Time;
 class Profiling;
 class Grid;
+class Logger;
 
 namespace array {
 template<typename T> class Array2D;
@@ -159,7 +158,7 @@ protected:
   //! unit system used by this component
   const units::System::Ptr m_sys;
   //! logger (for easy access)
-  const Logger::ConstPtr m_log;
+  std::shared_ptr<const Logger> m_log;
 };
 
 } // end of namespace pism

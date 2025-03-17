@@ -42,9 +42,6 @@ public:
   Logger(MPI_Comm com, int threshold);
   virtual ~Logger();
 
-  typedef std::shared_ptr<Logger> Ptr;
-  typedef std::shared_ptr<const Logger> ConstPtr;
-
   //! Print a message to the log.
   /** Does nothing if `threshold` is greater than the value provided to the constructor or set using
    *  set_threshold().

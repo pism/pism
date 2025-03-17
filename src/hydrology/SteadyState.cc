@@ -27,6 +27,7 @@
 #include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/Logger.hh"
 
 /* FIXMEs
  *

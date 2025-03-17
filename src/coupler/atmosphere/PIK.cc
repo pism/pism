@@ -28,6 +28,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace atmosphere {

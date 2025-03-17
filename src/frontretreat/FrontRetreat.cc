@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,7 @@
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

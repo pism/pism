@@ -27,6 +27,7 @@
 #include "pism/util/MaxTimestep.hh"
 
 #include "pism/util/ScalarForcing.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace atmosphere {

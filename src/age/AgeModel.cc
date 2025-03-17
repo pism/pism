@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include <memory>
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

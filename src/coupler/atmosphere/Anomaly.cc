@@ -22,6 +22,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/util/array/Forcing.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace atmosphere {

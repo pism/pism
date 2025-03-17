@@ -23,6 +23,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace inverse {

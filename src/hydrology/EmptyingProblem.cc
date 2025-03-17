@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace hydrology {

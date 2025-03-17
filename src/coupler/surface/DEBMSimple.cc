@@ -33,6 +33,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/array/Forcing.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace surface {

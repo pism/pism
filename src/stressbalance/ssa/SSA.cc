@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021, 2022, 2023, 2024 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021, 2022, 2023, 2024, 2025 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {

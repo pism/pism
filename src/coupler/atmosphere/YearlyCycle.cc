@@ -27,8 +27,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace atmosphere {

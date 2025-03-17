@@ -34,6 +34,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/array/Vector.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {

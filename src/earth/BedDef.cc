@@ -24,6 +24,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/Logger.hh"
 
 
 namespace pism {

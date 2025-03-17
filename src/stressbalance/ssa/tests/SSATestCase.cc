@@ -28,6 +28,7 @@
 
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {

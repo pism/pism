@@ -43,7 +43,7 @@ namespace bed {
  * @param[in] Nx extended grid size in the X direction
  * @param[in] Ny extended grid size in the Y direction
  */
-LingleClarkSerial::LingleClarkSerial(Logger::ConstPtr log,
+LingleClarkSerial::LingleClarkSerial(std::shared_ptr<const Logger> log,
                                      const Config &config,
                                      bool include_elastic,
                                      int Mx, int My,

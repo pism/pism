@@ -25,6 +25,7 @@
 
 #include "pism/energy/BTU_Full.hh"
 #include "pism/energy/BTU_Minimal.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace energy {

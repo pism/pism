@@ -1,4 +1,4 @@
-/* Copyright (C) 2021, 2023 PISM Authors
+/* Copyright (C) 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "pism/coupler/ocean/Delta_MBP.hh"
 #include "pism/util/ScalarForcing.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace ocean {

@@ -43,6 +43,7 @@
 #include "pism/coupler/ocean/PicoGeometry.hh"
 #include "pism/coupler/ocean/PicoPhysics.hh"
 #include "pism/util/array/Forcing.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace ocean {

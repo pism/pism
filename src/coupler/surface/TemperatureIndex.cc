@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2024 PISM Authors
+// Copyright (C) 2011--2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,6 +30,7 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/array/Forcing.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace surface {

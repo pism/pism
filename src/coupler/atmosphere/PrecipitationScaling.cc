@@ -21,6 +21,7 @@
 
 #include "pism/util/ScalarForcing.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace atmosphere {

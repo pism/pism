@@ -28,6 +28,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace hydrology {

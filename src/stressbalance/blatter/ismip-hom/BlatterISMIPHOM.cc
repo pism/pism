@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2020, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "pism/stressbalance/blatter/ismip-hom/BlatterISMIPHOM.hh"
 
 #include "pism/util/node_types.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {

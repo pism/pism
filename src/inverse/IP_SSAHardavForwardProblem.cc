@@ -28,6 +28,7 @@
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/fem/Quadrature.hh"
 #include "pism/util/fem/DirichletData.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace inverse {
