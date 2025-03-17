@@ -43,21 +43,20 @@ like this:
 
 Let's briefly deconstruct this run.
 
-At the front is "``mpiexec -n 4 pism``". This means that the PISM executable ``pism`` is
-run in parallel using four processes (usually one per CPU core) under the `Message Passing
+At the front is "``mpiexec -n 8 pism``". This means that the PISM executable ``pism`` is
+run in parallel using eight processes (usually one per CPU core) under the `Message Passing
 Interface <MPI_>`_. Though we are assuming you have a workstation or laptop with at least
-4 cores, this example will work with 1 to about 50 processors, with reasonably good
+8 cores, this example will work with 1 to about 50 processors, with reasonably good
 scaling in speed. Scaling can be good with more processors if we run at higher spatial
 resolution :cite:`BBssasliding`, :cite:`DickensMorey2013`.
 
 Next, the proposed run uses option ``-bootstrap`` to start the run by "bootstrapping."
 This term describes the creation, by heuristics and highly-simplified models, of the
 mathematical initial conditions required for a deterministic, time-dependent ice dynamics
-model. Then the options describe a `76 \times 141` point grid in the horizontal,
-which gives 20 km grid spacing in both directions. Then there are choices about the
-vertical extent and resolution of the computational grid; more on those later. After that
-we see a description of the time axis, with a start and end time given: "``-ys -10000 -ye
-0``".
+model. Then the options describe a 20 km grid spacing in both directions. Then there are
+choices about the vertical extent and resolution of the computational grid; more on those
+later. After that we see a description of the time axis, with a start and end time given:
+"``-ys -10000 -ye 0``".
 
 Then we get the instructions that tell PISM to read the upper surface boundary conditions
 (i.e. climate) from a file: "``-surface given -surface_given_file
