@@ -243,7 +243,7 @@ protected:
   //! Logger
   std::shared_ptr<Logger> m_log;
   //! Time manager
-  const Time::Ptr m_time;
+  std::shared_ptr<Time> m_time;
 
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;

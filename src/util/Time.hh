@@ -59,9 +59,6 @@ public:
        units::System::Ptr unit_system);
   virtual ~Time() = default;
 
-  typedef std::shared_ptr<Time> Ptr;
-  typedef std::shared_ptr<const Time> ConstPtr;
-
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);
 
