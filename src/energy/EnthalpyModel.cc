@@ -109,7 +109,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
   (void) t;
 
-  EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
+  auto EC = m_grid->ctx()->enthalpy_converter();
 
   const double
     ice_density           = m_config->get_number("constants.ice.density"), // kg m-3

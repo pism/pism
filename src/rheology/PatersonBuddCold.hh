@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2018, 2021, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2018, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@ namespace rheology {
 //! Cold case of Paterson-Budd
 class PatersonBuddCold : public PatersonBudd {
 public:
-  PatersonBuddCold(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr EC);
+  PatersonBuddCold(const std::string &prefix, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
   virtual ~PatersonBuddCold() = default;
 
   //! Return the temperature T corresponding to a given value A=A(T).
@@ -44,7 +44,7 @@ protected:
 };
 
 bool FlowLawIsPatersonBuddCold(const FlowLaw &flow_law,
-                               const Config &, EnthalpyConverter::Ptr);
+                               const Config &, std::shared_ptr<EnthalpyConverter>);
 
 } // end of namespace rheology
 } // end of namespace pism

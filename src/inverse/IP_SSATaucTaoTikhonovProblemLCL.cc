@@ -20,6 +20,8 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/petscwrappers/DM.hh"
+
 #include <memory>
 
 namespace pism {

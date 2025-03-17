@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,7 @@
 
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/DM.hh"
 
 namespace pism {
 namespace petsc {
@@ -75,7 +76,7 @@ VecArray2D::~VecArray2D() {
 
 // Wrapper around DMDAVecGetArray / DMDAVecRestoreArray
 
-DMDAVecArray::DMDAVecArray(DM::Ptr dm, ::Vec v)
+DMDAVecArray::DMDAVecArray(std::shared_ptr<DM> dm, ::Vec v)
   : m_dm(dm), m_v(v) {
   PetscErrorCode ierr = DMDAVecGetArray(*m_dm, m_v, &m_array);
   PISM_CHK(ierr, "DMDAVecGetArray");
@@ -91,7 +92,7 @@ void* DMDAVecArray::get() {
 
 // Wrapper around DMDAVecGetArrayDOF / DMDAVecRestoreArrayDOF
 
-DMDAVecArrayDOF::DMDAVecArrayDOF(DM::Ptr dm, ::Vec v)
+DMDAVecArrayDOF::DMDAVecArrayDOF(std::shared_ptr<DM> dm, ::Vec v)
   : m_dm(dm), m_v(v) {
   PetscErrorCode ierr = DMDAVecGetArrayDOF(*m_dm, m_v, &m_array);
   PISM_CHK(ierr, "DMDAVecGetArrayDOF");
@@ -107,7 +108,7 @@ void* DMDAVecArrayDOF::get() {
 
 // Wrapper around DMGetGlobalVector / DMRestoreGlobalVector
 
-TemporaryGlobalVec::TemporaryGlobalVec(DM::Ptr dm) {
+TemporaryGlobalVec::TemporaryGlobalVec(std::shared_ptr<DM> dm) {
   m_dm = dm;
   PetscErrorCode ierr = DMGetGlobalVector(*m_dm, &m_value);
   PISM_CHK(ierr, "DMGetGlobalVector");

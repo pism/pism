@@ -41,6 +41,7 @@
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/petscwrappers/VecScatter.hh"
+#include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
 #include "pism/util/pism_utilities.hh"
 

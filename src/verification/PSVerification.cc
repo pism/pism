@@ -49,7 +49,7 @@ const double Verification::LforFG = 750000; // m
 const double Verification::ApforG = 200; // m
 
 Verification::Verification(std::shared_ptr<const Grid> g,
-                           EnthalpyConverter::Ptr EC, int test)
+                           std::shared_ptr<EnthalpyConverter> EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2023 PISM Authors
+/* Copyright (C) 2015, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@ namespace rheology {
 */
 class GPBLD : public FlowLaw {
 public:
-  GPBLD(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr EC);
+  GPBLD(const std::string &prefix, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
 protected:
   double softness_impl(double enthalpy, double pressure) const;
   void flow_n_impl(const double *stress, const double *enthalpy,

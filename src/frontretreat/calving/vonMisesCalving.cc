@@ -43,7 +43,7 @@ vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
 {
 
   if (m_config->get_flag("calving.vonmises_calving.use_custom_flow_law")) {
-    EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+    auto EC = grid->ctx()->enthalpy_converter();
     rheology::FlowLawFactory factory("calving.vonmises_calving.", m_config, EC);
     m_flow_law = factory.create();
   }

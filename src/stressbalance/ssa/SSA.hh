@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020, 2022, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2020, 2022, 2023, 2024, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -65,17 +65,6 @@ public:
 private:
   double m_min_thickness, m_constant_nu;
 };
-
-//! Callback for constructing a new SSA subclass.  The caller is
-//! responsible for deleting the newly constructed SSA.
-/*! The factory idiom gives a way to implement runtime polymorphism for the 
-  choice of SSA algorithm.  The factory is a function pointer that takes 
-  all the arguments of an SSA constructor and returns a newly constructed instance.
-  Subclasses of SSA should provide an associated function pointer matching the
-  SSAFactory typedef */
-class SSA;
-typedef SSA * (*SSAFactory)(std::shared_ptr<const Grid>);
-
 
 //! PISM's SSA solver.
 /*!

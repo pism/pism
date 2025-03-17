@@ -135,7 +135,7 @@ void bedrock_surface_temperature(const array::Scalar &sea_level,
                               config->get_number("constants.sea_water.density") *
                               config->get_number("constants.standard_gravity")); // K m-1
 
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+  auto EC = grid->ctx()->enthalpy_converter();
 
   array::AccessScope list{&cell_type, &bed_topography, &sea_level, &ice_thickness,
       &ice_surface_temperature, &basal_enthalpy, &result};

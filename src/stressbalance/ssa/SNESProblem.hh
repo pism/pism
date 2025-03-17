@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2022, 2024 David Maxwell
+// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2022, 2024, 2025 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "pism/util/Grid.hh" // inline implementation in the header uses Grid
 #include "pism/util/Vector2d.hh" // to get Vector2
 #include "pism/util/petscwrappers/SNES.hh"
-#include "pism/util/Logger.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
@@ -51,7 +51,7 @@ protected:
 
   petsc::Vec m_X;
   petsc::SNES m_snes;
-  petsc::DM::Ptr m_DA;
+  std::shared_ptr<petsc::DM> m_DA;
 
 private:
 

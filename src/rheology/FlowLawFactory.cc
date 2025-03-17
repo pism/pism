@@ -33,45 +33,40 @@
 namespace pism {
 namespace rheology {
 
-FlowLaw* create_isothermal_glen(const std::string &pre,
-                                const Config &config, EnthalpyConverter::Ptr EC) {
+using ECPtr = std::shared_ptr<EnthalpyConverter>;
+
+FlowLaw *create_isothermal_glen(const std::string &pre, const Config &config, ECPtr EC) {
   return new (IsothermalGlen)(pre, config, EC);
 }
 
-FlowLaw* create_pb(const std::string &pre,
-                   const Config &config, EnthalpyConverter::Ptr EC) {
+FlowLaw *create_pb(const std::string &pre, const Config &config, ECPtr EC) {
   return new (PatersonBudd)(pre, config, EC);
 }
 
-FlowLaw* create_gpbld(const std::string &pre,
-                      const Config &config, EnthalpyConverter::Ptr EC) {
+FlowLaw *create_gpbld(const std::string &pre, const Config &config, ECPtr EC) {
   return new (GPBLD)(pre, config, EC);
 }
 
-FlowLaw* create_hooke(const std::string &pre,
-                      const Config &config, EnthalpyConverter::Ptr EC) {
+FlowLaw *create_hooke(const std::string &pre, const Config &config, ECPtr EC) {
   return new (Hooke)(pre, config, EC);
 }
 
-FlowLaw* create_arr(const std::string &pre,
-                    const Config &config, EnthalpyConverter::Ptr EC) {
+FlowLaw *create_arr(const std::string &pre, const Config &config, ECPtr EC) {
   return new (PatersonBuddCold)(pre, config, EC);
 }
 
-FlowLaw* create_arrwarm(const std::string &pre,
-                        const Config &config, EnthalpyConverter::Ptr EC) {
+FlowLaw *create_arrwarm(const std::string &pre, const Config &config, ECPtr EC) {
   return new (PatersonBuddWarm)(pre, config, EC);
 }
 
-FlowLaw* create_goldsby_kohlstedt(const std::string &pre,
-                                  const Config &config, EnthalpyConverter::Ptr EC) {
+FlowLaw *create_goldsby_kohlstedt(const std::string &pre, const Config &config, ECPtr EC) {
   return new (GoldsbyKohlstedt)(pre, config, EC);
 }
 
 FlowLawFactory::FlowLawFactory(const std::string &prefix,
                                std::shared_ptr<const Config> conf,
-                               EnthalpyConverter::Ptr my_EC)
-  : m_config(conf), m_EC(my_EC) {
+                               std::shared_ptr<EnthalpyConverter> EC)
+  : m_config(conf), m_EC(EC) {
 
   m_prefix = prefix;
 
@@ -109,7 +104,7 @@ void FlowLawFactory::set_default(const std::string &type) {
 
 std::shared_ptr<FlowLaw> FlowLawFactory::create() {
   // find the function that can create selected flow law:
-  FlowLawCreator r = m_flow_laws[m_type_name];
+  auto r = m_flow_laws[m_type_name];
   if (r == NULL) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Selected ice flow law \"%s\" is not available,\n"
                                   "but we shouldn't be able to get here anyway",

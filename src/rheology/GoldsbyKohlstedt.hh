@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,7 +46,7 @@ class GoldsbyKohlstedt : public FlowLaw {
 public:
   GoldsbyKohlstedt(const std::string &prefix,
                    const Config &config,
-                   EnthalpyConverter::Ptr EC);
+                   std::shared_ptr<EnthalpyConverter> EC);
 protected:
   virtual double flow_impl(double stress, double E,
                            double pressure, double grainsize) const;
@@ -78,7 +78,7 @@ protected:
 class GoldsbyKohlstedtStripped : public GoldsbyKohlstedt {
 public:
   GoldsbyKohlstedtStripped(const std::string &prefix,
-                           const Config &config, EnthalpyConverter::Ptr EC);
+                           const Config &config, std::shared_ptr<EnthalpyConverter> EC);
 
 protected:
   virtual double flow_from_temp(double stress, double temp,

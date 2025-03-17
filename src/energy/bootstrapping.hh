@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,7 +42,7 @@ namespace energy {
  * @param[in] G upward basal heat flux, in `W / meter^2`
  * @param[in] ice_k thermal conductivity of ice
  */
-double ice_temperature_guess(EnthalpyConverter::Ptr EC,
+double ice_temperature_guess(EnthalpyConverter &EC,
                              double H, double z, double T_surface,
                              double G, double ice_k);
 
@@ -60,7 +60,7 @@ double ice_temperature_guess(EnthalpyConverter::Ptr EC,
  *              ice specific heat capacity
  * @param[in] SMB surface mass balance in `m / second`
  */
-double ice_temperature_guess_smb(EnthalpyConverter::Ptr EC,
+double ice_temperature_guess_smb(EnthalpyConverter &EC,
                                  double H, double z, double T_surface,
                                  double G, double ice_k, double K, double SMB);
 

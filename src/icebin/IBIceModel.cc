@@ -176,7 +176,7 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(
     double Href_to_H_flux,       // [m] ice equivalent
     double nonneg_rule_flux)     // [m] ice equivalent
 {
-  EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
+  auto EC = ctx()->enthalpy_converter();
 
   const auto &ice_thickness = m_geometry.ice_thickness;
 
@@ -275,7 +275,7 @@ void IBIceModel::reset_rate() {
 void IBIceModel::prepare_outputs(double time_s) {
   (void)time_s;
 
-  EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
+  auto EC = ctx()->enthalpy_converter();
 
   // --------- ice_surface_enth from m_ice_enthalpy
   const auto &ice_surface_elevation = m_geometry.ice_surface_elevation;
@@ -424,7 +424,7 @@ void IBIceModel::construct_surface_temp(
 
 {
   printf("BEGIN IBIceModel::merge_surface_temp default_val=%g\n", default_val);
-  EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
+  auto EC = ctx()->enthalpy_converter();
 
   double ice_density = m_config->get_number("constants.ice.density");
   const auto &ice_enthalpy = m_energy_model->enthalpy();

@@ -23,7 +23,6 @@
 
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
@@ -37,6 +36,7 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/InputInterpolation.hh"
+#include "pism/util/petscwrappers/DM.hh"
 
 namespace pism {
 namespace array {

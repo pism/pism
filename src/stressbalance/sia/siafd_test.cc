@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
     auto grid = std::make_shared<Grid>(ctx, P);
     grid->report_parameters();
 
-    EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
+    std::shared_ptr<EnthalpyConverter> EC(new ColdEnthalpyConverter(*config));
 
     const int WIDE_STENCIL = config->get_number("grid.max_stencil_width");
 

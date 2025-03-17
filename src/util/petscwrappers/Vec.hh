@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,12 +21,15 @@
 #define _VEC_H_
 
 #include <petscvec.h>
+#include <memory>
 
 #include "pism/util/Wrapper.hh"
-#include "pism/util/petscwrappers/DM.hh"
 
 namespace pism {
 namespace petsc {
+
+class DM;
+
 /** Wrapper around PETSc's Vec. Simplifies memory management.
  *
  * The constructor takes ownership of the Vec argument passed to it.
@@ -69,32 +72,32 @@ private:
 
 class DMDAVecArray {
 public:
-  DMDAVecArray(DM::Ptr dm, ::Vec v);
+  DMDAVecArray(std::shared_ptr<DM> dm, ::Vec v);
   ~DMDAVecArray();
   void* get();
 private:
-  DM::Ptr m_dm;
+  std::shared_ptr<DM> m_dm;
   ::Vec m_v;
   void *m_array;
 };
 
 class DMDAVecArrayDOF {
 public:
-  DMDAVecArrayDOF(DM::Ptr dm, ::Vec v);
+  DMDAVecArrayDOF(std::shared_ptr<DM> dm, ::Vec v);
   ~DMDAVecArrayDOF();
   void* get();
 private:
-  DM::Ptr m_dm;
+  std::shared_ptr<DM> m_dm;
   ::Vec m_v;
   void *m_array;
 };
 
 class TemporaryGlobalVec : public Vec {
 public:
-  TemporaryGlobalVec(DM::Ptr dm);
+  TemporaryGlobalVec(std::shared_ptr<DM> dm);
   ~TemporaryGlobalVec();
 private:
-  DM::Ptr m_dm;
+  std::shared_ptr<DM> m_dm;
 };
 
 } // end of namespace petsc

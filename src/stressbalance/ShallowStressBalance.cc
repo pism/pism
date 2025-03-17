@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2023 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2023, 2025 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -83,7 +83,7 @@ double ShallowStressBalance::flow_enhancement_factor() const {
   return m_e_factor;
 }
 
-EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() const {
+std::shared_ptr<EnthalpyConverter> ShallowStressBalance::enthalpy_converter() const {
   return m_EC;
 }
 

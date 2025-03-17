@@ -76,7 +76,7 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
 
   Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
 
-  EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
+  std::shared_ptr<EnthalpyConverter> EC(new ColdEnthalpyConverter(*config));
 
   return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
 }

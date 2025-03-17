@@ -48,8 +48,8 @@ done this way for regularity (i.e. dEnth/dz computations).
 void compute_enthalpy_cold(const array::Array3D &temperature, const array::Scalar &ice_thickness,
                            array::Array3D &result) {
 
-  auto grid                 = result.grid();
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+  auto grid = result.grid();
+  auto EC   = grid->ctx()->enthalpy_converter();
 
   array::AccessScope list{ &temperature, &result, &ice_thickness };
 
@@ -76,8 +76,8 @@ void compute_enthalpy_cold(const array::Array3D &temperature, const array::Scala
 void compute_temperature(const array::Array3D &enthalpy, const array::Scalar &ice_thickness,
                          array::Array3D &result) {
 
-  auto grid                 = result.grid();
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+  auto grid = result.grid();
+  auto EC   = grid->ctx()->enthalpy_converter();
 
   array::AccessScope list{ &enthalpy, &ice_thickness, &result };
 
@@ -106,8 +106,8 @@ void compute_enthalpy(const array::Array3D &temperature,
                       const array::Array3D &liquid_water_fraction,
                       const array::Scalar &ice_thickness, array::Array3D &result) {
 
-  auto grid                 = result.grid();
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+  auto grid = result.grid();
+  auto EC   = grid->ctx()->enthalpy_converter();
 
   array::AccessScope list{ &temperature, &liquid_water_fraction, &ice_thickness, &result };
 
@@ -137,8 +137,7 @@ void compute_liquid_water_fraction(const array::Array3D &enthalpy,
                                    const array::Scalar &ice_thickness, array::Array3D &result) {
 
   auto grid = result.grid();
-
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+  auto EC   = grid->ctx()->enthalpy_converter();
 
   result.set_name("liqfrac");
   result.metadata(0).set_name("liqfrac");
@@ -179,8 +178,8 @@ void compute_liquid_water_fraction(const array::Array3D &enthalpy,
 void compute_cts(const array::Array3D &ice_enthalpy, const array::Scalar &ice_thickness,
                  array::Array3D &result) {
 
-  auto grid                 = result.grid();
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+  auto grid = result.grid();
+  auto EC   = grid->ctx()->enthalpy_converter();
 
   result.set_name("cts");
   result.metadata(0).set_name("cts");
@@ -402,14 +401,14 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
 
         for (unsigned int k = 0; k < ks; k++) {
           const double z = grid->z(k);
-          T[k] = ice_temperature_guess_smb(EC, H, z, T_surface, G, ice_k, K, SMB);
+          T[k] = ice_temperature_guess_smb(*EC, H, z, T_surface, G, ice_k, K, SMB);
         }
 
       } else { // method 2: a quartic guess; does not use SMB
 
         for (unsigned int k = 0; k < ks; k++) {
           const double z = grid->z(k);
-          T[k] = ice_temperature_guess(EC, H, z, T_surface, G, ice_k);
+          T[k] = ice_temperature_guess(*EC, H, z, T_surface, G, ice_k);
         }
 
       }

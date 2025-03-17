@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,14 +26,14 @@
 namespace pism {
 namespace energy {
 
-double ice_temperature_guess(EnthalpyConverter::Ptr EC,
+double ice_temperature_guess(EnthalpyConverter &EC,
                              double H, double z, double T_surface,
                              double G, double ice_k) {
 
   const double
     depth = H - z,
     d2    = depth * depth,
-    Tpmp  = EC->melting_temperature(EC->pressure(depth));
+    Tpmp  = EC.melting_temperature(EC.pressure(depth));
 
   const double
     beta = (4.0/21.0) * (G / (2.0 * ice_k * H * H * H)),
@@ -42,9 +42,9 @@ double ice_temperature_guess(EnthalpyConverter::Ptr EC,
   return std::min(Tpmp, T_surface + alpha * d2 + beta * d2 * d2);
 }
 
-double ice_temperature_guess_smb(EnthalpyConverter::Ptr EC, double H, double z, double T_surface,
+double ice_temperature_guess_smb(EnthalpyConverter &EC, double H, double z, double T_surface,
                                  double G, double ice_k, double K, double SMB) {
-  const double depth = H - z, Tpmp = EC->melting_temperature(EC->pressure(depth));
+  const double depth = H - z, Tpmp = EC.melting_temperature(EC.pressure(depth));
 
   if (SMB <= 0.0) {
     // negative or zero surface mass balance: linear temperature profile

@@ -390,7 +390,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
                                                                array::Vector &du,
                                                                Vec dzeta) {
-  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_number("grid.max_stencil_width"));
+  auto da2 = m_grid->get_dm(1, m_config->get_number("grid.max_stencil_width"));
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }

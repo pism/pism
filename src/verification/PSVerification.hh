@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ namespace surface {
 //! Climate inputs for verification tests.
 class Verification : public PSFormulas {
 public:
-  Verification(std::shared_ptr<const Grid> g, EnthalpyConverter::Ptr EC, int test);
+  Verification(std::shared_ptr<const Grid> g, std::shared_ptr<EnthalpyConverter> EC, int test);
   ~Verification() = default;
 private:
   void init_impl(const Geometry &geometry);
@@ -41,7 +41,7 @@ private:
   MaxTimestep max_timestep_impl(double t) const;
 
   int m_testname;
-  EnthalpyConverter::Ptr m_EC;
+  std::shared_ptr<EnthalpyConverter> m_EC;
   void update_ABCDH(double t);
   void update_FG(double t);
   void update_KO();

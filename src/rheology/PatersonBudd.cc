@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2023 PISM Authors
+/* Copyright (C) 2015, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@ namespace rheology {
 
 PatersonBudd::PatersonBudd(const std::string &prefix,
                            const Config &config,
-                           EnthalpyConverter::Ptr ec)
+                           std::shared_ptr<EnthalpyConverter> ec)
   : FlowLaw(prefix, config, ec) {
   m_name = "Paterson-Budd";
 }

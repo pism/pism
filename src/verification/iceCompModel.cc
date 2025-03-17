@@ -243,7 +243,7 @@ void IceCompModel::allocate_bed_deformation() {
 }
 
 void IceCompModel::allocate_couplers() {
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+  auto EC = m_ctx->enthalpy_converter();
 
   // Climate will always come from verification test formulas.
   m_surface.reset(new surface::Verification(m_grid, EC, m_testname));
@@ -657,7 +657,7 @@ void IceCompModel::reportErrors() {
   const rheology::FlowLaw &flow_law = *m_stress_balance->modifier()->flow_law();
   const double m = (2.0 * flow_law.exponent() + 2.0) / flow_law.exponent();
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+  auto EC = m_ctx->enthalpy_converter();
 
   if ((m_testname == 'F' or m_testname == 'G') and m_testname != 'V' and
       not FlowLawIsPatersonBuddCold(flow_law, *m_config, EC)) {

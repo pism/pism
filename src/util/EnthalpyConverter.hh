@@ -53,8 +53,6 @@ public:
   EnthalpyConverter(const Config &config);
   virtual ~EnthalpyConverter() = default;
 
-  typedef std::shared_ptr<EnthalpyConverter> Ptr;
-
   bool is_temperate(double E, double P) const;
   bool is_temperate_relaxed(double E, double P) const;
 

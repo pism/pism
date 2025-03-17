@@ -33,7 +33,7 @@ namespace pism {
 namespace rheology {
 
 FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
-                 EnthalpyConverter::Ptr ec)
+                 std::shared_ptr<EnthalpyConverter> ec)
   : m_EC(ec) {
 
   if (not m_EC) {
@@ -67,7 +67,7 @@ std::string FlowLaw::name() const {
   return m_name;
 }
 
-EnthalpyConverter::Ptr FlowLaw::EC() const {
+std::shared_ptr<EnthalpyConverter> FlowLaw::EC() const {
   return m_EC;
 }
 

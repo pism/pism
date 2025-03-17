@@ -28,7 +28,7 @@ namespace rheology {
   \ref AschwandenBlatter and \ref LliboutryDuval1985.
 */
 GPBLD::GPBLD(const std::string &prefix,
-             const Config &config, EnthalpyConverter::Ptr ec)
+             const Config &config, std::shared_ptr<EnthalpyConverter> ec)
   : FlowLaw(prefix, config, ec) {
   m_name = "Glen-Paterson-Budd-Lliboutry-Duval";
 

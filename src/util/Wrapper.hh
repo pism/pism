@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,16 +20,11 @@
 #ifndef _WRAPPER_H_
 #define _WRAPPER_H_
 
-#include <memory>
-
 namespace pism {
 
 template<typename T>
 class Wrapper {
 public:
-  typedef std::shared_ptr<Wrapper> Ptr;
-  typedef std::weak_ptr<Wrapper> WeakPtr;
-
   operator T() const {
     return m_value;
   }

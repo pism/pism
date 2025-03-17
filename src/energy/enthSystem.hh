@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023, 2025 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,7 @@ public:
                 const array::Array3D &v3,
                 const array::Array3D &w3,
                 const array::Array3D &strain_heating3,
-                EnthalpyConverter::Ptr EC);
+                std::shared_ptr<EnthalpyConverter> EC);
   ~enthSystemCtx() = default;
 
   void init(int i, int j, bool ismarginal, double ice_thickness);
@@ -107,7 +107,7 @@ protected:
   bool m_margin_exclude_strain_heat;
 
   const array::Array3D &m_Enth3, &m_strain_heating3;
-  EnthalpyConverter::Ptr m_EC;  // conductivity has known dependence on T, not enthalpy
+  std::shared_ptr<EnthalpyConverter> m_EC;  // conductivity has known dependence on T, not enthalpy
 
   void compute_enthalpy_CTS();
   double compute_lambda();

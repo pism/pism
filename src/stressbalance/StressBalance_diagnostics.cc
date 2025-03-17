@@ -1015,7 +1015,7 @@ std::shared_ptr<array::Array> PSB_vonmises_stress::compute_impl() const {
   std::shared_ptr<const rheology::FlowLaw> flow_law;
 
   if (m_config->get_flag("calving.vonmises_calving.use_custom_flow_law")) {
-    EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
+    auto EC = m_grid->ctx()->enthalpy_converter();
     rheology::FlowLawFactory factory("calving.vonmises_calving.", m_config, EC);
     flow_law = factory.create();
   } else {

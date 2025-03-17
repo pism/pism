@@ -501,8 +501,8 @@ static inline double D2(double u_x, double u_y, double u_z, double v_x, double v
 void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
   PetscErrorCode ierr;
 
-  const rheology::FlowLaw &flow_law = *m_shallow_stress_balance->flow_law();
-  EnthalpyConverter::Ptr EC = m_shallow_stress_balance->enthalpy_converter();
+  const auto &flow_law = *m_shallow_stress_balance->flow_law();
+  auto EC = m_shallow_stress_balance->enthalpy_converter();
 
   const array::Array3D
     &u = m_modifier->velocity_u(),

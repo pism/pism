@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019, 2021, 2022 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2019, 2021, 2022, 2025 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -64,7 +64,7 @@ public:
 
   std::shared_ptr<const rheology::FlowLaw> flow_law() const;
 
-  EnthalpyConverter::Ptr enthalpy_converter() const;
+  std::shared_ptr<EnthalpyConverter> enthalpy_converter() const;
 
   const IceBasalResistancePlasticLaw* sliding_law() const;
 
@@ -76,7 +76,7 @@ protected:
 
   IceBasalResistancePlasticLaw *m_basal_sliding_law;
   std::shared_ptr<rheology::FlowLaw> m_flow_law;
-  EnthalpyConverter::Ptr m_EC;
+  std::shared_ptr<EnthalpyConverter> m_EC;
 
   array::Vector2 m_velocity;
   array::Scalar m_basal_frictional_heating;

@@ -118,7 +118,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
   (void) t;
 
-  EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
+  auto EC = m_grid->ctx()->enthalpy_converter();
 
   inputs.check();
 

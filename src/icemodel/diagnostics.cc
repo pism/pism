@@ -1036,7 +1036,7 @@ std::shared_ptr<array::Array> Temperature::compute_impl() const {
   const auto &thickness = model->geometry().ice_thickness;
   const auto &enthalpy  = model->energy_balance_model()->enthalpy();
 
-  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
+  auto EC = model->ctx()->enthalpy_converter();
 
   double *Tij;
   const double *Enthij; // columns of these values
@@ -1093,7 +1093,7 @@ std::shared_ptr<array::Array> TemperaturePA::compute_impl() const {
   const auto &thickness = model->geometry().ice_thickness;
   const auto &enthalpy  = model->energy_balance_model()->enthalpy();
 
-  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
+  auto EC = model->ctx()->enthalpy_converter();
 
   double *Tij;
   const double *Enthij; // columns of these values
@@ -1157,7 +1157,7 @@ std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
   const auto &thickness = model->geometry().ice_thickness;
   const auto &enthalpy = model->energy_balance_model()->enthalpy();
 
-  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
+  auto EC = model->ctx()->enthalpy_converter();
 
   array::AccessScope list{result.get(), &enthalpy, &thickness};
 
@@ -1308,7 +1308,7 @@ std::shared_ptr<array::Array> TemperatureBasal::compute_impl() const {
 
   const auto &thickness = model->geometry().ice_thickness;
 
-  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
+  auto EC = model->ctx()->enthalpy_converter();
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result); // z=0 (basal) slice
   // Now result contains basal enthalpy.
@@ -1366,7 +1366,7 @@ std::shared_ptr<array::Array> TemperatureSurface::compute_impl() const {
   auto enth   = IceEnthalpySurface(model).compute();
   auto result = array::cast<array::Scalar>(enth);
 
-  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
+  auto EC = model->ctx()->enthalpy_converter();
 
   // result contains surface enthalpy; note that it is allocated by
   // IceEnthalpySurface::compute().
@@ -1452,7 +1452,7 @@ std::shared_ptr<array::Array> TemperateIceThickness::compute_impl() const {
 
   array::AccessScope list{ &cell_type, result.get(), &ice_enthalpy, &ice_thickness };
 
-  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
+  auto EC = model->ctx()->enthalpy_converter();
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1514,7 +1514,7 @@ std::shared_ptr<array::Array> TemperateIceThicknessBasal::compute_impl() const {
 
   auto result = allocate<array::Scalar>("tempicethk_basal");
 
-  EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
+  auto EC = model->ctx()->enthalpy_converter();
 
   const auto &cell_type     = model->geometry().cell_type;
   const auto &ice_enthalpy  = model->energy_balance_model()->enthalpy();
@@ -2910,7 +2910,7 @@ std::shared_ptr<array::Array> IceHardness::compute_impl() const {
       new array::Array3D(m_grid, "hardness", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
+  auto EC = m_grid->ctx()->enthalpy_converter();
 
   const array::Array3D &ice_enthalpy = model->energy_balance_model()->enthalpy();
   const array::Scalar &ice_thickness = model->geometry().ice_thickness;
@@ -2980,7 +2980,7 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
 
   using mask::ice_free;
 
-  EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
+  auto EC = m_grid->ctx()->enthalpy_converter();
 
   const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
 
@@ -3260,8 +3260,8 @@ void IceModel::init_diagnostics() {
 
   using namespace diagnostics;
 
-  typedef Diagnostic      d;
-  typedef Diagnostic::Ptr f;    // "f" for "field"
+  using d = Diagnostic;
+  using f = Diagnostic::Ptr;    // "f" for "field"
   m_diagnostics = {
     // geometry
     {"cell_grounded_fraction",              d::wrap(m_geometry.cell_grounded_fraction)},
@@ -3382,7 +3382,7 @@ void IceModel::init_diagnostics() {
     m_diagnostics["ligroundf"]   = m_diagnostics["grounding_line_flux"];
   }
 
-  typedef TSDiagnostic::Ptr s; // "s" for "scalar"
+  using s = TSDiagnostic::Ptr; // "s" for "scalar"
   m_ts_diagnostics = {
     // area
     {"ice_area_glacierized",                s(new scalar::IceAreaGlacierized(this))},
@@ -3449,7 +3449,7 @@ void IceModel::init_diagnostics() {
   }
 }
 
-typedef std::map<std::string, std::vector<VariableMetadata>> Metadata;
+using Metadata = std::map<std::string, std::vector<VariableMetadata>>;
 
 static void print_diagnostics(const Logger &log, const Metadata &list) {
   for (const auto &d : list) {
@@ -3592,7 +3592,7 @@ void IceModel::list_diagnostics(const std::string &list_type) const {
  */
 double IceModel::compute_temperate_base_fraction(double total_ice_area) {
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+  auto EC = m_ctx->enthalpy_converter();
 
   auto cell_area = m_grid->cell_area();
 

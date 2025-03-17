@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2018, 2020, 2021, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -233,7 +233,7 @@ static double F(double SL, double B, double H, double alpha) {
 /*!
  * Compute the flotation criterion at all the points in the box stencil.
  */
-typedef stencils::Box<double> Box;
+using Box = stencils::Box<double>;
 static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
   return {F(SL.c, B.c, H.c, alpha),
           F(SL.n,  B.n,  H.n,  alpha),

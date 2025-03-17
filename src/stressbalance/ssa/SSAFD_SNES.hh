@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 PISM Authors
+/* Copyright (C) 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -45,7 +45,7 @@ private:
   array::Vector m_residual;
 
   petsc::SNES m_snes;
-  petsc::DM::Ptr m_DA;
+  std::shared_ptr<petsc::DM> m_DA;
 
   struct CallbackData {
     DM da;

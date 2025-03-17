@@ -1095,7 +1095,7 @@ protected:
 
 DiagnosticList GeometryEvolution::diagnostics_impl() const {
   using namespace diagnostics;
-  typedef Diagnostic::Ptr Ptr;
+  using Ptr = Diagnostic::Ptr;
 
   std::map<std::string, Ptr> result;
   result = {

@@ -26,7 +26,7 @@ namespace pism {
 namespace rheology {
 
 IsothermalGlen::IsothermalGlen(const std::string &prefix,
-                               const Config &config, EnthalpyConverter::Ptr ec)
+                               const Config &config, std::shared_ptr<EnthalpyConverter> ec)
   : PatersonBudd(prefix, config, ec) {
   m_name = "isothermal Glen";
   

@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2023 PISM Authors
+// Copyright (C) 2010--2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -63,7 +63,7 @@ public:
 
 protected:
   std::shared_ptr<rheology::FlowLaw> m_flow_law;
-  EnthalpyConverter::Ptr m_EC;
+  std::shared_ptr<EnthalpyConverter> m_EC;
   double m_D_max;
   array::Staggered1 m_diffusive_flux;
   array::Array3D m_u, m_v;
