@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <memory>
 #include <petsc.h>
 
 static char help[] =
@@ -142,7 +143,7 @@ int main(int argc, char *argv[]) {
     // initialize BTU object:
     energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(ctx);
 
-    energy::BedThermalUnit::Ptr btu;
+    std::shared_ptr<energy::BedThermalUnit> btu;
 
     if (bedrock_grid.Mbz > 1) {
       btu.reset(new energy::BTU_Verification(grid, bedrock_grid, 'K', false));
