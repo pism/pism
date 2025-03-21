@@ -165,7 +165,7 @@ macro(pism_find_prerequisites)
     endif()
 
     pism_find_library(YAC "yac-mci>=3.4.0")
-    pism_find_library(YAXT "yaxt>=0.11.0")
+    pism_find_library(YAXT "yaxt_c>=0.11.0")
   endif()
 
   if (Pism_USE_PARALLEL_NETCDF4)
