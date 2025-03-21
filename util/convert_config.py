@@ -6,7 +6,7 @@ com = PISM.PETSc.COMM_WORLD
 sys = PISM.UnitSystem("")
 log = PISM.StringLogger(com, 1)
 
-pism_config = PISM.config_from_options(com, log, sys)
+pism_config = PISM.config_from_options(com, sys)
 
 config = PISM.ConfigJSON(sys)
 config.init_from_string("""

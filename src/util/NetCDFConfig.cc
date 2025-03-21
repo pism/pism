@@ -25,9 +25,8 @@
 
 namespace pism {
 
-NetCDFConfig::NetCDFConfig(MPI_Comm com, const std::string &name, units::System::Ptr system)
+NetCDFConfig::NetCDFConfig(const std::string &name, units::System::Ptr system)
   : Config(system),
-    m_com(com),
     m_data(name, system) {
 }
 

@@ -296,7 +296,7 @@ class Elevation(TestCase):
 
         # make a copy of the configuration database so we can re-initialize it from
         # options and then restore it
-        self.config = PISM.NetCDFConfig(ctx.com, "pism_config", ctx.unit_system)
+        self.config = PISM.NetCDFConfig("pism_config", ctx.unit_system)
         self.config.read(ctx.com, PISM.config_file)
         self.config.import_from(ctx.config)
 

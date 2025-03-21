@@ -50,7 +50,7 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   // logger
   auto logger = std::make_shared<Logger>(com, 1);
 
-  auto config = config_from_options(com, *logger, sys);
+  auto config = config_from_options(com, sys);
 
   logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
 

@@ -174,8 +174,7 @@ private:
   std::shared_ptr<const Config> m_config;
 };
 
-std::shared_ptr<Config> config_from_options(MPI_Comm com, const Logger &log,
-                                            units::System::Ptr unit_system);
+std::shared_ptr<Config> config_from_options(MPI_Comm com, units::System::Ptr unit_system);
 
 //! Set configuration parameters using command-line options.
 void set_config_from_options(units::System::Ptr unit_system, Config &config);

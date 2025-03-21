@@ -128,7 +128,7 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com,
   auto logger = std::make_shared<Logger>(com, 1);
 
   // configuration parameters
-  auto config = config_from_options(com, *logger, sys);
+  auto config = config_from_options(com, sys);
 
   logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
 

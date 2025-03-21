@@ -581,7 +581,7 @@ def pism_context_test():
 
     logger = PISM.Logger(com, 2)
 
-    config = PISM.NetCDFConfig(com, "pism_config", system)
+    config = PISM.NetCDFConfig("pism_config", system)
     config.read(com, PISM.config_file)
 
     EC = PISM.EnthalpyConverter(config)
@@ -1157,7 +1157,7 @@ def checksum_test():
 class ForcingOptions(TestCase):
     def setUp(self):
         # store current configuration parameters
-        self.config = PISM.NetCDFConfig(ctx.com, "pism_config", ctx.unit_system)
+        self.config = PISM.NetCDFConfig("pism_config", ctx.unit_system)
         self.config.read(ctx.com, PISM.config_file)
         self.config.import_from(ctx.config)
 

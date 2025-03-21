@@ -786,12 +786,12 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
 }
 
 //! Create a configuration database using command-line options.
-std::shared_ptr<Config> config_from_options(MPI_Comm com, const Logger &log,
+std::shared_ptr<Config> config_from_options(MPI_Comm com,
                                             units::System::Ptr unit_system) {
 
   using T         = NetCDFConfig;
-  auto  config    = std::make_shared<T>(com, "pism_config", unit_system);
-  auto  overrides = std::make_shared<T>(com, "pism_overrides", unit_system);
+  auto  config    = std::make_shared<T>("pism_config", unit_system);
+  auto  overrides = std::make_shared<T>("pism_overrides", unit_system);
 
   options::String config_filename("-config", "Config file name", pism::config_file);
   options::String override_filename("-config_override", "Config override file name");

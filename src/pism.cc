@@ -91,7 +91,7 @@ std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix) {
   auto logger = std::make_shared<Logger>(com, 1);
 
   // configuration parameters
-  auto config = config_from_options(com, *logger, sys);
+  auto config = config_from_options(com, sys);
 
   logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
 
@@ -241,8 +241,7 @@ int main(int argc, char *argv[]) {
       eismint2::set_config_defaults(*config);
 
       // process -config_override
-      auto overrides = std::make_shared<NetCDFConfig>(com, "pism_overrides",
-                                                      ctx->unit_system());
+      auto overrides = std::make_shared<NetCDFConfig>("pism_overrides", ctx->unit_system());
 
       options::String override_filename("-config_override", "Config override file name");
 

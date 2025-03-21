@@ -33,7 +33,7 @@ class Logger;
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
 class NetCDFConfig : public Config {
 public:
-  NetCDFConfig(MPI_Comm com, const std::string &name, units::System::Ptr unit_system);
+  NetCDFConfig(const std::string &name, units::System::Ptr unit_system);
   ~NetCDFConfig();
 
 protected:
@@ -60,7 +60,6 @@ protected:
   bool get_flag_impl(const std::string& name) const;
   void set_flag_impl(const std::string& name, bool value);
 private:
-  MPI_Comm m_com;
   VariableMetadata m_data;
   //! @brief the name of the file this config database was initialized from
   std::string m_config_filename;
