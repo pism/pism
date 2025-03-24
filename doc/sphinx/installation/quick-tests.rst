@@ -24,6 +24,17 @@ correctly.
    processor.) This run will also produce a NetCDF output file ``unnamed.nc``, which can
    be read and viewed by NetCDF tools.
 
+.. note::
+
+   Open MPI's ``mpiexec -n N`` stops with an error message if ``N`` is larger than the
+   number of *processors* available.
+
+   It is not recommended to *oversubscribe* nodes of a HPC cluster, i.e. request more CPUs
+   than available. If you have to work around this, use ``mpiexec --oversubscribe -n N``
+   instead or (if you cannot change the command), set the environment variable
+   ``OMPI_MCA_rmaps_base_oversubscribe=true``. Please see Open MPI documentation for
+   details.
+
 #. Try an EISMINT II run using the PETSc viewers (under the X window system):
 
    .. code-block:: none
