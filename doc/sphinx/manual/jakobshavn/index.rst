@@ -244,7 +244,7 @@ standard satisfied here is that the ice volume in the region changes by less tha
 percent in the final 100 model years. See ``ice_volume_glacierized`` in ``ts_spunjako_0.nc``
 below.
 
-The 5 km grid [#]_ uses ``-Mx 125 -My 86``. So now we do a basic run using 4 MPI
+The 5 km grid [#]_ uses ``-Mx 125 -My 86``. So now we do a basic run using 8 MPI
 processes:
 
 .. code-block:: none
