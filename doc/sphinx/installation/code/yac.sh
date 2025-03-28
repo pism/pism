@@ -27,14 +27,14 @@ cd yaxt
 
 autoreconf -i
 
-./configure --prefix=${prefix} \
+./configure --prefix=${prefix} FC=no \
             --with-pic
 
 make all && make install
 
 cd -
 
-yac_version=3.5.2
+yac_version=3.6.2
 git clone -b release-${yac_version} \
     https://gitlab.dkrz.de/dkrz-sw/yac.git
 
@@ -48,6 +48,7 @@ test -f ./configure || ./autogen.sh
             --disable-examples \
             --disable-tools \
             --disable-deprecated \
+            --disable-fortran-bindings \
             --with-pic
 
 make all && make install
