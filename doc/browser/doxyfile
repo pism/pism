@@ -949,6 +949,8 @@ TREEVIEW_WIDTH         = 250
 
 FORMULA_FONTSIZE       = 14
 
+FORMULA_MACROFILE = custom_commands.tex
+
 # When the SEARCHENGINE tag is enable doxygen will generate a search box for the HTML output. The underlying search engine uses javascript
 # and DHTML and should work on any modern browser. Note that when using HTML help (GENERATE_HTMLHELP) or Qt help (GENERATE_QHP)
 # there is already a search function so this one should typically
