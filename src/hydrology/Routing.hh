@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021, 2022 PISM Authors
+// Copyright (C) 2012-2019, 2021, 2022, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ namespace hydrology {
 //! equals overburden pressure.
 /*!
   This PISM hydrology model has lateral motion of subglacial water and which
-  conserves the water mass.  Further documentation is in [\ref BuelervanPeltDRAFT].
+  conserves the water mass.  Further documentation is in [\ref BuelervanPelt2015].
 
   The water velocity is along the steepest descent route for the hydraulic
   potential.  This potential is (mostly) a function of ice sheet geometry,

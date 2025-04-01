@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2023 PISM Authors
+// Copyright (C) 2012-2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -52,7 +52,7 @@ public:
   till_water_thickness()
   \endcode
   These correspond to state variables \f$W\f$, \f$P\f$, and \f$W_{\text{till}}\f$
-  in [\ref BuelervanPeltDRAFT], though not all derived classes of Hydrology
+  in [\ref BuelervanPelt2015], though not all derived classes of Hydrology
   have all of them as state variables.
 
   Additional modeled fields, for diagnostic purposes, are

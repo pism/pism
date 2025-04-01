@@ -246,7 +246,7 @@ See [@ref Paterson] table 8.1 regarding values.
 
 The effective pressure on the till is empirically-related
 to the amount of water in the till.  We use this formula derived from
-[@ref Tulaczyketal2000] and documented in [@ref BuelervanPeltDRAFT]:
+[@ref Tulaczyketal2000] and documented in [@ref BuelervanPelt2015]:
 
 @f[ N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s 10^{(e_0/C_c) (1 - s)}\right\} @f]
 
