@@ -37,7 +37,7 @@ FrontalMeltPhysics::FrontalMeltPhysics(const Config &config) {
  *
  * This function implements equation 1 from [@ref Rignotetal2016].
  *
- * q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}
+ * @f[ q_m = (A * h * Q_{sg} ^{\alpha} + B) * \mathrm{TF}^{\beta} @f]
  *
  * where A, B, alpha, beta are tuning parameters. Note that Rignot (2016) is an update on
  * Xu 2013 with slightly different parameter values.
@@ -61,7 +61,7 @@ double FrontalMeltPhysics::frontal_melt_from_undercutting(double h, double q_sg,
  *
  * This function implements the ISMIP6 equation
  *
- * q_m = (A * h * Q_sg ^{\alpha} + B) * TF^{\beta}
+ * @f[ q_m = (A * h * Q_{sg} ^{\alpha} + B) * \\mathrm{TF}^{\beta} @f]
  *
  * where A, B, alpha, beta are tuning parameters. Note that Rignot (2016) is an update on
  * Xu 2013 with slightly different parameter values.
