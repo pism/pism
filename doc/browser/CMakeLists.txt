@@ -15,6 +15,7 @@ if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
 
   # copy doxyfile, changing some things along the way:
   configure_file(doxyfile doxyfile)
+  configure_file(custom_commands.tex custom_commands.tex)
 
   configure_file(list_references.py list_references.py COPYONLY)
   configure_file (../ice-bib.bib ice-bib.bib COPYONLY)
