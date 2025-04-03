@@ -65,15 +65,9 @@ VerticalSpacing string_to_spacing(const std::string &keyword);
 std::string spacing_to_string(VerticalSpacing s);
 
 //! @brief Contains parameters of an input file grid.
-class InputGridInfo {
+
+class GridInfo {
 public:
-  InputGridInfo(const File &file, const std::string &variable,
-                std::shared_ptr<units::System> unit_system, Registration registration);
-
-  void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
-
-  // dimension lengths
-  unsigned int t_len;
   //! x-coordinate of the domain center
   double x0;
   //! y-coordinate of the domain center
@@ -82,10 +76,6 @@ public:
   double Lx;
   //! domain half-height
   double Ly;
-  //! minimal value of the z dimension
-  double z_min;
-  //! maximal value of the z dimension
-  double z_max;
 
   //! x coordinates
   std::vector<double> x;
@@ -93,6 +83,21 @@ public:
   std::vector<double> y;
   //! z coordinates
   std::vector<double> z;
+};
+
+class InputGridInfo : public GridInfo {
+public:
+  InputGridInfo(const File &file, const std::string &variable,
+                std::shared_ptr<units::System> unit_system, Registration registration);
+
+  void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
+
+  // dimension lengths
+  unsigned int t_len;
+  //! minimal value of the z dimension
+  double z_min;
+  //! maximal value of the z dimension
+  double z_max;
 
   std::string filename;
 
