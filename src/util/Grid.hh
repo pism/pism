@@ -85,6 +85,35 @@ public:
   std::vector<double> z;
 };
 
+class DistributedGridInfo : public GridInfo {
+public:
+  grid::Periodicity periodicity;
+
+  //! horizontal grid spacing
+  double dx;
+  //! horizontal grid spacing
+  double dy;
+  //! cell area (meters^2)
+  double cell_area;
+
+  grid::Registration registration;
+
+  int xs;
+  int xm;
+  int ys;
+  int ym;
+
+  //! number of grid points in the x-direction
+  unsigned int Mx;
+  //! number of grid points in the y-direction
+  unsigned int My;
+
+  int max_patch_size;
+
+  int rank;
+  int size;
+};
+
 class InputGridInfo : public GridInfo {
 public:
   InputGridInfo(const File &file, const std::string &variable,
@@ -327,6 +356,8 @@ public:
   int max_patch_size() const;
 
   std::shared_ptr<const Context> ctx() const;
+
+  const grid::DistributedGridInfo& info() const;
 
   int xs() const;
   int xm() const;
