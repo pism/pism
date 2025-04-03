@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2020, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2020, 2023, 2024, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -78,9 +78,10 @@ static void subset_start_and_count(const std::vector<double> &x, double subset_x
   Vecs into which NetCDF information will be interpolated) are owned by each
   processor.
 */
-LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid,
+                               const grid::DistributedGridInfo &internal_grid,
                                const std::vector<double> &z_internal, InterpolationType type)
-  : LocalInterpCtx(input_grid, internal_grid, type) {
+    : LocalInterpCtx(input_grid, internal_grid, type) {
 
   // Z
   start[Z_AXIS] = 0;                                     // always start at the base
@@ -96,14 +97,17 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid
 /*!
  * The two-dimensional version of the interpolation context.
  */
-LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const grid::DistributedGridInfo &internal_grid,
                                InterpolationType type) {
 
+  const auto &xx = internal_grid.x;
+  const auto &yy = internal_grid.y;
+
   // limits of the processor's part of the target computational domain
-  const double x_min_proc = internal_grid.x(internal_grid.xs()),
-               x_max_proc = internal_grid.x(internal_grid.xs() + internal_grid.xm() - 1),
-               y_min_proc = internal_grid.y(internal_grid.ys()),
-               y_max_proc = internal_grid.y(internal_grid.ys() + internal_grid.ym() - 1);
+  const double x_min_proc = xx[internal_grid.xs],
+               x_max_proc = xx[internal_grid.xs + internal_grid.xm - 1],
+               y_min_proc = yy[internal_grid.ys],
+               y_max_proc = yy[internal_grid.ys + internal_grid.ym - 1];
 
   // T
   start[T_AXIS] = (int)input_grid.t_len - 1; // use the latest time.
@@ -121,10 +125,10 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid
 
   if (type == LINEAR or type == NEAREST) {
     x = std::make_shared<Interpolation1D>(type, &input_grid.x[start[X_AXIS]], count[X_AXIS],
-                                        &internal_grid.x()[internal_grid.xs()], internal_grid.xm());
+                                          &xx[internal_grid.xs], internal_grid.xm);
 
     y = std::make_shared<Interpolation1D>(type, &input_grid.y[start[Y_AXIS]], count[Y_AXIS],
-                                        &internal_grid.y()[internal_grid.ys()], internal_grid.ym());
+                                          &yy[internal_grid.ys], internal_grid.ym);
 
     std::vector<double> zz = {0.0};
     z = std::make_shared<Interpolation1D>(type, zz, zz);

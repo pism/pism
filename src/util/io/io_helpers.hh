@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,6 +41,7 @@ class Config;
 
 namespace grid {
 class InputGridInfo;
+class DistributedGridInfo;
 }
 
 enum InterpolationType : int;
@@ -52,8 +53,9 @@ namespace io {
 enum Type : int;
 
 void check_input_grid(const grid::InputGridInfo &input_grid,
-                      const Grid& internal_grid,
-                      const std::vector<double> &internal_z_levels);
+                      const grid::DistributedGridInfo& internal_grid,
+                      const std::vector<double> &internal_z_levels,
+                      bool allow_extrapolation);
 
 void regrid_spatial_variable(const SpatialVariableMetadata &variable,
                              const Grid& internal_grid,

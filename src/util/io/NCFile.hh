@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2023, 2024 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,9 @@
 
 namespace pism {
 
-class Grid;
+namespace grid {
+class DistributedGridInfo;
+}
 
 namespace io {
 enum Mode : int;
@@ -96,8 +98,9 @@ public:
   void put_vara_double(const std::string &variable_name, const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count, const double *op) const;
 
-  void write_darray(const std::string &variable_name, const Grid &grid, unsigned int z_count,
-                    bool time_dependent, unsigned int record, const double *input);
+  void write_darray(const std::string &variable_name, const grid::DistributedGridInfo &grid,
+                    unsigned int z_count, bool time_dependent, unsigned int record,
+                    const double *input);
 
   void inq_nvars(int &result) const;
 
@@ -175,9 +178,9 @@ protected:
                                     const std::vector<unsigned int> &count,
                                     const double *op) const = 0;
 
-  virtual void write_darray_impl(const std::string &variable_name, const Grid &grid,
-                                 unsigned int z_count, bool time_dependent, unsigned int record,
-                                 const double *input);
+  virtual void write_darray_impl(const std::string &variable_name,
+                                 const grid::DistributedGridInfo &grid, unsigned int z_count,
+                                 bool time_dependent, unsigned int record, const double *input);
 
   virtual void inq_nvars_impl(int &result) const = 0;
 

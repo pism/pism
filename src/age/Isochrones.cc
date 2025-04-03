@@ -250,7 +250,7 @@ static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<co
                                  grid->registration());
 
   // Set up 2D interpolation:
-  LocalInterpCtx lic(input_grid, *grid, LINEAR);
+  LocalInterpCtx lic(input_grid, grid->info(), LINEAR);
   lic.start[T_AXIS] = record;
   lic.count[T_AXIS] = 1;
   lic.start[Z_AXIS] = 0;

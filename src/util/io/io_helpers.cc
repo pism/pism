@@ -259,21 +259,21 @@ void append_time(const File &file, const std::string &name, double value) {
 }
 
 //! \brief Define dimensions a variable depends on.
-static void define_dimensions(const SpatialVariableMetadata &var, const Grid &grid,
-                              const File &file) {
+static void define_dimensions(const SpatialVariableMetadata &var,
+                              const grid::GridInfo &grid, const File &file) {
 
   // x
   std::string x_name = var.x().get_name();
   if (not file.dimension_exists(x_name)) {
-    define_dimension(file, grid.Mx(), var.x());
-    file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE, { grid.x(1) - grid.x(0) });
+    define_dimension(file, grid.x.size(), var.x());
+    file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE, { grid.x[1] - grid.x[0] });
   }
 
   // y
   std::string y_name = var.y().get_name();
   if (not file.dimension_exists(y_name)) {
-    define_dimension(file, grid.My(), var.y());
-    file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE, { grid.y(1) - grid.y(0) });
+    define_dimension(file, grid.y.size(), var.y());
+    file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE, { grid.y[1] - grid.y[0] });
   }
 
   // z
@@ -313,17 +313,18 @@ static void write_dimension_data(const File &file, const std::string &name,
   }
 }
 
-void write_dimensions(const SpatialVariableMetadata &var, const Grid &grid, const File &file) {
+void write_dimensions(const SpatialVariableMetadata &var, const grid::GridInfo &grid,
+                      const File &file) {
   // x
   std::string x_name = var.x().get_name();
   if (file.dimension_exists(x_name)) {
-    write_dimension_data(file, x_name, grid.x());
+    write_dimension_data(file, x_name, grid.x);
   }
 
   // y
   std::string y_name = var.y().get_name();
   if (file.dimension_exists(y_name)) {
-    write_dimension_data(file, y_name, grid.y());
+    write_dimension_data(file, y_name, grid.y);
   }
 
   // z
@@ -511,7 +512,7 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
     return;
   }
 
-  define_dimensions(var, grid, file);
+  define_dimensions(var, grid.info(), file);
 
   std::string x = var.x().get_name(), y = var.y().get_name(), z = var.z().get_name();
 
@@ -660,7 +661,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
                                   file.name().c_str());
   }
 
-  write_dimensions(var, grid, file);
+  write_dimensions(var, grid.info(), file);
 
   bool time_independent = var.get_time_independent();
   bool written = file.get_variable_was_written(var.get_name());
@@ -689,9 +690,9 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
     units::Converter(var.unit_system(), units, output_units)
         .convert_doubles(tmp.data(), tmp.size());
 
-    file.write_distributed_array(name, grid, nlevels, not time_independent, tmp.data());
+    file.write_distributed_array(name, grid.info(), nlevels, not time_independent, tmp.data());
   } else {
-    file.write_distributed_array(name, grid, nlevels, not time_independent, input);
+    file.write_distributed_array(name, grid.info(), nlevels, not time_independent, input);
   }
   file.set_variable_was_written(var.get_name());
 }
@@ -701,7 +702,8 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
  *
  * Set `allow_extrapolation` to `true` to "extend" the vertical grid during "bootstrapping".
  */
-static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &internal,
+static void check_grid_overlap(const grid::InputGridInfo &input,
+                               const grid::DistributedGridInfo &internal,
                                const std::vector<double> &z_internal) {
 
   // Grid spacing (assume that the grid is equally-spaced) and the
@@ -710,8 +712,8 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
   // the grid spacing away from grid points at the edge.
   //
   // Note that x_min is not the same as internal.x(0).
-  const double x_min = internal.x0() - internal.Lx(), x_max = internal.x0() + internal.Lx(),
-               y_min = internal.y0() - internal.Ly(), y_max = internal.y0() + internal.Ly(),
+  const double x_min = internal.x0 - internal.Lx, x_max = internal.x0 + internal.Lx,
+               y_min = internal.y0 - internal.Ly, y_max = internal.y0 + internal.Ly,
                input_x_min = input.x0 - input.Lx, input_x_max = input.x0 + input.Lx,
                input_y_min = input.y0 - input.Ly, input_y_max = input.y0 + input.Ly;
 
@@ -772,8 +774,9 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
 
 /*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
 void check_input_grid(const grid::InputGridInfo &input_grid,
-                      const Grid& internal_grid,
-                      const std::vector<double> &internal_z_levels) {
+                      const grid::DistributedGridInfo& internal_grid,
+                      const std::vector<double> &internal_z_levels,
+                      bool allow_extrapolation) {
   if (not is_increasing(input_grid.x)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "input x coordinate has to be strictly increasing");
@@ -788,8 +791,6 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "input vertical grid has to be strictly increasing");
   }
-
-  bool allow_extrapolation = internal_grid.ctx()->config()->get_flag("grid.allow_extrapolation");
 
   if (not allow_extrapolation) {
     check_grid_overlap(input_grid, internal_grid, internal_z_levels);
