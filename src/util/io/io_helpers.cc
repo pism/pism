@@ -756,10 +756,10 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
   if (z_internal.size() > 1 and (not input.z.empty())) {
     // both internal field and input variable are 3D: check vertical grid extent
     // Note: in PISM 2D fields have one vertical level (z = 0).
-    const double input_z_min = input.z.front(), input_z_max = input.z.back(),
+    const double input_z_min = vector_min(input.z), input_z_max = vector_max(input.z),
                  z_min = z_internal.front(), z_max = z_internal.back();
 
-    if (not(z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
+    if (not(z_min >= input_z_min - eps and z_max <= input_z_max + eps)) {
       throw RuntimeError::formatted(
           PISM_ERROR_LOCATION,
           "PISM's computational domain is not a subset of the domain in '%s'\n"

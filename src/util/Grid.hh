@@ -94,10 +94,6 @@ public:
 
   // dimension lengths
   unsigned int t_len;
-  //! minimal value of the z dimension
-  double z_min;
-  //! maximal value of the z dimension
-  double z_max;
 
   std::string filename;
 

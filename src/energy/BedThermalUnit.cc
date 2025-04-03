@@ -26,6 +26,7 @@
 #include "pism/energy/BTU_Full.hh"
 #include "pism/energy/BTU_Minimal.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {
@@ -52,7 +53,7 @@ BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
                                grid::CELL_CENTER); // grid registration is irrelevant
 
       result.Mbz = info.z.size();
-      result.Lbz = -info.z_min;
+      result.Lbz = -vector_min(info.z);
     } else {
       // override values we got using config.get_number() in the constructor
       result.Mbz = 1;

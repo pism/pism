@@ -876,9 +876,6 @@ void InputGridInfo::reset() {
   y0 = 0;
   Ly = 0;
 
-  z_min = 0;
-  z_max = 0;
-
   longitude_latitude = false;
 }
 
@@ -905,8 +902,10 @@ void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr 
   }
 
   if (z.size() > 1) {
+    auto z_min = vector_min(z);
+    auto z_max = vector_max(z);
     log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(),
-                this->z_min, this->z_max);
+                z_min, z_max);
   }
 
   log.message(threshold, "  t:  %5d records\n\n", this->t_len);
@@ -997,9 +996,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
         break;
       }
       case Z_AXIS: {
-        this->z     = data;
-        this->z_min = v_min;
-        this->z_max = v_max;
+        this->z = data;
         break;
       }
       case T_AXIS: {
