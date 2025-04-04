@@ -215,6 +215,7 @@ class Grid;
  */
 class PointsWithGhosts {
 public:
+  PointsWithGhosts(const grid::DistributedGridInfo &grid, unsigned int stencil_width = 1);
   PointsWithGhosts(const Grid &grid, unsigned int stencil_width = 1);
 
   int i() const {
@@ -254,6 +255,7 @@ private:
  */
 class Points : public PointsWithGhosts {
 public:
+  Points(const grid::DistributedGridInfo &g) : PointsWithGhosts(g, 0) {}
   Points(const Grid &g) : PointsWithGhosts(g, 0) {}
 };
 
