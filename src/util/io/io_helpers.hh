@@ -125,8 +125,6 @@ VariableMetadata read_attributes(const File &file, const std::string &variable_n
 
 void write_attributes(const File &file, const VariableMetadata &variable, io::Type nctype);
 
-bool file_exists(MPI_Comm com, const std::string &filename);
-
 void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
 
 void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_to_use = 0);
