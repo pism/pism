@@ -61,6 +61,7 @@ void regrid_spatial_variable(const SpatialVariableMetadata &variable,
                              const Grid& internal_grid,
                              const LocalInterpCtx &lic,
                              const File &file,
+                             const Logger &log,
                              double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &variable,

@@ -60,7 +60,7 @@ namespace io {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-static void interpolate(const Grid &grid, const LocalInterpCtx &lic, double const *input_array,
+static void interpolate(const grid::DistributedGridInfo &grid, const LocalInterpCtx &lic, double const *input_array,
                         double *output_array) {
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
@@ -74,10 +74,10 @@ static void interpolate(const Grid &grid, const LocalInterpCtx &lic, double cons
     return input_array[index];
   };
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (Points p(grid); p; p.next()) {
     const int i_global = p.i(), j_global = p.j();
 
-    const int i = i_global - grid.xs(), j = j_global - grid.ys();
+    const int i = i_global - grid.xs, j = j_global - grid.ys;
 
     // Indices of neighboring points.
     const int X_m = lic.x->left(i), X_p = lic.x->right(i);
@@ -127,7 +127,7 @@ static void interpolate(const Grid &grid, const LocalInterpCtx &lic, double cons
       const double a_m = a_mm * (1.0 - x_alpha) + a_mp * x_alpha;
       const double a_p = a_pm * (1.0 - x_alpha) + a_pp * x_alpha;
 
-      int index = (j * grid.xm() + i) * nlevels + k;
+      auto index = (j * grid.xm + i) * nlevels + k;
 
       // index into the new array and interpolate in y direction
       output_array[index] = a_m * (1.0 - y_alpha) + a_p * y_alpha;
@@ -811,6 +811,7 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
 void regrid_spatial_variable(const SpatialVariableMetadata &variable,
                              const Grid &target_grid,
                              const LocalInterpCtx &interp_context, const File &file,
+                             const Logger &log,
                              double *output) {
 
   auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
@@ -825,7 +826,7 @@ void regrid_spatial_variable(const SpatialVariableMetadata &variable,
 
   // interpolate
   profiling.begin("io.regridding.interpolate");
-  interpolate(target_grid, interp_context, buffer.data(), output);
+  interpolate(target_grid.info(), interp_context, buffer.data(), output);
   profiling.end("io.regridding.interpolate");
 
   // Get the units string from the file and convert the units:
@@ -833,7 +834,7 @@ void regrid_spatial_variable(const SpatialVariableMetadata &variable,
     std::string input_units    = file.read_text_attribute(var.name, "units");
     std::string internal_units = variable["units"];
 
-    input_units = check_units(variable, input_units, *target_grid.ctx()->log());
+    input_units = check_units(variable, input_units, log);
 
     const size_t data_size = target_grid.xm() * target_grid.ym() * interp_context.z->n_output();
 

@@ -269,7 +269,9 @@ static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<co
   }
 
   petsc::VecArray tmp(result->vec());
-  io::regrid_spatial_variable(metadata, *grid, lic, input_file, tmp.get());
+  io::regrid_spatial_variable(metadata, *grid, lic, input_file,
+                              *grid->ctx()->log(),
+                              tmp.get());
 
   return result;
 }

@@ -97,6 +97,7 @@ double InputInterpolation3D::regrid_impl(const SpatialVariableMetadata &metadata
     context.start[T_AXIS] = record_index;
 
     io::regrid_spatial_variable(metadata, target_grid, context, file,
+                                *target_grid.ctx()->log(),
                                 output_array.get());
   }
   double end = get_time(target_grid.com);
