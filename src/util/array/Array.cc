@@ -486,7 +486,8 @@ const SpatialVariableMetadata& Array::metadata(unsigned int N) const {
 
 //! Writes an Array to a NetCDF file.
 void Array::write_impl(const File &file) const {
-  auto log = m_impl->grid->ctx()->log();
+  auto log = grid()->ctx()->log();
+  const auto &config = *grid()->ctx()->config();
   auto time = timestamp(m_impl->grid->com);
 
   // The simplest case:
@@ -501,17 +502,17 @@ void Array::write_impl(const File &file) const {
 
       petsc::VecArray tmp_array(tmp);
 
-      io::write_spatial_variable(metadata(0), *grid(), file, tmp_array.get());
+      io::write_spatial_variable(metadata(0), grid()->info(), config, file, tmp_array.get());
     } else {
       petsc::VecArray v_array(vec());
-      io::write_spatial_variable(metadata(0), *grid(), file, v_array.get());
+      io::write_spatial_variable(metadata(0), grid()->info(), config, file, v_array.get());
     }
     return;
   }
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  auto da2 = m_impl->grid->get_dm(1, 0);
+  auto da2 = grid()->get_dm(1, 0);
 
   // a temporary one-component vector, distributed across processors
   // the same way v is
@@ -523,7 +524,7 @@ void Array::write_impl(const File &file) const {
     petsc::VecArray tmp_array(tmp);
     log->message(3, "[%s] Writing %s...\n",
                  time.c_str(), metadata(j).get_name().c_str());
-    io::write_spatial_variable(metadata(j), *grid(), file, tmp_array.get());
+    io::write_spatial_variable(metadata(j), grid()->info(), config, file, tmp_array.get());
   }
 }
 

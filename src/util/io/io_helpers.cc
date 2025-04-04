@@ -643,14 +643,14 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
 /*!
   Converts units if internal and "output" units are different.
  */
-void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid &grid,
+void write_spatial_variable(const SpatialVariableMetadata &metadata,
+                            const grid::DistributedGridInfo &grid,
+                            const Config &config,
                             const File &file, const double *input) {
-  auto config = grid.ctx()->config();
-
   // make a copy of `metadata` so we can override `output_units` if "output.use_MKS" is
   // set.
   SpatialVariableMetadata var = metadata;
-  if (config->get_flag("output.use_MKS")) {
+  if (config.get_flag("output.use_MKS")) {
     var.output_units(var["units"]);
   }
 
@@ -661,7 +661,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
                                   file.name().c_str());
   }
 
-  write_dimensions(var, grid.info(), file);
+  write_dimensions(var, grid, file);
 
   bool time_independent = var.get_time_independent();
   bool written = file.get_variable_was_written(var.get_name());
@@ -678,7 +678,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
   std::string units = var["units"], output_units = var["output_units"];
 
   if (units != output_units) {
-    size_t data_size = grid.xm() * grid.ym() * nlevels;
+    size_t data_size = grid.xm * grid.ym * nlevels;
 
     // create a temporary array, convert to output units, and
     // save
@@ -690,9 +690,9 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
     units::Converter(var.unit_system(), units, output_units)
         .convert_doubles(tmp.data(), tmp.size());
 
-    file.write_distributed_array(name, grid.info(), nlevels, not time_independent, tmp.data());
+    file.write_distributed_array(name, grid, nlevels, not time_independent, tmp.data());
   } else {
-    file.write_distributed_array(name, grid.info(), nlevels, not time_independent, input);
+    file.write_distributed_array(name, grid, nlevels, not time_independent, input);
   }
   file.set_variable_was_written(var.get_name());
 }

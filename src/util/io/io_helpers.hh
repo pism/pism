@@ -69,7 +69,9 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
                            unsigned int time, double *output);
 
 void write_spatial_variable(const SpatialVariableMetadata &metadata,
-                            const Grid& grid, const File &file,
+                            const grid::DistributedGridInfo& grid,
+                            const Config &config,
+                            const File &file,
                             const double *input);
 
 void define_dimension(const File &nc, unsigned long int length,
