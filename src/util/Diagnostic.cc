@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,7 @@
  */
 #include <cmath>
 
+#include "io/IO_Flags.hh"
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
@@ -334,18 +335,16 @@ void TSDiagnostic::flush() {
     return;
   }
 
-  auto time_name = m_config->get_string("time.dimension_name");
-
   File file(m_grid->com, m_output_filename, io::PISM_NETCDF3,
             io::PISM_READWRITE); // OK to use netcdf3
 
-  unsigned int len = file.dimension_length(time_name);
+  unsigned int len = file.dimension_length(m_time_name);
 
   if (len > 0) {
     // Note: does not perform unit conversion of the time read from the file. This should
     // be OK because this file was written by PISM.
     double last_time = 0;
-    file.read_variable(time_name, {len - 1}, {1}, &last_time);
+    file.read_variable(m_time_name, {len - 1}, {1}, &last_time);
 
     if (last_time < m_time.front()) {
       m_start = len;
@@ -353,14 +352,14 @@ void TSDiagnostic::flush() {
   }
 
   if (len == m_start) {
-    io::define_timeseries(m_dimension, time_name, file, io::PISM_DOUBLE);
-    io::define_time_bounds(m_time_bounds, time_name, "nv", file, io::PISM_DOUBLE);
+    io::define_dimension(file, io::PISM_UNLIMITED, m_dimension);
+    io::define_time_bounds(m_time_bounds, m_time_name, "nv", file, io::PISM_DOUBLE);
 
     io::write_timeseries(file, m_dimension, m_start, m_time);
     io::write_time_bounds(file, m_time_bounds, m_start, m_bounds);
   }
 
-  io::define_timeseries(m_variable, time_name, file, io::PISM_DOUBLE);
+  io::define_timeseries(m_variable, m_time_name, file, io::PISM_DOUBLE);
   io::write_timeseries(file, m_variable, m_start, m_values);
 
   m_start += m_time.size();

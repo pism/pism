@@ -74,7 +74,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
                             const File &file,
                             const double *input);
 
-void define_dimension(const File &nc, unsigned long int length,
+void define_dimension(const File &file, unsigned long int length,
                       const VariableMetadata &metadata);
 
 void define_time(const File &file, const Context &ctx);
@@ -91,18 +91,18 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
 
 void define_timeseries(const VariableMetadata& var,
                        const std::string &dimension_name,
-                       const File &nc, io::Type nctype);
+                       const File &file, io::Type output_type);
 
-void define_time_bounds(const VariableMetadata& metadata,
-                        const std::string &dimension_name,
+void define_time_bounds(const VariableMetadata& var,
+                        const std::string &time_name,
                         const std::string &bounds_name,
-                        const File &file, io::Type nctype);
+                        const File &file, io::Type output_type);
 
 std::vector<double> read_1d_variable(const File &file, const std::string &name,
                                      const std::string &units,
                                      std::shared_ptr<units::System> unit_system);
 
-void write_timeseries(const File &nc, const VariableMetadata &metadata,
+void write_timeseries(const File &file, const VariableMetadata &metadata,
                       size_t t_start, const std::vector<double> &data);
 
 std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
@@ -110,7 +110,7 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
                                 std::shared_ptr<units::System> unit_system);
 
 void write_time_bounds(const File &file, const VariableMetadata &metadata,
-                       size_t t_start, const std::vector<double> &data);
+                       size_t t_start, const std::vector<double> &bounds);
 
 void read_time_info(std::shared_ptr<units::System> unit_system, const File &file,
                     const std::string &time_name, const std::string &time_units,
@@ -123,7 +123,7 @@ std::string time_dimension(units::System::Ptr unit_system,
 VariableMetadata read_attributes(const File &file, const std::string &variable_name,
                                  std::shared_ptr<units::System> unit_system);
 
-void write_attributes(const File &file, const VariableMetadata &variable, io::Type nctype);
+void write_attributes(const File &file, const VariableMetadata &metadata, io::Type output_type);
 
 void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
 

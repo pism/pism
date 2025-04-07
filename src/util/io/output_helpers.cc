@@ -30,23 +30,37 @@
 namespace pism {
 namespace io {
 
+static void define_variable(const File &file, const std::vector<std::string> &dims,
+                            io::Type type,
+                            const VariableMetadata &metadata) {
+
+  if (file.variable_exists(metadata.get_name())) {
+    return;
+  }
+
+  file.define_variable(metadata.get_name(), type, dims);
+
+  write_attributes(file, metadata, type);
+}
+
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
 void define_dimension(const File &file, unsigned long int length,
                       const VariableMetadata &metadata) {
   std::string name = metadata.get_name();
   try {
+    if (file.dimension_exists(name)) {
+      return;
+    }
+
     file.define_dimension(name, length);
 
-    file.define_variable(name, PISM_DOUBLE, { name });
-
-    write_attributes(file, metadata, PISM_DOUBLE);
+    define_variable(file, { name }, PISM_DOUBLE, metadata);
 
   } catch (RuntimeError &e) {
     e.add_context("defining dimension '%s' in '%s'", name.c_str(), file.name().c_str());
     throw;
   }
 }
-
 
 //! Prepare a file for output.
 void define_time(const File &file, const Context &ctx) {
@@ -63,23 +77,14 @@ void define_time(const File &file, const Context &ctx) {
  */
 void define_time(const File &file, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system) {
-  try {
-    if (file.variable_exists(name)) {
-      return;
-    }
+  // time
+  VariableMetadata time(name, unit_system);
+  time["long_name"] = "time";
+  time["calendar"]  = calendar;
+  time["units"]     = units;
+  time["axis"]      = "T";
 
-    // time
-    VariableMetadata time(name, unit_system);
-    time["long_name"] = "time";
-    time["calendar"]  = calendar;
-    time["units"]     = units;
-    time["axis"]      = "T";
-
-    define_dimension(file, PISM_UNLIMITED, time);
-  } catch (RuntimeError &e) {
-    e.add_context("defining the time dimension in \"" + file.name() + "\"");
-    throw;
-  }
+  define_dimension(file, PISM_UNLIMITED, time);
 }
 
 //! Prepare a file for output.
@@ -104,27 +109,30 @@ static void define_dimensions(const SpatialVariableMetadata &var,
                               const grid::GridInfo &grid, const File &file) {
 
   // x
-  std::string x_name = var.x().get_name();
-  if (not file.dimension_exists(x_name)) {
-    define_dimension(file, grid.x.size(), var.x());
-    file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE, { grid.x[1] - grid.x[0] });
+  {
+    auto x = var.x();
+    x["spacing_meters"] = { grid.x[1] - grid.x[0] };
+
+    define_dimension(file, grid.x.size(), x);
   }
 
   // y
-  std::string y_name = var.y().get_name();
-  if (not file.dimension_exists(y_name)) {
+  {
+    auto y = var.y();
+    y["spacing_meters"] = { grid.y[1] - grid.y[0] };
+
     define_dimension(file, grid.y.size(), var.y());
-    file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE, { grid.y[1] - grid.y[0] });
   }
 
   // z
-  std::string z_name = var.z().get_name();
-  if (not z_name.empty()) {
-    if (not file.dimension_exists(z_name)) {
-      const std::vector<double> &levels = var.levels();
+  {
+    auto z = var.z();
+
+    if (not z.get_name().empty()) {
+      const auto &levels = var.levels();
+
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
-      define_dimension(file, nlevels, var.z());
 
       bool spatial_dim = not var.z().get_string("axis").empty();
 
@@ -138,72 +146,62 @@ static void define_dimensions(const SpatialVariableMetadata &var,
           dz_min    = std::min(dz_min, dz);
         }
 
-        file.write_attribute(z_name, "spacing_min_meters", PISM_DOUBLE, { dz_min });
-        file.write_attribute(z_name, "spacing_max_meters", PISM_DOUBLE, { dz_max });
+        z["spacing_min_meters"] = { dz_min };
+        z["spacing_max_meters"] = { dz_max };
       }
+
+      define_dimension(file, nlevels, z);
     }
   }
 }
 
 static void write_dimension_data(const File &file, const std::string &name,
                                  const std::vector<double> &data) {
+  bool exists = file.dimension_exists(name);
   bool written = file.get_variable_was_written(name);
-  if (not written) {
+  if (exists and not written) {
     file.write_variable(name, { 0 }, { (unsigned int)data.size() }, data.data());
     file.set_variable_was_written(name);
-  }
-}
-
-void write_dimensions(const SpatialVariableMetadata &var, const grid::GridInfo &grid,
-                      const File &file) {
-  // x
-  std::string x_name = var.x().get_name();
-  if (file.dimension_exists(x_name)) {
-    write_dimension_data(file, x_name, grid.x);
-  }
-
-  // y
-  std::string y_name = var.y().get_name();
-  if (file.dimension_exists(y_name)) {
-    write_dimension_data(file, y_name, grid.y);
-  }
-
-  // z
-  std::string z_name = var.z().get_name();
-  if (file.dimension_exists(z_name)) {
-    write_dimension_data(file, z_name, var.levels());
   }
 }
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
 void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid &grid,
                              const File &file, io::Type default_type) {
-  auto config = grid.ctx()->config();
+  const auto &config = *grid.ctx()->config();
 
-  // make a copy of `metadata` so we can override `output_units` if "output.use_MKS" is
-  // set.
-  SpatialVariableMetadata var = metadata;
-  if (config->get_flag("output.use_MKS")) {
-    var.output_units(var["units"]);
-  }
-
-  std::vector<std::string> dims;
-  std::string name = var.get_name();
+  // Make a copy of `metadata` so we can modify it:
+  auto var = metadata;
+  auto name = var.get_name();
 
   if (file.variable_exists(name)) {
     return;
+  }
+
+  if (config.get_flag("output.use_MKS")) {
+    var.output_units(var["units"]);
+  }
+
+  // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat, lon,
+  // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
+  // #384).
+  const auto &mapping = grid.get_mapping_info().cf_mapping;
+  if (mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
+    var["grid_mapping"] = mapping.get_name();
   }
 
   define_dimensions(var, grid.info(), file);
 
   std::string x = var.x().get_name(), y = var.y().get_name(), z = var.z().get_name();
 
-  if (not var.get_time_independent()) {
-    dims.push_back(config->get_string("time.dimension_name"));
-  }
+  std::vector<std::string> dims;
 
-  dims.push_back(y);
-  dims.push_back(x);
+  if (not var.get_time_independent()) {
+    auto time_name = config.get_string("time.dimension_name");
+    dims = {time_name, y, x};
+  } else {
+    dims = {y, x};
+  }
 
   if (not z.empty()) {
     dims.push_back(z);
@@ -211,21 +209,12 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
 
   assert(dims.size() > 1);
 
-  io::Type type = var.get_output_type();
+  auto type = var.get_output_type();
   if (type == PISM_NAT) {
     type = default_type;
   }
-  file.define_variable(name, type, dims);
 
-  write_attributes(file, var, type);
-
-  // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat, lon,
-  // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
-  // #384).
-  const VariableMetadata &mapping = grid.get_mapping_info().cf_mapping;
-  if (mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
-    file.write_attribute(var.get_name(), "grid_mapping", mapping.get_name());
-  }
+  define_variable(file, dims, type, var);
 }
 
 //! \brief Write a double array to a file.
@@ -243,14 +232,17 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
     var.output_units(var["units"]);
   }
 
-  auto name = var.get_name();
+  // write dimensions:
+  {
+    // x
+    write_dimension_data(file, var.x().get_name(), grid.x);
 
-  if (not file.variable_exists(name)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
-                                  file.name().c_str());
+    // y
+    write_dimension_data(file, var.y().get_name(), grid.y);
+
+    // z
+    write_dimension_data(file, var.z().get_name(), var.levels());
   }
-
-  write_dimensions(var, grid, file);
 
   bool time_independent = var.get_time_independent();
   bool written = file.get_variable_was_written(var.get_name());
@@ -259,6 +251,13 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
   // extra_files)
   if (written and time_independent) {
     return;
+  }
+
+  const auto &name = var.get_name();
+
+  if (not file.variable_exists(name)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
+                                  file.name().c_str());
   }
 
   // make sure we have at least one level
@@ -288,23 +287,11 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
 
 //! Define a NetCDF variable corresponding to a time-series.
 void define_timeseries(const VariableMetadata &var, const std::string &dimension_name,
-                       const File &file, io::Type nctype) {
+                       const File &file, io::Type output_type) {
 
-  std::string name = var.get_name();
+  define_dimension(file, PISM_UNLIMITED, { dimension_name, var.unit_system() });
 
-  if (file.variable_exists(name)) {
-    return;
-  }
-
-  if (not file.dimension_exists(dimension_name)) {
-    define_dimension(file, PISM_UNLIMITED, VariableMetadata(dimension_name, var.unit_system()));
-  }
-
-  if (not file.variable_exists(name)) {
-    file.define_variable(name, nctype, { dimension_name });
-  }
-
-  write_attributes(file, var, nctype);
+  define_variable(file, { dimension_name }, output_type, var);
 }
 
 /** @brief Write a time-series `data` to a file.
@@ -316,10 +303,6 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
 
   std::string name = metadata.get_name();
   try {
-    if (not file.variable_exists(name)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' not found", name.c_str());
-    }
-
     // create a copy of "data":
     std::vector<double> tmp = data;
 
@@ -337,57 +320,60 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
 }
 
 void define_time_bounds(const VariableMetadata& var,
-                        const std::string &dimension_name,
+                        const std::string &time_name,
                         const std::string &bounds_name,
-                        const File &file, io::Type nctype) {
-  std::string name = var.get_name();
-
-  if (file.variable_exists(name)) {
-    return;
-  }
-
-  if (not file.dimension_exists(dimension_name)) {
-    file.define_dimension(dimension_name, PISM_UNLIMITED);
-  }
-
-  if (not file.dimension_exists(bounds_name)) {
-    file.define_dimension(bounds_name, 2);
-  }
-
-  file.define_variable(name, nctype, {dimension_name, bounds_name});
-
-  write_attributes(file, var, nctype);
+                        const File &file, io::Type output_type) {
+  define_dimension(file, 2, { bounds_name, var.unit_system() });
+  define_variable(file, { time_name, bounds_name }, output_type, var);
 }
 
-void write_time_bounds(const File &file, const VariableMetadata &metadata,
-                       size_t t_start, const std::vector<double> &data) {
+void write_time_bounds(const File &file, const VariableMetadata &metadata, size_t t_start,
+                       const std::vector<double> &bounds) {
 
-  VariableMetadata var = metadata;
-
-  std::string name = var.get_name();
+  const auto &name = metadata.get_name();
   try {
-    bool variable_exists = file.variable_exists(name);
-    if (not variable_exists) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' not found",
-                                    name.c_str());
-    }
-
     // make a copy of "data"
-    std::vector<double> tmp = data;
+    auto data = bounds;
 
     // convert to output units:
-    units::Converter(var.unit_system(), var["units"], var["output_units"])
-        .convert_doubles(tmp.data(), tmp.size());
+    units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
+        .convert_doubles(data.data(), data.size());
 
-    file.write_variable(name,
-                        {(unsigned int)t_start, 0},
-                        {(unsigned int)tmp.size() / 2, 2},
-                        tmp.data());
+    file.write_variable(name, { (unsigned int)t_start, 0 }, { (unsigned int)data.size() / 2, 2 },
+                        data.data());
 
   } catch (RuntimeError &e) {
-    e.add_context("writing time-bounds variable '%s' to '%s'", name.c_str(),
-                  file.name().c_str());
+    e.add_context("writing time-bounds variable '%s' to '%s'", name.c_str(), file.name().c_str());
     throw;
+  }
+}
+
+static void write_attributes(const File &file, const std::string &var_name,
+                             const std::map<std::string, std::string> &strings,
+                             const std::map<std::string, std::vector<double> > &numbers,
+                             io::Type output_type) {
+  // Write text attributes:
+  for (const auto &s : strings) {
+    const auto &name  = s.first;
+    const auto &value = s.second;
+
+    if (value.empty()) {
+      continue;
+    }
+
+    file.write_attribute(var_name, name, value);
+  }
+
+  // Write double attributes:
+  for (const auto &d : numbers) {
+    const auto &name   = d.first;
+    const auto &values = d.second;
+
+    if (values.empty()) {
+      continue;
+    }
+
+    file.write_attribute(var_name, name, output_type, values);
   }
 }
 
@@ -398,91 +384,56 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
 
   - Skips empty text attributes.
 */
-void write_attributes(const File &file, const VariableMetadata &variable, io::Type nctype) {
-  std::string var_name = variable.get_name();
+void write_attributes(const File &file, const VariableMetadata &metadata, io::Type output_type) {
+
+  // make a copy so we can edit metadata
+  auto variable = metadata;
+  const auto &var_name = variable.get_name();
 
   try {
-    std::string
-      units               = variable["units"],
-      output_units = variable["output_units"];
+    std::string units = variable["units"], output_units = variable["output_units"];
 
-    bool use_output_units = units != output_units;
+    // output units should never be written to a file
+    variable["output_units"] = "";
 
-    // units, valid_min, valid_max and valid_range need special treatment:
-    if (variable.has_attribute("units")) {
-      file.write_attribute(var_name, "units", use_output_units ? output_units : units);
-    }
-
-    std::vector<double> bounds(2);
-    if (variable.has_attribute("valid_range")) {
-      bounds = variable.get_numbers("valid_range");
-    } else {
-      if (variable.has_attribute("valid_min")) {
-        bounds[0]  = variable.get_number("valid_min");
-      }
-      if (variable.has_attribute("valid_max")) {
-        bounds[1]  = variable.get_number("valid_max");
-      }
-    }
-
-    double fill_value = 0.0;
-    if (variable.has_attribute("_FillValue")) {
-      fill_value = variable.get_number("_FillValue");
-    }
-
-    // We need to save valid_min, valid_max and valid_range in the units
-    // matching the ones in the output.
+    bool use_output_units = (not units.empty() and
+                             not output_units.empty() and
+                             units != output_units);
+    
     if (use_output_units) {
+      // Replace "units" with "output_units" and clear "output_units"
+      if (variable.has_attribute("units")) {
+        variable["units"]        = output_units;
+      }
 
       units::Converter c(variable.unit_system(), units, output_units);
 
-      bounds[0]  = c(bounds[0]);
-      bounds[1]  = c(bounds[1]);
-      fill_value = c(fill_value);
-    }
+      // We need to convert units of valid_min, valid_max and valid_range:
+      {
+        if (variable.has_attribute("valid_range")) {
+          auto bounds = variable.get_numbers("valid_range");
 
-    if (variable.has_attribute("_FillValue")) {
-      file.write_attribute(var_name, "_FillValue", nctype, {fill_value});
-    }
+          variable["valid_range"] = { c(bounds[0]), c(bounds[1]) };
+        } else {
+          if (variable.has_attribute("valid_min")) {
+            auto min = variable.get_number("valid_min");
+            variable["valid_min"] = { c(min) };
+          }
+          if (variable.has_attribute("valid_max")) {
+            auto max = variable.get_number("valid_max");
+            variable["valid_max"] = { c(max) };
+          }
+        }
 
-    if (variable.has_attribute("valid_range")) {
-      file.write_attribute(var_name, "valid_range", nctype, bounds);
-    } else if (variable.has_attribute("valid_min") and
-               variable.has_attribute("valid_max")) {
-      file.write_attribute(var_name, "valid_range", nctype, bounds);
-    } else if (variable.has_attribute("valid_min")) {
-      file.write_attribute(var_name, "valid_min",   nctype, {bounds[0]});
-    } else if (variable.has_attribute("valid_max")) {
-      file.write_attribute(var_name, "valid_max",   nctype, {bounds[1]});
-    }
-
-    // Write text attributes:
-    for (const auto& s : variable.all_strings()) {
-      std::string
-        name  = s.first,
-        value = s.second;
-
-      if (name == "units" or
-          name == "output_units" or
-          value.empty()) {
-        continue;
+        if (variable.has_attribute("_FillValue")) {
+          auto fill = variable.get_number("_FillValue");
+          variable["_FillValue"] = { c(fill) };
+        }
       }
-
-      file.write_attribute(var_name, name, value);
     }
 
-    // Write double attributes:
-    for (const auto& d : variable.all_doubles()) {
-      std::string name  = d.first;
-      std::vector<double> values = d.second;
-
-      if (member(name, {"valid_min", "valid_max", "valid_range", "_FillValue"}) or
-          values.empty()) {
-        continue;
-      }
-
-      file.write_attribute(var_name, name, nctype, values);
-    }
+    write_attributes(file, variable.get_name(), variable.all_strings(), variable.all_doubles(),
+                     output_type);
 
   } catch (RuntimeError &e) {
     e.add_context("writing attributes of variable '%s' to '%s'",

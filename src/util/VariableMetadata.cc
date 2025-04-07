@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2025 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -311,12 +311,15 @@ VariableMetadata &VariableMetadata::set_string(const std::string &name, const st
   } else if (name == "output_units") {
     m_strings[name] = value;
 
-    units::Unit internal(m_unit_system, get_string("units"));
-    units::Unit output(m_unit_system, value);
+    if (not value.empty()) {
+      units::Unit internal(m_unit_system, get_string("units"));
+      units::Unit output(m_unit_system, value);
 
-    if (not units::are_convertible(internal, output)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "units \"%s\" and \"%s\" are not compatible",
-                                    get_string("units").c_str(), value.c_str());
+      if (not units::are_convertible(internal, output)) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "units \"%s\" and \"%s\" are not compatible",
+                                      get_string("units").c_str(), value.c_str());
+      }
     }
   } else if (name == "short_name") {
     set_name(name);
