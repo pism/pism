@@ -63,8 +63,9 @@ protected:
                         const array::Staggered &hardness, double nuH_regularization,
                         array::Staggered &result);
 
-  void compute_driving_stress(const array::Scalar &ice_thickness,
+  void compute_driving_stress(const array::Scalar1 &ice_thickness,
                               const array::Scalar1 &surface_elevation,
+			      const array::Scalar1 &bed_elevation,
                               const array::CellType1 &cell_type,
                               const array::Scalar1 *no_model_mask, const EnthalpyConverter &EC,
                               array::Vector &result) const;

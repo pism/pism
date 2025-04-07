@@ -2299,6 +2299,12 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.strength_extension.min_thickness_type = "number";
     pism_config:stress_balance.ssa.strength_extension.min_thickness_units = "meters";
 
+    pism_config:stress_balance.ssa.surface_gradient_method = "one_sided";
+    pism_config:stress_balance.ssa.surface_gradient_method_choices = "one_sided,GL_centered_thk,GL_centered_surf";
+    pism_config:stress_balance.ssa.surface_gradient_method_doc = "method used for surface gradient calculation in SSA at grounding lines (otherwise centered differences are used)";
+    pism_config:stress_balance.ssa.surface_gradient_method_option = "ssa_gradient";
+    pism_config:stress_balance.ssa.surface_gradient_method_type = "keyword";
+
     pism_config:stress_balance.vertical_velocity_approximation = "centered";
     pism_config:stress_balance.vertical_velocity_approximation_choices = "centered,upstream";
     pism_config:stress_balance.vertical_velocity_approximation_doc = "Vertical velocity FD approximation. \"Upstream\" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.";
