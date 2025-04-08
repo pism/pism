@@ -77,7 +77,6 @@ public:
   const std::set<std::string>& parameters_used() const;
 
   void read(MPI_Comm com, const std::string &filename);
-  void write(MPI_Comm com, const std::string &filename, bool append = true) const;
   std::string filename() const;
 
   void read(const File &file);

@@ -81,15 +81,6 @@ void Config::write(const File &file) const {
   this->write_impl(file);
 }
 
-void Config::write(MPI_Comm com, const std::string &filename, bool append) const {
-
-  io::Mode mode = append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
-
-  File file(com, filename, io::PISM_NETCDF3, mode); // OK to use netcdf3
-
-  this->write(file);
-}
-
 //! \brief Returns the name of the file used to initialize the database.
 std::string Config::filename() const {
   return m_impl->filename;
