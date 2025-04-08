@@ -30,9 +30,9 @@
 namespace pism {
 namespace io {
 
-static void define_variable(const File &file, const std::vector<std::string> &dims,
-                            io::Type type,
-                            const VariableMetadata &metadata) {
+void define_variable(const File &file, const std::vector<std::string> &dims,
+                     io::Type type,
+                     const VariableMetadata &metadata) {
 
   if (file.variable_exists(metadata.get_name())) {
     return;
@@ -166,9 +166,10 @@ static void write_dimension_data(const File &file, const std::string &name,
 }
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
-void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid &grid,
+void define_spatial_variable(const SpatialVariableMetadata &metadata,
+                             const grid::DistributedGridInfo &grid,
+                             const VariableMetadata &cf_mapping, const Config &config,
                              const File &file, io::Type default_type) {
-  const auto &config = *grid.ctx()->config();
 
   // Make a copy of `metadata` so we can modify it:
   auto var = metadata;
@@ -185,12 +186,11 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid
   // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat, lon,
   // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
   // #384).
-  const auto &mapping = grid.get_mapping_info().cf_mapping;
-  if (mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
-    var["grid_mapping"] = mapping.get_name();
+  if (cf_mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
+    var["grid_mapping"] = cf_mapping.get_name();
   }
 
-  define_dimensions(var, grid.info(), file);
+  define_dimensions(var, grid, file);
 
   std::string x = var.x().get_name(), y = var.y().get_name(), z = var.z().get_name();
 

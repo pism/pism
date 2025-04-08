@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -97,7 +97,7 @@ void IceModel::init_timeseries() {
     }
 
     write_metadata(file, SKIP_MAPPING, PREPEND_HISTORY);
-    write_run_stats(file, run_stats());
+    io::define_variable(file, {}, io::PISM_DOUBLE, run_stats());
 
     // initialize scalar diagnostics
     for (auto d : m_ts_diagnostics) {
@@ -130,7 +130,7 @@ void IceModel::flush_timeseries() {
   // update run_stats in the time series output file
   if (not m_ts_diagnostics.empty()) {
     File file(m_grid->com, m_ts_filename, io::PISM_NETCDF3, io::PISM_READWRITE);
-    write_run_stats(file, run_stats());
+    io::define_variable(file, {}, io::PISM_DOUBLE, run_stats());
   }
 }
 

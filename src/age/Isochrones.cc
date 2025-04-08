@@ -236,17 +236,17 @@ std::vector<double> deposition_times(const Config &config, const Time &time) {
  * Uses bilinear interpolation in the X and Y directions.
  */
 static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<const Grid> grid,
-                                                              const File &input_file, int record) {
+                                                              const File &file, int record) {
 
-  auto result = details::allocate_layer_thickness(grid, deposition_times(input_file));
+  auto result = details::allocate_layer_thickness(grid, deposition_times(file));
 
   auto N = (int)result->levels().size();
 
   auto metadata = result->metadata(0);
 
-  auto variable_info = input_file.find_variable(metadata.get_name(), metadata["standard_name"]);
+  auto variable_info = file.find_variable(metadata.get_name(), metadata["standard_name"]);
 
-  grid::InputGridInfo input_grid(input_file, variable_info.name, metadata.unit_system(),
+  grid::InputGridInfo input_grid(file, variable_info.name, metadata.unit_system(),
                                  grid->registration());
 
   // Set up 2D interpolation:
@@ -269,7 +269,7 @@ static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<co
   }
 
   petsc::VecArray tmp(result->vec());
-  io::regrid_spatial_variable(metadata, *grid, lic, input_file,
+  io::regrid_spatial_variable(metadata, *grid, lic, file,
                               *grid->ctx()->log(),
                               tmp.get());
 

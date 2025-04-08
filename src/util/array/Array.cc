@@ -46,6 +46,7 @@
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/util/InputInterpolation.hh"
+#include "pism/util/projection.hh"
 
 namespace pism {
 
@@ -468,7 +469,8 @@ void Array::define(const File &file, io::Type default_type) const {
       type = default_type;
     }
 
-    io::define_spatial_variable(metadata(j), *m_impl->grid, file, type);
+    io::define_spatial_variable(metadata(j), grid()->info(), grid()->get_mapping_info().cf_mapping,
+                                *grid()->ctx()->config(), file, type);
   }
 }
 

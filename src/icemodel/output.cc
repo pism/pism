@@ -78,9 +78,9 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
   m_config->write(file);
 
   if (history_flag == PREPEND_HISTORY) {
-    VariableMetadata tmp = m_output_global_attributes;
+    auto tmp = m_output_global_attributes;
 
-    std::string old_history = file.read_text_attribute("PISM_GLOBAL", "history");
+    auto old_history = file.read_text_attribute("PISM_GLOBAL", "history");
 
     tmp.set_name("PISM_GLOBAL");
     tmp["history"] = std::string(tmp["history"]) + old_history;
@@ -132,19 +132,12 @@ void IceModel::save_results() {
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-    write_run_stats(file, run_stats());
+    io::define_variable(file, {}, io::PISM_DOUBLE, run_stats());
 
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
   }
   profiling.end("io.model_state");
-}
-
-void write_run_stats(const File &file, const pism::VariableMetadata &stats) {
-  if (not file.variable_exists(stats.get_name())) {
-    file.define_variable(stats.get_name(), io::PISM_DOUBLE, {});
-  }
-  io::write_attributes(file, stats, io::PISM_DOUBLE);
 }
 
 void IceModel::save_variables(const File &file,
@@ -174,7 +167,7 @@ void IceModel::save_variables(const File &file,
   //
   // FIXME: we should write this to variables instead of attributes because NetCDF-4 crashes after
   // about 2^16 attribute modifications per variable. :-(
-  write_run_stats(file, run_stats());
+  io::define_variable(file, {}, io::PISM_DOUBLE, run_stats());
 
   if (kind == INCLUDE_MODEL_STATE) {
     define_model_state(file);

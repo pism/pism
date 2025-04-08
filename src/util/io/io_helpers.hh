@@ -77,6 +77,10 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
 void define_dimension(const File &file, unsigned long int length,
                       const VariableMetadata &metadata);
 
+void define_variable(const File &file, const std::vector<std::string> &dims,
+                     io::Type type,
+                     const VariableMetadata &metadata);
+
 void define_time(const File &file, const Context &ctx);
 
 void define_time(const File &nc, const std::string &name, const std::string &calendar,
@@ -86,8 +90,9 @@ void append_time(const File &file, const Config &ctx, double time_seconds);
 void append_time(const File &nc, const std::string &name, double time_seconds);
 
 void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                             const Grid &grid, const File &file,
-                             io::Type default_type);
+                             const grid::DistributedGridInfo &grid,
+                             const VariableMetadata &cf_mapping, const Config &config,
+                             const File &file, io::Type default_type);
 
 void define_timeseries(const VariableMetadata& var,
                        const std::string &dimension_name,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -323,7 +323,7 @@ void IceModel::write_extras() {
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
-    write_run_stats(*m_extra_file, run_stats());
+    io::define_variable(*m_extra_file, {}, io::PISM_DOUBLE, run_stats());
 
     save_variables(*m_extra_file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,

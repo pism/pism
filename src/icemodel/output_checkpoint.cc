@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2019, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2017, 2019, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -77,7 +77,7 @@ bool IceModel::write_checkpoint() {
               io::PISM_READWRITE_MOVE);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-    write_run_stats(file, run_stats());
+    io::define_variable(file, {}, io::PISM_DOUBLE, run_stats());
 
     save_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
   }

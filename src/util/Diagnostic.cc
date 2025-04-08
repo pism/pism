@@ -26,6 +26,7 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/projection.hh"
 
 namespace pism {
 
@@ -125,7 +126,8 @@ void Diagnostic::define(const File &file, io::Type default_type) const {
 //! Define NetCDF variables corresponding to a diagnostic quantity.
 void Diagnostic::define_impl(const File &file, io::Type default_type) const {
   for (const auto &v : m_vars) {
-    io::define_spatial_variable(v, *m_grid, file, default_type);
+    io::define_spatial_variable(v, m_grid->info(), m_grid->get_mapping_info().cf_mapping,
+                                *m_grid->ctx()->config(), file, default_type);
   }
 }
 
