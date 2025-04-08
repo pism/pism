@@ -485,8 +485,8 @@ const array::Scalar& TemperatureIndex::air_temp_sd() const {
 
 void TemperatureIndex::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
-  m_firn_depth.define(output, io::PISM_DOUBLE);
-  m_snow_depth.define(output, io::PISM_DOUBLE);
+  m_firn_depth.define(output);
+  m_snow_depth.define(output);
 }
 
 void TemperatureIndex::write_model_state_impl(const File &output) const {

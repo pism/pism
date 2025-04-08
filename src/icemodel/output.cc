@@ -143,8 +143,7 @@ void IceModel::save_results() {
 void IceModel::save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
-                              double time,
-                              io::Type default_diagnostics_type) const {
+                              double time) const {
 
   // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
   // supports it.
@@ -172,7 +171,7 @@ void IceModel::save_variables(const File &file,
   if (kind == INCLUDE_MODEL_STATE) {
     define_model_state(file);
   }
-  define_diagnostics(file, variables, default_diagnostics_type);
+  define_diagnostics(file, variables);
 
   // Done defining variables
 
@@ -233,13 +232,12 @@ void IceModel::save_variables(const File &file,
   }
 }
 
-void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,
-                                  io::Type default_type) const {
+void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables) const {
   for (const auto& variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
     if (diag != m_diagnostics.end()) {
-      diag->second->define(file, default_type);
+      diag->second->define(file);
     }
   }
 }
@@ -258,7 +256,7 @@ void IceModel::write_diagnostics(const File &file, const std::set<std::string> &
 
 void IceModel::define_model_state(const File &file) const {
   for (auto *v : m_model_state) {
-    v->define(file, io::PISM_DOUBLE);
+    v->define(file);
   }
 
   for (const auto& m : m_submodels) {

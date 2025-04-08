@@ -136,8 +136,8 @@ double BTU_Full::depth_impl() const {
 }
 
 void BTU_Full::define_model_state_impl(const File &output) const {
-  m_bottom_surface_flux.define(output, io::PISM_DOUBLE);
-  m_temp->define(output, io::PISM_DOUBLE);
+  m_bottom_surface_flux.define(output);
+  m_temp->define(output);
 }
 
 void BTU_Full::write_model_state_impl(const File &output) const {

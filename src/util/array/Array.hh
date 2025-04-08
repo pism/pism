@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2023 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2023, 2025 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -229,7 +229,7 @@ public:
   void set_name(const std::string &name);
   const std::string& get_name() const;
 
-  void define(const File &file, io::Type default_type) const;
+  void define(const File &file) const;
 
   void read(const std::string &filename, unsigned int time);
   void read(const File &file, unsigned int time);

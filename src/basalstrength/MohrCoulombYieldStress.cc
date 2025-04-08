@@ -224,8 +224,8 @@ void MohrCoulombYieldStress::set_till_friction_angle(const array::Scalar &input)
 }
 
 void MohrCoulombYieldStress::define_model_state_impl(const File &output) const {
-  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
-  m_till_phi.define(output, io::PISM_DOUBLE);
+  m_basal_yield_stress.define(output);
+  m_till_phi.define(output);
 }
 
 void MohrCoulombYieldStress::write_model_state_impl(const File &output) const {

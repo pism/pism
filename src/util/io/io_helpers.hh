@@ -92,7 +92,7 @@ void append_time(const File &nc, const std::string &name, double time_seconds);
 void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const grid::DistributedGridInfo &grid,
                              const VariableMetadata &cf_mapping, const Config &config,
-                             const File &file, io::Type default_type);
+                             const File &file);
 
 void define_timeseries(const VariableMetadata& var,
                        const std::string &dimension_name,

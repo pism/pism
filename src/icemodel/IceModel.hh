@@ -212,8 +212,7 @@ protected:
   virtual void save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
-                              double time,
-                              io::Type default_diagnostics_type = io::PISM_FLOAT) const;
+                              double time) const;
 
   virtual void define_model_state(const File &file) const;
   virtual void write_model_state(const File &file) const;
@@ -224,8 +223,7 @@ protected:
                               HistoryTreatment history_flag) const;
 
   virtual void define_diagnostics(const File &file,
-                                  const std::set<std::string> &variables,
-                                  io::Type default_type) const;
+                                  const std::set<std::string> &variables) const;
   virtual void write_diagnostics(const File &file,
                                  const std::set<std::string> &variables) const;
 

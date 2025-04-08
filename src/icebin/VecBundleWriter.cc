@@ -32,7 +32,7 @@ void VecBundleWriter::init() {
                   m_grid->ctx()->unit_system());
 
   for (const auto *vec : vecs) {
-    vec->define(file, io::PISM_DOUBLE);
+    vec->define(file);
   }
 }
 

@@ -213,7 +213,7 @@ void AgeModel::init(const InputOptions &opts) {
 }
 
 void AgeModel::define_model_state_impl(const File &output) const {
-  m_ice_age.define(output, io::PISM_DOUBLE);
+  m_ice_age.define(output);
 }
 
 void AgeModel::write_model_state_impl(const File &output) const {

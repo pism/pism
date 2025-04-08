@@ -785,7 +785,7 @@ MaxTimestep Isochrones::max_timestep_deposition_times(double t) const {
  * We are saving layer thicknesses, deposition times, and the number of active layers.
  */
 void Isochrones::define_model_state_impl(const File &output) const {
-  m_layer_thickness->define(output, io::PISM_DOUBLE);
+  m_layer_thickness->define(output);
 }
 
 /*!

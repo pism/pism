@@ -549,8 +549,8 @@ const array::Scalar &DEBMSimple::atmosphere_transmissivity() const {
 
 void DEBMSimple::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
-  m_snow_depth.define(output, io::PISM_DOUBLE);
-  m_surface_albedo.define(output, io::PISM_DOUBLE);
+  m_snow_depth.define(output);
+  m_surface_albedo.define(output);
 }
 
 void DEBMSimple::write_model_state_impl(const File &output) const {

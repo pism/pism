@@ -87,9 +87,9 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 }
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
-  m_water_column_pressure->define(output, io::PISM_DOUBLE);
-  m_shelf_base_mass_flux->define(output, io::PISM_DOUBLE);
-  m_shelf_base_temperature->define(output, io::PISM_DOUBLE);
+  m_water_column_pressure->define(output);
+  m_shelf_base_mass_flux->define(output);
+  m_shelf_base_temperature->define(output);
 
   m_input_model->define_model_state(output);
 }

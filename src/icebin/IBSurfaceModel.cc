@@ -105,7 +105,7 @@ const array::Scalar& IBSurfaceModel::runoff_impl() const {
 
 void IBSurfaceModel::define_model_state_impl(const File &output) const {
   for (const auto *v : {&massxfer, &enthxfer, &deltah, &ice_top_bc_temp, &ice_top_bc_wc}) {
-    v->define(output, io::PISM_DOUBLE);
+    v->define(output);
   }
 }
 

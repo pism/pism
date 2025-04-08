@@ -174,10 +174,10 @@ void Pico::init_impl(const Geometry &geometry) {
 
 void Pico::define_model_state_impl(const File &output) const {
 
-  m_geometry.basin_mask().define(output, io::PISM_DOUBLE);
-  m_Soc_box0.define(output, io::PISM_DOUBLE);
-  m_Toc_box0.define(output, io::PISM_DOUBLE);
-  m_overturning.define(output, io::PISM_DOUBLE);
+  m_geometry.basin_mask().define(output);
+  m_Soc_box0.define(output);
+  m_Toc_box0.define(output);
+  m_overturning.define(output);
 
   OceanModel::define_model_state_impl(output);
 }

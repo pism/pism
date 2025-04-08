@@ -325,12 +325,10 @@ void IceModel::write_extras() {
 
     io::define_variable(*m_extra_file, {}, io::PISM_DOUBLE, run_stats());
 
-    save_variables(*m_extra_file,
-                   m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
-                   m_extra_vars,
-                   0.5 * (m_last_extra + current_time), // use the mid-point of the
-                                                        // current reporting interval
-                   io::PISM_FLOAT);
+    // use the mid-point of the current reporting interval
+    double time = 0.5 * (m_last_extra + current_time);
+    save_variables(*m_extra_file, m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
+                   m_extra_vars, time);
 
     // Get the length of the time dimension *after* it is appended to.
     unsigned int time_length = m_extra_file->dimension_length(time_name);

@@ -462,15 +462,10 @@ void Array::read_impl(const File &file, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an Array in a file opened using `file`.
-void Array::define(const File &file, io::Type default_type) const {
+void Array::define(const File &file) const {
   for (unsigned int j = 0; j < ndof(); ++j) {
-    io::Type type = metadata(j).get_output_type();
-    if (type == io::PISM_NAT) {
-      type = default_type;
-    }
-
     io::define_spatial_variable(metadata(j), grid()->info(), grid()->get_mapping_info().cf_mapping,
-                                *grid()->ctx()->config(), file, type);
+                                *grid()->ctx()->config(), file);
   }
 }
 
@@ -541,7 +536,7 @@ void Array::dump(const char filename[]) const {
     io::append_time(file, *m_impl->grid->ctx()->config(), m_impl->grid->ctx()->time()->current());
   }
 
-  define(file, io::PISM_DOUBLE);
+  define(file);
   write(file);
 }
 
@@ -839,7 +834,7 @@ void Array::read(const File &file, const unsigned int time) {
 }
 
 void Array::write(const File &file) const {
-  define(file, io::PISM_DOUBLE);
+  define(file);
 
   MPI_Comm com = m_impl->grid->com;
   double start_time = get_time(com);

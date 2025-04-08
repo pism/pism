@@ -186,7 +186,7 @@ std::string SSA::stdout_report() const {
 }
 
 void SSA::define_model_state_impl(const File &output) const {
-  m_velocity.define(output, io::PISM_DOUBLE);
+  m_velocity.define(output);
 }
 
 void SSA::write_model_state_impl(const File &output) const {

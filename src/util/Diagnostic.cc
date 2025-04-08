@@ -119,15 +119,15 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const File &file, io::Type default_type) const {
-  this->define_impl(file, default_type);
+void Diagnostic::define(const File &file) const {
+  this->define_impl(file);
 }
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const File &file, io::Type default_type) const {
+void Diagnostic::define_impl(const File &file) const {
   for (const auto &v : m_vars) {
     io::define_spatial_variable(v, m_grid->info(), m_grid->get_mapping_info().cf_mapping,
-                                *m_grid->ctx()->config(), file, default_type);
+                                *m_grid->ctx()->config(), file);
   }
 }
 

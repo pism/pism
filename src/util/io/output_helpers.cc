@@ -169,7 +169,7 @@ static void write_dimension_data(const File &file, const std::string &name,
 void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const grid::DistributedGridInfo &grid,
                              const VariableMetadata &cf_mapping, const Config &config,
-                             const File &file, io::Type default_type) {
+                             const File &file) {
 
   // Make a copy of `metadata` so we can modify it:
   auto var = metadata;
@@ -209,12 +209,7 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
 
   assert(dims.size() > 1);
 
-  auto type = var.get_output_type();
-  if (type == PISM_NAT) {
-    type = default_type;
-  }
-
-  define_variable(file, dims, type, var);
+  define_variable(file, dims, var.get_output_type(), var);
 }
 
 //! \brief Write a double array to a file.

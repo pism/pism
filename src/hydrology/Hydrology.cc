@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2024 PISM Authors
+// Copyright (C) 2012-2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -465,7 +465,7 @@ DiagnosticList Hydrology::diagnostics_impl() const {
 }
 
 void Hydrology::define_model_state_impl(const File &output) const {
-  m_Wtill.define(output, io::PISM_DOUBLE);
+  m_Wtill.define(output);
 }
 
 void Hydrology::write_model_state_impl(const File &output) const {

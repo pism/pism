@@ -70,7 +70,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 }
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
-  m_sea_level.define(output, io::PISM_DOUBLE);
+  m_sea_level.define(output);
 
   m_input_model->define_model_state(output);
 }

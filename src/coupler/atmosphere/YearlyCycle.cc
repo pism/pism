@@ -84,7 +84,7 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
 }
 
 void YearlyCycle::define_model_state_impl(const File &output) const {
-  m_precipitation.define(output, io::PISM_DOUBLE);
+  m_precipitation.define(output);
 }
 
 void YearlyCycle::write_model_state_impl(const File &output) const {

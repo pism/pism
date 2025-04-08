@@ -119,8 +119,8 @@ void FractureDensity::initialize() {
 }
 
 void FractureDensity::define_model_state_impl(const File &output) const {
-  m_density.define(output, io::PISM_DOUBLE);
-  m_age.define(output, io::PISM_DOUBLE);
+  m_density.define(output);
+  m_age.define(output);
 }
 
 void FractureDensity::write_model_state_impl(const File &output) const {

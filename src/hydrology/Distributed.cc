@@ -99,7 +99,7 @@ void Distributed::init_impl(const array::Scalar &W_till,
 
 void Distributed::define_model_state_impl(const File &output) const {
   Routing::define_model_state_impl(output);
-  m_P.define(output, io::PISM_DOUBLE);
+  m_P.define(output);
 }
 
 void Distributed::write_model_state_impl(const File &output) const {

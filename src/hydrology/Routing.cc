@@ -353,7 +353,7 @@ void Routing::init_impl(const array::Scalar &W_till,
 
 void Routing::define_model_state_impl(const File &output) const {
   Hydrology::define_model_state_impl(output);
-  m_W.define(output, io::PISM_DOUBLE);
+  m_W.define(output);
 }
 
 void Routing::write_model_state_impl(const File &output) const {

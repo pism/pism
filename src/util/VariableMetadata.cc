@@ -37,7 +37,7 @@ VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr s
       m_unit_system(std::move(system)),
       m_short_name(name),
       m_time_independent(false),
-      m_output_type(io::PISM_NAT) {
+      m_output_type(io::PISM_DOUBLE) {
 
   clear();
 

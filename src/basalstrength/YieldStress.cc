@@ -94,7 +94,7 @@ const array::Scalar& YieldStress::basal_material_yield_stress() {
  * step basal_material_yield_stress() gets called before update().
  */
 void YieldStress::define_model_state_impl(const File &output) const {
-  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
+  m_basal_yield_stress.define(output);
 }
 
 void YieldStress::write_model_state_impl(const File &output) const {

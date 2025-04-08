@@ -111,7 +111,7 @@ const array::Scalar &PIK::runoff_impl() const {
 }
 
 void PIK::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output, io::PISM_DOUBLE);
+  m_mass_flux->define(output);
   SurfaceModel::define_model_state_impl(output);
 }
 

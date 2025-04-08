@@ -199,7 +199,7 @@ void SteadyState::define_model_state_impl(const File& output) const {
     output.write_attribute(m_time_name, "units", time().units_string());
   }
 
-  m_Q.define(output, io::PISM_DOUBLE);
+  m_Q.define(output);
 }
 
 void SteadyState::write_model_state_impl(const File& output) const {

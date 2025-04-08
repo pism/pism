@@ -170,7 +170,7 @@ const array::Scalar &InitializationHelper::runoff_impl() const {
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
   for (auto *v : m_variables) {
-    v->define(output, io::PISM_DOUBLE);
+    v->define(output);
   }
   m_input_model->define_model_state(output);
 }

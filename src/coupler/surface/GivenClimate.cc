@@ -124,8 +124,8 @@ const array::Scalar &Given::runoff_impl() const {
 }
 
 void Given::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output, io::PISM_DOUBLE);
-  m_temperature->define(output, io::PISM_DOUBLE);
+  m_mass_flux->define(output);
+  m_temperature->define(output);
 }
 
 void Given::write_model_state_impl(const File &output) const {

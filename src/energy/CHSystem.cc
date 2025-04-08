@@ -234,7 +234,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
 }
 
 void CHSystem::define_model_state_impl(const File &output) const {
-  m_ice_enthalpy.define(output, io::PISM_DOUBLE);
+  m_ice_enthalpy.define(output);
 }
 
 void CHSystem::write_model_state_impl(const File &output) const {

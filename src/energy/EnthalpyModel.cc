@@ -347,8 +347,8 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 }
 
 void EnthalpyModel::define_model_state_impl(const File &output) const {
-  m_ice_enthalpy.define(output, io::PISM_DOUBLE);
-  m_basal_melt_rate.define(output, io::PISM_DOUBLE);
+  m_ice_enthalpy.define(output);
+  m_basal_melt_rate.define(output);
 }
 
 void EnthalpyModel::write_model_state_impl(const File &output) const {

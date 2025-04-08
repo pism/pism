@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -103,7 +103,7 @@ void RegionalYieldStress::define_model_state_impl(const File &output) const {
 
   // define tauc (this is likely to be a no-op because m_input should have defined it by
   // now)
-  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
+  m_basal_yield_stress.define(output);
 }
 
 void RegionalYieldStress::write_model_state_impl(const File &output) const {

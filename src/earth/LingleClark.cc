@@ -322,8 +322,8 @@ void LingleClark::update_impl(const array::Scalar &load, double /*t*/, double dt
 void LingleClark::define_model_state_impl(const File &output) const {
   BedDef::define_model_state_impl(output);
 
-  m_viscous_displacement->define(output, io::PISM_DOUBLE);
-  m_elastic_displacement.define(output, io::PISM_DOUBLE);
+  m_viscous_displacement->define(output);
+  m_elastic_displacement.define(output);
 }
 
 void LingleClark::write_model_state_impl(const File &output) const {

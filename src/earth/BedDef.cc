@@ -78,9 +78,9 @@ const array::Scalar &BedDef::uplift() const {
 }
 
 void BedDef::define_model_state_impl(const File &output) const {
-  m_uplift.define(output, io::PISM_DOUBLE);
-  m_topg.define(output, io::PISM_DOUBLE);
-  m_load_accumulator.define(output, io::PISM_DOUBLE);
+  m_uplift.define(output);
+  m_topg.define(output);
+  m_load_accumulator.define(output);
 
   if (not output.variable_exists(m_time_name)) {
     output.define_variable(m_time_name, io::PISM_DOUBLE, {});

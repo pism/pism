@@ -182,7 +182,7 @@ unsigned int BedThermalUnit::Mz() const {
 }
 
 void BedThermalUnit::define_model_state_impl(const File &output) const {
-  m_bottom_surface_flux.define(output, io::PISM_DOUBLE);
+  m_bottom_surface_flux.define(output);
 }
 
 void BedThermalUnit::write_model_state_impl(const File &output) const {
