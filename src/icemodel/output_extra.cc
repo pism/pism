@@ -317,7 +317,7 @@ void IceModel::write_extras() {
         var["bounds"] = "time_bounds";
 
         io::define_dimension(*m_extra_file, time_name, io::PISM_UNLIMITED);
-        io::define_variable(*m_extra_file, { time_name }, io::PISM_DOUBLE, var);
+        io::define_variable(*m_extra_file, var, { time_name }, io::PISM_DOUBLE);
       }
 
       io::define_time_bounds(time_bounds, time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
@@ -328,7 +328,7 @@ void IceModel::write_extras() {
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
-    io::define_variable(*m_extra_file, {}, io::PISM_DOUBLE, run_stats());
+    io::define_variable(*m_extra_file, run_stats(), {}, io::PISM_DOUBLE);
 
     // use the mid-point of the current reporting interval
     double time = 0.5 * (m_last_extra + current_time);

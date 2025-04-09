@@ -20,6 +20,7 @@
 #ifndef PISM_IO_HELPERS_H
 #define PISM_IO_HELPERS_H
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -105,11 +106,11 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
                             const File &file,
                             const double *input);
 
-void define_dimension(const File &file, const std::string &name, unsigned long int length);
+void define_dimension(const File &file, const std::string &name, size_t length);
 
-void define_variable(const File &file, const std::vector<std::string> &dims,
-                     io::Type type,
-                     const VariableMetadata &metadata);
+void define_variable(const File &file, const VariableMetadata &metadata,
+                     const std::vector<std::string> &dims,
+                     io::Type type);
 
 void append_time(const File &file, const std::string &name, double time_seconds);
 

@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
 
     auto time_name = time->variable_name();
     io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, { time_name }, io::PISM_DOUBLE, time->metadata());
+    io::define_variable(file, time->metadata(), { time_name }, io::PISM_DOUBLE);
     io::append_time(file, time_name, time->current());
 
     btu->write_model_state(file);

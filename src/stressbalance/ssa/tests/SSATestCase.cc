@@ -208,7 +208,7 @@ namespace details {
 static void write(const File &file, const VariableMetadata &var, size_t start, double value,
                   io::Type type = io::PISM_DOUBLE) {
   io::define_dimension(file, "N", io::PISM_UNLIMITED);
-  io::define_variable(file, { "N" }, type, var);
+  io::define_variable(file, var, { "N" }, type);
   io::write_timeseries(file, var, start, { value });
 }
 } // namespace details
@@ -305,7 +305,7 @@ void SSATestCase::write(const std::string &filename) {
     auto time      = m_ctx->time();
     auto time_name = time->variable_name();
     io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, { time_name }, io::PISM_DOUBLE, time->metadata());
+    io::define_variable(file, time->metadata(), { time_name }, io::PISM_DOUBLE);
     io::append_time(file, time_name, 0.0);
 
   m_geometry.ice_surface_elevation.write(file);

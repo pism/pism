@@ -23,25 +23,13 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace io {
 
-void define_variable(const File &file, const std::vector<std::string> &dims,
-                     io::Type type,
-                     const VariableMetadata &metadata) {
-
-  if (file.variable_exists(metadata.get_name())) {
-    return;
-  }
-
-  file.define_variable(metadata.get_name(), type, dims);
-
-  write_attributes(file, metadata, type);
-}
-
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
-void define_dimension(const File &file, const std::string &name, unsigned long int length) {
+void define_dimension(const File &file, const std::string &name, size_t length) {
   try {
     if (file.dimension_exists(name)) {
       return;
@@ -52,6 +40,18 @@ void define_dimension(const File &file, const std::string &name, unsigned long i
     e.add_context("defining dimension '%s' in '%s'", name.c_str(), file.name().c_str());
     throw;
   }
+}
+
+void define_variable(const File &file, const VariableMetadata &metadata, const std::vector<std::string> &dims,
+                     io::Type type) {
+
+  if (file.variable_exists(metadata.get_name())) {
+    return;
+  }
+
+  file.define_variable(metadata.get_name(), type, dims);
+
+  write_attributes(file, metadata, type);
 }
 
 //! \brief Append to the time dimension.
@@ -76,7 +76,7 @@ static void define_dimensions(const SpatialVariableMetadata &var,
     x["spacing_meters"] = { grid.x[1] - grid.x[0] };
 
     define_dimension(file, x.get_name(), grid.x.size());
-    define_variable(file, { x.get_name() }, PISM_DOUBLE, x);
+    define_variable(file, x, { x.get_name() }, PISM_DOUBLE);
   }
 
   // y
@@ -85,7 +85,7 @@ static void define_dimensions(const SpatialVariableMetadata &var,
     y["spacing_meters"] = { grid.y[1] - grid.y[0] };
 
     define_dimension(file, y.get_name(), grid.y.size());
-    define_variable(file, { y.get_name() }, PISM_DOUBLE, y);
+    define_variable(file, y, { y.get_name() }, PISM_DOUBLE);
   }
 
   // z
@@ -115,7 +115,7 @@ static void define_dimensions(const SpatialVariableMetadata &var,
       }
 
       define_dimension(file, z.get_name(), nlevels);
-      define_variable(file, { z.get_name() }, PISM_DOUBLE, z);
+      define_variable(file, z, { z.get_name() }, PISM_DOUBLE);
     }
   }
 }
@@ -130,7 +130,7 @@ static void write_dimension_data(const File &file, const std::string &name,
   }
 }
 
-//! Define a NetCDF variable corresponding to a VariableMetadata object.
+//! Define a NetCDF variable corresponding to a SpatialVariableMetadata object.
 void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const grid::GridInfo &grid,
                              const VariableMetadata &cf_mapping, const Config &config,
@@ -174,7 +174,7 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
 
   assert(dims.size() > 1);
 
-  define_variable(file, dims, var.get_output_type(), var);
+  define_variable(file, var, dims, var.get_output_type());
 }
 
 //! \brief Write a double array to a file.
@@ -250,7 +250,7 @@ void define_timeseries(const VariableMetadata &var, const std::string &dimension
                        const File &file, io::Type output_type) {
   define_dimension(file, dimension_name, PISM_UNLIMITED);
 
-  define_variable(file, { dimension_name }, output_type, var);
+  define_variable(file, var, { dimension_name }, output_type);
 }
 
 /** @brief Write a time-series `data` to a file.
@@ -283,7 +283,7 @@ void define_time_bounds(const VariableMetadata& var,
                         const std::string &bounds_name,
                         const File &file, io::Type output_type) {
   define_dimension(file, bounds_name, 2);
-  define_variable(file, { time_name, bounds_name }, output_type, var);
+  define_variable(file, var, { time_name, bounds_name }, output_type);
 }
 
 void write_time_bounds(const File &file, const VariableMetadata &metadata, size_t t_start,

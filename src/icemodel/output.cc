@@ -132,7 +132,7 @@ void IceModel::save_results() {
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-    io::define_variable(file, {}, io::PISM_DOUBLE, run_stats());
+    io::define_variable(file, run_stats(), {}, io::PISM_DOUBLE);
 
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
@@ -157,14 +157,14 @@ void IceModel::save_variables(const File &file,
     var["bounds"]  = "time_bounds";
 
     io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, { time_name }, io::PISM_DOUBLE, var);
+    io::define_variable(file, var, { time_name }, io::PISM_DOUBLE);
   }
 
   // define the "timestamp" (wall clock time since the beginning of the run)
   // Note: it is time-dependent, so we need to define time first.
   VariableMetadata timestamp("timestamp", m_sys);
   timestamp.long_name("wall-clock time since the beginning of the run").units("hours");
-  io::define_variable(file, { time_name }, io::PISM_FLOAT, timestamp);
+  io::define_variable(file, timestamp, { time_name }, io::PISM_FLOAT);
 
   // append to the time dimension
   io::append_time(file, time_name, time);
@@ -173,7 +173,7 @@ void IceModel::save_variables(const File &file,
   //
   // FIXME: we should write this to variables instead of attributes because NetCDF-4 crashes after
   // about 2^16 attribute modifications per variable. :-(
-  io::define_variable(file, {}, io::PISM_DOUBLE, run_stats());
+  io::define_variable(file, run_stats(), {}, io::PISM_DOUBLE);
 
   if (kind == INCLUDE_MODEL_STATE) {
     define_model_state(file);
