@@ -199,7 +199,7 @@ void Geometry::dump(const char *filename) const {
             string_to_backend(grid->ctx()->config()->get_string("output.format")),
             io::PISM_READWRITE_CLOBBER);
 
-  io::define_time(file, *grid->ctx());
+  io::define_time(file, *grid->ctx()->time());
   io::append_time(file, *grid->ctx()->config(), 0.0);
 
   latitude.write(file);

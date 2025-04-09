@@ -474,6 +474,10 @@ std::string Time::units_string() const {
   return m_time_units.format();
 }
 
+std::string Time::variable_name() const {
+  return m_variable_name;
+}
+
 units::Unit Time::units() const {
   return m_time_units;
 }
@@ -688,6 +692,8 @@ Time::Time(MPI_Comm com,
   : m_config(config),
     m_unit_system(unit_system),
     m_time_units(unit_system, "seconds since 1-1-1") {
+
+  m_variable_name = config->get_string("time.dimension_name");
 
   m_t_eps = config->get_number("time_stepping.resolution", "seconds");
 

@@ -25,7 +25,6 @@
 #include "pism/util/Config.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/projection.hh"
 
 namespace pism {
 namespace io {
@@ -62,29 +61,26 @@ void define_dimension(const File &file, unsigned long int length,
   }
 }
 
-//! Prepare a file for output.
-void define_time(const File &file, const Context &ctx) {
-  const Time &time     = *ctx.time();
-  const Config &config = *ctx.config();
+static VariableMetadata time_dimension(const std::string &name, const std::string &units,
+                                       const std::string &calendar,
+                                       std::shared_ptr<units::System> unit_system) {
+  VariableMetadata result(name, unit_system);
+  result.long_name("time").units(units);
+  result["axis"]     = "T";
+  result["calendar"] = calendar;
 
-  define_time(file, config.get_string("time.dimension_name"), time.calendar(), time.units_string(),
-              ctx.unit_system());
+  return result;
 }
 
 /*!
  * Define a time dimension and the corresponding coordinate variable. Does nothing if the time
  * variable is already present.
  */
-void define_time(const File &file, const std::string &name, const std::string &calendar,
-                 const std::string &units, units::System::Ptr unit_system) {
-  // time
-  VariableMetadata time(name, unit_system);
-  time["long_name"] = "time";
-  time["calendar"]  = calendar;
-  time["units"]     = units;
-  time["axis"]      = "T";
+void define_time(const File &file, const Time &time) {
+  auto metadata = time_dimension(time.variable_name(), time.units_string(), time.calendar(),
+                                 time.units().system());
 
-  define_dimension(file, PISM_UNLIMITED, time);
+  define_dimension(file, PISM_UNLIMITED, metadata);
 }
 
 //! Prepare a file for output.
@@ -167,7 +163,7 @@ static void write_dimension_data(const File &file, const std::string &name,
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
 void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                             const grid::DistributedGridInfo &grid,
+                             const grid::GridInfo &grid,
                              const VariableMetadata &cf_mapping, const Config &config,
                              const File &file) {
 

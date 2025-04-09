@@ -27,9 +27,7 @@ void VecBundleWriter::init() {
                   string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
                   io::PISM_READWRITE_MOVE);
 
-  io::define_time(file, m_grid->ctx()->config()->get_string("time.dimension_name"),
-                  m_grid->ctx()->time()->calendar(), m_grid->ctx()->time()->units_string(),
-                  m_grid->ctx()->unit_system());
+  io::define_time(file, *m_grid->ctx()->time());
 
   for (const auto *vec : vecs) {
     vec->define(file);

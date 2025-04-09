@@ -20,15 +20,18 @@
 #ifndef PISM_IO_HELPERS_H
 #define PISM_IO_HELPERS_H
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <mpi.h>
 
 #include "IO_Flags.hh"
-#include "LocalInterpCtx.hh"
-#include "pism/util/Units.hh"
 
 namespace pism {
+
+namespace units {
+class System;
+}
 
 class VariableMetadata;
 class SpatialVariableMetadata;
@@ -41,6 +44,7 @@ class Config;
 
 namespace grid {
 class InputGridInfo;
+class GridInfo;
 class DistributedGridInfo;
 }
 
@@ -51,6 +55,10 @@ class LocalInterpCtx;
 namespace io {
 
 enum Type : int;
+
+std::string time_dimension(std::shared_ptr<units::System> unit_system,
+                           const File &file,
+                           const std::string &variable_name);
 
 void check_input_grid(const grid::InputGridInfo &input_grid,
                       const grid::DistributedGridInfo& internal_grid,
@@ -68,6 +76,29 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
                            const Grid& grid, const File &file,
                            unsigned int time, double *output);
 
+std::vector<double> read_1d_variable(const File &file, const std::string &name,
+                                     const std::string &units,
+                                     std::shared_ptr<units::System> unit_system);
+
+std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
+                                const std::string &units,
+                                std::shared_ptr<units::System> unit_system);
+
+void read_time_info(std::shared_ptr<units::System> unit_system, const File &file,
+                    const std::string &time_name, const std::string &time_units,
+                    std::vector<double> &times, std::vector<double> &bounds);
+
+VariableMetadata read_attributes(const File &file, const std::string &variable_name,
+                                 std::shared_ptr<units::System> unit_system);
+
+// writing utilities
+
+void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
+
+void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_to_use = 0);
+
+// writing
+
 void write_spatial_variable(const SpatialVariableMetadata &metadata,
                             const grid::DistributedGridInfo& grid,
                             const Config &config,
@@ -81,16 +112,13 @@ void define_variable(const File &file, const std::vector<std::string> &dims,
                      io::Type type,
                      const VariableMetadata &metadata);
 
-void define_time(const File &file, const Context &ctx);
-
-void define_time(const File &nc, const std::string &name, const std::string &calendar,
-                 const std::string &units, units::System::Ptr unit_system);
+void define_time(const File &file, const Time &time);
 
 void append_time(const File &file, const Config &ctx, double time_seconds);
-void append_time(const File &nc, const std::string &name, double time_seconds);
+void append_time(const File &file, const std::string &name, double time_seconds);
 
 void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                             const grid::DistributedGridInfo &grid,
+                             const grid::GridInfo &grid,
                              const VariableMetadata &cf_mapping, const Config &config,
                              const File &file);
 
@@ -103,36 +131,13 @@ void define_time_bounds(const VariableMetadata& var,
                         const std::string &bounds_name,
                         const File &file, io::Type output_type);
 
-std::vector<double> read_1d_variable(const File &file, const std::string &name,
-                                     const std::string &units,
-                                     std::shared_ptr<units::System> unit_system);
+void write_time_bounds(const File &file, const VariableMetadata &metadata,
+                       size_t t_start, const std::vector<double> &bounds);
 
 void write_timeseries(const File &file, const VariableMetadata &metadata,
                       size_t t_start, const std::vector<double> &data);
 
-std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
-                                const std::string &units,
-                                std::shared_ptr<units::System> unit_system);
-
-void write_time_bounds(const File &file, const VariableMetadata &metadata,
-                       size_t t_start, const std::vector<double> &bounds);
-
-void read_time_info(std::shared_ptr<units::System> unit_system, const File &file,
-                    const std::string &time_name, const std::string &time_units,
-                    std::vector<double> &times, std::vector<double> &bounds);
-
-std::string time_dimension(units::System::Ptr unit_system,
-                           const File &file,
-                           const std::string &variable_name);
-
-VariableMetadata read_attributes(const File &file, const std::string &variable_name,
-                                 std::shared_ptr<units::System> unit_system);
-
 void write_attributes(const File &file, const VariableMetadata &metadata, io::Type output_type);
-
-void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
-
-void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_to_use = 0);
 
 } // end of namespace io
 } // end of namespace pism

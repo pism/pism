@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
               string_to_backend(config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);
 
-    io::define_time(file, *ctx);
+    io::define_time(file, *ctx->time());
     io::append_time(file, *ctx->config(), ctx->time()->current());
 
     btu->write_model_state(file);

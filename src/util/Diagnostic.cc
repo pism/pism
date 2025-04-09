@@ -361,7 +361,7 @@ void TSDiagnostic::flush() {
     io::write_time_bounds(file, m_time_bounds, m_start, m_bounds);
   }
 
-  io::define_timeseries(m_variable, m_time_name, file, io::PISM_DOUBLE);
+  io::define_variable(file, { m_time_name }, io::PISM_DOUBLE, m_variable);
   io::write_timeseries(file, m_variable, m_start, m_values);
 
   m_start += m_time.size();

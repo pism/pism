@@ -532,7 +532,7 @@ void Array::dump(const char filename[]) const {
             io::PISM_READWRITE_CLOBBER);
 
   if (not m_impl->metadata[0].get_time_independent()) {
-    io::define_time(file, *m_impl->grid->ctx());
+    io::define_time(file, *m_impl->grid->ctx()->time());
     io::append_time(file, *m_impl->grid->ctx()->config(), m_impl->grid->ctx()->time()->current());
   }
 

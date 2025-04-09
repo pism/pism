@@ -35,6 +35,7 @@
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
 
 namespace pism {
 

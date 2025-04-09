@@ -150,15 +150,14 @@ void IceModel::save_variables(const File &file,
   file.set_compression_level(m_config->get_number("output.compression_level"));
 
   // define the time dimension if necessary (no-op if it is already defined)
-  io::define_time(file, *m_grid->ctx());
+  io::define_time(file, *m_time);
 
   // define the "timestamp" (wall clock time since the beginning of the run)
   // Note: it is time-dependent, so we need to define time first.
   VariableMetadata timestamp("timestamp", m_sys);
   timestamp.long_name("wall-clock time since the beginning of the run").units("hours");
-  io::define_timeseries(timestamp,
-                        m_config->get_string("time.dimension_name"),
-                        file, io::PISM_FLOAT);
+  io::define_variable(file, { m_config->get_string("time.dimension_name") }, io::PISM_FLOAT,
+                      timestamp);
   // append to the time dimension
   io::append_time(file, *m_config, time);
 

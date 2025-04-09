@@ -89,6 +89,9 @@ public:
   //! Internal time units as a string.
   std::string units_string() const;
 
+  //! Name of the NetCDF variable to use
+  std::string variable_name() const;
+  
   /*!
    * Internal time units.
    */
@@ -149,6 +152,8 @@ protected:
   const units::System::Ptr m_unit_system;
   units::Unit m_time_units;
 
+  std::string m_variable_name;
+  
   //! Time resolution, in seconds.
   double m_t_eps;
 

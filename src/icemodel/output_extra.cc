@@ -312,7 +312,7 @@ void IceModel::write_extras() {
                                   string_to_backend(m_config->get_string("output.format")), mode));
 
       // Prepare the file:
-      io::define_time(*m_extra_file, *m_ctx);
+      io::define_time(*m_extra_file, *m_time);
       m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
       io::define_time_bounds(time_bounds, time_name, "nv", *m_extra_file, io::PISM_DOUBLE);

@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
 
     // Write results to an output file:
     File file(grid->com, output_file, io::PISM_NETCDF3, io::PISM_READWRITE_MOVE);
-    io::define_time(file, *ctx);
+    io::define_time(file, *ctx->time());
     io::append_time(file, *ctx->config(), ctx->time()->current());
 
     geometry.ice_surface_elevation.write(file);

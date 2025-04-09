@@ -215,9 +215,8 @@ protected:
 
   void define_state_impl(const File &output) const {
     m_accumulator.define(output);
-    io::define_timeseries(m_time_since_reset,
-                          Diagnostic::m_config->get_string("time.dimension_name"), output,
-                          io::PISM_DOUBLE);
+    io::define_variable(output, { Diagnostic::m_config->get_string("time.dimension_name") },
+                        io::PISM_DOUBLE, m_time_since_reset);
   }
 
   void write_state_impl(const File &output) const {

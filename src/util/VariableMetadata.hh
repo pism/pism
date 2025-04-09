@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018, 2020, 2021, 2022, 2023, 2024, 2024 Constantine Khroulev
+// Copyright (C) 2009--2018, 2020, 2021, 2022, 2023, 2024, 2024, 2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,14 +19,16 @@
 #ifndef PISM_VARIABLEMETADATA_H
 #define PISM_VARIABLEMETADATA_H
 
-#include <set>
 #include <map>
 #include <vector>
 #include <string>
-
-#include "pism/util/Units.hh"
+#include <memory>
 
 namespace pism {
+namespace units {
+class System;
+}
+
 namespace io {
 enum Type : int;
 }
@@ -98,7 +100,7 @@ private:
 
 class VariableMetadata {
 public:
-  VariableMetadata(const std::string &name, units::System::Ptr system, unsigned int ndims = 0);
+  VariableMetadata(const std::string &name, std::shared_ptr<units::System> system, unsigned int ndims = 0);
   virtual ~VariableMetadata() = default;
 
   Attribute operator[](const std::string &name) {
@@ -151,7 +153,7 @@ public:
   VariableMetadata &clear();
 
   // more getters
-  units::System::Ptr unit_system() const;
+  std::shared_ptr<units::System> unit_system() const;
 
   unsigned int n_spatial_dimensions() const;
 
@@ -170,7 +172,7 @@ protected:
 
 private:
   //! @brief The unit system to use.
-  units::System::Ptr m_unit_system;
+  std::shared_ptr<units::System> m_unit_system;
 
   //! string and boolean attributes
   std::map<std::string, std::string> m_strings;
@@ -186,7 +188,7 @@ private:
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class SpatialVariableMetadata : public VariableMetadata {
 public:
-  SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
+  SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
                           const std::vector<double> &zlevels = {0.0});
   virtual ~SpatialVariableMetadata() = default;
 

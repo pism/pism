@@ -602,12 +602,13 @@ void IceCompModel::print_summary(bool /* tempAndAge */) {
 static void write(units::System::Ptr sys, const File &file, size_t start, const char *name,
                   const char *units, const char *long_name, double value,
                   io::Type type = io::PISM_DOUBLE) {
-  VariableMetadata v(name, sys);
-  v["units"]     = units;
-  v["long_name"] = long_name;
+  VariableMetadata variable(name, sys);
+  variable.units(units).long_name(long_name);
 
-  io::define_timeseries(v, "N", file, type);
-  io::write_timeseries(file, v, start, { value });
+  io::define_dimension(file, io::PISM_UNLIMITED, { "N", sys });
+  io::define_variable(file, { "N" }, type, variable);
+
+  io::write_timeseries(file, variable, start, { value });
 }
 
 void IceCompModel::reportErrors() {

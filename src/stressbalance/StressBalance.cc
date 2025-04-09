@@ -71,7 +71,7 @@ void Inputs::dump(const char *filename) const {
 
   config->write(output);
 
-  io::define_time(output, *ctx);
+  io::define_time(output, *ctx->time());
   io::append_time(output, config->get_string("time.dimension_name"), ctx->time()->current());
 
   {
