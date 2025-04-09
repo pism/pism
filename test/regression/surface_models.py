@@ -800,7 +800,7 @@ class ISMIP6(TestCase):
 
             t = self.ctx.time.current() + j * dt
 
-            PISM.append_time(out, self.ctx.config, t)
+            PISM.append_time(out, self.ctx.time.variable_name(), t)
 
             PISM.write_time_bounds(out, bounds, j, [t, t + dt])
 

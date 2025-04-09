@@ -354,7 +354,8 @@ void TSDiagnostic::flush() {
   }
 
   if (len == m_start) {
-    io::define_dimension(file, io::PISM_UNLIMITED, m_dimension);
+    io::define_dimension(file, m_time_name, io::PISM_UNLIMITED);
+    io::define_variable(file, { m_time_name }, io::PISM_DOUBLE, m_dimension);
     io::define_time_bounds(m_time_bounds, m_time_name, "nv", file, io::PISM_DOUBLE);
 
     io::write_timeseries(file, m_dimension, m_start, m_time);

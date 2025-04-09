@@ -22,6 +22,7 @@
 #include <vector>
 #include <memory>
 
+#include "VariableMetadata.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Config.hh"
@@ -91,6 +92,9 @@ public:
 
   //! Name of the NetCDF variable to use
   std::string variable_name() const;
+
+  //! Metadata of the NetCDF variable for writing to an output file.
+  VariableMetadata metadata() const;
   
   /*!
    * Internal time units.

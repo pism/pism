@@ -478,6 +478,15 @@ std::string Time::variable_name() const {
   return m_variable_name;
 }
 
+VariableMetadata Time::metadata() const {
+  VariableMetadata result(variable_name(), units().system());
+  result.long_name("time").units(units_string());
+  result["axis"]     = "T";
+  result["calendar"] = calendar();
+
+  return result;
+}
+
 units::Unit Time::units() const {
   return m_time_units;
 }

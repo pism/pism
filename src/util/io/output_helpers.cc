@@ -21,9 +21,7 @@
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/Context.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
 
 namespace pism {
@@ -43,49 +41,17 @@ void define_variable(const File &file, const std::vector<std::string> &dims,
 }
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
-void define_dimension(const File &file, unsigned long int length,
-                      const VariableMetadata &metadata) {
-  std::string name = metadata.get_name();
+void define_dimension(const File &file, const std::string &name, unsigned long int length) {
   try {
     if (file.dimension_exists(name)) {
       return;
     }
 
     file.define_dimension(name, length);
-
-    define_variable(file, { name }, PISM_DOUBLE, metadata);
-
   } catch (RuntimeError &e) {
     e.add_context("defining dimension '%s' in '%s'", name.c_str(), file.name().c_str());
     throw;
   }
-}
-
-static VariableMetadata time_dimension(const std::string &name, const std::string &units,
-                                       const std::string &calendar,
-                                       std::shared_ptr<units::System> unit_system) {
-  VariableMetadata result(name, unit_system);
-  result.long_name("time").units(units);
-  result["axis"]     = "T";
-  result["calendar"] = calendar;
-
-  return result;
-}
-
-/*!
- * Define a time dimension and the corresponding coordinate variable. Does nothing if the time
- * variable is already present.
- */
-void define_time(const File &file, const Time &time) {
-  auto metadata = time_dimension(time.variable_name(), time.units_string(), time.calendar(),
-                                 time.units().system());
-
-  define_dimension(file, PISM_UNLIMITED, metadata);
-}
-
-//! Prepare a file for output.
-void append_time(const File &file, const Config &config, double time_seconds) {
-  append_time(file, config.get_string("time.dimension_name"), time_seconds);
 }
 
 //! \brief Append to the time dimension.
@@ -109,7 +75,8 @@ static void define_dimensions(const SpatialVariableMetadata &var,
     auto x = var.x();
     x["spacing_meters"] = { grid.x[1] - grid.x[0] };
 
-    define_dimension(file, grid.x.size(), x);
+    define_dimension(file, x.get_name(), grid.x.size());
+    define_variable(file, { x.get_name() }, PISM_DOUBLE, x);
   }
 
   // y
@@ -117,7 +84,8 @@ static void define_dimensions(const SpatialVariableMetadata &var,
     auto y = var.y();
     y["spacing_meters"] = { grid.y[1] - grid.y[0] };
 
-    define_dimension(file, grid.y.size(), var.y());
+    define_dimension(file, y.get_name(), grid.y.size());
+    define_variable(file, { y.get_name() }, PISM_DOUBLE, y);
   }
 
   // z
@@ -146,7 +114,8 @@ static void define_dimensions(const SpatialVariableMetadata &var,
         z["spacing_max_meters"] = { dz_max };
       }
 
-      define_dimension(file, nlevels, z);
+      define_dimension(file, z.get_name(), nlevels);
+      define_variable(file, { z.get_name() }, PISM_DOUBLE, z);
     }
   }
 }
@@ -279,8 +248,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
 //! Define a NetCDF variable corresponding to a time-series.
 void define_timeseries(const VariableMetadata &var, const std::string &dimension_name,
                        const File &file, io::Type output_type) {
-
-  define_dimension(file, PISM_UNLIMITED, { dimension_name, var.unit_system() });
+  define_dimension(file, dimension_name, PISM_UNLIMITED);
 
   define_variable(file, { dimension_name }, output_type, var);
 }
@@ -314,7 +282,7 @@ void define_time_bounds(const VariableMetadata& var,
                         const std::string &time_name,
                         const std::string &bounds_name,
                         const File &file, io::Type output_type) {
-  define_dimension(file, 2, { bounds_name, var.unit_system() });
+  define_dimension(file, bounds_name, 2);
   define_variable(file, { time_name, bounds_name }, output_type, var);
 }
 

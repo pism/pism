@@ -225,8 +225,10 @@ int main(int argc, char *argv[]) {
               string_to_backend(config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);
 
-    io::define_time(file, *ctx->time());
-    io::append_time(file, *ctx->config(), ctx->time()->current());
+    auto time_name = time->variable_name();
+    io::define_dimension(file, time_name, io::PISM_UNLIMITED);
+    io::define_variable(file, { time_name }, io::PISM_DOUBLE, time->metadata());
+    io::append_time(file, time_name, time->current());
 
     btu->write_model_state(file);
 

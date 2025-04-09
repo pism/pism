@@ -30,6 +30,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/Time.hh"
 
 namespace pism {
 
@@ -199,8 +200,11 @@ void Geometry::dump(const char *filename) const {
             string_to_backend(grid->ctx()->config()->get_string("output.format")),
             io::PISM_READWRITE_CLOBBER);
 
-  io::define_time(file, *grid->ctx()->time());
-  io::append_time(file, *grid->ctx()->config(), 0.0);
+  auto time = grid->ctx()->time();
+  auto time_name = time->variable_name();
+  io::define_dimension(file, time_name, io::PISM_UNLIMITED);
+  io::define_variable(file, { time_name }, io::PISM_DOUBLE, time->metadata());
+  io::append_time(file, time_name, time->current());
 
   latitude.write(file);
   longitude.write(file);

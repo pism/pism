@@ -290,7 +290,7 @@ void IceModel::write_extras() {
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
   {
-    std::string time_name = m_config->get_string("time.dimension_name");
+    std::string time_name = m_time->variable_name();
 
     VariableMetadata time_bounds("time_bounds", m_sys);
     time_bounds.units(m_time->units_string());
@@ -312,8 +312,13 @@ void IceModel::write_extras() {
                                   string_to_backend(m_config->get_string("output.format")), mode));
 
       // Prepare the file:
-      io::define_time(*m_extra_file, *m_time);
-      m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
+      {
+        auto var = m_time->metadata();
+        var["bounds"] = "time_bounds";
+
+        io::define_dimension(*m_extra_file, time_name, io::PISM_UNLIMITED);
+        io::define_variable(*m_extra_file, { time_name }, io::PISM_DOUBLE, var);
+      }
 
       io::define_time_bounds(time_bounds, time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
 

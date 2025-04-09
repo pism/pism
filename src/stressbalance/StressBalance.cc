@@ -71,8 +71,11 @@ void Inputs::dump(const char *filename) const {
 
   config->write(output);
 
-  io::define_time(output, *ctx->time());
-  io::append_time(output, config->get_string("time.dimension_name"), ctx->time()->current());
+  auto time = ctx->time();
+  auto time_name = time->variable_name();
+  io::define_dimension(output, time_name, io::PISM_UNLIMITED);
+  io::define_variable(output, { time_name }, io::PISM_DOUBLE, time->metadata());
+  io::append_time(output, time_name, time->current());
 
   {
     geometry->latitude.write(output);

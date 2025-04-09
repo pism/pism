@@ -105,16 +105,12 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
                             const File &file,
                             const double *input);
 
-void define_dimension(const File &file, unsigned long int length,
-                      const VariableMetadata &metadata);
+void define_dimension(const File &file, const std::string &name, unsigned long int length);
 
 void define_variable(const File &file, const std::vector<std::string> &dims,
                      io::Type type,
                      const VariableMetadata &metadata);
 
-void define_time(const File &file, const Time &time);
-
-void append_time(const File &file, const Config &ctx, double time_seconds);
 void append_time(const File &file, const std::string &name, double time_seconds);
 
 void define_spatial_variable(const SpatialVariableMetadata &metadata,

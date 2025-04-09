@@ -27,7 +27,10 @@ void VecBundleWriter::init() {
                   string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
                   io::PISM_READWRITE_MOVE);
 
-  io::define_time(file, *m_grid->ctx()->time());
+  auto time      = m_grid->ctx()->time();
+  auto time_name = time->variable_name();
+  io::define_dimension(file, time_name, io::PISM_UNLIMITED);
+  io::define_variable(file, { time_name }, io::PISM_DOUBLE, time->metadata());
 
   for (const auto *vec : vecs) {
     vec->define(file);
@@ -40,7 +43,8 @@ void VecBundleWriter::write(double time_s) {
                 string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
                 io::PISM_READWRITE); // append to file
 
-  io::append_time(nc, m_grid->ctx()->config()->get_string("time.dimension_name"), time_s);
+  auto time = m_grid->ctx()->time();
+  io::append_time(nc, time->variable_name(), time_s);
 
   for (const auto *vec : vecs) {
     vec->write(nc);

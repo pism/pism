@@ -29,6 +29,7 @@
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Time.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -206,7 +207,7 @@ void SSATestCase::report(const std::string &testname) {
 namespace details {
 static void write(const File &file, const VariableMetadata &var, size_t start, double value,
                   io::Type type = io::PISM_DOUBLE) {
-  io::define_dimension(file, io::PISM_UNLIMITED, { "N", var.unit_system() });
+  io::define_dimension(file, "N", io::PISM_UNLIMITED);
   io::define_variable(file, { "N" }, type, var);
   io::write_timeseries(file, var, start, { value });
 }
@@ -301,8 +302,11 @@ void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
   File file(m_grid->com, filename, io::PISM_NETCDF3, io::PISM_READWRITE_MOVE);
-  io::define_time(file, *m_grid->ctx()->time());
-  io::append_time(file, *m_config, 0.0);
+    auto time      = m_ctx->time();
+    auto time_name = time->variable_name();
+    io::define_dimension(file, time_name, io::PISM_UNLIMITED);
+    io::define_variable(file, { time_name }, io::PISM_DOUBLE, time->metadata());
+    io::append_time(file, time_name, 0.0);
 
   m_geometry.ice_surface_elevation.write(file);
   m_geometry.ice_thickness.write(file);

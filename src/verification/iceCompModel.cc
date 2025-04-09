@@ -605,7 +605,7 @@ static void write(units::System::Ptr sys, const File &file, size_t start, const 
   VariableMetadata variable(name, sys);
   variable.units(units).long_name(long_name);
 
-  io::define_dimension(file, io::PISM_UNLIMITED, { "N", sys });
+  io::define_dimension(file, "N", io::PISM_UNLIMITED);
   io::define_variable(file, { "N" }, type, variable);
 
   io::write_timeseries(file, variable, start, { value });

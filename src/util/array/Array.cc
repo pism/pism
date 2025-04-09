@@ -531,9 +531,11 @@ void Array::dump(const char filename[]) const {
             string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
             io::PISM_READWRITE_CLOBBER);
 
-  if (not m_impl->metadata[0].get_time_independent()) {
-    io::define_time(file, *m_impl->grid->ctx()->time());
-    io::append_time(file, *m_impl->grid->ctx()->config(), m_impl->grid->ctx()->time()->current());
+  if (not metadata(0).get_time_independent()) {
+    auto time = m_impl->grid->ctx()->time();
+    io::define_dimension(file, time->variable_name(), io::PISM_UNLIMITED);
+    io::define_variable(file, { time->variable_name()}, io::PISM_DOUBLE, time->metadata());
+    io::append_time(file, time->variable_name(), time->current());
   }
 
   define(file);
