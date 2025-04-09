@@ -786,7 +786,8 @@ class ISMIP6(TestCase):
 
         bounds = PISM.VariableMetadata("time_bounds", self.ctx.unit_system)
 
-        PISM.define_time_bounds(bounds, "time", "nv", out, PISM.PISM_DOUBLE)
+        PISM.define_dimension(out, "nv", 2)
+        PISM.define_variable(out, bounds, ["time", "nv"], PISM.PISM_DOUBLE)
 
         SMB_anomaly  = 1.0
         T_anomaly    = 1.0

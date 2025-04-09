@@ -66,58 +66,45 @@ void append_time(const File &file, const std::string &name, double value) {
   }
 }
 
-//! \brief Define dimensions a variable depends on.
-static void define_dimensions(const SpatialVariableMetadata &var,
-                              const grid::GridInfo &grid, const File &file) {
+// Add grid spacing info to dimensions of `var` to make them ready to define in an output file.
+static std::vector<std::pair<VariableMetadata, int> >
+format_dimensions(const SpatialVariableMetadata &var, const grid::GridInfo &grid) {
+  auto x = var.x();
+  auto y = var.y();
 
-  // x
-  {
-    auto x = var.x();
-    x["spacing_meters"] = { grid.x[1] - grid.x[0] };
+  x["spacing_meters"] = { grid.x[1] - grid.x[0] };
+  y["spacing_meters"] = { grid.y[1] - grid.y[0] };
 
-    define_dimension(file, x.get_name(), grid.x.size());
-    define_variable(file, x, { x.get_name() }, PISM_DOUBLE);
-  }
+  std::vector<std::pair<VariableMetadata, int> > result = { { y, grid.y.size() },
+                                                            { x, grid.x.size() } };
 
-  // y
-  {
-    auto y = var.y();
-    y["spacing_meters"] = { grid.y[1] - grid.y[0] };
+  auto z = var.z();
+  if (not z.get_name().empty()) {
+    const auto &levels = var.levels();
 
-    define_dimension(file, y.get_name(), grid.y.size());
-    define_variable(file, y, { y.get_name() }, PISM_DOUBLE);
-  }
+    // make sure we have at least one level
+    unsigned int nlevels = std::max(levels.size(), (size_t)1);
 
-  // z
-  {
-    auto z = var.z();
+    bool spatial_dim = not var.z().get_string("axis").empty();
 
-    if (not z.get_name().empty()) {
-      const auto &levels = var.levels();
+    if (nlevels > 1 and spatial_dim) {
+      double dz_max = levels[1] - levels[0];
+      double dz_min = levels.back() - levels.front();
 
-      // make sure we have at least one level
-      unsigned int nlevels = std::max(levels.size(), (size_t)1);
-
-      bool spatial_dim = not var.z().get_string("axis").empty();
-
-      if (nlevels > 1 and spatial_dim) {
-        double dz_max = levels[1] - levels[0];
-        double dz_min = levels.back() - levels.front();
-
-        for (unsigned int k = 0; k < nlevels - 1; ++k) {
-          double dz = levels[k + 1] - levels[k];
-          dz_max    = std::max(dz_max, dz);
-          dz_min    = std::min(dz_min, dz);
-        }
-
-        z["spacing_min_meters"] = { dz_min };
-        z["spacing_max_meters"] = { dz_max };
+      for (unsigned int k = 0; k < nlevels - 1; ++k) {
+        double dz = levels[k + 1] - levels[k];
+        dz_max    = std::max(dz_max, dz);
+        dz_min    = std::min(dz_min, dz);
       }
 
-      define_dimension(file, z.get_name(), nlevels);
-      define_variable(file, z, { z.get_name() }, PISM_DOUBLE);
+      z["spacing_min_meters"] = { dz_min };
+      z["spacing_max_meters"] = { dz_max };
     }
+
+    result.push_back({ z, nlevels });
   }
+
+  return result;
 }
 
 static void write_dimension_data(const File &file, const std::string &name,
@@ -155,8 +142,6 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
     var["grid_mapping"] = cf_mapping.get_name();
   }
 
-  define_dimensions(var, grid, file);
-
   std::string x = var.x().get_name(), y = var.y().get_name(), z = var.z().get_name();
 
   std::vector<std::string> dims;
@@ -174,6 +159,16 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
 
   assert(dims.size() > 1);
 
+  // define dimensions and coordinate variables:
+  for (const auto &pair : format_dimensions(var, grid)) {
+    auto dimension = pair.first;
+    auto length    = pair.second;
+
+    define_dimension(file, dimension.get_name(), length);
+    define_variable(file, dimension, { dimension.get_name() }, PISM_DOUBLE);
+  }
+
+  // define the variable itself:
   define_variable(file, var, dims, var.get_output_type());
 }
 
@@ -268,14 +263,6 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
                   file.name().c_str());
     throw;
   }
-}
-
-void define_time_bounds(const VariableMetadata& var,
-                        const std::string &time_name,
-                        const std::string &bounds_name,
-                        const File &file, io::Type output_type) {
-  define_dimension(file, bounds_name, 2);
-  define_variable(file, var, { time_name, bounds_name }, output_type);
 }
 
 void write_time_bounds(const File &file, const VariableMetadata &metadata, size_t t_start,

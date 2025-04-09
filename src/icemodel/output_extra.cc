@@ -293,7 +293,6 @@ void IceModel::write_extras() {
     std::string time_name = m_time->variable_name();
 
     VariableMetadata time_bounds("time_bounds", m_sys);
-    time_bounds.units(m_time->units_string());
 
     if (m_extra_file == nullptr) {
 
@@ -313,14 +312,17 @@ void IceModel::write_extras() {
 
       // Prepare the file:
       {
-        auto var = m_time->metadata();
-        var["bounds"] = "time_bounds";
+        auto time = m_time->metadata();
+        time_bounds.units(time["units"]);
+
+        time["bounds"] = time_bounds.get_name();
 
         io::define_dimension(*m_extra_file, time_name, io::PISM_UNLIMITED);
-        io::define_variable(*m_extra_file, var, { time_name }, io::PISM_DOUBLE);
-      }
+        io::define_variable(*m_extra_file, time, { time_name }, io::PISM_DOUBLE);
 
-      io::define_time_bounds(time_bounds, time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
+        io::define_dimension(*m_extra_file, "nv", 2);
+        io::define_variable(*m_extra_file, time_bounds, { time_name, "nv" }, io::PISM_DOUBLE);
+      }
 
       write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
     }

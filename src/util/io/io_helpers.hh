@@ -119,11 +119,6 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const VariableMetadata &cf_mapping, const Config &config,
                              const File &file);
 
-void define_time_bounds(const VariableMetadata& var,
-                        const std::string &time_name,
-                        const std::string &bounds_name,
-                        const File &file, io::Type output_type);
-
 void write_time_bounds(const File &file, const VariableMetadata &metadata,
                        size_t t_start, const std::vector<double> &bounds);
 
