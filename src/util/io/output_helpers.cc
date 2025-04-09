@@ -245,14 +245,6 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
   file.set_variable_was_written(var.get_name());
 }
 
-//! Define a NetCDF variable corresponding to a time-series.
-void define_timeseries(const VariableMetadata &var, const std::string &dimension_name,
-                       const File &file, io::Type output_type) {
-  define_dimension(file, dimension_name, PISM_UNLIMITED);
-
-  define_variable(file, var, { dimension_name }, output_type);
-}
-
 /** @brief Write a time-series `data` to a file.
  *
  * Always use output units when saving time-series.

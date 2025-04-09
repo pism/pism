@@ -119,10 +119,6 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const VariableMetadata &cf_mapping, const Config &config,
                              const File &file);
 
-void define_timeseries(const VariableMetadata& var,
-                       const std::string &dimension_name,
-                       const File &file, io::Type output_type);
-
 void define_time_bounds(const VariableMetadata& var,
                         const std::string &time_name,
                         const std::string &bounds_name,
