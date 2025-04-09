@@ -71,8 +71,19 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 //! Write time-independent metadata to a file.
 void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
                               HistoryTreatment history_flag) const {
+
   if (mapping_flag == WRITE_MAPPING) {
-    write_mapping(file, m_grid->get_mapping_info());
+    auto info = m_grid->get_mapping_info();
+
+    auto mapping = info.cf_mapping;
+    if (not info.proj_string.empty()) {
+      // Write the PROJ string to mapping:proj_params (for CDO).
+      mapping["proj_params"] = info.proj_string;
+    }
+
+    if (mapping.has_attributes()) {
+      io::define_variable(file, mapping, {}, io::PISM_DOUBLE);
+    }
   }
 
   m_config->write(file);
