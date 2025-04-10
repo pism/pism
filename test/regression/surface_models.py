@@ -803,7 +803,7 @@ class ISMIP6(TestCase):
 
             PISM.append_time(out, self.ctx.time.variable_name(), t)
 
-            PISM.write_time_bounds(out, bounds, j, [t, t + dt])
+            PISM.write_array(out, bounds, j, 1, 2, [t, t + dt])
 
             aSMB.set(t * SMB_anomaly)
 

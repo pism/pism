@@ -75,7 +75,7 @@ class ForcingInput(unittest.TestCase):
                 PISM.append_time(output, "time", self.t[k])
 
                 if use_bounds:
-                    PISM.write_time_bounds(output, bounds, k, (self.tb[k], self.tb[k + 1]))
+                    PISM.write_array(output, bounds, k, 1, 2, (self.tb[k], self.tb[k + 1]))
 
                 v.set(float(self.f[k]))
                 v.write(output)

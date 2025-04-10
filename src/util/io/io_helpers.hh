@@ -100,31 +100,34 @@ void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_
 
 // writing
 
-void write_spatial_variable(const SpatialVariableMetadata &metadata,
-                            const grid::DistributedGridInfo& grid,
-                            const Config &config,
-                            const File &file,
-                            const double *input);
+void define_spatial_variable(const SpatialVariableMetadata &metadata,
+                             const grid::GridInfo &grid,
+                             const VariableMetadata &cf_mapping, const Config &config,
+                             const File &file);
 
 void define_dimension(const File &file, const std::string &name, size_t length);
 
 void define_variable(const File &file, const VariableMetadata &metadata,
                      const std::vector<std::string> &dims);
 
+void write_attributes(const File &file, const VariableMetadata &metadata);
+
 void append_time(const File &file, const std::string &name, double time_seconds);
 
-void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                             const grid::GridInfo &grid,
-                             const VariableMetadata &cf_mapping, const Config &config,
-                             const File &file);
+//! Write an one- or two-dimensional array to an output file
+void write_array(const File &file, const std::string &name, unsigned int start, unsigned int M,
+                 unsigned int N, const std::vector<double> &data);
 
-void write_time_bounds(const File &file, const VariableMetadata &metadata,
-                       size_t t_start, const std::vector<double> &bounds);
+//! Write an one- or two-dimensional array to an output file, converting to output units
+//! if necessary
+void write_array(const File &file, const VariableMetadata &metadata, unsigned int start,
+                 unsigned int M, unsigned int N, const std::vector<double> &input);
 
-void write_timeseries(const File &file, const VariableMetadata &metadata,
-                      size_t t_start, const std::vector<double> &data);
-
-void write_attributes(const File &file, const VariableMetadata &metadata);
+void write_spatial_variable(const SpatialVariableMetadata &metadata,
+                            const grid::DistributedGridInfo& grid,
+                            const Config &config,
+                            const File &file,
+                            const double *input);
 
 } // end of namespace io
 } // end of namespace pism

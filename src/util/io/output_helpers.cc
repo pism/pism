@@ -31,16 +31,11 @@ namespace io {
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
 void define_dimension(const File &file, const std::string &name, size_t length) {
-  try {
-    if (file.dimension_exists(name)) {
-      return;
-    }
-
-    file.define_dimension(name, length);
-  } catch (RuntimeError &e) {
-    e.add_context("defining dimension '%s' in '%s'", name.c_str(), file.name().c_str());
-    throw;
+  if (file.dimension_exists(name)) {
+    return;
   }
+
+  file.define_dimension(name, length);
 }
 
 void define_variable(const File &file, const VariableMetadata &metadata,
@@ -55,16 +50,25 @@ void define_variable(const File &file, const VariableMetadata &metadata,
   write_attributes(file, metadata);
 }
 
+void write_array(const File &file, const std::string &name, unsigned int start, unsigned int M,
+                 unsigned int N, const std::vector<double> &data) {
+  file.write_variable(name, { start, 0 }, { M, N }, data.data());
+}
+
+void write_array(const File &file, const VariableMetadata &metadata, unsigned int start,
+                 unsigned int M, unsigned int N, const std::vector<double> &input) {
+  // create a copy of "data" to change units
+  std::vector<double> data = input;
+
+  units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
+      .convert_doubles(data.data(), data.size());
+
+  write_array(file, metadata.get_name(), start, M, N, data);
+}
+
 //! \brief Append to the time dimension.
 void append_time(const File &file, const std::string &name, double value) {
-  try {
-    unsigned int start = file.dimension_length(name);
-
-    file.write_variable(name, { start }, { 1 }, &value);
-  } catch (RuntimeError &e) {
-    e.add_context("appending to the time dimension in \"" + file.name() + "\"");
-    throw;
-  }
+  write_array(file, name, file.dimension_length(name), 1, 1, { value });
 }
 
 // Add grid spacing info to dimensions of `var` to make them ready to define in an output file.
@@ -169,11 +173,20 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const grid
 void write_spatial_variable(const SpatialVariableMetadata &metadata,
                             const grid::DistributedGridInfo &grid, const Config &config,
                             const File &file, const double *input) {
-  // make a copy of `metadata` so we can override `output_units` if "output.use_MKS" is
-  // set.
-  SpatialVariableMetadata var = metadata;
-  if (config.get_flag("output.use_MKS")) {
-    var.output_units(var["units"]);
+  auto var = metadata;
+  const auto &name = var.get_name();
+
+  if (not file.variable_exists(name)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
+                                  file.name().c_str());
+  }
+
+  // check if we need to write this variable
+  bool time_independent = var.get_time_independent();
+  // avoid writing time-independent variables more than once (saves time when writing to
+  // extra_files)
+  if (time_independent and file.get_variable_was_written(name)) {
+    return;
   }
 
   // write dimensions:
@@ -181,33 +194,21 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
     std::map<std::string, const std::vector<double>&> data = {{var.x().get_name(), grid.x},
                                                               {var.y().get_name(), grid.y},
                                                               {var.z().get_name(), var.levels()}};
-
     for (const auto &p : data) {
-      const auto &name = p.first;
+      const auto &dimension = p.first;
       const auto &coordinates = p.second;
-      bool exists = file.dimension_exists(name);
-      bool written = file.get_variable_was_written(name);
+      bool exists = file.dimension_exists(dimension);
+      bool written = file.get_variable_was_written(dimension);
       if (exists and not written) {
-        file.write_variable(name, { 0 }, { (unsigned int)coordinates.size() }, coordinates.data());
-        file.set_variable_was_written(name);
+        write_array(file, dimension, 0, coordinates.size(), 1, coordinates);
+        file.set_variable_was_written(dimension);
       }
     }
   }
 
-  bool time_independent = var.get_time_independent();
-  bool written = file.get_variable_was_written(var.get_name());
-
-  // avoid writing time-independent variables more than once (saves time when writing to
-  // extra_files)
-  if (written and time_independent) {
-    return;
-  }
-
-  const auto &name = var.get_name();
-
-  if (not file.variable_exists(name)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
-                                  file.name().c_str());
+  // override `output_units` if "output.use_MKS" is set
+  if (config.get_flag("output.use_MKS")) {
+    var.output_units(var["units"]);
   }
 
   // make sure we have at least one level
@@ -232,53 +233,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
   } else {
     file.write_distributed_array(name, grid, nlevels, not time_independent, input);
   }
-  file.set_variable_was_written(var.get_name());
-}
-
-/** @brief Write a time-series `data` to a file.
- *
- * Always use output units when saving time-series.
- */
-void write_timeseries(const File &file, const VariableMetadata &metadata, size_t t_start,
-                      const std::vector<double> &data) {
-
-  std::string name = metadata.get_name();
-  try {
-    // create a copy of "data":
-    std::vector<double> tmp = data;
-
-    // convert to output units:
-    units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
-        .convert_doubles(tmp.data(), tmp.size());
-
-    file.write_variable(name, {(unsigned int)t_start}, {(unsigned int)tmp.size()}, tmp.data());
-
-  } catch (RuntimeError &e) {
-    e.add_context("writing time-series variable '%s' to '%s'", name.c_str(),
-                  file.name().c_str());
-    throw;
-  }
-}
-
-void write_time_bounds(const File &file, const VariableMetadata &metadata, size_t t_start,
-                       const std::vector<double> &bounds) {
-
-  const auto &name = metadata.get_name();
-  try {
-    // make a copy of "data"
-    auto data = bounds;
-
-    // convert to output units:
-    units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
-        .convert_doubles(data.data(), data.size());
-
-    file.write_variable(name, { (unsigned int)t_start, 0 }, { (unsigned int)data.size() / 2, 2 },
-                        data.data());
-
-  } catch (RuntimeError &e) {
-    e.add_context("writing time-bounds variable '%s' to '%s'", name.c_str(), file.name().c_str());
-    throw;
-  }
+  file.set_variable_was_written(name);
 }
 
 static void write_attributes(const File &file, const std::string &var_name,

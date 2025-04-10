@@ -330,6 +330,7 @@ void IceModel::write_extras() {
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
+    // FIXME: this does *not* update run stats as a run progresses
     io::define_variable(*m_extra_file, run_stats(), {});
 
     // use the mid-point of the current reporting interval
@@ -341,8 +342,8 @@ void IceModel::write_extras() {
     unsigned int time_length = m_extra_file->dimension_length(time_name);
     size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
-    io::write_time_bounds(*m_extra_file, time_bounds,
-                          time_start, {m_last_extra, current_time});
+    // write time bounds
+    io::write_array(*m_extra_file, time_bounds, time_start, 1, 2, {m_last_extra, current_time});
     // make sure all changes are written
     m_extra_file->sync();
   }

@@ -208,7 +208,7 @@ namespace details {
 static void write(const File &file, const VariableMetadata &var, size_t start, double value) {
   io::define_dimension(file, "N", io::PISM_UNLIMITED);
   io::define_variable(file, var, { "N" });
-  io::write_timeseries(file, var, start, { value });
+  io::write_array(file, var, start, 1, 1, { value });
 }
 } // namespace details
 

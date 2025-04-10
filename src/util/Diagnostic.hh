@@ -226,7 +226,7 @@ protected:
 
     unsigned int time_length = output.dimension_length(time_name);
     unsigned int t_start     = time_length > 0 ? time_length - 1 : 0;
-    io::write_timeseries(output, m_time_since_reset, t_start, { m_interval_length });
+    io::write_array(output, m_time_since_reset, t_start, 1, 1, { m_interval_length });
   }
 
   virtual void update_impl(double dt) {

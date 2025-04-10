@@ -606,8 +606,7 @@ static void write(units::System::Ptr sys, const File &file, size_t start, const 
 
   io::define_dimension(file, "N", io::PISM_UNLIMITED);
   io::define_variable(file, variable, { "N" });
-
-  io::write_timeseries(file, variable, start, { value });
+  io::write_array(file, variable, start, 1, 1, { value });
 }
 
 void IceCompModel::reportErrors() {

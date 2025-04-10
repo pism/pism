@@ -194,12 +194,7 @@ void NetCDFConfig::read_impl(const File &file) {
 
 //! Write a config variable to a file (with all its attributes).
 void NetCDFConfig::write_impl(const File &file) const {
-
-  if (not file.variable_exists(m_data.get_name())) {
-    file.define_variable(m_data.get_name(), io::PISM_BYTE, {});
-  }
-
-  io::write_attributes(file, m_data);
+  io::define_variable(file, m_data, {});
 }
 
 } // end of namespace pism
