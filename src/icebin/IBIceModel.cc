@@ -323,7 +323,7 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
             string_to_backend(m_config->get_string("output.format")), io::PISM_READWRITE_MOVE);
 
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-  io::define_variable(file, run_stats(), {}, io::PISM_DOUBLE);
+  io::define_variable(file, run_stats(), {});
 
   // assume that "dumpToFile" is expected to save the model state *only*.
   save_variables(file, INCLUDE_MODEL_STATE, {}, m_time->current());

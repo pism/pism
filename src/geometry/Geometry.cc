@@ -203,7 +203,7 @@ void Geometry::dump(const char *filename) const {
   auto time = grid->ctx()->time();
   auto time_name = time->variable_name();
   io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-  io::define_variable(file, time->metadata(), { time_name }, io::PISM_DOUBLE);
+  io::define_variable(file, time->metadata(), { time_name });
   io::append_time(file, time_name, time->current());
 
   latitude.write(file);

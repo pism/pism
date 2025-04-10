@@ -109,8 +109,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
 void define_dimension(const File &file, const std::string &name, size_t length);
 
 void define_variable(const File &file, const VariableMetadata &metadata,
-                     const std::vector<std::string> &dims,
-                     io::Type type);
+                     const std::vector<std::string> &dims);
 
 void append_time(const File &file, const std::string &name, double time_seconds);
 
@@ -125,7 +124,7 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
 void write_timeseries(const File &file, const VariableMetadata &metadata,
                       size_t t_start, const std::vector<double> &data);
 
-void write_attributes(const File &file, const VariableMetadata &metadata, io::Type output_type);
+void write_attributes(const File &file, const VariableMetadata &metadata);
 
 } // end of namespace io
 } // end of namespace pism

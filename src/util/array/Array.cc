@@ -534,7 +534,7 @@ void Array::dump(const char filename[]) const {
   if (not metadata(0).get_time_independent()) {
     auto time = m_impl->grid->ctx()->time();
     io::define_dimension(file, time->variable_name(), io::PISM_UNLIMITED);
-    io::define_variable(file, time->metadata(), { time->variable_name() }, io::PISM_DOUBLE);
+    io::define_variable(file, time->metadata(), { time->variable_name() });
     io::append_time(file, time->variable_name(), time->current());
   }
 

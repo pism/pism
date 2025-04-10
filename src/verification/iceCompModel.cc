@@ -600,13 +600,12 @@ void IceCompModel::print_summary(bool /* tempAndAge */) {
 }
 
 static void write(units::System::Ptr sys, const File &file, size_t start, const char *name,
-                  const char *units, const char *long_name, double value,
-                  io::Type type = io::PISM_DOUBLE) {
+                  const char *units, const char *long_name, double value) {
   VariableMetadata variable(name, sys);
   variable.units(units).long_name(long_name);
 
   io::define_dimension(file, "N", io::PISM_UNLIMITED);
-  io::define_variable(file, variable, { "N" }, type);
+  io::define_variable(file, variable, { "N" });
 
   io::write_timeseries(file, variable, start, { value });
 }
@@ -757,7 +756,7 @@ void IceCompModel::reportErrors() {
 
     size_t start = file.dimension_length("N");
 
-    io::write_attributes(file, m_output_global_attributes, io::PISM_DOUBLE);
+    io::write_attributes(file, m_output_global_attributes);
 
     // Write the dimension variable:
     write(m_sys, file, start, "N", "1", "run number", start + 1);

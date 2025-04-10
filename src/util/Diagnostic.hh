@@ -216,7 +216,7 @@ protected:
   void define_state_impl(const File &output) const {
     auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
     m_accumulator.define(output);
-    io::define_variable(output, m_time_since_reset, { time_name }, io::PISM_DOUBLE);
+    io::define_variable(output, m_time_since_reset, { time_name });
   }
 
   void write_state_impl(const File &output) const {

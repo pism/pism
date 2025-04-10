@@ -30,7 +30,7 @@ void VecBundleWriter::init() {
   auto time      = m_grid->ctx()->time();
   auto time_name = time->variable_name();
   io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-  io::define_variable(file, time->metadata(), { time_name }, io::PISM_DOUBLE);
+  io::define_variable(file, time->metadata(), { time_name });
 
   for (const auto *vec : vecs) {
     vec->define(file);

@@ -149,7 +149,7 @@ void IceModel::write_snapshot() {
   {
     m_log->message(2, "saving snapshot to %s at %s, for time-step goal %s\n", filename.c_str(),
                    m_time->date(m_time->current()).c_str(), m_time->date(saving_after).c_str());
-    io::define_variable(*m_snapshot_file, run_stats(), {}, io::PISM_DOUBLE);
+    io::define_variable(*m_snapshot_file, run_stats(), {});
     save_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
   }
 

@@ -62,7 +62,7 @@ class ForcingInput(unittest.TestCase):
 
             if use_bounds:
                 PISM.define_dimension(output, "nv", 2)
-                PISM.define_variable(output, bounds, ["time", "nv"], PISM.PISM_DOUBLE)
+                PISM.define_variable(output, bounds, ["time", "nv"])
 
                 output.write_attribute("time", "bounds", "time_bounds")
 

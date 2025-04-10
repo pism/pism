@@ -74,7 +74,7 @@ void Inputs::dump(const char *filename) const {
   auto time = ctx->time();
   auto time_name = time->variable_name();
   io::define_dimension(output, time_name, io::PISM_UNLIMITED);
-  io::define_variable(output, time->metadata(), { time_name }, io::PISM_DOUBLE);
+  io::define_variable(output, time->metadata(), { time_name });
   io::append_time(output, time_name, time->current());
 
   {

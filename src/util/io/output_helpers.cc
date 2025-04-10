@@ -42,16 +42,15 @@ void define_dimension(const File &file, const std::string &name, size_t length) 
   }
 }
 
-void define_variable(const File &file, const VariableMetadata &metadata, const std::vector<std::string> &dims,
-                     io::Type type) {
+void define_variable(const File &file, const VariableMetadata &metadata, const std::vector<std::string> &dims) {
 
   if (file.variable_exists(metadata.get_name())) {
     return;
   }
 
-  file.define_variable(metadata.get_name(), type, dims);
+  file.define_variable(metadata.get_name(), metadata.get_output_type(), dims);
 
-  write_attributes(file, metadata, type);
+  write_attributes(file, metadata);
 }
 
 //! \brief Append to the time dimension.
@@ -165,11 +164,11 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
     auto length    = pair.second;
 
     define_dimension(file, dimension.get_name(), length);
-    define_variable(file, dimension, { dimension.get_name() }, PISM_DOUBLE);
+    define_variable(file, dimension, { dimension.get_name() });
   }
 
   // define the variable itself:
-  define_variable(file, var, dims, var.get_output_type());
+  define_variable(file, var, dims);
 }
 
 //! \brief Write a double array to a file.
@@ -315,69 +314,59 @@ static void write_attributes(const File &file, const std::string &var_name,
   }
 }
 
-//! Write variable attributes to a NetCDF file.
-/*!
-  - If both valid_min and valid_max are set, then valid_range is written
-  instead of the valid_min, valid_max pair.
-
-  - Skips empty text attributes.
+/*! Pre-process variable attributes for writing.
 */
-void write_attributes(const File &file, const VariableMetadata &metadata, io::Type output_type) {
+static VariableMetadata format_attributes(const VariableMetadata &metadata) {
 
   // make a copy so we can edit metadata
   auto variable = metadata;
-  const auto &var_name = variable.get_name();
 
-  try {
-    std::string units = variable["units"], output_units = variable["output_units"];
+  std::string units = variable["units"], output_units = variable["output_units"];
 
-    // output units should never be written to a file
-    variable["output_units"] = "";
+  // output units should never be written to a file
+  variable["output_units"] = "";
 
-    bool use_output_units = (not units.empty() and
-                             not output_units.empty() and
-                             units != output_units);
-    
-    if (use_output_units) {
-      // Replace "units" with "output_units" and clear "output_units"
-      if (variable.has_attribute("units")) {
-        variable["units"]        = output_units;
-      }
+  bool use_output_units =
+      (not units.empty() and not output_units.empty() and units != output_units);
 
-      units::Converter c(variable.unit_system(), units, output_units);
-
-      // We need to convert units of valid_min, valid_max and valid_range:
-      {
-        if (variable.has_attribute("valid_range")) {
-          auto bounds = variable.get_numbers("valid_range");
-
-          variable["valid_range"] = { c(bounds[0]), c(bounds[1]) };
-        } else {
-          if (variable.has_attribute("valid_min")) {
-            auto min = variable.get_number("valid_min");
-            variable["valid_min"] = { c(min) };
-          }
-          if (variable.has_attribute("valid_max")) {
-            auto max = variable.get_number("valid_max");
-            variable["valid_max"] = { c(max) };
-          }
-        }
-
-        if (variable.has_attribute("_FillValue")) {
-          auto fill = variable.get_number("_FillValue");
-          variable["_FillValue"] = { c(fill) };
-        }
-      }
+  if (use_output_units) {
+    // Replace "units" with "output_units"
+    if (variable.has_attribute("units")) {
+      variable["units"] = output_units;
     }
 
-    write_attributes(file, variable.get_name(), variable.all_strings(), variable.all_doubles(),
-                     output_type);
+    units::Converter c(variable.unit_system(), units, output_units);
 
-  } catch (RuntimeError &e) {
-    e.add_context("writing attributes of variable '%s' to '%s'",
-                  var_name.c_str(), file.name().c_str());
-    throw;
+    // We need to convert units of valid_min, valid_max and valid_range:
+    {
+      if (variable.has_attribute("valid_range")) {
+        auto bounds = variable.get_numbers("valid_range");
+
+        variable["valid_range"] = { c(bounds[0]), c(bounds[1]) };
+      } else {
+        if (variable.has_attribute("valid_min")) {
+          auto min              = variable.get_number("valid_min");
+          variable["valid_min"] = { c(min) };
+        }
+        if (variable.has_attribute("valid_max")) {
+          auto max              = variable.get_number("valid_max");
+          variable["valid_max"] = { c(max) };
+        }
+      }
+
+      if (variable.has_attribute("_FillValue")) {
+        auto fill              = variable.get_number("_FillValue");
+        variable["_FillValue"] = { c(fill) };
+      }
+    }
   }
+  return variable;
+}
+
+void write_attributes(const File &file, const VariableMetadata &metadata) {
+  auto variable = format_attributes(metadata);
+  write_attributes(file, variable.get_name(), variable.all_strings(), variable.all_doubles(),
+                   variable.get_output_type());
 }
 
 //! \brief Moves the file aside (file.nc -> file.nc~).

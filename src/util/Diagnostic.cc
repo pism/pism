@@ -355,16 +355,16 @@ void TSDiagnostic::flush() {
 
   if (len == m_start) {
     io::define_dimension(file, m_time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, m_dimension, { m_time_name }, io::PISM_DOUBLE);
+    io::define_variable(file, m_dimension, { m_time_name });
 
     io::define_dimension(file, "nv", 2);
-    io::define_variable(file, m_time_bounds, { m_time_name, "nv" }, io::PISM_DOUBLE);
+    io::define_variable(file, m_time_bounds, { m_time_name, "nv" });
 
     io::write_timeseries(file, m_dimension, m_start, m_time);
     io::write_time_bounds(file, m_time_bounds, m_start, m_bounds);
   }
 
-  io::define_variable(file, m_variable, { m_time_name }, io::PISM_DOUBLE);
+  io::define_variable(file, m_variable, { m_time_name });
   io::write_timeseries(file, m_variable, m_start, m_values);
 
   m_start += m_time.size();

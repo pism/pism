@@ -82,7 +82,7 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
     }
 
     if (mapping.has_attributes()) {
-      io::define_variable(file, mapping, {}, io::PISM_DOUBLE);
+      io::define_variable(file, mapping, {});
     }
   }
 
@@ -96,9 +96,9 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
     tmp.set_name("PISM_GLOBAL");
     tmp["history"] = std::string(tmp["history"]) + old_history;
 
-    io::write_attributes(file, tmp, io::PISM_DOUBLE);
+    io::write_attributes(file, tmp);
   } else {
-    io::write_attributes(file, m_output_global_attributes, io::PISM_DOUBLE);
+    io::write_attributes(file, m_output_global_attributes);
   }
 }
 
@@ -111,10 +111,9 @@ void IceModel::save_results() {
     auto stats = run_stats();
 
     auto str = pism::printf(
-      "PISM done. Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
-      (double)stats["wall_clock_hours"],
-      (double)stats["processor_hours"],
-      (double)stats["model_years_per_processor_hour"]);
+        "PISM done. Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
+        (double)stats["wall_clock_hours"], (double)stats["processor_hours"],
+        (double)stats["model_years_per_processor_hour"]);
 
     prepend_history(str);
   }
@@ -127,8 +126,7 @@ void IceModel::save_results() {
   }
 
   if (not ends_with(filename, ".nc")) {
-    m_log->message(2,
-                   "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+    m_log->message(2, "PISM WARNING: output file name does not have the '.nc' suffix!\n");
   }
 
   const Profiling &profiling = m_ctx->profiling();
@@ -136,25 +134,20 @@ void IceModel::save_results() {
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
-    File file(m_grid->com,
-              filename,
-              string_to_backend(m_config->get_string("output.format")),
+    File file(m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-    io::define_variable(file, run_stats(), {}, io::PISM_DOUBLE);
+    io::define_variable(file, run_stats(), {});
 
-    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
-                   m_time->current());
+    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
   }
   profiling.end("io.model_state");
 }
 
-void IceModel::save_variables(const File &file,
-                              OutputKind kind,
-                              const std::set<std::string> &variables,
-                              double time) const {
+void IceModel::save_variables(const File &file, OutputKind kind,
+                              const std::set<std::string> &variables, double time) const {
 
   // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
   // supports it.
@@ -164,18 +157,20 @@ void IceModel::save_variables(const File &file,
 
   // define the time dimension if necessary (no-op if it is already defined)
   {
-    auto var       = m_time->metadata();
-    var["bounds"]  = "time_bounds";
+    auto var      = m_time->metadata();
+    var["bounds"] = "time_bounds";
 
     io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, var, { time_name }, io::PISM_DOUBLE);
+    io::define_variable(file, var, { time_name });
   }
 
   // define the "timestamp" (wall clock time since the beginning of the run)
   // Note: it is time-dependent, so we need to define time first.
   VariableMetadata timestamp("timestamp", m_sys);
-  timestamp.long_name("wall-clock time since the beginning of the run").units("hours");
-  io::define_variable(file, timestamp, { time_name }, io::PISM_FLOAT);
+  timestamp.long_name("wall-clock time since the beginning of the run")
+      .units("hours")
+      .set_output_type(io::PISM_FLOAT);
+  io::define_variable(file, timestamp, { time_name });
 
   // append to the time dimension
   io::append_time(file, time_name, time);
@@ -184,7 +179,7 @@ void IceModel::save_variables(const File &file,
   //
   // FIXME: we should write this to variables instead of attributes because NetCDF-4 crashes after
   // about 2^16 attribute modifications per variable. :-(
-  io::define_variable(file, run_stats(), {}, io::PISM_DOUBLE);
+  io::define_variable(file, run_stats(), {});
 
   if (kind == INCLUDE_MODEL_STATE) {
     define_model_state(file);

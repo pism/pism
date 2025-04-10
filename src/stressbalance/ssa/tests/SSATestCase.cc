@@ -205,10 +205,9 @@ void SSATestCase::report(const std::string &testname) {
 }
 
 namespace details {
-static void write(const File &file, const VariableMetadata &var, size_t start, double value,
-                  io::Type type = io::PISM_DOUBLE) {
+static void write(const File &file, const VariableMetadata &var, size_t start, double value) {
   io::define_dimension(file, "N", io::PISM_UNLIMITED);
-  io::define_variable(file, var, { "N" }, type);
+  io::define_variable(file, var, { "N" });
   io::write_timeseries(file, var, start, { value });
 }
 } // namespace details
@@ -240,7 +239,7 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
   File file(m_grid->com, filename, io::PISM_NETCDF3, mode); // OK to use NetCDF3.
   size_t start = static_cast<size_t>(file.dimension_length("N"));
 
-  io::write_attributes(file, global_attributes, io::PISM_DOUBLE);
+  io::write_attributes(file, global_attributes);
 
   details::write(file, { "N", sys }, start, (double)(start + 1));
   {
@@ -255,8 +254,8 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
   }
   {
     VariableMetadata test{"test", sys};
-    test.units("1");
-    details::write(file, test, start, (double)testname[0], io::PISM_INT);
+    test.units("1").set_output_type(io::PISM_INT);
+    details::write(file, test, start, (double)testname[0]);
   }
   {
     VariableMetadata max_velocity{ "max_velocity", sys };
@@ -305,7 +304,7 @@ void SSATestCase::write(const std::string &filename) {
     auto time      = m_ctx->time();
     auto time_name = time->variable_name();
     io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, time->metadata(), { time_name }, io::PISM_DOUBLE);
+    io::define_variable(file, time->metadata(), { time_name });
     io::append_time(file, time_name, 0.0);
 
   m_geometry.ice_surface_elevation.write(file);

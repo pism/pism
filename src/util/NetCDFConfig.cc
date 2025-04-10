@@ -199,7 +199,7 @@ void NetCDFConfig::write_impl(const File &file) const {
     file.define_variable(m_data.get_name(), io::PISM_BYTE, {});
   }
 
-  io::write_attributes(file, m_data, io::PISM_DOUBLE);
+  io::write_attributes(file, m_data);
 }
 
 } // end of namespace pism
