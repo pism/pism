@@ -16,14 +16,15 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include "pism/util/io/File.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/IO_Flags.hh"
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include <vector>
 
 namespace pism {
 namespace io {
@@ -42,7 +43,8 @@ void define_dimension(const File &file, const std::string &name, size_t length) 
   }
 }
 
-void define_variable(const File &file, const VariableMetadata &metadata, const std::vector<std::string> &dims) {
+void define_variable(const File &file, const VariableMetadata &metadata,
+                     const std::vector<std::string> &dims) {
 
   if (file.variable_exists(metadata.get_name())) {
     return;
@@ -106,24 +108,13 @@ format_dimensions(const SpatialVariableMetadata &var, const grid::GridInfo &grid
   return result;
 }
 
-static void write_dimension_data(const File &file, const std::string &name,
-                                 const std::vector<double> &data) {
-  bool exists = file.dimension_exists(name);
-  bool written = file.get_variable_was_written(name);
-  if (exists and not written) {
-    file.write_variable(name, { 0 }, { (unsigned int)data.size() }, data.data());
-    file.set_variable_was_written(name);
-  }
-}
-
 //! Define a NetCDF variable corresponding to a SpatialVariableMetadata object.
-void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                             const grid::GridInfo &grid,
+void define_spatial_variable(const SpatialVariableMetadata &metadata, const grid::GridInfo &grid,
                              const VariableMetadata &cf_mapping, const Config &config,
                              const File &file) {
 
   // Make a copy of `metadata` so we can modify it:
-  auto var = metadata;
+  auto var  = metadata;
   auto name = var.get_name();
 
   if (file.variable_exists(name)) {
@@ -147,9 +138,9 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
 
   if (not var.get_time_independent()) {
     auto time_name = config.get_string("time.dimension_name");
-    dims = {time_name, y, x};
+    dims           = { time_name, y, x };
   } else {
-    dims = {y, x};
+    dims = { y, x };
   }
 
   if (not z.empty()) {
@@ -176,8 +167,7 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
   Converts units if internal and "output" units are different.
  */
 void write_spatial_variable(const SpatialVariableMetadata &metadata,
-                            const grid::DistributedGridInfo &grid,
-                            const Config &config,
+                            const grid::DistributedGridInfo &grid, const Config &config,
                             const File &file, const double *input) {
   // make a copy of `metadata` so we can override `output_units` if "output.use_MKS" is
   // set.
@@ -188,14 +178,20 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
 
   // write dimensions:
   {
-    // x
-    write_dimension_data(file, var.x().get_name(), grid.x);
+    std::map<std::string, const std::vector<double>&> data = {{var.x().get_name(), grid.x},
+                                                              {var.y().get_name(), grid.y},
+                                                              {var.z().get_name(), var.levels()}};
 
-    // y
-    write_dimension_data(file, var.y().get_name(), grid.y);
-
-    // z
-    write_dimension_data(file, var.z().get_name(), var.levels());
+    for (const auto &p : data) {
+      const auto &name = p.first;
+      const auto &coordinates = p.second;
+      bool exists = file.dimension_exists(name);
+      bool written = file.get_variable_was_written(name);
+      if (exists and not written) {
+        file.write_variable(name, { 0 }, { (unsigned int)coordinates.size() }, coordinates.data());
+        file.set_variable_was_written(name);
+      }
+    }
   }
 
   bool time_independent = var.get_time_independent();
