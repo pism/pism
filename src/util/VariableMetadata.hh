@@ -71,6 +71,13 @@ class Logger;
 
 class VariableMetadata;
 
+/*!
+ * Syntactic sugar used to make it easier to get attributes.
+ *
+ * This class makes it possible to get both string and numeric attributes using code that
+ * looks like `variable = metadata["attribute"]`. It tries to convert to the type of
+ * `variable` and throws an error if there is a type mismatch.
+ */
 class ConstAttribute {
 public:
   friend class VariableMetadata;
@@ -88,6 +95,12 @@ protected:
   VariableMetadata* m_var;
 };
 
+/*!
+ * Syntactic sugar used to make it easier to set attributes.
+ *
+ * This class makes it possible to set both string and numeric attributes using code that
+ * looks like `metadata["attribute"] = value`.
+ */
 class Attribute : public ConstAttribute {
 public:
   friend class VariableMetadata;
