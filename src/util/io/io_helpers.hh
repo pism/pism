@@ -100,15 +100,15 @@ void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_
 
 // writing
 
-void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                             const grid::GridInfo &grid,
-                             const VariableMetadata &cf_mapping, const Config &config,
-                             const File &file);
-
 void define_dimension(const File &file, const std::string &name, size_t length);
 
 void define_variable(const File &file, const VariableMetadata &metadata,
                      const std::vector<std::string> &dims);
+
+void define_spatial_variable(const SpatialVariableMetadata &metadata,
+                             const grid::GridInfo &grid,
+                             const VariableMetadata &cf_mapping, const Config &config,
+                             const File &file);
 
 void write_attributes(const File &file, const VariableMetadata &metadata);
 
