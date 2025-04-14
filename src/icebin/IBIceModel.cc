@@ -322,7 +322,7 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
   File file(m_grid->com, filename,
             string_to_backend(m_config->get_string("output.format")), io::PISM_READWRITE_MOVE);
 
-  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+  write_metadata(file, WRITE_MAPPING);
   io::define_variable(file, run_stats(), {});
 
   // assume that "dumpToFile" is expected to save the model state *only*.

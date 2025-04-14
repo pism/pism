@@ -217,10 +217,8 @@ protected:
   virtual void define_model_state(const File &file) const;
   virtual void write_model_state(const File &file) const;
 
-  enum HistoryTreatment {OVERWRITE_HISTORY = 0, PREPEND_HISTORY};
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
-  virtual void write_metadata(const File &file, MappingTreatment mapping_flag,
-                              HistoryTreatment history_flag) const;
+  virtual void write_metadata(const File &file, MappingTreatment mapping_flag) const;
 
   virtual void define_diagnostics(const File &file,
                                   const std::set<std::string> &variables) const;

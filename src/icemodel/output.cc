@@ -69,8 +69,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 }
 
 //! Write time-independent metadata to a file.
-void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
-                              HistoryTreatment history_flag) const {
+void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag) const {
 
   if (mapping_flag == WRITE_MAPPING) {
     auto info = m_grid->get_mapping_info();
@@ -88,7 +87,7 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
 
   m_config->write(file);
 
-  if (history_flag == PREPEND_HISTORY) {
+  {
     auto tmp = m_output_global_attributes;
 
     auto old_history = file.read_text_attribute("PISM_GLOBAL", "history");
@@ -97,8 +96,6 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
     tmp["history"] = std::string(tmp["history"]) + old_history;
 
     io::write_attributes(file, tmp);
-  } else {
-    io::write_attributes(file, m_output_global_attributes);
   }
 }
 
@@ -137,7 +134,7 @@ void IceModel::save_results() {
     File file(m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);
 
-    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+    write_metadata(file, WRITE_MAPPING);
 
     io::define_variable(file, run_stats(), {});
 

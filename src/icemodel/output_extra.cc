@@ -324,7 +324,7 @@ void IceModel::write_extras() {
         io::define_variable(*m_extra_file, time_bounds, { time_name, "nv" });
       }
 
-      write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
+      write_metadata(*m_extra_file, WRITE_MAPPING);
     }
 
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),

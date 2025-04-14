@@ -387,7 +387,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
             string_to_backend(m_config->get_string("output.format")),
             io::PISM_READWRITE_MOVE);
 
-  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+  write_metadata(file, WRITE_MAPPING);
 
   auto variables = output_variables("small");
   for (const auto &v : additional_variables) {

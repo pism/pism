@@ -96,7 +96,7 @@ void IceModel::init_timeseries() {
       }
     }
 
-    write_metadata(file, SKIP_MAPPING, PREPEND_HISTORY);
+    write_metadata(file, SKIP_MAPPING);
     io::define_variable(file, run_stats(), {});
 
     // initialize scalar diagnostics

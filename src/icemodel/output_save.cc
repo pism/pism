@@ -143,7 +143,7 @@ void IceModel::write_snapshot() {
         m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
         io::PISM_READWRITE_MOVE);
 
-    write_metadata(*m_snapshot_file, WRITE_MAPPING, PREPEND_HISTORY);
+    write_metadata(*m_snapshot_file, WRITE_MAPPING);
   }
 
   {

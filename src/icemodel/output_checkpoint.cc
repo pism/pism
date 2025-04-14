@@ -76,7 +76,7 @@ bool IceModel::write_checkpoint() {
               string_to_backend(m_config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);
 
-    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+    write_metadata(file, WRITE_MAPPING);
     io::define_variable(file, run_stats(), {});
 
     save_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
