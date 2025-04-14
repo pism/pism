@@ -29,7 +29,9 @@
 namespace pism {
 namespace io {
 
-//! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
+/*!
+ * Define a NetCDF dimension. Do nothing if a dimension is already present.
+ */
 void define_dimension(const File &file, const std::string &name, size_t length) {
   if (file.dimension_exists(name)) {
     return;
@@ -38,6 +40,9 @@ void define_dimension(const File &file, const std::string &name, size_t length) 
   file.define_dimension(name, length);
 }
 
+/*!
+ * Define a NetCDF variable and set its attributes. Do nothing if a variable is already present.
+ */
 void define_variable(const File &file, const VariableMetadata &metadata,
                      const std::vector<std::string> &dims) {
 
@@ -50,28 +55,10 @@ void define_variable(const File &file, const VariableMetadata &metadata,
   write_attributes(file, metadata);
 }
 
-void write_array(const File &file, const std::string &name, unsigned int start, unsigned int M,
-                 unsigned int N, const std::vector<double> &data) {
-  file.write_variable(name, { start, 0 }, { M, N }, data.data());
-}
-
-void write_array(const File &file, const VariableMetadata &metadata, unsigned int start,
-                 unsigned int M, unsigned int N, const std::vector<double> &input) {
-  // create a copy of "data" to change units
-  std::vector<double> data = input;
-
-  units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
-      .convert_doubles(data.data(), data.size());
-
-  write_array(file, metadata.get_name(), start, M, N, data);
-}
-
-//! \brief Append to the time dimension.
-void append_time(const File &file, const std::string &name, double value) {
-  write_array(file, name, file.dimension_length(name), 1, 1, { value });
-}
-
-//! Define a NetCDF variable corresponding to a SpatialVariableMetadata object.
+/*!
+ * Define a 2D or 3D NetCDF variable and set attributes. Do nothing if a variable is
+ * already present.
+ */
 void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const VariableMetadata &cf_mapping, const Config &config,
                              const File &file) {
@@ -123,9 +110,58 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
   define_variable(file, var, dims);
 }
 
-//! \brief Write a double array to a file.
 /*!
-  Converts units if internal and "output" units are different.
+ * Write a 1D or 2D array redundantly stored on all MPI ranks.
+ *
+ * @param[in] file file to write to
+ * @param[in] name variable name
+ * @param[in] start starting index of the first dimension variable `name` depends on
+ * @param[in] M number of elements along the first dimension
+ * @param[in] N number of elements along the second dimension (1 for 1D arrays)
+ * @param[in] data array to write
+ */
+void write_array(const File &file, const std::string &name, unsigned int start, unsigned int M,
+                 unsigned int N, const std::vector<double> &data) {
+  file.write_variable(name, { start, 0 }, { M, N }, data.data());
+}
+
+/*!
+ * Write a 1D or 2D array redundantly stored on all MPI ranks, converting to output units
+ * first.
+ *
+ * @param[in] file file to write to
+ * @param[in] metadata variable metadata
+ * @param[in] start starting index of the first dimension variable `name` depends on
+ * @param[in] M number of elements along the first dimension
+ * @param[in] N number of elements along the second dimension (1 for 1D arrays)
+ * @param[in] input array to write
+ *
+ */
+void write_array(const File &file, const VariableMetadata &metadata, unsigned int start,
+                 unsigned int M, unsigned int N, const std::vector<double> &input) {
+  // create a copy of "data" to change units
+  std::vector<double> data = input;
+
+  units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
+      .convert_doubles(data.data(), data.size());
+
+  write_array(file, metadata.get_name(), start, M, N, data);
+}
+
+//! Append to the time dimension.
+void append_time(const File &file, const std::string &name, double value) {
+  write_array(file, name, file.dimension_length(name), 1, 1, { value });
+}
+
+//! 
+/*! Write a distributed 2D or 3D to a file.
+ *
+ * Ensures that all coordinate variables this 2D or 3D variable depends on (except time)
+ * are written to the file as well.
+ *
+ * Converts units if internal and "output" units are different.
+ *
+ * Avoids writing time-independent variables more than once.
  */
 void write_spatial_variable(const SpatialVariableMetadata &metadata,
                             const grid::DistributedGridInfo &grid, const Config &config,
