@@ -33,6 +33,7 @@ namespace io {
 enum Type : int;
 }
 
+class Grid;
 class Logger;
 
 //! @brief A class for handling variable metadata, reading, writing and converting
@@ -198,25 +199,38 @@ private:
   io::Type m_output_type;
 };
 
+class DimensionMetadata : public VariableMetadata {
+public:
+  DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
+                    unsigned int length);
+  unsigned int length() const;
+private:
+  unsigned int m_length;
+};
+
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class SpatialVariableMetadata : public VariableMetadata {
 public:
   SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
-                          const std::vector<double> &zlevels = {0.0});
+                          const Grid &grid,
+                          const std::vector<double> &levels = { 0.0 });
+  SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
+                          unsigned int Mx, double dx, unsigned int My, double dy,
+                          const std::vector<double> &levels = { 0.0 });
   virtual ~SpatialVariableMetadata() = default;
 
   const std::vector<double>& levels() const;
 
-  VariableMetadata& x();
-  VariableMetadata& y();
-  VariableMetadata& z();
+  DimensionMetadata& x();
+  DimensionMetadata& y();
+  DimensionMetadata& z();
 
-  const VariableMetadata& x() const;
-  const VariableMetadata& y() const;
-  const VariableMetadata& z() const;
+  const DimensionMetadata& x() const;
+  const DimensionMetadata& y() const;
+  const DimensionMetadata& z() const;
 
 private:
-  VariableMetadata m_x, m_y, m_z;
+  DimensionMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
 };
 

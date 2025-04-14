@@ -299,8 +299,8 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
        {"units", "1"},
        {"positive", "up"}};
 
-    m_u_sigma->metadata(0).z().set_name("z_sigma");
-    m_v_sigma->metadata(0).z().set_name("z_sigma");
+    m_u_sigma->metadata(0).z().set_name("z_sigma").clear();
+    m_v_sigma->metadata(0).z().set_name("z_sigma").clear();
 
     for (const auto &z_attr : z_attrs) {
       m_u_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);

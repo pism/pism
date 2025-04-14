@@ -126,7 +126,7 @@ void Diagnostic::define(const File &file) const {
 //! Define NetCDF variables corresponding to a diagnostic quantity.
 void Diagnostic::define_impl(const File &file) const {
   for (const auto &v : m_vars) {
-    io::define_spatial_variable(v, m_grid->info(), m_grid->get_mapping_info().cf_mapping,
+    io::define_spatial_variable(v, m_grid->get_mapping_info().cf_mapping,
                                 *m_grid->ctx()->config(), file);
   }
 }

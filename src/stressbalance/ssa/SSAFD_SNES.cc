@@ -204,7 +204,7 @@ public:
   SSAFD_residual_mag(const SSAFD_SNES *m) : Diag<SSAFD_SNES>(m) {
 
     // set metadata:
-    m_vars = { { m_sys, "ssa_residual_mag" } };
+    m_vars = { { m_sys, "ssa_residual_mag", *m_grid } };
 
     m_vars[0].long_name("magnitude of the SSAFD solver's residual").units("Pa");
   }

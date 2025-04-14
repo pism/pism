@@ -71,49 +71,8 @@ void append_time(const File &file, const std::string &name, double value) {
   write_array(file, name, file.dimension_length(name), 1, 1, { value });
 }
 
-// Add grid spacing info to dimensions of `var` to make them ready to define in an output file.
-static std::vector<std::pair<VariableMetadata, int> >
-format_dimensions(const SpatialVariableMetadata &var, const grid::GridInfo &grid) {
-  auto x = var.x();
-  auto y = var.y();
-
-  x["spacing_meters"] = { grid.x[1] - grid.x[0] };
-  y["spacing_meters"] = { grid.y[1] - grid.y[0] };
-
-  std::vector<std::pair<VariableMetadata, int> > result = { { y, grid.y.size() },
-                                                            { x, grid.x.size() } };
-
-  auto z = var.z();
-  if (not z.get_name().empty()) {
-    const auto &levels = var.levels();
-
-    // make sure we have at least one level
-    unsigned int nlevels = std::max(levels.size(), (size_t)1);
-
-    bool spatial_dim = not var.z().get_string("axis").empty();
-
-    if (nlevels > 1 and spatial_dim) {
-      double dz_max = levels[1] - levels[0];
-      double dz_min = levels.back() - levels.front();
-
-      for (unsigned int k = 0; k < nlevels - 1; ++k) {
-        double dz = levels[k + 1] - levels[k];
-        dz_max    = std::max(dz_max, dz);
-        dz_min    = std::min(dz_min, dz);
-      }
-
-      z["spacing_min_meters"] = { dz_min };
-      z["spacing_max_meters"] = { dz_max };
-    }
-
-    result.push_back({ z, nlevels });
-  }
-
-  return result;
-}
-
 //! Define a NetCDF variable corresponding to a SpatialVariableMetadata object.
-void define_spatial_variable(const SpatialVariableMetadata &metadata, const grid::GridInfo &grid,
+void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const VariableMetadata &cf_mapping, const Config &config,
                              const File &file) {
 
@@ -136,31 +95,29 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata, const grid
     var["grid_mapping"] = cf_mapping.get_name();
   }
 
-  std::string x = var.x().get_name(), y = var.y().get_name(), z = var.z().get_name();
-
   std::vector<std::string> dims;
 
   if (not var.get_time_independent()) {
-    auto time_name = config.get_string("time.dimension_name");
-    dims           = { time_name, y, x };
-  } else {
-    dims = { y, x };
+    dims = { config.get_string("time.dimension_name") };
   }
 
-  if (not z.empty()) {
-    dims.push_back(z);
+  // define dimensions and coordinate variables; assemble the list of dimension names:
+  //
+  // Note the order: y,x,z
+  for (const auto &dimension : { var.y(), var.x(), var.z() }) {
+
+    auto dimension_name = dimension.get_name();
+
+    if (dimension_name.empty()) {
+      continue;
+    }
+
+    dims.push_back(dimension_name);
+    define_dimension(file, dimension_name, dimension.length());
+    define_variable(file, dimension, { dimension_name });
   }
 
   assert(dims.size() > 1);
-
-  // define dimensions and coordinate variables:
-  for (const auto &pair : format_dimensions(var, grid)) {
-    auto dimension = pair.first;
-    auto length    = pair.second;
-
-    define_dimension(file, dimension.get_name(), length);
-    define_variable(file, dimension, { dimension.get_name() });
-  }
 
   // define the variable itself:
   define_variable(file, var, dims);

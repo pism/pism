@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -106,7 +106,7 @@ namespace diagnostics {
 class AirTemperatureSnapshot : public Diag<AtmosphereModel> {
 public:
   AirTemperatureSnapshot(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
-    m_vars = { { m_sys, "air_temp_snapshot" } };
+    m_vars = { { m_sys, "air_temp_snapshot", *m_grid } };
     m_vars[0].long_name("instantaneous value of the near-surface air temperature").units("kelvin");
   }
 
@@ -147,7 +147,7 @@ protected:
 class AirTemperature : public Diag<AtmosphereModel> {
 public:
   AirTemperature(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
-    m_vars = { { m_sys, "effective_air_temp" } };
+    m_vars = { { m_sys, "effective_air_temp", *m_grid } };
     m_vars[0].long_name("effective mean-annual near-surface air temperature").units("kelvin");
   }
 
@@ -165,7 +165,7 @@ protected:
 class Precipitation : public Diag<AtmosphereModel> {
 public:
   Precipitation(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
-    m_vars = { { m_sys, "effective_precipitation" } };
+    m_vars = { { m_sys, "effective_precipitation", *m_grid } };
     m_vars[0]
         .long_name("effective precipitation rate")
         .standard_name("precipitation_flux")

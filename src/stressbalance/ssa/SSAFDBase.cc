@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 PISM Authors
+/* Copyright (C) 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -1549,7 +1549,7 @@ const array::Vector &SSAFDBase::driving_stress() const {
 class SSAFD_nuH : public Diag<SSAFDBase> {
 public:
   SSAFD_nuH(const SSAFDBase *m) : Diag<SSAFDBase>(m) {
-    m_vars = { { m_sys, "nuH[0]" }, { m_sys, "nuH[1]" } };
+    m_vars = { { m_sys, "nuH[0]", *m_grid }, { m_sys, "nuH[1]", *m_grid } };
     m_vars[0]
         .long_name("ice thickness times effective viscosity, i-offset")
         .units("Pa s m")
@@ -1580,7 +1580,7 @@ public:
   SSAFD_taud(const SSAFDBase *m) : Diag<SSAFDBase>(m) {
 
     // set metadata:
-    m_vars = { { m_sys, "taud_x" }, { m_sys, "taud_y" } };
+    m_vars = { { m_sys, "taud_x", *m_grid }, { m_sys, "taud_y", *m_grid } };
 
     m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
     m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
@@ -1608,7 +1608,7 @@ public:
   SSAFD_taud_mag(const SSAFDBase *m) : Diag<SSAFDBase>(m) {
 
     // set metadata:
-    m_vars = { { m_sys, "taud_mag" } };
+    m_vars = { { m_sys, "taud_mag", *m_grid } };
 
     m_vars[0].long_name("magnitude of the driving shear stress at the base of ice").units("Pa");
     m_vars[0]["comment"] = "this is the magnitude of the driving stress used by the SSAFD solver";

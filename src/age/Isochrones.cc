@@ -94,9 +94,9 @@ static std::shared_ptr<array::Array3D> allocate_layer_thickness(std::shared_ptr<
                    isochrone_depth_variable_name, layer_thickness_variable_name);
   auto &z = result->metadata(0).z();
   z.clear()
-      .set_name(deposition_time_variable_name)
-      .long_name(z_description)
-      .units(time->units_string());
+    .set_name(deposition_time_variable_name)
+    .long_name(z_description)
+    .units(time->units_string());
   z["calendar"] = time->calendar();
 
   return result;
@@ -810,7 +810,8 @@ public:
 
     const auto &time = m_grid->ctx()->time();
 
-    m_vars = { { m_sys, isochrone_depth_variable_name, model->layer_thicknesses().levels() } };
+    m_vars = { { m_sys, isochrone_depth_variable_name, *m_grid,
+                 model->layer_thicknesses().levels() } };
 
     auto description = pism::printf("depth below surface of isochrones for times in '%s'",
                                     deposition_time_variable_name);

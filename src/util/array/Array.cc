@@ -88,11 +88,11 @@ Array::Array(std::shared_ptr<const Grid> grid, const std::string &name, Kind gho
   if (m_impl->dof > 1) {
     // dof > 1: this is a 2D vector
     for (unsigned int j = 0; j < m_impl->dof; ++j) {
-      m_impl->metadata.push_back({ system, pism::printf("%s[%d]", name.c_str(), j) });
+      m_impl->metadata.push_back({ system, pism::printf("%s[%d]", name.c_str(), j), *grid });
     }
   } else {
     // both 2D and 3D vectors
-    m_impl->metadata = { { system, name, zlevels } };
+    m_impl->metadata = { { system, name, *grid, zlevels } };
   }
 
   if (zlevels.size() > 1) {
@@ -464,7 +464,7 @@ void Array::read_impl(const File &file, const unsigned int time) {
 //! \brief Define variables corresponding to an Array in a file opened using `file`.
 void Array::define(const File &file) const {
   for (unsigned int j = 0; j < ndof(); ++j) {
-    io::define_spatial_variable(metadata(j), grid()->info(), grid()->get_mapping_info().cf_mapping,
+    io::define_spatial_variable(metadata(j), grid()->get_mapping_info().cf_mapping,
                                 *grid()->ctx()->config(), file);
   }
 }

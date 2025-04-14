@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ DiagnosticList SIAFD::diagnostics_impl() const {
 }
 
 SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m) : Diag<SIAFD>(m) {
-  m_vars = { { m_sys, "schoofs_theta" } };
+  m_vars = { { m_sys, "schoofs_theta", *m_grid } };
 
   m_vars[0]
       .long_name("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA")
@@ -57,7 +57,7 @@ std::shared_ptr<array::Array> SIAFD_schoofs_theta::compute_impl() const {
 
 
 SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m) : Diag<SIAFD>(m) {
-  m_vars = { { m_sys, "topgsmooth" } };
+  m_vars = { { m_sys, "topgsmooth", *m_grid } };
   m_vars[0]
       .long_name("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
       .units("m");
@@ -74,7 +74,7 @@ std::shared_ptr<array::Array> SIAFD_topgsmooth::compute_impl() const {
 SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  m_vars = { { m_sys, "thksmooth" } };
+  m_vars = { { m_sys, "thksmooth", *m_grid } };
   m_vars[0]
       .long_name(
           "thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
@@ -104,7 +104,7 @@ std::shared_ptr<array::Array> SIAFD_thksmooth::compute_impl() const {
 SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  m_vars = { { m_sys, "diffusivity" } };
+  m_vars = { { m_sys, "diffusivity", *m_grid } };
   m_vars[0].long_name("diffusivity of SIA mass continuity equation").units("m^2 s^-1");
 }
 
@@ -125,7 +125,7 @@ std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
 SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  m_vars = { { m_sys, "diffusivity_i" }, { m_sys, "diffusivity_j" } };
+  m_vars = { { m_sys, "diffusivity_i", *m_grid }, { m_sys, "diffusivity_j", *m_grid } };
   m_vars[0]
       .long_name("diffusivity of SIA mass continuity equation on the staggered grid (i-offset)")
       .units("m^2 s^-1");
@@ -158,7 +158,7 @@ std::shared_ptr<array::Array> SIAFD_diffusivity_staggered::compute_impl() const 
 SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  m_vars = { { m_sys, "h_x_i" }, { m_sys, "h_x_j" } };
+  m_vars = { { m_sys, "h_x_i", *m_grid }, { m_sys, "h_x_j", *m_grid } };
   m_vars[0].long_name("the x-component of the surface gradient, i-offset").units("1");
   m_vars[1].long_name("the x-component of the surface gradient, j-offset").units("1");
 }
@@ -174,7 +174,7 @@ std::shared_ptr<array::Array> SIAFD_h_x::compute_impl() const {
 SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  m_vars = { { m_sys, "h_y_i" }, { m_sys, "h_y_j" } };
+  m_vars = { { m_sys, "h_y_i", *m_grid }, { m_sys, "h_y_j", *m_grid } };
   m_vars[0].long_name("the y-component of the surface gradient, i-offset").units("1");
   m_vars[1].long_name("the y-component of the surface gradient, j-offset").units("1");
 }

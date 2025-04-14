@@ -156,7 +156,7 @@ class MeanSummerTemperature : public Diag<YearlyCycle>
 {
 public:
   MeanSummerTemperature(const YearlyCycle *m) : Diag<YearlyCycle>(m) {
-    m_vars = { { m_sys, "air_temp_mean_summer" } };
+    m_vars = { { m_sys, "air_temp_mean_summer", *m_grid } };
     m_vars[0]
         .long_name("mean summer near-surface air temperature used in the cosine yearly cycle")
         .units("kelvin");

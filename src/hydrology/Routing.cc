@@ -41,7 +41,7 @@ class BasalWaterPressure : public Diag<Routing>
 public:
   BasalWaterPressure(const Routing *m)
     : Diag<Routing>(m) {
-    m_vars = { { m_sys, "bwp" } };
+    m_vars = { { m_sys, "bwp", *m_grid } };
     m_vars[0].long_name("pressure of transportable water in subglacial layer").units("Pa");
   }
 
@@ -63,7 +63,7 @@ class RelativeBasalWaterPressure : public Diag<Routing>
 public:
   RelativeBasalWaterPressure(const Routing *m)
     : Diag<Routing>(m) {
-    m_vars = { { m_sys, "bwprel" } };
+    m_vars = { { m_sys, "bwprel", *m_grid } };
     m_vars[0]
         .long_name(
             "pressure of transportable water in subglacial layer as fraction of the overburden pressure")
@@ -104,7 +104,7 @@ class EffectiveBasalWaterPressure : public Diag<Routing>
 public:
   EffectiveBasalWaterPressure(const Routing *m)
     : Diag<Routing>(m) {
-    m_vars = { { m_sys, "effbwp" } };
+    m_vars = { { m_sys, "effbwp", *m_grid } };
     m_vars[0]
         .long_name("effective pressure of transportable water in subglacial layer"
                    " (overburden pressure minus water pressure)")
@@ -140,7 +140,7 @@ class WallMelt : public Diag<Routing>
 public:
   WallMelt(const Routing *m)
     : Diag<Routing>(m) {
-    m_vars = { { m_sys, "wallmelt" } };
+    m_vars = { { m_sys, "wallmelt", *m_grid } };
     m_vars[0]
         .long_name("wall melt into subglacial hydrology layer from (turbulent)"
                    " dissipation of energy in transportable water")
@@ -166,7 +166,7 @@ class BasalWaterVelocity : public Diag<Routing>
 public:
   BasalWaterVelocity(const Routing *m)
     : Diag<Routing>(m) {
-    m_vars = { { m_sys, "bwatvel[0]" }, { m_sys, "bwatvel[1]" } };
+    m_vars = { { m_sys, "bwatvel[0]", *m_grid }, { m_sys, "bwatvel[1]", *m_grid } };
     m_vars[0].long_name("velocity of water in subglacial layer, i-offset").units("m s^-1");
     m_vars[1].long_name("velocity of water in subglacial layer, j-offset").units("m s^-1");
   }
@@ -218,7 +218,7 @@ class HydraulicPotential : public Diag<Routing>
 {
 public:
   HydraulicPotential(const Routing *m) : Diag<Routing>(m) {
-    m_vars = { { m_sys, "hydraulic_potential" } };
+    m_vars = { { m_sys, "hydraulic_potential", *m_grid } };
     m_vars[0].long_name("hydraulic potential in the subglacial hydrology system").units("Pa");
   }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2020, 2021, 2022, 2023 Constantine Khroulev
+// Copyright (C) 2009--2017, 2020, 2021, 2022, 2023, 2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,18 +32,17 @@ Vector::Vector(std::shared_ptr<const Grid> grid, const std::string &name)
   // arrays with this wide stencil.
 
   auto sys = m_impl->grid->ctx()->unit_system();
-  m_impl->metadata = {{sys, "u" + name}, {sys, "v" + name}};
+  m_impl->metadata = { { sys, "u" + name, *grid }, { sys, "v" + name, *grid } };
   set_name("vel" + name);
 }
 
 Vector::Vector(std::shared_ptr<const Grid> grid, const std::string &name,
                unsigned int stencil_width)
-  : Array2D<pism::Vector2d>(grid, name,
-                           stencil_width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS,
-                           stencil_width) {
+    : Array2D<pism::Vector2d>(grid, name, stencil_width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS,
+                              stencil_width) {
 
-  auto sys = m_impl->grid->ctx()->unit_system();
-  m_impl->metadata = {{sys, "u" + name}, {sys, "v" + name}};
+  auto sys         = m_impl->grid->ctx()->unit_system();
+  m_impl->metadata = { { sys, "u" + name, *grid }, { sys, "v" + name, *grid } };
   set_name("vel" + name);
 }
 

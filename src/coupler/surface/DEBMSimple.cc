@@ -570,7 +570,7 @@ class DEBMSInsolation : public Diag<DEBMSimple>
 {
 public:
   DEBMSInsolation(const DEBMSimple *m) : Diag<DEBMSimple>(m) {
-    m_vars = { { m_sys, "insolation" } };
+    m_vars = { { m_sys, "insolation", *m_grid } };
     m_vars[0]
         .long_name(
             "mean top of atmosphere insolation during the period when the sun is above the critical angle Phi")
@@ -634,7 +634,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)
@@ -690,7 +690,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)
@@ -743,7 +743,7 @@ public:
     }
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)

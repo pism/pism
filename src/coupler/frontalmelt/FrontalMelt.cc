@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2022, 2023 Constantine Khroulev and Andy Aschwanden
+/* Copyright (C) 2018, 2019, 2020, 2022, 2023, 2025 Constantine Khroulev and Andy Aschwanden
  *
  * This file is part of PISM.
  *
@@ -182,7 +182,7 @@ public:
 
     m_accumulator.metadata()["units"] = "m";
 
-    m_vars = { { m_sys, "frontal_melt_rate" } };
+    m_vars = { { m_sys, "frontal_melt_rate", *m_grid } };
     m_vars[0]
         .long_name("frontal melt rate")
         .units("m second^-1")
@@ -205,7 +205,7 @@ public:
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_retreat_rate", RATE) {
     m_accumulator.metadata()["units"] = "m";
 
-    m_vars = { { m_sys, "frontal_melt_retreat_rate" } };
+    m_vars = { { m_sys, "frontal_melt_retreat_rate", *m_grid } };
     m_vars[0]
         .long_name("retreat rate due to frontal melt")
         .units("m second^-1")

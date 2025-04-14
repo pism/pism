@@ -150,7 +150,7 @@ public:
   {
     m_accumulator.metadata()["units"] = "kg m^-2";
 
-    m_vars = { { m_sys, "no_gl_retreat_smb_adjustment" } };
+    m_vars = { { m_sys, "no_gl_retreat_smb_adjustment", *m_grid } };
     m_vars[0]
         .long_name("SMB adjustment needed to maintain grounded ice extent")
         .units("kg m^-2 s^-1")
