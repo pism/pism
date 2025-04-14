@@ -88,14 +88,15 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag) c
   m_config->write(file);
 
   {
-    auto tmp = m_output_global_attributes;
+    auto global_attributes = m_output_global_attributes;
+    global_attributes.set_name("PISM_GLOBAL");
 
     auto old_history = file.read_text_attribute("PISM_GLOBAL", "history");
+    std::string history = global_attributes["history"];
 
-    tmp.set_name("PISM_GLOBAL");
-    tmp["history"] = std::string(tmp["history"]) + old_history;
+    global_attributes["history"] = history + old_history;
 
-    io::write_attributes(file, tmp);
+    io::write_attributes(file, global_attributes);
   }
 }
 

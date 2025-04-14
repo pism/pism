@@ -1012,13 +1012,7 @@ void IceModel::allocate_bed_deformation() {
   m_submodels["bed deformation"] = m_beddef.get();
 }
 
-//! Read some runtime (command line) options and alter the
-//! corresponding parameters or flags as appropriate.
 void IceModel::process_options() {
-
-  m_log->message(3,
-             "Processing physics-related command-line options...\n");
-
   set_config_from_options(m_sys, *m_config);
   m_config->resolve_filenames();
 
@@ -1038,14 +1032,6 @@ void IceModel::process_options() {
     m_log->message(2,
                "PISM WARNING: Both -skip and -no_mass are set.\n"
                "              -skip only makes sense in runs updating ice geometry.\n");
-  }
-
-  if (m_config->get_string("calving.methods").find("thickness_calving") != std::string::npos &&
-      not m_config->get_flag("geometry.part_grid.enabled")) {
-    m_log->message(2,
-               "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
-               "              without application of partially filled grid cell scheme (-part_grid)\n"
-               "              may lead to (incorrect) non-moving ice shelf front.\n");
   }
 }
 

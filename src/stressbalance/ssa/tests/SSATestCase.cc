@@ -217,6 +217,7 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
   auto sys = m_grid->ctx()->unit_system();
 
   VariableMetadata global_attributes("PISM_GLOBAL", sys);
+  global_attributes["source"] = std::string("PISM ") + pism::revision;
 
   options::String filename("-report_file", "NetCDF error report file");
 
@@ -232,8 +233,6 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
   if (not append) {
     mode = io::PISM_READWRITE_MOVE;
   }
-
-  global_attributes["source"] = std::string("PISM ") + pism::revision;
 
   // Find the number of records in this file:
   File file(m_grid->com, filename, io::PISM_NETCDF3, mode); // OK to use NetCDF3.

@@ -54,6 +54,13 @@ CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const Grid> g)
         .units("m"); // no standard name
     m_calving_threshold->metadata()["valid_min"] = {0.0};
   }
+
+  if (not m_config->get_flag("geometry.part_grid.enabled")) {
+    m_log->message(
+        2, "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
+           "              without application of partially filled grid cell scheme (-part_grid)\n"
+           "              may lead to (incorrect) non-moving ice shelf front.\n");
+  }
 }
 
 void CalvingAtThickness::init() {
