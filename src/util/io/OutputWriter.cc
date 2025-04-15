@@ -21,14 +21,11 @@
 #include <mpi.h>
 #include <map>
 
-#include "IO_Flags.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/OutputWriter.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/error_handling.hh"
 
 namespace pism {
 
@@ -89,20 +86,10 @@ struct OutputWriter::Impl {
     use_internal_units = config.get_flag("output.use_MKS");
   }
 
-  const File &get_file(const std::string &filename) {
-    if (files[filename] == nullptr) {
-      files[filename] =
-          std::make_shared<File>(comm, filename, io::PISM_GUESS, io::PISM_READWRITE_MOVE);
-    }
-
-    return *files[filename];
-  }
-
   std::string time_name;
   MPI_Comm comm;
   grid::DistributedGridInfo grid;
   VariableMetadata mapping;
-  std::map<std::string, std::shared_ptr<File> > files;
   bool use_internal_units;
 };
 
@@ -114,6 +101,10 @@ OutputWriter::OutputWriter(MPI_Comm comm, const Config &config,
 
 OutputWriter::~OutputWriter() {
   delete m_impl;
+}
+
+MPI_Comm OutputWriter::comm() const {
+  return m_impl->comm;
 }
 
 void OutputWriter::define_dimension(const std::string &filename, const std::string &name,
@@ -173,8 +164,11 @@ void OutputWriter::define_spatial_variable(const std::string &filename,
   define_variable(filename, var, dims);
 }
 
-void OutputWriter::write_attributes(const std::string &filename, const VariableMetadata &metadata) {
-  write_attributes_impl(filename, metadata);
+void OutputWriter::write_attributes(const std::string &filename, const VariableMetadata &variable) {
+  auto metadata = format_attributes(variable);
+
+  write_attributes_impl(filename, metadata.get_name(), metadata.all_strings(),
+                        metadata.all_doubles(), metadata.get_output_type());
 }
 
 void OutputWriter::append_time(const std::string &filename, double time_seconds) {
@@ -201,94 +195,9 @@ void OutputWriter::write_array(const std::string &filename, const VariableMetada
 
 void OutputWriter::write_spatial_variable(const SpatialVariableMetadata &metadata,
                                           const std::string &filename, const double *input) {
-  write_spatial_variable_impl(metadata, filename, input);
-}
-
-void OutputWriter::close(const std::string &filename) {
-  close_impl(filename);
-}
-
-void OutputWriter::define_dimension_impl(const std::string &filename, const std::string &name,
-                                         size_t length) {
-  const auto &file = m_impl->get_file(filename);
-
-  if (file.dimension_exists(name)) {
-    return;
-  }
-
-  file.define_dimension(name, length);
-}
-
-void OutputWriter::define_variable_impl(const std::string &filename,
-                                        const VariableMetadata &metadata,
-                                        const std::vector<std::string> &dims) {
-  const auto &file = m_impl->get_file(filename);
-
-  if (file.variable_exists(metadata.get_name())) {
-    return;
-  }
-
-  file.define_variable(metadata.get_name(), metadata.get_output_type(), dims);
-
-  write_attributes(filename, metadata);
-}
-
-void OutputWriter::write_attributes_impl(const std::string &filename, const std::string &var_name,
-                                         const std::map<std::string, std::string> &strings,
-                                         const std::map<std::string, std::vector<double> > &numbers,
-                                         io::Type output_type) {
-  const auto &file = m_impl->get_file(filename);
-
-  // Write text attributes:
-  for (const auto &s : strings) {
-    const auto &name  = s.first;
-    const auto &value = s.second;
-
-    if (value.empty()) {
-      continue;
-    }
-
-    file.write_attribute(var_name, name, value);
-  }
-
-  // Write double attributes:
-  for (const auto &d : numbers) {
-    const auto &name   = d.first;
-    const auto &values = d.second;
-
-    if (values.empty()) {
-      continue;
-    }
-
-    file.write_attribute(var_name, name, output_type, values);
-  }
-}
-
-void OutputWriter::append_time_impl(const std::string &filename, double time_seconds) {
-  const auto &file = m_impl->get_file(filename);
-  auto name = m_impl->time_name;
-
-  write_array_impl(filename, m_impl->time_name, file.dimension_length(name), 1, 1, { time_seconds });
-}
-
-void OutputWriter::write_array_impl(const std::string &filename, const std::string &name,
-                                    unsigned int start, unsigned int M, unsigned int N,
-                                    const std::vector<double> &data) {
-  const auto &file = m_impl->get_file(filename);
-
-  file.write_variable(name, { start, 0 }, { M, N }, data.data());
-}
-
-void OutputWriter::write_spatial_variable_impl(const SpatialVariableMetadata &metadata,
-                                               const std::string &filename, const double *input) {
-  const auto &file = m_impl->get_file(filename);
+  const auto &file = get_file(filename);
 
   const auto &name = metadata.get_name();
-
-  if (not file.variable_exists(name)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
-                                  file.name().c_str());
-  }
 
   // check if we need to write this variable
   bool time_independent = metadata.get_time_independent();
@@ -316,7 +225,7 @@ void OutputWriter::write_spatial_variable_impl(const SpatialVariableMetadata &me
       }
     }
   }
-  
+
   // make sure we have at least one level
   unsigned int nlevels = std::max(metadata.levels().size(), (size_t)1);
 
@@ -346,10 +255,11 @@ void OutputWriter::write_spatial_variable_impl(const SpatialVariableMetadata &me
     file.write_distributed_array(name, m_impl->grid, nlevels, not time_independent, input);
   }
   file.set_variable_was_written(name);
+
 }
 
-void OutputWriter::close_impl(const std::string &filename) {
-  m_impl->files[filename].reset();
+void OutputWriter::close(const std::string &filename) {
+  close_impl(filename);
 }
 
 } // namespace pism

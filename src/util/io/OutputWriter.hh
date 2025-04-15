@@ -17,9 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <mpi.h>
+#include <map>
 #include <string>
 #include <vector>
+
+#include <mpi.h>
 
 namespace pism {
 
@@ -38,7 +40,7 @@ enum Type : int;
 class OutputWriter {
 public:
   OutputWriter(MPI_Comm comm, const Config &config, const grid::DistributedGridInfo &grid,
-               const VariableMetadata &cf_mapping);
+               const VariableMetadata &mapping);
   virtual ~OutputWriter();
 
   void define_dimension(const std::string &filename, const std::string &name, size_t length);
@@ -49,7 +51,7 @@ public:
   void define_spatial_variable(const std::string &filename,
                                const SpatialVariableMetadata &metadata);
 
-  void write_attributes(const std::string &filename, const VariableMetadata &metadata);
+  void write_attributes(const std::string &filename, const VariableMetadata &variable);
 
   void append_time(const std::string &filename, double time_seconds);
 
@@ -70,30 +72,36 @@ public:
 
 protected:
   virtual void define_dimension_impl(const std::string &filename, const std::string &name,
-                                     size_t length);
+                                     size_t length) = 0;
 
   virtual void define_variable_impl(const std::string &filename,
                                     const VariableMetadata &metadata,
-                                    const std::vector<std::string> &dims);
+                                    const std::vector<std::string> &dims) = 0;
 
-  virtual void write_attributes_impl(const std::string &filename, const std::string &var_name,
-                                     const std::map<std::string, std::string> &strings,
-                                     const std::map<std::string, std::vector<double> > &numbers,
-                                     io::Type output_type);
+  virtual void write_attributes(const std::string &filename, const std::string &var_name,
+                                const std::map<std::string, std::string> &strings,
+                                const std::map<std::string, std::vector<double> > &numbers,
+                                io::Type output_type) = 0;
 
-  virtual void append_time_impl(const std::string &filename, double time_seconds);
+  virtual void append_time_impl(const std::string &filename, double time_seconds) = 0;
 
-  virtual void write_array_impl(const std::string &filename, const std::string &name,
-                                unsigned int start, unsigned int M, unsigned int N,
-                                const std::vector<double> &data);
+  virtual void write_array(const std::string &filename, const std::string &name,
+                           const std::vector<unsigned int> &start,
+                           const std::vector<unsigned int> &count,
+                           const std::vector<double> &data) = 0;
 
-  virtual void write_spatial_variable_impl(const SpatialVariableMetadata &metadata,
-                                           const std::string &filename, const double *input);
+  virtual void write_distributed_array(const std::string &filename, const std::string &name,
+                                       const std::vector<unsigned int> &start,
+                                       const std::vector<unsigned int> &count,
+                                       const double *data) = 0;
 
-  virtual void append_impl(const std::string &filename);
+  virtual void append_impl(const std::string &filename) = 0;
 
-  virtual void close_impl(const std::string &filename);
+  virtual void close_impl(const std::string &filename) = 0;
 
+  MPI_Comm comm() const;
+
+private:
   struct Impl;
   Impl *m_impl;
 };
