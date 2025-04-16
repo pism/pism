@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2023 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -141,6 +141,11 @@ bool Unit::is_convertible(const Unit &other) const {
 std::string Unit::format() const {
   return m_impl->unit_string;
 }
+
+Unit::operator std::string() const {
+  return m_impl->unit_string;
+}
+
 
 void Unit::reset() {
   m_impl->reset();

@@ -27,7 +27,7 @@ def to_xarray(self, **kwargs):
         grid = self.grid()
         time = grid.ctx().time()
         calendar = time.calendar()
-        units = time.units_string()
+        units = time.units().format()
         date = cftime.num2date(time.current(), units, calendar)
         spatial_coords = self.spatial_coords
         das = []

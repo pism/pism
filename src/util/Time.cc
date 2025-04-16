@@ -470,17 +470,13 @@ double Time::end() const {
   return m_run_end;
 }
 
-std::string Time::units_string() const {
-  return m_time_units.format();
-}
-
 std::string Time::variable_name() const {
   return m_variable_name;
 }
 
 VariableMetadata Time::metadata() const {
   VariableMetadata result(variable_name(), units().system());
-  result.long_name("time").units(units_string());
+  result.long_name("time").units(units());
   result["axis"]     = "T";
   result["calendar"] = calendar();
 

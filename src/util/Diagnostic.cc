@@ -161,7 +161,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
 
   m_variable["ancillary_variables"] = name + "_aux";
 
-  m_dimension.long_name("time").units(m_grid->ctx()->time()->units_string());
+  m_dimension.long_name("time").units(m_grid->ctx()->time()->units());
   m_dimension["calendar"] = m_grid->ctx()->time()->calendar();
   m_dimension["axis"] = "T";
 }

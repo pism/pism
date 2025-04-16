@@ -96,7 +96,7 @@ static std::shared_ptr<array::Array3D> allocate_layer_thickness(std::shared_ptr<
   z.clear()
     .set_name(deposition_time_variable_name)
     .long_name(z_description)
-    .units(time->units_string());
+    .units(time->units());
   z["calendar"] = time->calendar();
 
   return result;
@@ -822,7 +822,7 @@ public:
         .set_name(deposition_time_variable_name)
         .long_name(
             pism::printf("deposition times for isochrones in '%s'", isochrone_depth_variable_name))
-        .units(time->units_string());
+        .units(time->units());
     z["calendar"] = time->calendar();
   }
 

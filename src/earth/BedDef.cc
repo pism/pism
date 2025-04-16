@@ -88,7 +88,7 @@ void BedDef::define_model_state_impl(const File &output) const {
     output.write_attribute(m_time_name, "long_name",
                            "time of the last update of the Lingle-Clark bed deformation model");
     output.write_attribute(m_time_name, "calendar", time().calendar());
-    output.write_attribute(m_time_name, "units", time().units_string());
+    output.write_attribute(m_time_name, "units", time().units());
   }
 
 }

@@ -85,7 +85,7 @@ void IceModel::init_timeseries() {
     // as the end of a reporting time step
     std::string time_name = m_config->get_string("time.dimension_name");
     if (append and file.dimension_length(time_name) > 0) {
-      auto time = io::read_1d_variable(file, time_name, m_time->units_string(), m_sys);
+      auto time = io::read_1d_variable(file, time_name, m_time->units(), m_sys);
       double
         epsilon = m_config->get_number("time_stepping.resolution"), // usually one second
         t       = vector_max(time);

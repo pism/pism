@@ -87,9 +87,6 @@ public:
 
   std::vector<double> parse_times(const std::string &spec) const;
 
-  //! Internal time units as a string.
-  std::string units_string() const;
-
   //! Name of the NetCDF variable to use
   std::string variable_name() const;
 

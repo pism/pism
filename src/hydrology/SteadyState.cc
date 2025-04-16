@@ -196,7 +196,7 @@ void SteadyState::define_model_state_impl(const File& output) const {
     output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the steady state subglacial water flux");
     output.write_attribute(m_time_name, "calendar", time().calendar());
-    output.write_attribute(m_time_name, "units", time().units_string());
+    output.write_attribute(m_time_name, "units", time().units());
   }
 
   m_Q.define(output);
@@ -307,7 +307,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   // read time bounds data from a file
   m_time_bounds =
-      io::read_bounds(file, bounds_name, time().units_string(), m_grid->ctx()->unit_system());
+      io::read_bounds(file, bounds_name, time().units(), m_grid->ctx()->unit_system());
 
   // time bounds data overrides the time variable: we make t[j] be the
   // left end-point of the j-th interval
