@@ -43,47 +43,51 @@ public:
                const VariableMetadata &mapping);
   virtual ~OutputWriter();
 
-  void define_dimension(const std::string &filename, const std::string &name, size_t length);
+  void define_dimension(const std::string &file_name, const std::string &name, size_t length);
 
-  void define_variable(const std::string &filename, const VariableMetadata &metadata,
+  void define_variable(const std::string &file_name, const VariableMetadata &metadata,
                        const std::vector<std::string> &dims);
 
-  void define_spatial_variable(const std::string &filename,
+  void define_spatial_variable(const std::string &file_name,
                                const SpatialVariableMetadata &metadata);
 
-  void write_attributes(const std::string &filename, const VariableMetadata &variable);
+  void write_attributes(const std::string &file_name, const VariableMetadata &variable);
 
-  void append_time(const std::string &filename, double time_seconds);
+  void append_time(const std::string &file_name, double time_seconds);
 
-  void write_array(const std::string &filename, const std::string &variable_name,
+  void write_array(const std::string &file_name, const std::string &variable_name,
                    const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
                    const std::vector<double> &input);
 
-  void write_array(const std::string &filename, const VariableMetadata &metadata,
+  void write_array(const std::string &file_name, const VariableMetadata &metadata,
                    const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
                    const std::vector<double> &input);
 
-  void write_spatial_variable(const SpatialVariableMetadata &metadata, const std::string &filename,
+  void write_spatial_variable(const SpatialVariableMetadata &metadata, const std::string &file_name,
                               const double *input);
 
-  void append(const std::string &filename);
+  void append(const std::string &file_name);
 
-  void close(const std::string &filename);
+  void close(const std::string &file_name);
 
+  unsigned int time_dimension_length(const std::string &file_name) const;
+  
 protected:
-  virtual void define_dimension_impl(const std::string &filename, const std::string &name,
+  virtual void define_dimension_impl(const std::string &file_name, const std::string &name,
                                      size_t length) = 0;
 
-  virtual void define_variable_impl(const std::string &filename,
+  virtual void define_variable_impl(const std::string &file_name,
                                     const VariableMetadata &metadata,
                                     const std::vector<std::string> &dims) = 0;
 
-  virtual void write_attributes(const std::string &filename, const std::string &var_name,
+  virtual void write_attributes(const std::string &file_name, const std::string &var_name,
                                 const std::map<std::string, std::string> &strings,
                                 const std::map<std::string, std::vector<double> > &numbers,
                                 io::Type output_type) = 0;
 
-  virtual void append_time_impl(const std::string &filename, double time_seconds) = 0;
+  virtual void append_time_impl(const std::string &file_name, double time_seconds) = 0;
+
+  virtual unsigned int time_dimension_length_impl(const std::string &file_name) const = 0;
 
   virtual void write_array_impl(const std::string &file_name, const std::string &variable_name,
                                 const std::vector<unsigned int> &start,
@@ -95,11 +99,15 @@ protected:
                                             const std::vector<unsigned int> &count,
                                             const double *data) = 0;
 
-  virtual void append_impl(const std::string &filename) = 0;
+  virtual void append_impl(const std::string &file_name) = 0;
 
-  virtual void close_impl(const std::string &filename) = 0;
+  virtual void close_impl(const std::string &file_name) = 0;
 
   MPI_Comm comm() const;
+
+  bool get_written(const std::string &file_name, const std::string &variable_name) const;
+
+  void set_written(const std::string &file_name, const std::string &variable_name);
 
 private:
   struct Impl;

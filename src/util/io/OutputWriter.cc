@@ -91,7 +91,19 @@ struct OutputWriter::Impl {
   grid::DistributedGridInfo grid;
   VariableMetadata mapping;
   bool use_internal_units;
+  std::map<std::tuple<std::string, std::string>, bool> written;
 };
+
+
+bool OutputWriter::get_written(const std::string &file_name,
+                               const std::string &variable_name) const {
+  return m_impl->written[{ file_name, variable_name }];
+}
+
+void OutputWriter::set_written(const std::string &file_name, const std::string &variable_name) {
+  m_impl->written[{ file_name, variable_name }] = true;
+}
+
 
 OutputWriter::OutputWriter(MPI_Comm comm, const Config &config,
                            const grid::DistributedGridInfo &grid,
@@ -175,14 +187,16 @@ void OutputWriter::append_time(const std::string &filename, double time_seconds)
   append_time_impl(filename, time_seconds);
 }
 
-void OutputWriter::write_array(const std::string &filename, const std::string &name,
-                               unsigned int start, unsigned int M, unsigned int N,
-                               const std::vector<double> &data) {
-  write_array(filename, name, { start, 0 }, { M, N }, data);
+void OutputWriter::write_array(const std::string &filename, const std::string &variable_name,
+                               const std::vector<unsigned int> &start,
+                               const std::vector<unsigned int> &count,
+                               const std::vector<double> &input) {
+  write_array_impl(filename, variable_name, start, count, input.data());
 }
 
 void OutputWriter::write_array(const std::string &filename, const VariableMetadata &metadata,
-                               unsigned int start, unsigned int M, unsigned int N,
+                               const std::vector<unsigned int> &start,
+                               const std::vector<unsigned int> &count,
                                const std::vector<double> &input) {
   // create a copy of "data" to change units
   std::vector<double> data = input;
@@ -190,38 +204,42 @@ void OutputWriter::write_array(const std::string &filename, const VariableMetada
   units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
       .convert_doubles(data.data(), data.size());
 
-  write_array(filename, metadata.get_name(), start, M, N, data);
+  write_array(filename, metadata.get_name(), start, count, data);
 }
 
 void OutputWriter::write_spatial_variable(const SpatialVariableMetadata &metadata,
-                                          const std::string &filename, const double *input) {
-  const auto &file = get_file(filename);
+                                          const std::string &file_name, const double *input) {
 
-  const auto &name = metadata.get_name();
+  const auto &grid = m_impl->grid;
+
+  const auto &variable_name = metadata.get_name();
 
   // check if we need to write this variable
   bool time_independent = metadata.get_time_independent();
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
-  if (time_independent and file.get_variable_was_written(name)) {
+  if (time_independent and get_written(file_name, variable_name)) {
     return;
   }
 
   // write dimensions:
   {
     std::map<std::string, const std::vector<double> &> data = {
-      { metadata.x().get_name(), m_impl->grid.x },
-      { metadata.y().get_name(), m_impl->grid.y },
+      { metadata.x().get_name(), grid.x },
+      { metadata.y().get_name(), grid.y },
       { metadata.z().get_name(), metadata.levels() }
     };
     for (const auto &p : data) {
       const auto &dimension   = p.first;
       const auto &coordinates = p.second;
-      bool exists             = file.dimension_exists(dimension);
-      bool written            = file.get_variable_was_written(dimension);
-      if (exists and not written) {
-        write_array(filename, dimension, 0, coordinates.size(), 1, coordinates);
-        file.set_variable_was_written(dimension);
+
+      if (coordinates.empty()) {
+        continue;
+      }
+
+      if (not get_written(file_name, dimension)) {
+        write_array(file_name, dimension, { 0 }, { (unsigned int)coordinates.size() }, coordinates);
+        set_written(file_name, dimension);
       }
     }
   }
@@ -236,9 +254,20 @@ void OutputWriter::write_spatial_variable(const SpatialVariableMetadata &metadat
     output_units = units;
   }
 
-  // FIXME: use put_vara_double(...) instead and remove write_darray()
+  std::vector<unsigned int> start, count;
+
+  if (time_independent) {
+    start = { (unsigned)grid.ys, (unsigned)grid.xs, 0 };
+    count = { (unsigned)grid.ym, (unsigned)grid.xm, nlevels };
+  } else {
+    auto t_length = time_dimension_length(file_name);
+    auto t_start = t_length > 0 ? t_length - 1 : 0;
+    start = { t_start, (unsigned)grid.ys, (unsigned)grid.xs, 0 };
+    count = { 1,      (unsigned)grid.ym, (unsigned)grid.xm, nlevels };
+  }
+
   if (units != output_units) {
-    size_t data_size = m_impl->grid.xm * m_impl->grid.ym * nlevels;
+    auto data_size = grid.xm * grid.ym * nlevels;
 
     // create a temporary array, convert to output units, and
     // save
@@ -250,16 +279,19 @@ void OutputWriter::write_spatial_variable(const SpatialVariableMetadata &metadat
     units::Converter(metadata.unit_system(), units, output_units)
         .convert_doubles(tmp.data(), tmp.size());
 
-    file.write_distributed_array(name, m_impl->grid, nlevels, not time_independent, tmp.data());
+    write_distributed_array_impl(file_name, variable_name, start, count, tmp.data());
   } else {
-    file.write_distributed_array(name, m_impl->grid, nlevels, not time_independent, input);
+    write_distributed_array_impl(file_name, variable_name, start, count, input);
   }
-  file.set_variable_was_written(name);
-
+  set_written(file_name, variable_name);
 }
 
-void OutputWriter::close(const std::string &filename) {
-  close_impl(filename);
+void OutputWriter::close(const std::string &file_name) {
+  close_impl(file_name);
+}
+
+unsigned int OutputWriter::time_dimension_length(const std::string &file_name) const {
+  return time_dimension_length_impl(file_name);
 }
 
 } // namespace pism
