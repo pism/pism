@@ -120,9 +120,10 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
  * @param[in] N number of elements along the second dimension (1 for 1D arrays)
  * @param[in] data array to write
  */
-void write_array(const File &file, const std::string &name, unsigned int start, unsigned int M,
-                 unsigned int N, const std::vector<double> &data) {
-  file.write_variable(name, { start, 0 }, { M, N }, data.data());
+void write_array(const File &file, const std::string &variable_name,
+                 const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
+                 const std::vector<double> &input) {
+  file.write_variable(variable_name, start, count, input.data());
 }
 
 /*!
@@ -137,20 +138,21 @@ void write_array(const File &file, const std::string &name, unsigned int start, 
  * @param[in] input array to write
  *
  */
-void write_array(const File &file, const VariableMetadata &metadata, unsigned int start,
-                 unsigned int M, unsigned int N, const std::vector<double> &input) {
+void write_array(const File &file, const VariableMetadata &metadata,
+                 const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
+                 const std::vector<double> &input) {
   // create a copy of "data" to change units
   std::vector<double> data = input;
 
   units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
       .convert_doubles(data.data(), data.size());
 
-  write_array(file, metadata.get_name(), start, M, N, data);
+  write_array(file, metadata.get_name(), start, count, data);
 }
 
 //! Append to the time dimension.
 void append_time(const File &file, const std::string &name, double value) {
-  write_array(file, name, file.dimension_length(name), 1, 1, { value });
+  write_array(file, name, {file.dimension_length(name)}, {1}, { value });
 }
 
 //! 
@@ -193,7 +195,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata,
       bool exists = file.dimension_exists(dimension);
       bool written = file.get_variable_was_written(dimension);
       if (exists and not written) {
-        write_array(file, dimension, 0, coordinates.size(), 1, coordinates);
+        write_array(file, dimension, { 0 }, { (unsigned int)coordinates.size() }, coordinates);
         file.set_variable_was_written(dimension);
       }
     }

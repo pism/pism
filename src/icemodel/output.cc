@@ -237,8 +237,9 @@ void IceModel::save_variables(const File &file, OutputKind kind,
   // find out how much time passed since the beginning of the run and save it to the output file
   {
     auto time_length = file.dimension_length(time_name);
-    size_t start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
-    io::write_array(file, timestamp, start, 1, 1, { wall_clock_hours(m_grid->com, m_start_time) });
+    auto start = time_length > 0 ? (time_length - 1) : 0;
+    io::write_array(file, timestamp, { start }, { 1 },
+                    { wall_clock_hours(m_grid->com, m_start_time) });
   }
 }
 

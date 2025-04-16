@@ -599,14 +599,14 @@ void IceCompModel::print_summary(bool /* tempAndAge */) {
   IceModel::print_summary(true);
 }
 
-static void write(units::System::Ptr sys, const File &file, size_t start, const char *name,
+static void write(units::System::Ptr sys, const File &file, unsigned int start, const char *name,
                   const char *units, const char *long_name, double value) {
   VariableMetadata variable(name, sys);
   variable.units(units).long_name(long_name);
 
   io::define_dimension(file, "N", io::PISM_UNLIMITED);
   io::define_variable(file, variable, { "N" });
-  io::write_array(file, variable, start, 1, 1, { value });
+  io::write_array(file, variable, { start }, { 1 }, { value });
 }
 
 void IceCompModel::reportErrors() {

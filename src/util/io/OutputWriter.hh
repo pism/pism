@@ -55,12 +55,12 @@ public:
 
   void append_time(const std::string &filename, double time_seconds);
 
-  //! Write an one- or two-dimensional array to an output file
-  void write_array(const std::string &filename, const std::string &name, unsigned int start,
-                   unsigned int M, unsigned int N, const std::vector<double> &data);
+  void write_array(const std::string &filename, const std::string &variable_name,
+                   const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
+                   const std::vector<double> &input);
 
   void write_array(const std::string &filename, const VariableMetadata &metadata,
-                   unsigned int start, unsigned int M, unsigned int N,
+                   const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
                    const std::vector<double> &input);
 
   void write_spatial_variable(const SpatialVariableMetadata &metadata, const std::string &filename,
@@ -85,15 +85,15 @@ protected:
 
   virtual void append_time_impl(const std::string &filename, double time_seconds) = 0;
 
-  virtual void write_array(const std::string &filename, const std::string &name,
-                           const std::vector<unsigned int> &start,
-                           const std::vector<unsigned int> &count,
-                           const std::vector<double> &data) = 0;
+  virtual void write_array_impl(const std::string &file_name, const std::string &variable_name,
+                                const std::vector<unsigned int> &start,
+                                const std::vector<unsigned int> &count, const double *data) = 0;
 
-  virtual void write_distributed_array(const std::string &filename, const std::string &name,
-                                       const std::vector<unsigned int> &start,
-                                       const std::vector<unsigned int> &count,
-                                       const double *data) = 0;
+  virtual void write_distributed_array_impl(const std::string &file_name,
+                                            const std::string &variable_name,
+                                            const std::vector<unsigned int> &start,
+                                            const std::vector<unsigned int> &count,
+                                            const double *data) = 0;
 
   virtual void append_impl(const std::string &filename) = 0;
 

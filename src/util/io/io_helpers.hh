@@ -114,13 +114,15 @@ void write_attributes(const File &file, const VariableMetadata &metadata);
 void append_time(const File &file, const std::string &name, double time_seconds);
 
 //! Write an one- or two-dimensional array to an output file
-void write_array(const File &file, const std::string &name, unsigned int start, unsigned int M,
-                 unsigned int N, const std::vector<double> &data);
+void write_array(const File &file, const std::string &variable_name,
+                 const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
+                 const std::vector<double> &input);
 
 //! Write an one- or two-dimensional array to an output file, converting to output units
 //! if necessary
-void write_array(const File &file, const VariableMetadata &metadata, unsigned int start,
-                 unsigned int M, unsigned int N, const std::vector<double> &input);
+void write_array(const File &file, const VariableMetadata &metadata,
+                 const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
+                 const std::vector<double> &input);
 
 void write_spatial_variable(const SpatialVariableMetadata &metadata,
                             const grid::DistributedGridInfo& grid,

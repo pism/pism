@@ -167,8 +167,8 @@ void OutputWriter::define_spatial_variable(const std::string &filename,
 void OutputWriter::write_attributes(const std::string &filename, const VariableMetadata &variable) {
   auto metadata = format_attributes(variable);
 
-  write_attributes_impl(filename, metadata.get_name(), metadata.all_strings(),
-                        metadata.all_doubles(), metadata.get_output_type());
+  write_attributes(filename, metadata.get_name(), metadata.all_strings(), metadata.all_doubles(),
+                   metadata.get_output_type());
 }
 
 void OutputWriter::append_time(const std::string &filename, double time_seconds) {
@@ -178,7 +178,7 @@ void OutputWriter::append_time(const std::string &filename, double time_seconds)
 void OutputWriter::write_array(const std::string &filename, const std::string &name,
                                unsigned int start, unsigned int M, unsigned int N,
                                const std::vector<double> &data) {
-  write_array_impl(filename, name, start, M, N, data);
+  write_array(filename, name, { start, 0 }, { M, N }, data);
 }
 
 void OutputWriter::write_array(const std::string &filename, const VariableMetadata &metadata,

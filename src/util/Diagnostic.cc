@@ -361,14 +361,15 @@ void TSDiagnostic::flush() {
     io::define_variable(file, m_time_bounds, { m_time_name, "nv" });
 
     // write requested times
-    io::write_array(file, m_dimension, m_start, m_time.size(), 1, m_time);
+    io::write_array(file, m_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);
     // write time bounds
-    io::write_array(file, m_time_bounds, m_start, m_bounds.size() / 2, 2, m_bounds);
+    io::write_array(file, m_time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
+                    m_bounds);
   }
 
   io::define_variable(file, m_variable, { m_time_name });
   // write values of a diagnostic
-  io::write_array(file, m_variable, m_start, m_values.size(), 1, m_values);
+  io::write_array(file, m_variable, { m_start }, { (unsigned int)m_values.size() }, m_values);
 
   m_start += m_time.size();
 

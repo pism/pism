@@ -205,10 +205,10 @@ void SSATestCase::report(const std::string &testname) {
 }
 
 namespace details {
-static void write(const File &file, const VariableMetadata &var, size_t start, double value) {
+static void write(const File &file, const VariableMetadata &var, unsigned int start, double value) {
   io::define_dimension(file, "N", io::PISM_UNLIMITED);
   io::define_variable(file, var, { "N" });
-  io::write_array(file, var, start, 1, 1, { value });
+  io::write_array(file, var, { start }, { 1 }, { value });
 }
 } // namespace details
 

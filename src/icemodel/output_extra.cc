@@ -339,11 +339,12 @@ void IceModel::write_extras() {
                    m_extra_vars, time);
 
     // Get the length of the time dimension *after* it is appended to.
-    unsigned int time_length = m_extra_file->dimension_length(time_name);
-    size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
+    auto time_length = m_extra_file->dimension_length(time_name);
+    auto time_start = time_length > 0 ? (time_length - 1) : 0;
 
     // write time bounds
-    io::write_array(*m_extra_file, time_bounds, time_start, 1, 2, {m_last_extra, current_time});
+    io::write_array(*m_extra_file, time_bounds, { time_start, 0 }, { 1, 2 },
+                    { m_last_extra, current_time });
     // make sure all changes are written
     m_extra_file->sync();
   }
