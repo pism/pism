@@ -257,13 +257,14 @@ void OutputWriter::write_spatial_variable(const SpatialVariableMetadata &metadat
   std::vector<unsigned int> start, count;
 
   if (time_independent) {
-    start = { (unsigned)grid.ys, (unsigned)grid.xs, 0 };
-    count = { (unsigned)grid.ym, (unsigned)grid.xm, nlevels };
+    start = { grid.ys, grid.xs, 0 };
+    count = { grid.ym, grid.xm, nlevels };
   } else {
     auto t_length = time_dimension_length(file_name);
-    auto t_start = t_length > 0 ? t_length - 1 : 0;
-    start = { t_start, (unsigned)grid.ys, (unsigned)grid.xs, 0 };
-    count = { 1,      (unsigned)grid.ym, (unsigned)grid.xm, nlevels };
+    auto t_start  = t_length > 0 ? t_length - 1 : 0;
+
+    start = { t_start, grid.ys, grid.xs, 0 };
+    count = {       1, grid.ym, grid.xm, nlevels };
   }
 
   if (units != output_units) {

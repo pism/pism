@@ -176,11 +176,11 @@ void NCFile::write_darray_impl(const std::string &variable_name,
   std::vector<unsigned int> start, count;
 
   if (time_dependent) {
-    start = { record, (unsigned)grid.ys, (unsigned)grid.xs, 0 };
-    count = { 1,      (unsigned)grid.ym, (unsigned)grid.xm, z_count };
+    start = { record, grid.ys, grid.xs, 0 };
+    count = {      1, grid.ym, grid.xm, z_count };
   } else {
-    start = { (unsigned)grid.ys, (unsigned)grid.xs, 0 };
-    count = { (unsigned)grid.ym, (unsigned)grid.xm, z_count };
+    start = { grid.ys, grid.xs, 0 };
+    count = { grid.ym, grid.xm, z_count };
   }
 
   this->put_vara_double(variable_name, start, count, input);

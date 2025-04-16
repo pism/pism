@@ -98,10 +98,10 @@ public:
 
   grid::Registration registration;
 
-  int xs;
-  int xm;
-  int ys;
-  int ym;
+  unsigned int xs;
+  unsigned int xm;
+  unsigned int ys;
+  unsigned int ym;
 
   //! number of grid points in the x-direction
   unsigned int Mx;
