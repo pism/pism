@@ -17,8 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <string>
-
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
@@ -26,53 +24,70 @@
 
 namespace pism {
 
-struct Impl;
-
-const File &SynchronousOutputWriter::get_file(const std::string &filename) {
-  if (m_files[filename] == nullptr) {
-    m_files[filename] =
-      std::make_shared<File>(comm(), filename, io::PISM_GUESS, io::PISM_READWRITE_MOVE);
+const File &SynchronousOutputWriter::file(const std::string &file_name) {
+  if (m_files[file_name] == nullptr) {
+    m_files[file_name] =
+        std::make_shared<File>(comm(), file_name, io::PISM_GUESS, io::PISM_READWRITE_MOVE);
   }
 
-  return *m_files[filename];
+  return *m_files[file_name];
 }
 
 SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &config,
-                                                 const grid::DistributedGridInfo &grid,
                                                  const VariableMetadata &mapping)
-    : OutputWriter(comm, config, grid, mapping) {
+    : OutputWriter(comm, config, mapping) {
+  // empty
 }
 
-void SynchronousOutputWriter::define_dimension_impl(const std::string &filename, const std::string &name,
-                                         size_t length) {
-  const auto &file = get_file(filename);
+void SynchronousOutputWriter::define_variable_impl(const std::string &file_name,
+                                                   const VariableMetadata &metadata,
+                                                   const std::vector<std::string> &dims) {
+  const auto &output_file = file(file_name);
 
-  if (file.dimension_exists(name)) {
+  if (output_file.variable_exists(metadata.get_name())) {
     return;
   }
 
-  file.define_dimension(name, length);
+  const auto &variable_name = metadata.get_name();
+
+  auto type = metadata.get_output_type();
+
+  output_file.define_variable(variable_name, type, dims);
+
+  write_attributes(file_name, variable_name, metadata.all_strings(), metadata.all_doubles(), type);
 }
 
-void SynchronousOutputWriter::define_variable_impl(const std::string &filename,
-                                        const VariableMetadata &metadata,
-                                        const std::vector<std::string> &dims) {
-  const auto &file = get_file(filename);
+void SynchronousOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
+  write_array(file_name, time_name(), { time_dimension_length(file_name) }, { 1 },
+              { time_seconds });
+}
 
-  if (file.variable_exists(metadata.get_name())) {
+void SynchronousOutputWriter::append_impl(const std::string &file_name) {
+  m_files[file_name] =
+      std::make_shared<File>(comm(), file_name, io::PISM_GUESS, io::PISM_READWRITE);
+}
+
+void SynchronousOutputWriter::close_impl(const std::string &file_name) {
+  m_files[file_name]->close();
+  m_files[file_name].reset();
+}
+
+void SynchronousOutputWriter::define_dimension_impl(const std::string &file_name,
+                                                    const std::string &name, unsigned int length) {
+  const auto &output_file = file(file_name);
+
+  if (output_file.dimension_exists(name)) {
     return;
   }
 
-  file.define_variable(metadata.get_name(), metadata.get_output_type(), dims);
-
-  write_attributes(filename, metadata);
+  output_file.define_dimension(name, length);
 }
 
-void SynchronousOutputWriter::write_attributes_impl(const std::string &filename, const std::string &var_name,
-                                         const std::map<std::string, std::string> &strings,
-                                         const std::map<std::string, std::vector<double> > &numbers,
-                                         io::Type output_type) {
-  const auto &file = get_file(filename);
+void SynchronousOutputWriter::write_attributes(
+    const std::string &file_name, const std::string &var_name,
+    const std::map<std::string, std::string> &strings,
+    const std::map<std::string, std::vector<double> > &numbers, io::Type output_type) {
+  const auto &output_file = file(file_name);
 
   // Write text attributes:
   for (const auto &s : strings) {
@@ -83,7 +98,7 @@ void SynchronousOutputWriter::write_attributes_impl(const std::string &filename,
       continue;
     }
 
-    file.write_attribute(var_name, name, value);
+    output_file.write_attribute(var_name, name, value);
   }
 
   // Write double attributes:
@@ -95,34 +110,31 @@ void SynchronousOutputWriter::write_attributes_impl(const std::string &filename,
       continue;
     }
 
-    file.write_attribute(var_name, name, output_type, values);
+    output_file.write_attribute(var_name, name, output_type, values);
   }
 }
 
-void SynchronousOutputWriter::append_time_impl(const std::string &filename, double time_seconds) {
-  const auto &file = get_file(filename);
-  auto name = m_impl->time_name;
-
-  write_array_impl(filename, m_impl->time_name, file.dimension_length(name), 1, 1, { time_seconds });
+unsigned int SynchronousOutputWriter::time_dimension_length_impl(const std::string &file_name) {
+  const auto &output_file = file(file_name);
+  return output_file.dimension_length(time_name());
 }
 
-void SynchronousOutputWriter::write_array_impl(const std::string &filename, const std::string &name,
-                                    unsigned int start, unsigned int M, unsigned int N,
-                                    const std::vector<double> &data) {
-  const auto &file = get_file(filename);
-
-  file.write_variable(name, { start, 0 }, { M, N }, data.data());
+void SynchronousOutputWriter::write_array_impl(const std::string &file_name,
+                                               const std::string &variable_name,
+                                               const std::vector<unsigned int> &start,
+                                               const std::vector<unsigned int> &count,
+                                               const double *data) {
+  const auto &output_file = file(file_name);
+  output_file.write_variable(variable_name, start, count, data);
 }
 
-void SynchronousOutputWriter::write_spatial_variable_impl(const SpatialVariableMetadata &metadata,
-                                               const std::string &filename, const double *input) {
-}
-
-void SynchronousOutputWriter::append_impl(const std::string &filename) {
-}
-
-void SynchronousOutputWriter::close_impl(const std::string &filename) {
-  m_impl->files[filename].reset();
+void SynchronousOutputWriter::write_distributed_array_impl(const std::string &file_name,
+                                                           const std::string &variable_name,
+                                                           const std::vector<unsigned int> &start,
+                                                           const std::vector<unsigned int> &count,
+                                                           const double *data) {
+  const auto &output_file = file(file_name);
+  output_file.write_variable(variable_name, start, count, data);
 }
 
 } // namespace pism

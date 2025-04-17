@@ -19,43 +19,46 @@
 
 #include "pism/util/io/File.hh"
 #include "pism/util/io/OutputWriter.hh"
+
 #include <memory>
 
 namespace pism {
 
 class SynchronousOutputWriter : public OutputWriter {
 public:
-  SynchronousOutputWriter(MPI_Comm comm, const Config &config,
-                          const grid::DistributedGridInfo &grid,
-                          const VariableMetadata &mapping);
+  SynchronousOutputWriter(MPI_Comm comm, const Config &config, const VariableMetadata &mapping);
   virtual ~SynchronousOutputWriter() = default;
 
 private:
   std::map<std::string, std::shared_ptr<File> > m_files;
-  
-  void define_dimension_impl(const std::string &filename, const std::string &name, size_t length);
 
-  void define_variable_impl(const std::string &filename, const VariableMetadata &metadata,
+  const File &file(const std::string &file_name);
+
+  void define_dimension_impl(const std::string &file_name, const std::string &name,
+                             unsigned int length);
+
+  void define_variable_impl(const std::string &file_name, const VariableMetadata &metadata,
                             const std::vector<std::string> &dims);
 
-  void write_attributes_impl(const std::string &filename, const std::string &var_name,
-                             const std::map<std::string, std::string> &strings,
-                             const std::map<std::string, std::vector<double> > &numbers,
-                             io::Type output_type);
+  void write_attributes(const std::string &file_name, const std::string &var_name,
+                        const std::map<std::string, std::string> &strings,
+                        const std::map<std::string, std::vector<double> > &numbers,
+                        io::Type output_type);
 
-  void append_time_impl(const std::string &filename, double time_seconds);
+  void append_time_impl(const std::string &file_name, double time_seconds);
 
-  void write_array_impl(const std::string &filename, const std::string &name, unsigned int start,
-                        unsigned int M, unsigned int N, const std::vector<double> &data);
+  unsigned int time_dimension_length_impl(const std::string &file_name);
 
-  void write_spatial_variable_impl(const SpatialVariableMetadata &metadata,
-                                   const std::string &filename, const double *input);
+  void write_array_impl(const std::string &file_name, const std::string &variable_name,
+                        const std::vector<unsigned int> &start,
+                        const std::vector<unsigned int> &count, const double *data);
 
-  void append_impl(const std::string &filename);
+  void write_distributed_array_impl(const std::string &file_name, const std::string &variable_name,
+                                    const std::vector<unsigned int> &start,
+                                    const std::vector<unsigned int> &count, const double *data);
 
-  void close_impl(const std::string &filename);
+  void append_impl(const std::string &file_name);
 
-  const File &get_file(const std::string &filename);
+  void close_impl(const std::string &file_name);
 };
-
-}
+} // namespace pism

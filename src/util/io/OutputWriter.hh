@@ -39,17 +39,18 @@ enum Type : int;
 
 class OutputWriter {
 public:
-  OutputWriter(MPI_Comm comm, const Config &config, const grid::DistributedGridInfo &grid,
-               const VariableMetadata &mapping);
+  OutputWriter(MPI_Comm comm, const Config &config, const VariableMetadata &mapping);
   virtual ~OutputWriter();
 
-  void define_dimension(const std::string &file_name, const std::string &name, size_t length);
+  void define_dimension(const std::string &file_name, const std::string &dimension_name,
+                        unsigned int length);
 
   void define_variable(const std::string &file_name, const VariableMetadata &metadata,
                        const std::vector<std::string> &dims);
 
   void define_spatial_variable(const std::string &file_name,
-                               const SpatialVariableMetadata &metadata);
+                               const SpatialVariableMetadata &metadata,
+                               const grid::DistributedGridInfo &grid);
 
   void write_attributes(const std::string &file_name, const VariableMetadata &variable);
 
@@ -63,18 +64,27 @@ public:
                    const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
                    const std::vector<double> &input);
 
-  void write_spatial_variable(const SpatialVariableMetadata &metadata, const std::string &file_name,
+  void write_spatial_variable(const std::string &file_name, const SpatialVariableMetadata &metadata,
                               const double *input);
 
   void append(const std::string &file_name);
 
   void close(const std::string &file_name);
 
-  unsigned int time_dimension_length(const std::string &file_name) const;
-  
+  unsigned int time_dimension_length(const std::string &file_name);
+
 protected:
+
+  MPI_Comm comm() const;
+
+  const grid::DistributedGridInfo& grid_info(const std::string &variable_name) const;
+
+  bool &already_written(const std::string &file_name, const std::string &variable_name);
+
+  const std::string &time_name() const;
+
   virtual void define_dimension_impl(const std::string &file_name, const std::string &name,
-                                     size_t length) = 0;
+                                     unsigned int length) = 0;
 
   virtual void define_variable_impl(const std::string &file_name,
                                     const VariableMetadata &metadata,
@@ -87,7 +97,7 @@ protected:
 
   virtual void append_time_impl(const std::string &file_name, double time_seconds) = 0;
 
-  virtual unsigned int time_dimension_length_impl(const std::string &file_name) const = 0;
+  virtual unsigned int time_dimension_length_impl(const std::string &file_name) = 0;
 
   virtual void write_array_impl(const std::string &file_name, const std::string &variable_name,
                                 const std::vector<unsigned int> &start,
@@ -102,12 +112,6 @@ protected:
   virtual void append_impl(const std::string &file_name) = 0;
 
   virtual void close_impl(const std::string &file_name) = 0;
-
-  MPI_Comm comm() const;
-
-  bool get_written(const std::string &file_name, const std::string &variable_name) const;
-
-  void set_written(const std::string &file_name, const std::string &variable_name);
 
 private:
   struct Impl;

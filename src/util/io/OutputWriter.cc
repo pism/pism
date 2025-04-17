@@ -17,9 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cstddef>
+#include <map>
 #include <memory>
 #include <mpi.h>
-#include <map>
+#include <vector>
 
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
@@ -79,36 +81,27 @@ static VariableMetadata format_attributes(const VariableMetadata &metadata) {
 }
 
 struct OutputWriter::Impl {
-  Impl(MPI_Comm comm_, const Config &config, const grid::DistributedGridInfo &grid_,
-       const VariableMetadata &mapping_)
-      : comm(comm_), grid(grid_), mapping(mapping_) {
+  Impl(MPI_Comm comm_, const Config &config, const VariableMetadata &mapping_)
+      : comm(comm_), mapping(mapping_) {
     time_name          = config.get_string("time.dimension_name");
     use_internal_units = config.get_flag("output.use_MKS");
   }
 
   std::string time_name;
   MPI_Comm comm;
-  grid::DistributedGridInfo grid;
   VariableMetadata mapping;
   bool use_internal_units;
   std::map<std::tuple<std::string, std::string>, bool> written;
+  std::map<std::string, grid::DistributedGridInfo> grids;
 };
 
-
-bool OutputWriter::get_written(const std::string &file_name,
-                               const std::string &variable_name) const {
+bool &OutputWriter::already_written(const std::string &file_name,
+                                    const std::string &variable_name) {
   return m_impl->written[{ file_name, variable_name }];
 }
 
-void OutputWriter::set_written(const std::string &file_name, const std::string &variable_name) {
-  m_impl->written[{ file_name, variable_name }] = true;
-}
-
-
-OutputWriter::OutputWriter(MPI_Comm comm, const Config &config,
-                           const grid::DistributedGridInfo &grid,
-                           const VariableMetadata &cf_mapping)
-    : m_impl(new Impl(comm, config, grid, cf_mapping)) {
+OutputWriter::OutputWriter(MPI_Comm comm, const Config &config, const VariableMetadata &cf_mapping)
+    : m_impl(new Impl(comm, config, cf_mapping)) {
 }
 
 OutputWriter::~OutputWriter() {
@@ -119,23 +112,34 @@ MPI_Comm OutputWriter::comm() const {
   return m_impl->comm;
 }
 
-void OutputWriter::define_dimension(const std::string &filename, const std::string &name,
-                                    size_t length) {
-  define_dimension_impl(filename, name, length);
+const std::string &OutputWriter::time_name() const {
+  return m_impl->time_name;
 }
 
-void OutputWriter::define_variable(const std::string &filename, const VariableMetadata &metadata,
+const grid::DistributedGridInfo &OutputWriter::grid_info(const std::string &variable_name) const {
+  return m_impl->grids[variable_name];
+}
+
+void OutputWriter::define_dimension(const std::string &file_name, const std::string &dimension_name,
+                                    unsigned int length) {
+  define_dimension_impl(file_name, dimension_name, length);
+}
+
+void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &metadata,
                                    const std::vector<std::string> &dims) {
-  define_variable_impl(filename, metadata, dims);
+  define_variable_impl(file_name, metadata, dims);
 }
 
-void OutputWriter::define_spatial_variable(const std::string &filename,
-                                           const SpatialVariableMetadata &metadata) {
+void OutputWriter::define_spatial_variable(const std::string &file_name,
+                                           const SpatialVariableMetadata &metadata,
+                                           const grid::DistributedGridInfo &grid) {
 
   // Make a copy of `metadata` so we can modify it:
-  auto var  = metadata;
-  const auto &name = var.get_name();
+  auto var               = metadata;
+  const auto &name       = var.get_name();
   const auto &cf_mapping = m_impl->mapping;
+
+  m_impl->grids[name] = grid;
 
   if (m_impl->use_internal_units) {
     var.output_units(var["units"]);
@@ -166,86 +170,86 @@ void OutputWriter::define_spatial_variable(const std::string &filename,
     }
 
     dims.push_back(dimension_name);
-    define_dimension(filename, dimension_name, dimension.length());
-    define_variable(filename, dimension, { dimension_name });
+    define_dimension(file_name, dimension_name, dimension.length());
+    define_variable(file_name, dimension, { dimension_name });
   }
 
   assert(dims.size() > 1);
 
   // define the variable itself:
-  define_variable(filename, var, dims);
+  define_variable(file_name, var, dims);
 }
 
-void OutputWriter::write_attributes(const std::string &filename, const VariableMetadata &variable) {
+void OutputWriter::write_attributes(const std::string &file_name, const VariableMetadata &variable) {
   auto metadata = format_attributes(variable);
 
-  write_attributes(filename, metadata.get_name(), metadata.all_strings(), metadata.all_doubles(),
+  write_attributes(file_name, metadata.get_name(), metadata.all_strings(), metadata.all_doubles(),
                    metadata.get_output_type());
 }
 
-void OutputWriter::append_time(const std::string &filename, double time_seconds) {
-  append_time_impl(filename, time_seconds);
+void OutputWriter::append_time(const std::string &file_name, double time_seconds) {
+  append_time_impl(file_name, time_seconds);
 }
 
-void OutputWriter::write_array(const std::string &filename, const std::string &variable_name,
+void OutputWriter::write_array(const std::string &file_name, const std::string &variable_name,
                                const std::vector<unsigned int> &start,
                                const std::vector<unsigned int> &count,
                                const std::vector<double> &input) {
-  write_array_impl(filename, variable_name, start, count, input.data());
+  write_array_impl(file_name, variable_name, start, count, input.data());
 }
 
-void OutputWriter::write_array(const std::string &filename, const VariableMetadata &metadata,
+void OutputWriter::write_array(const std::string &file_name, const VariableMetadata &metadata,
                                const std::vector<unsigned int> &start,
                                const std::vector<unsigned int> &count,
                                const std::vector<double> &input) {
   // create a copy of "data" to change units
   std::vector<double> data = input;
 
+  // convert units "in place":
   units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
       .convert_doubles(data.data(), data.size());
 
-  write_array(filename, metadata.get_name(), start, count, data);
+  write_array(file_name, metadata.get_name(), start, count, data);
 }
 
-void OutputWriter::write_spatial_variable(const SpatialVariableMetadata &metadata,
-                                          const std::string &file_name, const double *input) {
-
-  const auto &grid = m_impl->grid;
-
+void OutputWriter::write_spatial_variable(const std::string &file_name,
+                                          const SpatialVariableMetadata &metadata,
+                                          const double *input) {
   const auto &variable_name = metadata.get_name();
+  const auto &grid          = grid_info(variable_name);
 
   // check if we need to write this variable
   bool time_independent = metadata.get_time_independent();
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
-  if (time_independent and get_written(file_name, variable_name)) {
+  if (time_independent and already_written(file_name, variable_name)) {
     return;
   }
 
   // write dimensions:
   {
-    std::map<std::string, const std::vector<double> &> data = {
-      { metadata.x().get_name(), grid.x },
-      { metadata.y().get_name(), grid.y },
-      { metadata.z().get_name(), metadata.levels() }
-    };
+    std::map<std::string, const std::vector<double> &> data = { { metadata.x().get_name(), grid.x },
+                                                                { metadata.y().get_name(), grid.y },
+                                                                { metadata.z().get_name(),
+                                                                  metadata.levels() } };
     for (const auto &p : data) {
-      const auto &dimension   = p.first;
-      const auto &coordinates = p.second;
+      const auto &dimension_name = p.first;
+      const auto &coordinates    = p.second;
 
       if (coordinates.empty()) {
         continue;
       }
 
-      if (not get_written(file_name, dimension)) {
-        write_array(file_name, dimension, { 0 }, { (unsigned int)coordinates.size() }, coordinates);
-        set_written(file_name, dimension);
+      if (not already_written(file_name, dimension_name)) {
+        write_array(file_name, dimension_name, { 0 }, { (unsigned int)coordinates.size() },
+                    coordinates);
+        already_written(file_name, dimension_name) = true;
       }
     }
   }
 
   // make sure we have at least one level
-  unsigned int nlevels = std::max(metadata.levels().size(), (size_t)1);
+  unsigned int nlevels = std::max(metadata.levels().size(), (std::size_t)1);
 
   std::string units = metadata["units"], output_units = metadata["output_units"];
 
@@ -273,10 +277,11 @@ void OutputWriter::write_spatial_variable(const SpatialVariableMetadata &metadat
     // create a temporary array, convert to output units, and
     // save
     std::vector<double> tmp(data_size);
-    for (size_t k = 0; k < data_size; ++k) {
+    for (unsigned int k = 0; k < data_size; ++k) {
       tmp[k] = input[k];
     }
 
+    // convert units "in place"
     units::Converter(metadata.unit_system(), units, output_units)
         .convert_doubles(tmp.data(), tmp.size());
 
@@ -284,14 +289,14 @@ void OutputWriter::write_spatial_variable(const SpatialVariableMetadata &metadat
   } else {
     write_distributed_array_impl(file_name, variable_name, start, count, input);
   }
-  set_written(file_name, variable_name);
+  already_written(file_name, variable_name) = true;
 }
 
 void OutputWriter::close(const std::string &file_name) {
   close_impl(file_name);
 }
 
-unsigned int OutputWriter::time_dimension_length(const std::string &file_name) const {
+unsigned int OutputWriter::time_dimension_length(const std::string &file_name) {
   return time_dimension_length_impl(file_name);
 }
 
