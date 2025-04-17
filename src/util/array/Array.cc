@@ -462,7 +462,7 @@ void Array::read_impl(const File &file, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an Array in a file opened using `file`.
-void Array::define(const File &file) const {
+void Array::define(const OutputFile &file) const {
   for (unsigned int j = 0; j < ndof(); ++j) {
     io::define_spatial_variable(metadata(j), grid()->get_mapping_info().cf_mapping,
                                 *grid()->ctx()->config(), file);
@@ -482,7 +482,7 @@ const SpatialVariableMetadata& Array::metadata(unsigned int N) const {
 }
 
 //! Writes an Array to a NetCDF file.
-void Array::write_impl(const File &file) const {
+void Array::write_impl(const OutputFile &file) const {
   auto log = grid()->ctx()->log();
   const auto &config = *grid()->ctx()->config();
   auto time = timestamp(m_impl->grid->com);
@@ -527,7 +527,7 @@ void Array::write_impl(const File &file) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void Array::dump(const char filename[]) const {
-  File file(m_impl->grid->com, filename,
+  OutputFile file(m_impl->grid->com, filename,
             string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
             io::PISM_READWRITE_CLOBBER);
 
@@ -657,7 +657,8 @@ void Array::check_array_indices(int i, int j, unsigned int k) const {
   }
 
   if (m_array == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s: begin_access() was not called", m_impl->name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s: begin_access() was not called",
+                                  m_impl->name.c_str());
   }
 }
 
@@ -722,7 +723,7 @@ std::vector<double> Array::norm(int n) const {
 
 void Array::write(const std::string &filename) const {
   // We expect the file to be present and ready to write into.
-  File file(m_impl->grid->com, filename,
+  OutputFile file(m_impl->grid->com, filename,
             string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
             io::PISM_READWRITE);
 
@@ -835,7 +836,7 @@ void Array::read(const File &file, const unsigned int time) {
   inc_state_counter();          // mark as modified
 }
 
-void Array::write(const File &file) const {
+void Array::write(const OutputFile &file) const {
   define(file);
 
   MPI_Comm com = m_impl->grid->com;

@@ -80,7 +80,7 @@ void IceModel::init_timeseries() {
     // default behavior is to move the file aside if it exists already; option allows appending
     bool append = m_config->get_flag("output.timeseries.append");
     auto mode = append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
-    File file(m_grid->com, m_ts_filename, io::PISM_NETCDF3, mode);      // Use NetCDF-3 to write time-series.
+    OutputFile file(m_grid->com, m_ts_filename, io::PISM_NETCDF3, mode);      // Use NetCDF-3 to write time-series.
     // add the last saved time to the list of requested times so that the first time is interpreted
     // as the end of a reporting time step
     std::string time_name = m_config->get_string("time.dimension_name");

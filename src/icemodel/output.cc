@@ -69,7 +69,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 }
 
 //! Write time-independent metadata to a file.
-void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag) const {
+void IceModel::write_metadata(const OutputFile &file, MappingTreatment mapping_flag) const {
 
   if (mapping_flag == WRITE_MAPPING) {
     auto info = m_grid->get_mapping_info();
@@ -132,7 +132,7 @@ void IceModel::save_results() {
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
-    File file(m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
+    OutputFile file(m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);
 
     write_metadata(file, WRITE_MAPPING);
@@ -144,7 +144,7 @@ void IceModel::save_results() {
   profiling.end("io.model_state");
 }
 
-void IceModel::save_variables(const File &file, OutputKind kind,
+void IceModel::save_variables(const OutputFile &file, OutputKind kind,
                               const std::set<std::string> &variables, double time) const {
 
   // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
@@ -243,7 +243,7 @@ void IceModel::save_variables(const File &file, OutputKind kind,
   }
 }
 
-void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables) const {
+void IceModel::define_diagnostics(const OutputFile &file, const std::set<std::string> &variables) const {
   for (const auto& variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
@@ -255,7 +255,7 @@ void IceModel::define_diagnostics(const File &file, const std::set<std::string> 
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated Arrays.
-void IceModel::write_diagnostics(const File &file, const std::set<std::string> &variables) const {
+void IceModel::write_diagnostics(const OutputFile &file, const std::set<std::string> &variables) const {
   for (const auto& variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
@@ -265,7 +265,7 @@ void IceModel::write_diagnostics(const File &file, const std::set<std::string> &
   }
 }
 
-void IceModel::define_model_state(const File &file) const {
+void IceModel::define_model_state(const OutputFile &file) const {
   for (auto *v : m_model_state) {
     v->define(file);
   }
@@ -279,7 +279,7 @@ void IceModel::define_model_state(const File &file) const {
   }
 }
 
-void IceModel::write_model_state(const File &file) const {
+void IceModel::write_model_state(const OutputFile &file) const {
   for (auto *v : m_model_state) {
     v->write(file);
   }

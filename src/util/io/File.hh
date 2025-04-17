@@ -156,6 +156,14 @@ private:
   File & operator=(const File &);
 };
 
+class OutputFile : public File {
+public:
+  OutputFile(MPI_Comm com, const std::string &filename, io::Backend backend, io::Mode mode)
+    : File(com, filename, backend, mode) {
+
+  }
+};
+
 } // end of namespace pism
 
 #endif /* _PISM_FILE_ACCESS_H_ */

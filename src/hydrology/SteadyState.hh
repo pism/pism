@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -52,8 +52,9 @@ protected:
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
+
+  void define_model_state_impl(const OutputFile &output) const;
+  void write_model_state_impl(const OutputFile &output) const;
 
   std::shared_ptr<EmptyingProblem> m_emptying_problem;
 

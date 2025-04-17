@@ -86,7 +86,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   }
 }
 
-void InitializationHelper::define_model_state_impl(const File &output) const {
+void InitializationHelper::define_model_state_impl(const OutputFile &output) const {
   m_water_column_pressure->define(output);
   m_shelf_base_mass_flux->define(output);
   m_shelf_base_temperature->define(output);
@@ -94,7 +94,7 @@ void InitializationHelper::define_model_state_impl(const File &output) const {
   m_input_model->define_model_state(output);
 }
 
-void InitializationHelper::write_model_state_impl(const File &output) const {
+void InitializationHelper::write_model_state_impl(const OutputFile &output) const {
   m_water_column_pressure->write(output);
   m_shelf_base_mass_flux->write(output);
   m_shelf_base_temperature->write(output);

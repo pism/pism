@@ -54,14 +54,14 @@ const array::Scalar &PSFormulas::runoff_impl() const {
   return *m_runoff;
 }
 
-void PSFormulas::define_model_state_impl(const File &output) const {
+void PSFormulas::define_model_state_impl(const OutputFile &output) const {
   // these are *not* model state, but I want to be able to re-start from a file produced using this
   // class
   m_mass_flux->define(output);
   m_temperature->define(output);
 }
 
-void PSFormulas::write_model_state_impl(const File &output) const {
+void PSFormulas::write_model_state_impl(const OutputFile &output) const {
   // these are *not* model state, but I want to be able to re-start from a file produced using this
   // class
   m_mass_flux->write(output);

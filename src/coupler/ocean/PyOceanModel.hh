@@ -1,4 +1,4 @@
-// Copyright (C) 2023 PISM Authors
+// Copyright (C) 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -62,12 +62,12 @@ public:
   /*!
    * Define model state variables and set their attributes
    */
-  virtual void define_model_state(const File &output) const;
+  virtual void define_model_state(const OutputFile &output) const;
 
   /*!
    * Write model state variables and set their attributes
    */
-  virtual void write_model_state(const File &output) const;
+  virtual void write_model_state(const OutputFile &output) const;
 };
 
 //! The adapter class for Python ocean models
@@ -86,8 +86,8 @@ private:
   void update_impl(const Geometry &geometry, double my_t, double my_dt);
   void init_impl(const Geometry &geometry);
 
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
+  void define_model_state_impl(const OutputFile &output) const;
+  void write_model_state_impl(const OutputFile &output) const;
 
   std::shared_ptr<PyOceanModel> m_impl;
 };

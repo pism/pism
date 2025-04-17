@@ -690,12 +690,12 @@ void Blatter::init_impl() {
   }
 }
 
-void Blatter::define_model_state_impl(const File &output) const {
+void Blatter::define_model_state_impl(const OutputFile &output) const {
   m_u_sigma->define(output);
   m_v_sigma->define(output);
 }
 
-void Blatter::write_model_state_impl(const File &output) const {
+void Blatter::write_model_state_impl(const OutputFile &output) const {
   m_u_sigma->write(output);
   m_v_sigma->write(output);
 }

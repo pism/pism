@@ -181,11 +181,11 @@ unsigned int BedThermalUnit::Mz() const {
   return this->Mz_impl();
 }
 
-void BedThermalUnit::define_model_state_impl(const File &output) const {
+void BedThermalUnit::define_model_state_impl(const OutputFile &output) const {
   m_bottom_surface_flux.define(output);
 }
 
-void BedThermalUnit::write_model_state_impl(const File &output) const {
+void BedThermalUnit::write_model_state_impl(const OutputFile &output) const {
   m_bottom_surface_flux.write(output);
 }
 

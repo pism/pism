@@ -83,11 +83,11 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
   }
 }
 
-void YearlyCycle::define_model_state_impl(const File &output) const {
+void YearlyCycle::define_model_state_impl(const OutputFile &output) const {
   m_precipitation.define(output);
 }
 
-void YearlyCycle::write_model_state_impl(const File &output) const {
+void YearlyCycle::write_model_state_impl(const OutputFile &output) const {
   m_precipitation.write(output);
 }
 

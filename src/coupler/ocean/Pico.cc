@@ -172,7 +172,7 @@ void Pico::init_impl(const Geometry &geometry) {
                                         *m_water_column_pressure);
 }
 
-void Pico::define_model_state_impl(const File &output) const {
+void Pico::define_model_state_impl(const OutputFile &output) const {
 
   m_geometry.basin_mask().define(output);
   m_Soc_box0.define(output);
@@ -182,7 +182,7 @@ void Pico::define_model_state_impl(const File &output) const {
   OceanModel::define_model_state_impl(output);
 }
 
-void Pico::write_model_state_impl(const File &output) const {
+void Pico::write_model_state_impl(const OutputFile &output) const {
 
   m_geometry.basin_mask().write(output);
   m_Soc_box0.write(output);

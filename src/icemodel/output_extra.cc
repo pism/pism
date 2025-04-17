@@ -307,7 +307,7 @@ void IceModel::write_extras() {
         filename = pism::printf("%s_%s.nc", m_extra_filename.c_str(), date_without_spaces.c_str());
       }
 
-      m_extra_file.reset(new File(m_grid->com, filename,
+      m_extra_file.reset(new OutputFile(m_grid->com, filename,
                                   string_to_backend(m_config->get_string("output.format")), mode));
 
       // Prepare the file:

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,8 +48,8 @@ public:
 
   std::shared_ptr<array::Scalar> elastic_load_response_matrix() const;
 protected:
-  virtual void define_model_state_impl(const File &output) const;
-  virtual void write_model_state_impl(const File &output) const;
+  virtual void define_model_state_impl(const OutputFile &output) const;
+  virtual void write_model_state_impl(const OutputFile &output) const;
 
   DiagnosticList diagnostics_impl() const;
 

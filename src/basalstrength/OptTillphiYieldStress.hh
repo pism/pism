@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2023 PISM Authors
+// Copyright (C) 2011--2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -46,8 +46,8 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
+  void define_model_state_impl(const OutputFile &output) const;
+  void write_model_state_impl(const OutputFile &output) const;
 
   array::Scalar1 m_mask;
   array::Scalar1 m_usurf_difference;

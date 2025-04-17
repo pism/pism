@@ -84,11 +84,11 @@ void Diagnostic::init(const File &input, unsigned int time) {
   this->init_impl(input, time);
 }
 
-void Diagnostic::define_state(const File &output) const {
+void Diagnostic::define_state(const OutputFile &output) const {
   this->define_state_impl(output);
 }
 
-void Diagnostic::write_state(const File &output) const {
+void Diagnostic::write_state(const OutputFile &output) const {
   this->write_state_impl(output);
 }
 
@@ -98,12 +98,12 @@ void Diagnostic::init_impl(const File &input, unsigned int time) {
   // empty
 }
 
-void Diagnostic::define_state_impl(const File &output) const {
+void Diagnostic::define_state_impl(const OutputFile &output) const {
   (void) output;
   // empty
 }
 
-void Diagnostic::write_state_impl(const File &output) const {
+void Diagnostic::write_state_impl(const OutputFile &output) const {
   (void) output;
   // empty
 }
@@ -119,12 +119,12 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const File &file) const {
+void Diagnostic::define(const OutputFile &file) const {
   this->define_impl(file);
 }
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const File &file) const {
+void Diagnostic::define_impl(const OutputFile &file) const {
   for (const auto &v : m_vars) {
     io::define_spatial_variable(v, m_grid->get_mapping_info().cf_mapping,
                                 *m_grid->ctx()->config(), file);

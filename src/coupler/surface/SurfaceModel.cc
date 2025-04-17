@@ -315,7 +315,7 @@ void SurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-void SurfaceModel::define_model_state_impl(const File &output) const {
+void SurfaceModel::define_model_state_impl(const OutputFile &output) const {
   if (m_atmosphere) {
     m_atmosphere->define_model_state(output);
   }
@@ -325,7 +325,7 @@ void SurfaceModel::define_model_state_impl(const File &output) const {
   }
 }
 
-void SurfaceModel::write_model_state_impl(const File &output) const {
+void SurfaceModel::write_model_state_impl(const OutputFile &output) const {
   if (m_atmosphere) {
     m_atmosphere->write_model_state(output);
   }

@@ -297,7 +297,7 @@ MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
   return std::min(input_max_dt, MaxTimestep(max_dt, "surface forcing"));
 }
 
-void ForceThickness::define_model_state_impl(const File &output) const {
+void ForceThickness::define_model_state_impl(const OutputFile &output) const {
   m_ftt_mask.define(output);
   m_target_thickness.define(output);
 
@@ -306,7 +306,7 @@ void ForceThickness::define_model_state_impl(const File &output) const {
   }
 }
 
-void ForceThickness::write_model_state_impl(const File &output) const {
+void ForceThickness::write_model_state_impl(const OutputFile &output) const {
   m_ftt_mask.write(output);
   m_target_thickness.write(output);
 

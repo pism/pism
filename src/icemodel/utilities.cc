@@ -65,7 +65,7 @@ int IceModel::process_signals() {
                    file_name.c_str());
     pism_signal = 0;
 
-    File file(m_grid->com,
+    OutputFile file(m_grid->com,
               file_name,
               string_to_backend(m_config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);

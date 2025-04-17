@@ -129,16 +129,17 @@ public:
 
   const Profiling &profiling() const;
 
-  void define_model_state(const File &output) const;
-  void write_model_state(const File &output) const;
+  void define_model_state(const OutputFile &output) const;
+  void write_model_state(const OutputFile &output) const;
 
   //! Reports the maximum time-step the model can take at time t.
   MaxTimestep max_timestep(double t) const;
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void define_model_state_impl(const File &output) const;
-  virtual void write_model_state_impl(const File &output) const;
+
+  virtual void define_model_state_impl(const OutputFile &output) const;
+  virtual void write_model_state_impl(const OutputFile &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;

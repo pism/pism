@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 PISM Authors
+/* Copyright (C) 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -50,12 +50,12 @@ void PyOceanModel::update(const Geometry &geometry, double t, double dt) {
   throw RuntimeError(PISM_ERROR_LOCATION, "PyOceanModel.update(geometry, t, dt) is not implemented");
 }
 
-void PyOceanModel::define_model_state(const File &output) const {
+void PyOceanModel::define_model_state(const OutputFile &output) const {
   (void) output;
   // empty
 }
 
-void PyOceanModel::write_model_state(const File &output) const {
+void PyOceanModel::write_model_state(const OutputFile &output) const {
   (void) output;
   // empty
 }
@@ -82,11 +82,11 @@ void PyOceanModelAdapter::init_impl(const Geometry &geometry) {
 }
 
 
-void PyOceanModelAdapter::define_model_state_impl(const File &output) const {
+void PyOceanModelAdapter::define_model_state_impl(const OutputFile &output) const {
   m_impl->define_model_state(output);
 }
 
-void PyOceanModelAdapter::write_model_state_impl(const File &output) const {
+void PyOceanModelAdapter::write_model_state_impl(const OutputFile &output) const {
   m_impl->write_model_state(output);
 }
 

@@ -36,6 +36,7 @@ class Default;
 
 class Grid;
 class File;
+class OutputFile;
 class SpatialVariableMetadata;
 
 namespace petsc {
@@ -229,13 +230,13 @@ public:
   void set_name(const std::string &name);
   const std::string& get_name() const;
 
-  void define(const File &file) const;
+  void define(const OutputFile &file) const;
 
   void read(const std::string &filename, unsigned int time);
   void read(const File &file, unsigned int time);
 
   void write(const std::string &filename) const;
-  void write(const File &file) const;
+  void write(const OutputFile &file) const;
 
   void regrid(const std::string &filename, io::Default default_value);
   void regrid(const File &file, io::Default default_value);
@@ -279,7 +280,7 @@ protected:
 
   void read_impl(const File &file, unsigned int time);
   virtual void regrid_impl(const File &file, io::Default default_value);
-  void write_impl(const File &file) const;
+  void write_impl(const OutputFile &file) const;
 
   void checkCompatibility(const char *function, const Array &other) const;
 

@@ -233,11 +233,11 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   loop.check();
 }
 
-void CHSystem::define_model_state_impl(const File &output) const {
+void CHSystem::define_model_state_impl(const OutputFile &output) const {
   m_ice_enthalpy.define(output);
 }
 
-void CHSystem::write_model_state_impl(const File &output) const {
+void CHSystem::write_model_state_impl(const OutputFile &output) const {
   m_ice_enthalpy.write(output);
 }
 

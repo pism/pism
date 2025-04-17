@@ -196,7 +196,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 void Geometry::dump(const char *filename) const {
   auto grid = ice_thickness.grid();
 
-  File file(grid->com, filename,
+  OutputFile file(grid->com, filename,
             string_to_backend(grid->ctx()->config()->get_string("output.format")),
             io::PISM_READWRITE_CLOBBER);
 

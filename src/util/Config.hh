@@ -34,6 +34,7 @@
 namespace pism {
 
 class File;
+class OutputFile;
 class Logger;
 
 
@@ -80,7 +81,7 @@ public:
   std::string filename() const;
 
   void read(const File &file);
-  void write(const File &file) const;
+  void write(const OutputFile &file) const;
 
   bool is_set(const std::string &name) const;
 
@@ -130,7 +131,7 @@ public:
   // Implementations
 protected:
   virtual void read_impl(const File &nc) = 0;
-  virtual void write_impl(const File &nc) const = 0;
+  virtual void write_impl(const OutputFile &nc) const = 0;
 
   virtual bool is_set_impl(const std::string &name) const = 0;
 

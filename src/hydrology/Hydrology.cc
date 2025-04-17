@@ -464,11 +464,11 @@ DiagnosticList Hydrology::diagnostics_impl() const {
   return result;
 }
 
-void Hydrology::define_model_state_impl(const File &output) const {
+void Hydrology::define_model_state_impl(const OutputFile &output) const {
   m_Wtill.define(output);
 }
 
-void Hydrology::write_model_state_impl(const File &output) const {
+void Hydrology::write_model_state_impl(const OutputFile &output) const {
   m_Wtill.write(output);
 }
 

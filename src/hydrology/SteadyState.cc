@@ -187,7 +187,7 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
   return MaxTimestep(dt, "hydrology 'steady'");
 }
 
-void SteadyState::define_model_state_impl(const File& output) const {
+void SteadyState::define_model_state_impl(const OutputFile& output) const {
   NullTransport::define_model_state_impl(output);
 
   if (not output.variable_exists(m_time_name)) {
@@ -202,7 +202,7 @@ void SteadyState::define_model_state_impl(const File& output) const {
   m_Q.define(output);
 }
 
-void SteadyState::write_model_state_impl(const File& output) const {
+void SteadyState::write_model_state_impl(const OutputFile& output) const {
   NullTransport::write_model_state_impl(output);
 
   output.write_variable(m_time_name, {0}, {1}, &m_t_last);

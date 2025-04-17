@@ -78,17 +78,18 @@ public:
 
   SpatialVariableMetadata &metadata(unsigned int N = 0);
 
-  void define(const File &file) const;
+  void define(const OutputFile &file) const;
 
   void init(const File &input, unsigned int time);
-  void define_state(const File &output) const;
-  void write_state(const File &output) const;
+  void define_state(const OutputFile &output) const;
+  void write_state(const OutputFile &output) const;
 
 protected:
-  virtual void define_impl(const File &file) const;
   virtual void init_impl(const File &input, unsigned int time);
-  virtual void define_state_impl(const File &output) const;
-  virtual void write_state_impl(const File &output) const;
+
+  virtual void define_impl(const OutputFile &file) const;
+  virtual void define_state_impl(const OutputFile &output) const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual void update_impl(double dt);
   virtual void reset_impl();
@@ -213,13 +214,13 @@ protected:
     }
   }
 
-  void define_state_impl(const File &output) const {
+  void define_state_impl(const OutputFile &output) const {
     auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
     m_accumulator.define(output);
     io::define_variable(output, m_time_since_reset, { time_name });
   }
 
-  void write_state_impl(const File &output) const {
+  void write_state_impl(const OutputFile &output) const {
     m_accumulator.write(output);
 
     auto time_name = Diagnostic::m_config->get_string("time.dimension_name");

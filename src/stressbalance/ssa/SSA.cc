@@ -185,11 +185,11 @@ std::string SSA::stdout_report() const {
   return m_stdout_ssa;
 }
 
-void SSA::define_model_state_impl(const File &output) const {
+void SSA::define_model_state_impl(const OutputFile &output) const {
   m_velocity.define(output);
 }
 
-void SSA::write_model_state_impl(const File &output) const {
+void SSA::write_model_state_impl(const OutputFile &output) const {
   m_velocity.write(output);
 }
 

@@ -119,14 +119,14 @@ MaxTimestep OceanModel::max_timestep_impl(double t) const {
   throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-void OceanModel::define_model_state_impl(const File &output) const {
+void OceanModel::define_model_state_impl(const OutputFile &output) const {
   if (m_input_model) {
     return m_input_model->define_model_state(output);
   }
   // no state to define
 }
 
-void OceanModel::write_model_state_impl(const File &output) const {
+void OceanModel::write_model_state_impl(const OutputFile &output) const {
   if (m_input_model) {
     return m_input_model->write_model_state(output);
   }

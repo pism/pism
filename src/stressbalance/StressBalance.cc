@@ -65,7 +65,7 @@ void Inputs::dump(const char *filename) const {
   auto ctx = geometry->ice_thickness.grid()->ctx();
   auto config = ctx->config();
 
-  File output(ctx->com(), filename,
+  OutputFile output(ctx->com(), filename,
               string_to_backend(config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);
 
@@ -655,12 +655,12 @@ const SSB_Modifier* StressBalance::modifier() const {
 }
 
 
-void StressBalance::define_model_state_impl(const File &output) const {
+void StressBalance::define_model_state_impl(const OutputFile &output) const {
   m_shallow_stress_balance->define_model_state(output);
   m_modifier->define_model_state(output);
 }
 
-void StressBalance::write_model_state_impl(const File &output) const {
+void StressBalance::write_model_state_impl(const OutputFile &output) const {
   m_shallow_stress_balance->write_model_state(output);
   m_modifier->write_model_state(output);
 }

@@ -23,9 +23,9 @@ VecBundleWriter::VecBundleWriter(std::shared_ptr<pism::Grid> _grid, std::string 
 }
 
 void VecBundleWriter::init() {
-  pism::File file(m_grid->com, fname,
-                  string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
-                  io::PISM_READWRITE_MOVE);
+  pism::OutputFile file(m_grid->com, fname,
+                        string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
+                        io::PISM_READWRITE_MOVE);
 
   auto time      = m_grid->ctx()->time();
   auto time_name = time->variable_name();
@@ -39,7 +39,7 @@ void VecBundleWriter::init() {
 
 /** Dump the value of the Vectors at curent PISM simulation time. */
 void VecBundleWriter::write(double time_s) {
-  pism::File nc(m_grid->com, fname,
+  pism::OutputFile nc(m_grid->com, fname,
                 string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
                 io::PISM_READWRITE); // append to file
 

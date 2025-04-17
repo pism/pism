@@ -40,7 +40,7 @@ public:
 
 private:
   virtual void read_impl(const File &nc);
-  virtual void write_impl(const File &nc) const;
+  virtual void write_impl(const OutputFile &nc) const;
 
   virtual bool is_set_impl(const std::string &name) const;
 

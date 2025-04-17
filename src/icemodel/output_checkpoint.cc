@@ -71,7 +71,7 @@ bool IceModel::write_checkpoint() {
   {
     // Note: we open a new file every time we write a checkpoint, moving the old file
     // aside if it exists.
-    File file(m_grid->com,
+    OutputFile file(m_grid->com,
               m_checkpoint_filename,
               string_to_backend(m_config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);

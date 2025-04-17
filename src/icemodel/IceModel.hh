@@ -209,20 +209,20 @@ protected:
   virtual void initialize_2d();
 
   enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
-  virtual void save_variables(const File &file,
+  virtual void save_variables(const OutputFile &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time) const;
 
-  virtual void define_model_state(const File &file) const;
-  virtual void write_model_state(const File &file) const;
+  virtual void define_model_state(const OutputFile &file) const;
+  virtual void write_model_state(const OutputFile &file) const;
 
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
-  virtual void write_metadata(const File &file, MappingTreatment mapping_flag) const;
+  virtual void write_metadata(const OutputFile &file, MappingTreatment mapping_flag) const;
 
-  virtual void define_diagnostics(const File &file,
+  virtual void define_diagnostics(const OutputFile &file,
                                   const std::set<std::string> &variables) const;
-  virtual void write_diagnostics(const File &file,
+  virtual void write_diagnostics(const OutputFile &file,
                                  const std::set<std::string> &variables) const;
 
   std::string save_state_on_error(const std::string &suffix,
@@ -419,7 +419,7 @@ protected:
 
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
-  std::shared_ptr<File> m_snapshot_file;
+  std::shared_ptr<OutputFile> m_snapshot_file;
   bool m_split_snapshots;
   std::vector<double> m_snapshot_times;
   std::set<std::string> m_snapshot_vars;
@@ -444,7 +444,7 @@ protected:
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
-  std::unique_ptr<File> m_extra_file;
+  std::unique_ptr<OutputFile> m_extra_file;
   void init_extras();
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);

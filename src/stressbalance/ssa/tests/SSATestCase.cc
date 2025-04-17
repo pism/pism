@@ -299,7 +299,7 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/, double /*x*/, double /*y*/
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  File file(m_grid->com, filename, io::PISM_NETCDF3, io::PISM_READWRITE_MOVE);
+  OutputFile file(m_grid->com, filename, io::PISM_NETCDF3, io::PISM_READWRITE_MOVE);
     auto time      = m_ctx->time();
     auto time_name = time->variable_name();
     io::define_dimension(file, time_name, io::PISM_UNLIMITED);

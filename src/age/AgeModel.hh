@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -53,8 +53,8 @@ public:
   const array::Array3D & age() const;
 protected:
   MaxTimestep max_timestep_impl(double t) const;
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
+  void define_model_state_impl(const OutputFile &output) const;
+  void write_model_state_impl(const OutputFile &output) const;
 
   array::Array3D m_ice_age;
   array::Array3D m_work;

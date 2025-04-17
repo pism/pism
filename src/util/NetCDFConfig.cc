@@ -193,7 +193,7 @@ void NetCDFConfig::read_impl(const File &file) {
 }
 
 //! Write a config variable to a file (with all its attributes).
-void NetCDFConfig::write_impl(const File &file) const {
+void NetCDFConfig::write_impl(const OutputFile &file) const {
   io::define_variable(file, m_data, {});
 }
 

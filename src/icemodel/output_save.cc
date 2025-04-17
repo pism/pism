@@ -139,7 +139,7 @@ void IceModel::write_snapshot() {
       filename = m_snapshots_filename;
     }
 
-    m_snapshot_file = std::make_shared<File>(
+    m_snapshot_file = std::make_shared<OutputFile>(
         m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
         io::PISM_READWRITE_MOVE);
 

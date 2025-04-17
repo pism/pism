@@ -382,7 +382,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
 
   filename = filename_add_suffix(filename, suffix, "");
 
-  File file(m_grid->com,
+  OutputFile file(m_grid->com,
             filename,
             string_to_backend(m_config->get_string("output.format")),
             io::PISM_READWRITE_MOVE);

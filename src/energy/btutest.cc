@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
                  max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
-    File file(grid->com,
+    OutputFile file(grid->com,
               outname,
               string_to_backend(config->get_string("output.format")),
               io::PISM_READWRITE_MOVE);
