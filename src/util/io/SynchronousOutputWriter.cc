@@ -27,7 +27,7 @@ namespace pism {
 
 const File &SynchronousOutputWriter::file(const std::string &file_name) {
   if (m_files[file_name] == nullptr) {
-    auto file = std::make_shared<File>(comm(), file_name, io::PISM_GUESS, io::PISM_READWRITE_MOVE);
+    auto file = std::make_shared<File>(comm(), file_name, m_backend, io::PISM_READWRITE_MOVE);
 
     file->set_compression_level(m_compression_level);
 
@@ -41,6 +41,7 @@ SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &co
                                                  const VariableMetadata &mapping)
     : OutputWriter(comm, config, mapping) {
   m_compression_level = static_cast<int>(config.get_number("output.compression_level"));
+  m_backend = string_to_backend(config.get_string("output.format"));
 }
 
 void SynchronousOutputWriter::define_variable_impl(const std::string &file_name,

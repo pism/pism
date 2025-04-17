@@ -17,12 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/util/io/File.hh"
 #include "pism/util/io/OutputWriter.hh"
 
 #include <memory>
 
 namespace pism {
+
+class File;
+
+namespace io {
+enum Backend : int;
+}
 
 class SynchronousOutputWriter : public OutputWriter {
 public:
@@ -32,6 +37,7 @@ public:
 private:
   std::map<std::string, std::shared_ptr<File> > m_files;
   int m_compression_level;
+  io::Backend m_backend;
 
   const File &file(const std::string &file_name);
 
@@ -62,4 +68,5 @@ private:
 
   void close_impl(const std::string &file_name);
 };
+
 } // namespace pism
