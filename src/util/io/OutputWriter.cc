@@ -22,9 +22,10 @@
 #include <memory>
 #include <mpi.h>
 #include <vector>
+#include <cassert>
 
 #include "pism/util/Config.hh"
-#include "pism/util/Grid.hh"
+#include "pism/util/GridInfo.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/OutputWriter.hh"
 #include "pism/util/pism_utilities.hh"

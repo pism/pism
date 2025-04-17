@@ -33,4 +33,5 @@
 
 %rename("GridParameters") "pism::grid::Parameters";
 %shared_ptr(pism::Grid);
+%include "util/GridInfo.hh"
 %include "util/Grid.hh"

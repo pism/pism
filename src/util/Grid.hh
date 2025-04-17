@@ -29,6 +29,7 @@
 #include <mpi.h>                // MPI_Comm
 
 #include "pism/util/Interpolation1D.hh"
+#include "pism/util/GridInfo.hh"
 
 namespace pism {
 
@@ -51,68 +52,9 @@ class System;
 namespace grid {
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} VerticalSpacing;
-typedef enum {NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
-
-typedef enum {CELL_CENTER, CELL_CORNER} Registration;
-
-Registration string_to_registration(const std::string &keyword);
-std::string registration_to_string(Registration registration);
-
-Periodicity string_to_periodicity(const std::string &keyword);
-std::string periodicity_to_string(Periodicity p);
 
 VerticalSpacing string_to_spacing(const std::string &keyword);
 std::string spacing_to_string(VerticalSpacing s);
-
-//! @brief Contains parameters of an input file grid.
-
-class GridInfo {
-public:
-  //! x-coordinate of the domain center
-  double x0;
-  //! y-coordinate of the domain center
-  double y0;
-  //! domain half-width
-  double Lx;
-  //! domain half-height
-  double Ly;
-
-  //! x coordinates
-  std::vector<double> x;
-  //! y coordinates
-  std::vector<double> y;
-  //! z coordinates
-  std::vector<double> z;
-};
-
-class DistributedGridInfo : public GridInfo {
-public:
-  grid::Periodicity periodicity;
-
-  //! horizontal grid spacing
-  double dx;
-  //! horizontal grid spacing
-  double dy;
-  //! cell area (meters^2)
-  double cell_area;
-
-  grid::Registration registration;
-
-  unsigned int xs;
-  unsigned int xm;
-  unsigned int ys;
-  unsigned int ym;
-
-  //! number of grid points in the x-direction
-  unsigned int Mx;
-  //! number of grid points in the y-direction
-  unsigned int My;
-
-  int max_patch_size;
-
-  int rank;
-  int size;
-};
 
 class InputGridInfo : public GridInfo {
 public:
@@ -137,6 +79,7 @@ public:
 private:
   void reset();
 };
+
 
 //! Grid parameters; used to collect defaults before an Grid is allocated.
 /* Make sure that all of
