@@ -128,7 +128,7 @@ void OutputWriter::define_dimension(const std::string &file_name, const std::str
 
 void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &metadata,
                                    const std::vector<std::string> &dims) {
-  define_variable_impl(file_name, metadata, dims);
+  define_variable_impl(file_name, format_attributes(metadata), dims);
 }
 
 void OutputWriter::define_spatial_variable(const std::string &file_name,
