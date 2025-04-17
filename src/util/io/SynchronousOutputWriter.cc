@@ -17,17 +17,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
-#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 
 const File &SynchronousOutputWriter::file(const std::string &file_name) {
   if (m_files[file_name] == nullptr) {
-    m_files[file_name] =
-        std::make_shared<File>(comm(), file_name, io::PISM_GUESS, io::PISM_READWRITE_MOVE);
+    auto file = std::make_shared<File>(comm(), file_name, io::PISM_GUESS, io::PISM_READWRITE_MOVE);
+
+    file->set_compression_level(m_compression_level);
+
+    m_files[file_name] = file;
   }
 
   return *m_files[file_name];
@@ -36,7 +40,7 @@ const File &SynchronousOutputWriter::file(const std::string &file_name) {
 SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &config,
                                                  const VariableMetadata &mapping)
     : OutputWriter(comm, config, mapping) {
-  // empty
+  m_compression_level = static_cast<int>(config.get_number("output.compression_level"));
 }
 
 void SynchronousOutputWriter::define_variable_impl(const std::string &file_name,

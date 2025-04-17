@@ -18,6 +18,7 @@
  */
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -83,17 +84,17 @@ protected:
 
   const std::string &time_name() const;
 
+  virtual void write_attributes(const std::string &file_name, const std::string &var_name,
+                                const std::map<std::string, std::string> &strings,
+                                const std::map<std::string, std::vector<double> > &numbers,
+                                io::Type output_type) = 0;
+
   virtual void define_dimension_impl(const std::string &file_name, const std::string &name,
                                      unsigned int length) = 0;
 
   virtual void define_variable_impl(const std::string &file_name,
                                     const VariableMetadata &metadata,
                                     const std::vector<std::string> &dims) = 0;
-
-  virtual void write_attributes(const std::string &file_name, const std::string &var_name,
-                                const std::map<std::string, std::string> &strings,
-                                const std::map<std::string, std::vector<double> > &numbers,
-                                io::Type output_type) = 0;
 
   virtual void append_time_impl(const std::string &file_name, double time_seconds) = 0;
 
@@ -116,6 +117,41 @@ protected:
 private:
   struct Impl;
   Impl *m_impl;
+};
+
+class OutputFile {
+public:
+  OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name);
+
+  void define_dimension(const std::string &dimension_name, unsigned int length);
+
+  void define_variable(const VariableMetadata &metadata, const std::vector<std::string> &dims);
+
+  void define_spatial_variable(const SpatialVariableMetadata &metadata,
+                               const grid::DistributedGridInfo &grid);
+
+  void write_attributes(const VariableMetadata &variable);
+
+  void append_time(double time_seconds);
+
+  void write_array(const std::string &variable_name, const std::vector<unsigned int> &start,
+                   const std::vector<unsigned int> &count, const std::vector<double> &input);
+
+  void write_array(const VariableMetadata &metadata, const std::vector<unsigned int> &start,
+                   const std::vector<unsigned int> &count, const std::vector<double> &input);
+
+  void write_spatial_variable(const SpatialVariableMetadata &metadata, const double *input);
+
+  void append();
+
+  void close();
+
+  unsigned int time_dimension_length();
+
+  std::string name();
+private:
+  std::string m_file_name;
+  std::shared_ptr<OutputWriter> m_writer;
 };
 
 } // namespace pism

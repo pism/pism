@@ -39,6 +39,7 @@ add_library (util OBJECT
   io/output_helpers.cc
   io/OutputWriter.cc
   io/SynchronousOutputWriter.cc
+  io/OutputFile.cc
   node_types.cc
   options.cc
   petscwrappers/DM.cc

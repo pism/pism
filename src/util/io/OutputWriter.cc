@@ -293,6 +293,10 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   already_written(file_name, variable_name) = true;
 }
 
+void OutputWriter::append(const std::string &file_name) {
+  append_impl(file_name);
+}
+
 void OutputWriter::close(const std::string &file_name) {
   close_impl(file_name);
 }

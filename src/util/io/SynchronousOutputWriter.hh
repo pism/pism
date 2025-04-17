@@ -31,6 +31,7 @@ public:
 
 private:
   std::map<std::string, std::shared_ptr<File> > m_files;
+  int m_compression_level;
 
   const File &file(const std::string &file_name);
 
