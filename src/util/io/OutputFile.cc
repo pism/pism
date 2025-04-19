@@ -26,44 +26,44 @@ OutputFile::OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &
   // empty
 }
 
-void OutputFile::define_dimension(const std::string &dimension_name, unsigned int length) {
+void OutputFile::define_dimension(const std::string &dimension_name, unsigned int length) const {
   m_writer->define_dimension(m_file_name, dimension_name, length);
 }
 
 void OutputFile::define_variable(const VariableMetadata &metadata,
-                                 const std::vector<std::string> &dims) {
+                                 const std::vector<std::string> &dims) const {
   m_writer->define_variable(m_file_name, metadata, dims);
 }
 
 void OutputFile::define_spatial_variable(const SpatialVariableMetadata &metadata,
-                                         const grid::DistributedGridInfo &grid) {
+                                         const grid::DistributedGridInfo &grid) const {
   m_writer->define_spatial_variable(m_file_name, metadata, grid);
 }
 
-void OutputFile::write_attributes(const VariableMetadata &variable) {
+void OutputFile::write_attributes(const VariableMetadata &variable) const {
   m_writer->write_attributes(m_file_name, variable);
 }
 
-void OutputFile::append_time(double time_seconds) {
+void OutputFile::append_time(double time_seconds) const {
   m_writer->append_time(m_file_name, time_seconds);
 }
 
 void OutputFile::write_array(const std::string &variable_name,
                              const std::vector<unsigned int> &start,
                              const std::vector<unsigned int> &count,
-                             const std::vector<double> &input) {
+                             const std::vector<double> &input) const {
   m_writer->write_array(m_file_name, variable_name, start, count, input);
 }
 
 void OutputFile::write_array(const VariableMetadata &metadata,
                              const std::vector<unsigned int> &start,
                              const std::vector<unsigned int> &count,
-                             const std::vector<double> &input) {
+                             const std::vector<double> &input) const {
   m_writer->write_array(m_file_name, metadata, start, count, input);
 }
 
 void OutputFile::write_spatial_variable(const SpatialVariableMetadata &metadata,
-                                        const double *input) {
+                                        const double *input) const {
   m_writer->write_spatial_variable(m_file_name, metadata, input);
 }
 
@@ -75,11 +75,11 @@ void OutputFile::close() {
   m_writer->close(m_file_name);
 }
 
-unsigned int OutputFile::time_dimension_length() {
+unsigned int OutputFile::time_dimension_length() const {
   return m_writer->time_dimension_length(m_file_name);
 }
 
-std::string OutputFile::name() {
+std::string OutputFile::name() const {
   return m_file_name;
 }
 

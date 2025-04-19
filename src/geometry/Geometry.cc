@@ -31,6 +31,7 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 
@@ -195,16 +196,19 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
 void Geometry::dump(const char *filename) const {
   auto grid = ice_thickness.grid();
+  auto ctx    = grid->ctx();
+  auto config = ctx->config();
 
-  OutputFile file(grid->com, filename,
-            string_to_backend(grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE_CLOBBER);
+  VariableMetadata mapping{ "mapping", ctx->unit_system() };
+  auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *config);
+
+  OutputFile file(writer, filename);
 
   auto time = grid->ctx()->time();
   auto time_name = time->variable_name();
-  io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-  io::define_variable(file, time->metadata(), { time_name });
-  io::append_time(file, time_name, time->current());
+  file.define_dimension(time_name, io::PISM_UNLIMITED);
+  file.define_variable(time->metadata(), { time_name });
+  file.append_time(time->current());
 
   latitude.write(file);
   longitude.write(file);

@@ -235,7 +235,6 @@ public:
   void read(const std::string &filename, unsigned int time);
   void read(const File &file, unsigned int time);
 
-  void write(const std::string &filename) const;
   void write(const OutputFile &file) const;
 
   void regrid(const std::string &filename, io::Default default_value);

@@ -17,6 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifndef PISM_SYNCHRONOUSOUTPUTWRITER_H
+#define PISM_SYNCHRONOUSOUTPUTWRITER_H
+
 #include "pism/util/io/OutputWriter.hh"
 
 #include <memory>
@@ -31,7 +34,7 @@ enum Backend : int;
 
 class SynchronousOutputWriter : public OutputWriter {
 public:
-  SynchronousOutputWriter(MPI_Comm comm, const Config &config, const VariableMetadata &mapping);
+  SynchronousOutputWriter(MPI_Comm comm, const Config &config);
   virtual ~SynchronousOutputWriter() = default;
 
 private:
@@ -70,3 +73,5 @@ private:
 };
 
 } // namespace pism
+
+#endif /* PISM_SYNCHRONOUSOUTPUTWRITER_H */

@@ -47,6 +47,8 @@
 
 #include "pism/util/InputInterpolation.hh"
 #include "pism/util/projection.hh"
+#include "pism/util/io/OutputWriter.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 
@@ -464,33 +466,30 @@ void Array::read_impl(const File &file, const unsigned int time) {
 //! \brief Define variables corresponding to an Array in a file opened using `file`.
 void Array::define(const OutputFile &file) const {
   for (unsigned int j = 0; j < ndof(); ++j) {
-    io::define_spatial_variable(metadata(j), grid()->get_mapping_info().cf_mapping,
-                                *grid()->ctx()->config(), file);
+    file.define_spatial_variable(metadata(j), grid()->info());
   }
 }
 
 //! @brief Returns a reference to the SpatialVariableMetadata object
 //! containing metadata for the compoment N.
-SpatialVariableMetadata& Array::metadata(unsigned int N) {
+SpatialVariableMetadata &Array::metadata(unsigned int N) {
   assert(N < m_impl->dof);
   return m_impl->metadata[N];
 }
 
-const SpatialVariableMetadata& Array::metadata(unsigned int N) const {
+const SpatialVariableMetadata &Array::metadata(unsigned int N) const {
   assert(N < m_impl->dof);
   return m_impl->metadata[N];
 }
 
 //! Writes an Array to a NetCDF file.
 void Array::write_impl(const OutputFile &file) const {
-  auto log = grid()->ctx()->log();
-  const auto &config = *grid()->ctx()->config();
+  auto log  = grid()->ctx()->log();
   auto time = timestamp(m_impl->grid->com);
 
   // The simplest case:
   if (ndof() == 1) {
-    log->message(3, "[%s] Writing %s...\n",
-                 time.c_str(), metadata(0).get_name().c_str());
+    log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(0).get_name().c_str());
 
     if (m_impl->ghosted) {
       petsc::TemporaryGlobalVec tmp(dm());
@@ -499,10 +498,10 @@ void Array::write_impl(const OutputFile &file) const {
 
       petsc::VecArray tmp_array(tmp);
 
-      io::write_spatial_variable(metadata(0), grid()->info(), config, file, tmp_array.get());
+      file.write_spatial_variable(metadata(0), tmp_array.get());
     } else {
       petsc::VecArray v_array(vec());
-      io::write_spatial_variable(metadata(0), grid()->info(), config, file, v_array.get());
+      file.write_spatial_variable(metadata(0), v_array.get());
     }
     return;
   }
@@ -519,23 +518,23 @@ void Array::write_impl(const OutputFile &file) const {
     get_dof(da2, tmp, j);
 
     petsc::VecArray tmp_array(tmp);
-    log->message(3, "[%s] Writing %s...\n",
-                 time.c_str(), metadata(j).get_name().c_str());
-    io::write_spatial_variable(metadata(j), grid()->info(), config, file, tmp_array.get());
+    log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(j).get_name().c_str());
+    file.write_spatial_variable(metadata(j), tmp_array.get());
   }
 }
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void Array::dump(const char filename[]) const {
-  OutputFile file(m_impl->grid->com, filename,
-            string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE_CLOBBER);
+  auto writer = std::make_shared<SynchronousOutputWriter>(grid()->com, *grid()->ctx()->config());
+
+  OutputFile file(writer, filename);
 
   if (not metadata(0).get_time_independent()) {
     auto time = m_impl->grid->ctx()->time();
-    io::define_dimension(file, time->variable_name(), io::PISM_UNLIMITED);
-    io::define_variable(file, time->metadata(), { time->variable_name() });
-    io::append_time(file, time->variable_name(), time->current());
+
+    file.define_dimension(time->variable_name(), io::PISM_UNLIMITED);
+    file.define_variable(time->metadata(), { time->variable_name() });
+    file.append_time(time->current());
   }
 
   define(file);
@@ -719,15 +718,6 @@ std::vector<double> Array::norm(int n) const {
   } else {
     return result;
   }
-}
-
-void Array::write(const std::string &filename) const {
-  // We expect the file to be present and ready to write into.
-  OutputFile file(m_impl->grid->com, filename,
-            string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE);
-
-  this->write(file);
 }
 
 void Array::read(const std::string &filename, unsigned int time) {

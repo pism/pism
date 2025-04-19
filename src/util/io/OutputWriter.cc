@@ -82,15 +82,15 @@ static VariableMetadata format_attributes(const VariableMetadata &metadata) {
 }
 
 struct OutputWriter::Impl {
-  Impl(MPI_Comm comm_, const Config &config, const VariableMetadata &mapping_)
-      : comm(comm_), mapping(mapping_) {
+  Impl(MPI_Comm comm_, const Config &config)
+      : comm(comm_) {
     time_name          = config.get_string("time.dimension_name");
     use_internal_units = config.get_flag("output.use_MKS");
   }
 
   std::string time_name;
   MPI_Comm comm;
-  VariableMetadata mapping;
+  std::map<std::string, std::map<std::string, std::string> > extra_attributes;
   bool use_internal_units;
   std::map<std::tuple<std::string, std::string>, bool> written;
   std::map<std::string, grid::DistributedGridInfo> grids;
@@ -101,8 +101,16 @@ bool &OutputWriter::already_written(const std::string &file_name,
   return m_impl->written[{ file_name, variable_name }];
 }
 
-OutputWriter::OutputWriter(MPI_Comm comm, const Config &config, const VariableMetadata &cf_mapping)
-    : m_impl(new Impl(comm, config, cf_mapping)) {
+OutputWriter::OutputWriter(MPI_Comm comm, const Config &config)
+    : m_impl(new Impl(comm, config)) {
+}
+
+
+void OutputWriter::add_extra_attributes(const std::string &file_name,
+                                        const std::map<std::string, std::string> &attributes) {
+  for (const auto &attr : attributes) {
+    m_impl->extra_attributes[file_name][attr.first] = attr.second;
+  }
 }
 
 OutputWriter::~OutputWriter() {
@@ -138,7 +146,7 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
   // Make a copy of `metadata` so we can modify it:
   auto var               = metadata;
   const auto &name       = var.get_name();
-  const auto &cf_mapping = m_impl->mapping;
+  const auto &extra_attributes = m_impl->extra_attributes[file_name];
 
   m_impl->grids[name] = grid;
 
@@ -146,13 +154,17 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
     var.output_units(var["units"]);
   }
 
-  // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat, lon,
-  // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
+  // add extra attributes such as "grid_mapping" and "coordinates". Variables lat, lon,
+  // lat_bnds, and lon_bnds should not have these attributes to support CDO (see issue
   // #384).
-  if (cf_mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
-    var["grid_mapping"] = cf_mapping.get_name();
+  if (not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
+    for (const auto &attr : extra_attributes) {
+      const auto &name = attr.first;
+      const auto &value = attr.second;
+      var[name] = value;
+    }
   }
-
+  
   std::vector<std::string> dims;
 
   if (not var.get_time_independent()) {

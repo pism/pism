@@ -190,13 +190,13 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
 void SteadyState::define_model_state_impl(const OutputFile& output) const {
   NullTransport::define_model_state_impl(output);
 
-  if (not output.variable_exists(m_time_name)) {
-    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
+  {
+    VariableMetadata t(m_time_name, m_sys);
+    t.long_name("time of the last update of the steady state subglacial water flux")
+        .units(time().units());
+    t["calendar"] = time().calendar();
 
-    output.write_attribute(m_time_name, "long_name",
-                        "time of the last update of the steady state subglacial water flux");
-    output.write_attribute(m_time_name, "calendar", time().calendar());
-    output.write_attribute(m_time_name, "units", time().units());
+    output.define_variable(t, {});
   }
 
   m_Q.define(output);
@@ -205,7 +205,7 @@ void SteadyState::define_model_state_impl(const OutputFile& output) const {
 void SteadyState::write_model_state_impl(const OutputFile& output) const {
   NullTransport::write_model_state_impl(output);
 
-  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
+  output.write_array(m_time_name, { 0 }, { 1 }, { m_t_last });
   m_Q.write(output);
 }
 

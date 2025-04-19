@@ -20,6 +20,7 @@
 #include <vector>
 #include <cstdlib>              // free
 
+#include "VariableMetadata.hh"
 #include "pism/util/ConfigJSON.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
@@ -348,8 +349,9 @@ void ConfigJSON::read_impl(const File &nc) {
   this->init_from_string(config_string);
 }
 
-void ConfigJSON::write_impl(const OutputFile &nc) const {
-  nc.write_attribute("PISM_GLOBAL", "pism_config", this->dump());
+void ConfigJSON::write_impl(const OutputFile &file) const {
+  // FIXME: writing of JSON configuration data is broken!
+  // nc.write_attribute("PISM_GLOBAL", "pism_config", this->dump());
 }
 
 bool ConfigJSON::is_set_impl(const std::string &name) const {

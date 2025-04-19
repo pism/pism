@@ -25,11 +25,11 @@
 
 #include "pism/util/Config.hh"
 #include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/OutputWriter.hh"
 
 namespace pism {
 
@@ -217,17 +217,15 @@ protected:
   void define_state_impl(const OutputFile &output) const {
     auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
     m_accumulator.define(output);
-    io::define_variable(output, m_time_since_reset, { time_name });
+    output.define_variable(m_time_since_reset, { time_name });
   }
 
   void write_state_impl(const OutputFile &output) const {
     m_accumulator.write(output);
 
-    auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
-
-    unsigned int time_length = output.dimension_length(time_name);
+    unsigned int time_length = output.time_dimension_length();
     unsigned int t_start     = time_length > 0 ? time_length - 1 : 0;
-    io::write_array(output, m_time_since_reset, { t_start }, { 1 }, { m_interval_length });
+    output.write_array(m_time_since_reset, { t_start }, { 1 }, { m_interval_length });
   }
 
   virtual void update_impl(double dt) {

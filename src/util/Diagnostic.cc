@@ -19,6 +19,7 @@
 #include <cmath>
 
 #include "io/IO_Flags.hh"
+#include "io/OutputWriter.hh"
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
@@ -126,8 +127,7 @@ void Diagnostic::define(const OutputFile &file) const {
 //! Define NetCDF variables corresponding to a diagnostic quantity.
 void Diagnostic::define_impl(const OutputFile &file) const {
   for (const auto &v : m_vars) {
-    io::define_spatial_variable(v, m_grid->get_mapping_info().cf_mapping,
-                                *m_grid->ctx()->config(), file);
+    file.define_spatial_variable(v, m_grid->info());
   }
 }
 

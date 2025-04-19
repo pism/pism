@@ -17,6 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifndef PISM_OUTPUTWRITER_H
+#define PISM_OUTPUTWRITER_H
+
 #include <map>
 #include <memory>
 #include <string>
@@ -40,9 +43,12 @@ enum Type : int;
 
 class OutputWriter {
 public:
-  OutputWriter(MPI_Comm comm, const Config &config, const VariableMetadata &mapping);
+  OutputWriter(MPI_Comm comm, const Config &config);
   virtual ~OutputWriter();
 
+  void add_extra_attributes(const std::string &file_name,
+                            const std::map<std::string, std::string> &attributes);
+  
   void define_dimension(const std::string &file_name, const std::string &dimension_name,
                         unsigned int length);
 
@@ -123,35 +129,37 @@ class OutputFile {
 public:
   OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name);
 
-  void define_dimension(const std::string &dimension_name, unsigned int length);
+  void define_dimension(const std::string &dimension_name, unsigned int length) const;
 
-  void define_variable(const VariableMetadata &metadata, const std::vector<std::string> &dims);
+  void define_variable(const VariableMetadata &metadata, const std::vector<std::string> &dims) const;
 
   void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                               const grid::DistributedGridInfo &grid);
+                               const grid::DistributedGridInfo &grid) const;
 
-  void write_attributes(const VariableMetadata &variable);
+  void write_attributes(const VariableMetadata &variable) const;
 
-  void append_time(double time_seconds);
+  void append_time(double time_seconds) const;
 
   void write_array(const std::string &variable_name, const std::vector<unsigned int> &start,
-                   const std::vector<unsigned int> &count, const std::vector<double> &input);
+                   const std::vector<unsigned int> &count, const std::vector<double> &input) const;
 
   void write_array(const VariableMetadata &metadata, const std::vector<unsigned int> &start,
-                   const std::vector<unsigned int> &count, const std::vector<double> &input);
+                   const std::vector<unsigned int> &count, const std::vector<double> &input) const;
 
-  void write_spatial_variable(const SpatialVariableMetadata &metadata, const double *input);
+  void write_spatial_variable(const SpatialVariableMetadata &metadata, const double *input) const;
 
   void append();
 
   void close();
 
-  unsigned int time_dimension_length();
+  unsigned int time_dimension_length() const;
 
-  std::string name();
+  std::string name() const;
 private:
   std::string m_file_name;
   std::shared_ptr<OutputWriter> m_writer;
 };
 
 } // namespace pism
+
+#endif /* PISM_OUTPUTWRITER_H */

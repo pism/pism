@@ -37,9 +37,8 @@ const File &SynchronousOutputWriter::file(const std::string &file_name) {
   return *m_files[file_name];
 }
 
-SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &config,
-                                                 const VariableMetadata &mapping)
-    : OutputWriter(comm, config, mapping) {
+SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &config)
+    : OutputWriter(comm, config) {
   m_compression_level = static_cast<int>(config.get_number("output.compression_level"));
   m_backend = string_to_backend(config.get_string("output.format"));
 }
@@ -68,8 +67,10 @@ void SynchronousOutputWriter::append_time_impl(const std::string &file_name, dou
 }
 
 void SynchronousOutputWriter::append_impl(const std::string &file_name) {
-  m_files[file_name] =
-      std::make_shared<File>(comm(), file_name, io::PISM_GUESS, io::PISM_READWRITE);
+  if (m_files[file_name] == nullptr) {
+    m_files[file_name] =
+        std::make_shared<File>(comm(), file_name, io::PISM_GUESS, io::PISM_READWRITE);
+  }
 }
 
 void SynchronousOutputWriter::close_impl(const std::string &file_name) {
