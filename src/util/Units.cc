@@ -203,7 +203,7 @@ struct Converter::Impl {
     }
 
     converter = ut_get_converter(u1.m_impl->unit, u2.m_impl->unit);
-    if (not converter) {
+    if (converter == nullptr) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "cannot create a converter from %s to %s",
                                     spec1.c_str(), spec2.c_str());
@@ -217,7 +217,7 @@ struct Converter::Impl {
     }
 
     converter = ut_get_converter(u1.m_impl->unit, u2.m_impl->unit);
-    if (not converter) {
+    if (converter == nullptr) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "failed to create a converter from '%s' to '%s'",
                                     u1.format().c_str(), u2.format().c_str());
