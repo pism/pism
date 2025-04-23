@@ -65,6 +65,10 @@ Config::~Config() {
   delete m_impl;
 }
 
+std::shared_ptr<units::System> Config::unit_system() const {
+  return m_impl->unit_system;
+}
+
 void Config::read(MPI_Comm com, const std::string &filename) {
 
   File file(com, filename, io::PISM_NETCDF3, io::PISM_READONLY); // OK to use netcdf3

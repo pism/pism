@@ -114,7 +114,8 @@ private:
 
 class VariableMetadata {
 public:
-  VariableMetadata(const std::string &name, std::shared_ptr<units::System> system, unsigned int ndims = 0);
+  VariableMetadata(const std::string &name, std::shared_ptr<units::System> system,
+                   unsigned int ndims = 0);
   virtual ~VariableMetadata() = default;
 
   Attribute operator[](const std::string &name) {

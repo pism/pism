@@ -151,6 +151,8 @@ protected:
 
   virtual bool get_flag_impl(const std::string& name) const = 0;
   virtual void set_flag_impl(const std::string& name, bool value) = 0;
+
+  std::shared_ptr<units::System> unit_system() const;
 private:
   struct Impl;
   Impl *m_impl;
