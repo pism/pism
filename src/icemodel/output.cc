@@ -165,7 +165,10 @@ void IceModel::save_variables(const OutputFile &file, OutputKind kind,
   // FIXME: this will not update run_stats() in an extra file!
   file.define_variable(run_stats(), {});
 
-  if (member("lat", variables) and member("lon", variables)) {
+  // "lon" and "lat" are a part of the "model state", so we need to add "coordinates" when
+  // saving the model state even if "lon" and "lat" were not requested explicitly:
+  if ((member("lat", variables) and member("lon", variables)) or
+      kind == INCLUDE_MODEL_STATE) {
     file.add_extra_attributes({ { "coordinates", "lat lon" } });
   }
 
