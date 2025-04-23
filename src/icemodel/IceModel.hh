@@ -216,6 +216,8 @@ protected:
 
   virtual void define_model_state(const OutputFile &file) const;
   virtual void write_model_state(const OutputFile &file) const;
+  virtual void define_run_stats(const OutputFile &file) const;
+  virtual void write_run_stats(const OutputFile &file) const;
 
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
   virtual void write_metadata(const OutputFile &file, MappingTreatment mapping_flag) const;

@@ -69,12 +69,12 @@ bool IceModel::write_checkpoint() {
   double checkpoint_start_time = get_time(m_grid->com);
   profiling.begin("io.checkpoint");
   {
-    // Note: we open a new file every time we write a checkpoint, moving the old file
-    // aside if it exists.
     OutputFile file(m_output_writer, m_checkpoint_filename);
-
+    // Ensure that the checkpoint file is closed to force PISM to open a new file every
+    // time we write a checkpoint, moving the old file aside if it exists.
+    file.close();
+    
     write_metadata(file, WRITE_MAPPING);
-    file.define_variable(run_stats(), {});
 
     save_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
   }

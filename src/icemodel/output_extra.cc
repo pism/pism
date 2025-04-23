@@ -329,9 +329,6 @@ void IceModel::write_extras() {
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
-    // FIXME: this does *not* update run stats as a run progresses
-    m_extra_file->define_variable(run_stats(), {});
-
     // use the mid-point of the current reporting interval
     double time = 0.5 * (m_last_extra + current_time);
     save_variables(*m_extra_file, m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,

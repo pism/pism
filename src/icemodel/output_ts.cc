@@ -97,8 +97,6 @@ void IceModel::init_timeseries() {
     }
 
     write_metadata(*m_ts_file, SKIP_MAPPING);
-    // FIXME: will not update run stats
-    m_ts_file->define_variable(run_stats(), {});
 
     // initialize scalar diagnostics
     for (const auto &d : m_ts_diagnostics) {

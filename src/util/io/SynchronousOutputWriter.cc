@@ -87,8 +87,10 @@ void SynchronousOutputWriter::sync_impl(const std::string &file_name) {
 }
 
 void SynchronousOutputWriter::close_impl(const std::string &file_name) {
-  m_files[file_name]->close();
-  m_files[file_name].reset();
+  if (m_files[file_name] != nullptr) {
+    m_files[file_name]->close();
+    m_files[file_name].reset();
+  }
 }
 
 void SynchronousOutputWriter::define_dimension_impl(const std::string &file_name,

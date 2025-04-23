@@ -98,16 +98,7 @@ void IceModel::write_metadata(const OutputFile &file, MappingTreatment mapping_f
 Calls save_variables() to do the actual work.
  */
 void IceModel::save_results() {
-  {
-    auto stats = run_stats();
-
-    auto str = pism::printf(
-        "PISM done. Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
-        (double)stats["wall_clock_hours"], (double)stats["processor_hours"],
-        (double)stats["model_years_per_processor_hour"]);
-
-    append_history(str);
-  }
+  append_history("PISM done");
 
   std::string filename = m_config->get_string("output.file");
 
@@ -129,11 +120,59 @@ void IceModel::save_results() {
 
     write_metadata(file, WRITE_MAPPING);
 
-    file.define_variable(run_stats(), {});
-
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
   }
   profiling.end("io.model_state");
+}
+
+void IceModel::define_run_stats(const OutputFile &file) const {
+
+  auto time_name = m_time->variable_name();
+
+  // define the "timestamp" (wall clock time since the beginning of the run)
+  // Note: it is time-dependent, so we need to define time first.
+  VariableMetadata wall_clock("wall_clock_time", m_sys);
+  wall_clock.long_name("wall-clock time since the beginning of the run")
+      .units("hours")
+      .set_output_type(io::PISM_FLOAT);
+
+  VariableMetadata run_duration("run_duration", m_sys);
+  run_duration.long_name("model time since the beginning of the run")
+      .units("years")
+      .set_output_type(io::PISM_FLOAT);
+
+  VariableMetadata myph("model_years_per_processor_hour", m_sys);
+  myph.long_name("average number of model years per processor hour, since the beginning of the run")
+      .units("years / hour")
+      .set_output_type(io::PISM_FLOAT);
+
+  VariableMetadata step_counter("step_counter", m_sys);
+  step_counter.long_name("number of time steps since the beginning of the run")
+      .units("")
+      .set_output_type(io::PISM_INT);
+
+  file.define_variable(wall_clock, { time_name });
+  file.define_variable(run_duration, { time_name });
+  file.define_variable(myph, { time_name });
+  file.define_variable(step_counter, { time_name });
+}
+
+void IceModel::write_run_stats(const OutputFile &file) const {
+
+  auto time_name = m_time->variable_name();
+
+  auto t_length = file.time_dimension_length();
+  auto t_start = t_length > 0 ? t_length - 1 : 0;
+
+  double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time),
+         proc_hours       = m_grid->size() * wall_clock_hours,
+         model_years = m_time->convert_time_interval(m_time->current() - m_time->start(), "years");
+
+  file.write_array({ "wall_clock_time", m_sys }, { t_start }, { 1 }, { wall_clock_hours });
+  file.write_array({ "run_duration", m_sys }, { t_start }, { 1 }, { model_years });
+  file.write_array({ "model_years_per_processor_hour", m_sys }, { t_start }, { 1 },
+                   { model_years / proc_hours });
+  file.write_array({ "step_counter", m_sys }, { t_start }, { 1 }, { (double)m_step_counter });
 }
 
 void IceModel::save_variables(const OutputFile &file, OutputKind kind,
@@ -150,20 +189,7 @@ void IceModel::save_variables(const OutputFile &file, OutputKind kind,
     file.define_variable(time, { time_name });
   }
 
-  // define the "timestamp" (wall clock time since the beginning of the run)
-  // Note: it is time-dependent, so we need to define time first.
-  VariableMetadata timestamp("timestamp", m_sys);
-  timestamp.long_name("wall-clock time since the beginning of the run")
-      .units("hours")
-      .set_output_type(io::PISM_FLOAT);
-  file.define_variable(timestamp, { time_name });
-
-  // Write metadata *before* everything else:
-  //
-  // FIXME: we should write this to variables instead of attributes because NetCDF-4 crashes after
-  // about 2^16 attribute modifications per variable. :-(
-  // FIXME: this will not update run_stats() in an extra file!
-  file.define_variable(run_stats(), {});
+  define_run_stats(file);
 
   // "lon" and "lat" are a part of the "model state", so we need to add "coordinates" when
   // saving the model state even if "lon" and "lat" were not requested explicitly:
@@ -193,12 +219,7 @@ void IceModel::save_variables(const OutputFile &file, OutputKind kind,
   }
   write_diagnostics(file, variables);
 
-  // find out how much time passed since the beginning of the run and save it to the output file
-  {
-    auto time_length = file.time_dimension_length();
-    auto start       = time_length > 0 ? (time_length - 1) : 0;
-    file.write_array(timestamp, { start }, { 1 }, { wall_clock_hours(m_grid->com, m_start_time) });
-  }
+  write_run_stats(file);
 }
 
 void IceModel::define_diagnostics(const OutputFile &file, const std::set<std::string> &variables) const {
