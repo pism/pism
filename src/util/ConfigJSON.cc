@@ -84,8 +84,7 @@ static json_t* pack_json_array(const std::vector<double> &data) {
 /*!
  * Convert a JSON array to an STL vector.
  */
-std::vector<double> unpack_json_array(const char *name,
-                                      const json_t *input) {
+static std::vector<double> unpack_json_array(const char *name, const json_t *input) {
   std::vector<double> result;
 
   if (json_typeof(input) != JSON_ARRAY) {
