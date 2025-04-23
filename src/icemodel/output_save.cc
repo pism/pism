@@ -139,9 +139,7 @@ void IceModel::write_snapshot() {
       filename = m_snapshots_filename;
     }
 
-    m_snapshot_file = std::make_shared<OutputFile>(
-        m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
-        io::PISM_READWRITE_MOVE);
+    m_snapshot_file = std::make_shared<OutputFile>(m_output_writer, filename);
 
     write_metadata(*m_snapshot_file, WRITE_MAPPING);
   }
@@ -149,7 +147,7 @@ void IceModel::write_snapshot() {
   {
     m_log->message(2, "saving snapshot to %s at %s, for time-step goal %s\n", filename.c_str(),
                    m_time->date(m_time->current()).c_str(), m_time->date(saving_after).c_str());
-    io::define_variable(*m_snapshot_file, run_stats(), {});
+    m_snapshot_file->define_variable(run_stats(), {});
     save_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
   }
 

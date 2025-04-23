@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <memory>
 static char help[] =
   "\nSIAFD_TEST\n"
   "  Testing program for SIA, time-independent calculations separate from\n"
@@ -32,14 +33,13 @@ static char help[] =
 #include "pism/util/Context.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/verification/tests/exactTestsFG.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 
@@ -377,14 +377,15 @@ int main(int argc, char *argv[]) {
     reportErrors(*grid, ctx->unit_system(),
                  geometry.ice_thickness, u3, v3, w3, sigma);
 
+    auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
     // Write results to an output file:
-    OutputFile file(grid->com, output_file, io::PISM_NETCDF3, io::PISM_READWRITE_MOVE);
+    OutputFile file(writer, output_file);
 
     auto time      = ctx->time();
     auto time_name = time->variable_name();
-    io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, time->metadata(), { time_name });
-    io::append_time(file, time_name, time->current());
+    file.define_dimension(time_name, io::PISM_UNLIMITED);
+    file.define_variable(time->metadata(), { time_name });
+    file.append_time(time->current());
 
     geometry.ice_surface_elevation.write(file);
     geometry.ice_thickness.write(file);

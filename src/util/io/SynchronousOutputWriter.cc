@@ -66,11 +66,24 @@ void SynchronousOutputWriter::append_time_impl(const std::string &file_name, dou
               { time_seconds });
 }
 
+void SynchronousOutputWriter::append_history_impl(const std::string &file_name,
+                                                  const std::string &text) {
+  const auto &output_file = file(file_name);
+
+  auto old_history = output_file.read_text_attribute("PISM_GLOBAL", "history");
+
+  output_file.write_attribute("PISM_GLOBAL", "history", old_history + text);
+}
+
 void SynchronousOutputWriter::append_impl(const std::string &file_name) {
   if (m_files[file_name] == nullptr) {
     m_files[file_name] =
         std::make_shared<File>(comm(), file_name, io::PISM_GUESS, io::PISM_READWRITE);
   }
+}
+
+void SynchronousOutputWriter::sync_impl(const std::string &file_name) {
+  m_files[file_name]->sync();
 }
 
 void SynchronousOutputWriter::close_impl(const std::string &file_name) {
@@ -125,12 +138,26 @@ unsigned int SynchronousOutputWriter::time_dimension_length_impl(const std::stri
   return output_file.dimension_length(time_name());
 }
 
+double SynchronousOutputWriter::last_time_value_impl(const std::string &file_name) {
+  const auto &output_file = file(file_name);
+
+  auto t_length = output_file.dimension_length(time_name());
+
+  if (t_length > 0) {
+    double time = 0;
+    output_file.read_variable("time", { t_length - 1 }, { 1 }, &time);
+    return time;
+  }
+  return 0;
+}
+
 void SynchronousOutputWriter::write_array_impl(const std::string &file_name,
                                                const std::string &variable_name,
                                                const std::vector<unsigned int> &start,
                                                const std::vector<unsigned int> &count,
                                                const double *data) {
   const auto &output_file = file(file_name);
+
   output_file.write_variable(variable_name, start, count, data);
 }
 
@@ -140,6 +167,7 @@ void SynchronousOutputWriter::write_distributed_array_impl(const std::string &fi
                                                            const std::vector<unsigned int> &count,
                                                            const double *data) {
   const auto &output_file = file(file_name);
+
   output_file.write_variable(variable_name, start, count, data);
 }
 

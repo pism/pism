@@ -241,8 +241,11 @@ protected:
   //! Time manager
   std::shared_ptr<Time> m_time;
 
+  std::shared_ptr<OutputWriter> m_output_writer;
+  
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
+  std::string m_output_history;
 
   //! the list of sub-models, for writing model states and obtaining diagnostics
   std::map<std::string,const Component*> m_submodels;
@@ -381,7 +384,7 @@ protected:
 
   // see iMutil.cc
   virtual int process_signals();
-  virtual void prepend_history(const std::string &string);
+  virtual void append_history(const std::string &string);
   VariableMetadata run_stats() const;
 
   // working space (a convenience)
@@ -429,7 +432,7 @@ protected:
   MaxTimestep save_max_timestep(double my_t);
 
   //! file to write scalar time-series to
-  std::string m_ts_filename;
+  std::shared_ptr<OutputFile> m_ts_file;
   //! requested times for scalar time-series
   std::shared_ptr<std::vector<double>> m_ts_times;
   std::set<std::string> m_ts_vars;
@@ -438,13 +441,12 @@ protected:
   MaxTimestep ts_max_timestep(double my_t);
 
   // spatially-varying time-series
-  bool m_split_extra;
   std::string m_extra_filename;
   std::vector<double> m_extra_times;
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
-  std::unique_ptr<OutputFile> m_extra_file;
+  std::shared_ptr<OutputFile> m_extra_file;
   void init_extras();
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);

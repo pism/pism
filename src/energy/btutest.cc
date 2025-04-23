@@ -24,7 +24,6 @@ static char help[] =
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/io/File.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
 #include "pism/util/Time.hh"
@@ -34,11 +33,11 @@ static char help[] =
 
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 //! Allocate the verification context. Uses ColdEnthalpyConverter.
 std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &prefix) {
@@ -220,15 +219,14 @@ int main(int argc, char *argv[]) {
                  max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
-    OutputFile file(grid->com,
-              outname,
-              string_to_backend(config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE);
+    auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
+    // Write results to an output file:
+    OutputFile file(writer, outname);
 
     auto time_name = time->variable_name();
-    io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, time->metadata(), { time_name });
-    io::append_time(file, time_name, time->current());
+    file.define_dimension(time_name, io::PISM_UNLIMITED);
+    file.define_variable(time->metadata(), { time_name });
+    file.append_time(time->current());
 
     btu->write_model_state(file);
 

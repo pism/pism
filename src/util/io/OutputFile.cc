@@ -18,12 +18,17 @@
  */
 
 #include "pism/util/io/OutputWriter.hh"
+#include <string>
 
 namespace pism {
 
 OutputFile::OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name)
     : m_file_name(file_name), m_writer(writer) {
   // empty
+}
+
+void OutputFile::add_extra_attributes(const std::map<std::string, std::string> &attributes) const {
+  m_writer->add_extra_attributes(m_file_name, attributes);
 }
 
 void OutputFile::define_dimension(const std::string &dimension_name, unsigned int length) const {
@@ -46,6 +51,10 @@ void OutputFile::write_attributes(const VariableMetadata &variable) const {
 
 void OutputFile::append_time(double time_seconds) const {
   m_writer->append_time(m_file_name, time_seconds);
+}
+
+void OutputFile::append_history(const std::string &text) const {
+  m_writer->append_history(m_file_name, text);
 }
 
 void OutputFile::write_array(const std::string &variable_name,
@@ -71,12 +80,20 @@ void OutputFile::append() {
   m_writer->append(m_file_name);
 }
 
+void OutputFile::sync() {
+  m_writer->sync(m_file_name);
+}
+
 void OutputFile::close() {
   m_writer->close(m_file_name);
 }
 
 unsigned int OutputFile::time_dimension_length() const {
   return m_writer->time_dimension_length(m_file_name);
+}
+
+double OutputFile::last_time_value() const {
+  return m_writer->last_time_value(m_file_name);
 }
 
 std::string OutputFile::name() const {

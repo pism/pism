@@ -7,10 +7,9 @@
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Array.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 using namespace pism;
 
@@ -19,18 +18,19 @@ namespace icebin {
 
 VecBundleWriter::VecBundleWriter(std::shared_ptr<pism::Grid> _grid, std::string const &_fname,
                                  std::vector<pism::array::Array const *> &_vecs)
-    : m_grid(_grid), fname(_fname), vecs(_vecs) {
+    : m_grid(_grid),
+      fname(_fname),
+      vecs(_vecs),
+      output_writer(new SynchronousOutputWriter(m_grid->com, *m_grid->ctx()->config())) {
 }
 
 void VecBundleWriter::init() {
-  pism::OutputFile file(m_grid->com, fname,
-                        string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
-                        io::PISM_READWRITE_MOVE);
+  pism::OutputFile file(output_writer, fname);
 
   auto time      = m_grid->ctx()->time();
   auto time_name = time->variable_name();
-  io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-  io::define_variable(file, time->metadata(), { time_name });
+  file.define_dimension(time_name, io::PISM_UNLIMITED);
+  file.define_variable(time->metadata(), { time_name });
 
   for (const auto *vec : vecs) {
     vec->define(file);
@@ -39,15 +39,11 @@ void VecBundleWriter::init() {
 
 /** Dump the value of the Vectors at curent PISM simulation time. */
 void VecBundleWriter::write(double time_s) {
-  pism::OutputFile nc(m_grid->com, fname,
-                string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
-                io::PISM_READWRITE); // append to file
+  pism::OutputFile file(output_writer, fname);
 
-  auto time = m_grid->ctx()->time();
-  io::append_time(nc, time->variable_name(), time_s);
-
+  file.append_time(time_s);
   for (const auto *vec : vecs) {
-    vec->write(nc);
+    vec->write(file);
   }
 }
 

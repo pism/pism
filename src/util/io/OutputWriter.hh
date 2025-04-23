@@ -48,7 +48,7 @@ public:
 
   void add_extra_attributes(const std::string &file_name,
                             const std::map<std::string, std::string> &attributes);
-  
+
   void define_dimension(const std::string &file_name, const std::string &dimension_name,
                         unsigned int length);
 
@@ -60,6 +60,8 @@ public:
                                const grid::DistributedGridInfo &grid);
 
   void write_attributes(const std::string &file_name, const VariableMetadata &variable);
+
+  void append_history(const std::string &file_name, const std::string &text);
 
   void append_time(const std::string &file_name, double time_seconds);
 
@@ -76,15 +78,18 @@ public:
 
   void append(const std::string &file_name);
 
+  void sync(const std::string &file_name);
+
   void close(const std::string &file_name);
 
   unsigned int time_dimension_length(const std::string &file_name);
 
+  double last_time_value(const std::string &file_name);
+  
 protected:
-
   MPI_Comm comm() const;
 
-  const grid::DistributedGridInfo& grid_info(const std::string &variable_name) const;
+  const grid::DistributedGridInfo &grid_info(const std::string &variable_name) const;
 
   bool &already_written(const std::string &file_name, const std::string &variable_name);
 
@@ -98,13 +103,16 @@ protected:
   virtual void define_dimension_impl(const std::string &file_name, const std::string &name,
                                      unsigned int length) = 0;
 
-  virtual void define_variable_impl(const std::string &file_name,
-                                    const VariableMetadata &metadata,
+  virtual void define_variable_impl(const std::string &file_name, const VariableMetadata &metadata,
                                     const std::vector<std::string> &dims) = 0;
 
   virtual void append_time_impl(const std::string &file_name, double time_seconds) = 0;
 
+  virtual void append_history_impl(const std::string &file_name, const std::string &text) = 0;
+
   virtual unsigned int time_dimension_length_impl(const std::string &file_name) = 0;
+
+  virtual double last_time_value_impl(const std::string &file_name) = 0;
 
   virtual void write_array_impl(const std::string &file_name, const std::string &variable_name,
                                 const std::vector<unsigned int> &start,
@@ -118,6 +126,8 @@ protected:
 
   virtual void append_impl(const std::string &file_name) = 0;
 
+  virtual void sync_impl(const std::string &file_name) = 0;
+
   virtual void close_impl(const std::string &file_name) = 0;
 
 private:
@@ -128,6 +138,8 @@ private:
 class OutputFile {
 public:
   OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name);
+
+  void add_extra_attributes(const std::map<std::string, std::string> &attributes) const;
 
   void define_dimension(const std::string &dimension_name, unsigned int length) const;
 
@@ -140,6 +152,8 @@ public:
 
   void append_time(double time_seconds) const;
 
+  void append_history(const std::string &text) const;
+
   void write_array(const std::string &variable_name, const std::vector<unsigned int> &start,
                    const std::vector<unsigned int> &count, const std::vector<double> &input) const;
 
@@ -150,9 +164,13 @@ public:
 
   void append();
 
+  void sync();
+
   void close();
 
   unsigned int time_dimension_length() const;
+
+  double last_time_value() const;
 
   std::string name() const;
 private:

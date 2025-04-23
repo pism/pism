@@ -50,7 +50,7 @@ int IceModel::process_signals() {
     m_log->message(1,
        "\ncaught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
 
-    prepend_history(pism::printf("EARLY EXIT caused by signal SIGTERM. Completed timestep at time=%s.",
+    append_history(pism::printf("EARLY EXIT caused by signal SIGTERM. Completed timestep at time=%s.",
                                  m_time->date(m_time->current()).c_str()));
     // Tell the caller that the user requested an early termination of
     // the run.
@@ -65,10 +65,7 @@ int IceModel::process_signals() {
                    file_name.c_str());
     pism_signal = 0;
 
-    OutputFile file(m_grid->com,
-              file_name,
-              string_to_backend(m_config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE);
+    OutputFile file(m_output_writer, file_name);
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
     // flush all the time-series buffers:
@@ -111,10 +108,8 @@ VariableMetadata IceModel::run_stats() const {
 }
 
 //! Get time and user/host name and add it to the given string.
-void  IceModel::prepend_history(const std::string &str) {
-  m_output_global_attributes.set_string("history",
-                                        username_prefix(m_grid->com) + (str + "\n") +
-                                        m_output_global_attributes.get_string("history"));
+void  IceModel::append_history(const std::string &str) {
+  m_output_history = m_output_history + "\n" + username_prefix(m_grid->com) + str;
 }
 
 //! Return the grid used by this model.

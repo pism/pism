@@ -57,7 +57,11 @@ private:
 
   void append_time_impl(const std::string &file_name, double time_seconds);
 
+  void append_history_impl(const std::string &file_name, const std::string &text);
+
   unsigned int time_dimension_length_impl(const std::string &file_name);
+
+  double last_time_value_impl(const std::string &file_name);
 
   void write_array_impl(const std::string &file_name, const std::string &variable_name,
                         const std::vector<unsigned int> &start,
@@ -68,7 +72,7 @@ private:
                                     const std::vector<unsigned int> &count, const double *data);
 
   void append_impl(const std::string &file_name);
-
+  void sync_impl(const std::string &file_name);
   void close_impl(const std::string &file_name);
 };
 

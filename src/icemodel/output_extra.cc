@@ -21,6 +21,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
+#include <memory>
 
 namespace pism {
 
@@ -148,13 +149,13 @@ void IceModel::init_extras() {
                        "both output.extra.split and output.extra.append are set.");
   }
 
+  m_extra_file = std::make_shared<OutputFile>(m_output_writer, m_extra_filename);
+  
   if (append) {
-    File file(m_grid->com, m_extra_filename, io::PISM_NETCDF3, io::PISM_READONLY);
+    m_extra_file->append();
 
-    std::string time_name = m_config->get_string("time.dimension_name");
-    if (file.variable_exists(time_name)) {
-      auto time = io::read_1d_variable(file, time_name, m_time->units(), m_sys);
-      double time_max = vector_max(time);
+    if (m_extra_file->time_dimension_length() > 0) {
+      double time_max = m_extra_file->last_time_value();
 
       while (m_next_extra + 1 < m_extra_times.size() && m_extra_times[m_next_extra + 1] < time_max) {
         m_next_extra++;
@@ -178,11 +179,9 @@ void IceModel::init_extras() {
   }
 
   if (split) {
-    m_split_extra = true;
-    m_log->message(2, "saving spatial time-series to '%s+year.nc'; ",
+    m_log->message(2, "saving spatial time-series to '%s+date.nc'; ",
                m_extra_filename.c_str());
   } else {
-    m_split_extra = false;
     if (not ends_with(m_extra_filename, ".nc")) {
       m_log->message(2,
                  "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
@@ -219,7 +218,7 @@ void IceModel::init_extras() {
   } else {
     m_log->message(2,
                    "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
-  } // end of the else clause after "if (extra_vars_set)"
+  }
 }
 
 //! Write spatially-variable diagnostic quantities.
@@ -287,51 +286,51 @@ void IceModel::write_extras() {
     return;
   }
 
+  bool extra_split = m_config->get_flag("output.extra.split");
+
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
   {
+
     std::string time_name = m_time->variable_name();
 
     VariableMetadata time_bounds("time_bounds", m_sys);
 
     if (m_extra_file == nullptr) {
 
-      // default behavior is to move the file aside if it exists already; option allows appending
-      auto mode =
-          m_config->get_flag("output.extra.append") ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
-
       std::string filename = m_extra_filename;
-      if (m_split_extra) {
+      if (extra_split) {
         // each time-series record is written to a separate file
         auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
         filename = pism::printf("%s_%s.nc", m_extra_filename.c_str(), date_without_spaces.c_str());
       }
 
-      m_extra_file.reset(new OutputFile(m_grid->com, filename,
-                                  string_to_backend(m_config->get_string("output.format")), mode));
+      m_extra_file.reset(new OutputFile(m_output_writer, filename));
 
-      // Prepare the file:
-      {
+      if (m_config->get_flag("output.extra.append")) {
+        m_extra_file->append();
+      } else {
+        // Prepare the file:
         auto time = m_time->metadata();
         time_bounds.units(time["units"]);
 
         time["bounds"] = time_bounds.get_name();
 
-        io::define_dimension(*m_extra_file, time_name, io::PISM_UNLIMITED);
-        io::define_variable(*m_extra_file, time, { time_name });
+        m_extra_file->define_dimension(time_name, io::PISM_UNLIMITED);
+        m_extra_file->define_variable(time, { time_name });
 
-        io::define_dimension(*m_extra_file, "nv", 2);
-        io::define_variable(*m_extra_file, time_bounds, { time_name, "nv" });
+        m_extra_file->define_dimension("nv", 2);
+        m_extra_file->define_variable(time_bounds, { time_name, "nv" });
+
+        write_metadata(*m_extra_file, WRITE_MAPPING);
       }
-
-      write_metadata(*m_extra_file, WRITE_MAPPING);
     }
 
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
     // FIXME: this does *not* update run stats as a run progresses
-    io::define_variable(*m_extra_file, run_stats(), {});
+    m_extra_file->define_variable(run_stats(), {});
 
     // use the mid-point of the current reporting interval
     double time = 0.5 * (m_last_extra + current_time);
@@ -339,12 +338,12 @@ void IceModel::write_extras() {
                    m_extra_vars, time);
 
     // Get the length of the time dimension *after* it is appended to.
-    auto time_length = m_extra_file->dimension_length(time_name);
+    auto time_length = m_extra_file->time_dimension_length();
     auto time_start = time_length > 0 ? (time_length - 1) : 0;
 
     // write time bounds
-    io::write_array(*m_extra_file, time_bounds, { time_start, 0 }, { 1, 2 },
-                    { m_last_extra, current_time });
+    m_extra_file->write_array(time_bounds, { time_start, 0 }, { 1, 2 },
+                              { m_last_extra, current_time });
     // make sure all changes are written
     m_extra_file->sync();
   }
@@ -352,9 +351,10 @@ void IceModel::write_extras() {
 
   flush_timeseries();
 
-  if (m_split_extra) {
+  if (extra_split) {
     // each record is saved to a new file, so we can close this one
-    m_extra_file.reset(nullptr);
+    m_extra_file->close();
+    m_extra_file = nullptr;
   }
 
   m_last_extra = current_time;

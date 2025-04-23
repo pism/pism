@@ -284,7 +284,8 @@ public:
 
   void flush();
 
-  void init(const File &output_file, std::shared_ptr<std::vector<double> > requested_times);
+  void init(std::shared_ptr<OutputFile> output_file,
+            std::shared_ptr<std::vector<double> > requested_times);
 
   const VariableMetadata &metadata() const;
 
@@ -331,7 +332,7 @@ protected:
 
   //! the name of the file to save to (stored here because it is used by flush(), which is called
   //! from update())
-  std::string m_output_filename;
+  std::shared_ptr<OutputFile> m_output_file;
   //! starting index used when flushing the buffer
   unsigned int m_start;
   //! size of the buffer used to store data

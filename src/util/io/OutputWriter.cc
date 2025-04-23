@@ -105,7 +105,6 @@ OutputWriter::OutputWriter(MPI_Comm comm, const Config &config)
     : m_impl(new Impl(comm, config)) {
 }
 
-
 void OutputWriter::add_extra_attributes(const std::string &file_name,
                                         const std::map<std::string, std::string> &attributes) {
   for (const auto &attr : attributes) {
@@ -159,9 +158,9 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
   // #384).
   if (not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
     for (const auto &attr : extra_attributes) {
-      const auto &name = attr.first;
-      const auto &value = attr.second;
-      var[name] = value;
+      const auto &attr_name = attr.first;
+      const auto &attr_value = attr.second;
+      var[attr_name] = attr_value;
     }
   }
   
@@ -202,6 +201,10 @@ void OutputWriter::write_attributes(const std::string &file_name, const Variable
 
 void OutputWriter::append_time(const std::string &file_name, double time_seconds) {
   append_time_impl(file_name, time_seconds);
+}
+
+void OutputWriter::append_history(const std::string &file_name, const std::string &text) {
+  append_history_impl(file_name, text);
 }
 
 void OutputWriter::write_array(const std::string &file_name, const std::string &variable_name,
@@ -249,7 +252,7 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
       const auto &dimension_name = p.first;
       const auto &coordinates    = p.second;
 
-      if (coordinates.empty()) {
+      if (dimension_name.empty() or coordinates.empty()) {
         continue;
       }
 
@@ -309,12 +312,20 @@ void OutputWriter::append(const std::string &file_name) {
   append_impl(file_name);
 }
 
+void OutputWriter::sync(const std::string &file_name) {
+  sync_impl(file_name);
+}
+
 void OutputWriter::close(const std::string &file_name) {
   close_impl(file_name);
 }
 
 unsigned int OutputWriter::time_dimension_length(const std::string &file_name) {
   return time_dimension_length_impl(file_name);
+}
+
+double OutputWriter::last_time_value(const std::string &file_name) {
+  return last_time_value_impl(file_name);
 }
 
 } // namespace pism

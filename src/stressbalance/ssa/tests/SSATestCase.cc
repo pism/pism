@@ -30,6 +30,7 @@
 #include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -297,14 +298,16 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/, double /*x*/, double /*y*/
 
 //! Save the computation and data to a file.
 void SSATestCase::write(const std::string &filename) {
+  auto writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  // Write results to an output file:
+  OutputFile file(writer, filename);
 
   // Write results to an output file:
-  OutputFile file(m_grid->com, filename, io::PISM_NETCDF3, io::PISM_READWRITE_MOVE);
-    auto time      = m_ctx->time();
-    auto time_name = time->variable_name();
-    io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, time->metadata(), { time_name });
-    io::append_time(file, time_name, 0.0);
+  auto time      = m_ctx->time();
+  auto time_name = time->variable_name();
+  file.define_dimension(time_name, io::PISM_UNLIMITED);
+  file.define_variable(time->metadata(), { time_name });
+  file.append_time(0.0);
 
   m_geometry.ice_surface_elevation.write(file);
   m_geometry.ice_thickness.write(file);

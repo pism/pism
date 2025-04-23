@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <cmath>
+#include <memory>
 
 #include "io/IO_Flags.hh"
 #include "io/OutputWriter.hh"
@@ -337,16 +338,13 @@ void TSDiagnostic::flush() {
     return;
   }
 
-  File file(m_grid->com, m_output_filename, io::PISM_NETCDF3,
-            io::PISM_READWRITE); // OK to use netcdf3
-
-  unsigned int len = file.dimension_length(m_time_name);
+  auto &file = *m_output_file;
+  auto len = file.time_dimension_length();
 
   if (len > 0) {
     // Note: does not perform unit conversion of the time read from the file. This should
     // be OK because this file was written by PISM.
-    double last_time = 0;
-    file.read_variable(m_time_name, {len - 1}, {1}, &last_time);
+    double last_time = file.last_time_value();
 
     if (last_time < m_time.front()) {
       m_start = len;
@@ -354,22 +352,24 @@ void TSDiagnostic::flush() {
   }
 
   if (len == m_start) {
-    io::define_dimension(file, m_time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, m_dimension, { m_time_name });
+    file.define_dimension(m_time_name, io::PISM_UNLIMITED);
+    file.define_variable(m_dimension, { m_time_name });
 
-    io::define_dimension(file, "nv", 2);
-    io::define_variable(file, m_time_bounds, { m_time_name, "nv" });
+    file.define_dimension("nv", 2);
+    file.define_variable(m_time_bounds, { m_time_name, "nv" });
 
     // write requested times
-    io::write_array(file, m_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);
+    file.write_array(m_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);
     // write time bounds
-    io::write_array(file, m_time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
-                    m_bounds);
+    file.write_array(m_time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
+                     m_bounds);
   }
 
-  io::define_variable(file, m_variable, { m_time_name });
+  file.define_variable(m_variable, { m_time_name });
   // write values of a diagnostic
-  io::write_array(file, m_variable, { m_start }, { (unsigned int)m_values.size() }, m_values);
+  file.write_array(m_variable, { m_start }, { (unsigned int)m_values.size() }, m_values);
+
+  file.sync();
 
   m_start += m_time.size();
 
@@ -380,14 +380,14 @@ void TSDiagnostic::flush() {
   }
 }
 
-void TSDiagnostic::init(const File &output_file,
+void TSDiagnostic::init(std::shared_ptr<OutputFile> output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
-  m_output_filename = output_file.name();
+  m_output_file = output_file;
 
   m_requested_times = std::move(requested_times);
 
   // Get the number of records in the file (for appending):
-  m_start = output_file.dimension_length(m_dimension.get_name());
+  m_start = output_file->time_dimension_length();
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {

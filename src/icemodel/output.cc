@@ -81,22 +81,15 @@ void IceModel::write_metadata(const OutputFile &file, MappingTreatment mapping_f
     }
 
     if (mapping.has_attributes()) {
-      io::define_variable(file, mapping, {});
+      file.define_variable(mapping, {});
     }
   }
 
   m_config->write(file);
 
   {
-    auto global_attributes = m_output_global_attributes;
-    global_attributes.set_name("PISM_GLOBAL");
-
-    auto old_history = file.read_text_attribute("PISM_GLOBAL", "history");
-    std::string history = global_attributes["history"];
-
-    global_attributes["history"] = history + old_history;
-
-    io::write_attributes(file, global_attributes);
+    file.append_history(m_output_history);
+    file.write_attributes(m_output_global_attributes);
   }
 }
 
@@ -113,7 +106,7 @@ void IceModel::save_results() {
         (double)stats["wall_clock_hours"], (double)stats["processor_hours"],
         (double)stats["model_years_per_processor_hour"]);
 
-    prepend_history(str);
+    append_history(str);
   }
 
   std::string filename = m_config->get_string("output.file");
@@ -132,12 +125,11 @@ void IceModel::save_results() {
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
-    OutputFile file(m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE);
+    OutputFile file(m_output_writer, filename);
 
     write_metadata(file, WRITE_MAPPING);
 
-    io::define_variable(file, run_stats(), {});
+    file.define_variable(run_stats(), {});
 
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
   }
@@ -145,21 +137,17 @@ void IceModel::save_results() {
 }
 
 void IceModel::save_variables(const OutputFile &file, OutputKind kind,
-                              const std::set<std::string> &variables, double time) const {
-
-  // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
-  // supports it.
-  file.set_compression_level(m_config->get_number("output.compression_level"));
+                              const std::set<std::string> &variables, double time_seconds) const {
 
   auto time_name = m_time->variable_name();
 
   // define the time dimension if necessary (no-op if it is already defined)
   {
-    auto var      = m_time->metadata();
-    var["bounds"] = "time_bounds";
+    auto time      = m_time->metadata();
+    time["bounds"] = "time_bounds";
 
-    io::define_dimension(file, time_name, io::PISM_UNLIMITED);
-    io::define_variable(file, var, { time_name });
+    file.define_dimension(time_name, io::PISM_UNLIMITED);
+    file.define_variable(time, { time_name });
   }
 
   // define the "timestamp" (wall clock time since the beginning of the run)
@@ -168,66 +156,34 @@ void IceModel::save_variables(const OutputFile &file, OutputKind kind,
   timestamp.long_name("wall-clock time since the beginning of the run")
       .units("hours")
       .set_output_type(io::PISM_FLOAT);
-  io::define_variable(file, timestamp, { time_name });
-
-  // append to the time dimension
-  io::append_time(file, time_name, time);
+  file.define_variable(timestamp, { time_name });
 
   // Write metadata *before* everything else:
   //
   // FIXME: we should write this to variables instead of attributes because NetCDF-4 crashes after
   // about 2^16 attribute modifications per variable. :-(
-  io::define_variable(file, run_stats(), {});
+  // FIXME: this will not update run_stats() in an extra file!
+  file.define_variable(run_stats(), {});
+
+  if (member("lat", variables) and member("lon", variables)) {
+    file.add_extra_attributes({ { "coordinates", "lat lon" } });
+  }
+
+  const auto &mapping = m_grid->get_mapping_info();
+  if (not mapping.proj_string.empty() or mapping.cf_mapping.has_attributes()) {
+    file.add_extra_attributes({ { "grid_mapping", mapping.cf_mapping.get_name() } });
+  }
 
   if (kind == INCLUDE_MODEL_STATE) {
     define_model_state(file);
   }
+
   define_diagnostics(file, variables);
 
   // Done defining variables
 
-  {
-    // Note: we don't use "variables" (an argument of this method) here because it
-    // contains PISM's names of diagnostic quantities which (in some cases) map to more
-    // than one NetCDF variable. Moreover, here we're concerned with file contents, not
-    // the list of requested variables.
-    std::set<std::string> var_names;
-    unsigned int n_vars = file.nvariables();
-    for (unsigned int k = 0; k < n_vars; ++k) {
-      var_names.insert(file.variable_name(k));
-    }
-
-    auto grid_mapping_name = m_grid->get_mapping_info().cf_mapping.get_name();
-    bool set_grid_mapping = member(grid_mapping_name, var_names);
-
-    // If this output file contains variables lat and lon...
-    if (member("lat", var_names) and member("lon", var_names)) {
-
-      // add the coordinates attribute to all variables that use x and y dimensions
-      for (const auto& v : var_names) {
-        std::set<std::string> dims;
-        for (const auto& d : file.dimensions(v)) {
-          dims.insert(d);
-        }
-
-        if (not member(v, {"lat", "lon", "lat_bnds", "lon_bnds"}) and
-            member("x", dims) and member("y", dims)) {
-          file.write_attribute(v, "coordinates", "lat lon");
-        }
-
-        if (set_grid_mapping and member("x", dims) and member("y", dims)) {
-          file.write_attribute(v, "grid_mapping", grid_mapping_name);
-        }
-      }
-
-      // and if it also contains lat_bnds and lon_bnds, add the bounds attribute to lat
-      // and lon.
-      if (member("lat_bnds", var_names) and member("lon_bnds", var_names)) {
-        file.write_attribute("lat", "bounds", "lat_bnds");
-        file.write_attribute("lon", "bounds", "lon_bnds");
-      }
-    }
-  }
+  // append to the time dimension
+  file.append_time(time_seconds);
 
   if (kind == INCLUDE_MODEL_STATE) {
     write_model_state(file);
@@ -236,10 +192,9 @@ void IceModel::save_variables(const OutputFile &file, OutputKind kind,
 
   // find out how much time passed since the beginning of the run and save it to the output file
   {
-    auto time_length = file.dimension_length(time_name);
-    auto start = time_length > 0 ? (time_length - 1) : 0;
-    io::write_array(file, timestamp, { start }, { 1 },
-                    { wall_clock_hours(m_grid->com, m_start_time) });
+    auto time_length = file.time_dimension_length();
+    auto start       = time_length > 0 ? (time_length - 1) : 0;
+    file.write_array(timestamp, { start }, { 1 }, { wall_clock_hours(m_grid->com, m_start_time) });
   }
 }
 
@@ -248,7 +203,19 @@ void IceModel::define_diagnostics(const OutputFile &file, const std::set<std::st
     auto diag = m_diagnostics.find(variable);
 
     if (diag != m_diagnostics.end()) {
-      diag->second->define(file);
+      auto &D = *diag->second;
+      for (unsigned int n = 0; n < D.n_variables(); ++n) {
+        auto var = D.metadata(n);
+
+        if (var.get_name() == "lat" and member("lat_bnds", variables)) {
+          var["bounds"] = "lat_bnds";
+        }
+        if (var.get_name() == "lon" and member("lon_bnds", variables)) {
+          var["bounds"] = "lon_bnds";
+        }
+
+        file.define_spatial_variable(var, m_grid->info());
+      }
     }
   }
 }
