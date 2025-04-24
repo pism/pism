@@ -107,6 +107,25 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
   return result;
 }
 
+static void define_time(const OutputFile &file,
+                        const VariableMetadata &T) {
+
+  auto time = T;
+  auto time_name = time.get_name();
+
+  VariableMetadata time_bounds("time_bounds", time.unit_system());
+
+  time_bounds.units(time["units"]);
+
+  time["bounds"] = time_bounds.get_name();
+
+  file.define_dimension(time_name, io::PISM_UNLIMITED);
+  file.define_variable(time, { time_name });
+
+  file.define_dimension("nv", 2);
+  file.define_variable(time_bounds, { time_name, "nv" });
+}
+
 //! Initialize the code saving spatially-variable diagnostic quantities.
 void IceModel::init_extras() {
 
@@ -152,6 +171,8 @@ void IceModel::init_extras() {
   m_extra_file = std::make_shared<OutputFile>(m_output_writer, m_extra_filename);
   
   if (append) {
+    // assume that the file is ready to write to, i.e. time and time_bounds are already
+    // defined
     m_extra_file->append();
 
     if (m_extra_file->time_dimension_length() > 0) {
@@ -176,6 +197,10 @@ void IceModel::init_extras() {
       m_extra_times = tmp;
       m_next_extra = 0;
     }
+  } else {
+    // prepare the file
+    define_time(*m_extra_file, m_time->metadata());
+    write_metadata(*m_extra_file, WRITE_MAPPING);
   }
 
   if (split) {
@@ -311,17 +336,7 @@ void IceModel::write_extras() {
         m_extra_file->append();
       } else {
         // Prepare the file:
-        auto time = m_time->metadata();
-        time_bounds.units(time["units"]);
-
-        time["bounds"] = time_bounds.get_name();
-
-        m_extra_file->define_dimension(time_name, io::PISM_UNLIMITED);
-        m_extra_file->define_variable(time, { time_name });
-
-        m_extra_file->define_dimension("nv", 2);
-        m_extra_file->define_variable(time_bounds, { time_name, "nv" });
-
+        define_time(*m_extra_file, m_time->metadata());
         write_metadata(*m_extra_file, WRITE_MAPPING);
       }
     }
