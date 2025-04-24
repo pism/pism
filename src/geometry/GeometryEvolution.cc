@@ -78,6 +78,8 @@ struct GeometryEvolution::Impl {
 
   //! Flux through cell interfaces. Ghosted.
   array::Staggered1 flux_staggered;
+  //! Temporary storage for the flux limiter.
+  array::Staggered flux_limited;
 
   // Work space
   array::Vector1 input_velocity;       // a ghosted copy; not modified
@@ -100,6 +102,7 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
       thickness_change(grid, "thickness_change"),
       ice_area_specific_volume_change(grid, "ice_area_specific_volume_change"),
       flux_staggered(grid, "flux_staggered"),
+      flux_limited(grid, "flux_limited"),
       input_velocity(grid, "input_velocity"),
       bed_elevation(grid, "bed_elevation"),
       sea_level(grid, "sea_level"),
@@ -282,16 +285,12 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
   m_impl->flux_staggered.update_ghosts();
 
   {
-    // allocate temporary storage (FIXME: at some point I should evaluate whether it's OK
-    // to allocate this every time step)
-    array::Staggered flux_limited(m_grid, "limited_ice_flux");
-
     make_nonnegative_preserving(dt,
                                 m_impl->ice_thickness,  // in (uses ghosts)
                                 m_impl->flux_staggered, // in (uses ghosts)
-                                flux_limited);
+                                m_impl->flux_limited);
 
-    m_impl->flux_staggered.copy_from(flux_limited);
+    m_impl->flux_staggered.copy_from(m_impl->flux_limited);
   }
 
   profiling().begin("ge.flux_divergence");
