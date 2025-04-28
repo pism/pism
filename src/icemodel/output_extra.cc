@@ -168,39 +168,42 @@ void IceModel::init_extras() {
                        "both output.extra.split and output.extra.append are set.");
   }
 
-  m_extra_file = std::make_shared<OutputFile>(m_output_writer, m_extra_filename);
-  
-  if (append) {
-    // assume that the file is ready to write to, i.e. time and time_bounds are already
-    // defined
-    m_extra_file->append();
+  m_extra_file = nullptr;
+  if (not split) {
+    m_extra_file = std::make_shared<OutputFile>(m_output_writer, m_extra_filename);
 
-    if (m_extra_file->time_dimension_length() > 0) {
-      double time_max = m_extra_file->last_time_value();
+    if (append) {
+      // assume that the file is ready to write to, i.e. time and time_bounds are already
+      // defined
+      m_extra_file->append();
 
-      while (m_next_extra + 1 < m_extra_times.size() && m_extra_times[m_next_extra + 1] < time_max) {
-        m_next_extra++;
+      if (m_extra_file->time_dimension_length() > 0) {
+        double time_max = m_extra_file->last_time_value();
+
+        while (m_next_extra + 1 < m_extra_times.size() &&
+               m_extra_times[m_next_extra + 1] < time_max) {
+          m_next_extra++;
+        }
+
+        if (m_next_extra > 0) {
+          m_log->message(2, "skipping times before the last record in %s (at %s)\n",
+                         m_extra_filename.c_str(), m_time->date(time_max).c_str());
+        }
+
+        // discard requested times before the beginning of the run
+        std::vector<double> tmp(m_extra_times.size() - m_next_extra);
+        for (unsigned int k = 0; k < tmp.size(); ++k) {
+          tmp[k] = m_extra_times[m_next_extra + k];
+        }
+
+        m_extra_times = tmp;
+        m_next_extra  = 0;
       }
-
-      if (m_next_extra > 0) {
-        m_log->message(2,
-                   "skipping times before the last record in %s (at %s)\n",
-                   m_extra_filename.c_str(), m_time->date(time_max).c_str());
-      }
-
-      // discard requested times before the beginning of the run
-      std::vector<double> tmp(m_extra_times.size() - m_next_extra);
-      for (unsigned int k = 0; k < tmp.size(); ++k) {
-        tmp[k] = m_extra_times[m_next_extra + k];
-      }
-
-      m_extra_times = tmp;
-      m_next_extra = 0;
+    } else {
+      // prepare the file
+      define_time(*m_extra_file, m_time->metadata());
+      write_metadata(*m_extra_file, WRITE_MAPPING);
     }
-  } else {
-    // prepare the file
-    define_time(*m_extra_file, m_time->metadata());
-    write_metadata(*m_extra_file, WRITE_MAPPING);
   }
 
   if (split) {
