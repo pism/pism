@@ -136,11 +136,6 @@ void IceModel::define_run_stats(const OutputFile &file) const {
       .units("hours")
       .set_output_type(io::PISM_FLOAT);
 
-  VariableMetadata run_duration("run_duration", m_sys);
-  run_duration.long_name("model time since the beginning of the run")
-      .units("years")
-      .set_output_type(io::PISM_FLOAT);
-
   VariableMetadata myph("model_years_per_processor_hour", m_sys);
   myph.long_name("average number of model years per processor hour, since the beginning of the run")
       .units("years / hour")
@@ -152,7 +147,6 @@ void IceModel::define_run_stats(const OutputFile &file) const {
       .set_output_type(io::PISM_INT);
 
   file.define_variable(wall_clock, { time_name });
-  file.define_variable(run_duration, { time_name });
   file.define_variable(myph, { time_name });
   file.define_variable(step_counter, { time_name });
 }
@@ -169,7 +163,6 @@ void IceModel::write_run_stats(const OutputFile &file) const {
          model_years = m_time->convert_time_interval(m_time->current() - m_time->start(), "years");
 
   file.write_array({ "wall_clock_time", m_sys }, { t_start }, { 1 }, { wall_clock_hours });
-  file.write_array({ "run_duration", m_sys }, { t_start }, { 1 }, { model_years });
   file.write_array({ "model_years_per_processor_hour", m_sys }, { t_start }, { 1 },
                    { model_years / proc_hours });
   file.write_array({ "step_counter", m_sys }, { t_start }, { 1 }, { (double)m_step_counter });
