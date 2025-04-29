@@ -1,4 +1,4 @@
-all: result extra extra_split extra_append snapshots snapshots_split timeseries timeseries_append checkpointing compression grid_mapping
+all: result extra extra_split extra_append snapshots snapshots_split timeseries timeseries_append checkpointing compression grid_mapping beddef_lc
 
 result: test_result.sh
 	bash $^
@@ -35,6 +35,9 @@ compression: test_compression.sh
 	ncdump -h -s result_compressed.nc | grep -v pism_config | head -100 | grep _DeflateLevel
 
 grid_mapping: test_grid_mapping.sh
+	bash $^
+
+beddef_lc: test_beddef_lc.sh
 	bash $^
 
 clean:
