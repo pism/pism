@@ -78,8 +78,6 @@ public:
 
   SpatialVariableMetadata &metadata(unsigned int N = 0);
 
-  void define(const OutputFile &file) const;
-
   void init(const File &input, unsigned int time);
   void define_state(const OutputFile &output) const;
   void write_state(const OutputFile &output) const;
@@ -87,7 +85,6 @@ public:
 protected:
   virtual void init_impl(const File &input, unsigned int time);
 
-  virtual void define_impl(const OutputFile &file) const;
   virtual void define_state_impl(const OutputFile &output) const;
   virtual void write_state_impl(const OutputFile &output) const;
 

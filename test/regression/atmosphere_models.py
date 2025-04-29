@@ -45,9 +45,6 @@ def write_state(model):
         output = PISM.util.prepare_output(o_diagnostics)
 
         for d in ds:
-            ds[d].define(output)
-
-        for d in ds:
             ds[d].compute().write(output)
 
         output.close()

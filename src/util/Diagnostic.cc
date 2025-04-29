@@ -121,17 +121,6 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const OutputFile &file) const {
-  this->define_impl(file);
-}
-
-//! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const OutputFile &file) const {
-  for (const auto &v : m_vars) {
-    file.define_spatial_variable(v, m_grid->info());
-  }
-}
-
 std::shared_ptr<array::Array> Diagnostic::compute() const {
   std::vector<std::string> names;
   for (const auto &v : m_vars) {
