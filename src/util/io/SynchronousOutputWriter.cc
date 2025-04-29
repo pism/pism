@@ -22,6 +22,7 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 
@@ -150,7 +151,9 @@ double SynchronousOutputWriter::last_time_value_impl(const std::string &file_nam
     output_file.read_variable("time", { t_length - 1 }, { 1 }, &time);
     return time;
   }
-  return 0;
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "time dimension in '%s' is absent or has length zero",
+                                file_name.c_str());
 }
 
 void SynchronousOutputWriter::write_array_impl(const std::string &file_name,
