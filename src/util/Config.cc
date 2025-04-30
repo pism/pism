@@ -379,6 +379,10 @@ void Config::set_flag(const std::string& name, bool value,
   this->set_flag_impl(name, value);
 }
 
+std::shared_ptr<units::System> Config::unit_system() const {
+  return m_impl->unit_system;
+}
+
 static bool special_parameter(const std::string &name) {
   for (const auto &suffix : {"_doc", "_units", "_type", "_option", "_choices", "_valid_min", "_valid_max"}) {
     if (ends_with(name, suffix)) {
@@ -586,9 +590,9 @@ void set_flag_from_option(Config &config, const std::string &option,
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-void set_number_from_option(units::System::Ptr unit_system, Config &config, const std::string &option,
+void set_number_from_option(Config &config, const std::string &option,
                             const std::string &parameter) {
-  options::Real opt(unit_system, "-" + option, config.doc(parameter), config.units(parameter),
+  options::Real opt(config.unit_system(), "-" + option, config.doc(parameter), config.units(parameter),
                     config.get_number(parameter, Config::FORGET_THIS_USE));
   if (opt.is_set()) {
     config.set_number(parameter, opt, CONFIG_USER);
@@ -630,8 +634,7 @@ void set_keyword_from_option(Config &config, const std::string &option, const st
   }
 }
 
-void set_parameter_from_options(units::System::Ptr unit_system, Config &config,
-                                const std::string &name) {
+void set_parameter_from_options(Config &config, const std::string &name) {
 
   // skip special parameters ("attributes" of parameters)
   if (special_parameter(name)) {
@@ -666,7 +669,7 @@ void set_parameter_from_options(units::System::Ptr unit_system, Config &config,
   } else if (type == "flag") {
     set_flag_from_option(config, option, name);
   } else if (type == "number") {
-    set_number_from_option(unit_system, config, option, name);
+    set_number_from_option(config, option, name);
   } else if (type == "integer") {
     set_integer_from_option(config, option, name);
   } else if (type == "keyword") {
@@ -677,17 +680,17 @@ void set_parameter_from_options(units::System::Ptr unit_system, Config &config,
   }
 }
 
-void set_config_from_options(units::System::Ptr unit_system, Config &config) {
+void set_config_from_options(Config &config) {
   for (const auto &d : config.all_doubles()) {
-    set_parameter_from_options(unit_system, config, d.first);
+    set_parameter_from_options(config, d.first);
   }
 
   for (const auto &s : config.all_strings()) {
-    set_parameter_from_options(unit_system, config, s.first);
+    set_parameter_from_options(config, s.first);
   }
 
   for (const auto &b : config.all_flags()) {
-    set_parameter_from_options(unit_system, config, b.first);
+    set_parameter_from_options(config, b.first);
   }
 
   // Shortcuts
@@ -777,7 +780,7 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
                                                 " (a comma-separated list of 2 numbers)");
       }
 
-      units::Converter meter_per_second(unit_system, "m year^-1", "m second^-1");
+      units::Converter meter_per_second(config.unit_system(), "m year^-1", "m second^-1");
 
       config.set_number("surface.elevation_dependent.M_limit_min", meter_per_second(L[0]));
       config.set_number("surface.elevation_dependent.M_limit_max", meter_per_second(L[1]));
@@ -806,7 +809,7 @@ std::shared_ptr<Config> config_from_options(MPI_Comm com,
     config->import_from(*overrides);
   }
 
-  set_config_from_options(unit_system, *config);
+  set_config_from_options(*config);
 
   config->resolve_filenames();
 

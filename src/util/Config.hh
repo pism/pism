@@ -53,7 +53,7 @@ enum ConfigSettingFlag {CONFIG_DEFAULT = 0, CONFIG_FORCE = 1, CONFIG_USER = 2};
 //! A class for storing and accessing PISM configuration flags and parameters.
 class Config {
 public:
-  Config(units::System::Ptr unit_system);
+  Config(std::shared_ptr<units::System> unit_system);
   virtual ~Config();
 
   //! Flag used by `get_...()` methods.
@@ -128,6 +128,7 @@ public:
   std::pair<bool, double> valid_min(const std::string &parameter) const;
   std::pair<bool, double> valid_max(const std::string &parameter) const;
 
+  std::shared_ptr<units::System> unit_system() const;
   // Implementations
 protected:
   virtual void read_impl(const File &nc) = 0;
@@ -174,20 +175,20 @@ private:
   std::shared_ptr<const Config> m_config;
 };
 
-std::shared_ptr<Config> config_from_options(MPI_Comm com, units::System::Ptr unit_system);
+std::shared_ptr<Config> config_from_options(MPI_Comm com, std::shared_ptr<units::System> unit_system);
 
 //! Set configuration parameters using command-line options.
-void set_config_from_options(units::System::Ptr unit_system, Config &config);
+void set_config_from_options(Config &config);
 
 //! Set one parameter using command-line options.
-void set_parameter_from_options(units::System::Ptr unit_system, Config &config, const std::string &name);
+void set_parameter_from_options(Config &config, const std::string &name);
 
 //! Set one flag parameter using command-line options.
 void set_flag_from_option(Config &config,
-                             const std::string &option,const std::string &parameter);
+                          const std::string &option,const std::string &parameter);
 
 //! Set one scalar parameter using command-line options.
-void set_number_from_option(units::System::Ptr unit_system, Config &config,
+void set_number_from_option(Config &config,
                             const std::string &option, const std::string &parameter);
 
 //! Set one free-form string parameter using command-line options.

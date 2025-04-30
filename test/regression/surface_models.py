@@ -341,7 +341,7 @@ class Elevation(TestCase):
                          "{},{},{},{},{}".format(M_min, M_max, z_min, z_ela, z_max))
 
         ctx = PISM.Context()
-        PISM.set_config_from_options(ctx.unit_system, ctx.config)
+        PISM.set_config_from_options(ctx.config)
 
         T = PISM.util.convert(0.5 * (T_min + T_max), "degree_Celsius", "kelvin")
         SMB = PISM.util.convert(1.87504, "m/year", "m/s") * config.get_number("constants.ice.density")

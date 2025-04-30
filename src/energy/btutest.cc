@@ -70,7 +70,7 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   config->set_string("time.start", "0s");
   config->set_number("time.run_length", 1.0);
 
-  set_config_from_options(sys, *config);
+  set_config_from_options(*config);
   config->resolve_filenames();
 
   print_config(*logger, 3, *config);

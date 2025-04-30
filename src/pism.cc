@@ -98,7 +98,7 @@ std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix) {
   config->set_string("grid.periodicity", "none");
   config->set_string("grid.registration", "corner");
 
-  set_config_from_options(sys, *config);
+  set_config_from_options(*config);
   config->resolve_filenames();
 
   print_config(*logger, 3, *config);
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
       }
 
       // process command-line options
-      set_config_from_options(ctx->unit_system(), *config);
+      set_config_from_options(*config);
       config->resolve_filenames();
     } else if (not verification_test.is_set()) {
       required_options.emplace_back("-i");

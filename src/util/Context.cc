@@ -123,11 +123,20 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com,
   // unit system
   auto sys = std::make_shared<units::System>();
 
-  // logger
-  auto logger = std::make_shared<Logger>(com, 1);
-
   // configuration parameters
   auto config = config_from_options(com, sys);
+
+  return context_from_config(com, config, prefix);
+}
+
+std::shared_ptr<Context> context_from_config(MPI_Comm com,
+                                             std::shared_ptr<Config> config,
+                                             const std::string &prefix) {
+  // unit system
+  auto sys = config->unit_system();
+
+  // logger
+  auto logger = std::make_shared<Logger>(com, 1);
 
   logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
 
@@ -139,6 +148,5 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com,
 
   return std::make_shared<Context>(com, sys, config, EC, time, logger, prefix);
 }
-
 
 } // end of namespace pism

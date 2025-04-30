@@ -75,7 +75,7 @@ def set_config():
     config.set_number("stress_balance.sia.Glen_exponent", 3.0)
     config.set_number("stress_balance.sia.bed_smoother.range", 50.0e3)
 
-    PISM.set_config_from_options(ctx.unit_system, config)
+    PISM.set_config_from_options(config)
 
 
 def smooth(topg, topg_smoothed, usurf, theta):

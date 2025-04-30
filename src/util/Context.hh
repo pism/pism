@@ -68,9 +68,12 @@ private:
   Context & operator=(const Context &);
 };
 
+std::shared_ptr<Context> context_from_config(MPI_Comm com,
+                                             std::shared_ptr<Config> config,
+                                             const std::string &prefix);
+
 //! Create a default context using options.
-std::shared_ptr<Context> context_from_options(MPI_Comm com,
-                                              const std::string &prefix);
+std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &prefix);
 
 } // end of namespace pism
 
