@@ -41,6 +41,44 @@ namespace io {
 enum Type : int;
 }
 
+/*!
+ * File output API
+ *
+ * PISM writes the following kinds of output:
+ *
+ * 1) output at the end of a run (used to re-start the model),
+ *
+ * 2) 2D and 3D diagnostic output saved at specified model times during a run (affects
+ *    model time stepping),
+ *
+ * 3) Same as 2), but each time record is saved to a separate file,
+ *
+ * 4) Same as 2), but appending to a file created by an earlier run,
+ *
+ * 5) Snapshots of the model state at times *close to* specified model times during a run
+ *    (does not affect model time stepping; can be used to re-start a failed run)
+ *
+ * 6) Same as 5, but each snapshot is saved to separate file,
+ *
+ * 7) Scalar time-dependent diagnostics (value are stored *redundantly* on all MPI ranks),
+ *
+ * 8) Same as 7), but appending to a file created by an earlier run,
+ *
+ * 9) Snapshots of the model state saved after a specified *wall clock time* interval
+ *    passed (used to re-start a failed run).
+ *
+ * All files contain *one* unlimited dimension (time).
+ *
+ * File contents are determined at run time.
+ *
+ * A file may contain a mix of 1D, 2D, and 3D time-dependent and time-independent
+ * variables.
+ *
+ * A file may contain more than one x,y grid and more than one set of vertical (z) levels.
+ *
+ *
+ *    
+ */
 class OutputWriter {
 public:
   OutputWriter(MPI_Comm comm, const Config &config);
