@@ -119,8 +119,7 @@ std::shared_ptr<Logger> Context::log() {
 }
 
 std::shared_ptr<Context> context_from_options(MPI_Comm com,
-                                              const std::string &prefix,
-                                              bool print) {
+                                              const std::string &prefix) {
   // unit system
   auto sys = std::make_shared<units::System>();
 
@@ -131,10 +130,6 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com,
   auto config = config_from_options(com, sys);
 
   logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
-
-  if (print) {
-    print_config(*logger, 3, *config);
-  }
 
   // time manager
   auto time = std::make_shared<Time>(com, config, *logger, sys);

@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
     if (verification_test.is_set()) {
       ctx = verification::context(com, "pism");
     } else {
-      ctx = context_from_options(com, "pism", false);
+      ctx = context_from_options(com, "pism");
     }
 
     auto log = ctx->log();
