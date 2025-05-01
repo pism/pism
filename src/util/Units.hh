@@ -74,7 +74,7 @@ public:
   double time(const DateTime &d, const std::string &calendar) const;
 
   Unit& operator=(const Unit& other);
-  std::string format() const;
+  std::string string() const;
 
   operator std::string() const;
 

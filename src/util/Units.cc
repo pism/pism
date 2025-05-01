@@ -138,7 +138,7 @@ bool Unit::is_convertible(const Unit &other) const {
   return ut_are_convertible(m_impl->unit, other.m_impl->unit) != 0;
 }
 
-std::string Unit::format() const {
+std::string Unit::string() const {
   return m_impl->unit_string;
 }
 
@@ -213,14 +213,14 @@ struct Converter::Impl {
   Impl(const Unit &u1, const Unit &u2) {
     if (not u1.is_convertible(u2)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert '%s' to '%s'",
-                                    u1.format().c_str(), u2.format().c_str());
+                                    u1.string().c_str(), u2.string().c_str());
     }
 
     converter = ut_get_converter(u1.m_impl->unit, u2.m_impl->unit);
     if (converter == nullptr) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "failed to create a converter from '%s' to '%s'",
-                                    u1.format().c_str(), u2.format().c_str());
+                                    u1.string().c_str(), u2.string().c_str());
     }
 
   }
