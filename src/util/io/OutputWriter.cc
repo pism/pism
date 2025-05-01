@@ -32,8 +32,9 @@
 
 namespace pism {
 
-/*! Pre-process variable attributes for writing.
-*/
+/*!
+ * Pre-process variable attributes for writing.
+ */
 static VariableMetadata format_attributes(const VariableMetadata &metadata) {
 
   // make a copy so we can edit metadata
@@ -156,6 +157,10 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
   // add extra attributes such as "grid_mapping" and "coordinates". Variables lat, lon,
   // lat_bnds, and lon_bnds should not have these attributes to support CDO (see issue
   // #384).
+  //
+  // We check names of x and y dimensions to avoid setting extra attributes for variables
+  // that use a different grid (e.g. viscous_bed_displacement written by the Lingle-Clark
+  // bed deformation model).
   if (metadata.x().get_name() == "x" and metadata.y().get_name() == "y") {
     if (not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
       for (const auto &attr : extra_attributes) {

@@ -32,6 +32,9 @@ namespace io {
 enum Backend : int;
 }
 
+/*!
+ * Synchronous implementation of OutputWriter.
+ */
 class SynchronousOutputWriter : public OutputWriter {
 public:
   SynchronousOutputWriter(MPI_Comm comm, const Config &config);

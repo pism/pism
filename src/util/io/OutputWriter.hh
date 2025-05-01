@@ -78,7 +78,19 @@ enum Type : int;
  *
  * Appending to a file requires being able to get the current length of the time dimension
  * in a file and the last value of the corresponding coordinate variable.
- *    
+ *
+ * The first call using `file_name` opens the file `file_name`. If the file already exists
+ * it is moved to `file_name` + "~" (a "backup" file).
+ *
+ * If the first call using `file_name` is `append(file_name)`, the file is opened for
+ * appending.
+ *
+ * An opened file remains open until `close()` is called or until an instance of
+ * `OutputWriter` is de-allocated (i.e. until the end of a model run).
+ *
+ * PISM defines all variables before writing *any* of the associated data. Attributes are
+ * set *once* and not modified afterwards. This should make it possible to aggregate all
+ * metadata and write all of it at once
  */
 class OutputWriter {
 public:
@@ -97,18 +109,26 @@ public:
 
   /*!
    * Define a dimension.
+   * 
+   * No-op if the dimension already exists.
    */
   void define_dimension(const std::string &file_name, const std::string &dimension_name,
                         unsigned int length);
 
   /*!
    * Define a variable given a list of dimension names and set its attributes.
+   *
+   * No-op if the variable already exists.
    */
   void define_variable(const std::string &file_name, const VariableMetadata &metadata,
                        const std::vector<std::string> &dims);
 
   /*!
    * Define a 2D or 3D (possibly time-dependent) variable and set its attributes.
+   *
+   * No-op if the variable already exists.
+   *
+   * Stores domain decomposition `grid` and makes it accessible using grid_info().
    *
    * @param[in] file_name name of the output file
    * @param[in] metadata variable metadata (name, attributes, etc)
@@ -118,78 +138,195 @@ public:
                                const SpatialVariableMetadata &metadata,
                                const grid::DistributedGridInfo &grid);
 
+  /*!
+   * Set global attributes for a given output file.
+   *
+   * Numbers are written as NC_DOUBLE.
+   */
   void set_global_attributes(const std::string &file_name,
                              const std::map<std::string, std::string> &strings,
                              const std::map<std::string, std::vector<double> > &numbers);
 
-
+  /*!
+   * Append to the global attribute "history" in the output file.
+   *
+   * The "history" attribute is treated as a newline-delimited list. This call adds a "\n"
+   * followed by the string in `text` to the attribute "history" in the file `file_name`.
+   */
   void append_history(const std::string &file_name, const std::string &text);
 
+  /*!
+   * Increase the length of the time dimension by one, appending the value `time_seconds`.
+   *
+   * This should increase the value returned by `time_dimension_length()` by one.
+   */
   void append_time(const std::string &file_name, double time_seconds);
 
+  /*!
+   * Write a 1D array `input` to a variable `variable_name` in the file `file_name`.
+   *
+   * Data in `input` are written without modification.
+   *
+   * The array `input` is stored *redundantly* on all MPI ranks.
+   */
   void write_array(const std::string &file_name, const std::string &variable_name,
                    const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
                    const std::vector<double> &input);
 
+  /*!
+   * Write a 1D array `input` to a variable `variable_name` in the file `file_name`,
+   * converting from internal to "output" units if necessary.
+   *
+   * The array `input` is stored *redundantly* on all MPI ranks.
+   */
   void write_array(const std::string &file_name, const VariableMetadata &metadata,
                    const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
                    const std::vector<double> &input);
 
+  /*!
+   * Write a 2D or 3D array `input` described by `metadata` to the file `file_name`.
+   *
+   * Write coordinate variables (`x`, `y`, `z`, etc) required by this variable.
+   *
+   * Convert from internal to output units, if necessary.
+   *
+   * May be a no-op if this variable is time-independent and was written already.
+   *
+   * The array `input` is distributed across MPI ranks in the communicator used to create
+   * this `OutputWriter` instance. Uses domain decomposition information provided to
+   * `define_spatial_variable()`.
+   */
   void write_spatial_variable(const std::string &file_name, const SpatialVariableMetadata &metadata,
                               const double *input);
 
+  /*!
+   * Indicate that the file `file_name` should be open for appending.
+   *
+   * This implies that if `file_name` should not be deleted if it already exists.
+   *
+   * May require reading time dimension length and the last value of time from `file_name`.
+   */
   void append(const std::string &file_name);
 
+  /*!
+   * Ensure that all requested write operations are complete.
+   *
+   * May be a no-op in the context of asynchronous writing.
+   */
   void sync(const std::string &file_name);
 
+  /*!
+   * Possibly close the file `file_name`. Used to indicate that the user does not intend
+   * to write to the file `file_name` any more.
+   */
   void close(const std::string &file_name);
 
+  /*!
+   * Return the length of the time dimension (possibly cached to avoid reading from the
+   * file or communication).
+   */
   unsigned int time_dimension_length(const std::string &file_name);
 
+  /*!
+   * Return the last value of the coordinate variable "time" (possibly cached to avoid
+   * reading from the file or communication).
+   *
+   * Used when appending to an existing file.
+   */
   double last_time_value(const std::string &file_name);
   
 protected:
+  /*!
+   * Return the MPI communicator
+   */
   MPI_Comm comm() const;
 
+  /*!
+   * Return the domain decomposition information for the variable `variable_name`.
+   */
   const grid::DistributedGridInfo &grid_info(const std::string &variable_name) const;
 
+  /*!
+   * Return `true` if variable `variable_name` was already written to the file
+   * `file_name`. Used to avoid writing coordinate variables and time-independent 2D and
+   * 3D arrays more than once.
+   */
   bool &already_written(const std::string &file_name, const std::string &variable_name);
 
+  /*!
+   * Return the name of the time dimension and the corresponding coordinate variable.
+   */
   const std::string &time_name() const;
 
+  /*!
+   * Implementation of set_global_attributes()
+   */
   virtual void
   set_global_attributes_impl(const std::string &file_name,
                              const std::map<std::string, std::string> &strings,
                              const std::map<std::string, std::vector<double> > &numbers) = 0;
 
+  /*!
+   * Implementation of define_dimension()
+   */
   virtual void define_dimension_impl(const std::string &file_name, const std::string &name,
                                      unsigned int length) = 0;
 
+  /*!
+   * Implementation of define_variable()
+   */
   virtual void define_variable_impl(const std::string &file_name, const VariableMetadata &metadata,
                                     const std::vector<std::string> &dims) = 0;
 
+  /*!
+   * Implementation of append_time()
+   */
   virtual void append_time_impl(const std::string &file_name, double time_seconds) = 0;
 
+  /*!
+   * Implementation of append_history()
+   */
   virtual void append_history_impl(const std::string &file_name, const std::string &text) = 0;
 
+  /*!
+   * Implementation of time_dimension_length()
+   */
   virtual unsigned int time_dimension_length_impl(const std::string &file_name) = 0;
 
+  /*!
+   * Implementation of last_time_value()
+   */
   virtual double last_time_value_impl(const std::string &file_name) = 0;
 
+  /*!
+   * Implementation of write_array()
+   */
   virtual void write_array_impl(const std::string &file_name, const std::string &variable_name,
                                 const std::vector<unsigned int> &start,
                                 const std::vector<unsigned int> &count, const double *data) = 0;
 
+  /*!
+   * Implementation of write_distributed_array()
+   */
   virtual void write_distributed_array_impl(const std::string &file_name,
                                             const std::string &variable_name,
                                             const std::vector<unsigned int> &start,
                                             const std::vector<unsigned int> &count,
                                             const double *data) = 0;
 
+  /*!
+   * Implementation of append()
+   */
   virtual void append_impl(const std::string &file_name) = 0;
 
+  /*!
+   * Implementation of sync()
+   */
   virtual void sync_impl(const std::string &file_name) = 0;
 
+  /*!
+   * Implementation of close()
+   */
   virtual void close_impl(const std::string &file_name) = 0;
 
 private:
@@ -197,6 +334,14 @@ private:
   Impl *m_impl;
 };
 
+/*!
+ * Wrapper class used to make OutputWriter a bit easier to use.
+ *
+ * See documentation of OutputWriter for details.
+ *
+ * Does not open the file when created, allowing one to call `append()` to indicate that a
+ * file should not be over-written.
+ */
 class OutputFile {
 public:
   OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name);
