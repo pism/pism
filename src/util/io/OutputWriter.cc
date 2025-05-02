@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <mpi.h>
+#include <string>
 #include <vector>
 #include <cassert>
 
@@ -231,7 +232,7 @@ void OutputWriter::write_array(const std::string &file_name, const VariableMetad
   units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
       .convert_doubles(data.data(), data.size());
 
-  write_array(file_name, metadata.get_name(), start, count, data);
+  write_array_impl(file_name, metadata.get_name(), start, count, data.data());
 }
 
 void OutputWriter::write_spatial_variable(const std::string &file_name,
@@ -271,30 +272,13 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   }
 
   // make sure we have at least one level
-  unsigned int nlevels = std::max(metadata.levels().size(), (std::size_t)1);
+  unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
 
-  std::string units = metadata["units"], output_units = metadata["output_units"];
-
-  // override `output_units` if "output.use_MKS" is set
-  if (m_impl->use_internal_units) {
-    output_units = units;
-  }
-
-  std::vector<unsigned int> start, count;
-
-  if (time_independent) {
-    start = { grid.ys, grid.xs, 0 };
-    count = { grid.ym, grid.xm, nlevels };
-  } else {
-    auto t_length = time_dimension_length(file_name);
-    auto t_start  = t_length > 0 ? t_length - 1 : 0;
-
-    start = { t_start, grid.ys, grid.xs, 0 };
-    count = {       1, grid.ym, grid.xm, nlevels };
-  }
+  std::string units = metadata["units"];
+  std::string output_units = m_impl->use_internal_units ? units : metadata["output_units"];
 
   if (units != output_units) {
-    auto data_size = grid.xm * grid.ym * nlevels;
+    auto data_size = grid.xm * grid.ym * n_levels;
 
     // create a temporary array, convert to output units, and
     // save
@@ -307,9 +291,9 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
     units::Converter(metadata.unit_system(), units, output_units)
         .convert_doubles(tmp.data(), tmp.size());
 
-    write_distributed_array_impl(file_name, variable_name, start, count, tmp.data());
+    write_spatial_variable_impl(file_name, metadata, tmp.data());
   } else {
-    write_distributed_array_impl(file_name, variable_name, start, count, input);
+    write_spatial_variable_impl(file_name, metadata, input);
   }
   already_written(file_name, variable_name) = true;
 }

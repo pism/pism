@@ -74,9 +74,8 @@ private:
                         const std::vector<unsigned int> &start,
                         const std::vector<unsigned int> &count, const double *data);
 
-  void write_distributed_array_impl(const std::string &file_name, const std::string &variable_name,
-                                    const std::vector<unsigned int> &start,
-                                    const std::vector<unsigned int> &count, const double *data);
+  void write_spatial_variable_impl(const std::string &file_name,
+                                   const SpatialVariableMetadata &metadata, const double *data);
 
   void append_impl(const std::string &file_name);
   void sync_impl(const std::string &file_name);
