@@ -76,6 +76,9 @@ public:
   std::map<std::string, AxisType> dimension_types;
 
   bool longitude_latitude;
+
+  //! z coordinates: input grids may be 3-dimensional
+  std::vector<double> z;
 private:
   void reset();
 };

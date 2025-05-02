@@ -51,8 +51,6 @@ public:
   std::vector<double> x;
   //! y coordinates
   std::vector<double> y;
-  //! z coordinates
-  std::vector<double> z;
 };
 
 class DistributedGridInfo : public GridInfo {

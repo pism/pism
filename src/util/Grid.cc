@@ -82,6 +82,9 @@ struct Grid::Impl : public grid::DistributedGridInfo {
   gsl_interp_accel *bsearch_accel;
 
   std::map<std::string, std::shared_ptr<InputInterpolation>> regridding_2d;
+
+  //! z coordinates within the ice
+  std::vector<double> z;
 };
 
 Grid::Impl::Impl(std::shared_ptr<const Context> context)
