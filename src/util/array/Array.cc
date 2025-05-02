@@ -720,6 +720,17 @@ std::vector<double> Array::norm(int n) const {
   }
 }
 
+void Array::write(const std::string &filename) const {
+  const auto &config = *grid()->ctx()->config();
+  auto writer = std::make_shared<SynchronousOutputWriter>(grid()->com, config);
+
+  // We expect the file to be present and ready to write into.
+  OutputFile file(writer, filename);
+  file.append();
+
+  write(file);
+}
+
 void Array::read(const std::string &filename, unsigned int time) {
   File file(m_impl->grid->com, filename, io::PISM_GUESS, io::PISM_READONLY);
   this->read(file, time);
