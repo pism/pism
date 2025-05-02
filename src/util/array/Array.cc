@@ -46,7 +46,6 @@
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/util/InputInterpolation.hh"
-#include "pism/util/projection.hh"
 #include "pism/util/io/OutputWriter.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 

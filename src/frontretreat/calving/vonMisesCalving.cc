@@ -120,7 +120,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
   array::AccessScope list{&ice_enthalpy, &ice_thickness, &m_cell_type, &ice_velocity,
                                &m_strain_rates, &m_calving_rate, &m_calving_threshold};
 
-  const double *z = m_grid->z().data();
+  const double *z = ice_enthalpy.levels().data();
 
   double glen_exponent = m_flow_law->exponent();
 
