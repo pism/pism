@@ -36,7 +36,7 @@ ${PISM_PATH}/pism -i input-vertical-grid.nc -bootstrap \
         -o ok-vertical-grid.nc
 
 # compare results (use relative tolerance)
-$PISM_PATH/pism_nccmp -x -v timestamp -r -t 1e-7 fixed-vertical-grid.nc ok-vertical-grid.nc
+$PISM_PATH/pism_nccmp -x -v timestamp,step_counter,model_years_per_processor_hour,wall_clock_time -r -t 1e-7 fixed-vertical-grid.nc ok-vertical-grid.nc
 if [ $? != 0 ];
 then
     exit 1
