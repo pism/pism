@@ -30,17 +30,6 @@ namespace pism {
 namespace io {
 
 /*!
- * Define a NetCDF dimension. Do nothing if a dimension is already present.
- */
-void define_dimension(const File &file, const std::string &name, size_t length) {
-  if (file.dimension_exists(name)) {
-    return;
-  }
-
-  file.define_dimension(name, length);
-}
-
-/*!
  * Define a NetCDF variable and set its attributes. Do nothing if a variable is already present.
  */
 void define_variable(const File &file, const VariableMetadata &metadata,
@@ -100,7 +89,7 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
     }
 
     dims.push_back(dimension_name);
-    define_dimension(file, dimension_name, dimension.length());
+    file.define_dimension(dimension_name, dimension.length());
     define_variable(file, dimension, { dimension_name });
   }
 

@@ -604,7 +604,7 @@ static void write(units::System::Ptr sys, const File &file, unsigned int start, 
   VariableMetadata variable(name, sys);
   variable.units(units).long_name(long_name);
 
-  io::define_dimension(file, "N", io::PISM_UNLIMITED);
+  file.define_dimension("N", io::PISM_UNLIMITED);
   io::define_variable(file, variable, { "N" });
   io::write_array(file, variable, { start }, { 1 }, { value });
 }
