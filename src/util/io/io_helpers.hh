@@ -104,8 +104,6 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const VariableMetadata &cf_mapping, const Config &config,
                              const File &file);
 
-void write_attributes(const File &file, const VariableMetadata &metadata);
-
 void append_time(const File &file, const std::string &name, double time_seconds);
 
 //! Write an one- or two-dimensional array to an output file
