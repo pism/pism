@@ -117,12 +117,6 @@ void write_array(const File &file, const VariableMetadata &metadata,
                  const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
                  const std::vector<double> &input);
 
-void write_spatial_variable(const SpatialVariableMetadata &metadata,
-                            const grid::DistributedGridInfo& grid,
-                            const Config &config,
-                            const File &file,
-                            const double *input);
-
 } // end of namespace io
 } // end of namespace pism
 
