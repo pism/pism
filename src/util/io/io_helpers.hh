@@ -98,17 +98,6 @@ void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_u
 
 void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_to_use = 0);
 
-// writing
-
-void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                             const VariableMetadata &cf_mapping, const Config &config,
-                             const File &file);
-
-//! Write an one- or two-dimensional array to an output file
-void write_array(const File &file, const std::string &variable_name,
-                 const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
-                 const std::vector<double> &input);
-
 } // end of namespace io
 } // end of namespace pism
 

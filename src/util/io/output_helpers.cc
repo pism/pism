@@ -16,98 +16,11 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include "pism/util/Config.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include <vector>
 
 namespace pism {
 namespace io {
-
-/*!
- * Define a 2D or 3D NetCDF variable and set attributes. Do nothing if a variable is
- * already present.
- */
-void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                             const VariableMetadata &cf_mapping, const Config &config,
-                             const File &file) {
-
-  // Make a copy of `metadata` so we can modify it:
-  auto var  = metadata;
-  auto name = var.get_name();
-
-  if (file.variable_exists(name)) {
-    return;
-  }
-
-  if (config.get_flag("output.use_MKS")) {
-    var.output_units(var["units"]);
-  }
-
-  // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat, lon,
-  // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
-  // #384).
-  if (cf_mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
-    var["grid_mapping"] = cf_mapping.get_name();
-  }
-
-  std::vector<std::string> dims;
-
-  if (not var.get_time_independent()) {
-    dims = { config.get_string("time.dimension_name") };
-  }
-
-  // define dimensions and coordinate variables; assemble the list of dimension names:
-  //
-  // Note the order: y,x,z
-  for (const auto &dimension : { var.y(), var.x(), var.z() }) {
-
-    auto dimension_name = dimension.get_name();
-
-    if (dimension_name.empty()) {
-      continue;
-    }
-
-    dims.push_back(dimension_name);
-    file.define_dimension(dimension_name, dimension.length());
-    file.define_variable(dimension_name, PISM_DOUBLE, { dimension_name });
-    for (const auto& arg : dimension.all_strings()) {
-      file.write_attribute(dimension_name, arg.first, arg.second);
-    }
-  }
-
-  assert(dims.size() > 1);
-
-  // define the variable itself:
-  file.define_variable(var.get_name(), var.get_output_type(), dims);
-  for (const auto &arg : var.all_strings()) {
-    file.write_attribute(var.get_name(), arg.first, arg.second);
-  }
-  for (const auto &arg : var.all_doubles()) {
-    file.write_attribute(var.get_name(), arg.first, var.get_output_type(), arg.second);
-  }
-}
-
-/*!
- * Write a 1D or 2D array redundantly stored on all MPI ranks.
- *
- * @param[in] file file to write to
- * @param[in] name variable name
- * @param[in] start starting index of the first dimension variable `name` depends on
- * @param[in] M number of elements along the first dimension
- * @param[in] N number of elements along the second dimension (1 for 1D arrays)
- * @param[in] data array to write
- */
-void write_array(const File &file, const std::string &variable_name,
-                 const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
-                 const std::vector<double> &input) {
-  file.write_variable(variable_name, start, count, input.data());
-}
 
 //! \brief Moves the file aside (file.nc -> file.nc~).
 /*!
