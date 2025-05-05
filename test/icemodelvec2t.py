@@ -57,14 +57,17 @@ class ForcingInput(unittest.TestCase):
             bounds = PISM.VariableMetadata("time_bounds", ctx.unit_system)
             bounds.set_string("units", units)
 
-            output = PISM.util.prepare_output(filename, append_time=False)
-            output.write_attribute("time", "units", units)
+            time = ctx.time.metadata()
+            time.units(units)
 
             if use_bounds:
-                PISM.define_dimension(output, "nv", 2)
-                PISM.define_variable(output, bounds, ["time", "nv"])
+                time.set_string("bounds", "time_bounds")
 
-                output.write_attribute("time", "bounds", "time_bounds")
+            output = PISM.util.prepare_output(filename, append_time=False, time=time)
+
+            if use_bounds:
+                output.define_dimension("nv", 2)
+                output.define_variable(bounds, ["time", "nv"])
 
             if forward:
                 order = range(N)
@@ -72,13 +75,15 @@ class ForcingInput(unittest.TestCase):
                 order = range(N - 1, -1, -1)
 
             for k in order:
-                PISM.append_time(output, "time", self.t[k])
+                output.append_time(self.t[k])
 
                 if use_bounds:
-                    PISM.write_array(output, bounds, k, 1, 2, (self.tb[k], self.tb[k + 1]))
+                    output.write_array(bounds, [k, 0], [1, 2], (self.tb[k], self.tb[k + 1]))
 
                 v.set(float(self.f[k]))
                 v.write(output)
+
+            output.close()
 
         # regular forcing file
         write_data(self.filename, use_bounds=True)
