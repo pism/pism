@@ -52,6 +52,7 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 
@@ -599,14 +600,16 @@ void IceCompModel::print_summary(bool /* tempAndAge */) {
   IceModel::print_summary(true);
 }
 
-static void write(units::System::Ptr sys, const File &file, unsigned int start, const char *name,
-                  const char *units, const char *long_name, double value) {
-  VariableMetadata variable(name, sys);
-  variable.units(units).long_name(long_name);
+static void write(const File &file, unsigned int start, const char *name, const char *units,
+                  const char *long_name, double value) {
 
   file.define_dimension("N", io::PISM_UNLIMITED);
-  io::define_variable(file, variable, { "N" });
-  io::write_array(file, variable, { start }, { 1 }, { value });
+
+  file.define_variable(name, io::PISM_DOUBLE, { "N" });
+  file.write_attribute(name, "units", units);
+  file.write_attribute(name, "long_name", long_name);
+
+  file.write_variable(name, { start }, { 1 }, &value);
 }
 
 void IceCompModel::reportErrors() {
@@ -755,57 +758,59 @@ void IceCompModel::reportErrors() {
 
     size_t start = file.dimension_length("N");
 
-    io::write_attributes(file, m_output_global_attributes);
+    for (const auto& arg : m_output_global_attributes.all_strings()) {
+      file.write_attribute("PISM_GLOBAL", arg.first, arg.second);
+    }
 
     // Write the dimension variable:
-    write(m_sys, file, start, "N", "1", "run number", start + 1);
+    write(file, start, "N", "1", "run number", start + 1);
 
     // Always write grid parameters:
-    write(m_sys, file, start, "dx", "meter", "grid spacing", m_grid->dx());
-    write(m_sys, file, start, "dy", "meter", "grid spacing", m_grid->dy());
-    write(m_sys, file, start, "dz", "meter", "grid spacing", m_grid->dz_max());
+    write(file, start, "dx", "meter", "grid spacing", m_grid->dx());
+    write(file, start, "dy", "meter", "grid spacing", m_grid->dy());
+    write(file, start, "dz", "meter", "grid spacing", m_grid->dz_max());
 
     // Always write the test name:
-    write(m_sys, file, start, "test", "", "test name", m_testname);
+    write(file, start, "test", "", "test name", m_testname);
 
     if ((m_testname != 'K') && (m_testname != 'O')) {
-      write(m_sys, file, start, "relative_volume", "1", "relative volume error", 100*volerr/volexact);
-      write(m_sys, file, start, "relative_max_eta", "1", "relative $\\eta$ error", maxetaerr/pow(domeHexact,m));
-      write(m_sys, file, start, "maximum_thickness", "meters", "maximum ice thickness error", maxHerr);
-      write(m_sys, file, start, "average_thickness", "meters", "average ice thickness error", avHerr);
+      write(file, start, "relative_volume", "1", "relative volume error", 100*volerr/volexact);
+      write(file, start, "relative_max_eta", "1", "relative $\\eta$ error", maxetaerr/pow(domeHexact,m));
+      write(file, start, "maximum_thickness", "meters", "maximum ice thickness error", maxHerr);
+      write(file, start, "average_thickness", "meters", "average ice thickness error", avHerr);
     }
 
     if ((m_testname == 'F') || (m_testname == 'G')) {
-      write(m_sys, file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
-      write(m_sys, file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
-      write(m_sys, file, start, "maximum_basal_temperature", "kelvin", "maximum basal temperature error", basemaxTerr);
-      write(m_sys, file, start, "average_basal_temperature", "kelvin", "average basal temperature error", baseavTerr);
+      write(file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
+      write(file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
+      write(file, start, "maximum_basal_temperature", "kelvin", "maximum basal temperature error", basemaxTerr);
+      write(file, start, "average_basal_temperature", "kelvin", "average basal temperature error", baseavTerr);
 
       {
         units::Converter c(m_sys, "J s^-1 m^-3", "1e6 J s^-1 m^-3");
-        write(m_sys, file, start, "maximum_sigma", "1e6 J s-1 m-3", "maximum strain heating error", c(max_strain_heating_error));
-        write(m_sys, file, start, "average_sigma", "1e6 J s-1 m-3", "average strain heating error", c(av_strain_heating_error));
+        write(file, start, "maximum_sigma", "1e6 J s-1 m-3", "maximum strain heating error", c(max_strain_heating_error));
+        write(file, start, "average_sigma", "1e6 J s-1 m-3", "average strain heating error", c(av_strain_heating_error));
       }
 
       {
         units::Converter c(m_sys, "m second^-1", "m year^-1");
-        write(m_sys, file, start, "maximum_surface_velocity", "m year-1", "maximum ice surface horizontal velocity error", c(maxUerr));
-        write(m_sys, file, start, "average_surface_velocity", "m year-1", "average ice surface horizontal velocity error", c(avUerr));
-        write(m_sys, file, start, "maximum_surface_w", "m year-1", "maximum ice surface vertical velocity error", c(maxWerr));
-        write(m_sys, file, start, "average_surface_w", "m year-1", "average ice surface vertical velocity error", c(avWerr));
+        write(file, start, "maximum_surface_velocity", "m year-1", "maximum ice surface horizontal velocity error", c(maxUerr));
+        write(file, start, "average_surface_velocity", "m year-1", "average ice surface horizontal velocity error", c(avUerr));
+        write(file, start, "maximum_surface_w", "m year-1", "maximum ice surface vertical velocity error", c(maxWerr));
+        write(file, start, "average_surface_w", "m year-1", "average ice surface vertical velocity error", c(avWerr));
       }
     }
 
     if ((m_testname == 'K') || (m_testname == 'O')) {
-      write(m_sys, file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
-      write(m_sys, file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
-      write(m_sys, file, start, "maximum_bedrock_temperature", "kelvin", "maximum bedrock temperature error", maxTberr);
-      write(m_sys, file, start, "average_bedrock_temperature", "kelvin", "average bedrock temperature error", avTberr);
+      write(file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
+      write(file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
+      write(file, start, "maximum_bedrock_temperature", "kelvin", "maximum bedrock temperature error", maxTberr);
+      write(file, start, "average_bedrock_temperature", "kelvin", "average bedrock temperature error", avTberr);
     }
 
     if (m_testname == 'O') {
       units::Converter c(m_sys, "m second^-1", "m year^-1");
-      write(m_sys, file, start, "maximum_basal_melt_rate", "m year -1", "maximum basal melt rate error", c(maxbmelterr));
+      write(file, start, "maximum_basal_melt_rate", "m year -1", "maximum basal melt rate error", c(maxbmelterr));
     }
   }
 

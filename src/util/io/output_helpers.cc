@@ -30,21 +30,6 @@ namespace pism {
 namespace io {
 
 /*!
- * Define a NetCDF variable and set its attributes. Do nothing if a variable is already present.
- */
-void define_variable(const File &file, const VariableMetadata &metadata,
-                     const std::vector<std::string> &dims) {
-
-  if (file.variable_exists(metadata.get_name())) {
-    return;
-  }
-
-  file.define_variable(metadata.get_name(), metadata.get_output_type(), dims);
-
-  write_attributes(file, metadata);
-}
-
-/*!
  * Define a 2D or 3D NetCDF variable and set attributes. Do nothing if a variable is
  * already present.
  */
@@ -90,13 +75,22 @@ void define_spatial_variable(const SpatialVariableMetadata &metadata,
 
     dims.push_back(dimension_name);
     file.define_dimension(dimension_name, dimension.length());
-    define_variable(file, dimension, { dimension_name });
+    file.define_variable(dimension_name, PISM_DOUBLE, { dimension_name });
+    for (const auto& arg : dimension.all_strings()) {
+      file.write_attribute(dimension_name, arg.first, arg.second);
+    }
   }
 
   assert(dims.size() > 1);
 
   // define the variable itself:
-  define_variable(file, var, dims);
+  file.define_variable(var.get_name(), var.get_output_type(), dims);
+  for (const auto &arg : var.all_strings()) {
+    file.write_attribute(var.get_name(), arg.first, arg.second);
+  }
+  for (const auto &arg : var.all_doubles()) {
+    file.write_attribute(var.get_name(), arg.first, var.get_output_type(), arg.second);
+  }
 }
 
 /*!

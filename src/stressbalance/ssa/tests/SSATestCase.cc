@@ -206,10 +206,16 @@ void SSATestCase::report(const std::string &testname) {
 }
 
 namespace details {
-static void write(const File &file, const VariableMetadata &var, unsigned int start, double value) {
+static void write(const File &file, const char *name,
+                  const char *units,
+                  const char *long_name,
+                  unsigned int start, double value,
+                  io::Type type = io::PISM_DOUBLE) {
   file.define_dimension("N", io::PISM_UNLIMITED);
-  io::define_variable(file, var, { "N" });
-  io::write_array(file, var, { start }, { 1 }, { value });
+  file.define_variable(name, type, { "N" });
+  file.write_attribute(name, "units", units);
+  file.write_attribute(name, "long_name", long_name);
+  file.write_variable(name, { start }, { 1 }, &value);
 }
 } // namespace details
 
@@ -239,54 +245,36 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
   File file(m_grid->com, filename, io::PISM_NETCDF3, mode); // OK to use NetCDF3.
   size_t start = static_cast<size_t>(file.dimension_length("N"));
 
-  io::write_attributes(file, global_attributes);
+  for (const auto &arg : global_attributes.all_strings()) {
+    file.write_attribute("PISM_GLOBAL", arg.first, arg.second);
+  }
 
-  details::write(file, { "N", sys }, start, (double)(start + 1));
-  {
-    VariableMetadata dx{ "dx", sys };
-    dx.units("meters");
-    details::write(file, dx, start, m_grid->dx());
-  }
-  {
-    VariableMetadata dy{"dy", sys};
-    dy.units("meters");
-    details::write(file, dy, start, m_grid->dy());
-  }
-  {
-    VariableMetadata test{"test", sys};
-    test.units("1").set_output_type(io::PISM_INT);
-    details::write(file, test, start, (double)testname[0]);
-  }
-  {
-    VariableMetadata max_velocity{ "max_velocity", sys };
-    max_velocity.long_name("maximum ice velocity magnitude error").units("m year^-1");
-    details::write(file, max_velocity, start, max_vector);
-  }
-  {
-    VariableMetadata rel_velocity{ "relative_velocity", sys };
-    rel_velocity.long_name("relative ice velocity magnitude error").units("percent");
-    details::write(file, rel_velocity, start, rel_vector);
-  }
-  {
-    VariableMetadata maximum_u{ "maximum_u", sys };
-    maximum_u.long_name("maximum error in the X-component of the ice velocity").units("m year^-1");
-    details::write(file, maximum_u , start, max_u);
-  }
-  {
-    VariableMetadata maximum_v{ "maximum_v", sys };
-    maximum_v.long_name("maximum error in the Y-component of the ice velocity").units("m year^-1");
-    details::write(file, maximum_v, start, max_v);
-  }
-  {
-    VariableMetadata average_u{ "average_u", sys };
-    average_u.long_name("average error in the X-component of the ice velocity").units("m year^-1");
-    details::write(file, average_u, start, avg_u);
-  }
-  {
-    VariableMetadata average_v{ "average_v", sys };
-    average_v.long_name("average error in the Y-component of the ice velocity").units("m year^-1");
-    details::write(file, average_v , start, avg_v);
-  }
+  details::write(file, "N", "", "", start, (double)(start + 1));
+
+  details::write(file, "dx", "meters", "", start, m_grid->dx());
+
+  details::write(file, "dy", "meters", "", start, m_grid->dy());
+
+  details::write(file, "test", "", "", start, (double)testname[0], io::PISM_INT);
+
+  details::write(file, "max_velocity", "m year^-1", "maximum ice velocity magnitude error", start,
+                 max_vector);
+
+  details::write(file, "relative_velocity", "percent", "relative ice velocity magnitude error",
+                 start, rel_vector);
+
+  details::write(file, "maximum_u", "m year^-1",
+                 "maximum error in the X-component of the ice velocity", start, max_u);
+
+  details::write(file, "maximum_v", "m year^-1",
+                 "maximum error in the Y-component of the ice velocity", start, max_v);
+
+  details::write(file, "average_u", "m year^-1",
+                 "average error in the X-component of the ice velocity", start, avg_u);
+
+  details::write(file, "average_v", "m year^-1",
+                 "average error in the Y-component of the ice velocity", start, avg_v);
+
   file.close();
 }
 

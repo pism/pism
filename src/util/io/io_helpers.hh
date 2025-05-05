@@ -100,9 +100,6 @@ void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_
 
 // writing
 
-void define_variable(const File &file, const VariableMetadata &metadata,
-                     const std::vector<std::string> &dims);
-
 void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const VariableMetadata &cf_mapping, const Config &config,
                              const File &file);
