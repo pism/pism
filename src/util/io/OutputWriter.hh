@@ -79,7 +79,7 @@ enum Type : int;
  * Appending to a file requires being able to get the current length of the time dimension
  * in a file and the last value of the corresponding coordinate variable.
  *
- * The first call using `file_name` opens the file `file_name`. If the file already exists
+ * In this API, the first call using `file_name` opens the file `file_name`. If the file already exists
  * it is moved to `file_name` + "~" (a "backup" file).
  *
  * If the first call using `file_name` is `append(file_name)`, the file is opened for
@@ -89,8 +89,13 @@ enum Type : int;
  * `OutputWriter` is de-allocated (i.e. until the end of a model run).
  *
  * PISM defines all variables before writing *any* of the associated data. Attributes are
- * set *once* and not modified afterwards. This should make it possible to aggregate all
- * metadata and write all of it at once
+ * set *once* and not modified afterwards. (This should make it possible to aggregate all
+ * metadata and write all of it at once.)
+ *
+ * PISM manages buffers scalar time-dependent diagnostics to reduce the number of I/O
+ * operations. 2D and 3D arrays are written one time record at a time (increase the length
+ * of time dimension by one, write a bunch of variables, increase the length of time
+ * dimension by one, write more, etc).
  */
 class OutputWriter {
 public:
@@ -103,6 +108,13 @@ public:
    *
    * These attributes (usually 'coordinates = "lat lon"' and "grid_mapping") are used to
    * provide grid information.
+   *
+   * A variable should have the "coordinates" attribute only if the file contains
+   * variables "lat" and "lon". Similarly, a variable should have the "grid_mapping"
+   * attribute only if the file contains a grid mapping variable. The code writing a
+   * variable has no way to determine the contents of an output file, so this method
+   * allows IceModel to use the information *it* has to adjust metadata of 2D and 3D
+   * variables written to output files.
    */
   void add_extra_attributes(const std::string &file_name,
                             const std::map<std::string, std::string> &attributes);
@@ -111,6 +123,8 @@ public:
    * Define a dimension.
    * 
    * No-op if the dimension already exists.
+   *
+   * `length` of zero corresponds to an unlimited dimension.
    */
   void define_dimension(const std::string &file_name, const std::string &dimension_name,
                         unsigned int length);
@@ -119,6 +133,8 @@ public:
    * Define a variable given a list of dimension names and set its attributes.
    *
    * No-op if the variable already exists.
+   *
+   * The name of the variable is obtained using `metadata.get_name()` and its type using `metadata.get_output_type()`.
    */
   void define_variable(const std::string &file_name, const VariableMetadata &metadata,
                        const std::vector<std::string> &dims);
@@ -168,6 +184,8 @@ public:
    * Data in `input` are written without modification.
    *
    * The array `input` is stored *redundantly* on all MPI ranks.
+   *
+   * FIXME: writing to the time variable will change the length of the time dimension.
    */
   void write_array(const std::string &file_name, const std::string &variable_name,
                    const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
@@ -178,6 +196,8 @@ public:
    * converting from internal to "output" units if necessary.
    *
    * The array `input` is stored *redundantly* on all MPI ranks.
+   *
+   * FIXME: writing to the time variable will change the length of the time dimension.
    */
   void write_array(const std::string &file_name, const VariableMetadata &metadata,
                    const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
