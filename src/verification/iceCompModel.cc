@@ -649,11 +649,13 @@ void IceCompModel::reportErrors() {
     return;
   }
 
-  double maxbmelterr, minbmelterr, volexact, areaexact, domeHexact,
-    volerr, areaerr, maxHerr, avHerr, maxetaerr, centerHerr;
-  double maxTerr, avTerr, basemaxTerr, baseavTerr, basecenterTerr, maxTberr, avTberr;
-  double max_strain_heating_error, av_strain_heating_error;
-  double maxUerr, avUerr, maxWerr, avWerr;
+  double maxbmelterr = 0.0, minbmelterr = 0.0, volexact = 0.0, areaexact = 0.0, domeHexact = 0.0,
+         volerr = 0.0, areaerr = 0.0, maxHerr = 0.0, avHerr = 0.0, maxetaerr = 0.0,
+         centerHerr = 0.0;
+  double maxTerr = 0.0, avTerr = 0.0, basemaxTerr = 0.0, baseavTerr = 0.0, basecenterTerr = 0.0,
+         maxTberr = 0.0, avTberr = 0.0;
+  double max_strain_heating_error = 0.0, av_strain_heating_error = 0.0;
+  double maxUerr = 0.0, avUerr = 0.0, maxWerr = 0.0, avWerr = 0.0;
 
   const rheology::FlowLaw &flow_law = *m_stress_balance->modifier()->flow_law();
   const double m = (2.0 * flow_law.exponent() + 2.0) / flow_law.exponent();
