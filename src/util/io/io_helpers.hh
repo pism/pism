@@ -111,12 +111,6 @@ void write_array(const File &file, const std::string &variable_name,
                  const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
                  const std::vector<double> &input);
 
-//! Write an one- or two-dimensional array to an output file, converting to output units
-//! if necessary
-void write_array(const File &file, const VariableMetadata &metadata,
-                 const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
-                 const std::vector<double> &input);
-
 } // end of namespace io
 } // end of namespace pism
 

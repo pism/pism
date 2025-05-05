@@ -109,30 +109,6 @@ void write_array(const File &file, const std::string &variable_name,
   file.write_variable(variable_name, start, count, input.data());
 }
 
-/*!
- * Write a 1D or 2D array redundantly stored on all MPI ranks, converting to output units
- * first.
- *
- * @param[in] file file to write to
- * @param[in] metadata variable metadata
- * @param[in] start starting index of the first dimension variable `name` depends on
- * @param[in] M number of elements along the first dimension
- * @param[in] N number of elements along the second dimension (1 for 1D arrays)
- * @param[in] input array to write
- *
- */
-void write_array(const File &file, const VariableMetadata &metadata,
-                 const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
-                 const std::vector<double> &input) {
-  // create a copy of "data" to change units
-  std::vector<double> data = input;
-
-  units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
-      .convert_doubles(data.data(), data.size());
-
-  write_array(file, metadata.get_name(), start, count, data);
-}
-
 //! Append to the time dimension.
 void append_time(const File &file, const std::string &name, double value) {
   write_array(file, name, {file.dimension_length(name)}, {1}, { value });
