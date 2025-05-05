@@ -45,8 +45,10 @@ void OutputFile::define_spatial_variable(const SpatialVariableMetadata &metadata
   m_writer->define_spatial_variable(m_file_name, metadata, grid);
 }
 
-void OutputFile::write_attributes(const VariableMetadata &variable) const {
-  m_writer->write_attributes(m_file_name, variable);
+void OutputFile::set_global_attributes(
+    const std::map<std::string, std::string> &strings,
+    const std::map<std::string, std::vector<double> > &numbers) const {
+  m_writer->set_global_attributes(m_file_name, strings, numbers);
 }
 
 void OutputFile::append_time(double time_seconds) const {

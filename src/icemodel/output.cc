@@ -89,7 +89,8 @@ void IceModel::write_metadata(const OutputFile &file, MappingTreatment mapping_f
 
   {
     file.append_history(m_output_history);
-    file.write_attributes(m_output_global_attributes);
+    file.set_global_attributes(m_output_global_attributes.all_strings(),
+                               m_output_global_attributes.all_doubles());
   }
 }
 

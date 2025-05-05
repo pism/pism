@@ -194,11 +194,10 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
   define_variable(file_name, var, dims);
 }
 
-void OutputWriter::write_attributes(const std::string &file_name, const VariableMetadata &variable) {
-  auto metadata = format_attributes(variable);
-
-  write_attributes(file_name, metadata.get_name(), metadata.all_strings(), metadata.all_doubles(),
-                   metadata.get_output_type());
+void OutputWriter::set_global_attributes(
+    const std::string &file_name, const std::map<std::string, std::string> &strings,
+    const std::map<std::string, std::vector<double> > &numbers) {
+  set_global_attributes_impl(file_name, strings, numbers);
 }
 
 void OutputWriter::append_time(const std::string &file_name, double time_seconds) {

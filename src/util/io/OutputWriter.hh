@@ -76,7 +76,8 @@ enum Type : int;
  *
  * A file may contain more than one x,y grid and more than one set of vertical (z) levels.
  *
- *
+ * Appending to a file requires being able to get the current length of the time dimension
+ * in a file and the last value of the corresponding coordinate variable.
  *    
  */
 class OutputWriter {
@@ -84,20 +85,43 @@ public:
   OutputWriter(MPI_Comm comm, const Config &config);
   virtual ~OutputWriter();
 
+  /*!
+   * Add attributes to all 2D and 3D variables using "x" and "y" dimensions except for
+   * "lat", "lon", "lat_bnds" and "lon_bnds".
+   *
+   * These attributes (usually 'coordinates = "lat lon"' and "grid_mapping") are used to
+   * provide grid information.
+   */
   void add_extra_attributes(const std::string &file_name,
                             const std::map<std::string, std::string> &attributes);
 
+  /*!
+   * Define a dimension.
+   */
   void define_dimension(const std::string &file_name, const std::string &dimension_name,
                         unsigned int length);
 
+  /*!
+   * Define a variable given a list of dimension names and set its attributes.
+   */
   void define_variable(const std::string &file_name, const VariableMetadata &metadata,
                        const std::vector<std::string> &dims);
 
+  /*!
+   * Define a 2D or 3D (possibly time-dependent) variable and set its attributes.
+   *
+   * @param[in] file_name name of the output file
+   * @param[in] metadata variable metadata (name, attributes, etc)
+   * @param[in] grid domain decomposition information
+   */
   void define_spatial_variable(const std::string &file_name,
                                const SpatialVariableMetadata &metadata,
                                const grid::DistributedGridInfo &grid);
 
-  void write_attributes(const std::string &file_name, const VariableMetadata &variable);
+  void set_global_attributes(const std::string &file_name,
+                             const std::map<std::string, std::string> &strings,
+                             const std::map<std::string, std::vector<double> > &numbers);
+
 
   void append_history(const std::string &file_name, const std::string &text);
 
@@ -133,10 +157,10 @@ protected:
 
   const std::string &time_name() const;
 
-  virtual void write_attributes(const std::string &file_name, const std::string &var_name,
-                                const std::map<std::string, std::string> &strings,
-                                const std::map<std::string, std::vector<double> > &numbers,
-                                io::Type output_type) = 0;
+  virtual void
+  set_global_attributes_impl(const std::string &file_name,
+                             const std::map<std::string, std::string> &strings,
+                             const std::map<std::string, std::vector<double> > &numbers) = 0;
 
   virtual void define_dimension_impl(const std::string &file_name, const std::string &name,
                                      unsigned int length) = 0;
@@ -186,7 +210,8 @@ public:
   void define_spatial_variable(const SpatialVariableMetadata &metadata,
                                const grid::DistributedGridInfo &grid) const;
 
-  void write_attributes(const VariableMetadata &variable) const;
+  void set_global_attributes(const std::map<std::string, std::string> &strings,
+                             const std::map<std::string, std::vector<double> > &numbers) const;
 
   void append_time(double time_seconds) const;
 

@@ -105,6 +105,12 @@ void SynchronousOutputWriter::define_dimension_impl(const std::string &file_name
   output_file.define_dimension(name, length);
 }
 
+void SynchronousOutputWriter::set_global_attributes_impl(
+    const std::string &file_name, const std::map<std::string, std::string> &strings,
+    const std::map<std::string, std::vector<double> > &numbers) {
+  write_attributes(file_name, "PISM_GLOBAL", strings, numbers, io::PISM_DOUBLE);
+}
+
 void SynchronousOutputWriter::write_attributes(
     const std::string &file_name, const std::string &var_name,
     const std::map<std::string, std::string> &strings,

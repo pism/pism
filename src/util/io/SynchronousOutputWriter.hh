@@ -50,6 +50,10 @@ private:
   void define_variable_impl(const std::string &file_name, const VariableMetadata &metadata,
                             const std::vector<std::string> &dims);
 
+  void set_global_attributes_impl(const std::string &file_name,
+                                  const std::map<std::string, std::string> &strings,
+                                  const std::map<std::string, std::vector<double> > &numbers);
+
   void write_attributes(const std::string &file_name, const std::string &var_name,
                         const std::map<std::string, std::string> &strings,
                         const std::map<std::string, std::vector<double> > &numbers,
