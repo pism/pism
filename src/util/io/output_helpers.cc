@@ -109,11 +109,6 @@ void write_array(const File &file, const std::string &variable_name,
   file.write_variable(variable_name, start, count, input.data());
 }
 
-//! Append to the time dimension.
-void append_time(const File &file, const std::string &name, double value) {
-  write_array(file, name, {file.dimension_length(name)}, {1}, { value });
-}
-
 //! \brief Moves the file aside (file.nc -> file.nc~).
 /*!
  * Note: only one processor does the renaming.
