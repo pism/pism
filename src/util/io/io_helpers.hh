@@ -20,7 +20,6 @@
 #ifndef PISM_IO_HELPERS_H
 #define PISM_IO_HELPERS_H
 
-#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -36,24 +35,16 @@ class VariableMetadata;
 class SpatialVariableMetadata;
 class Grid;
 class File;
-class Time;
 class Logger;
-class Context;
-class Config;
 
 namespace grid {
 class InputGridInfo;
-class GridInfo;
 class DistributedGridInfo;
 }
-
-enum InterpolationType : int;
 
 class LocalInterpCtx;
 
 namespace io {
-
-enum Type : int;
 
 std::string time_dimension(std::shared_ptr<units::System> unit_system,
                            const File &file,

@@ -13,7 +13,6 @@
 %include "util/io/File.hh"
 %include "util/io/io_helpers.hh"
 
-
 %shared_ptr(pism::OutputWriter)
 %shared_ptr(pism::SynchronousOutputWriter)
 %shared_ptr(pism::OutputFile)

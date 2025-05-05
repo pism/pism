@@ -18,7 +18,6 @@
  */
 
 #include "pism/coupler/ocean/Initialization.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Logger.hh"

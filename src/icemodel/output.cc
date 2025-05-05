@@ -28,8 +28,6 @@
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"
-
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"

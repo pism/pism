@@ -22,7 +22,6 @@
 #include "pism/util/Context.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 
