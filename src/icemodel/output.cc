@@ -34,6 +34,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/Component.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 
 namespace pism {

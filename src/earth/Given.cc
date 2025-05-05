@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,7 @@
 
 #include "pism/earth/Given.hh"
 #include "pism/util/array/Forcing.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace bed {

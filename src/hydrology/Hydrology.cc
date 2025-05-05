@@ -21,6 +21,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace hydrology {

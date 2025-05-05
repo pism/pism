@@ -22,6 +22,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace ocean {

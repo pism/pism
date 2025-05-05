@@ -29,6 +29,7 @@
 #include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace hydrology {

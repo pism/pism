@@ -24,6 +24,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace stressbalance {

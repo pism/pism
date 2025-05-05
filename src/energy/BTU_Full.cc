@@ -25,6 +25,7 @@
 #include "pism/energy/BedrockColumn.hh"
 #include <memory>
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace energy {

@@ -30,6 +30,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

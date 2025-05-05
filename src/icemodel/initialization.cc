@@ -68,6 +68,7 @@
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/array/Forcing.hh"
 #include <memory>
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

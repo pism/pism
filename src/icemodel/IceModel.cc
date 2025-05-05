@@ -52,6 +52,7 @@
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/coupler/ocean/PyOceanModel.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

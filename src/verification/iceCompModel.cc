@@ -53,6 +53,7 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

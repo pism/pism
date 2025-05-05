@@ -22,6 +22,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 #include <memory>
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

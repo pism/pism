@@ -39,6 +39,7 @@
 #include "pism/util/pism_utilities.hh" // pism::printf()
 #include "pism/util/fem/Quadrature.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace stressbalance {

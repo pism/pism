@@ -23,6 +23,7 @@
 #include "pism/util/io/File.hh"
 #include <memory>
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

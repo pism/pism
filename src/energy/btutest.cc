@@ -38,6 +38,7 @@ static char help[] =
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 //! Allocate the verification context. Uses ColdEnthalpyConverter.
 std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &prefix) {

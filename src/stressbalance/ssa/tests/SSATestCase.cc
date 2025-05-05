@@ -31,6 +31,7 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace stressbalance {

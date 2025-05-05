@@ -38,6 +38,7 @@
 
 #if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"
+#include "pism/util/io/IO_Flags.hh"
 #endif
 
 // Flux balance code

@@ -26,8 +26,6 @@
 #include <vector>
 #include <mpi.h>
 
-#include "IO_Flags.hh"
-
 namespace pism {
 
 namespace units {
