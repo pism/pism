@@ -28,7 +28,6 @@
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/OutputWriter.hh"
 
 namespace pism {
