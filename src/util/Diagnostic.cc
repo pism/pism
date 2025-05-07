@@ -121,6 +121,10 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
+const grid::DistributedGridInfo &Diagnostic::grid_info() const {
+  return m_grid->info();
+}
+
 std::shared_ptr<array::Array> Diagnostic::compute() const {
   std::vector<std::string> names;
   for (const auto &v : m_vars) {

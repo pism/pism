@@ -32,6 +32,9 @@
 #include "pism/util/io/OutputWriter.hh"
 
 namespace pism {
+namespace grid {
+class DistributedGridInfo;
+}
 
 class Grid;
 
@@ -73,6 +76,8 @@ public:
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated Array.
   std::shared_ptr<array::Array> compute() const;
+
+  const grid::DistributedGridInfo &grid_info() const;
 
   unsigned int n_variables() const;
 

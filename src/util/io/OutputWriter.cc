@@ -149,7 +149,9 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
   const auto &name       = var.get_name();
   const auto &extra_attributes = m_impl->extra_attributes[file_name];
 
-  m_impl->grids[name] = grid;
+  if (m_impl->grids.find(name) == m_impl->grids.end()) {
+    m_impl->grids[name] = grid;
+  }
 
   if (m_impl->use_internal_units) {
     var.output_units(var["units"]);
