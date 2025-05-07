@@ -1,35 +1,41 @@
 def get(self, key):
-    methods = [ # order matters
-        self.get_flag,
-        self.get_number,
-        self.get_numbers,
-        self.get_string,
-    ]
+    flags = list(dict(self.all_flags()).keys())
+    numbers = list(dict(self.all_doubles()).keys())
+    strings = list(dict(self.all_strings()).keys())
 
-    for method in methods:
-        try:
-            return method(key)
-        except:
-            pass
+    if key in flags:
+        return self.get_flag(key)
 
-    return self._get(key)
+    if key in numbers:
+        value = self.get_numbers(key)
+        if len(value) == 1:
+            return value[0]
+        return value
+
+    if key in strings:
+        return self.get_string(key)
+        
+    raise ValueError(f"unknown configuration parameter: {key}")
 
 def set(self, key, val):
-    methods = [ # order matters
-        self.set_flag,
-        self.set_number,
-        self.set_numbers,
-        self.set_string,
-    ]
+    flags = list(dict(self.all_flags()).keys())
+    numbers = list(dict(self.all_doubles()).keys())
+    strings = list(dict(self.all_strings()).keys())
 
-    for method in methods:
+    if key in flags:
+        return self.set_flag(key, val)
+
+    if key in numbers:
         try:
-            return method(key, val)
-        except:
-            pass
+            len(val)
+            return self.set_numbers(key, val)
+        except TypeError:
+            return self.set_number(key, val)
 
-    return self._set(key, val)
-
+    if key in strings:
+        return self.set_string(key, val)
+        
+    raise ValueError(f"unknown configuration parameter: {key}")
 
 def set_from_dict(self, d: dict):
     """
