@@ -1819,7 +1819,7 @@ netcdf pism_config {
 
     pism_config:ocean.th.gamma_S = 5.05e-7;
     pism_config:ocean.th.gamma_S_doc = "Turbulent salt transfer coefficient. See :cite:`HollandJenkins1999`.";
-    pism_config:ocean.th.gamma_S_option = "gamma_T";
+    pism_config:ocean.th.gamma_S_option = "gamma_S";
     pism_config:ocean.th.gamma_S_type = "number";
     pism_config:ocean.th.gamma_S_units = "m s^-1";
 
