@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
       "  run siafd_test -Mx <number> -My <number> -Mz <number> -o foo.nc\n"
       "\n";
 
-    bool stop = show_usage_check_req_opts(*ctx->log(), "siafd_test", {}, usage);
+    bool stop = maybe_show_usage(*ctx->log(), "siafd_test", usage);
 
     if (stop) {
       return 0;

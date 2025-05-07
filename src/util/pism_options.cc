@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2021, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2021, 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -48,12 +48,10 @@ void show_usage(const Logger &log, const std::string &execname, const std::strin
 
 //! @brief In a single call a driver program can provide a usage string to
 //! the user and check if required options are given, and if not, end.
-bool show_usage_check_req_opts(const Logger &log,
-                               const std::string &execname,
-                               const std::vector<std::string> &required_options,
-                               const std::string &usage) {
+bool maybe_show_usage(const Logger &log, const std::string &execname,
+                      const std::string &usage) {
   const bool keep_running = false;
-  const bool terminate = true;
+  const bool terminate    = true;
 
   log.message(2, "%s %s\n", execname.c_str(), pism::revision);
 
@@ -63,21 +61,6 @@ bool show_usage_check_req_opts(const Logger &log,
   }
 
   if (options::Bool("-usage", "print PISM usage")) {
-    show_usage(log, execname, usage);
-    return terminate;
-  }
-
-  // go through list of required options, and if not given, fail
-  bool req_absent = false;
-  for (const auto &opt : required_options) {
-    if (not options::Bool(opt, "a required option")) {
-      req_absent = true;
-      log.error("PISM ERROR: option %s required\n", opt.c_str());
-    }
-  }
-
-  if (req_absent) {
-    log.error("\n");
     show_usage(log, execname, usage);
     return terminate;
   }

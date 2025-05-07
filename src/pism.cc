@@ -235,7 +235,6 @@ int main(int argc, char *argv[]) {
     auto log = ctx->log();
     auto config = ctx->config();
 
-    std::vector<std::string> required_options{};
     if (eisII.is_set()) {
       // set defaults:
       eismint2::set_config_defaults(*config);
@@ -253,8 +252,12 @@ int main(int argc, char *argv[]) {
       // process command-line options
       set_config_from_options(*config);
       config->resolve_filenames();
-    } else if (not verification_test.is_set()) {
-      required_options.emplace_back("-i");
+    }
+
+    if (not(verification_test.is_set() or eisII.is_set()) and
+        config->get_string("input.file").empty()) {
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "Configuration parameter 'input.file' cannot be empty");
     }
 
     print_config(*ctx->log(), 3, *config);
@@ -271,8 +274,7 @@ int main(int argc, char *argv[]) {
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
     {
-      bool done = show_usage_check_req_opts(*log, "PISM (basic evolution run mode)" ,
-                                            required_options, usage);
+      bool done = maybe_show_usage(*log, "PISM (basic evolution run mode)", usage);
       if (done) {
         return 0;
       }

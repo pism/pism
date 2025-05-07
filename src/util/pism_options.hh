@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -39,10 +39,7 @@ void show_usage(const Logger &log, const std::string &execname, const std::strin
 
 //! @brief Returns true if PISM should terminate after printing some
 //! messages to stdout.
-bool show_usage_check_req_opts(const Logger &log,
-                               const std::string &execname,
-                               const std::vector<std::string> &required_options,
-                               const std::string &usage);
+bool maybe_show_usage(const Logger &log, const std::string &execname, const std::string &usage);
 
 
 //! Utilities for processing command-line options.

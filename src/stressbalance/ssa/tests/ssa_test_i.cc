@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
       "  run ssa_testi -Mx <number> -My <number> -ssa_method <fd|fem>\n"
       "\n";
 
-    bool stop = show_usage_check_req_opts(*ctx->log(), "ssa_testi", {}, usage);
+    bool stop = maybe_show_usage(*ctx->log(), "ssa_testi", usage);
 
     if (stop) {
       return 0;

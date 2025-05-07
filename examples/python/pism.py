@@ -133,9 +133,13 @@ def main():
         * option -i is required
       """
 
-    if PISM.show_usage_check_req_opts(context.log(), "PISM (basic evolution run mode)" ,
-                                      ["-i"], usage):
+    if PISM.maybe_show_usage(context.log(), "PISM (basic evolution run mode)" , usage):
         return
+
+    input_file = context.config().get_string("input.file")
+    if len(input_file) == 0:
+        import sys
+        sys.exit(1)
 
     grid = PISM.Grid.FromOptions(context)
 

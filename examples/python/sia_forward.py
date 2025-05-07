@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024, 2025 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -36,7 +36,7 @@ sia_forward.py -i IN.nc [-o file.nc]
     * -i is required
 """
 
-PISM.show_usage_check_req_opts(ctx.log(), "sia_forward.py", ["-i"], usage)
+PISM.maybe_show_usage(ctx.log(), "sia_forward.py", usage)
 
 input_filename = config.get_string("input.file")
 if len(input_filename) == 0:

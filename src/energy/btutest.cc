@@ -106,8 +106,7 @@ int main(int argc, char *argv[]) {
       "  -ye            end year in using Test K\n"
       "  -dt            time step B (= positive float) in years\n";
 
-    bool done = show_usage_check_req_opts(*log, "BTUTEST %s (test program for BedThermalUnit)",
-                                          {"-Mbz"}, usage);
+    bool done = maybe_show_usage(*log, "BTUTEST %s (test program for BedThermalUnit)", usage);
     if (done) {
       return 0;
     }

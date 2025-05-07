@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2014, 2015, 2016, 2018, 2022 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2014, 2015, 2016, 2018, 2022, 2025 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     * -i is required
   """
 
-    PISM.show_usage_check_req_opts(context.log, "ssa_forward", ["-i"], usage)
+    PISM.maybe_show_usage(context.log, "ssa_forward", usage)
 
     input_file = config.get_string("input.file")
     if len(input_file) == 0:

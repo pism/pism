@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
       "  run ssafe_test -Mx <number> -My <number> -ssa_method <fd|fem>\n"
       "\n";
 
-    bool stop = show_usage_check_req_opts(*ctx->log(), "ssa_testj", {}, usage);
+    bool stop = maybe_show_usage(*ctx->log(), "ssa_testj", usage);
 
     if (stop) {
       return 0;

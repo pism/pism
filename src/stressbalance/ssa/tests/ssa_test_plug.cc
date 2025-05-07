@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
                         "  run ssa_test_plug -Mx <number> -My <number> -ssa_method <fd|fem>\n"
                         "\n";
 
-    bool stop = show_usage_check_req_opts(*ctx->log(), "ssa_test_plug", {}, usage);
+    bool stop = maybe_show_usage(*ctx->log(), "ssa_test_plug", usage);
 
     if (stop) {
       return 0;

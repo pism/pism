@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
       "  run ssa_test_cfbc -Mx <number> -My <number>\n"
       "\n";
 
-    bool stop = show_usage_check_req_opts(*ctx->log(), "ssa_test_cfbc", {}, usage);
+    bool stop = maybe_show_usage(*ctx->log(), "ssa_test_cfbc", usage);
 
     if (stop) {
       return 0;
