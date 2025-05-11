@@ -92,10 +92,10 @@ enum Type : int;
  * set *once* and not modified afterwards. (This should make it possible to aggregate all
  * metadata and write all of it at once.)
  *
- * PISM manages buffers scalar time-dependent diagnostics to reduce the number of I/O
- * operations. 2D and 3D arrays are written one time record at a time (increase the length
- * of time dimension by one, write a bunch of variables, increase the length of time
- * dimension by one, write more, etc).
+ * PISM buffers scalar time-dependent diagnostics to reduce the number of I/O operations.
+ * 2D and 3D arrays are written one time record at a time (increase the length of time
+ * dimension by one, write a bunch of variables, increase the length of time dimension by
+ * one, write more, etc).
  */
 class OutputWriter {
 public:
