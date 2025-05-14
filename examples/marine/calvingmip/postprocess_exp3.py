@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Creates output file from PISM EXP3 result to upload for CalvinMIP, 
+# Creates output file from PISM EXP3 result to upload for CalvinMIP,
 # as instructed from https://github.com/JRowanJordan/CalvingMIP/wiki/Experiment-3
 
 import numpy as np
@@ -124,7 +124,7 @@ for ti in range(Mt):
   for l,po in enumerate(trans):
     profile=[]
     for k,p in enumerate(po):
-        
+
         i=int(np.floor(p[1]))
         j=int(np.floor(p[0]))
         di=p[0]-np.floor(p[0])
@@ -133,22 +133,22 @@ for ti in range(Mt):
         if ti==0:
             xav[l,k]=ph.interpolate_along_transect(exp_ym,i,j,di,dj)
             yav[l,k]=ph.interpolate_along_transect(exp_xm,i,j,di,dj)
-             
+
             sav[l,k]=np.sqrt((xav[l,k]-xav[l,0])**2+(yav[l,k]-yav[l,0])**2)
             pair = [xav[l,k],yav[l,k],sav[l,k]]
             profile.append(pair)
-        
+
         Hav[ti,l,k]=ph.interpolate_along_transect(exp_thk[ti],i,j,di,dj)
         uav[ti,l,k]=ph.interpolate_along_transect(exp_xvm[ti],i,j,di,dj)
         vav[ti,l,k]=ph.interpolate_along_transect(exp_yvm[ti],i,j,di,dj)
-        
+
         #nearest neighbors
         mav[ti,l,k]=ph.nearest_along_transect(exp_mask[ti],i,j,di,dj)
 
-    
+
     if ti==0:
         profiles[point_names[l]]=profile
-    
+
 ########################################################################################################
 
 if True:
@@ -166,21 +166,21 @@ if True:
   #nct2    = wrtfile.createVariable('Time100', 'f8', ('Time100',))
   ncx     = wrtfile.createVariable('X', 'f8', ('X',))
   ncy     = wrtfile.createVariable('Y', 'f8', ('Y',))
-    
+
   ncxvm   = wrtfile.createVariable('xvelmean', 'f8', ('Time1','Y', 'X'),fill_value=np.nan)
   ncyvm   = wrtfile.createVariable('yvelmean', 'f8', ('Time1','Y', 'X'),fill_value=np.nan)
   ncthk   = wrtfile.createVariable('lithk', 'f8', ('Time1','Y', 'X'),fill_value=np.nan)
   ncmask  = wrtfile.createVariable('mask', 'f8', ('Time1','Y', 'X'))
   nccrate = wrtfile.createVariable('calverate', 'f8', ('Time1','Y', 'X'),fill_value=np.nan)
   nctopg  = wrtfile.createVariable('topg', 'f8', ('Time1','Y', 'X'))
-    
+
   ncafl  = wrtfile.createVariable('iareafl', 'f8', ('Time1'))
   ncagr  = wrtfile.createVariable('iareagr', 'f8', ('Time1'))
   nclim  = wrtfile.createVariable('lim', 'f8', ('Time1'))
   nclimw  = wrtfile.createVariable('limnsw', 'f8', ('Time1'))
   nctcf  = wrtfile.createVariable('tendlicalvf', 'f8', ('Time1'))
   nctgf  = wrtfile.createVariable('tendligroundf', 'f8', ('Time1'))
-    
+
   wrtfile.createDimension('Caprona A', size=np.shape(trans[0])[0])
   ncxa     = wrtfile.createVariable('Caprona A', 'f8', ('Caprona A',))
   ncsa    = wrtfile.createVariable('sCapA', 'f8', ('Caprona A'))
@@ -188,7 +188,7 @@ if True:
   ncxvma  = wrtfile.createVariable('xvelmeanCapA', 'f8', ('Time1','Caprona A'),fill_value=np.nan)
   ncyvma  = wrtfile.createVariable('yvelmeanCapA', 'f8', ('Time1','Caprona A'),fill_value=np.nan)
   ncmaska  = wrtfile.createVariable('maskCapA', 'f8', ('Time1','Caprona A'))
-    
+
   wrtfile.createDimension('Caprona B', size=np.shape(trans[1])[0])
   ncxb     = wrtfile.createVariable('Caprona B', 'f8', ('Caprona B',))
   ncsb    = wrtfile.createVariable('sCapB', 'f8', ('Caprona B'))
@@ -204,7 +204,7 @@ if True:
   ncxvmc  = wrtfile.createVariable('xvelmeanCapC', 'f8', ('Time1','Caprona C'),fill_value=np.nan)
   ncyvmc  = wrtfile.createVariable('yvelmeanCapC', 'f8', ('Time1','Caprona C'),fill_value=np.nan)
   ncmaskc  = wrtfile.createVariable('maskCapC', 'f8', ('Time1','Caprona C'))
-    
+
   wrtfile.createDimension('Caprona D', size=np.shape(trans[3])[0])
   ncxd     = wrtfile.createVariable('Caprona D', 'f8', ('Caprona D',))
   ncsd    = wrtfile.createVariable('sCapD', 'f8', ('Caprona D'))
@@ -220,7 +220,7 @@ if True:
   ncxvme  = wrtfile.createVariable('xvelmeanHalA', 'f8', ('Time1','Halbrane A'),fill_value=np.nan)
   ncyvme  = wrtfile.createVariable('yvelmeanHalA', 'f8', ('Time1','Halbrane A'),fill_value=np.nan)
   ncmaske  = wrtfile.createVariable('maskHalA', 'f8', ('Time1','Halbrane A'))
-    
+
   wrtfile.createDimension('Halbrane B', size=np.shape(trans[5])[0])
   ncxf     = wrtfile.createVariable('Halbrane B', 'f8', ('Halbrane B',))
   ncsf    = wrtfile.createVariable('sHalB', 'f8', ('Halbrane B'))
@@ -236,7 +236,7 @@ if True:
   ncxvmg  = wrtfile.createVariable('xvelmeanHalC', 'f8', ('Time1','Halbrane C'),fill_value=np.nan)
   ncyvmg  = wrtfile.createVariable('yvelmeanHalC', 'f8', ('Time1','Halbrane C'),fill_value=np.nan)
   ncmaskg  = wrtfile.createVariable('maskHalC', 'f8', ('Time1','Halbrane C'))
-    
+
   wrtfile.createDimension('Halbrane D', size=np.shape(trans[7])[0])
   ncxh     = wrtfile.createVariable('Halbrane D', 'f8', ('Halbrane D',))
   ncsh    = wrtfile.createVariable('sHalD', 'f8', ('Halbrane D'))
@@ -244,46 +244,46 @@ if True:
   ncxvmh  = wrtfile.createVariable('xvelmeanHalD', 'f8', ('Time1','Halbrane D'),fill_value=np.nan)
   ncyvmh  = wrtfile.createVariable('yvelmeanHalD', 'f8', ('Time1','Halbrane D'),fill_value=np.nan)
   ncmaskh  = wrtfile.createVariable('maskHalD', 'f8', ('Time1','Halbrane D'))
-    
+
   #####################################################################################
-    
+
   nct[:] = exp_t[:]
   #nct2[:]= exp_t[::100]
   ncx[:] = exp_x[:]
   ncy[:] = exp_y[:]
-    
+
   ncxvm[:]  = exp_xvm[:]
-  ncyvm[:]  = exp_yvm[:] 
+  ncyvm[:]  = exp_yvm[:]
   ncthk[:]  = exp_thk[:]
   ncmask[:] = exp_mask[:]
   nccrate[:]= exp_crate[:]
   nctopg[:] = exp_topg[:]
-    
+
   ncafl[:]  = exp_ts_afl[-1]
   ncagr[:]  = exp_ts_agr[-1]
   nclim[:]  = exp_ts_lim[-1]
   nclimw[:] = exp_ts_limnsw[-1]
   nctcf[:] = exp_ts_tendcf[-1]
   nctgf[:] = exp_ts_tendgf[-1]
-   
-  cuta = np.shape(trans[0])[0] 
-  ncxa[:] = sav[0][0:cuta] 
+
+  cuta = np.shape(trans[0])[0]
+  ncxa[:] = sav[0][0:cuta]
   ncsa[:] = sav[0][0:cuta]
   ncthka[:] = Hav[:,0,0:cuta]
   ncmaska[:] = mav[:,0,0:cuta]
   ncxvma[:] = uav[:,0,0:cuta]
   ncyvma[:] = vav[:,0,0:cuta]
-    
+
   cutb = np.shape(trans[1])[0]
-  ncxb[:] = sav[1][0:cutb] 
+  ncxb[:] = sav[1][0:cutb]
   ncsb[:] = sav[1][0:cutb]
   ncthkb[:] = Hav[:,1,0:cutb]
   ncmaskb[:] = mav[:,1,0:cutb]
   ncxvmb[:] = uav[:,1,0:cutb]
   ncyvmb[:] = vav[:,1,0:cutb]
-    
+
   cutc = np.shape(trans[2])[0]
-  ncxc[:] = sav[2][0:cutc] 
+  ncxc[:] = sav[2][0:cutc]
   ncsc[:] = sav[2][0:cutc]
   ncthkc[:] = Hav[:,2,0:cutc]
   ncmaskc[:] = mav[:,2,0:cutc]
@@ -291,15 +291,15 @@ if True:
   ncyvmc[:] = vav[:,2,0:cutc]
 
   cutd = np.shape(trans[3])[0]
-  ncxd[:] = sav[3][0:cutd] 
+  ncxd[:] = sav[3][0:cutd]
   ncsd[:] = sav[3][0:cutd]
   ncthkd[:] = Hav[:,3,0:cutd]
   ncmaskd[:] = mav[:,3,0:cutd]
   ncxvmd[:] = uav[:,3,0:cutd]
   ncyvmd[:] = vav[:,3,0:cutd]
-    
+
   cute = np.shape(trans[4])[0]
-  ncxe[:] = sav[4][0:cute] 
+  ncxe[:] = sav[4][0:cute]
   ncse[:] = sav[4][0:cute]
   ncthke[:] = Hav[:,4,0:cute]
   ncmaske[:] = mav[:,4,0:cute]
@@ -307,15 +307,15 @@ if True:
   ncyvme[:] = vav[:,4,0:cute]
 
   cutf = np.shape(trans[5])[0]
-  ncxf[:] = sav[5][0:cutf] 
+  ncxf[:] = sav[5][0:cutf]
   ncsf[:] = sav[5][0:cutf]
   ncthkf[:] = Hav[:,5,0:cutf]
   ncmaskf[:] = mav[:,5,0:cutf]
   ncxvmf[:] = uav[:,5,0:cutf]
   ncyvmf[:] = vav[:,5,0:cutf]
-    
+
   cutg = np.shape(trans[6])[0]
-  ncxg[:] = sav[6][0:cutg] 
+  ncxg[:] = sav[6][0:cutg]
   ncsg[:] = sav[6][0:cutg]
   ncthkg[:] = Hav[:,6,0:cutg]
   ncmaskg[:] = mav[:,6,0:cutg]
@@ -330,76 +330,76 @@ if True:
   ncxvmh[:] = uav[:,7,0:cuth]
   ncyvmh[:] = vav[:,7,0:cuth]
 
- 
+
   #####################################################################################
 
   nct.units = 'a'
   #nct2.units = 'a'
   ncx.units = 'm'
   ncy.units = 'm'
-    
+
   ncxvm.units = 'm/a'
-  ncyvm.units = 'm/a'  
+  ncyvm.units = 'm/a'
   ncthk.units = 'm'
   nctopg.units = 'm'
   nccrate.units = 'm/a'
-    
+
   ncafl.units = 'm^2'
   ncagr.units = 'm^2'
   nclim.units = 'kg'
   nclimw.units = 'kg'
   nctcf.units = 'kg/a'
   nctgf.units = 'kg/a'
-    
+
   ncxa.units = 'm'
   ncsa.units = 'm'
   ncthka.units = 'm'
   ncxvma.units = 'm/a'
   ncyvma.units = 'm/a'
-    
+
   ncxb.units = 'm'
   ncsb.units = 'm'
   ncthkb.units = 'm'
   ncxvmb.units = 'm/a'
   ncyvmb.units = 'm/a'
-    
+
   ncxc.units = 'm'
   ncsc.units = 'm'
   ncthkc.units = 'm'
   ncxvmc.units = 'm/a'
   ncyvmc.units = 'm/a'
-    
+
   ncxd.units = 'm'
   ncsd.units = 'm'
   ncthkd.units = 'm'
   ncxvmd.units = 'm/a'
   ncyvmd.units = 'm/a'
-    
+
   ncxe.units = 'm'
   ncse.units = 'm'
   ncthke.units = 'm'
   ncxvme.units = 'm/a'
   ncyvme.units = 'm/a'
-    
+
   ncxf.units = 'm'
   ncsf.units = 'm'
   ncthkf.units = 'm'
   ncxvmf.units = 'm/a'
   ncyvmf.units = 'm/a'
-    
+
   ncxg.units = 'm'
   ncsg.units = 'm'
   ncthkg.units = 'm'
   ncxvmg.units = 'm/a'
   ncyvmg.units = 'm/a'
-    
+
   ncxh.units = 'm'
   ncsh.units = 'm'
   ncthkh.units = 'm'
   ncxvmh.units = 'm/a'
   ncyvmh.units = 'm/a'
 
-    
+
   #####################################################################################
 
 
@@ -408,61 +408,60 @@ if True:
   ncthk.Standard_name   = 'land_ice_thickness'
   nctopg.Standard_name  = 'bedrock_altitude'
   nccrate.Standard_name = 'calving_rate'
-    
+
   ncafl.Standard_name  = 'floating_ice_shelf_area'
   ncagr.Standard_name  = 'grounded_ice_sheet_area'
   nclim.Standard_name  =  'land_ice_mass'
   nclimw.Standard_name = 'land_ice_mass_not_displacing_sea_water'
   nctcf.Standard_name  =  'tendency_of_land_ice_mass_due_to_calving'
   nctgf.Standard_name  =  'tendency_of_grounded_ice_mass'
-  
 
-  
+
   ncsa.Standard_name   = 'distance_along_Caprona_A'
   ncthka.Standard_name = 'land_ice_thickness_along_Caprona_A'
   ncxvma.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Caprona_A'
   ncyvma.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Caprona_A'
-    
+
   ncsb.Standard_name   = 'distance_along_Caprona_B'
   ncthkb.Standard_name = 'land_ice_thickness_along_Caprona_B'
   ncxvmb.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Caprona_B'
-  ncyvmb.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Caprona_B'    
-    
+  ncyvmb.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Caprona_B'   
+
   ncsc.Standard_name   = 'distance_along_Caprona_C'
   ncthkc.Standard_name = 'land_ice_thickness_along_Caprona_C'
   ncxvmc.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Caprona_C'
   ncyvmc.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Caprona_C'
-    
+
   ncsd.Standard_name   = 'distance_along_Caprona_D'
   ncthkd.Standard_name = 'land_ice_thickness_along_Caprona_D'
   ncxvmd.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Caprona_D'
   ncyvmd.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Caprona_D'
-    
+
   ncse.Standard_name   = 'distance_along_Halbrane_A'
   ncthke.Standard_name = 'land_ice_thickness_along_Halbrane_A'
   ncxvme.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Halbrane_A'
   ncyvme.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Halbrane_A'
-    
+
   ncsf.Standard_name   = 'distance_along_Halbrane_B'
   ncthkf.Standard_name = 'land_ice_thickness_along_Halbrane_B'
   ncxvmf.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Halbrane_B'
   ncyvmf.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Halbrane_B'
-    
+
   ncsg.Standard_name   = 'distance_along_Halbrane_C'
   ncthkg.Standard_name = 'land_ice_thickness_along_Halbrane_C'
   ncxvmg.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Halbrane_C'
   ncyvmg.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Halbrane_C'
-    
+
   ncsh.Standard_name   = 'distance_along_Halbrane_D'
   ncthkh.Standard_name = 'land_ice_thickness_along_Halbrane_D'
   ncxvmh.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Halbrane_D'
   ncyvmh.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Halbrane_D'
-    
+
   #####################################################################################
-    
+
   ncmask.flag_values = '1, 2, 3'
   ncmask.flag_meanings = '1=grounded ice, 2=floating ice, 3=open ocean'
-   
+
   ncmaska.flag_values = '1, 2, 3'
   ncmaska.flag_meanings = '1=grounded ice, 2=floating ice, 3=open ocean'
 
@@ -486,13 +485,13 @@ if True:
 
   ncmaskh.flag_values = '1, 2, 3'
   ncmaskh.flag_meanings = '1=grounded ice, 2=floating ice, 3=open ocean'
-    
+
 
   now = datetime.datetime.now().strftime("%B %d, %Y")
   wrtfile.comment  = "CalvingMIP contribution postprocessed by torsten.albrecht@pik-potsdam.de at " + now
   wrtfile.institution = 'Potsdam Institute for Climate Impact Research (PIK), Germany'
   wrtfile.inputdata = 'PISM code from https://github.com/pism/pism/tree/pik/calving_rate_given'
-    
+
   wrtfile.close()
 
 
