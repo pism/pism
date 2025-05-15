@@ -12,6 +12,8 @@ Changes since v2.2.0
   To get correct behavior with PISM 2.2.0 run `pism -energy cold -eisII ...` instead of
   `pism -eisII ...`.
 
+- Added `calvingmip_calving` and `given_calving` options to be able to run CalvingMIP 
+  experiments, as well as run script and postprocessing scripts
 
 Changes since v2.1
 ==================
