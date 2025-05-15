@@ -21,7 +21,7 @@ options="ssa_method fd -stress_balance ssa -ssa_dirichlet_bc -stress_balance.ssa
 
 # run "python setup_circular.py -L 1.6e6 -M 321" to create the input file "circular_input.nc"
 
-# EXP1 5km
+# EXP1 5km: on one CPU the first equilibrium simulation over 10 kyr would take more than a day, consider to run it in parallel
 pism -i circular_input.nc -bootstrap -Mx 321 -My 321 -Mz 3 -Mbz 1 -Lz 1600 -Lbz 0 -bootstrapping.defaults.geothermal_flux 0.0 \
 $options -calvingmip_experiment 1 -ts_file results/ts_exp1.nc -ts_times 100000:yearly:110000 \
 -extra_file results/extra_exp1.nc -extra_times 10 -ys 100000 -ye 110000 -o results/result_exp1.nc
@@ -34,7 +34,7 @@ $options -calvingmip_experiment 2 -ts_file results/ts_exp2.nc -ts_times 110000:y
 
 
 
-# run ""python setup_thule.py -L 2.0e6 -M 401"" to create input file "thule_input.nc"
+# run "python setup_thule.py -L 2.0e6 -M 401" to create input file "thule_input.nc"
 
 #EXP3 5km
 pism -i thule_input.nc -bootstrap -Mx 401 -My 401 -Mz 3 -Mbz 1 -Lz 2500 -Lbz 0 -bootstrapping.defaults.geothermal_flux 0.0 \
