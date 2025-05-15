@@ -34,7 +34,8 @@ namespace calving {
  */
 class GivenRate : public Component {
 public:
-  GivenRate(IceGrid::ConstPtr grid);
+  GivenRate(std::shared_ptr<const Grid> grid);
+  //GivenRate(Grid::ConstPtr grid);
   virtual ~GivenRate() = default;
 
   void init();

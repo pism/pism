@@ -40,10 +40,8 @@ FrontRetreat::FrontRetreat(std::shared_ptr<const Grid> g)
   m_tmp.metadata(0).long_name("additional mass loss at points near the front").units("m");
   m_cell_type.metadata(0).long_name("cell type mask");
 
-  m_wx.set_attrs("internal", "weight of mass loss at calving front in x-direction",
-                  "", "", "", 0);
-  m_wy.set_attrs("internal", "weight of mass loss at calving front in y-direction",
-                  "", "", "", 0);
+  m_wx.metadata(0).long_name("weight of mass loss at calving front in x-direction");
+  m_wy.metadata(0).long_name("weight of mass loss at calving front in y-direction");
 
 }
 
@@ -257,7 +255,7 @@ void FrontRetreat::update_geometry(double dt,
                    vw = ice_velocity(i-1, j).u,
                    ve = ice_velocity(i+1, j).u,
                    vs = ice_velocity(i, j-1).v,
-                   vn = ice_velocity(i, j+1).v; 
+                   vn = ice_velocity(i, j+1).v;
 
             if (vw > vcr) {
               m_wx(i,j) = vw; //ww
@@ -283,7 +281,7 @@ void FrontRetreat::update_geometry(double dt,
               m_wy(i,j+1) /= velsum;
 
             } else { //N2 != N
- 
+
               if (m_cell_type.floating_ice(i-1, j)) m_wx(i,j)  = 1.0 / (double)N;
               if (m_cell_type.floating_ice(i+1, j)) m_wx(i+1,j)= 1.0 / (double)N;
               if (m_cell_type.floating_ice(i, j-1)) m_wy(i,j)  = 1.0 / (double)N;

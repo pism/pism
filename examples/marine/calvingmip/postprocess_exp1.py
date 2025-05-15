@@ -324,7 +324,7 @@ if True:
   ncy.units = 'm'
 
   ncxvm.units = 'm/a'
-  ncyvm.units = 'm/a' 
+  ncyvm.units = 'm/a'
   ncthk.units = 'm'
   nctopg.units = 'm'
   nccrate.units = 'm/a'

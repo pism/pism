@@ -19,14 +19,17 @@
 
 #include "GivenRate.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/util/io/File.hh"
+
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace calving {
 
-GivenRate::GivenRate(IceGrid::ConstPtr grid)
+GivenRate::GivenRate(std::shared_ptr<const Grid> grid)
+//GivenRate::GivenRate(IceGrid::ConstPtr grid)
   : Component(grid) {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.given_calving");
@@ -34,7 +37,7 @@ GivenRate::GivenRate(IceGrid::ConstPtr grid)
     auto buffer_size = static_cast<unsigned int>
       (m_config->get_number("input.forcing.buffer_size"));
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_calving_rate = std::make_shared<array::Forcing>(m_grid,
                                                       file,
@@ -44,12 +47,13 @@ GivenRate::GivenRate(IceGrid::ConstPtr grid)
                                                       opt.periodic,
                                                       LINEAR);
 
-    m_calving_rate->set_attrs("diagnostic",
-                              "'calving rate' as used in given_calving method",
-                              "m s-1",
-                              "m year-1",
-                              "", 0); // no standard name
+    m_calving_rate->metadata().set_name("calving_rate");
+    m_calving_rate->metadata(0)
+          .long_name("'calving rate' as used in given_calving method")
+          .units("m s^-1")
+          .output_units("m year^-1");
     m_calving_rate->metadata()["valid_min"] = {0.0};
+
   }
 }
 
@@ -59,9 +63,9 @@ void GivenRate::init() {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.given_calving");
 
-  File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+  File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-  if (file.find_variable(m_calving_rate->get_name())) {
+  if (file.variable_exists(m_calving_rate->metadata().get_name())) {
     m_log->message(2,
                    "  Reading calving rate from file '%s'...\n",
                    opt.filename.c_str());

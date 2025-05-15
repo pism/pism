@@ -323,7 +323,7 @@ if True:
   ncyvmg[:] = vav[:,6,0:cutg]
 
   cuth = np.shape(trans[7])[0]
-  ncxh[:] = sav[7][0:cuth] 
+  ncxh[:] = sav[7][0:cuth]
   ncsh[:] = sav[7][0:cuth]
   ncthkh[:] = Hav[:,7,0:cuth]
   ncmaskh[:] = mav[:,7,0:cuth]
@@ -425,7 +425,7 @@ if True:
   ncsb.Standard_name   = 'distance_along_Caprona_B'
   ncthkb.Standard_name = 'land_ice_thickness_along_Caprona_B'
   ncxvmb.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Caprona_B'
-  ncyvmb.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Caprona_B'   
+  ncyvmb.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Caprona_B'  
 
   ncsc.Standard_name   = 'distance_along_Caprona_C'
   ncthkc.Standard_name = 'land_ice_thickness_along_Caprona_C'

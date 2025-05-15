@@ -20,13 +20,14 @@
 #include "CalvingMIP.hh"
 
 #include "pism/util/Mask.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
 
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
 
 #include "pism/util/Time.hh"
+#include "pism/util/Logger.hh"
 
 #include <cmath>                // pow, tan, atan
 
@@ -37,18 +38,18 @@ namespace pism {
 namespace calving {
 
 
-CalvingMIP::CalvingMIP(IceGrid::ConstPtr grid)
+CalvingMIP::CalvingMIP(std::shared_ptr<const Grid> grid)
+//CalvingMIP::CalvingMIP(IceGrid::ConstPtr grid)
   : Component(grid),
     m_calving_rate(grid, "calvingmip_calving_rate"),
     m_calving_rate_tmp(grid, "calvingmip_calving_rate_temporary"),
     m_cell_type(grid, "cell_type_where_calving_rate_set")
 {
-  m_calving_rate.metadata().set_name("calvingmip_calving_rate");
-  m_calving_rate.set_attrs("diagnostic",
-                           "horizontal calving rate due to CalvingMIP calving",
-                           "m s-1", "m year-1", "", 0);
+  m_calving_rate.metadata(0)
+	  .set_name("calvingmip_calving_rate")
+          .long_name("horizontal calving rate due to CalvingMIP calving");
 
-  m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
+  m_cell_type.metadata().long_name("cell type mask");
 }
 
 void CalvingMIP::init() {

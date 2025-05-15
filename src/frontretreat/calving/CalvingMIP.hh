@@ -32,13 +32,14 @@ namespace calving {
 class CalvingMIP : public Component
 {
 public:
-  CalvingMIP(IceGrid::ConstPtr grid);
+  CalvingMIP(std::shared_ptr<const Grid> grid);
+  //CalvingMIP(Grid::ConstPtr grid);
   virtual ~CalvingMIP() = default;
 
   void init();
 
   void update(const array::CellType1 &cell_type,
-              const array::Vector1 &ice_velocity, 
+              const array::Vector1 &ice_velocity,
               const array::Scalar &ice_thickness);
 
   const array::Scalar &calving_rate() const;
