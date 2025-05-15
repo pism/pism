@@ -20,7 +20,7 @@ options="ssa_method fd -stress_balance ssa -ssa_dirichlet_bc -stress_balance.ssa
 
 
 
-# EXP1 5km
+# EXP1 5km: This can take more than 1 day on one CPU, consider to run it in parallel
 pismr -i circular_input.nc -bootstrap -Mx 321 -My 321 -Mz 3 -Mbz 1 -Lz 1600 -Lbz 0 -bootstrapping.defaults.geothermal_flux 0.0 \
 $options -calvingmip_experiment 1 -ts_file results/ts_exp1.nc -ts_times 100000:yearly:110000 \
 -extra_file results/extra_exp1.nc -extra_times 10 -ys 100000 -ye 110000 -o results/result_exp1.nc
