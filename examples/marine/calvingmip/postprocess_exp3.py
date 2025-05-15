@@ -425,7 +425,7 @@ if True:
   ncsb.Standard_name   = 'distance_along_Caprona_B'
   ncthkb.Standard_name = 'land_ice_thickness_along_Caprona_B'
   ncxvmb.Standard_name = 'land_ice_vertical_mean_x_velocity_along_Caprona_B'
-  ncyvmb.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Caprona_B'  
+  ncyvmb.Standard_name = 'land_ice_vertical_mean_y_velocity_along_Caprona_B' 
 
   ncsc.Standard_name   = 'distance_along_Caprona_C'
   ncthkc.Standard_name = 'land_ice_thickness_along_Caprona_C'

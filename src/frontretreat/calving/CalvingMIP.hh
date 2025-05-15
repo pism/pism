@@ -33,7 +33,6 @@ class CalvingMIP : public Component
 {
 public:
   CalvingMIP(std::shared_ptr<const Grid> grid);
-  //CalvingMIP(Grid::ConstPtr grid);
   virtual ~CalvingMIP() = default;
 
   void init();

@@ -29,7 +29,6 @@ namespace pism {
 namespace calving {
 
 GivenRate::GivenRate(std::shared_ptr<const Grid> grid)
-//GivenRate::GivenRate(IceGrid::ConstPtr grid)
   : Component(grid) {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.given_calving");

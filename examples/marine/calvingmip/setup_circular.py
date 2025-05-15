@@ -6,7 +6,7 @@
 
 # run as "python setup_circular.py -L 1.6e6 -M 321" for 5km resolution and 1600 x 1600 km domain width
 
-# set path to ../../preprocessing/PISMNC.py
+# set path or symbolic link to to ../../preprocessing/PISMNC.py
 from PISMNC import PISMDataset as NC
 from optparse import OptionParser
 import numpy as np

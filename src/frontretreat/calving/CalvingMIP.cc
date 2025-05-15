@@ -37,9 +37,7 @@ namespace pism {
 //! @brief Calving and iceberg removal code as in https://github.com/JRowanJordan/CalvingMIP/wiki
 namespace calving {
 
-
 CalvingMIP::CalvingMIP(std::shared_ptr<const Grid> grid)
-//CalvingMIP::CalvingMIP(IceGrid::ConstPtr grid)
   : Component(grid),
     m_calving_rate(grid, "calvingmip_calving_rate"),
     m_calving_rate_tmp(grid, "calvingmip_calving_rate_temporary"),
@@ -48,6 +46,9 @@ CalvingMIP::CalvingMIP(std::shared_ptr<const Grid> grid)
   m_calving_rate.metadata(0)
 	  .set_name("calvingmip_calving_rate")
           .long_name("horizontal calving rate due to CalvingMIP calving");
+          .units("m s^-1")
+          .output_units("m year^-1");
+  m_calving_rate->metadata()["valid_min"] = {0.0};
 
   m_cell_type.metadata().long_name("cell type mask");
 }

@@ -916,7 +916,7 @@ void IceModel::init_calving() {
     allocate_front_retreat = true;
 
     if (not m_given_calving) {
-      m_given_calving.reset(new calving::GivenRate(m_grid));
+      m_given_calving = std::make_shared<calving::GivenRate>(m_grid);
     }
 
     m_given_calving->init();
@@ -943,7 +943,7 @@ void IceModel::init_calving() {
     allocate_front_retreat = true;
 
     if (not m_calvingmip) {
-      m_calvingmip.reset(new calving::CalvingMIP(m_grid));
+      m_calvingmip = std::make_shared<calving::CalvingMIP>(m_grid);
     }
 
     m_calvingmip->init();

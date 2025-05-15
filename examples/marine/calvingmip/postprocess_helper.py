@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Helper scripts for postprocessing PISM result to upload for CalvinMIP, 
+# Helper scripts for postprocessing PISM result to upload for CalvinMIP,
 # by albrecht@pik-potsdam.de
 
 import numpy as np
@@ -9,7 +9,7 @@ import netCDF4 as nc
 
 ###############################################################################################
 
-# define piecewise linear transects between i-j-locations 
+# define piecewise linear transects between i-j-locations
 def get_troughs(of,trans,dp):
 
   try:
@@ -23,7 +23,7 @@ def get_troughs(of,trans,dp):
   compfile.close()
 
   trans_points=[]
-  
+
   for l,points in enumerate(trans):
 
     pkm=[]
@@ -56,7 +56,7 @@ def get_troughs(of,trans,dp):
         dpy=0.0
         dpx=xdir*dpr
         mnew=0.0
-      else:  
+      else:
         mnew=my/mx
         dpy=ydir*np.sqrt((mnew*dpr)**2/(1.0+mnew**2))
         dpx=dpy/mnew
@@ -84,7 +84,7 @@ def get_troughs(of,trans,dp):
   return trans_points
 
 
-def interpolate_along_transect(var,i,j,di,dj): 
+def interpolate_along_transect(var,i,j,di,dj):
     return (1.0-dj)*((1.0-di)*var[i,j] + di*var[i,j+1]) + dj*((1.0-di)*var[i+1,j] + di*var[i+1,j+1])
 
 def nearest_along_transect(var,i,j,di,dj):
