@@ -898,16 +898,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
                                     variable.c_str());
     }
 
-    std::string xy_units = "meters";
-    // Attempting to detect rotated pole grids
-    {
-      auto mapping                  = MappingInfo::FromFile(file, var.name, unit_system).cf_mapping;
-      std::string grid_mapping_name = mapping["grid_mapping_name"];
-      longitude_latitude            = (grid_mapping_name == "rotated_latitude_longitude");
-      if (longitude_latitude) {
-        xy_units = "degrees";
-      }
-    }
+    auto mapping = MappingInfo::FromFile(file, var.name, unit_system).cf_mapping;
 
     bool time_dimension_processed = false;
     for (const auto &dimension_name : file.dimensions(var.name)) {
@@ -919,16 +910,29 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       if (dimtype == X_AXIS or dimtype == Y_AXIS or dimtype == Z_AXIS) {
         // horizontal dimensions
         if (dimtype == X_AXIS or dimtype == Y_AXIS) {
-          // another attempt at detecting rotated pole grids
+          auto std_name = file.read_text_attribute(dimension_name, "standard_name");
+          std::string units = "meters";
+          // Try to detect rotated pole grids
           {
-            auto std_name = file.read_text_attribute(dimension_name, "standard_name");
-            if (member(std_name, { "grid_latitude", "grid_longitude" }) or
+            if (mapping.get_string("grid_mapping_name") == "rotated_latitude_longitude" or
+                member(std_name, { "grid_latitude", "grid_longitude" }) or
                 member(dimension_name, { "rlat", "rlon" })) {
-              xy_units           = "degrees";
+              units              = "degrees";
               longitude_latitude = true;
             }
           }
-          data = io::read_1d_variable(file, dimension_name, xy_units, unit_system);
+          // Try to detect longitude-latitude grids
+          {
+            if (std_name == "longitude" or member(dimension_name, {"lon", "longitude"})) {
+              units              = "degree_east";
+              longitude_latitude = true;
+            }
+            if (std_name == "latitude" or member(dimension_name, {"lat", "latitude"})) {
+              units              = "degree_north";
+              longitude_latitude = true;
+            }
+          }
+          data = io::read_1d_variable(file, dimension_name, units, unit_system);
           if (data.size() < 2) {
             throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                           "length(%s) in %s has to be at least 2",
