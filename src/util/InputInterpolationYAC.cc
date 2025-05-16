@@ -42,6 +42,7 @@
 #include <proj.h>
 
 #include "pism/util/Proj.hh"
+#include "pism/util/LonLatGrid.hh"
 
 #if (Pism_USE_YAC_INTERPOLATION == 0)
 #error "This code requires YAC"
@@ -52,75 +53,6 @@ extern "C" {
 }
 
 namespace pism {
-
-/*!
- * Utility class converting `x,y` coordinates in a projection to a `lon,lat` pair.
- *
- * Requires the `PROJ` library.
- */
-class LonLatCalculator {
-public:
-  LonLatCalculator(const std::string &proj_string)
-      : m_coordinate_mapping(proj_string, "EPSG:4326") {
-  }
-
-  std::array<double, 2> lonlat(double x, double y) {
-    PJ_COORD in, out;
-
-    in.xy = { x, y };
-    out   = proj_trans(m_coordinate_mapping, PJ_FWD, in);
-
-    return { out.lp.phi, out.lp.lam };
-  }
-
-private:
-  Proj m_coordinate_mapping;
-};
-
-/*!
- * Grid definition using coordinates in radians.
- */
-struct LonLatGrid {
-  std::vector<double> lon;
-  std::vector<double> lat;
-
-  /*!
-   *
-   * Converts a Cartesian grid in a `projection` that uses coordinates
-   * `x` and `y` in meters into the form that can be used to define a
-   * curvilinear grid in YAC.
-   *
-   * The `projection` string has to use the format compatible with PROJ.
-   */
-  LonLatGrid(const std::vector<double> &x, const std::vector<double> &y,
-             const std::string &projection) {
-
-    size_t nrow = y.size();
-    size_t ncol = x.size();
-    size_t N    = nrow * ncol;
-
-    lon.resize(N);
-    lat.resize(N);
-
-    // convert from (row, col) to the linear index in "cell" arrays
-    auto C = [ncol](size_t row, size_t col) { return row * ncol + col; };
-
-    // convert from degrees to radians
-    auto deg2rad = [](double degree) { return degree * M_PI / 180; };
-
-    pism::LonLatCalculator mapping(projection);
-
-    for (size_t row = 0; row < nrow; ++row) {
-      for (size_t col = 0; col < ncol; ++col) {
-        auto coords = mapping.lonlat(x[col], y[row]);
-
-        lon[C(row, col)] = deg2rad(coords[0]);
-        lat[C(row, col)] = deg2rad(coords[1]);
-      }
-    }
-  }
-};
-
 
 /*!
  * Define the PISM grid. Each PE defines its own subdomain.
