@@ -71,7 +71,7 @@ void CliffCalvingShear::init() {
 
 }
 
-void HayhurstCalving::update(const array::CellType1 &cell_type,
+void CliffCalvingShear::update(const array::CellType1 &cell_type,
                              const array::Scalar &ice_thickness,
                              const array::Scalar &sea_level,
                              const array::Scalar &bed_elevation) {
@@ -81,89 +81,60 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
     water_density = m_config->get_number("constants.sea_water.density"),
-    gravity       = m_config->get_number("constants.standard_gravity"),
-    // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
-    unit_scaling  = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
+    gravity       = m_config->get_number("constants.standard_gravity");
 
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
-                               &bed_elevation};
+                               &bed_elevation, &surface_elevation};
 
   for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    double water_depth = sea_level(i, j) - bed_elevation(i, j);
+    // Find partially filled or empty grid boxes on the icefree ocean, which
+    // have grounded ice neighbors after the mass continuity step
+    if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
+      // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
+      stencils::Star<double> H = ice_thickness.star(i, j);
+      stencils::Star<double> h = surface_elevation.star(i, j);
+      stencils::Star<int> M = cell_type.star_int(i, j);
 
-    if (cell_type.icy(i, j) and water_depth > 0.0) {
-      // note that ice_thickness > 0 at icy locations
-      assert(ice_thickness(i, j) > 0);
+      // Get the ice thickness and mask in the partially filled grid cell where we apply calving
+      // it is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells 
+      const double H_threshold = part_grid_threshold_thickness(M, H, h, bed_elevation(i, j));
+      const int m = mask::grounded_ice(sea_level(i, j), bed_elevation(i, j), H_threshold);
+      
+      // Calculate the parameters for the calving law given in [\ref Schlemm2019]
+      const double F = H_threshold - (sea_level(i, j) - bed_elevation(i, j)),  
+                  w = (sea_level(i, j) - bed_elevation(i, j)) / H_threshold,       
+                  Fs = 115 * pow(w-0.356, 4) + 21,
+                  Fc = 75-49*w,
+                  s = 0.17 * pow(9.1, w) + 1.76,
+                  Fscaled = std::max(0.0,F-Fc)/Fs;  
 
-      double H = ice_thickness(i, j);
-
-      // Note that for ice at floatation water_depth = H * (ice_density / water_density),
-      // so omega cannot exceed ice_density / water_density.
-      double omega = water_depth / H;
-
-      // Extend the calving parameterization to ice shelves. This tweak should (I hope)
-      // prevent a feedback in which the creation of an ice shelf reduces the calving
-      // rate, which leads to an advance of the front and an even lower calving rate, etc.
-      if (omega > ice_density / water_density) {
-        // ice at the front is floating
-        double freeboard = (1.0 - ice_density / water_density) * H;
-        H = water_depth + freeboard;
-        omega = water_depth / H;
-      }
-
-      // [\ref Mercenier2018] maximum tensile stress approximation
-      double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0)) * ice_density * gravity * H;
-
-      // ensure that sigma_0 - m_sigma_threshold >= 0
-      sigma_0 = std::max(sigma_0, m_sigma_threshold);
-
-      // [\ref Mercenier2018] equation 22
-      m_calving_rate(i, j) = (m_B_tilde * unit_scaling *
-                              (1.0 - pow(omega, 2.8)) *
-                              pow(sigma_0 - m_sigma_threshold, m_exponent_r) * H);
-    } else { // end of "if (ice_free_ocean and next_to_floating)"
+      // Calculate the calving rate [\ref Schlemm2019] if cell is grounded
+      double C_unbuttressed;
+      C_unbuttressed = (mask::grounded(m) ?
+                         m_C0 * pow(Fscaled, s):
+                         0.0);
+                         
+      // Apply mélange buttressing [\ref Schlemm2021]
+      // check value of max_cliff_calving to prevent division by zero 
+      m_calving_rate(i, j) =  (std::abs(m_max_cliff_calving_rate) < 1e-12 ?
+                        0.0 :
+                        C_unbuttressed / (1.0 + C_unbuttressed / m_max_cliff_calving_rate));
+    } else {
       m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points
 
-  // Set calving rate *near* grounded termini to the average of grounded icy
-  // neighbors: front retreat code uses values at these locations (the rest is for
-  // visualization).
 
-  m_calving_rate.update_ghosts();
-
-  for (auto p = m_grid->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j) ) {
-
-      auto R = m_calving_rate.star(i, j);
-      auto M = cell_type.star(i, j);
-
-      int N = 0;
-      double R_sum = 0.0;
-      for (auto d : {North, East, South, West}) {
-        if (mask::icy(M[d])) {
-          R_sum += R[d];
-          N++;
-        }
-      }
-
-      if (N > 0) {
-        m_calving_rate(i, j) = R_sum / N;
-      }
-    }
-  }
 }
 
-const array::Scalar &HayhurstCalving::calving_rate() const {
+const array::Scalar &CliffCalvingShear::calving_rate() const {
   return m_calving_rate;
 }
 
-DiagnosticList HayhurstCalving::diagnostics_impl() const {
-  return {{"hayhurst_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+DiagnosticList CliffCalvingShear::diagnostics_impl() const {
+  return {{"cliff_calving_shear_rate", Diagnostic::wrap(m_calving_rate)}};
 }
 
 } // end of namespace calving
