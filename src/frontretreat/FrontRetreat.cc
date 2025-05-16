@@ -250,7 +250,6 @@ void FrontRetreat::update_geometry(double dt,
           if (m_calving_along_flow) { //weight with velocity vector
             m_tmp(i, j) = (Href_old + Href_change);
             //set weights according to inflow vectors
-            int N2 = 0 ;
             double velsum = 0.0,
                    vw = ice_velocity(i-1, j).u,
                    ve = ice_velocity(i+1, j).u,
@@ -260,19 +259,19 @@ void FrontRetreat::update_geometry(double dt,
             if (vw > vcr) {
               m_wx(i,j) = vw; //ww
               velsum += vw;
-              N2 += 1; }
+            }
             if (ve < -vcr) {
               m_wx(i+1,j) = -ve; //we
               velsum -= ve;
-              N2 += 1; }
+            }
             if (vs > vcr) {
               m_wy(i,j) = vs;  //ws
               velsum += vs;
-              N2 += 1; }
+            }
             if (vn < -vcr) {
               m_wy(i,j+1) = -vn; //wn
               velsum -= vn;
-              N2 += 1; }
+            }
 
             if (velsum > vcr) {
               m_wx(i,j)   /= velsum;
