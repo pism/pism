@@ -40,16 +40,6 @@ CliffCalvingShear::CliffCalvingShear(std::shared_ptr<const Grid> grid)
       .long_name("horizontal calving rate due to shear stress failure")
       .units("m s^-1")
       .output_units("m year^-1");
-
-  m_C0.metadata(0)
-      .long_name("scaling factor for calving rate due to shear stress failure")
-      .units("m s^-1")
-      .output_units("m year^-1");
-
-  m_max_cliff_calving_rate.metadata(0)
-      .long_name("maximum cliff calving rate due to mélange buttressing")
-      .units("m s^-1")
-      .output_units("m year^-1");
 }
 
 void CliffCalvingShear::init() {
@@ -89,6 +79,8 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
     water_density = m_config->get_number("constants.sea_water.density"),
     gravity       = m_config->get_number("constants.standard_gravity");
 
+  GeometryCalculator gc(*m_config);
+
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
@@ -99,9 +91,14 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
     // have grounded ice neighbors after the mass continuity step
     if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
       // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
-      stencils::Star<double> H = ice_thickness.star(i, j);
+      stencils::Star<double> H;
+      H.c = ice_thickness(i, j);
+      H.e = ice_thickness(i+1, j);
+      H.w = ice_thickness(i-1, j);
+      H.n = ice_thickness(i, j+1);
+      H.s = ice_thickness(i, j-1);
       stencils::Star<double> surface_elevation;
-      for (int d = 0; d < 5; ++d) {
+      for (auto d : {North, East, South, West}) {
         surface_elevation[d] = H[d] + bed_elevation(i, j);
       }
       stencils::Star<int> M = cell_type.star_int(i, j);
@@ -109,7 +106,7 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
       // Get the ice thickness and mask in the partially filled grid cell where we apply calving
       // it is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells 
       const double H_threshold = part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
-      const int m = mask::grounded_ice(sea_level(i, j), bed_elevation(i, j), H_threshold);
+      const int m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
       
       // Calculate the parameters for the calving law given in [\ref Schlemm2019]
       const double F = H_threshold - (sea_level(i, j) - bed_elevation(i, j)),  
@@ -121,7 +118,7 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
 
       // Calculate the calving rate [\ref Schlemm2019] if cell is grounded
       double C_unbuttressed;
-      C_unbuttressed = (mask::grounded(m) ?
+      C_unbuttressed = (mask::grounded_ice(m) ?
                          m_C0 * pow(Fscaled, s):
                          0.0);
                          
