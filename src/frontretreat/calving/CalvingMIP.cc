@@ -45,10 +45,10 @@ CalvingMIP::CalvingMIP(std::shared_ptr<const Grid> grid)
 {
   m_calving_rate.metadata(0)
 	  .set_name("calvingmip_calving_rate")
-          .long_name("horizontal calving rate due to CalvingMIP calving");
+          .long_name("horizontal calving rate due to CalvingMIP calving")
           .units("m s^-1")
           .output_units("m year^-1");
-  m_calving_rate->metadata()["valid_min"] = {0.0};
+  m_calving_rate.metadata()["valid_min"] = {0.0};
 
   m_cell_type.metadata().long_name("cell type mask");
 }
