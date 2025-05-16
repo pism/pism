@@ -134,9 +134,9 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
 void Picop::init_impl(const Geometry &geometry) {
   (void) geometry;
 
-  m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel for the ocean ...\n");
+  m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel / Plume for the ocean ...\n");
 
-  ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
+  ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
 
   m_theta_ocean->init(opt.filename, opt.periodic);
   m_salinity_ocean->init(opt.filename, opt.periodic);
