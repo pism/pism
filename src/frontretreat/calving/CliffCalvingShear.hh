@@ -46,11 +46,10 @@ protected:
   DiagnosticList diagnostics_impl() const;
   
 protected:
-  array::Scalar1 m_calving_rate;
+  array::Scalar1 m_calving_rate;  //!< calving rate field
 
-  double C0,
-         max_cliff_calving_rate;
-
+  double m_C0,                     //!< scaling factor for calving rate
+         m_max_cliff_calving_rate; //!< maximum cliff calving rate due to mélange buttressing
 };
 
 } // end of namespace calving

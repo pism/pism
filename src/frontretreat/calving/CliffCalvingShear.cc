@@ -22,25 +22,31 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/stencils.hh"
+#include "pism/util/Mask.hh"
+#include "pism/geometry/part_grid_threshold_thickness.hh"
 
 namespace pism {
 namespace calving {
 
 CliffCalvingShear::CliffCalvingShear(std::shared_ptr<const Grid> grid)
   : Component(grid),
-    m_calving_rate(grid, "shear_cliff_calving_rate")  // where else do I have to change this?
+    m_calving_rate(grid, "shear_cliff_calving_rate"),
+    m_C0(0.0),
+    m_max_cliff_calving_rate(0.0)
 {
   m_calving_rate.metadata(0)
       .long_name("horizontal calving rate due to shear stress failure")
       .units("m s^-1")
       .output_units("m year^-1");
 
-m_C0.metadata(0)
+  m_C0.metadata(0)
       .long_name("scaling factor for calving rate due to shear stress failure")
       .units("m s^-1")
       .output_units("m year^-1");
 
-m_max_cliff_calving_rate.metadata(0)
+  m_max_cliff_calving_rate.metadata(0)
       .long_name("maximum cliff calving rate due to mélange buttressing")
       .units("m s^-1")
       .output_units("m year^-1");
@@ -84,7 +90,7 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
     gravity       = m_config->get_number("constants.standard_gravity");
 
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
-                               &bed_elevation, &surface_elevation};
+                               &bed_elevation};
 
   for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
@@ -94,12 +100,15 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
     if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
       // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
       stencils::Star<double> H = ice_thickness.star(i, j);
-      stencils::Star<double> h = surface_elevation.star(i, j);
+      stencils::Star<double> surface_elevation;
+      for (int d = 0; d < 5; ++d) {
+        surface_elevation[d] = H[d] + bed_elevation(i, j);
+      }
       stencils::Star<int> M = cell_type.star_int(i, j);
 
       // Get the ice thickness and mask in the partially filled grid cell where we apply calving
       // it is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells 
-      const double H_threshold = part_grid_threshold_thickness(M, H, h, bed_elevation(i, j));
+      const double H_threshold = part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
       const int m = mask::grounded_ice(sea_level(i, j), bed_elevation(i, j), H_threshold);
       
       // Calculate the parameters for the calving law given in [\ref Schlemm2019]
