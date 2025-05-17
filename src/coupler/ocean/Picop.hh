@@ -21,8 +21,10 @@
 #define _POPICOP_H_
 
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
-
+#include "pism/coupler/ocean/Pico.hh"
 #include "pism/coupler/ocean/PicoGeometry.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 
@@ -52,82 +54,20 @@ protected:
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
 private:
-  array::Scalar m_Soc, m_Soc_box0;
-  array::Scalar m_Toc, m_Toc_box0, m_T_star;
-  array::Scalar m_overturning;
-  array::Scalar1 m_basal_melt_rate, m_grounding_line_elevation;
-
+  std::shared_ptr<Pico> m_pico;
+  
+  array::Scalar m_grounding_line_elevation;
+  
   PicoGeometry m_geometry;
 
   std::shared_ptr<array::Forcing> m_theta_ocean, m_salinity_ocean;
 
-  void compute_ocean_input_per_basin(const PicoPhysics &physics,
-                                     const array::Scalar &basin_mask,
-                                     const array::Scalar &continental_shelf_mask,
-                                     const array::Scalar &salinity_ocean,
-                                     const array::Scalar &theta_ocean,
-                                     std::vector<double> &temperature,
-                                     std::vector<double> &salinity) const;
-
-  void set_ocean_input_fields(const PicoPhysics &physics,
-                              const array::Scalar &ice_thickness,
-                              const array::CellType1 &mask,
-                              const array::Scalar &basin_mask,
-                              const array::Scalar &shelf_mask,
-                              const std::vector<double> &basin_temperature,
-                              const std::vector<double> &basin_salinity,
-                              array::Scalar &Toc_box0,
-                              array::Scalar &Soc_box0) const;
-
-  void process_box1(const PicoPhysics &physics,
-                    const array::Scalar &ice_thickness,
-                    const array::Scalar &shelf_mask,
-                    const array::Scalar &box_mask,
-                    const array::Scalar &Toc_box0,
-                    const array::Scalar &Soc_box0,
-                    array::Scalar &basal_melt_rate,
-                    array::Scalar &basal_temperature,
-                    array::Scalar &T_star,
-                    array::Scalar &Toc,
-                    array::Scalar &Soc,
-                    array::Scalar &overturning);
-
-  void process_other_boxes(const PicoPhysics &physics,
-                           const array::Scalar &ice_thickness,
-                           const array::Scalar &shelf_mask,
-                           const array::Scalar &box_mask,
-                           array::Scalar &basal_melt_rate,
-                           array::Scalar &basal_temperature,
-                           array::Scalar &T_star,
-                           array::Scalar &Toc,
-                           array::Scalar &Soc) const;
-
-  void beckmann_goosse(const PicoPhysics &physics,
-                       const array::Scalar &ice_thickness,
-                       const array::Scalar &shelf_mask,
-                       const array::CellType &cell_type,
-                       const array::Scalar &Toc_box0,
-                       const array::Scalar &Soc_box0,
-                       array::Scalar &basal_melt_rate,
-                       array::Scalar &basal_temperature,
-                       array::Scalar &Toc,
-                       array::Scalar &Soc);
-
-  void compute_box_average(int box_id,
-                           const array::Scalar &field,
-                           const array::Scalar &shelf_mask,
-                           const array::Scalar &box_mask,
-                           std::vector<double> &result) const;
-
-  void compute_box_area(int box_id,
-                        const array::Scalar &shelf_mask,
-                        const array::Scalar &box_mask,
-                        std::vector<double> &result) const;
-
   void compute_grounding_line_elevation(const Geometry &geometry,
                                         array::Scalar &grounding_line_elevation) const;
+  
+  //! Ghosted copy of the ice velocity
+  array::Vector1 m_velocity;
 
-  int m_n_basins, m_n_boxes, m_n_shelves;
 };
 
 } // end of namespace ocean

@@ -39,7 +39,9 @@ class Pico : public CompleteOceanModel {
 public:
   Pico(std::shared_ptr<const Grid> g);
   virtual ~Pico() = default;
-
+  const array::Scalar &get_salinity() const { return m_Soc; }
+  const array::Scalar &get_temperature() const { return m_Toc; }
+  
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);

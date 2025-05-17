@@ -1776,50 +1776,16 @@ netcdf pism_config {
     pism_config:ocean.pico.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:ocean.pico.periodic_type = "flag";
     
-    pism_config:ocean.picop.continental_shelf_depth = -800.0;
-    pism_config:ocean.picop.continental_shelf_depth_doc = "Specifies the depth up to which oceanic input temperatures and salinities are averaged over the continental shelf areas in front of the ice shelf cavities.";
-    pism_config:ocean.picop.continental_shelf_depth_option = "continental_shelf_depth";
-    pism_config:ocean.picop.continental_shelf_depth_type = "number";
-    pism_config:ocean.picop.continental_shelf_depth_units = "meters";
-
-    pism_config:ocean.picop.exclude_ice_rises = "yes";
-    pism_config:ocean.picop.exclude_ice_rises_doc = "If set to true, grounding lines of ice rises are excluded in the geometrical routines that determine the ocean boxes; using this option is recommended.";
-    pism_config:ocean.picop.exclude_ice_rises_option = "exclude_icerises";
-    pism_config:ocean.picop.exclude_ice_rises_type = "flag";
-
     pism_config:ocean.picop.file = "";
     pism_config:ocean.picop.file_doc = "Specifies the NetCDF file containing potential temperature (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).";
-    pism_config:ocean.picop.file_option = "ocean_picop_file";
+    pism_config:ocean.picop.file_option = "ocean_pico_file";
     pism_config:ocean.picop.file_type = "string";
-
-    pism_config:ocean.picop.heat_exchange_coefficent = 2e-5;
-    pism_config:ocean.picop.heat_exchange_coefficent_doc = "Sets the coefficient for turbulent heat exchange from the ambient ocean across the boundary layer beneath the ice shelf base.";
-    pism_config:ocean.picop.heat_exchange_coefficent_option = "gamma_T";
-    pism_config:ocean.picop.heat_exchange_coefficent_type = "number";
-    pism_config:ocean.picop.heat_exchange_coefficent_units = "meters second^-1";
-
-    pism_config:ocean.picop.maximum_ice_rise_area = 1e5;
-    pism_config:ocean.picop.maximum_ice_rise_area_doc = "Specifies an area threshold that separates ice rises from continental regions.";
-    pism_config:ocean.picop.maximum_ice_rise_area_type = "number";
-    pism_config:ocean.picop.maximum_ice_rise_area_units = "km^2";
-
-    pism_config:ocean.picop.number_of_boxes = 5;
-    pism_config:ocean.picop.number_of_boxes_doc = "For each ice shelf the number of ocean boxes is determined by interpolating between 1 and number_of_boxes depending on its size and geometry such that larger ice shelves are resolved with more boxes; a value of 5 is suitable for the Antarctic setup.";
-    pism_config:ocean.picop.number_of_boxes_option = "number_of_boxes";
-    pism_config:ocean.picop.number_of_boxes_type = "integer";
-    pism_config:ocean.picop.number_of_boxes_units = "count";
-
-    pism_config:ocean.picop.overturning_coefficent = 1e6;
-    pism_config:ocean.picop.overturning_coefficent_doc = "Sets the overturning strength coefficient.";
-    pism_config:ocean.picop.overturning_coefficent_option = "overturning_coeff";
-    pism_config:ocean.picop.overturning_coefficent_type = "number";
-    pism_config:ocean.picop.overturning_coefficent_units = "meters^6 seconds^-1 kg^-1";
 
     pism_config:ocean.picop.periodic = "no";
     pism_config:ocean.picop.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:ocean.picop.periodic_type = "flag";
 
-    pism_config:ocean.pik_melt_factor = 5e-3;
+pism_config:ocean.pik_melt_factor = 5e-3;
     pism_config:ocean.pik_melt_factor_doc = "dimensionless tuning parameter in the ``-ocean pik`` ocean heat flux parameterization; see :cite:`Martinetal2011`";
     pism_config:ocean.pik_melt_factor_option = "meltfactor_pik";
     pism_config:ocean.pik_melt_factor_type = "number";
