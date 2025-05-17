@@ -37,6 +37,8 @@
 // The Cryosphere, 13, 1043-49, (2019)
 // DOI: 10.5194/tc-13-1043-2019
 
+#include <cmath>
+
 #include <gsl/gsl_math.h> // GSL_NAN
 
 #include "pism/coupler/util/options.hh"
@@ -45,6 +47,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/array/Scalar.hh"
 
 #include "pism/coupler/ocean/Picop.hh"
 #include "pism/coupler/ocean/PicoGeometry.hh"
@@ -53,52 +56,31 @@
 #include "pism/util/Logger.hh"
 
 namespace pism {
+
+namespace stressbalance {
+class StressBalance;
+}
+
 namespace ocean {
 
-Picop::Picop(std::shared_ptr<const Grid> grid)
-  : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
+Picop::Picop(std::shared_ptr<const Grid> grid, std::shared_ptr<stressbalance::StressBalance> stressbalance):
+    CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
+    m_stress_balance(stressbalance),
     m_pico(std::make_shared<Pico>(grid)),
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
+    m_theta_ocean(m_pico->get_temperature()),
+    m_salinity_ocean(m_pico->get_salinity()),
     m_geometry(grid),
     m_velocity(grid, "ghosted_velocity")
+
 {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
 
-  {
-    auto buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
-
-    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
-
-    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
-                                                file,
-                                                "theta_ocean",
-                                                "", // no standard name
-                                                buffer_size,
-                                                opt.periodic,
-                                                LINEAR);
-
-    m_salinity_ocean = std::make_shared<array::Forcing>(m_grid,
-                                                   file,
-                                                   "salinity_ocean",
-                                                   "", // no standard name
-                                                   buffer_size,
-                                                   opt.periodic,
-                                                   LINEAR);
-  }
-
-  m_theta_ocean->metadata(0)
-      .long_name("potential temperature of the adjacent ocean")
-      .units("kelvin");
-
-  m_salinity_ocean->metadata(0)
-      .long_name("salinity of the adjacent ocean")
-      .units("g/kg");
-
-
-  m_grounding_line_elevation.metadata(0).long_name("cavity overturning").units("m");
+  m_grounding_line_elevation.metadata(0).long_name("grounding line elevation").units("m");
   m_grounding_line_elevation.metadata()["_FillValue"] = { 0.0 };
-  
+  m_grounding_line_elevation.set(0.0);
+
 }
 
 void Picop::init_impl(const Geometry &geometry) {
@@ -106,14 +88,7 @@ void Picop::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel / Plume for the ocean ...\n");
 
-  ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
-
-  m_theta_ocean->init(opt.filename, opt.periodic);
-  m_salinity_ocean->init(opt.filename, opt.periodic);
-
-  // This initializes the basin_mask
-  m_geometry.init();
-
+    
   compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
 }
 
@@ -132,12 +107,8 @@ void Picop::write_model_state_impl(const File &output) const {
 
 void Picop::update_impl(const Geometry &geometry, double t, double dt) {
 
-  m_theta_ocean->update(t, dt);
-  m_salinity_ocean->update(t, dt);
-
-  m_theta_ocean->average(t, dt);
-  m_salinity_ocean->average(t, dt);
-
+  (void) t;
+  (void) dt;
   compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
 }
 
@@ -151,69 +122,105 @@ MaxTimestep Picop::max_timestep_impl(double t) const {
 
 void Picop::compute_grounding_line_elevation(const Geometry &geometry,
                                              array::Scalar &grounding_line_elevation) const {
-  const array::Scalar &bed      = geometry.bed_elevation;
-  const array::Scalar &H        = geometry.ice_thickness;
-  const array::Scalar &cell_type = geometry.cell_type;
-  const array::Scalar &z_s      = geometry.sea_level_elevation;
+  const array::Scalar &bed        = geometry.bed_elevation;
+  const array::Scalar &H          = geometry.ice_thickness;
+  const array::Scalar &cell_type  = geometry.cell_type;
+  const array::Scalar &z_s        = geometry.sea_level_elevation;
 
-  array::AccessScope list{&bed, &H, &z_s, &cell_type, &m_velocity, &grounding_line_elevation};
+  const int Mx = m_grid->Mx();
+  const int My = m_grid->My();
+  const double dx = m_grid->dx();
+  const double dy = m_grid->dy();
 
-  auto grid = m_grid;
+  array::AccessScope scope{&bed, &H, &z_s, &cell_type, &m_velocity, &grounding_line_elevation};
 
   // Step 1: Initialize zgl0 at grounding line: bed elevation
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
-    if (cell_type(i, j) == MASK_GROUNDED) {
-      grounding_line_elevation(i, j) = bed(i, j);
-    } else {
-      grounding_line_elevation(i, j) = 0.0; // temporary initial value
-    }
+    grounding_line_elevation(i, j) = (cell_type(i, j) == MASK_GROUNDED) ? bed(i, j) : 0.0;
   }
 
-  // Step 2: Advection-diffusion loop (simplified iterative update)
-  const double eps = 1e-14;
+  // Step 2: Advection-diffusion loop
+  const double eps = 1e-8;
   const int max_iter = 100;
   const double tol = 1e-4;
   double residual = 0.0;
 
+  using std::pow;
+  using std::sqrt;
+
   for (int iter = 0; iter < max_iter; ++iter) {
     residual = 0.0;
-    for (auto p = grid->points(); p; p.next()) {
-      int i = p.i(), j = p.j();
-      if (cell_type(i, j) != MASK_FLOATING) continue;
 
-      double u = m_velocity(i, j).u;
-      double v = m_velocity(i, j).v;
+    for (int j = 0; j < My; ++j) {
+      for (int i = 0; i < Mx; ++i) {
 
-      // Upwind scheme for advection term
-      double dzdx = (u >= 0.0) ? (grounding_line_elevation(i, j) - grounding_line_elevation(i - 1, j)) / grid->dx()
-                                : (grounding_line_elevation(i + 1, j) - grounding_line_elevation(i, j)) / grid->dx();
-      double dzdy = (v >= 0.0) ? (grounding_line_elevation(i, j) - grounding_line_elevation(i, j - 1)) / grid->dy()
-                                : (grounding_line_elevation(i, j + 1) - grounding_line_elevation(i, j)) / grid->dy();
+        const double mag = sqrt(pow(m_velocity(i, j).u, 2.0) + pow(m_velocity(i, j).v, 2.0)) ;
 
-      // Diffusion (Laplacian)
-      double laplacian =
-          (grounding_line_elevation(i + 1, j) + grounding_line_elevation(i - 1, j)
-         + grounding_line_elevation(i, j + 1) + grounding_line_elevation(i, j - 1)
-         - 4.0 * grounding_line_elevation(i, j)) / (grid->dx() * grid->dx());
+        double u = m_velocity(i, j).u;
+        double v = m_velocity(i, j).v;
+        u /= mag;
+        v /= mag;
 
-      // Update
-      double update = - (u * dzdx + v * dzdy + eps * laplacian);
-      grounding_line_elevation(i, j) += 0.1 * update;
+        // x-derivative
+        double dzdx;
+        if (i > 0 && i < Mx - 1) {
+          dzdx = (grounding_line_elevation(i + 1, j) - grounding_line_elevation(i - 1, j)) / (2.0 * dx);
+        } else if (i == 0 && i + 2 < Mx) {
+          dzdx = (-3 * grounding_line_elevation(i, j) + 4 * grounding_line_elevation(i + 1, j)
+                  - grounding_line_elevation(i + 2, j)) / (2.0 * dx);
+        } else if (i == Mx - 1 && i >= 2) {
+          dzdx = (3 * grounding_line_elevation(i, j) - 4 * grounding_line_elevation(i - 1, j)
+                  + grounding_line_elevation(i - 2, j)) / (2.0 * dx);
+        } else {
+          dzdx = 0.0; // fallback
+        }
 
-      residual += update * update;
+        // y-derivative
+        double dzdy;
+        if (j > 0 && j < My - 1) {
+          dzdy = (grounding_line_elevation(i, j + 1) - grounding_line_elevation(i, j - 1)) / (2.0 * dy);
+        } else if (j == 0 && j + 2 < My) {
+          dzdy = (-3 * grounding_line_elevation(i, j) + 4 * grounding_line_elevation(i, j + 1)
+                  - grounding_line_elevation(i, j + 2)) / (2.0 * dy);
+        } else if (j == My - 1 && j >= 2) {
+          dzdy = (3 * grounding_line_elevation(i, j) - 4 * grounding_line_elevation(i, j - 1)
+                  + grounding_line_elevation(i, j - 2)) / (2.0 * dy);
+        } else {
+          dzdy = 0.0; // fallback
+        }
+
+        // Laplacian for diffusion
+        double laplacian = 0.0;
+        if (i > 0 && i < Mx - 1 && j > 0 && j < My - 1) {
+          laplacian = (grounding_line_elevation(i + 1, j) + grounding_line_elevation(i - 1, j)
+                     + grounding_line_elevation(i, j + 1) + grounding_line_elevation(i, j - 1)
+                     - 4.0 * grounding_line_elevation(i, j)) / (dx * dx);
+        }
+
+        // Update
+        double update = -(u * dzdx + v * dzdy + eps * laplacian);
+
+        // Boundary condition: grounding_line_elevation == bed outside shelf
+        if (cell_type(i, j) != MASK_FLOATING) {
+          grounding_line_elevation(i, j) = bed(i,j);
+        };
+        grounding_line_elevation(i, j) += 0.1 * update;
+        residual += update * update;
+      }
     }
 
-    residual = std::sqrt(GlobalSum(grid->com, residual));
+    residual = std::sqrt(GlobalSum(m_grid->com, residual));
     if (residual < tol) break;
   }
 
-  // Step 3: Clip to ensure z_gl <= base of ice shelf
-  for (auto p = grid->points(); p; p.next()) {
-    int i = p.i(), j = p.j();
-    double zb = z_s(i, j) - H(i, j); // ice shelf base
-    if (grounding_line_elevation(i, j) > zb) {
-      grounding_line_elevation(i, j) = zb;
+  // Step 3: Clip to base elevation
+  for (int j = 0; j < My; ++j) {
+    for (int i = 0; i < Mx; ++i) {
+      double zb = z_s(i, j) - H(i, j);  // base of ice shelf
+      if (grounding_line_elevation(i, j) > zb) {
+        grounding_line_elevation(i, j) = zb;
+      }
     }
   }
 

@@ -23,10 +23,13 @@
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 #include "pism/coupler/ocean/Pico.hh"
 #include "pism/coupler/ocean/PicoGeometry.hh"
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Vector.hh"
 
 namespace pism {
+
+namespace stressbalance {
+class StressBalance;
+}
 
 namespace ocean {
 
@@ -40,7 +43,7 @@ class PicoPhysics;
 //!
 class Picop : public CompleteOceanModel {
 public:
-  Picop(std::shared_ptr<const Grid> g);
+  Picop(std::shared_ptr<const Grid> g,  std::shared_ptr<stressbalance::StressBalance> stressbalance);
   virtual ~Picop() = default;
 
 protected:
@@ -54,20 +57,24 @@ protected:
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
 private:
+  std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
+  
   std::shared_ptr<Pico> m_pico;
   
   array::Scalar m_grounding_line_elevation;
   
+  const array::Scalar &m_theta_ocean;
+  const array::Scalar &m_salinity_ocean;
+  
   PicoGeometry m_geometry;
 
-  std::shared_ptr<array::Forcing> m_theta_ocean, m_salinity_ocean;
 
   void compute_grounding_line_elevation(const Geometry &geometry,
                                         array::Scalar &grounding_line_elevation) const;
   
   //! Ghosted copy of the ice velocity
   array::Vector1 m_velocity;
-
+  
 };
 
 } // end of namespace ocean
