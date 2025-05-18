@@ -24,10 +24,6 @@
 
 namespace pism {
 
-namespace stressbalance {
-class StressBalance;
-}
-
 namespace ocean {
 
 /*!
@@ -40,10 +36,7 @@ public:
   // "modifier" constructor
   CompleteOceanModel(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> input);
   // "model" constructor
-  CompleteOceanModel(std::shared_ptr<const Grid> g);
-  
-  CompleteOceanModel(std::shared_ptr<const Grid> g, std::shared_ptr<stressbalance::StressBalance> stressbalance);
-
+  CompleteOceanModel(std::shared_ptr<const Grid> g);  
   
   virtual ~CompleteOceanModel() = default;
 protected:

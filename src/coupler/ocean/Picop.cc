@@ -52,26 +52,22 @@
 #include "pism/coupler/ocean/Picop.hh"
 #include "pism/coupler/ocean/PicoGeometry.hh"
 #include "pism/coupler/ocean/PicoPhysics.hh"
+#include "pism/coupler/ocean/PicopPhysics.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
 
 namespace pism {
 
-namespace stressbalance {
-class StressBalance;
-}
-
 namespace ocean {
 
-Picop::Picop(std::shared_ptr<const Grid> grid, std::shared_ptr<stressbalance::StressBalance> stressbalance):
-    CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
-    m_stress_balance(stressbalance),
+Picop::Picop(std::shared_ptr<const Grid> grid)
+  : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
+    m_stress_balance(std::shared_ptr<stressbalance::StressBalance>()),
     m_pico(std::make_shared<Pico>(grid)),
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
-    m_geometry(grid),
-    m_velocity(grid, "ghosted_velocity")
+    m_geometry(grid)
 
 {
 
@@ -122,17 +118,19 @@ MaxTimestep Picop::max_timestep_impl(double t) const {
 
 void Picop::compute_grounding_line_elevation(const Geometry &geometry,
                                              array::Scalar &grounding_line_elevation) const {
+
   const array::Scalar &bed        = geometry.bed_elevation;
   const array::Scalar &H          = geometry.ice_thickness;
   const array::Scalar &cell_type  = geometry.cell_type;
   const array::Scalar &z_s        = geometry.sea_level_elevation;
+  const array::Vector &adv_vel = m_stress_balance->advective_velocity();
 
   const int Mx = m_grid->Mx();
   const int My = m_grid->My();
   const double dx = m_grid->dx();
   const double dy = m_grid->dy();
 
-  array::AccessScope scope{&bed, &H, &z_s, &cell_type, &m_velocity, &grounding_line_elevation};
+  array::AccessScope scope{&bed, &H, &z_s, &cell_type, &adv_vel, &grounding_line_elevation};
 
   // Step 1: Initialize zgl0 at grounding line: bed elevation
   for (auto p = m_grid->points(); p; p.next()) {
@@ -155,12 +153,13 @@ void Picop::compute_grounding_line_elevation(const Geometry &geometry,
     for (int j = 0; j < My; ++j) {
       for (int i = 0; i < Mx; ++i) {
 
-        const double mag = sqrt(pow(m_velocity(i, j).u, 2.0) + pow(m_velocity(i, j).v, 2.0)) ;
+        const double mag = sqrt(pow(adv_vel(i, j).u, 2.0) + pow(adv_vel(i, j).v, 2.0)) ;
 
-        double u = m_velocity(i, j).u;
-        double v = m_velocity(i, j).v;
+        double u = adv_vel(i, j).u;
+        double v = adv_vel(i, j).v;
         u /= mag;
         v /= mag;
+        m_log->message(2, "(%i, %i) = %.3e, %.3e, %.3e", i, j, u, v, mag);
 
         // x-derivative
         double dzdx;
