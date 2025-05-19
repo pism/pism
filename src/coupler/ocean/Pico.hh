@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022, 2023 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022, 2023, 2025 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -44,7 +44,7 @@ public:
   
 protected:
   void init_impl(const Geometry &geometry);
-  void update_impl(const Geometry &geometry, double t, double dt);
+  void update_impl(const Inputs &inputs, double t, double dt);
   MaxTimestep max_timestep_impl(double t) const;
 
   void define_model_state_impl(const File &output) const;

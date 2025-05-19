@@ -47,8 +47,8 @@ void Frac_SMB::init_impl(const Geometry &geometry) {
                  "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
 }
 
-void Frac_SMB::update_impl(const Geometry &geometry, double t, double dt) {
-  m_input_model->update(geometry, t, dt);
+void Frac_SMB::update_impl(const Inputs &inputs, double t, double dt) {
+  m_input_model->update(inputs, t, dt);
 
   m_shelf_base_mass_flux->copy_from(m_input_model->shelf_base_mass_flux());
   m_shelf_base_mass_flux->scale(m_forcing->value(t + 0.5 * dt));

@@ -19,6 +19,8 @@
 #include "coupler/ocean/PyOceanModel.hh"
 %}
 
+%rename(OceanInputs) pism::ocean::Inputs;
+
 %shared_ptr(pism::ocean::OceanModel)
 %include "coupler/OceanModel.hh"
 

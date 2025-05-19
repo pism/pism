@@ -42,8 +42,8 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> g, std::s
   m_shelf_base_mass_flux->metadata().output_units(units);
 }
 
-void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
-  OceanModel::update_impl(geometry, t, dt);
+void InitializationHelper::update_impl(const Inputs &inputs, double t, double dt) {
+  OceanModel::update_impl(inputs, t, dt);
 
   m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
   m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
@@ -71,7 +71,9 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   } else {
     m_log->message(2, "* Performing a 'fake' ocean model time-step for bootstrapping...\n");
 
-    init_step(this, geometry, time());
+    Inputs inputs;
+    inputs.geometry = &geometry;
+    init_step(this, inputs, time());
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to

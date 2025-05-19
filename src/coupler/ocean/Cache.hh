@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,7 +33,7 @@ public:
 protected:
   MaxTimestep max_timestep_impl(double t) const;
 
-  void update_impl(const Geometry &geometry, double my_t, double my_dt);
+  void update_impl(const Inputs &inputs, double my_t, double my_dt);
   void init_impl(const Geometry &geometry);
 
   const array::Scalar& shelf_base_temperature_impl() const;

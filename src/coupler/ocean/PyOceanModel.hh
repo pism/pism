@@ -1,4 +1,4 @@
-// Copyright (C) 2023 PISM Authors
+// Copyright (C) 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -57,7 +57,7 @@ public:
    *
    * Assumes that the time step length `dt` is allowed at the time `t`.
    */
-  virtual void update(const Geometry &geometry, double t, double dt);
+  virtual void update(const Inputs &inputs, double t, double dt);
 
   /*!
    * Define model state variables and set their attributes
@@ -83,7 +83,7 @@ public:
 
 private:
   MaxTimestep max_timestep_impl(double t) const;
-  void update_impl(const Geometry &geometry, double my_t, double my_dt);
+  void update_impl(const Inputs &inputs, double my_t, double my_dt);
   void init_impl(const Geometry &geometry);
 
   void define_model_state_impl(const File &output) const;

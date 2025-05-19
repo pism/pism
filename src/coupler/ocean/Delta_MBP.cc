@@ -49,8 +49,10 @@ void Delta_MBP::init_impl(const Geometry &geometry) {
                  "* Initializing melange back pressure forcing using scalar offsets...\n");
 }
 
-void Delta_MBP::update_impl(const Geometry &geometry, double t, double dt) {
-  m_input_model->update(geometry, t, dt);
+void Delta_MBP::update_impl(const Inputs &inputs, double t, double dt) {
+  m_input_model->update(inputs, t, dt);
+
+  const auto &geometry = *inputs.geometry;
 
   double
     melange_thickness = m_config->get_number("ocean.delta_MBP.melange_thickness"),

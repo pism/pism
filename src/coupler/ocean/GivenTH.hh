@@ -58,7 +58,7 @@ public:
     bool limit_salinity_range;
   };
 private:
-  void update_impl(const Geometry &geometry, double t, double dt);
+  void update_impl(const Inputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);
   MaxTimestep max_timestep_impl(double t) const;
 

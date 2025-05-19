@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2021, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -45,7 +45,7 @@ private:
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
-  void update_impl(const Geometry &geometry, double t, double dt);
+  void update_impl(const Inputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);
 
   const array::Scalar& shelf_base_temperature_impl() const;
