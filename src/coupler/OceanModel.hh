@@ -29,6 +29,11 @@ namespace pism {
 //! melange back pressure, shelf base mass flux and shelf base
 //! temperature.
 namespace ocean {
+
+struct Inputs {
+  const Geometry *geometry;
+};
+
 //! A very rudimentary PISM ocean model.
 class OceanModel : public Component {
 public:
@@ -41,7 +46,7 @@ public:
 
   void init(const Geometry &geometry);
 
-  void update(const Geometry &geometry, double t, double dt);
+  void update(const Inputs &geometry, double t, double dt);
 
   const array::Scalar& shelf_base_temperature() const;
   const array::Scalar& shelf_base_mass_flux() const;
@@ -56,7 +61,7 @@ public:
 protected:
   virtual void init_impl(const Geometry &geometry);
   // provides default (pass-through) implementations for "modifiers"
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual void update_impl(const Inputs &inputs, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;

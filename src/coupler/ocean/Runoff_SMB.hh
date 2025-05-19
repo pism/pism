@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ public:
 private:
   void init_impl(const Geometry &geometry);
 
-  void update_impl(const Geometry &geometry, double t, double dt);
+  void update_impl(const Inputs &inputs, double t, double dt);
 
   void mass_flux(double delta_T, array::Scalar &result) const;
 

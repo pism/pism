@@ -243,7 +243,7 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
   } // end of the loop over grid points
 }
 
-void Pico::update_impl(const Geometry &geometry, double t, double dt) {
+void Pico::update_impl(const Inputs &inputs, double t, double dt) {
 
   m_theta_ocean->update(t, dt);
   m_salinity_ocean->update(t, dt);
@@ -269,9 +269,9 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
   PicoPhysics physics(*m_config);
 
-  const array::Scalar &ice_thickness    = geometry.ice_thickness;
-  const auto &cell_type = geometry.cell_type;
-  const array::Scalar &bed_elevation    = geometry.bed_elevation;
+  const array::Scalar &ice_thickness    = inputs.geometry->ice_thickness;
+  const auto &cell_type = inputs.geometry->cell_type;
+  const array::Scalar &bed_elevation    = inputs.geometry->bed_elevation;
 
   // Geometric part of PICO
   m_geometry.update(bed_elevation, cell_type);
@@ -354,7 +354,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
     water_density = m_config->get_number("constants.sea_water.density"),
     g             = m_config->get_number("constants.standard_gravity");
 
-  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+  compute_average_water_column_pressure(*inputs.geometry, ice_density, water_density, g,
                                         *m_water_column_pressure);
 }
 

@@ -61,11 +61,13 @@ void Frac_MBP::init_impl(const Geometry &geometry) {
  *
  * `P_o^{*} = P_o + P_m`.
  */
-void Frac_MBP::update_impl(const Geometry &geometry, double t, double dt) {
-  m_input_model->update(geometry, t, dt);
+void Frac_MBP::update_impl(const Inputs &inputs, double t, double dt) {
+  m_input_model->update(inputs, t, dt);
 
   m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
 
+  const auto &geometry = *inputs.geometry;
+  
   double
     lambda      = m_forcing->value(t + 0.5 * dt),
     ice_density = m_config->get_number("constants.ice.density"),

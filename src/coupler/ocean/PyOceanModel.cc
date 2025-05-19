@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 PISM Authors
+/* Copyright (C) 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,8 +43,8 @@ void PyOceanModel::init(const Geometry &geometry) {
   throw RuntimeError(PISM_ERROR_LOCATION, "PyOceanModel.init(geometry) is not implemented");
 }
 
-void PyOceanModel::update(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
+void PyOceanModel::update(const Inputs &inputs, double t, double dt) {
+  (void) inputs;
   (void) t;
   (void) dt;
   throw RuntimeError(PISM_ERROR_LOCATION, "PyOceanModel.update(geometry, t, dt) is not implemented");
@@ -73,8 +73,8 @@ MaxTimestep PyOceanModelAdapter::max_timestep_impl(double t) const {
   return m_impl->max_timestep(t);
 }
 
-void PyOceanModelAdapter::update_impl(const Geometry &geometry, double t, double dt) {
-  m_impl->update(geometry, t, dt);
+void PyOceanModelAdapter::update_impl(const Inputs &inputs, double t, double dt) {
+  m_impl->update(inputs, t, dt);
 }
 
 void PyOceanModelAdapter::init_impl(const Geometry &geometry) {

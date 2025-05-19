@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@ public:
 
 private:
   MaxTimestep max_timestep_impl(double t) const;
-  void update_impl(const Geometry &geometry, double my_t, double my_dt);
+  void update_impl(const Inputs &inputs, double my_t, double my_dt);
   void init_impl(const Geometry &geometry);
 
   void melting_point_temperature(const array::Scalar &depth, array::Scalar &result) const;

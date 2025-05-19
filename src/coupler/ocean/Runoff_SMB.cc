@@ -57,8 +57,8 @@ void Runoff_SMB::init_impl(const Geometry &geometry) {
                  "*   derived from delta_T air temperature modifier\n");
 }
 
-void Runoff_SMB::update_impl(const Geometry &geometry, double t, double dt) {
-  m_input_model->update(geometry, t, dt);
+void Runoff_SMB::update_impl(const Inputs &inputs, double t, double dt) {
+  m_input_model->update(inputs, t, dt);
 
   mass_flux(m_forcing->value(t + 0.5 * dt), *m_shelf_base_mass_flux);
 }

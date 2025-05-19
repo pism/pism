@@ -94,11 +94,13 @@ def constant_test():
     geometry.ice_thickness.set(ice_thickness)
     geometry.bed_elevation.set(-2 * ice_thickness)
     geometry.ensure_consistency(0.0)
+    inputs = PISM.OceanInputs()
+    inputs.geometry = geometry
 
     model = PISM.OceanConstant(grid)
 
     model.init(geometry)
-    model.update(geometry, 0, 1)
+    model.update(inputs, 0, 1)
 
     check_model(model, T_melting, mass_flux, average_water_column_pressure)
 
@@ -128,11 +130,13 @@ def pik_test():
     geometry.ice_thickness.set(ice_thickness)
     geometry.bed_elevation.set(-2 * ice_thickness)
     geometry.ensure_consistency(0.0)
+    inputs = PISM.OceanInputs()
+    inputs.geometry = geometry
 
     model = PISM.OceanPIK(grid)
 
     model.init(geometry)
-    model.update(geometry, 0, 1)
+    model.update(inputs, 0, 1)
 
     check_model(model, T_melting, mass_flux, average_water_column_pressure)
 
@@ -144,6 +148,8 @@ class GivenTest(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
         self.filename = tmp_name("ocean_given_input")
 
         self.temperature = 263.0
@@ -165,7 +171,7 @@ class GivenTest(TestCase):
 
         model = PISM.OceanGiven(self.grid)
         model.init(self.geometry)
-        model.update(self.geometry, 0, 1)
+        model.update(self.inputs, 0, 1)
 
         assert model.max_timestep(0).infinite() == True
 
@@ -187,6 +193,8 @@ class GivenTHTest(TestCase):
 
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
 
         self.geometry.ice_thickness.set(ice_thickness)
         self.geometry.bed_elevation.set(-2 * ice_thickness)
@@ -214,7 +222,7 @@ class GivenTHTest(TestCase):
 
         model = PISM.OceanGivenTH(self.grid)
         model.init(self.geometry)
-        model.update(self.geometry, 0, 1)
+        model.update(self.inputs, 0, 1)
 
         assert model.max_timestep(0).infinite() == True
 
@@ -230,6 +238,8 @@ class DeltaT(TestCase):
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
         self.geometry.ensure_consistency(0.0)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
 
         self.model = PISM.OceanConstant(self.grid)
         self.dT = -5.0
@@ -245,7 +255,7 @@ class DeltaT(TestCase):
         modifier = PISM.OceanDeltaT(self.grid, self.model)
 
         modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         check_modifier(self.model, modifier, self.dT, 0.0, 0.0)
 
@@ -259,6 +269,8 @@ class DeltaSMB(TestCase):
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
         self.geometry.ensure_consistency(0.0)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
         self.model = PISM.OceanConstant(self.grid)
         self.dSMB = -5.0
 
@@ -273,7 +285,7 @@ class DeltaSMB(TestCase):
         modifier = PISM.OceanDeltaSMB(self.grid, self.model)
 
         modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         check_modifier(self.model, modifier, 0.0, self.dSMB, 0.0)
 
@@ -287,6 +299,8 @@ class AnomalyBMB(TestCase):
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
         self.geometry.ensure_consistency(0.0)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
 
         self.model = PISM.OceanConstant(self.grid)
         self.dBMB = -5.0
@@ -305,7 +319,7 @@ class AnomalyBMB(TestCase):
         modifier = PISM.OceanAnomaly(self.grid, self.model)
 
         modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         check_modifier(self.model, modifier, 0.0, self.dBMB, 0.0)
 
@@ -325,6 +339,8 @@ class DeltaMBP(TestCase):
         self.geometry.ice_thickness.set(self.H)
         self.geometry.bed_elevation.set(-2 * self.H)
         self.geometry.ensure_consistency(0.0)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
 
         create_scalar_forcing(self.filename, "delta_MBP", "Pa", [self.dP], [0],
                               time_bounds=[0, 1])
@@ -337,7 +353,7 @@ class DeltaMBP(TestCase):
         modifier = PISM.OceanDeltaMBP(self.grid, self.model)
 
         modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         model = self.model
 
@@ -369,6 +385,8 @@ class FracMBP(TestCase):
         self.geometry.ice_thickness.set(self.H)
         self.geometry.bed_elevation.set(-2 * self.H)
         self.geometry.ensure_consistency(0.0)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
 
         create_scalar_forcing(self.filename, "frac_MBP", "1",
                               [self.Lambda], [0], time_bounds=[0, 1])
@@ -381,7 +399,7 @@ class FracMBP(TestCase):
         modifier = PISM.OceanFracMBP(self.grid, self.model)
 
         modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         model = self.model
 
@@ -408,6 +426,8 @@ class FracSMB(TestCase):
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
         self.geometry.ensure_consistency(0.0)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
         self.model = PISM.OceanConstant(self.grid)
         self.dSMB = 0.5
 
@@ -422,7 +442,7 @@ class FracSMB(TestCase):
         modifier = PISM.OceanFracSMB(self.grid, self.model)
 
         modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         model = self.model
 
@@ -448,6 +468,8 @@ class Cache(TestCase):
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
         self.geometry.ensure_consistency(0.0)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
 
         self.constant = PISM.OceanConstant(self.grid)
 
@@ -475,7 +497,7 @@ class Cache(TestCase):
         ts = np.arange(float(N)) * dt
         diff = []
         for t in ts:
-            modifier.update(self.geometry, t, dt)
+            modifier.update(self.inputs, t, dt)
 
             check_difference(model.shelf_base_mass_flux(),
                              modifier.shelf_base_mass_flux(), 0.0)
