@@ -646,16 +646,25 @@ netcdf pism_config {
     pism_config:calving.hayhurst_calving.sigma_threshold_type = "number";
     pism_config:calving.hayhurst_calving.sigma_threshold_units = "MPa";
 
-
-    pism_config:calving.cliff_calving_shear.C0 = 1.0;
-    pism_config:calving.cliff_calving_shear.C0_doc = "Scaling factor for cliff calving rate";
+    pism_config:calving.cliff_calving_shear.C0 = 90.0;
+    pism_config:calving.cliff_calving_shear.C0_doc = "Scaling factor for cliff calving rate :cite:`Schlemm2019`";
     pism_config:calving.cliff_calving_shear.C0_type = "number";
     pism_config:calving.cliff_calving_shear.C0_units = "m year-1";
 
-    pism_config:calving.cliff_calving_shear.max_cliff_calving_rate = 1000.0;
-    pism_config:calving.cliff_calving_shear.max_cliff_calving_rate_doc = "Maximum cliff calving rate";
+    pism_config:calving.cliff_calving_shear.max_cliff_calving_rate = 3000.0;
+    pism_config:calving.cliff_calving_shear.max_cliff_calving_rate_doc = "Maximum cliff calving rate :cite:`Schlemm2021`";
     pism_config:calving.cliff_calving_shear.max_cliff_calving_rate_type = "number";
     pism_config:calving.cliff_calving_shear.max_cliff_calving_rate_units = "m year-1";
+
+    pism_config:calving.cliff_calving_tensile.I = 1.0e-6;
+    pism_config:calving.cliff_calving_tensile.I_doc = "Scaling factor for tensile cliff calving rate :cite:`Schlemm2019`";
+    pism_config:calving.cliff_calving_tensile.I_type = "number";
+    pism_config:calving.cliff_calving_tensile.I_units = "m second-1";
+
+    pism_config:calving.cliff_calving_tensile.alpha = 1.0;
+    pism_config:calving.cliff_calving_tensile.alpha_doc = "Exponent for tensile cliff calving rate :cite:`Schlemm2019`";
+    pism_config:calving.cliff_calving_tensile.alpha_type = "number";
+    pism_config:calving.cliff_calving_tensile.alpha_units = "1";
 
     pism_config:calving.methods = "";
     pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``";
