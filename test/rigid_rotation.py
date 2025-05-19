@@ -166,6 +166,10 @@ class MassTransport(object):
             else:
                 self.transport_scheme.update(dt, geometry.cell_type, geometry.ice_thickness, self.v, True)
                 geometry.ice_thickness.copy_from(self.transport_scheme.x())
+                with PISM.vec.Access(nocomm=geometry.ice_thickness):
+                    for (i, j) in self.grid.points():
+                        if geometry.ice_thickness[i, j] < 0:
+                            geometry.ice_thickness[i, j] = 0
 
             geometry.ensure_consistency(0.0)
 
