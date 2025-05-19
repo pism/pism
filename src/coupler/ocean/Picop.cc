@@ -87,7 +87,8 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
 void Picop::init_impl(const Geometry &geometry) {
   (void) geometry;
 
-  m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel / Plume for the ocean ...\n");
+  m_pico->init(geometry);
+  m_log->message(2, "* Initializing the Plume extension of PICO for the ocean ...\n");
 
   PicoPhysics pico_physics(*m_config);
   PicopPhysics picop_physics(*m_config);
@@ -112,9 +113,8 @@ void Picop::write_model_state_impl(const File &output) const {
 
 void Picop::update_impl(const Geometry &geometry, double t, double dt) {
 
-  (void) t;
-  (void) dt;
-
+  m_pico->update(geometry, t, dt);
+  
   PicoPhysics pico_physics(*m_config);
 
   compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
