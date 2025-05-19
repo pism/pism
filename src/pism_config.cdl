@@ -656,13 +656,13 @@ netcdf pism_config {
     pism_config:calving.cliff_calving_shear.max_cliff_calving_rate_type = "number";
     pism_config:calving.cliff_calving_shear.max_cliff_calving_rate_units = "m year-1";
 
-    pism_config:calving.cliff_calving_tensile.I = 1.0e-6;
-    pism_config:calving.cliff_calving_tensile.I_doc = "Scaling factor for tensile cliff calving rate :cite:`Schlemm2019`";
+    pism_config:calving.cliff_calving_tensile.I = 3.7e-16;
+    pism_config:calving.cliff_calving_tensile.I_doc = "Scaling factor for tensile cliff calving rate :cite:`Crawford2021`";
     pism_config:calving.cliff_calving_tensile.I_type = "number";
     pism_config:calving.cliff_calving_tensile.I_units = "m second-1";
 
-    pism_config:calving.cliff_calving_tensile.alpha = 1.0;
-    pism_config:calving.cliff_calving_tensile.alpha_doc = "Exponent for tensile cliff calving rate :cite:`Schlemm2019`";
+    pism_config:calving.cliff_calving_tensile.alpha = 6.9;
+    pism_config:calving.cliff_calving_tensile.alpha_doc = "Exponent for tensile cliff calving rate :cite:`Crawford2021`";
     pism_config:calving.cliff_calving_tensile.alpha_type = "number";
     pism_config:calving.cliff_calving_tensile.alpha_units = "1";
 

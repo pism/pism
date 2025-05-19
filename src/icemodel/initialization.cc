@@ -32,6 +32,7 @@
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/calving/CliffCalvingShear.hh"
+#include "pism/frontretreat/calving/CliffCalvingTensile.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/NullTransport.hh"
 #include "pism/hydrology/Routing.hh"
@@ -961,6 +962,19 @@ void IceModel::init_calving() {
     methods.erase("cliff_calving_shear");
 
     m_submodels["cliff calving shear"] = m_cliff_calving_shear.get();
+  }
+
+  if (set_member("cliff_calving_tensile", methods)) {
+    allocate_front_retreat = true;
+
+    if (not m_cliff_calving_tensile) {
+      m_cliff_calving_tensile = std::make_shared<calving::CliffCalvingTensile>(m_grid);
+    }
+
+    m_cliff_calving_tensile->init();
+    methods.erase("cliff_calving_tensile");
+
+    m_submodels["cliff calving tensile"] = m_cliff_calving_tensile.get();
   }
 
   if (set_member("float_kill", methods)) {
