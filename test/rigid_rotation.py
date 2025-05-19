@@ -203,8 +203,9 @@ def test():
 
     mt.plot_thickness(ax, levels)
 
-    Range = mt.geometry.ice_thickness.range()
-    print(f"time={t}, min={Range[0]}, max={Range[1]}, V={volume(mt.geometry)}")
+    Min = PISM.min(mt.geometry.ice_thickness)
+    Max = PISM.max(mt.geometry.ice_thickness)
+    print(f"time={t}, min={Min}, max={Max}, V={volume(mt.geometry)}")
 
     for j in range(N):
         mt.step(dt, C)
@@ -212,9 +213,9 @@ def test():
 
         mt.plot_thickness(ax, levels)
 
-        Range = mt.geometry.ice_thickness.range()
-
-        print(f"time={t}, min={Range[0]}, max={Range[1]}, V={volume(mt.geometry)}")
+        Min = PISM.min(mt.geometry.ice_thickness)
+        Max = PISM.max(mt.geometry.ice_thickness)
+        print(f"time={t}, min={Min}, max={Max}, V={volume(mt.geometry)}")
 
     plt.show()
 
