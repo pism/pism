@@ -113,9 +113,11 @@ void Picop::write_model_state_impl(const File &output) const {
 }
 
 
-void Picop::update_impl(const Geometry &geometry, double t, double dt) {
+void Picop::update_impl(const Inputs &inputs, double t, double dt) {
 
-  m_pico->update(geometry, t, dt);
+  m_pico->update(inputs, t, dt);
+
+  const auto &geometry = *inputs.geometry;
   
   PicoPhysics pico_physics(*m_config);
 
