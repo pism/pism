@@ -33,7 +33,7 @@ namespace stressbalance {
 
 namespace ocean {
 
-class PicoPhysics;
+class PicopPhysics;
 
 //! Implements the PICO ocean model as submitted to The Cryosphere (March 2017)
 //! and adds the Plume model.

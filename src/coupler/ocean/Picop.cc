@@ -50,8 +50,6 @@
 #include "pism/util/array/Scalar.hh"
 
 #include "pism/coupler/ocean/Picop.hh"
-#include "pism/coupler/ocean/PicoGeometry.hh"
-#include "pism/coupler/ocean/PicoPhysics.hh"
 #include "pism/coupler/ocean/PicopPhysics.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
@@ -84,6 +82,7 @@ void Picop::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel / Plume for the ocean ...\n");
 
+  PicopPhysics physics(*m_config);
     
   compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
 }

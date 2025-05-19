@@ -27,10 +27,36 @@ class PicopPhysics {
 public:
   PicopPhysics(const Config &config);
 
-  double melt_rate(double pm_point, double Toc) const;
+  double characteristic_freezing_poing(double s_a, double z_gl) const;
 
+  double effective_heat_exchange_coefficient(double t_a, double t_f_gl, double alpha) const;
 
+  double length_scaling(double t_a, double t_f_gl, double alpha) const;
+  
+  double geometric_scaling(double GammaTS, double alpha) const;
+
+  double dimensionless_coordinate(double z_b, double z_gl, double l) const;
+
+  double dimensionless_melt_curve(double X_hat) const;
+
+  double melt_function(double t_a, double s_a, double z_gl, double g_alpha) const;
+  
+  double melt_rate(double M, double X_hat) const;
+  
 private:
+
+  // drag coefficient
+  double m_Cd, m_Cd12;
+  double m_GammaT, m_Cd12GammaT;
+  // heat exchange parameters
+  double m_Cd12GammaTS0, m_gamma1, m_gamma2;
+  // freezing point coefficients
+  double m_lambda1, m_lambda2, m_lambda3;
+  // entrainment coefficient
+  double m_E0, m_M0;
+  // scaling coefficients
+  double  m_x0;
+
 };
 
 } // end of namespace ocean
