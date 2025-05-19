@@ -63,7 +63,7 @@ class PythonOceanModel(PISM.PyOceanModel):
                 pressure = ice_density * g * depth[i, j]
                 result[i, j] = T0 - beta_CC * pressure;
 
-    def update(self, geometry, t, dt):
+    def update(self, inputs, t, dt):
         """Perform a time step from `t` to `t + dt` [seconds]. Needs to update its state and
         data provided to PISM.
 
@@ -81,10 +81,10 @@ class PythonOceanModel(PISM.PyOceanModel):
 
             self.shelf_base_mass_flux.set(mass_flux)
 
-            PISM.compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+            PISM.compute_average_water_column_pressure(inputs.geometry, ice_density, water_density, g,
                                                        self.water_column_pressure);
 
-            self.melting_point_temperature(geometry.ice_thickness, self.shelf_base_temperature)
+            self.melting_point_temperature(inputs.geometry.ice_thickness, self.shelf_base_temperature)
         except Exception:
             traceback.print_exc()
             raise
@@ -175,6 +175,8 @@ def standalone_test():
     grid.report_parameters()
 
     geometry = PISM.Geometry(grid)
+    ocean_inputs = PISM.OceanInputs()
+    ocean_inputs.geometry = geometry
 
     ocean = PythonOceanModel(grid, standalone=True)
 
@@ -189,7 +191,7 @@ def standalone_test():
 
     ocean.init(geometry)
 
-    ocean.update(geometry, 0, 86400)
+    ocean.update(ocean_inputs, 0, 86400)
 
     ocean.shelf_base_temperature.dump("shelf_base_temperature.nc")
 

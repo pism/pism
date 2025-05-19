@@ -570,7 +570,11 @@ void IceModel::step(bool do_mass_continuity,
   profiling.end("sea_level");
 
   profiling.begin("ocean");
-  m_ocean->update(m_geometry, current_time, m_dt);
+  {
+    ocean::Inputs inputs;
+    inputs.geometry = &m_geometry;
+    m_ocean->update(inputs, current_time, m_dt);
+  }
   profiling.end("ocean");
 
   // The sea level elevation might have changed, so we need to update the mask, etc. Note

@@ -1810,6 +1810,12 @@ netcdf pism_config {
     pism_config:ocean.picop.freezing_point_offset_option = "freezing_point_offset";
     pism_config:ocean.picop.freezing_point_offset_type = "number";
     pism_config:ocean.picop.freezing_point_offset_units = "degree_Celsius";
+
+    pism_config:ocean.picop.freezing_point_salinity_coefficient = -5.73e-2;
+    pism_config:ocean.picop.freezing_point_salinity_coefficient_doc = "Sets the freezing point salinity coefficient.";
+    pism_config:ocean.picop.freezing_point_salinity_coefficient_option = "freezing_point_salinity_coefficient";
+    pism_config:ocean.picop.freezing_point_salinity_coefficient_type = "number";
+    pism_config:ocean.picop.freezing_point_salinity_coefficient_units = "degree_Celsius";
     
     pism_config:ocean.picop.freezing_point_salinity_coefficient = -5.73e-2;
     pism_config:ocean.picop.freezing_point_salinity_coefficient_doc = "Sets the freezing point salinity coefficient.";

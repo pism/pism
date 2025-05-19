@@ -32,7 +32,7 @@ Constant::Constant(std::shared_ptr<const Grid> g)
   // empty
 }
 
-void Constant::update_impl(const Geometry &geometry, double t, double dt) {
+void Constant::update_impl(const Inputs &inputs, double t, double dt) {
   (void) t;
   (void) dt;
 
@@ -43,12 +43,12 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
     g             = m_config->get_number("constants.standard_gravity"),
     mass_flux     = melt_rate * ice_density;
 
-  melting_point_temperature(geometry.ice_thickness, *m_shelf_base_temperature);
+  melting_point_temperature(inputs.geometry->ice_thickness, *m_shelf_base_temperature);
 
   m_shelf_base_mass_flux->set(mass_flux);
 
-  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
-                                           *m_water_column_pressure);
+  compute_average_water_column_pressure(*inputs.geometry, ice_density, water_density, g,
+                                        *m_water_column_pressure);
 }
 
 void Constant::init_impl(const Geometry &geometry) {

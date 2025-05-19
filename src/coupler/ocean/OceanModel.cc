@@ -86,8 +86,8 @@ void OceanModel::init_impl(const Geometry &geometry) {
   }
 }
 
-void OceanModel::update(const Geometry &geometry, double t, double dt) {
-  this->update_impl(geometry, t, dt);
+void OceanModel::update(const Inputs &inputs, double t, double dt) {
+  this->update_impl(inputs, t, dt);
 }
 
 const array::Scalar &OceanModel::shelf_base_mass_flux() const {
@@ -104,9 +104,9 @@ const array::Scalar &OceanModel::average_water_column_pressure() const {
 
 // pass-through default implementations for "modifiers"
 
-void OceanModel::update_impl(const Geometry &geometry, double t, double dt) {
+void OceanModel::update_impl(const Inputs &inputs, double t, double dt) {
   if (m_input_model) {
-    m_input_model->update(geometry, t, dt);
+    m_input_model->update(inputs, t, dt);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }

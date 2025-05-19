@@ -70,8 +70,8 @@ void Anomaly::init_impl(const Geometry &geometry) {
   m_shelf_base_mass_flux_anomaly->init(opt.filename, opt.periodic);
 }
 
-void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
-  m_input_model->update(geometry, t, dt);
+void Anomaly::update_impl(const Inputs &inputs, double t, double dt) {
+  m_input_model->update(inputs, t, dt);
 
   m_shelf_base_mass_flux_anomaly->update(t, dt);
 

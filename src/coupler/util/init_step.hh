@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,6 +16,7 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <cassert>
 
 #include "pism/util/Time.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -28,8 +29,8 @@ namespace pism {
  *
  * This is sometimes necessary during initialization, but should be avoided if possible.
  */
-template<class M>
-void init_step(M *model, const Geometry &geometry, const Time& time) {
+template<class M, class In>
+void init_step(M *model, const In &inputs, const Time& time) {
   const double
     now               = time.current(),
     one_year_from_now = time.increment_date(now, 1.0);
@@ -46,7 +47,7 @@ void init_step(M *model, const Geometry &geometry, const Time& time) {
 
   assert(max_dt.finite());
 
-  model->update(geometry, now, max_dt.value());
+  model->update(inputs, now, max_dt.value());
 }
 
 } // end of namespace pism
