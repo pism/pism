@@ -66,6 +66,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_basal_melt_rate(m_grid, "picop_basal_melt_rate"),
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
     m_shelf_base_elevation(grid, "picop_shelf_base_elevation"),
+    m_slope(grid, "picop_basal_slope"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_geometry(grid)
@@ -95,6 +96,7 @@ void Picop::init_impl(const Geometry &geometry) {
     
   compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
   compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
+  compute_slope(geometry, m_shelf_base_elevation, m_slope);
   
 }
 
@@ -119,6 +121,7 @@ void Picop::update_impl(const Geometry &geometry, double t, double dt) {
 
   compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
   compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
+  compute_slope(geometry, m_shelf_base_elevation, m_slope);
 
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(pico_physics.ice_density());
