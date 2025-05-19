@@ -27,6 +27,7 @@
 #include "pism/frontretreat/calving/FloatKill.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
+#include "pism/frontretreat/calving/CliffCalvingShear.hh"
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/coupler/FrontalMelt.hh"
@@ -99,7 +100,7 @@ void IceModel::front_retreat_step(double t, double dt) {
   }
 
   // compute retreat rates due to eigencalving, von Mises calving, Hayhurst calving,
-  // and frontal melt.
+  // Cliff calving shear, and frontal melt.
   // We do this first to make sure that all three mechanisms use the same ice geometry.
   {
     if (m_eigen_calving) {
@@ -121,6 +122,13 @@ void IceModel::front_retreat_step(double t, double dt) {
                                  m_geometry.ice_thickness,
                                  m_stress_balance.shallow->velocity(),
                                  m_energy_model->enthalpy());
+    }
+
+    if (m_cliff_calving_shear) {
+      m_cliff_calving_shear->update(m_geometry.cell_type,
+                                    m_geometry.ice_thickness,
+                                    m_geometry.sea_level_elevation,
+                                    m_geometry.bed_elevation);
     }
 
     if (m_frontal_melt) {
@@ -201,6 +209,10 @@ void IceModel::front_retreat_step(double t, double dt) {
 
       if (m_vonmises_calving) {
         retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
+      }
+
+      if (m_cliff_calving_shear) {
+        retreat_rate.add(1.0, m_cliff_calving_shear->calving_rate());
       }
 
       if (m_calving_rate_factor) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,7 @@
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/stencils.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/Logger.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 
 namespace pism {
@@ -84,14 +85,14 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
-  for (auto pt = m_grid->points(); pt; pt.next()) {
+  for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have grounded ice neighbors after the mass continuity step
     if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
       // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
-      stencils::Star<double> H;
+      stencils::Star<double> H;   // TO DO: change H to type Scalar1 (array::Scalar1) then we can use the star stencil directly, but need  to change this also in the call to the calving update function!!!
       H.c = ice_thickness(i, j);
       H.e = ice_thickness(i+1, j);
       H.w = ice_thickness(i-1, j);
