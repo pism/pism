@@ -28,6 +28,7 @@
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/calving/CliffCalvingShear.hh"
+#include "pism/frontretreat/calving/CliffCalvingTensile.hh"
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/coupler/FrontalMelt.hh"
@@ -87,7 +88,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
 
 void IceModel::front_retreat_step(double t, double dt) {
 
-  bool retreat_rate_based_calving = m_eigen_calving or m_vonmises_calving or m_hayhurst_calving;
+  bool retreat_rate_based_calving = m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_cliff_calving_shear or m_cliff_calving_tensile;
   bool calving_is_active =
       retreat_rate_based_calving or m_float_kill_calving or m_thickness_threshold_calving;
   bool frontal_melt_only_open_ocean = m_config->get_flag("frontal_melt.open_ocean_margins_only");
@@ -129,6 +130,13 @@ void IceModel::front_retreat_step(double t, double dt) {
                                     m_geometry.ice_thickness,
                                     m_geometry.sea_level_elevation,
                                     m_geometry.bed_elevation);
+    }
+
+    if (m_cliff_calving_tensile) {
+      m_cliff_calving_tensile->update(m_geometry.cell_type,
+                                     m_geometry.ice_thickness,
+                                     m_geometry.sea_level_elevation,
+                                     m_geometry.bed_elevation);
     }
 
     if (m_frontal_melt) {
@@ -215,6 +223,10 @@ void IceModel::front_retreat_step(double t, double dt) {
         retreat_rate.add(1.0, m_cliff_calving_shear->calving_rate());
       }
 
+      if (m_cliff_calving_tensile) {
+        retreat_rate.add(1.0, m_cliff_calving_tensile->calving_rate());
+      }
+
       if (m_calving_rate_factor) {
         double T = t + 0.5 * dt;
         retreat_rate.scale(m_calving_rate_factor->value(T));
@@ -243,7 +255,8 @@ void IceModel::front_retreat_step(double t, double dt) {
 
       m_geometry.ensure_consistency(thickness_threshold);
 
-      if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
+      if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or
+          m_cliff_calving_shear or m_cliff_calving_tensile) {
         remove_narrow_tongues(m_geometry, m_geometry.ice_thickness);
 
         m_geometry.ensure_consistency(thickness_threshold);
