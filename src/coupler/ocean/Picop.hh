@@ -20,6 +20,7 @@
 #ifndef _POPICOP_H_
 #define _POPICOP_H_
 
+#include "pism/geometry/UNO.hh"
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 #include "pism/coupler/ocean/Pico.hh"
 #include "pism/coupler/ocean/PicoGeometry.hh"
@@ -61,7 +62,8 @@ private:
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
   
   std::shared_ptr<Pico> m_pico;
-  
+  std::unique_ptr<pism::UNO> m_uno;
+
   array::Scalar1 m_basal_melt_rate;
   array::Scalar1 m_grounding_line_elevation;
   array::Scalar1 m_shelf_base_elevation;
@@ -72,7 +74,14 @@ private:
   
   PicoGeometry m_geometry;
 
-
+  void compute_melt_rate(const PicopPhysics &physics,
+                         const array::Scalar &T_a,
+                         const array::Scalar &S_a,
+                         array::Scalar1 &grounding_line_elevation,
+                         array::Scalar1 &shelf_base_elevation,
+                         array::Scalar1 &slope,
+                         array::Scalar1 &basal_melt_rate) const;
+  
   void compute_grounding_line_elevation(const Geometry &geometry,
                                         array::Scalar1 &grounding_line_elevation) const;
   

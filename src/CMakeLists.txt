@@ -62,6 +62,7 @@ add_library (libpism
   geometry/grounded_cell_fraction.cc
   geometry/flux_limiter.cc
   geometry/part_grid_threshold_thickness.cc
+  geometry/UNO.cc
   icemodel/IceModel.cc
   icemodel/IceEISModel.cc
   icemodel/frontretreat.cc
@@ -119,7 +120,6 @@ if (Pism_DEBUG)
   target_sources(libpism
     PRIVATE
     geometry/MPDATA2.cc
-    geometry/UNO.cc
   )
 endif()
 
