@@ -49,6 +49,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/array/Scalar.hh"
 
+#include "pism/coupler/ocean/PicoPhysics.hh"
 #include "pism/coupler/ocean/Picop.hh"
 #include "pism/coupler/ocean/PicopPhysics.hh"
 #include "pism/util/array/Forcing.hh"
@@ -62,7 +63,9 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
     m_stress_balance(std::shared_ptr<stressbalance::StressBalance>()),
     m_pico(std::make_shared<Pico>(grid)),
+    m_basal_melt_rate(m_grid, "picop_basal_melt_rate"),
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
+    m_shelf_base_elevation(grid, "picop_shelf_base_elevation"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_geometry(grid)
@@ -75,6 +78,10 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_grounding_line_elevation.metadata()["_FillValue"] = { 0.0 };
   m_grounding_line_elevation.set(0.0);
 
+  m_shelf_base_elevation.metadata(0).long_name("shelf base elevation").units("m");
+  m_shelf_base_elevation.metadata()["_FillValue"] = { 0.0 };
+  m_shelf_base_elevation.set(0.0);
+
 }
 
 void Picop::init_impl(const Geometry &geometry) {
@@ -82,9 +89,12 @@ void Picop::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel / Plume for the ocean ...\n");
 
-  PicopPhysics physics(*m_config);
+  PicoPhysics pico_physics(*m_config);
+  PicopPhysics picop_physics(*m_config);
     
+  compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
   compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
+  
 }
 
 void Picop::define_model_state_impl(const File &output) const {
@@ -104,7 +114,23 @@ void Picop::update_impl(const Geometry &geometry, double t, double dt) {
 
   (void) t;
   (void) dt;
+
+  PicoPhysics pico_physics(*m_config);
+
+  compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
   compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
+
+  m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
+  m_shelf_base_mass_flux->scale(pico_physics.ice_density());
+
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                        *m_water_column_pressure);
+
 }
 
 
@@ -114,9 +140,24 @@ MaxTimestep Picop::max_timestep_impl(double t) const {
   return MaxTimestep("ocean picop");
 }
 
+void Picop::compute_shelf_base_elevation(const Geometry &geometry,
+                                         array::Scalar1 &shelf_base_elevation) const {
+  
+  const array::Scalar &surface    = geometry.ice_surface_elevation;
+  const array::Scalar &H          = geometry.ice_thickness;
+  const array::Scalar &cell_type  = geometry.cell_type;
+
+  array::AccessScope scope{&surface, &H, &cell_type, &shelf_base_elevation};
+
+  // Step 1: Initialize zgl0 at grounding line: bed elevation
+  for (auto p = m_grid->points(); p; p.next()) {
+    int i = p.i(), j = p.j();
+    shelf_base_elevation(i, j) = (cell_type(i, j) == MASK_FLOATING) ? surface(i, j) - H(i, j) : 0.0;
+  }
+}
 
 void Picop::compute_grounding_line_elevation(const Geometry &geometry,
-                                             array::Scalar &grounding_line_elevation) const {
+                                             array::Scalar1 &grounding_line_elevation) const {
 
   const array::Scalar &bed        = geometry.bed_elevation;
   const array::Scalar &H          = geometry.ice_thickness;
@@ -221,8 +262,33 @@ void Picop::compute_grounding_line_elevation(const Geometry &geometry,
       }
     }
   }
-
+  // just for debugging
   m_log->message(2, "Computed grounding line elevation field with residual = %.3e\n", residual);
+}
+
+void Picop::compute_slope(const Geometry &geometry,
+                          array::Scalar1 &shelf_base_elevation,
+                          array::Scalar &slope) const {
+
+  const array::CellType1 &cell_type = geometry.cell_type;
+  
+  array::AccessScope scope{&cell_type, &shelf_base_elevation};
+
+  double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+
+  
+  for (auto p = m_grid->points(); p; p.next()) {
+    int i = p.i(), j = p.j();
+    auto h = shelf_base_elevation.star(i, j);
+    double s_n = (h.c - h.n) / (dx * dx + dy * dy);
+
+    slope(i, j) = s_n;
+  }
+  
+
+  
 }
 
 // Write diagnostic variables to extra files if requested

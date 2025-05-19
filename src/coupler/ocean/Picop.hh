@@ -24,6 +24,7 @@
 #include "pism/coupler/ocean/Pico.hh"
 #include "pism/coupler/ocean/PicoGeometry.hh"
 #include "pism/util/array/Vector.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/stressbalance/StressBalance.hh"
 namespace pism {
 
@@ -61,7 +62,9 @@ private:
   
   std::shared_ptr<Pico> m_pico;
   
-  array::Scalar m_grounding_line_elevation;
+  array::Scalar1 m_basal_melt_rate;
+  array::Scalar1 m_grounding_line_elevation;
+  array::Scalar1 m_shelf_base_elevation;
   
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
@@ -70,10 +73,16 @@ private:
 
 
   void compute_grounding_line_elevation(const Geometry &geometry,
-                                        array::Scalar &grounding_line_elevation) const;
-    
-};
+                                        array::Scalar1 &grounding_line_elevation) const;
+  
+  void compute_shelf_base_elevation(const Geometry &geometry,
+                                        array::Scalar1 &shelf_base_elevation) const;
 
+  void compute_slope(const Geometry &geometry,
+                     array::Scalar1 &shelf_base_elevation,
+                     array::Scalar &slope) const;
+
+};
 } // end of namespace ocean
 } // end of namespace pism
 
