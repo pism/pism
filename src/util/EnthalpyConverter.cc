@@ -85,7 +85,7 @@ bool EnthalpyConverter::is_temperate_relaxed(double E, double P) const {
   return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);
 }
 
-void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) {
+void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) const {
 #if (Pism_DEBUG==1)
   const double T_melting = melting_temperature(P);
   if (T <= 0.0) {
@@ -110,7 +110,7 @@ void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) {
 #endif
 }
 
-void EnthalpyConverter::validate_E_P(double E, double P) {
+void EnthalpyConverter::validate_E_P(double E, double P) const {
 #if (Pism_DEBUG==1)
   if (E >= enthalpy_liquid(P)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "E=%f J/kg at P=%f Pa equals or exceeds that of liquid water (%f J/kg)",

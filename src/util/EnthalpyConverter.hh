@@ -76,8 +76,8 @@ public:
   void pressure(const std::vector<double> &depth,
                 unsigned int ks, std::vector<double> &result) const;
 protected:
-  static void validate_E_P(double E, double P);
-  static void validate_T_omega_P(double T, double omega, double P);
+  void validate_E_P(double E, double P) const;
+  void validate_T_omega_P(double T, double omega, double P) const;
 
   double temperature_cold(double E) const;
   double enthalpy_cold(double T) const;
