@@ -12,7 +12,7 @@ All mechanisms described below fall into two categories:
 
 - mechanisms computing a *retreat rate* due to calving and using it to update ice geometry
   (:ref:`sec-calving-eigen-calving`, :ref:`sec-calving-vonmises`,
-  :ref:`sec-calving-hayhurst`), and
+  :ref:`sec-calving-hayhurst`, :ref:`sec-calving-cliff-shear`, :ref:`sec-calving-cliff-tensile`), and
 - mechanisms removing ice at a grid point according to a certain criterion
   (:ref:`sec-calving-thickness-threshold`, :ref:`sec-calving-floating-ice`,
   :ref:`sec-prescribed-retreat`).
