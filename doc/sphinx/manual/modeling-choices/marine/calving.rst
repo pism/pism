@@ -152,11 +152,51 @@ Hayhurst calving
 ^^^^^^^^^^^^^^^^
 
 The option :opt:`-calving hayhurst_calving` implements the parameterization described in
-:cite:`Mercenier2018` (equation 22).
+:cite:`Mercenier2018` (equation 22). This mechanism models calving based on the Hayhurst
+creep damage parameter, which accounts for both tensile and shear stresses.
+
+The calving rate is calculated based on the maximum tensile stress at the ice front and
+takes into account:
+
+- The water depth relative to ice thickness
+- A damage threshold stress
+- A damage rate parameter
+- A damage law exponent
+
+The calving rate is computed as:
+
+.. math::
+   :label: eq-hayhurst
+
+   c = |\mathbf{u}| \frac{\tilde{B} (\sigma_0 - \sigma_{th})^r}{\sigma_{th}}
+
+where:
+- `c` is the calving rate
+- `|\mathbf{u}|` is the ice velocity magnitude
+- `\tilde{B}` is the effective damage rate parameter (default: 65.0 MPa^r/year)
+- `\sigma_0` is the maximum tensile stress
+- `\sigma_{th}` is the damage threshold stress (default: 0.17 MPa)
+- `r` is the damage law exponent (default: 0.43)
+
+The maximum tensile stress `\sigma_0` is approximated as:
+
+.. math::
+   :label: eq-hayhurst-sigma
+
+   \sigma_0 = (0.4 - 0.45 (\omega - 0.065)^2) \rho_i g H
+
+where:
+- `\omega` is the ratio of water depth to ice thickness
+- `\rho_i` is the ice density
+- `g` is the gravitational acceleration
+- `H` is the ice thickness
 
 .. note::
 
-   FIXME: not documented.
+   The calving parameterization was derived for grounded ice but is also applied to floating ice cells
+   (where `\omega > \rho_i/\rho_w`). Without this modification, the formation of an ice shelf would effectively
+   stop calving. To prevent this, the ice thickness `H` is adjusted to include the freeboard height and
+   `\omega` is recalculated, ensuring continued calving at the grounding line.
 
 .. rubric:: Parameters
 
@@ -164,6 +204,98 @@ Prefix: ``calving.hayhurst_calving.``
 
 .. pism-parameters::
    :prefix: calving.hayhurst_calving.
+
+.. _sec-calving-cliff-shear:
+
+Cliff calving due to shear failure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The option :opt:`-calving cliff_calving_shear` implements a parameterization for calving of ice cliffs
+based on shear stress failure :cite:`Schlemm2019`. This mechanism is designed to model calving of
+grounded ice cliffs that form when ice shelves collapse, exposing grounded ice to the ocean.
+
+The calving rate is calculated based on the cliff height and water depth, with a maximum rate
+limited by mélange buttressing :cite:`Schlemm2021`. The parameterization takes into account:
+
+- The height of the ice cliff above water level
+- The ratio of water depth to ice thickness
+- A maximum calving rate due to mélange buttressing
+
+The calving rate is computed as:
+
+.. math::
+   :label: eq-cliff-shear
+
+   c = \frac{C_0 (F-F_c)^s}{F_s (1 + C_0 (F-F_c)^s / c_{max})}
+
+where:
+- `c` is the calving rate
+- `C_0` is a scaling factor (default: 90 m/year)
+- `F` is the cliff height above water level
+- `F_c` is a critical cliff height threshold
+- `F_s` is a scaling factor
+- `s` is an exponent
+- `c_{max}` is the maximum calving rate due to mélange buttressing (default: 3000 m/year)
+
+.. note::
+
+   The maximum calving rate parameter (`c_{max}`) controls the effect of mélange buttressing.
+   Setting this parameter to a very large value (e.g., 100 km/year) effectively disables
+   mélange buttressing, resulting in nearly unbuttressed cliff calving rates. However, this should
+   be used with caution as it can lead to unrealistically high calving rates :cite:`Schlemm2021`.
+
+.. rubric:: Parameters
+
+Prefix: ``calving.cliff_calving_shear.``
+
+.. pism-parameters::
+   :prefix: calving.cliff_calving_shear.
+
+.. _sec-calving-cliff-tensile:
+
+Cliff calving due to tensile failure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The option :opt:`-calving cliff_calving_tensile` implements a parameterization for calving of ice cliffs
+based on tensile stress failure :cite:`Crawford2021`. This mechanism models calving of grounded ice
+cliffs that form when ice shelves collapse, with a focus on tensile failure at the cliff face.
+
+The calving rate is calculated based on the cliff height, with a minimum threshold height required
+for calving to occur. The parameterization takes into account:
+
+- The height of the ice cliff above water level
+- A minimum cliff height threshold (135 m)
+- A power law relationship between cliff height and calving rate
+
+The calving rate is computed as:
+
+.. math::
+   :label: eq-cliff-tensile
+
+   c = I H_c^\alpha
+
+where:
+- `c` is the calving rate
+- `I` is a scaling factor (default: 3.7e-16 m/s)
+- `H_c` is the cliff height above water level
+- `\alpha` is an exponent (default: 6.9)
+
+Calving only occurs when the cliff height exceeds 135 meters.
+
+.. note::
+
+   The parameters `I` and `\alpha` depend on ice temperature and bed conditions (frozen, slippery, or normal).
+   The default values provided are calibrated for cold ice (-20°C) with a frozen bed.
+   Different values may be needed for warmer ice or different bed conditions :cite:`Crawford2021`.
+
+.. rubric:: Parameters
+
+Prefix: ``calving.cliff_calving_tensile.``
+
+.. pism-parameters::
+   :prefix: calving.cliff_calving_tensile.
+
+
 
 .. _sec-calving-thickness-threshold:
 
