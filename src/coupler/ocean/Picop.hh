@@ -33,6 +33,11 @@ namespace stressbalance {
   class StressBalance;
 }
 
+struct Inputs {
+  const Geometry *geometry;
+  const stressbalance::StressBalance *stress_balance;
+};
+
 namespace ocean {
 
 class PicopPhysics;
@@ -45,7 +50,7 @@ class PicopPhysics;
 //!
 class Picop : public CompleteOceanModel {
 public:
-  Picop(std::shared_ptr<const Grid> g);  // default for factory
+  Picop(std::shared_ptr<const Grid> g);
   virtual ~Picop() = default;
 
 protected:
@@ -59,7 +64,6 @@ protected:
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
 private:
-  std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
   
   std::shared_ptr<Pico> m_pico;
   std::unique_ptr<pism::UNO> m_uno;
@@ -73,7 +77,7 @@ private:
   const array::Scalar &m_salinity_ocean;
   
   PicoGeometry m_geometry;
-
+  
   void compute_melt_rate(const PicopPhysics &physics,
                          const array::Scalar &T_a,
                          const array::Scalar &S_a,
@@ -83,6 +87,7 @@ private:
                          array::Scalar1 &basal_melt_rate) const;
   
   void compute_grounding_line_elevation(const Geometry &geometry,
+                                        const array::Vector &velocity,
                                         array::Scalar1 &grounding_line_elevation) const;
   
   void compute_shelf_base_elevation(const Geometry &geometry,

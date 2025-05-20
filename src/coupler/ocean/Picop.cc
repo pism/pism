@@ -62,7 +62,6 @@ namespace ocean {
 
 Picop::Picop(std::shared_ptr<const Grid> grid)
   : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
-    m_stress_balance(std::shared_ptr<stressbalance::StressBalance>()),
     m_pico(std::make_shared<Pico>(grid)),
     m_uno(new pism::UNO(grid, pism::PISM_UNO_UPWIND1)),
     m_basal_melt_rate(m_grid, "picop_basal_melt_rate"),
@@ -96,15 +95,15 @@ void Picop::init_impl(const Geometry &geometry) {
   PicoPhysics pico_physics(*m_config);
   PicopPhysics picop_physics(*m_config);
     
-  compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
-  compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
-  compute_slope(geometry, m_shelf_base_elevation, m_slope);
-  compute_melt_rate(picop_physics, m_theta_ocean, m_salinity_ocean,
-                    m_grounding_line_elevation, m_shelf_base_elevation,
-                    m_slope, m_basal_melt_rate);
+  // compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
+  // compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
+  // compute_slope(geometry, m_shelf_base_elevation, m_slope);
+  // compute_melt_rate(picop_physics, m_theta_ocean, m_salinity_ocean,
+  //                   m_grounding_line_elevation, m_shelf_base_elevation,
+  //                   m_slope, m_basal_melt_rate);
 
-  m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
-  m_shelf_base_mass_flux->scale(pico_physics.ice_density());
+  // m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
+  // m_shelf_base_mass_flux->scale(pico_physics.ice_density());
 
   double
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -134,13 +133,17 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   m_pico->update(inputs, t, dt);
 
   const auto &geometry = *inputs.geometry;
+  const array::Vector &velocity = *inputs.stress_balance->advective_velocity();
   
   PicoPhysics pico_physics(*m_config);
   PicopPhysics picop_physics(*m_config);
 
   compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
-  compute_grounding_line_elevation(geometry, m_grounding_line_elevation);
+  
+  compute_grounding_line_elevation(geometry, velocity, m_grounding_line_elevation);
+  
   compute_slope(geometry, m_shelf_base_elevation, m_slope);
+  
   compute_melt_rate(picop_physics, m_theta_ocean, m_salinity_ocean,
                     m_grounding_line_elevation, m_shelf_base_elevation,
                     m_slope, m_basal_melt_rate);
@@ -216,13 +219,13 @@ void Picop::compute_shelf_base_elevation(const Geometry &geometry,
 }
 
 void Picop::compute_grounding_line_elevation(const Geometry &geometry,
+                                             const array::Vector &adv_vel,
                                              array::Scalar1 &grounding_line_elevation) const {
 
   const array::Scalar &bed           = geometry.bed_elevation;
   const array::Scalar &H             = geometry.ice_thickness;
   const array::CellType1 &cell_type  = geometry.cell_type;
   const array::Scalar &z_s           = geometry.sea_level_elevation;
-  const array::Vector &adv_vel       =  m_stress_balance->advective_velocity();
 
   array::AccessScope scope{&bed, &H, &z_s, &cell_type, &adv_vel, &grounding_line_elevation};
 
@@ -233,11 +236,16 @@ void Picop::compute_grounding_line_elevation(const Geometry &geometry,
   }
 
 
+  const double tol = 1e-4;
   const double alpha = 0.1;
+  double residual = 0.0;
   for (int n = 0; n < 500; ++n) {
    
+    const array::Scalar &result_old = m_uno->x();
     m_uno->update(alpha, cell_type, grounding_line_elevation, adv_vel, true);
-    const array::Scalar &result = m_uno->x();
+    const array::Scalar &result_new = m_uno->x();
+    
+    
   }
 }
 
