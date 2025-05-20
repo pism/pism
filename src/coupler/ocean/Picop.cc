@@ -127,7 +127,6 @@ void Picop::write_model_state_impl(const File &output) const {
   OceanModel::write_model_state_impl(output);
 }
 
-
 void Picop::update_impl(const Inputs &inputs, double t, double dt) {
 
   m_pico->update(inputs, t, dt);
@@ -229,6 +228,13 @@ void Picop::compute_grounding_line_elevation(const Geometry &geometry,
 
   array::AccessScope scope{&bed, &H, &z_s, &cell_type, &adv_vel, &grounding_line_elevation};
 
+  // array::Scalar &sliding_speed = *m_work2d[0];
+  // compute_magnitude(adv_vel, sliding_speed);
+
+  // // compute its magnitude:
+  // compute_magnitude(adv_vel, magnitude);
+  // auto result = adv_vel.scale(1/magnitude);
+  
   // Step 1: Initialize zgl0 at grounding line: bed elevation
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
@@ -238,15 +244,27 @@ void Picop::compute_grounding_line_elevation(const Geometry &geometry,
 
   const double tol = 1e-4;
   const double alpha = 0.1;
-  double residual = 0.0;
-  for (int n = 0; n < 500; ++n) {
-   
+  const double max_iter = 500;
+  
+  using std::sqrt;
+  
+  for (int iter = 0; iter < max_iter; ++iter) {
+
+    double residual = 0.0;
+
     const array::Scalar &result_old = m_uno->x();
     m_uno->update(alpha, cell_type, grounding_line_elevation, adv_vel, true);
     const array::Scalar &result_new = m_uno->x();
-    
-    
+
+    for (auto p = m_grid->points(); p; p.next()) {
+      int i = p.i(), j = p.j();
+      residual += result_new(i, j) * result_new(i, j) - result_old(i, j) * result_old(i, j);
+    }
+
+    residual = std::sqrt(GlobalSum(m_grid->com, residual));
+    if (residual < tol) break;
   }
+    
 }
 
 void Picop::compute_slope(const Geometry &geometry,

@@ -33,20 +33,12 @@ namespace stressbalance {
   class StressBalance;
 }
 
-struct Inputs {
-  const Geometry *geometry;
-  const stressbalance::StressBalance *stress_balance;
-};
-
 namespace ocean {
 
 class PicopPhysics;
 
-//! Implements the PICO ocean model as submitted to The Cryosphere (March 2017)
-//! and adds the Plume model.
-//!
-//! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
-//! use in PISM, i.e. three dimensions.
+//! Implements the PICO ocean model published in The Cryosphere (2018)
+//! and adds the Plume model Pelle et al (2019).
 //!
 class Picop : public CompleteOceanModel {
 public:
