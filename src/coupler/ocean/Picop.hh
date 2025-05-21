@@ -24,14 +24,9 @@
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 #include "pism/coupler/ocean/Pico.hh"
 #include "pism/coupler/ocean/PicoGeometry.hh"
-#include "pism/util/array/Vector.hh"
-#include "pism/util/array/Scalar.hh"
-#include "pism/stressbalance/StressBalance.hh"
+
 namespace pism {
 
-namespace stressbalance {
-  class StressBalance;
-}
 
 namespace ocean {
 
@@ -68,7 +63,11 @@ private:
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
   
+  // array::Scalar m_work;
+  // array::Vector m_work2;
+
   PicoGeometry m_geometry;
+
   
   void compute_melt_rate(const PicopPhysics &physics,
                          const array::Scalar &T_a,

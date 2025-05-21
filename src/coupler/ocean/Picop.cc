@@ -48,7 +48,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/array/Scalar.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 #include "pism/coupler/ocean/PicoPhysics.hh"
 #include "pism/coupler/ocean/Picop.hh"
@@ -132,7 +132,7 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   m_pico->update(inputs, t, dt);
 
   const auto &geometry = *inputs.geometry;
-  const array::Vector &velocity = *inputs.stress_balance->advective_velocity();
+  const auto &velocity = inputs.stress_balance->advective_velocity();
   
   PicoPhysics pico_physics(*m_config);
   PicopPhysics picop_physics(*m_config);
@@ -226,19 +226,17 @@ void Picop::compute_grounding_line_elevation(const Geometry &geometry,
   const array::CellType1 &cell_type  = geometry.cell_type;
   const array::Scalar &z_s           = geometry.sea_level_elevation;
 
-  array::AccessScope scope{&bed, &H, &z_s, &cell_type, &adv_vel, &grounding_line_elevation};
+  array::AccessScope scope{&bed, &H, &z_s, &cell_type, &grounding_line_elevation};
 
-  // array::Scalar &sliding_speed = *m_work2d[0];
-  // compute_magnitude(adv_vel, sliding_speed);
-
-  // // compute its magnitude:
-  // compute_magnitude(adv_vel, magnitude);
-  // auto result = adv_vel.scale(1/magnitude);
+  // compute_magnitude(adv_vel, m_work);
   
   // Step 1: Initialize zgl0 at grounding line: bed elevation
+  //         Normalize velocities
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
     grounding_line_elevation(i, j) = (cell_type(i, j) == MASK_GROUNDED) ? bed(i, j) : 0.0;
+    // m_work2(i, j).u = adv_vel(i, j).v / m_work(i,j) ;
+    // m_work2(i, j).v = adv_vel(i, j).v / m_work(i,j) ;
   }
 
 
