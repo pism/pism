@@ -25,9 +25,6 @@
 
 namespace pism {
 
-namespace stressbalance {
-  class StressBalance;
-}
 
 //! @brief Ocean models and modifiers: provide sea level elevation,
 //! melange back pressure, shelf base mass flux and shelf base
@@ -36,7 +33,6 @@ namespace ocean {
 
 struct Inputs {
   const Geometry *geometry;
-  const stressbalance::StressBalance * stress_balance;
 };
 
 //! A very rudimentary PISM ocean model.

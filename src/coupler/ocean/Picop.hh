@@ -24,8 +24,18 @@
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 #include "pism/coupler/ocean/Pico.hh"
 #include "pism/coupler/ocean/PicoGeometry.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
+
+namespace stressbalance {
+class StressBalance;
+}
+
+struct Inputs {
+  const Geometry *geometry;
+  const stressbalance::StressBalance *stress_balance;
+};
 
 
 namespace ocean {
@@ -65,7 +75,6 @@ private:
   
   // array::Scalar m_work;
   // array::Vector m_work2;
-
   PicoGeometry m_geometry;
 
   
@@ -77,8 +86,7 @@ private:
                          array::Scalar1 &slope,
                          array::Scalar1 &basal_melt_rate) const;
   
-  void compute_grounding_line_elevation(const Geometry &geometry,
-                                        const array::Vector &velocity,
+  void compute_grounding_line_elevation(const Inputs &inputs,
                                         array::Scalar1 &grounding_line_elevation) const;
   
   void compute_shelf_base_elevation(const Geometry &geometry,

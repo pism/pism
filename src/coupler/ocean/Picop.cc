@@ -132,14 +132,13 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   m_pico->update(inputs, t, dt);
 
   const auto &geometry = *inputs.geometry;
-  const auto &velocity = inputs.stress_balance->advective_velocity();
   
   PicoPhysics pico_physics(*m_config);
   PicopPhysics picop_physics(*m_config);
 
   compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
   
-  compute_grounding_line_elevation(geometry, velocity, m_grounding_line_elevation);
+  compute_grounding_line_elevation(inputs, m_grounding_line_elevation);
   
   compute_slope(geometry, m_shelf_base_elevation, m_slope);
   
@@ -217,14 +216,14 @@ void Picop::compute_shelf_base_elevation(const Geometry &geometry,
   }
 }
 
-void Picop::compute_grounding_line_elevation(const Geometry &geometry,
-                                             const array::Vector &adv_vel,
+void Picop::compute_grounding_line_elevation(const Inputs &inputs,
                                              array::Scalar1 &grounding_line_elevation) const {
 
-  const array::Scalar &bed           = geometry.bed_elevation;
-  const array::Scalar &H             = geometry.ice_thickness;
-  const array::CellType1 &cell_type  = geometry.cell_type;
-  const array::Scalar &z_s           = geometry.sea_level_elevation;
+  const array::Scalar &bed           = inputs.geometry->bed_elevation;
+  const array::Scalar &H             = inputs.geometry->ice_thickness;
+  const array::CellType1 &cell_type  = inputs.geometry->cell_type;
+  const array::Scalar &z_s           = inputs.geometry->sea_level_elevation;
+  const array::Vector &adv_vel       = inputs.stress_balance->adv_vel;
 
   array::AccessScope scope{&bed, &H, &z_s, &cell_type, &grounding_line_elevation};
 
@@ -240,28 +239,28 @@ void Picop::compute_grounding_line_elevation(const Geometry &geometry,
   }
 
 
-  const double tol = 1e-4;
-  const double alpha = 0.1;
-  const double max_iter = 500;
+  // const double tol = 1e-4;
+  // const double alpha = 0.1;
+  // const double max_iter = 500;
   
-  using std::sqrt;
+  // using std::sqrt;
   
-  for (int iter = 0; iter < max_iter; ++iter) {
+  // for (int iter = 0; iter < max_iter; ++iter) {
 
-    double residual = 0.0;
+  //   double residual = 0.0;
 
-    const array::Scalar &result_old = m_uno->x();
-    m_uno->update(alpha, cell_type, grounding_line_elevation, adv_vel, true);
-    const array::Scalar &result_new = m_uno->x();
+  //   const array::Scalar &result_old = m_uno->x();
+  //   m_uno->update(alpha, cell_type, grounding_line_elevation, adv_vel, true);
+  //   const array::Scalar &result_new = m_uno->x();
 
-    for (auto p = m_grid->points(); p; p.next()) {
-      int i = p.i(), j = p.j();
-      residual += result_new(i, j) * result_new(i, j) - result_old(i, j) * result_old(i, j);
-    }
+  //   for (auto p = m_grid->points(); p; p.next()) {
+  //     int i = p.i(), j = p.j();
+  //     residual += result_new(i, j) * result_new(i, j) - result_old(i, j) * result_old(i, j);
+  //   }
 
-    residual = std::sqrt(GlobalSum(m_grid->com, residual));
-    if (residual < tol) break;
-  }
+  //   residual = std::sqrt(GlobalSum(m_grid->com, residual));
+  //   if (residual < tol) break;
+  // }
     
 }
 
