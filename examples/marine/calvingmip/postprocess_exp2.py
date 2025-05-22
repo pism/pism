@@ -3,6 +3,7 @@
 # Creates output file from PISM EXP2 result to upload for CalvinMIP,
 # as instructed from https://github.com/JRowanJordan/CalvingMIP/wiki/Experiment-2
 
+
 import numpy as np
 import netCDF4 as nc
 import datetime
@@ -13,11 +14,11 @@ secperyear=365*24*3600
 resolution=5.0
 dkm=5.0 #km steps
 
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/circular/exp2-05km-dir/"
+pismpath     = "./"
 pism_outfile = pismpath + "results/extra_exp2.nc"
 pism_tsfile  = pismpath + "results/ts_exp2.nc"
 
-pism_infile = pismpath + "input/circular_input_5km.nc"
+pism_infile = pismpath + "circular_input.nc"
 
 exp_outfile = "CalvingMIP_EXP2_PISM_PIK.nc"
 
@@ -77,7 +78,7 @@ points_D = [[Mp,Mp],[Mx-2,2]]
 
 transects=[points_A,points_B,points_C,points_D,points_E,points_F,points_G,points_H]
 point_names=['A','B','C','D','E','F','G','H']
-dp=np.float(dkm)/np.float(resolution)
+dp=float(dkm)/float(resolution)
 trans = ph.get_troughs(pism_infile,transects,dp)
 
 

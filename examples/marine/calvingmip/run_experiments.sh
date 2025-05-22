@@ -19,36 +19,37 @@ options="ssa_method fd -stress_balance ssa -ssa_dirichlet_bc -stress_balance.ssa
          -o_order zyx -output.sizes.medium mask,calvingmip_calving_rate -options_left -verbose 3"
 
 
-# run "python setup_circular.py -L 1.6e6 -M 321" to create the input file "circular_input.nc"
+# to prepare input, run "python setup_circular.py -L 1.6e6 -M 321" to create the input file "circular_input.nc"
 
-# EXP1 5km: on one CPU the first equilibrium simulation over 10 kyr would take more than a day, consider to run it in parallel
+# EXP1 5km: the first equilibrium simulation over 10 kyr takes about 50 processor hours, 
+# consider to run it in parallel using mpiexec, srun or mpirun with about 16 or 64 CPU cores
 pism -i circular_input.nc -bootstrap -Mx 321 -My 321 -Mz 3 -Mbz 1 -Lz 1600 -Lbz 0 -bootstrapping.defaults.geothermal_flux 0.0 \
 $options -calvingmip_experiment 1 -ts_file results/ts_exp1.nc -ts_times 100000:yearly:110000 \
 -extra_file results/extra_exp1.nc -extra_times 10 -ys 100000 -ye 110000 -o results/result_exp1.nc
 
 
-# EXP2 5km
+# EXP2 5km: the 1000-yr simulation with oscillating calving rate takes about 5 processor hours
 pism -i result_exp1.nc  \
 $options -calvingmip_experiment 2 -ts_file results/ts_exp2.nc -ts_times 110000:yearly:111000 \
 -extra_file results/extra_exp2.nc -extra_times 1 -ys 110000 -ye 111000 -o results/result_exp2.nc
 
 
 
-# run "python setup_thule.py -L 2.0e6 -M 401" to create input file "thule_input.nc"
+# to prepare input, run "python setup_thule.py -L 2.0e6 -M 401" to create input file "thule_input.nc"
 
-#EXP3 5km
+#EXP3 5km: the equilibrium simulatuion over 10 kyr takes more than 400 processor hours
 pism -i thule_input.nc -bootstrap -Mx 401 -My 401 -Mz 3 -Mbz 1 -Lz 2500 -Lbz 0 -bootstrapping.defaults.geothermal_flux 0.0 \
 $options -calvingmip_experiment 3 -ts_file results/ts_exp3.nc -ts_times 100000:yearly:110000 \
 -extra_file results/extra_exp3.nc -extra_times 10 -ys 100000 -ye 110000 -o results/result_exp3.nc
 
 
-#EXP4 5km
+#EXP4 5km: the 1000-yr simulation with oscillating calving rate takes about 50 processor hours
 pism -i result_exp3.nc \
 $options -calvingmip_experiment 4 -ts_file results/ts_exp4.nc -ts_times 110000:yearly:111000 \
 -extra_file results/extra_exp4.nc -extra_times 1 -ys 110000 -ye 111000 -o results/result_exp4.nc
 
 
-#EXP5 5km
+#EXP5 5km: the equilibrium simulation with calving law over 10 kyr takes more than 800 processor hours
 pism -i result_exp3.nc -exp5_calving_threshold 275.0 \
 $options -calvingmip_experiment 5 -ts_file results/ts_exp5.nc -ts_times 110000:yearly:120000 \
 -extra_file results/extra_exp5.nc -extra_times 10 -ys 110000 -ye 120000 -o results/result_exp5.nc

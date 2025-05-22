@@ -13,11 +13,11 @@ secperyear=365*24*3600
 resolution=5.0
 dkm=10.0 #km steps
 
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp3-05km-dir-4cpu/"
-pism_outfile = pismpath + "results/result_exp3b.nc"
-pism_tsfile  = pismpath + "results/ts_exp3b.nc"
+pismpath     = "./"
+pism_outfile = pismpath + "results/result_exp3.nc"
+pism_tsfile  = pismpath + "results/ts_exp3.nc"
 
-pism_infile = pismpath + "input/thule_input_5km.nc"
+pism_infile = pismpath + "thule_input.nc"
 
 exp_outfile = "CalvingMIP_EXP3_PISM_PIK.nc"
 
@@ -91,7 +91,7 @@ points_HD = [[Mp+MH1,Mp],[Mp+MH1,Mp-MH2]]
 transects=[points_CA,points_CB,points_CC,points_CD,points_HA,points_HB,points_HC,points_HD]
 point_names=['Caprona A','Caprona B','Caprona C','Caprona D','Halbrane E','Halbrane F','Halbrane G','Halbrane H']
 
-dp=np.float(dkm)/np.float(resolution)
+dp=float(dkm)/float(resolution)
 trans = ph.get_troughs(pism_infile,transects,dp)
 
 

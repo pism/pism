@@ -13,15 +13,14 @@ secperyear=365*24*3600
 resolution=5.0
 dkm=10.0 #km steps
 
+#pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp5-05km-dir-375m/"
+pismpath     = "./"
 
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp5-05km-dir-375m/"
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/thule/exp5-05km-dir-275m/"
+pism_outfile = pismpath + "results/extra_exp5.nc" #10kyr
+pism_tsfile  = pismpath + "results/ts_exp5.nc"
+pism_infile = pismpath + "thule_input.nc"
 
-pism_outfile = pismpath + "results/extra_exp5b.nc" #10kyr
-pism_tsfile  = pismpath + "results/ts_exp5b.nc"
-pism_infile = pismpath + "input/thule_input_5km.nc"
-
-exp_outfile = "CalvingMIP_EXP5_PISM_PIK_375m.nc"
+#exp_outfile = "CalvingMIP_EXP5_PISM_PIK_375m.nc"
 exp_outfile = "CalvingMIP_EXP5_PISM_PIK_275m.nc"
 
 
@@ -94,7 +93,7 @@ points_HD = [[Mp+MH1,Mp],[Mp+MH1,Mp-MH2]]
 transects=[points_CA,points_CB,points_CC,points_CD,points_HA,points_HB,points_HC,points_HD]
 point_names=['Caprona A','Caprona B','Caprona C','Caprona D','Halbrane E','Halbrane F','Halbrane G','Halbrane H']
 
-dp=np.float(dkm)/np.float(resolution)
+dp=float(dkm)/float(resolution)
 trans = ph.get_troughs(pism_infile,transects,dp)
 
 

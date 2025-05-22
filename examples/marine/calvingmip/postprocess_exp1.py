@@ -13,11 +13,11 @@ secperyear=365*24*3600
 resolution=5.0
 dkm=5.0 #km steps
 
-pismpath     = "/p/tmp/albrecht/pism23/calvmip/circular/exp1-05km-dir/"
-pism_outfile = pismpath + "results/result_exp1c.nc"
-pism_tsfile  = pismpath + "results/ts_exp1c.nc"
+pismpath     = "./"
+pism_outfile = pismpath + "results/result_exp1.nc"
+pism_tsfile  = pismpath + "results/ts_exp1.nc"
 
-pism_infile = pismpath + "input/circular_input_5km.nc"
+pism_infile = pismpath + "circular_input.nc"
 
 exp_outfile = "CalvingMIP_EXP1_PISM_PIK.nc"
 
@@ -77,7 +77,7 @@ points_D = [[Mp,Mp],[Mx-2,2]]
 
 transects=[points_A,points_B,points_C,points_D,points_E,points_F,points_G,points_H]
 point_names=['A','B','C','D','E','F','G','H']
-dp=np.float(dkm)/np.float(resolution)
+dp=float(dkm)/float(resolution)
 trans = ph.get_troughs(pism_infile,transects,dp)
 
 
