@@ -47,14 +47,12 @@
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/Time.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
-#include "pism/coupler/ocean/PicoPhysics.hh"
 #include "pism/coupler/ocean/Picop.hh"
 #include "pism/coupler/ocean/PicopPhysics.hh"
-#include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -91,7 +89,6 @@ void Picop::init_impl(const Geometry &geometry) {
   m_pico->init(geometry);
   m_log->message(2, "* Initializing the Plume extension of PICO for the ocean ...\n");
 
-  PicoPhysics pico_physics(*m_config);
   PicopPhysics picop_physics(*m_config);
     
   // compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
@@ -111,7 +108,6 @@ void Picop::init_impl(const Geometry &geometry) {
 
   compute_average_water_column_pressure(geometry, ice_density, water_density, g,
                                         *m_water_column_pressure);
-  
 }
 
 void Picop::define_model_state_impl(const File &output) const {
@@ -130,9 +126,13 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
 
   m_pico->update(inputs, t, dt);
 
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
   const auto &geometry = *inputs.geometry;
   
-  PicoPhysics pico_physics(*m_config);
   PicopPhysics picop_physics(*m_config);
 
   compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
@@ -146,12 +146,7 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
                     m_slope, m_basal_melt_rate);
 
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
-  m_shelf_base_mass_flux->scale(pico_physics.ice_density());
-
-  double
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    g             = m_config->get_number("constants.standard_gravity");
+  m_shelf_base_mass_flux->scale(ice_density);
 
   compute_average_water_column_pressure(geometry, ice_density, water_density, g,
                                         *m_water_column_pressure);
