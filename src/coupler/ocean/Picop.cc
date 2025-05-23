@@ -112,13 +112,13 @@ void Picop::init_impl(const Geometry &geometry) {
 
 void Picop::define_model_state_impl(const File &output) const {
 
-
+  m_pico->define_model_state(output);
   OceanModel::define_model_state_impl(output);
 }
 
 void Picop::write_model_state_impl(const File &output) const {
 
-
+  m_pico->write_model_state(output);
   OceanModel::write_model_state_impl(output);
 }
 
@@ -156,6 +156,11 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
 
 MaxTimestep Picop::max_timestep_impl(double t) const {
   (void) t;
+
+  auto pico_dt_max = m_pico->max_timestep(t);
+  if (pico_dt_max.finite()) {
+    return { pico_dt_max.value(), "ocean picop" };
+  }
 
   return MaxTimestep("ocean picop");
 }
