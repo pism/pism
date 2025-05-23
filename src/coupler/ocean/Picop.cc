@@ -70,8 +70,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_slope(grid, "picop_basal_slope"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
-    m_geometry(grid)
-
+    m_flow_direction(grid, "ice_flow_direction")
 {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
@@ -217,13 +216,13 @@ void Picop::compute_shelf_base_elevation(const Geometry &geometry,
 }
 
 void Picop::compute_grounding_line_elevation(const Inputs &inputs,
-                                             array::Scalar1 &grounding_line_elevation) const {
+                                             array::Scalar1 &grounding_line_elevation) {
 
   const array::Scalar &bed           = inputs.geometry->bed_elevation;
   const array::Scalar &H             = inputs.geometry->ice_thickness;
   const array::CellType1 &cell_type  = inputs.geometry->cell_type;
   const array::Scalar &z_s           = inputs.geometry->sea_level_elevation;
-  const array::Vector &adv_vel       = inputs.stress_balance->adv_vel;
+  const array::Vector &adv_vel       = inputs.stress_balance->advective_velocity();;
 
   array::AccessScope scope{&bed, &H, &z_s, &cell_type, &grounding_line_elevation};
 
@@ -234,8 +233,12 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
     grounding_line_elevation(i, j) = (cell_type(i, j) == MASK_GROUNDED) ? bed(i, j) : 0.0;
-    // m_work2(i, j).u = adv_vel(i, j).v / m_work(i,j) ;
-    // m_work2(i, j).v = adv_vel(i, j).v / m_work(i,j) ;
+    double flow_speed = adv_vel(i,j).magnitude();
+    if (flow_speed > 0.0) {
+      m_flow_direction(i, j) = adv_vel(i, j) / flow_speed;
+    } else {
+      m_flow_direction(i, j) = 0.0;
+    }
   }
 
 
