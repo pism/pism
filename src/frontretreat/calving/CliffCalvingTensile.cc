@@ -33,8 +33,9 @@ namespace calving {
 CliffCalvingTensile::CliffCalvingTensile(std::shared_ptr<const Grid> grid)
   : Component(grid),
     m_calving_rate(grid, "tensile_cliff_calving_rate"),
-    m_C0(0.0),
-    m_max_cliff_calving_rate(0.0)
+    m_I(0.0),
+    m_alpha(0.0)
+
 {
   m_calving_rate.metadata(0)
       .long_name("horizontal calving rate due to tensile stress failure")
@@ -111,7 +112,7 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
       const double Hc = H_threshold - (sea_level(i, j) - bed_elevation(i, j));
       // Calculate the calving rate [\ref Crawford2021] if cell is grounded
       // and cliff height is greater than 135 m
-      m_calving_rate = (mask::grounded_ice(m) && Hc > 135.0 ?
+      m_calving_rate(i, j) = (mask::grounded_ice(m) && Hc > 135.0 ?
                          m_I * pow(Hc, m_alpha):
                          0.0);
                          

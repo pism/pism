@@ -49,7 +49,7 @@ protected:
   array::Scalar1 m_calving_rate; 
 
   double m_I,                    
-         m_alpha;  
+         m_alpha;
 };
 
 } // end of namespace calving
