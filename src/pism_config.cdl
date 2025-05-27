@@ -631,6 +631,11 @@ netcdf pism_config {
     pism_config:calving.float_kill.margin_only_option = "float_kill_margin_only";
     pism_config:calving.float_kill.margin_only_type = "flag";
 
+    pism_config:calving.float_kill.calve_cliff_front = "no";
+    pism_config:calving.float_kill.calve_cliff_front_doc = "Calve floating ice cells that have both ocean and grounded neighbors (removes a single row of floating cells in front of an ice cliff).";
+    pism_config:calving.float_kill.calve_cliff_front_option = "float_kill_calve_cliff_front";
+    pism_config:calving.float_kill.calve_cliff_front_type = "flag";
+
     pism_config:calving.hayhurst_calving.B_tilde = 65.0;
     pism_config:calving.hayhurst_calving.B_tilde_doc = "Effective damage rate :cite:`Mercenier2018`";
     pism_config:calving.hayhurst_calving.B_tilde_type = "number";
