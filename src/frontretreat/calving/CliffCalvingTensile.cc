@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,7 @@
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/stencils.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/Logger.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 
 namespace pism {
@@ -85,7 +86,7 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
-  for (auto pt = m_grid->points(); pt; pt.next()) {
+  for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
