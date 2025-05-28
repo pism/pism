@@ -1,12 +1,16 @@
+%define PETSC_VERSION_LT(MAJOR, MINOR, SUBMINOR)
+0
+%enddef
+
 
 /* Does not seem like this is used anywhere, but if I don't compile
    this, it will rot. */
-%include "stressbalance/ssa/SNESProblem.hh"
-%template(_SNESScalarProblem) pism::SNESProblem<1,double>;
-%template(_SNESVectorProblem) pism::SNESProblem<2,pism::Vector2d>;
 %{
 #include "stressbalance/ssa/SNESProblem.hh"
 %}
+%include "stressbalance/ssa/SNESProblem.hh"
+%template(_SNESScalarProblem) pism::SNESProblem<1,double>;
+%template(_SNESVectorProblem) pism::SNESProblem<2,pism::Vector2d>;
 
 /* Inverse model classes */
 %{
