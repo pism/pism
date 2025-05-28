@@ -1051,7 +1051,7 @@ void IceModel::reset_diagnostics() {
   }
 }
 
-IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &grid)
+ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &grid)
   : calving(grid, "thickness_change_due_to_calving"),
     frontal_melt(grid, "thickness_change_due_to_frontal_melt"),
     forced_retreat(grid, "thickness_change_due_to_forced_retreat") {

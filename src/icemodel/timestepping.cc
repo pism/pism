@@ -98,7 +98,7 @@ by incorporating choices made by options (e.g. `-max_dt`) and by derived classes
 
 @param[in] counter current time-step skipping counter
  */
-IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
+TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   const double current_time = m_time->current();
 

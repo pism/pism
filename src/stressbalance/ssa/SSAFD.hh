@@ -31,6 +31,16 @@
 namespace pism {
 namespace stressbalance {
 
+class KSPFailure : public RuntimeError {
+public:
+  KSPFailure(const char* reason);
+};
+
+class PicardFailure : public RuntimeError {
+public:
+  PicardFailure(const std::string &message);
+};
+
 
 //! PISM's SSA solver: the finite difference implementation.
 class SSAFD : public SSAFDBase {
@@ -80,15 +90,6 @@ protected:
 
   bool m_regional_mode;
 
-  class KSPFailure : public RuntimeError {
-  public:
-    KSPFailure(const char* reason);
-  };
-
-  class PicardFailure : public RuntimeError {
-  public:
-    PicardFailure(const std::string &message);
-  };
 };
 
 } // end of namespace stressbalance

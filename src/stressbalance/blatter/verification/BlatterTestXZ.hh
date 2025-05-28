@@ -53,7 +53,7 @@ private:
                        const double *ice_bottom,
                        const double *sea_level);
 
-  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
+  bool dirichlet_node(const DMDALocalInfo &info, const fem::GlobalIndex& I);
 
   Vector2d u_bc(double x, double y, double z) const;
 

@@ -40,6 +40,10 @@ struct Vector3 {
 
 namespace fem {
 
+struct GlobalIndex {
+  int i, j, k;
+};
+
 class Quadrature;
 
 //! The mapping from global to local degrees of freedom.
@@ -298,9 +302,6 @@ public:
     }
   }
 
-  struct GlobalIndex {
-    int i, j, k;
-  };
 
   GlobalIndex local_to_global(int i, int j, int k, unsigned int n) const {
     return {i + m_i_offset[n],

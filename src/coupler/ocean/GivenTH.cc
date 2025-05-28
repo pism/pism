@@ -31,7 +31,7 @@
 namespace pism {
 namespace ocean {
 
-GivenTH::Constants::Constants(const Config &config) {
+Constants::Constants(const Config &config) {
   // coefficients of the in situ melting point temperature
   // parameterization:
   a[0] = -0.0575;
@@ -198,7 +198,7 @@ MaxTimestep GivenTH::max_timestep_impl(double t) const {
 //* Evaluate the parameterization of the melting point temperature.
 /** The value returned is in degrees Celsius.
  */
-static double melting_point_temperature(GivenTH::Constants c,
+static double melting_point_temperature(Constants c,
                                         double salinity, double ice_thickness) {
   return c.a[0] * salinity + c.a[1] + c.a[2] * ice_thickness;
 }
@@ -211,7 +211,7 @@ static double melting_point_temperature(GivenTH::Constants c,
  *
  * @return shelf base melt rate, in [m/s]
  */
-static double shelf_base_melt_rate(GivenTH::Constants c,
+static double shelf_base_melt_rate(Constants c,
                                    double sea_water_salinity, double basal_salinity) {
 
   return c.gamma_S * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);

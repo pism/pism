@@ -28,6 +28,21 @@
 namespace pism {
 namespace stressbalance {
 
+struct Work {
+  // u_x on the i offset
+  double u_x;
+  // v_x on the i offset
+  double v_x;
+  // weight for the i offset
+  double w_i;
+  // u_y on the j offset
+  double u_y;
+  // v_y on the j offset
+  double v_y;
+  // weight for the j offset
+  double w_j;
+};
+
 /*!
  * A base class containing the FD discretization of the SSA system.
  *
@@ -93,24 +108,10 @@ protected:
   void compute_residual(const Inputs &inputs, const pism::Vector2d *const *velocity,
                         pism::Vector2d **result);
 
-  struct Work {
-    // u_x on the i offset
-    double u_x;
-    // v_x on the i offset
-    double v_x;
-    // weight for the i offset
-    double w_i;
-    // u_y on the j offset
-    double u_y;
-    // v_y on the j offset
-    double v_y;
-    // weight for the j offset
-    double w_j;
-  };
 
   //! temprary storage used to compute the nuH term (ghosted, but ghost values are
   //! computed "redundantly" and not communicated)
-  array::Array2D<Work> m_work;
+  array::Array2D<stressbalance::Work> m_work;
 
   //! ice hardness
   array::Staggered m_hardness;

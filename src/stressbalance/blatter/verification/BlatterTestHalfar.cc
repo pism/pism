@@ -54,7 +54,7 @@ BlatterTestHalfar::BlatterTestHalfar(std::shared_ptr<const Grid> grid,
 }
 
 bool BlatterTestHalfar::dirichlet_node(const DMDALocalInfo &info,
-                                       const fem::Element3::GlobalIndex& I) {
+                                       const fem::GlobalIndex& I) {
   // use Dirichlet BC at x == 0 and the "cliff" near the right boundary
   return I.i == 0 or I.i == info.mx - 1;
 }

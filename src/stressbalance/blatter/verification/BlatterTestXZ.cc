@@ -71,7 +71,7 @@ bool BlatterTestXZ::marine_boundary(int face,
 }
 
 bool BlatterTestXZ::dirichlet_node(const DMDALocalInfo &info,
-                                   const fem::Element3::GlobalIndex& I) {
+                                   const fem::GlobalIndex& I) {
   // use Dirichlet BC at x == -Lx and x == Lx
   return (I.i == 0 or I.i == info.mx - 1);
 }

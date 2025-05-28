@@ -36,7 +36,7 @@ public:
 private:
   void init_2d_parameters(const Inputs &inputs);
 
-  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
+  bool dirichlet_node(const DMDALocalInfo &info, const fem::GlobalIndex& I);
 
   Vector2d u_bc(double x, double y, double z) const;
 

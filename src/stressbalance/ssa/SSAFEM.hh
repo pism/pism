@@ -30,6 +30,33 @@ namespace pism {
 
 namespace stressbalance {
 
+//! Storage for SSA coefficients at element nodes.
+//!
+//! All fields must be "double" or structures containing "double"
+//! for array::Array2D<T> to work correctly.
+struct Coefficients {
+  //! ice thickness
+  double thickness;
+  //! bed elevation
+  double bed;
+  //! sea level
+  double sea_level;
+  //! basal yield stress
+  double tauc;
+  //! ice hardness
+  double hardness;
+  //! prescribed gravitational driving stress
+  Vector2d driving_stress;
+};
+
+// Forward declaration of SSAFEM
+class SSAFEM;
+
+struct CallbackData {
+  DM da;
+  SSAFEM *ssa;
+};
+
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
   Jed's original code is in rev 831: src/base/ssaJed/...
@@ -45,25 +72,6 @@ protected:
   virtual void init_impl();
   void cache_inputs(const Inputs &inputs);
 
-  //! Storage for SSA coefficients at element nodes.
-  //!
-  //! All fields must be "double" or structures containing "double"
-  //! for array::Array2D<T> to work correctly.
-  struct Coefficients {
-    //! ice thickness
-    double thickness;
-    //! bed elevation
-    double bed;
-    //! sea level
-    double sea_level;
-    //! basal yield stress
-    double tauc;
-    //! ice hardness
-    double hardness;
-    //! prescribed gravitational driving stress
-    Vector2d driving_stress;
-  };
-
   array::Scalar1 m_bc_mask;
   array::Vector1 m_bc_values;
 
@@ -71,20 +79,20 @@ protected:
   double m_alpha;
   double m_rho_g;
 
-  array::Array2D<Coefficients> m_coefficients;
+  array::Array2D<stressbalance::Coefficients> m_coefficients;
 
   void quad_point_values(const fem::Element &E,
-                         const Coefficients *x,
+                         const stressbalance::Coefficients *x,
                          int *mask,
                          double *thickness,
                          double *tauc,
                          double *hardness) const;
 
   static void explicit_driving_stress(const fem::Element &E,
-                                      const Coefficients *x,
+                                      const stressbalance::Coefficients *x,
                                       Vector2d *result);
 
-  void driving_stress(const fem::Element &E, const Coefficients *x, Vector2d *result) const;
+  void driving_stress(const fem::Element &E, const stressbalance::Coefficients *x, Vector2d *result) const;
 
   void PointwiseNuHAndBeta(double thickness,
                            double hardness,
@@ -113,10 +121,6 @@ protected:
      having a DA as its first entry.  The CallbackData fulfills
      this requirement, and allows for passing the callback on to an honest
      SSAFEM object. */
-  struct CallbackData {
-    DM da;
-    SSAFEM *ssa;
-  };
 
   // objects used internally
   CallbackData m_callback_data;

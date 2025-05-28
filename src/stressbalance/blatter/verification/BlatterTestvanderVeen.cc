@@ -59,7 +59,7 @@ BlatterTestvanderVeen::BlatterTestvanderVeen(std::shared_ptr<const Grid> grid,
 }
 
 bool BlatterTestvanderVeen::dirichlet_node(const DMDALocalInfo &info,
-                                           const fem::Element3::GlobalIndex& I) {
+                                           const fem::GlobalIndex& I) {
   (void) info;
   // use Dirichlet BC at x == 0
   return I.i == 0;

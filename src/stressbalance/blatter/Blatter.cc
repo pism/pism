@@ -123,7 +123,7 @@ void Blatter::compute_node_type(double min_thickness) {
  *
  * Used by verification tests.
  */
-bool Blatter::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
+bool Blatter::dirichlet_node(const DMDALocalInfo &info, const fem::GlobalIndex& I) {
   (void) info;
   (void) I;
   return false;
@@ -769,7 +769,7 @@ void Blatter::report_mesh_info() {
 /*!
  * Runs the solver and extracts iteration counts.
  */
-Blatter::SolutionInfo Blatter::solve() {
+SolutionInfo Blatter::solve() {
   PetscErrorCode ierr;
   SolutionInfo result;
 
@@ -814,7 +814,7 @@ Blatter::SolutionInfo Blatter::solve() {
   return result;
 }
 
-Blatter::SolutionInfo Blatter::parameter_continuation() {
+SolutionInfo Blatter::parameter_continuation() {
   PetscErrorCode ierr;
 
   SolutionInfo info;

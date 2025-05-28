@@ -48,7 +48,7 @@ public:
   // Exact sliding coefficient beta
   double beta_exact(double x) const;
 private:
-  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
+  bool dirichlet_node(const DMDALocalInfo &info, const fem::GlobalIndex& I);
 
   bool marine_boundary(int face,
                        const int *node_type,

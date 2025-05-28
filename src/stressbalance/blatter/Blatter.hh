@@ -35,6 +35,33 @@ class Q1Element3Face;
 
 namespace stressbalance {
 
+struct SolutionInfo {
+  SNESConvergedReason snes_reason;
+  KSPConvergedReason  ksp_reason;
+  PetscInt snes_it;
+  PetscInt ksp_it;
+  PetscInt mg_coarse_ksp_it;
+};
+
+/*!
+ * 2D input parameters
+ */
+struct Parameters {
+  // elevation (z coordinate) of the bottom domain boundary
+  double bed;
+  // thickness of the domain
+  double thickness;
+  // NodeType stored as double
+  double node_type;
+  // basal yield stress
+  double tauc;
+  // sea level elevation (used to determine if a location is grounded)
+  double sea_level;
+  // floatation function (positive where floating, zero or negative where grounded)
+  double floatation;
+  // FIXME: Add Dirichlet BC at a map plane location.
+};
+
 class Blatter : public ShallowStressBalance {
 public:
   Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor);
@@ -45,24 +72,6 @@ public:
   std::shared_ptr<array::Array3D> velocity_u_sigma() const;
   std::shared_ptr<array::Array3D> velocity_v_sigma() const;
 
-  /*!
-   * 2D input parameters
-   */
-  struct Parameters {
-    // elevation (z coordinate) of the bottom domain boundary
-    double bed;
-    // thickness of the domain
-    double thickness;
-    // NodeType stored as double
-    double node_type;
-    // basal yield stress
-    double tauc;
-    // sea level elevation (used to determine if a location is grounded)
-    double sea_level;
-    // floatation function (positive where floating, zero or negative where grounded)
-    double floatation;
-    // FIXME: Add Dirichlet BC at a map plane location.
-  };
 
 protected:
   // u and v components of ice velocity on the fine sigma grid
@@ -142,7 +151,7 @@ protected:
                                const double *ice_bottom,
                                const double *sea_level);
 
-  virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
+  virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::GlobalIndex& I);
 
   virtual Vector2d u_bc(double x, double y, double z) const;
 
@@ -222,12 +231,6 @@ protected:
   void get_basal_velocity(array::Vector &result);
 
   void report_mesh_info();
-
-  struct SolutionInfo {
-    PetscInt snes_it, ksp_it, mg_coarse_ksp_it;
-    SNESConvergedReason snes_reason;
-    KSPConvergedReason ksp_reason;
-  };
 
   SolutionInfo solve();
   SolutionInfo parameter_continuation();

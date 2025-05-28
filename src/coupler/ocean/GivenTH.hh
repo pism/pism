@@ -23,40 +23,42 @@
 
 namespace pism {
 namespace ocean {
+
+class Constants {
+public:
+  Constants(const Config &config);
+  //! Coefficients for linearized freezing point equation for in situ
+  //! temperature:
+  //!
+  //! Tb(salinity, thickness) = a[0] * salinity + a[1] + a[2] * thickness
+  double a[3];
+  //! Coefficients for linearized freezing point equation for potential
+  //! temperature
+  //!
+  //! Theta_b(salinity, thickness) = b[0] * salinity + b[1] + b[2] * thickness
+  double b[3];
+
+  //! Turbulent heat transfer coefficient:
+  double gamma_T;
+  //! Turbulent salt transfer coefficient:
+  double gamma_S;
+
+  double shelf_top_surface_temperature;
+  double water_latent_heat_fusion;
+  double sea_water_density;
+  double sea_water_specific_heat_capacity;
+  double ice_density;
+  double ice_specific_heat_capacity;
+  double ice_thermal_diffusivity;
+  bool limit_salinity_range;
+};
+
 class GivenTH : public CompleteOceanModel
 {
 public:
   GivenTH(std::shared_ptr<const Grid> g);
   virtual ~GivenTH() = default;
 
-  class Constants {
-  public:
-    Constants(const Config &config);
-    //! Coefficients for linearized freezing point equation for in situ
-    //! temperature:
-    //!
-    //! Tb(salinity, thickness) = a[0] * salinity + a[1] + a[2] * thickness
-    double a[3];
-    //! Coefficients for linearized freezing point equation for potential
-    //! temperature
-    //!
-    //! Theta_b(salinity, thickness) = b[0] * salinity + b[1] + b[2] * thickness
-    double b[3];
-
-    //! Turbulent heat transfer coefficient:
-    double gamma_T;
-    //! Turbulent salt transfer coefficient:
-    double gamma_S;
-
-    double shelf_top_surface_temperature;
-    double water_latent_heat_fusion;
-    double sea_water_density;
-    double sea_water_specific_heat_capacity;
-    double ice_density;
-    double ice_specific_heat_capacity;
-    double ice_thermal_diffusivity;
-    bool limit_salinity_range;
-  };
 private:
   void update_impl(const Inputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);

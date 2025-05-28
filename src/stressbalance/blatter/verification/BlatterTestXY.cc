@@ -51,7 +51,7 @@ bool BlatterTestXY::marine_boundary(int face,
   return false;
 }
 
-bool BlatterTestXY::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
+bool BlatterTestXY::dirichlet_node(const DMDALocalInfo &info, const fem::GlobalIndex& I) {
   // use Dirichlet BC on the whole map-plane boundary
   return (I.i == 0 or I.i == info.mx - 1 or
           I.j == 0 or I.j == info.my - 1);

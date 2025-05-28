@@ -341,7 +341,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 
         double thickness[Nq_max];
         {
-          Coefficients coeffs[Nk];
+          stressbalance::Coefficients coeffs[Nk];
           int    mask[Nq_max];
           double tauc[Nq_max];
           double hardness[Nq_max];
@@ -506,7 +506,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
 
         double thickness[Nq_max];
         {
-          Coefficients coeffs[Nk];
+          stressbalance::Coefficients coeffs[Nk];
           int    mask[Nq_max];
           double tauc[Nq_max];
           double hardness[Nq_max];

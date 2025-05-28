@@ -28,6 +28,13 @@
 
 namespace pism {
 
+enum IntervalType {YEARLY, MONTHLY, SIMPLE};
+
+struct Interval {
+  double dt;
+  IntervalType type;
+};
+
 /**
  * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
  */
@@ -123,12 +130,6 @@ protected:
   void compute_times_simple(double time_start, double delta, double time_end,
                             std::vector<double> &result) const;
 
-  enum IntervalType {YEARLY, MONTHLY, SIMPLE};
-
-  struct Interval {
-    double dt;
-    IntervalType type;
-  };
 
   void compute_times(double time_start, double time_end,
                      const Interval &interval,

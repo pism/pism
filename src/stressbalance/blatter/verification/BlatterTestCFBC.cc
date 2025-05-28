@@ -44,7 +44,7 @@ BlatterTestCFBC::BlatterTestCFBC(std::shared_ptr<const Grid> grid, int Mz, int c
 }
 
 bool BlatterTestCFBC::dirichlet_node(const DMDALocalInfo &info,
-                                     const fem::Element3::GlobalIndex& I) {
+                                     const fem::GlobalIndex& I) {
   (void) info;
   return I.i == 0;
 }

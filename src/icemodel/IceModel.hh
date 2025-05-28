@@ -56,6 +56,25 @@
 
 namespace pism {
 
+struct ThicknessChanges {
+  ThicknessChanges(const std::shared_ptr<const Grid> &grid);
+
+  // calving during the last time step
+  array::Scalar calving;
+
+  // frontal melt during the last time step
+  array::Scalar frontal_melt;
+
+  // parameterized retreat
+  array::Scalar forced_retreat;
+};
+
+struct TimesteppingInfo {
+  double dt;
+  std::string reason;
+  unsigned int skip_counter;
+};
+
 namespace ocean {
 class OceanModel;
 class PyOceanModel;
@@ -325,11 +344,6 @@ protected:
   // see iceModel.cc
   virtual void allocate_storage();
 
-  struct TimesteppingInfo {
-    double dt;
-    std::string reason;
-    unsigned int skip_counter;
-  };
   virtual TimesteppingInfo max_timestep(unsigned int counter);
 
   virtual MaxTimestep max_timestep_diffusivity();
@@ -393,19 +407,6 @@ protected:
   mutable std::vector<std::shared_ptr<array::Scalar2>> m_work2d;
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
-
-  struct ThicknessChanges {
-    ThicknessChanges(const std::shared_ptr<const Grid> &grid);
-
-    // calving during the last time step
-    array::Scalar calving;
-
-    // frontal melt during the last time step
-    array::Scalar frontal_melt;
-
-    // parameterized retreat
-    array::Scalar forced_retreat;
-  };
 
   ThicknessChanges m_thickness_change;
 

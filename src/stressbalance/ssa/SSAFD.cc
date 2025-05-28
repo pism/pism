@@ -33,12 +33,12 @@
 namespace pism {
 namespace stressbalance {
 
-SSAFD::KSPFailure::KSPFailure(const char* reason)
+KSPFailure::KSPFailure(const char* reason)
   : RuntimeError(ErrorLocation(), std::string("SSAFD KSP (linear solver) failed: ") + reason){
   // empty
 }
 
-SSAFD::PicardFailure::PicardFailure(const std::string &message)
+PicardFailure::PicardFailure(const std::string &message)
   : RuntimeError(ErrorLocation(), "SSAFD Picard iterations failed: " + message) {
   // empty
 }

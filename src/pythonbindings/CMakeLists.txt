@@ -43,7 +43,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     )
 
   set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-I${CMAKE_BINARY_DIR}" APPEND)
-
+  if(Pism_DEBUB)
+    set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-Wall;-debug-tmsearch" APPEND)
+  endif()
+  set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-Wall;-debug-tmsearch" APPEND)
+  
   if(Pism_USE_JANSSON)
     set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_USE_JANSSON=1" APPEND)
   else()
