@@ -1,4 +1,6 @@
 %{
+#include "util/ColumnSystem.hh"
+#include "energy/EnergyModel.hh"
 #include "energy/EnthalpyModel.hh"
 #include "energy/TemperatureModel.hh"
 #include "regional/EnthalpyModel_Regional.hh"

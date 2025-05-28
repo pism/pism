@@ -10,6 +10,7 @@
 
 /* Inverse model classes */
 %{
+#include "stressbalance/ssa/SNESProblem.hh"
 #include "inverse/IP_SSATaucForwardProblem.hh"
 #include "inverse/IP_SSAHardavForwardProblem.hh"
 #include "inverse/IPDesignVariableParameterization.hh"
@@ -22,11 +23,11 @@
 #include "inverse/functional/IPLogRelativeFunctional.hh"
 #include "inverse/functional/IPLogRatioFunctional.hh"
 #include "inverse/IP_SSATaucTikhonovGNSolver.hh"
-
 #include "inverse/TaoUtil.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
+#include "inverse/IPTaoTikhonovProblem.hh"
 
 #include "util/TerminationReason.hh"
 %}

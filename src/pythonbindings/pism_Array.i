@@ -7,6 +7,9 @@
 #include "util/array/Vector.hh"
 #include "util/array/Array3D.hh"
 #include "util/array/Staggered.hh"
+#include "util/array/Array.hh"
+#include "util/array/Array2D.hh"
+#include "util/Vector2d.hh"
 
 using namespace pism;
 %}

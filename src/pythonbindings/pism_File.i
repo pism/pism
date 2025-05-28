@@ -1,4 +1,5 @@
 %{
+#include "util/io/IO_Flags.hh"
 #include "util/io/File.hh"
 #include "util/io/io_helpers.hh"
 %}

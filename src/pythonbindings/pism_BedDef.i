@@ -1,4 +1,5 @@
 %{
+#include "earth/BedDef.hh"
 #include "earth/LingleClark.hh"
 #include "earth/Given.hh"
 #include "earth/greens.hh"

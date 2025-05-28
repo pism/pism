@@ -1,4 +1,5 @@
 %{
+#include "coupler/AtmosphereModel.hh"
 #include "coupler/atmosphere/Anomaly.hh"
 #include "coupler/atmosphere/CosineYearlyCycle.hh"
 #include "coupler/atmosphere/Delta_P.hh"

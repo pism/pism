@@ -1,3 +1,6 @@
+%{
+#include "util/VariableMetadata.hh"
+%}
 /* VariableMetadata and SpatialVariableMetadata don't have default constructors. */
 /* This should go before array::Array so that array::Array::metadata()
    is wrapped properly. */

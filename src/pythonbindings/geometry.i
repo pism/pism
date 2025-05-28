@@ -1,6 +1,10 @@
 %{
 #include "geometry/Geometry.hh"
 #include "geometry/GeometryEvolution.hh"
+#if (Pism_DEBUG==1)
+#include "pism/geometry/MPDATA2.hh"
+#include "pism/geometry/UNO.hh"
+#endif
 %}
 
 

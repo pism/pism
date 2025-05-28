@@ -3,6 +3,7 @@
 #include "frontretreat/calving/EigenCalving.hh"
 #include "frontretreat/calving/FloatKill.hh"
 #include "frontretreat/calving/HayhurstCalving.hh"
+#include "frontretreat/calving/StressCalving.hh"
 #include "frontretreat/calving/vonMisesCalving.hh"
 %}
 

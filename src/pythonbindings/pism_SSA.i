@@ -1,7 +1,10 @@
 %{
+#include "stressbalance/StressBalance.hh"
+#include "stressbalance/ShallowStressBalance.hh"
+#include "stressbalance/ssa/SSA.hh"
 #include "stressbalance/ssa/SSAFEM.hh"
 #include "stressbalance/ssa/SSAFD.hh"
-#include "stressbalance/StressBalance.hh"
+#include "stressbalance/ssa/SSAFDBase.hh"
 %}
 
 %shared_ptr(pism::stressbalance::ShallowStressBalance)

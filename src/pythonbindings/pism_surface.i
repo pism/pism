@@ -1,4 +1,6 @@
 %{
+#include "coupler/SurfaceModel.hh"
+#include "coupler/surface/Formulas.hh"
 #include "coupler/surface/ISMIP6Climate.hh"
 #include "coupler/surface/EISMINTII.hh"
 #include "coupler/surface/Delta_T.hh"

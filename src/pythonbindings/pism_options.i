@@ -1,4 +1,5 @@
 %{
+#include "util/options.hh"
 #include "util/pism_options.hh"
 %}
 

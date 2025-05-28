@@ -1,4 +1,5 @@
 %{
+#include "util/Wrapper.hh"
 #include "util/petscwrappers/DM.hh"
 %}
 

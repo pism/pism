@@ -1,4 +1,5 @@
 %{
+#include "stressbalance/SSB_Modifier.hh"
 #include "stressbalance/sia/SIAFD.hh"
 #include "stressbalance/sia/BedSmoother.hh"
 %}
