@@ -23,7 +23,7 @@
 #include "pism/geometry/UNO.hh"
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 #include "pism/coupler/ocean/Pico.hh"
-#include "pism/coupler/ocean/PicoGeometry.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 
@@ -62,7 +62,7 @@ private:
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
   
-  // array::Scalar m_work;
+  array::CellType1 m_cell_type;
   array::Vector m_flow_direction;
   
   void compute_melt_rate(const PicopPhysics &physics,

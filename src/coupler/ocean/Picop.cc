@@ -68,6 +68,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_slope(grid, "picop_basal_slope"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
+    m_cell_type(grid, "cell_type"),
     m_flow_direction(grid, "ice_flow_direction")
 {
 
@@ -148,7 +149,13 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   compute_shelf_base_elevation(geometry, m_shelf_base_elevation);
   
   compute_grounding_line_elevation(inputs, m_grounding_line_elevation);
-  
+
+  {
+    m_shelf_base_temperature->copy_from(m_pico->shelf_base_temperature());
+    m_shelf_base_mass_flux->copy_from(m_pico->shelf_base_mass_flux());
+    return;
+  }
+
   compute_slope(geometry, m_shelf_base_elevation, m_slope);
   
   compute_melt_rate(picop_physics, m_theta_ocean, m_salinity_ocean,
@@ -224,52 +231,67 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
                                              array::Scalar1 &result) {
 
   const auto &bed       = inputs.geometry->bed_elevation;
-  const auto &H         = inputs.geometry->ice_thickness;
   const auto &cell_type = inputs.geometry->cell_type;
   const auto &z_s       = inputs.geometry->sea_level_elevation;
   const auto &adv_vel   = inputs.stress_balance->advective_velocity();
 
-  array::AccessScope scope{
-    &bed, &H, &z_s, &cell_type, &result, &adv_vel, &m_flow_direction
-  };
+  array::AccessScope scope{ &adv_vel, &m_flow_direction };
 
   // Step 1: Initialize zgl0 at grounding line: bed elevation
   //         Normalize velocities
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
-    result(i, j) = (cell_type(i, j) == MASK_GROUNDED) ? bed(i, j) : 0.0;
     double flow_speed = adv_vel(i,j).magnitude();
     if (flow_speed > 0.0) {
       m_flow_direction(i, j) = adv_vel(i, j) / flow_speed;
     } else {
       m_flow_direction(i, j) = 0.0;
     }
+  } // end of the loop over grid points
+
+  double dx = m_grid->dx();
+  double dy = m_grid->dy();
+
+  // Max CFL time step for max(u) = max(v) = 1:
+  double dt_max = 1.0 / (1.0 / dx + 1.0 / dy);
+
+  double tol = 1e-4;
+  double alpha = 1;
+  double max_iter = 500;
+  
+  using std::sqrt;
+
+  bool preserve_nonnegativity = false;
+
+  result.copy_from(bed);
+
+  auto &result_old = result;
+  const auto &result_new = m_uno->x();
+  scope.add({&result_new, &result_old, &cell_type});
+  
+  for (int iter = 0; iter < max_iter; ++iter) {
+
+    m_uno->update(alpha * dt_max, cell_type, result, m_flow_direction,
+                  preserve_nonnegativity);
+
+    double residual = 0.0;
+    for (auto p = m_grid->points(); p; p.next()) {
+      int i = p.i(), j = p.j();
+      if (cell_type.icy(i, j)) {
+        residual += result_new(i, j) * result_new(i, j) - result_old(i, j) * result_old(i, j);
+      }
+    }
+
+    residual = std::sqrt(GlobalSum(m_grid->com, residual));
+
+    result.copy_from(m_uno->x());
+
+    m_log->message(2, "iteration %d, residual = %f\n", iter, residual);
+
+    if (residual < tol) {
+      break;
+    }
   }
-
-
-  // const double tol = 1e-4;
-  // const double alpha = 0.1;
-  // const double max_iter = 500;
-  
-  // using std::sqrt;
-  
-  // for (int iter = 0; iter < max_iter; ++iter) {
-
-  //   double residual = 0.0;
-
-  //   const array::Scalar &result_old = m_uno->x();
-  //   m_uno->update(alpha, cell_type, grounding_line_elevation, adv_vel, true);
-  //   const array::Scalar &result_new = m_uno->x();
-
-  //   for (auto p = m_grid->points(); p; p.next()) {
-  //     int i = p.i(), j = p.j();
-  //     residual += result_new(i, j) * result_new(i, j) - result_old(i, j) * result_old(i, j);
-  //   }
-
-  //   residual = std::sqrt(GlobalSum(m_grid->com, residual));
-  //   if (residual < tol) break;
-  // }
-    
 }
 
 void Picop::compute_slope(const Geometry &geometry,
