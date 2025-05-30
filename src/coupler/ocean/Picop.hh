@@ -17,13 +17,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _POPICOP_H_
-#define _POPICOP_H_
+#ifndef PISM_PICOP_H
+#define PISM_PICOP_H
 
-#include "pism/geometry/UNO.hh"
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 #include "pism/coupler/ocean/Pico.hh"
-#include "pism/util/array/CellType.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 
@@ -52,7 +51,6 @@ protected:
 private:
   
   std::shared_ptr<Pico> m_pico;
-  std::unique_ptr<pism::UNO> m_uno;
 
   array::Scalar1 m_basal_melt_rate;
   array::Scalar1 m_grounding_line_elevation;
@@ -62,8 +60,8 @@ private:
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
   
-  array::CellType1 m_cell_type;
   array::Vector m_flow_direction;
+  array::Scalar m_work;
   
   void compute_melt_rate(const PicopPhysics &physics,
                          const array::Scalar &T_a,
@@ -87,4 +85,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _POPICOP_H_ */
+#endif /* PISM_PICOP_H */

@@ -38,15 +38,12 @@
 // DOI: 10.5194/tc-13-1043-2019
 
 #include <cmath>
-
-#include <gsl/gsl_math.h> // GSL_NAN
+#include <stdexcept>
 
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/geometry/UNO.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
 #include "pism/coupler/ocean/Picop.hh"
@@ -61,15 +58,14 @@ namespace ocean {
 Picop::Picop(std::shared_ptr<const Grid> grid)
   : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
     m_pico(std::make_shared<Pico>(grid)),
-    m_uno(new pism::UNO(grid, pism::PISM_UNO_UPWIND1)),
     m_basal_melt_rate(m_grid, "picop_basal_melt_rate"),
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
     m_shelf_base_elevation(grid, "picop_shelf_base_elevation"),
     m_slope(grid, "picop_basal_slope"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
-    m_cell_type(grid, "cell_type"),
-    m_flow_direction(grid, "ice_flow_direction")
+    m_flow_direction(grid, "ice_flow_direction"),
+    m_work(grid, "temporary_storage")
 {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
@@ -151,6 +147,7 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   compute_grounding_line_elevation(inputs, m_grounding_line_elevation);
 
   {
+    // FIXME: remove this once the rest of PICOP is ready to test
     m_shelf_base_temperature->copy_from(m_pico->shelf_base_temperature());
     m_shelf_base_mass_flux->copy_from(m_pico->shelf_base_mass_flux());
     return;
@@ -227,64 +224,179 @@ void Picop::compute_shelf_base_elevation(const Geometry &geometry, array::Scalar
   }
 }
 
+/*! Use bilinear interpolation to estimate the value in a cell with a,b,c,d at corners.
+ *
+ * `alpha` and `beta` are interpolation weights.
+ *
+ * d--------c
+ * |        |
+ * |        |
+ * |        |
+ * a--------b
+ */
+static double interpolate(double a, double b, double c, double d,
+                          double alpha, double beta) {
+  return a * (1 - alpha) * (1 - beta) + b * alpha * (1 - beta) + c * alpha * beta +
+         d * (1 - alpha) * (beta);
+}
+
+/*! Use bilinear interpolation to estimate the value in a "box" stencil at the location (x,y).
+ *
+ * Each side of the box has length 2, from -1 to 1 in both X and Y directions. The point
+ * "c" is at (0,0).
+ *
+ * nw-----n-----ne
+ *  |     |     |
+ *  |     |     |
+ *  w-----c-----e
+ *  |     |     |
+ *  |     |     |
+ * sw-----s-----se
+ */
+static double interpolate(const stencils::Box<double> &B, double x, double y) {
+  if (x <= 0 and y <= 0) {
+    /*!
+     *  w--------c
+     *  |        |
+     *  |        |
+     *  |        |
+     * sw--------s
+     */
+    return interpolate(B.sw, B.s, B.c, B.w, 1 - (-x), 1 - (-y));
+  }
+
+  if (x > 0 and y <= 0) {
+    /*!
+     *  c--------e
+     *  |        |
+     *  |        |
+     *  |        |
+     *  s--------se
+     */
+    return interpolate(B.s, B.se, B.e, B.c, x, 1 - (-y));
+  }
+
+  if (x <= 0 and y > 0) {
+    /*!
+     * nw--------n
+     *  |        |
+     *  |        |
+     *  |        |
+     *  w--------c
+     */
+    return interpolate(B.w, B.c, B.n, B.nw, 1 - (-x), y);
+  }
+
+  if (x > 0 and y > 0) {
+    /*!
+     *  n--------ne
+     *  |        |
+     *  |        |
+     *  |        |
+     *  c--------e
+     */
+    return interpolate(B.c, B.e, B.ne, B.n, x, y);
+  }
+
+  throw std::runtime_error("logic failed: one of inputs might be nan");
+}
+
+/*!
+ * Perform one iteration of the naive semi-Lagrangian transport algorithm, transporting
+ * `U_old` over the area covered by floating ice in the direction defined by
+ * `flow_direction` (normalized flow velocity), storing result in `U_new`.
+ *
+ * Values at locations where `cell_type` is other than floating_ice are held constant.
+ */
+void transport_step(const array::Scalar1 &U_old, const array::CellType &cell_type,
+               const array::Vector &flow_direction, array::Scalar &U_new) {
+
+  auto grid = U_new.grid();
+
+  array::AccessScope scope{ &U_old, &cell_type, &U_new, &flow_direction };
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.floating_ice(i, j)) {
+      auto U = U_old.box(i, j);
+      auto D = flow_direction(i, j);
+
+      U_new(i, j) = interpolate(U, -D.u, -D.v);
+    } else {
+      U_new(i, j) = U_old(i, j);
+    }
+  }
+}
+
 void Picop::compute_grounding_line_elevation(const Inputs &inputs,
                                              array::Scalar1 &result) {
 
   const auto &bed       = inputs.geometry->bed_elevation;
   const auto &cell_type = inputs.geometry->cell_type;
-  const auto &z_s       = inputs.geometry->sea_level_elevation;
   const auto &adv_vel   = inputs.stress_balance->advective_velocity();
 
-  array::AccessScope scope{ &adv_vel, &m_flow_direction };
+  array::AccessScope scope{ &adv_vel, &m_flow_direction, &bed, &cell_type, &result };
 
   // Step 1: Initialize zgl0 at grounding line: bed elevation
   //         Normalize velocities
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
-    double flow_speed = adv_vel(i,j).magnitude();
+    double flow_speed = adv_vel(i, j).magnitude();
     if (flow_speed > 0.0) {
       m_flow_direction(i, j) = adv_vel(i, j) / flow_speed;
     } else {
       m_flow_direction(i, j) = 0.0;
     }
+
+    if (cell_type.grounded_ice(i, j)) {
+      result(i, j) = bed(i, j);
+    } else {
+      result(i, j) = 0.0;
+    }
   } // end of the loop over grid points
 
-  double dx = m_grid->dx();
-  double dy = m_grid->dy();
-
-  // Max CFL time step for max(u) = max(v) = 1:
-  double dt_max = 1.0 / (1.0 / dx + 1.0 / dy);
-
-  double tol = 1e-4;
-  double alpha = 1;
+  double tol = 1.0;             // meters
   double max_iter = 500;
   
   using std::sqrt;
 
-  bool preserve_nonnegativity = false;
-
-  result.copy_from(bed);
+  const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
+  const auto &ice_thickness = inputs.geometry->ice_thickness;
 
   auto &result_old = result;
-  const auto &result_new = m_uno->x();
-  scope.add({&result_new, &result_old, &cell_type});
-  
+  auto &result_new = m_work;
+
+  scope.add({ &result_new, &ice_surface_elevation, &ice_thickness });
+
   for (int iter = 0; iter < max_iter; ++iter) {
 
-    m_uno->update(alpha * dt_max, cell_type, result, m_flow_direction,
-                  preserve_nonnegativity);
+    transport_step(result_old, cell_type, m_flow_direction, result_new);
+
+    // elevation of a plume origin that reached (x,y) cannot be above the elevation of the
+    // bottom of the ice at (x,y)
+    for (auto p = m_grid->points(); p; p.next()) {
+      int i = p.i(), j = p.j();
+
+      if (cell_type.floating_ice(i, j)) {
+        double ice_bottom_elevation = ice_surface_elevation(i, j) - ice_thickness(i, j);
+
+        if (result_new(i, j) > ice_bottom_elevation) {
+          result_new(i, j) = ice_bottom_elevation;
+        }
+      }
+    }
 
     double residual = 0.0;
     for (auto p = m_grid->points(); p; p.next()) {
       int i = p.i(), j = p.j();
-      if (cell_type.icy(i, j)) {
-        residual += result_new(i, j) * result_new(i, j) - result_old(i, j) * result_old(i, j);
-      }
+      residual = std::max(residual, std::abs(result_new(i, j) - result_old(i, j)));
     }
 
-    residual = std::sqrt(GlobalSum(m_grid->com, residual));
+    residual = GlobalMax(m_grid->com, residual);
 
-    result.copy_from(m_uno->x());
+    // copy into `result`, updating ghosts for the next iteration
+    result.copy_from(result_new);
 
     m_log->message(2, "iteration %d, residual = %f\n", iter, residual);
 
