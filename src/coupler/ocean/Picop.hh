@@ -54,8 +54,7 @@ private:
 
   array::Scalar1 m_basal_melt_rate;
   array::Scalar1 m_grounding_line_elevation;
-  array::Scalar1 m_shelf_base_elevation;
-  array::Scalar1 m_slope;
+  array::Scalar1 m_grounding_line_slope;
   
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
@@ -63,23 +62,23 @@ private:
   array::Vector m_flow_direction;
   array::Scalar m_work;
   
-  void compute_melt_rate(const PicopPhysics &physics,
+  void compute_melt_rate(const Inputs &inputs,
+                         const PicopPhysics &physics,
                          const array::Scalar &T_a,
                          const array::Scalar &S_a,
                          array::Scalar1 &grounding_line_elevation,
-                         array::Scalar1 &shelf_base_elevation,
-                         array::Scalar1 &slope,
+                         array::Scalar1 &grounding_line_slope,
                          array::Scalar1 &basal_melt_rate) const;
-  
+    
   void compute_grounding_line_elevation(const Inputs &inputs,
+                                        array::Scalar1 &result);
+  
+  void compute_grounding_line_slope(const Inputs &inputs,
                                         array::Scalar1 &result);
   
   void compute_shelf_base_elevation(const Geometry &geometry,
                                     array::Scalar1 &result) const;
 
-  void compute_slope(const Geometry &geometry,
-                     array::Scalar1 &shelf_base_elevation,
-                     array::Scalar &slope) const;
 
 };
 } // end of namespace ocean

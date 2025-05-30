@@ -64,6 +64,7 @@ coords = {
     ),
 }
 
+print("Preparing geometry")
 ds = xr.Dataset(
     {
         "bed": xr.DataArray(
@@ -97,6 +98,7 @@ ds = xr.Dataset(
 )
 ds.to_netcdf("mismip+.nc")
 
+print("Preparing ocean forcing")
 
 rho_i = xr.DataArray(918.).pint.quantify("kg m^-3")
 rho_sw = xr.DataArray(1028.).pint.quantify("kg m^-3")
@@ -126,6 +128,8 @@ basins.name = "basins"
 
 ocean_ds = xr.merge([theta_ocean, salinity_ocean, basins])
 ocean_ds.to_netcdf("ocean.nc")
+
+print("Preparing climate forcing")
 
 ice_surface_temp = xr.zeros_like(ds["bed"]) + to
 ice_surface_temp.name = "ice_surface_temp"
