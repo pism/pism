@@ -332,11 +332,10 @@ void transport_step(const array::Scalar1 &U_old, const array::CellType &cell_typ
 void Picop::compute_grounding_line_elevation(const Inputs &inputs,
                                              array::Scalar1 &result) {
 
-  const auto &bed       = inputs.geometry->bed_elevation;
   const auto &cell_type = inputs.geometry->cell_type;
   const auto &adv_vel   = inputs.stress_balance->advective_velocity();
 
-  array::AccessScope scope{ &adv_vel, &m_flow_direction, &bed, &cell_type, &result };
+  array::AccessScope scope{ &adv_vel, &m_flow_direction };
 
   // Step 1: Initialize zgl0 at grounding line: bed elevation
   //         Normalize velocities
@@ -348,26 +347,23 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
     } else {
       m_flow_direction(i, j) = 0.0;
     }
+  }
 
-    if (cell_type.grounded_ice(i, j)) {
-      result(i, j) = bed(i, j);
-    } else {
-      result(i, j) = 0.0;
-    }
-  } // end of the loop over grid points
-
+  // FIXME: this is the right way to initialize it *if* we don't have a better guess, but
+  // we may benefit from re-using the result of this computation from the previous time
+  // step, especially if the bed elevation did not change
+  result.copy_from(inputs.geometry->bed_elevation);
+  
   double tol = 1.0;             // meters
   double max_iter = 500;
   
-  using std::sqrt;
-
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
   const auto &ice_thickness = inputs.geometry->ice_thickness;
 
   auto &result_old = result;
   auto &result_new = m_work;
 
-  scope.add({ &result_new, &ice_surface_elevation, &ice_thickness });
+  scope.add({ &result_old, &result_new, &cell_type, &ice_surface_elevation, &ice_thickness });
 
   for (int iter = 0; iter < max_iter; ++iter) {
 
@@ -398,7 +394,7 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
     // copy into `result`, updating ghosts for the next iteration
     result.copy_from(result_new);
 
-    m_log->message(2, "iteration %d, residual = %f\n", iter, residual);
+    m_log->message(2, "picop iteration %03d, max change = %f m\n", iter, residual);
 
     if (residual < tol) {
       break;
