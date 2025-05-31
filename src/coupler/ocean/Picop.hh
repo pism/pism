@@ -66,8 +66,6 @@ private:
                          const PicopPhysics &physics,
                          const array::Scalar &T_a,
                          const array::Scalar &S_a,
-                         array::Scalar1 &grounding_line_elevation,
-                         array::Scalar1 &grounding_line_slope,
                          array::Scalar1 &basal_melt_rate) const;
     
   void compute_grounding_line_elevation(const Inputs &inputs,

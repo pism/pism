@@ -90,6 +90,12 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
 
+  m_basal_melt_rate.metadata(0)
+      .long_name("PICOP sub-shelf melt rate")
+      .units("m s^-1")
+      .output_units("m year^-1");
+  m_basal_melt_rate.metadata()["_FillValue"] = {0.0};
+  
   m_grounding_line_elevation.metadata(0).long_name("grounding line elevation").units("m");
   m_grounding_line_elevation.metadata()["_FillValue"] = { 0.0 };
   m_grounding_line_elevation.set(0.0);
@@ -98,6 +104,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_grounding_line_slope.metadata()["_FillValue"] = { 0.0 };
   m_grounding_line_slope.set(0.0);
   
+  m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 }
 
 void Picop::init_impl(const Geometry &geometry) {
@@ -129,11 +136,64 @@ void Picop::write_model_state_impl(const File &output) const {
   OceanModel::write_model_state_impl(output);
 }
 
+// CODE Duplication: should this be a public member of PICO?
+/*!
+* Extend basal melt rates to grounded and ocean neighbors for consitency with subgl_melt.
+* Note that melt rates are then simply interpolated into partially floating cells, they
+* are not included in the calculations of PICO.
+*/
+static void extend_basal_melt_rates(const array::CellType1 &cell_type,
+                                    array::Scalar1 &basal_melt_rate) {
+
+  auto grid = basal_melt_rate.grid();
+
+  // update ghosts of the basal melt rate so that we can use basal_melt_rate.box(i,j)
+  // below
+  basal_melt_rate.update_ghosts();
+
+  array::AccessScope list{&cell_type, &basal_melt_rate};
+
+  for (auto p = grid->points(); p; p.next()) {
+
+    const int i = p.i(), j = p.j();
+
+    auto M = cell_type.box(i, j);
+
+    bool potential_partially_filled_cell =
+      ((M.c  == MASK_GROUNDED or M.c  == MASK_ICE_FREE_OCEAN) and
+       (M.w  == MASK_FLOATING or M.e  == MASK_FLOATING or
+        M.s  == MASK_FLOATING or M.n  == MASK_FLOATING or
+        M.sw == MASK_FLOATING or M.nw == MASK_FLOATING or
+        M.se == MASK_FLOATING or M.ne == MASK_FLOATING));
+
+    if (potential_partially_filled_cell) {
+      auto BMR = basal_melt_rate.box(i, j);
+
+      int N = 0;
+      double melt_sum = 0.0;
+
+      melt_sum += M.nw == MASK_FLOATING ? (++N, BMR.nw) : 0.0;
+      melt_sum += M.n  == MASK_FLOATING ? (++N, BMR.n)  : 0.0;
+      melt_sum += M.ne == MASK_FLOATING ? (++N, BMR.ne) : 0.0;
+      melt_sum += M.e  == MASK_FLOATING ? (++N, BMR.e)  : 0.0;
+      melt_sum += M.se == MASK_FLOATING ? (++N, BMR.se) : 0.0;
+      melt_sum += M.s  == MASK_FLOATING ? (++N, BMR.s)  : 0.0;
+      melt_sum += M.sw == MASK_FLOATING ? (++N, BMR.sw) : 0.0;
+      melt_sum += M.w  == MASK_FLOATING ? (++N, BMR.w)  : 0.0;
+
+      if (N != 0) { // If there are floating neigbors, return average melt rates
+        basal_melt_rate(i, j) = melt_sum / N;
+      }
+    }
+  } // end of the loop over grid points
+}
+
 void Picop::update_impl(const Inputs &inputs, double t, double dt) {
 
   m_pico->update(inputs, t, dt);
 
   const auto &geometry = *inputs.geometry;
+  const auto &cell_type = inputs.geometry->cell_type;
 
   double
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -154,19 +214,18 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   
   compute_grounding_line_elevation(inputs, m_grounding_line_elevation);
   compute_grounding_line_slope(inputs, m_grounding_line_slope);
+  
+  compute_melt_rate(inputs, picop_physics, m_theta_ocean, m_salinity_ocean,
+                    m_basal_melt_rate);
 
+  extend_basal_melt_rates(cell_type, m_basal_melt_rate);
   {
     // FIXME: remove this once the rest of PICOP is ready to test
     m_shelf_base_temperature->copy_from(m_pico->shelf_base_temperature());
     m_shelf_base_mass_flux->copy_from(m_pico->shelf_base_mass_flux());
     return;
   }
-
   
-  compute_melt_rate(inputs, picop_physics, m_theta_ocean, m_salinity_ocean,
-                    m_grounding_line_elevation,m_grounding_line_slope,
-                    m_basal_melt_rate);
-
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(ice_density);
 
@@ -188,8 +247,6 @@ void Picop::compute_melt_rate(const Inputs &inputs,
                               const PicopPhysics &physics,
                               const array::Scalar &T_a,
                               const array::Scalar &S_a,
-                              array::Scalar1 &grounding_line_elevation,
-                              array::Scalar1 &grounding_line_slope,
                               array::Scalar1 &melt_rate) const {
 
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
@@ -197,15 +254,15 @@ void Picop::compute_melt_rate(const Inputs &inputs,
   
   array::AccessScope scope{&T_a, &S_a,
                            &ice_surface_elevation, &ice_thickness,
-                           &grounding_line_slope, &grounding_line_elevation,
+                           &m_grounding_line_slope, &m_grounding_line_elevation,
                            &melt_rate};
 
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
 
     const double z_b = ice_surface_elevation(i, j) - ice_thickness(i, j);
-    const double z_gl = grounding_line_elevation(i, j);
-    const double alpha = 0.0;  // FIX
+    const double z_gl = m_grounding_line_elevation(i, j);
+    const double alpha = m_grounding_line_slope(i, j);
     const double s_a = S_a(i, j);
     const double t_a = T_a(i, j);
       
@@ -352,8 +409,8 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
   // step, especially if the bed elevation did not change
   result.copy_from(inputs.geometry->bed_elevation);
   
-  double tol = 1.0;             // meters
-  double max_iter = 500;
+  const double rtol = 0.001;             // meters
+  const int max_iter = 500;
   
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
   const auto &ice_thickness = inputs.geometry->ice_thickness;
@@ -384,7 +441,9 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
     double residual = 0.0;
     for (auto p = m_grid->points(); p; p.next()) {
       int i = p.i(), j = p.j();
-      residual = std::max(residual, std::abs(result_new(i, j) - result_old(i, j)));
+      double denom = std::max(std::abs(result_old(i, j)), 1e-8);  // avoid divide-by-zero
+      double rel_change = std::abs(result_new(i, j) - result_old(i, j)) / denom;
+      residual = std::max(residual, rel_change);
     }
 
     residual = GlobalMax(m_grid->com, residual);
@@ -392,10 +451,13 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
     // copy into `result`, updating ghosts for the next iteration
     result.copy_from(result_new);
 
-    m_log->message(2, "grounding line elevation iteration %03d, max change = %f m\n", iter, residual);
 
-    if (residual < tol) {
+    if (residual < rtol) {
+      m_log->message(2, "grounding line elevation converged iteration %03d, max change = %f m\n", iter, residual);
       break;
+    }
+    if (iter == max_iter) {
+      m_log->message(2, "grounding line elevation maximum number of iterations reached %03d, max change = %f m\n", max_iter, residual);
     }
   }
 }
@@ -464,8 +526,8 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
   // step, especially if the bed elevation did not change
   result.copy_from(m_grounding_line_slope);
   
-  double tol = 0.001;             // meters
-  double max_iter = 500;
+  const double rtol = 0.001;
+  const int max_iter = 500;
   
 
   auto &result_old = result;
@@ -480,7 +542,9 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
     double residual = 0.0;
     for (auto p = m_grid->points(); p; p.next()) {
       int i = p.i(), j = p.j();
-      residual = std::max(residual, std::abs(result_new(i, j) - result_old(i, j)));
+      double denom = std::max(std::abs(result_old(i, j)), 1e-8);  // avoid divide-by-zero
+      double rel_change = std::abs(result_new(i, j) - result_old(i, j)) / denom;
+      residual = std::max(residual, rel_change);
     }
 
     residual = GlobalMax(m_grid->com, residual);
@@ -488,10 +552,12 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
     // copy into `result`, updating ghosts for the next iteration
     result.copy_from(result_new);
 
-    m_log->message(2, "grounding line slope iteration %03d, max change = %f rad\n", iter, residual);
-
-    if (residual < tol) {
+    if (residual < rtol) {
+      m_log->message(2, "grounding line slope converged iteration %03d, max change = %f rad\n", iter, residual);
       break;
+    }
+    if (iter == max_iter) {
+      m_log->message(2, "grounding line slope maximum number of iterations reached %03d, max change = %f m\n", max_iter, residual);
     }
   }
 }
