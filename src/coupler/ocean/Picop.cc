@@ -53,6 +53,27 @@
 
 namespace pism {
 
+using Box = stencils::Box<double>;
+
+/*!
+ * Subshelf elevation
+ */
+static double ZB(double S, double H) {
+  return S - H;
+}
+
+static Box ZB(const Box &S, const Box &H) {
+  return {ZB(S.c, H.c),
+          ZB(S.n,  H.n),
+          ZB(S.nw, H.nw),
+          ZB(S.w,  H.w),
+          ZB(S.sw, H.sw),
+          ZB(S.s,  H.s),
+          ZB(S.se, H.se),
+          ZB(S.e,  H.e),
+          ZB(S.ne, H.ne)};
+}
+
 namespace ocean {
 
 Picop::Picop(std::shared_ptr<const Grid> grid)
@@ -132,6 +153,7 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   PicopPhysics picop_physics(*m_config);
   
   compute_grounding_line_elevation(inputs, m_grounding_line_elevation);
+  compute_grounding_line_slope(inputs, m_grounding_line_slope);
 
   {
     // FIXME: remove this once the rest of PICOP is ready to test
@@ -140,7 +162,6 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
     return;
   }
 
-  compute_grounding_line_slope(inputs, m_grounding_line_slope);
   
   compute_melt_rate(inputs, picop_physics, m_theta_ocean, m_salinity_ocean,
                     m_grounding_line_elevation,m_grounding_line_slope,
@@ -371,7 +392,7 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
     // copy into `result`, updating ghosts for the next iteration
     result.copy_from(result_new);
 
-    m_log->message(2, "picop iteration %03d, max change = %f m\n", iter, residual);
+    m_log->message(2, "grounding line elevation iteration %03d, max change = %f m\n", iter, residual);
 
     if (residual < tol) {
       break;
@@ -380,58 +401,81 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
 }
 
 void Picop::compute_grounding_line_slope(const Inputs &inputs,
-                                             array::Scalar1 &result) {
+                                         array::Scalar1 &result) {
 
+  const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
+  const auto &ice_thickness = inputs.geometry->ice_thickness;
   const auto &cell_type = inputs.geometry->cell_type;
   const auto &adv_vel   = inputs.stress_balance->advective_velocity();
 
-  array::AccessScope scope{ &adv_vel, &m_flow_direction };
+  array::AccessScope scope{ &adv_vel, &m_flow_direction,  &m_grounding_line_slope,
+                            &ice_surface_elevation, &ice_thickness };
 
+  using std::sqrt;
+  
+  const double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+
+  double weight_sw, weight_se, weight_nw, weight_ne, weight_s, weight_e, weight_n, weight_w;
+  
   // Step 1: Initialize zgl0 at grounding line: bed elevation
   //         Normalize velocities
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
-    double flow_speed = adv_vel(i, j).magnitude();
-    if (flow_speed > 0.0) {
-      m_flow_direction(i, j) = adv_vel(i, j) / flow_speed;
-    } else {
-      m_flow_direction(i, j) = 0.0;
+
+    // compute the floatation function at 8 points surrounding the current grid point
+    stencils::Box<double> s_n;
+    {
+      auto S = ice_surface_elevation.box(i, j);
+      auto H = ice_thickness.box(i, j);
+
+      auto x = ZB(S, H);
+
+      s_n.sw = (x.c - x.sw) / sqrt((dx * dx) + (dy * dy));
+      s_n.se = (x.c - x.se) / sqrt((dx * dx) + (dy * dy));
+      s_n.ne = (x.c - x.nw) / sqrt((dx * dx) + (dy * dy));
+      s_n.nw = (x.c - x.nw) / sqrt((dx * dx) + (dy * dy));
+
+      s_n.s = (x.c - x.s) / dy;
+      s_n.e = (x.c - x.e) / dx;
+      s_n.n = (x.c - x.n) / dy;
+      s_n.w = (x.c - x.w) / dx;
+        
+      weight_sw = (s_n.sw > 0) ? 1.0 : 0.0;
+      weight_se = (s_n.se > 0) ? 1.0 : 0.0;
+      weight_nw = (s_n.nw > 0) ? 1.0 : 0.0;
+      weight_ne = (s_n.ne > 0) ? 1.0 : 0.0;
+
+      weight_s = (s_n.s > 0) ? 1.0 : 0.0;
+      weight_e = (s_n.e > 0) ? 1.0 : 0.0;
+      weight_n = (s_n.n > 0) ? 1.0 : 0.0;
+      weight_w = (s_n.w > 0) ? 1.0 : 0.0;
     }
+
+    double slope = weight_sw * s_n.sw + weight_se * s_n.se + weight_ne * s_n.ne +  weight_nw * s_n.nw
+      +  weight_s * s_n.s +  weight_e * s_n.e +  weight_n * s_n.n + weight_w * s_n.w;
+
+    m_grounding_line_slope(i, j) = slope;
   }
 
   // FIXME: this is the right way to initialize it *if* we don't have a better guess, but
   // we may benefit from re-using the result of this computation from the previous time
   // step, especially if the bed elevation did not change
-  result.copy_from(inputs.geometry->bed_elevation);
+  result.copy_from(m_grounding_line_slope);
   
-  double tol = 1.0;             // meters
+  double tol = 0.001;             // meters
   double max_iter = 500;
   
-  const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
-  const auto &ice_thickness = inputs.geometry->ice_thickness;
 
   auto &result_old = result;
   auto &result_new = m_work;
 
-  scope.add({ &result_old, &result_new, &cell_type, &ice_surface_elevation, &ice_thickness });
+  scope.add({ &result_old, &result_new, &cell_type });
 
   for (int iter = 0; iter < max_iter; ++iter) {
 
     transport_step(result_old, cell_type, m_flow_direction, result_new);
-
-    // elevation of a plume origin that reached (x,y) cannot be above the elevation of the
-    // bottom of the ice at (x,y)
-    for (auto p = m_grid->points(); p; p.next()) {
-      int i = p.i(), j = p.j();
-
-      if (cell_type.floating_ice(i, j)) {
-        double ice_bottom_elevation = ice_surface_elevation(i, j) - ice_thickness(i, j);
-
-        if (result_new(i, j) > ice_bottom_elevation) {
-          result_new(i, j) = ice_bottom_elevation;
-        }
-      }
-    }
 
     double residual = 0.0;
     for (auto p = m_grid->points(); p; p.next()) {
@@ -444,7 +488,7 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
     // copy into `result`, updating ghosts for the next iteration
     result.copy_from(result_new);
 
-    m_log->message(2, "picop iteration %03d, max change = %f m\n", iter, residual);
+    m_log->message(2, "grounding line slope iteration %03d, max change = %f rad\n", iter, residual);
 
     if (residual < tol) {
       break;
