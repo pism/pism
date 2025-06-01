@@ -31,7 +31,7 @@ public:
 
   double effective_heat_exchange_coefficient(double t_a, double t_f_gl, double alpha) const;
 
-  double length_scaling(double t_a, double t_f_gl, double alpha) const;
+  double length_scaling(double t_a, double t_f_gl, double GammaTS, double alpha) const;
   
   double geometric_scaling(double GammaTS, double alpha) const;
 
@@ -45,6 +45,7 @@ public:
   
 private:
 
+  double m_T_pmp;
   // drag coefficient
   double m_Cd, m_Cd12;
   double m_GammaT, m_Cd12GammaT;

@@ -30,6 +30,8 @@ namespace ocean {
 
 PicopPhysics::PicopPhysics(const Config &config) {
   
+    m_T_pmp           = config.get_number("constants.fresh_water.melting_point_temperature");
+
     m_E0             = config.get_number("ocean.picop.entrainment_coefficient");
     m_Cd             = config.get_number("ocean.picop.drag_coefficient");
     m_Cd12GammaT     = config.get_number("ocean.picop.turbulent_heat_exchange_coefficient");
@@ -49,7 +51,7 @@ PicopPhysics::PicopPhysics(const Config &config) {
 //! equation 4 in the PICOP paper.
 double PicopPhysics::characteristic_freezing_poing(double s_a, double z) const {
   // in m/s
-  return m_lambda1 * s_a + m_lambda2 + m_lambda3 * z;
+  return m_T_pmp + m_lambda1 * s_a + m_lambda2 + m_lambda3 * z;
 }
 
 //! equation 5 in the PICOP paper.
@@ -59,12 +61,12 @@ double PicopPhysics::effective_heat_exchange_coefficient(double t_a, double t_f_
 
 //! equation 6 in the PICOP paper.
 double PicopPhysics::geometric_scaling(double GammaTS, double alpha) const {
-  return pow((sin(alpha) / (m_Cd + m_E0 * sin(alpha))), 2) * pow((sin(alpha) / (m_Cd12 * GammaTS * sin(alpha))), 2);
+  return pow((sin(alpha) / (m_Cd + m_E0 * sin(alpha))), 0.5) * pow((sin(alpha) / (m_Cd12 * GammaTS * sin(alpha))), 0.5);
 }
 
 //! equation 7 in the PICOP paper.
-double PicopPhysics::length_scaling(double t_a, double t_f_gl, double alpha) const {
-  return (t_a - t_f_gl) / m_lambda3 * (m_x0  + m_E0 * sin(alpha)) / m_x0 * ( + m_E0 * sin(alpha));
+double PicopPhysics::length_scaling(double t_a, double t_f_gl, double GammaTS, double alpha) const {
+  return (t_a - t_f_gl) / m_lambda3 * (m_x0 * m_Cd12 * GammaTS  + m_E0 * sin(alpha)) / m_x0 * (m_Cd12 * GammaTS + m_E0 * sin(alpha));
 }
 
 //! equation 8 in the PICOP paper.

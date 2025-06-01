@@ -49,6 +49,7 @@
 #include "pism/coupler/ocean/Picop.hh"
 #include "pism/coupler/ocean/PicopPhysics.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
@@ -192,16 +193,7 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
 
   m_pico->update(inputs, t, dt);
 
-  const auto &geometry = *inputs.geometry;
   const auto &cell_type = inputs.geometry->cell_type;
-
-  double
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    g             = m_config->get_number("constants.standard_gravity");
-
-  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
-                                        *m_water_column_pressure);
 
   if (inputs.stress_balance == nullptr) {
     // Use outputs from PICO if the stress balance is not available
@@ -211,24 +203,31 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   }
   
   PicopPhysics picop_physics(*m_config);
-  
+
+  profiling().begin("ocean.compute_grounding_line_elevation");
   compute_grounding_line_elevation(inputs, m_grounding_line_elevation);
+  profiling().end("ocean.compute_grounding_line_elevation");
+  
+  profiling().begin("ocean.compute_grounding_line_slope");
   compute_grounding_line_slope(inputs, m_grounding_line_slope);
+  profiling().end("ocean.compute_grounding_line_slope");
   
   compute_melt_rate(inputs, picop_physics, m_theta_ocean, m_salinity_ocean,
                     m_basal_melt_rate);
 
   extend_basal_melt_rates(cell_type, m_basal_melt_rate);
-  {
-    // FIXME: remove this once the rest of PICOP is ready to test
-    m_shelf_base_temperature->copy_from(m_pico->shelf_base_temperature());
-    m_shelf_base_mass_flux->copy_from(m_pico->shelf_base_mass_flux());
-    return;
-  }
+    
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
   
+  m_shelf_base_temperature->copy_from(m_pico->shelf_base_temperature());
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(ice_density);
 
+  compute_average_water_column_pressure(*inputs.geometry, ice_density, water_density, g,
+                                        *m_water_column_pressure);
 }
 
 
@@ -268,14 +267,14 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       
     const double t_f_gl = physics.characteristic_freezing_poing(s_a, z_b);
     const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
-    const double l = physics.length_scaling(t_a, t_f_gl, alpha);
+    const double l = physics.length_scaling(t_a, t_f_gl, Gamma_TS, alpha);
     const double g_alpha = physics.geometric_scaling(Gamma_TS, alpha);
     const double M = physics.melt_function(t_a, s_a, z_gl, g_alpha);
     const double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
-    
-    melt_rate(i, j) = M * physics.dimensionless_melt_curve(X_hat);
+
+    melt_rate(i, j) =  M * physics.dimensionless_melt_curve(X_hat);
+ 
   }
-  
 }
 
 
@@ -472,8 +471,6 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
 
   array::AccessScope scope{ &adv_vel, &m_flow_direction,  &m_grounding_line_slope,
                             &ice_surface_elevation, &ice_thickness };
-
-  using std::sqrt;
   
   const double
     dx = m_grid->dx(),
@@ -515,9 +512,14 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
       weight_w = (s_n.w > 0) ? 1.0 : 0.0;
     }
 
-    double slope = weight_sw * s_n.sw + weight_se * s_n.se + weight_ne * s_n.ne +  weight_nw * s_n.nw
+    const double tan_slope = weight_sw * s_n.sw + weight_se * s_n.se + weight_ne * s_n.ne +  weight_nw * s_n.nw
       +  weight_s * s_n.s +  weight_e * s_n.e +  weight_n * s_n.n + weight_w * s_n.w;
 
+    double slope = atan(tan_slope);
+    // ensure slope > 0.
+    if (slope == 0.0) {
+      slope = 0.001;
+    }
     m_grounding_line_slope(i, j) = slope;
   }
 
@@ -568,6 +570,7 @@ DiagnosticList Picop::diagnostics_impl() const {
   DiagnosticList result = {
     { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
     { "picop_grounding_line_slope", Diagnostic::wrap(m_grounding_line_slope) },
+    { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
   };
 
   return combine(result, OceanModel::diagnostics_impl());
