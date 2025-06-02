@@ -93,7 +93,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
 
   m_basal_melt_rate.metadata(0)
       .long_name("PICOP sub-shelf melt rate")
-      .units("m year^-1")
+      .units("m s^-1")
       .output_units("m year^-1");
   m_basal_melt_rate.metadata()["_FillValue"] = {0.0};
   
@@ -260,18 +260,17 @@ void Picop::compute_melt_rate(const Inputs &inputs,
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
 
-    
     if (cell_type.floating_ice(i, j)) {
       const double z_b = ice_surface_elevation(i, j) - ice_thickness(i, j);
       const double z_gl = m_grounding_line_elevation(i, j);
-      double alpha = m_grounding_line_slope(i, j);
-      // if(alpha>=M_PI) alpha = M_PI - 0.001;
+      const double alpha = m_grounding_line_slope(i, j);
+
       const double s_a = S_a(i, j);
       double t_a = T_a(i, j);
       
       /* Low bound for Toc to ensure X_hat is between 0 and 1 */
-      if (t_a < 273.15 + physics.characteristic_freezing_point(s_a, 0.0)) {
-        t_a = 273.15 + physics.characteristic_freezing_point(s_a, 0.0);
+      if (t_a < physics.characteristic_freezing_point(s_a, 0.0)) {
+        t_a = physics.characteristic_freezing_point(s_a, 0.0);
       }
       const double t_f_gl = physics.characteristic_freezing_point(s_a, z_b);
       const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
@@ -281,6 +280,8 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double M = physics.melt_function(t_a, s_a, z_gl, g_alpha);
       double m =  M * physics.dimensionless_melt_curve(X_hat);
 
+      m_log->message(2, "(%i, %i) X_hat = %f\n", i, j, X_hat);
+      
       if (m > 100000.0) {
         m = 0.001 / 31556926.0;
       }
@@ -530,12 +531,13 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
     const double N_valid = (weight_sw + weight_se  + weight_ne  +  weight_nw 
                             +  weight_s +  weight_e +  weight_n + weight_w);
 
-    double slope = atan(tan_slope);
-    
-    // ensure slope > 0.
-    if (slope >= M_PI) {
-      slope = M_PI - 0.0001;
+    double slope = 0.0;
+
+    if (N_valid > 0.0) {
+      slope = atan(tan_slope / N_valid);
     }
+
+    
     m_grounding_line_slope(i, j) = slope;
   }
 

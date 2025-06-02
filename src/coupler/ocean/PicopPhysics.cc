@@ -37,35 +37,44 @@ PicopPhysics::PicopPhysics(const Config &config) {
     m_gamma1         = config.get_number("ocean.picop.heat_exchange_parameter_1");
     m_gamma2         = config.get_number("ocean.picop.heat_exchange_parameter_2");
     m_lambda1        = config.get_number("ocean.picop.freezing_point_salinity_coefficient");
-    m_lambda2        = config.get_number("ocean.picop.freezing_point_offset");
+    m_lambda2        = config.get_number("ocean.picop.freezing_point_offset", "kelvin");
     m_lambda3        = config.get_number("ocean.picop.freezing_point_depth_coefficient");
-    m_M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
+    m_M0             = config.get_number("ocean.picop.melt_rate_parameter");
     m_x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
   
-    m_Cd12 = sqrt(m_Cd);
-    m_GammaT = m_Cd12GammaT / m_Cd12;
+    m_Cd12 = sqrt(m_Cd); // (1)
+    m_GammaT = m_Cd12GammaT / m_Cd12;  // (1)
 }
 
 //! equation 4 in the PICOP paper.
 double PicopPhysics::characteristic_freezing_point(double s_a, double z) const {
-  // in C
+  // in K * g /kg + K  + K / m
   return m_lambda1 * s_a + m_lambda2 + m_lambda3 * z;
 }
 
 //! equation 5 in the PICOP paper.
 double PicopPhysics::effective_heat_exchange_coefficient(double t_a, double t_f_gl, double alpha) const {
-  return m_GammaT * (m_gamma1 + m_gamma2 * (t_a - t_f_gl) / m_lambda3 * m_E0 * sin(alpha) / (m_Cd12GammaTS0 + m_E0 * sin(alpha)));
+  const double t2 = (t_a - t_f_gl) / m_lambda3;
+  const double num = m_E0 * sin(alpha);
+  const double denom = (m_Cd12GammaTS0 + m_E0 * sin(alpha));
+  return m_GammaT * (m_gamma1 + m_gamma2 * t2 * num / denom);
 }
 
 //! equation 6 in the PICOP paper.
 double PicopPhysics::geometric_scaling(double GammaTS, double alpha) const {
-  return pow((sin(alpha) / (m_Cd + m_E0 * sin(alpha))), 0.5) * pow((sin(alpha) / (m_Cd12 * GammaTS * sin(alpha))), 0.5);
+  const double t1 = pow((sin(alpha) / (m_Cd + m_E0 * sin(alpha))), 0.5);
+  const double t2 = pow((m_E0 * sin(alpha)) / (m_Cd12 * GammaTS + m_E0 * sin(alpha)), 0.5);
+  const double t3 = (m_E0 * sin(alpha)) / (m_Cd12 * GammaTS + m_E0 * sin(alpha));
+  return t1 * t2 * t3;
 }
 
 //! equation 7 in the PICOP paper.
 double PicopPhysics::length_scaling(double t_a, double t_f_gl, double GammaTS, double alpha) const {
   // K * K^-1 * m * 1
-  return (t_a - t_f_gl) / m_lambda3 * (m_x0 * m_Cd12 * GammaTS  + m_E0 * sin(alpha)) / (m_x0 * (m_Cd12 * GammaTS + m_E0 * sin(alpha)));
+  const double t1 = (t_a - t_f_gl) / m_lambda3;
+  const double t2 = (m_x0 * m_Cd12 * GammaTS  + m_E0 * sin(alpha));
+  const double t3 =  (m_x0 * (m_Cd12 * GammaTS + m_E0 * sin(alpha)));
+  return t1 * t2 / t3;
 }
 
 //! equation 8 in the PICOP paper.
