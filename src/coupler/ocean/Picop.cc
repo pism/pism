@@ -93,7 +93,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
 
   m_basal_melt_rate.metadata(0)
       .long_name("PICOP sub-shelf melt rate")
-      .units("m s^-1")
+      .units("m year^-1")
       .output_units("m year^-1");
   m_basal_melt_rate.metadata()["_FillValue"] = {0.0};
   
@@ -101,7 +101,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_grounding_line_elevation.metadata()["_FillValue"] = { 0.0 };
   m_grounding_line_elevation.set(0.0);
 
-  m_grounding_line_slope.metadata(0).long_name("grounding line slope").units("rad");
+  m_grounding_line_slope.metadata(0).long_name("grounding line slope").units("rad").output_units("degree");
   m_grounding_line_slope.metadata()["_FillValue"] = { 0.0 };
   m_grounding_line_slope.set(0.0);
   
@@ -250,8 +250,9 @@ void Picop::compute_melt_rate(const Inputs &inputs,
 
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
   const auto &ice_thickness = inputs.geometry->ice_thickness;
+  const auto &cell_type = inputs.geometry->cell_type;
   
-  array::AccessScope scope{&T_a, &S_a,
+  array::AccessScope scope{&T_a, &S_a, &cell_type,
                            &ice_surface_elevation, &ice_thickness,
                            &m_grounding_line_slope, &m_grounding_line_elevation,
                            &melt_rate};
@@ -259,21 +260,33 @@ void Picop::compute_melt_rate(const Inputs &inputs,
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
 
-    const double z_b = ice_surface_elevation(i, j) - ice_thickness(i, j);
-    const double z_gl = m_grounding_line_elevation(i, j);
-    const double alpha = m_grounding_line_slope(i, j);
-    const double s_a = S_a(i, j);
-    const double t_a = T_a(i, j);
+    
+    if (cell_type.floating_ice(i, j)) {
+      const double z_b = ice_surface_elevation(i, j) - ice_thickness(i, j);
+      const double z_gl = m_grounding_line_elevation(i, j);
+      double alpha = m_grounding_line_slope(i, j);
+      // if(alpha>=M_PI) alpha = M_PI - 0.001;
+      const double s_a = S_a(i, j);
+      double t_a = T_a(i, j);
       
-    const double t_f_gl = physics.characteristic_freezing_poing(s_a, z_b);
-    const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
-    const double l = physics.length_scaling(t_a, t_f_gl, Gamma_TS, alpha);
-    const double g_alpha = physics.geometric_scaling(Gamma_TS, alpha);
-    const double M = physics.melt_function(t_a, s_a, z_gl, g_alpha);
-    const double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
+      /* Low bound for Toc to ensure X_hat is between 0 and 1 */
+      if (t_a < 273.15 + physics.characteristic_freezing_point(s_a, 0.0)) {
+        t_a = 273.15 + physics.characteristic_freezing_point(s_a, 0.0);
+      }
+      const double t_f_gl = physics.characteristic_freezing_point(s_a, z_b);
+      const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
+      const double l = physics.length_scaling(t_a, t_f_gl, Gamma_TS, alpha);
+      const double g_alpha = physics.geometric_scaling(Gamma_TS, alpha);
+      double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
+      const double M = physics.melt_function(t_a, s_a, z_gl, g_alpha);
+      double m =  M * physics.dimensionless_melt_curve(X_hat);
 
-    melt_rate(i, j) =  M * physics.dimensionless_melt_curve(X_hat);
- 
+      if (m > 100000.0) {
+        m = 0.001 / 31556926.0;
+      }
+
+      melt_rate(i, j) = m;
+    }    
   }
 }
 
@@ -452,11 +465,11 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
 
 
     if (residual < rtol) {
-      m_log->message(2, "grounding line elevation converged iteration %03d, max change = %f m\n", iter, residual);
+      m_log->message(2, "grounding line elevation converged iteration %03d, max rel. change = %f\n", iter, residual);
       break;
     }
     if (iter == max_iter) {
-      m_log->message(2, "grounding line elevation maximum number of iterations reached %03d, max change = %f m\n", max_iter, residual);
+      m_log->message(2, "grounding line elevation maximum number of iterations reached %03d, max rel. change = %f\n", max_iter, residual);
     }
   }
 }
@@ -491,15 +504,15 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
 
       auto x = ZB(S, H);
 
-      s_n.sw = (x.c - x.sw) / sqrt((dx * dx) + (dy * dy));
-      s_n.se = (x.c - x.se) / sqrt((dx * dx) + (dy * dy));
-      s_n.ne = (x.c - x.nw) / sqrt((dx * dx) + (dy * dy));
-      s_n.nw = (x.c - x.nw) / sqrt((dx * dx) + (dy * dy));
+      s_n.sw = (-x.c + x.sw) / sqrt((dx * dx) + (dy * dy));
+      s_n.se = (-x.c + x.se) / sqrt((dx * dx) + (dy * dy));
+      s_n.ne = (-x.c + x.nw) / sqrt((dx * dx) + (dy * dy));
+      s_n.nw = (-x.c + x.nw) / sqrt((dx * dx) + (dy * dy));
 
-      s_n.s = (x.c - x.s) / dy;
-      s_n.e = (x.c - x.e) / dx;
-      s_n.n = (x.c - x.n) / dy;
-      s_n.w = (x.c - x.w) / dx;
+      s_n.s = (-x.c + x.s) / dy;
+      s_n.e = (-x.c + x.e) / dx;
+      s_n.n = (-x.c + x.n) / dy;
+      s_n.w = (-x.c + x.w) / dx;
         
       weight_sw = (s_n.sw > 0) ? 1.0 : 0.0;
       weight_se = (s_n.se > 0) ? 1.0 : 0.0;
@@ -512,13 +525,16 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
       weight_w = (s_n.w > 0) ? 1.0 : 0.0;
     }
 
-    const double tan_slope = weight_sw * s_n.sw + weight_se * s_n.se + weight_ne * s_n.ne +  weight_nw * s_n.nw
-      +  weight_s * s_n.s +  weight_e * s_n.e +  weight_n * s_n.n + weight_w * s_n.w;
+    const double tan_slope = (weight_sw * s_n.sw + weight_se * s_n.se + weight_ne * s_n.ne +  weight_nw * s_n.nw
+                              +  weight_s * s_n.s +  weight_e * s_n.e +  weight_n * s_n.n + weight_w * s_n.w);
+    const double N_valid = (weight_sw + weight_se  + weight_ne  +  weight_nw 
+                            +  weight_s +  weight_e +  weight_n + weight_w);
 
     double slope = atan(tan_slope);
+    
     // ensure slope > 0.
-    if (slope == 0.0) {
-      slope = 0.001;
+    if (slope >= M_PI) {
+      slope = M_PI - 0.0001;
     }
     m_grounding_line_slope(i, j) = slope;
   }
@@ -555,11 +571,11 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
     result.copy_from(result_new);
 
     if (residual < rtol) {
-      m_log->message(2, "grounding line slope converged iteration %03d, max change = %f rad\n", iter, residual);
+      m_log->message(2, "grounding line slope converged iteration %03d, max rel. change = %f\n", iter, residual);
       break;
     }
     if (iter == max_iter) {
-      m_log->message(2, "grounding line slope maximum number of iterations reached %03d, max change = %f m\n", max_iter, residual);
+      m_log->message(2, "grounding line slope maximum number of iterations reached %03d, max rel .change = %f\n", max_iter, residual);
     }
   }
 }
@@ -571,6 +587,8 @@ DiagnosticList Picop::diagnostics_impl() const {
     { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
     { "picop_grounding_line_slope", Diagnostic::wrap(m_grounding_line_slope) },
     { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
+    { "picop_temperature", Diagnostic::wrap(m_theta_ocean) },
+    { "picop_salinity", Diagnostic::wrap(m_salinity_ocean) },
   };
 
   return combine(result, OceanModel::diagnostics_impl());

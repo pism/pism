@@ -27,7 +27,7 @@ class PicopPhysics {
 public:
   PicopPhysics(const Config &config);
 
-  double characteristic_freezing_poing(double s_a, double z_gl) const;
+  double characteristic_freezing_point(double s_a, double z_gl) const;
 
   double effective_heat_exchange_coefficient(double t_a, double t_f_gl, double alpha) const;
 
@@ -45,7 +45,6 @@ public:
   
 private:
 
-  double m_T_pmp;
   // drag coefficient
   double m_Cd, m_Cd12;
   double m_GammaT, m_Cd12GammaT;

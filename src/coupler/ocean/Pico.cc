@@ -193,7 +193,7 @@ void Pico::write_model_state_impl(const File &output) const {
 }
 
 /*!
-* Extend basal melt rates to grounded and ocean neighbors for consitency with subgl_melt.
+* Extend basal melt rates to grounded and ocean neighbors for consistency with subgl_melt.
 * Note that melt rates are then simply interpolated into partially floating cells, they
 * are not included in the calculations of PICO.
 */

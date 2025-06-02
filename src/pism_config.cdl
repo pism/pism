@@ -1817,12 +1817,6 @@ netcdf pism_config {
     pism_config:ocean.picop.freezing_point_salinity_coefficient_type = "number";
     pism_config:ocean.picop.freezing_point_salinity_coefficient_units = "degree_Celsius";
     
-    pism_config:ocean.picop.freezing_point_salinity_coefficient = -5.73e-2;
-    pism_config:ocean.picop.freezing_point_salinity_coefficient_doc = "Sets the freezing point salinity coefficient.";
-    pism_config:ocean.picop.freezing_point_salinity_coefficient_option = "freezing_point_salinity_coefficient";
-    pism_config:ocean.picop.freezing_point_salinity_coefficient_type = "number";
-    pism_config:ocean.picop.freezing_point_salinity_coefficient_units = "degree_Celsius";
-
     pism_config:ocean.picop.heat_exchange_parameter = 6.0e-4;
     pism_config:ocean.picop.heat_exchange_parameter_doc = "Sets the heat exchange parameter.";
     pism_config:ocean.picop.heat_exchange_parameter_option = "heat_exchange_parameter";

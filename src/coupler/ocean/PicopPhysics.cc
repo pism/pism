@@ -30,8 +30,6 @@ namespace ocean {
 
 PicopPhysics::PicopPhysics(const Config &config) {
   
-    m_T_pmp           = config.get_number("constants.fresh_water.melting_point_temperature");
-
     m_E0             = config.get_number("ocean.picop.entrainment_coefficient");
     m_Cd             = config.get_number("ocean.picop.drag_coefficient");
     m_Cd12GammaT     = config.get_number("ocean.picop.turbulent_heat_exchange_coefficient");
@@ -41,7 +39,7 @@ PicopPhysics::PicopPhysics(const Config &config) {
     m_lambda1        = config.get_number("ocean.picop.freezing_point_salinity_coefficient");
     m_lambda2        = config.get_number("ocean.picop.freezing_point_offset");
     m_lambda3        = config.get_number("ocean.picop.freezing_point_depth_coefficient");
-    m_M0             = config.get_number("ocean.picop.melt_rate_parameter");
+    m_M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
     m_x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
   
     m_Cd12 = sqrt(m_Cd);
@@ -49,9 +47,9 @@ PicopPhysics::PicopPhysics(const Config &config) {
 }
 
 //! equation 4 in the PICOP paper.
-double PicopPhysics::characteristic_freezing_poing(double s_a, double z) const {
-  // in m/s
-  return m_T_pmp + m_lambda1 * s_a + m_lambda2 + m_lambda3 * z;
+double PicopPhysics::characteristic_freezing_point(double s_a, double z) const {
+  // in C
+  return m_lambda1 * s_a + m_lambda2 + m_lambda3 * z;
 }
 
 //! equation 5 in the PICOP paper.
@@ -66,7 +64,8 @@ double PicopPhysics::geometric_scaling(double GammaTS, double alpha) const {
 
 //! equation 7 in the PICOP paper.
 double PicopPhysics::length_scaling(double t_a, double t_f_gl, double GammaTS, double alpha) const {
-  return (t_a - t_f_gl) / m_lambda3 * (m_x0 * m_Cd12 * GammaTS  + m_E0 * sin(alpha)) / m_x0 * (m_Cd12 * GammaTS + m_E0 * sin(alpha));
+  // K * K^-1 * m * 1
+  return (t_a - t_f_gl) / m_lambda3 * (m_x0 * m_Cd12 * GammaTS  + m_E0 * sin(alpha)) / (m_x0 * (m_Cd12 * GammaTS + m_E0 * sin(alpha)));
 }
 
 //! equation 8 in the PICOP paper.
@@ -93,7 +92,7 @@ double PicopPhysics::dimensionless_melt_curve(double X_hat) const {
 
     double result = 0.0;
     for (size_t k = 0; k < ps.size(); ++k) {
-        result += ps[k] * std::pow(X_hat, static_cast<int>(k));
+        result += ps[k] * pow(X_hat, static_cast<int>(k));
     }
 
     return result;
@@ -101,12 +100,14 @@ double PicopPhysics::dimensionless_melt_curve(double X_hat) const {
 
 //! equation 9 in the PICOP paper.
 double PicopPhysics::melt_rate(double M, double X_hat) const {
+  // 1 * m s^-1
   return dimensionless_melt_curve(X_hat) * M;
 }
 
 //! equation 10 in the PICOP paper.
 double PicopPhysics::melt_function(double t_a, double s_a, double z_gl, double g_alpha) const {
-  return m_M0 * g_alpha * pow(t_a - characteristic_freezing_poing(s_a, z_gl), 2);
+  // m s^-1  degC^-2 * 1 * deg_C^2
+  return m_M0 * g_alpha * pow(t_a - characteristic_freezing_point(s_a, z_gl), 2);
 }
 
 } // end of namespace ocean
