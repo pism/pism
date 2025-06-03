@@ -1835,11 +1835,11 @@ netcdf pism_config {
     pism_config:ocean.picop.heat_exchange_parameter_2_type = "number";
     pism_config:ocean.picop.heat_exchange_parameter_2_units = "m^-1";
 
-    pism_config:ocean.picop.melt_rate_parameter = 3.168876461541279e-07;
+    pism_config:ocean.picop.melt_rate_parameter = 10;
     pism_config:ocean.picop.melt_rate_parameter_doc = "Sets the melt rate parameter.";
     pism_config:ocean.picop.melt_rate_parameter_option = "melt_rate_parameter";
     pism_config:ocean.picop.melt_rate_parameter_type = "number";
-    pism_config:ocean.picop.melt_rate_parameter_units = "m s^-1 degree_Celsius^-2";
+    pism_config:ocean.picop.melt_rate_parameter_units = "m yr^-1 degree_Celsius^-2";
 
     pism_config:ocean.picop.periodic = "no";
     pism_config:ocean.picop.periodic_doc = "If true, interpret forcing data as periodic in time";

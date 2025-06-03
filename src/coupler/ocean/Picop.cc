@@ -280,9 +280,9 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double M = physics.melt_function(t_a, s_a, z_gl, g_alpha);
       double m =  M * physics.dimensionless_melt_curve(X_hat);
 
-      m_log->message(2, "(%i, %i) X_hat = %f\n", i, j, X_hat);
+      m_log->message(2, "(%i, %i) s_a=%f, t_a=%f, t_f_gl = %f, l=%f, X_hat=%f\n", i, j, s_a, t_a, t_f_gl, l, X_hat);
       
-      if (m > 100000.0) {
+      if (m > 10000000.0) {
         m = 0.001 / 31556926.0;
       }
 
@@ -483,7 +483,8 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
   const auto &cell_type = inputs.geometry->cell_type;
   const auto &adv_vel   = inputs.stress_balance->advective_velocity();
 
-  array::AccessScope scope{ &adv_vel, &m_flow_direction,  &m_grounding_line_slope,
+  array::AccessScope scope{ &adv_vel, &m_flow_direction,
+                            &m_grounding_line_slope,
                             &ice_surface_elevation, &ice_thickness };
   
   const double
@@ -505,20 +506,20 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
 
       auto x = ZB(S, H);
 
-      s_n.sw = (-x.c + x.sw) / sqrt((dx * dx) + (dy * dy));
-      s_n.se = (-x.c + x.se) / sqrt((dx * dx) + (dy * dy));
-      s_n.ne = (-x.c + x.nw) / sqrt((dx * dx) + (dy * dy));
-      s_n.nw = (-x.c + x.nw) / sqrt((dx * dx) + (dy * dy));
-
-      s_n.s = (-x.c + x.s) / dy;
-      s_n.e = (-x.c + x.e) / dx;
-      s_n.n = (-x.c + x.n) / dy;
-      s_n.w = (-x.c + x.w) / dx;
+      s_n.sw = (x.c - x.sw) / sqrt((dx / 2 * dx / 2) + (dy / 2 * dy / 2));
+      s_n.se = (x.c - x.se) / sqrt((dx / 2 * dx / 2) + (dy / 2 * dy / 2));
+      s_n.ne = (x.c - x.nw) / sqrt((dx / 2 * dx / 2) + (dy / 2 * dy / 2));
+      s_n.nw = (x.c - x.nw) / sqrt((dx / 2 * dx / 2) + (dy / 2 * dy / 2));
+      
+      s_n.s = (x.c - x.s) / dy / 2;
+      s_n.e = (x.c - x.e) / dx / 2;
+      s_n.n = (x.c - x.n) / dy / 2;
+      s_n.w = (x.c - x.w) / dx / 2;
         
       weight_sw = (s_n.sw > 0) ? 1.0 : 0.0;
       weight_se = (s_n.se > 0) ? 1.0 : 0.0;
-      weight_nw = (s_n.nw > 0) ? 1.0 : 0.0;
       weight_ne = (s_n.ne > 0) ? 1.0 : 0.0;
+      weight_nw = (s_n.nw > 0) ? 1.0 : 0.0;
 
       weight_s = (s_n.s > 0) ? 1.0 : 0.0;
       weight_e = (s_n.e > 0) ? 1.0 : 0.0;
@@ -559,6 +560,20 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
 
     transport_step(result_old, cell_type, m_flow_direction, result_new);
 
+    // // elevation of a plume origin that reached (x,y) cannot be above the elevation of the
+    // // bottom of the ice at (x,y)
+    // for (auto p = m_grid->points(); p; p.next()) {
+    //   int i = p.i(), j = p.j();
+
+    //   if (cell_type.floating_ice(i, j)) {
+    //     double ice_bottom_elevation = ice_surface_elevation(i, j) - ice_thickness(i, j);
+
+    //     if (result_new(i, j) > ice_bottom_elevation) {
+    //       result_new(i, j) = ice_bottom_elevation;
+    //     }
+    //   }
+    // }
+    
     double residual = 0.0;
     for (auto p = m_grid->points(); p; p.next()) {
       int i = p.i(), j = p.j();

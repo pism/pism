@@ -38,8 +38,8 @@ PicopPhysics::PicopPhysics(const Config &config) {
     m_gamma2         = config.get_number("ocean.picop.heat_exchange_parameter_2");
     m_lambda1        = config.get_number("ocean.picop.freezing_point_salinity_coefficient");
     m_lambda2        = config.get_number("ocean.picop.freezing_point_offset", "kelvin");
-    m_lambda3        = config.get_number("ocean.picop.freezing_point_depth_coefficient");
-    m_M0             = config.get_number("ocean.picop.melt_rate_parameter");
+    m_lambda3        = config.get_number("ocean.picop.freezing_point_depth_coefficient", "kelvin m^-1");
+    m_M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
     m_x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
   
     m_Cd12 = sqrt(m_Cd); // (1)
