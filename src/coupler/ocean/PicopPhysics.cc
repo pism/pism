@@ -41,8 +41,8 @@ PicopPhysics::PicopPhysics(const Config &config) {
     m_lambda3        = config.get_number("ocean.picop.freezing_point_depth_coefficient", "kelvin m^-1");
     m_M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
     m_x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
-  
-    m_Cd12 = sqrt(m_Cd); // (1)
+
+    m_Cd12 = sqrt(m_Cd);
     m_GammaT = m_Cd12GammaT / m_Cd12;  // (1)
 }
 
@@ -62,19 +62,20 @@ double PicopPhysics::effective_heat_exchange_coefficient(double t_a, double t_f_
 
 //! equation 6 in the PICOP paper.
 double PicopPhysics::geometric_scaling(double GammaTS, double alpha) const {
-  const double t1 = sqrt((sin(alpha) / (m_Cd + m_E0 * sin(alpha))));
-  const double t2 = sqrt((m_E0 * sin(alpha)) / (m_Cd12 * GammaTS + m_E0 * sin(alpha)));
-  const double t3 = (m_E0 * sin(alpha)) / (m_Cd12 * GammaTS + m_E0 * sin(alpha));
-  return t1 * t2 * t3;
+  // 1 * 1 * 1
+  const double g1 = sqrt((sin(alpha) / (m_Cd + m_E0 * sin(alpha))));
+  const double g2 = sqrt((m_E0 * sin(alpha)) / (m_Cd12 * GammaTS + m_E0 * sin(alpha)));
+  const double g3 = (m_E0 * sin(alpha)) / (m_Cd12 * GammaTS + m_E0 * sin(alpha));
+  return g1 * g2 * g3;
 }
 
 //! equation 7 in the PICOP paper.
 double PicopPhysics::length_scaling(double t_a, double t_f_gl, double GammaTS, double alpha) const {
   // K * K^-1 * m * 1
-  const double t1 = (t_a - t_f_gl) / m_lambda3;
-  const double t2 = (m_x0 * m_Cd12 * GammaTS  + m_E0 * sin(alpha));
-  const double t3 =  (m_x0 * (m_Cd12 * GammaTS + m_E0 * sin(alpha)));
-  return t1 * t2 / t3;
+  const double l1 = (t_a - t_f_gl) / m_lambda3;
+  const double l2 = (m_x0 * m_Cd12 * GammaTS  + m_E0 * sin(alpha));
+  const double l3 =  (m_x0 * (m_Cd12 * GammaTS + m_E0 * sin(alpha)));
+  return l1 * l2 / l3;
 }
 
 //! equation 8 in the PICOP paper.
