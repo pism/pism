@@ -54,27 +54,6 @@
 
 namespace pism {
 
-using Box = stencils::Box<double>;
-
-/*!
- * Subshelf elevation
- */
-static double ZB(double S, double H) {
-  return S - H;
-}
-
-static Box ZB(const Box &S, const Box &H) {
-  return {ZB(S.c, H.c),
-          ZB(S.n,  H.n),
-          ZB(S.nw, H.nw),
-          ZB(S.w,  H.w),
-          ZB(S.sw, H.sw),
-          ZB(S.s,  H.s),
-          ZB(S.se, H.se),
-          ZB(S.e,  H.e),
-          ZB(S.ne, H.ne)};
-}
-
 namespace ocean {
 
 Picop::Picop(std::shared_ptr<const Grid> grid)
@@ -82,12 +61,16 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_pico(std::make_shared<Pico>(grid)),
     m_basal_melt_rate(m_grid, "picop_basal_melt_rate"),
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
-    m_grounding_line_slope(grid, "picop_grounding_line_slope"),
+    m_shelf_base_elevation(grid, "picop_shelf_base_elevation"),
+    m_shelf_base_slope(grid, "picop_shelf_base_slope"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
-    m_work(grid, "temporary_storage")
-{
+    m_work(grid, "temporary_storage"),
+    m_work1(grid, "temporary_storage 1"),
+    m_work2(grid, "temporary_storage 2"),
+    m_zb_x(grid, "staggered slope x"),
+    m_zb_y(grid, "staggered slope y") {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
 
@@ -101,10 +84,14 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_grounding_line_elevation.metadata()["_FillValue"] = { 0.0 };
   m_grounding_line_elevation.set(0.0);
 
-  m_grounding_line_slope.metadata(0).long_name("grounding line slope").units("rad").output_units("degree");
-  m_grounding_line_slope.metadata()["_FillValue"] = { 0.0 };
-  m_grounding_line_slope.set(0.0);
+  m_shelf_base_elevation.metadata(0).long_name("shelf base elevation").units("m");
+  m_shelf_base_elevation.metadata()["_FillValue"] = { 0.0 };
+  m_shelf_base_elevation.set(0.0);
   
+  m_shelf_base_slope.metadata(0).long_name("shelf base slope").units("rad").output_units("degree");
+  m_shelf_base_slope.metadata()["_FillValue"] = { 0.0 };
+  m_shelf_base_slope.set(0.0);
+      
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 }
 
@@ -204,13 +191,17 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   
   PicopPhysics picop_physics(*m_config);
 
+  
+  compute_shelf_base_elevation(inputs, m_shelf_base_elevation);
+
   profiling().begin("ocean.compute_grounding_line_elevation");
   compute_grounding_line_elevation(inputs, m_grounding_line_elevation);
   profiling().end("ocean.compute_grounding_line_elevation");
   
-  profiling().begin("ocean.compute_grounding_line_slope");
-  compute_grounding_line_slope(inputs, m_grounding_line_slope);
-  profiling().end("ocean.compute_grounding_line_slope");
+
+  profiling().begin("ocean.compute_shelf_base_slope");
+  compute_shelf_base_slope(inputs, m_shelf_base_slope);
+  profiling().end("ocean.compute_shelf_base_slope");
   
   compute_melt_rate(inputs, picop_physics, m_theta_ocean, m_salinity_ocean,
                     m_basal_melt_rate);
@@ -246,7 +237,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
                               const PicopPhysics &physics,
                               const array::Scalar &T_a,
                               const array::Scalar &S_a,
-                              array::Scalar1 &melt_rate) const {
+                              array::Scalar1 &result) const {
 
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
   const auto &ice_thickness = inputs.geometry->ice_thickness;
@@ -254,8 +245,8 @@ void Picop::compute_melt_rate(const Inputs &inputs,
   
   array::AccessScope scope{&T_a, &S_a, &cell_type,
                            &ice_surface_elevation, &ice_thickness,
-                           &m_grounding_line_slope, &m_grounding_line_elevation,
-                           &melt_rate};
+                           &m_shelf_base_slope, &m_grounding_line_elevation,
+                           &result};
 
   for (auto p = m_grid->points(); p; p.next()) {
     int i = p.i(), j = p.j();
@@ -263,8 +254,8 @@ void Picop::compute_melt_rate(const Inputs &inputs,
     if (cell_type.floating_ice(i, j)) {
       const double z_b = ice_surface_elevation(i, j) - ice_thickness(i, j);
       const double z_gl = m_grounding_line_elevation(i, j);
-      const double alpha = m_grounding_line_slope(i, j);
-
+      const double alpha = m_shelf_base_slope(i, j);
+            
       const double s_a = S_a(i, j);
       double t_a = T_a(i, j);
       
@@ -282,15 +273,76 @@ void Picop::compute_melt_rate(const Inputs &inputs,
 
       m_log->message(2, "(%i, %i) s_a=%f, t_a=%f, t_f_gl = %f, l=%f, X_hat=%f\n", i, j, s_a, t_a, t_f_gl, l, X_hat);
       
-      if (m > 10000000.0) {
+      if (m > (1000.0 / 31556926.0)) {
         m = 0.001 / 31556926.0;
       }
 
-      melt_rate(i, j) = m;
+      result(i, j) = m;
     }    
   }
 }
 
+/*!
+ * Compute the weight used to determine if the difference between locations `i,j` and `n`
+ * (neighbor) should be used in the computation of the surface gradient in
+ * SSA::compute_driving_stress().
+ *
+ * We avoid differencing across
+ *
+ * - ice margins if stress boundary condition at ice margins (CFBC) is active
+ * - grounding lines
+ * - ice margins next to ice free locations above the surface elevation of the ice (fjord
+ *   walls, nunataks, headwalls)
+ */
+static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n) {
+  using mask::floating_ice;
+  using mask::grounded;
+  using mask::ice_free;
+  using mask::ice_free_ocean;
+  using mask::icy;
+
+  // grounding lines and calving fronts
+  if ((grounded(M_ij) and floating_ice(M_n)) or (floating_ice(M_ij) and grounded(M_n)) or
+      (floating_ice(M_ij) and ice_free_ocean(M_n))) {
+    return 0;
+  }
+
+  // fjord walls, nunataks, headwalls
+  if ((icy(M_ij) and ice_free(M_n) and h_n > h_ij) or
+      (ice_free(M_ij) and icy(M_n) and h_ij > h_n)) {
+    return 0;
+  }
+
+  // This condition has to match the one used to implement the calving front stress
+  // boundary condition in assemble_rhs().
+  if (margin_bc and ((icy(M_ij) and ice_free(M_n)) or (ice_free(M_ij) and icy(M_n)))) {
+    return 0;
+  }
+
+  return 1;
+}
+
+// Use "upwinded" (-ish) finite difference to approximate the surface elevation
+// difference.
+static double diff_uphill(double L, double C, double R) {
+  double dL = C - L, dR = R - C;
+
+  if (dR * dL > 0) {
+    // dL and dR have the same sign
+    //
+    // If dL < 0 then L > C > R and "dL = C - L" is the "uphill" difference.
+    //
+    // If dL > 0 then L < C < R and "dR = R - C" is the "uphill" difference.
+    return dL < 0.0 ? dL : dR;
+  }
+
+  // centered
+  return 0.5 * (dL + dR);
+}
+
+static double diff_centered(double L, double /* unused */, double R) {
+  return 0.5 * (R - L);
+}
 
 /*! Use bilinear interpolation to estimate the value in a cell with a,b,c,d at corners.
  *
@@ -403,7 +455,7 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
   const auto &cell_type = inputs.geometry->cell_type;
   const auto &adv_vel   = inputs.stress_balance->advective_velocity();
 
-  array::AccessScope scope{ &adv_vel, &m_flow_direction };
+  array::AccessScope scope{ &adv_vel, &m_flow_direction, &result };
 
   // Step 1: Initialize zgl0 at grounding line: bed elevation
   //         Normalize velocities
@@ -475,104 +527,133 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
   }
 }
 
-void Picop::compute_grounding_line_slope(const Inputs &inputs,
+void Picop::compute_shelf_base_elevation(const Inputs &inputs,
                                          array::Scalar1 &result) {
 
+  const auto &cell_type = inputs.geometry->cell_type;
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
   const auto &ice_thickness = inputs.geometry->ice_thickness;
-  const auto &cell_type = inputs.geometry->cell_type;
-  const auto &adv_vel   = inputs.stress_balance->advective_velocity();
 
-  array::AccessScope scope{ &adv_vel, &m_flow_direction,
-                            &m_grounding_line_slope,
-                            &ice_surface_elevation, &ice_thickness };
+  array::AccessScope scope{&cell_type,
+                           &ice_surface_elevation, &ice_thickness, &result };
+
+  for (auto p = m_grid->points(); p; p.next()) {
+    int i = p.i(), j = p.j();      
+      result(i, j) = ice_surface_elevation(i, j) - ice_thickness(i, j);
+  }
+}
+
+
+void Picop::compute_shelf_base_slope(const Inputs &inputs,
+                                         array::Scalar1 &result) {
+
+  const auto &cell_type = inputs.geometry->cell_type;
+  const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
+  const auto &ice_thickness = inputs.geometry->ice_thickness;
+
+  const auto &zb = m_shelf_base_elevation;
+  
+  array::AccessScope scope{&zb, &ice_surface_elevation, &ice_thickness, &cell_type, &result };
   
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();
 
-  double weight_sw, weight_se, weight_nw, weight_ne, weight_s, weight_e, weight_n, weight_w;
-  
-  // Step 1: Initialize zgl0 at grounding line: bed elevation
-  //         Normalize velocities
-  for (auto p = m_grid->points(); p; p.next()) {
-    int i = p.i(), j = p.j();
+  using mask::floating_ice;
+  using mask::ice_free_ocean;
 
-    // compute the floatation function at 8 points surrounding the current grid point
-    stencils::Box<double> s_n;
-    {
-      auto S = ice_surface_elevation.box(i, j);
-      auto H = ice_thickness.box(i, j);
+  bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
-      auto x = ZB(S, H);
-
-      s_n.sw = (x.c - x.sw) / sqrt((dx / 2 * dx / 2) + (dy / 2 * dy / 2));
-      s_n.se = (x.c - x.se) / sqrt((dx / 2 * dx / 2) + (dy / 2 * dy / 2));
-      s_n.ne = (x.c - x.nw) / sqrt((dx / 2 * dx / 2) + (dy / 2 * dy / 2));
-      s_n.nw = (x.c - x.nw) / sqrt((dx / 2 * dx / 2) + (dy / 2 * dy / 2));
-      
-      s_n.s = (x.c - x.s) / dy / 2;
-      s_n.e = (x.c - x.e) / dx / 2;
-      s_n.n = (x.c - x.n) / dy / 2;
-      s_n.w = (x.c - x.w) / dx / 2;
-        
-      weight_sw = (s_n.sw > 0) ? 1.0 : 0.0;
-      weight_se = (s_n.se > 0) ? 1.0 : 0.0;
-      weight_ne = (s_n.ne > 0) ? 1.0 : 0.0;
-      weight_nw = (s_n.nw > 0) ? 1.0 : 0.0;
-
-      weight_s = (s_n.s > 0) ? 1.0 : 0.0;
-      weight_e = (s_n.e > 0) ? 1.0 : 0.0;
-      weight_n = (s_n.n > 0) ? 1.0 : 0.0;
-      weight_w = (s_n.w > 0) ? 1.0 : 0.0;
-    }
-
-    const double tan_slope = (weight_sw * s_n.sw + weight_se * s_n.se + weight_ne * s_n.ne +  weight_nw * s_n.nw
-                              +  weight_s * s_n.s +  weight_e * s_n.e +  weight_n * s_n.n + weight_w * s_n.w);
-    const double N_valid = (weight_sw + weight_se  + weight_ne  +  weight_nw 
-                            +  weight_s +  weight_e +  weight_n + weight_w);
-
-    double slope = 0.0;
-
-    if (N_valid > 0.0) {
-      slope = atan(tan_slope / N_valid);
-    }
-
-    
-    m_grounding_line_slope(i, j) = slope;
+  auto diff_grounded = diff_centered;
+  if (m_config->get_flag("stress_balance.ssa.fd.upstream_surface_slope_approximation")) {
+    diff_grounded = diff_uphill;
   }
+  
+  for (auto p = m_grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j(); {
 
-  // FIXME: this is the right way to initialize it *if* we don't have a better guess, but
-  // we may benefit from re-using the result of this computation from the previous time
-  // step, especially if the bed elevation did not change
-  result.copy_from(m_grounding_line_slope);
+    // To compute the x-derivative we use
+    //
+    // * away from the grounding line, ice margins, and no_model mask transitions -- 2nd
+    //   order centered difference
+    //
+    // * at the grounded cell near the grounding line -- 1st order
+    //   one-sided difference using the grounded neighbor
+    //
+    // * at the floating cell near the grounding line -- 1st order
+    //   one-sided difference using the floating neighbor
+    //
+    // All these cases can be combined by writing h_x as the weighted
+    // average of one-sided differences, with weights of 0 if a finite
+    // difference is not used and 1 if it is.
+    //
+    // The y derivative is handled the same way.
+
+    auto M = cell_type.star_int(i, j);
+    auto h = zb.star(i, j);
+
+    // x-derivative
+    double h_x = 0.0;
+    {
+      int west = weight(cfbc, M.c, M.w, h.c, h.w),
+          east = weight(cfbc, M.c, M.e, h.c, h.e);
+
+      if (east + west == 2 and mask::grounded_ice(M.c)) {
+        // interior of the ice blob: use the "uphill-biased" difference
+        h_x = diff_grounded(h.w, h.c, h.e) / dx;
+      } else if (east + west > 0) {
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
+        if (floating_ice(M.c) and (ice_free_ocean(M.e) or ice_free_ocean(M.w))) {
+          // at the ice front: use constant extrapolation to approximate the value outside
+          // the ice extent (see the notes in the manual)
+          h_x /= 2.0;
+        }
+      } else {
+        h_x = 0.0;
+      }
+    }
+
+    // y-derivative
+    double h_y = 0.0;
+    {
+      int south = weight(cfbc, M.c, M.s, h.c, h.s),
+          north = weight(cfbc, M.c, M.n, h.c, h.n);
+
+      if (north + south == 2 and mask::grounded_ice(M.c)) {
+        // interior of the ice blob: use the "uphill-biased" difference
+        h_y = diff_grounded(h.s, h.c, h.n) / dy;
+      } else if (north + south > 0) {
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
+        if (floating_ice(M.c) and (ice_free_ocean(M.s) or ice_free_ocean(M.n))) {
+          // at the ice front: use constant extrapolation to approximate the value outside
+          // the ice extent
+          h_y /= 2.0;
+        }
+      } else {
+        h_y = 0.0;
+      }
+    }
+    double slope =  atan(sqrt(h_x*h_x + h_y*h_y));
+    if (slope >= M_PI) {
+      slope = M_PI - 0.001;
+    }
+    result(i, j) = slope;
+    }
+  }
   
   const double rtol = 0.001;
   const int max_iter = 500;
   
-
   auto &result_old = result;
   auto &result_new = m_work;
 
-  scope.add({ &result_old, &result_new, &cell_type });
+  const auto &adv_vel   = inputs.stress_balance->advective_velocity();
+
+  scope.add({ &result_old, &result_new, &adv_vel });
 
   for (int iter = 0; iter < max_iter; ++iter) {
 
     transport_step(result_old, cell_type, m_flow_direction, result_new);
-
-    // // elevation of a plume origin that reached (x,y) cannot be above the elevation of the
-    // // bottom of the ice at (x,y)
-    // for (auto p = m_grid->points(); p; p.next()) {
-    //   int i = p.i(), j = p.j();
-
-    //   if (cell_type.floating_ice(i, j)) {
-    //     double ice_bottom_elevation = ice_surface_elevation(i, j) - ice_thickness(i, j);
-
-    //     if (result_new(i, j) > ice_bottom_elevation) {
-    //       result_new(i, j) = ice_bottom_elevation;
-    //     }
-    //   }
-    // }
     
     double residual = 0.0;
     for (auto p = m_grid->points(); p; p.next()) {
@@ -594,18 +675,20 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
     if (iter == max_iter) {
       m_log->message(2, "grounding line slope maximum number of iterations reached %03d, max rel .change = %f\n", max_iter, residual);
     }
+  
   }
-}
 
+}
 // Write diagnostic variables to extra files if requested
 DiagnosticList Picop::diagnostics_impl() const {
 
   DiagnosticList result = {
     { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
-    { "picop_grounding_line_slope", Diagnostic::wrap(m_grounding_line_slope) },
     { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
     { "picop_temperature", Diagnostic::wrap(m_theta_ocean) },
     { "picop_salinity", Diagnostic::wrap(m_salinity_ocean) },
+    { "picop_shelf_base_elevation", Diagnostic::wrap(m_shelf_base_elevation) },
+    { "picop_shelf_base_slope", Diagnostic::wrap(m_shelf_base_slope) },
   };
 
   return combine(result, OceanModel::diagnostics_impl());
