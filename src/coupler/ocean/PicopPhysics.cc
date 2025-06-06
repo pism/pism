@@ -20,10 +20,10 @@
 #include <cassert>              // assert
 #include <vector>
 #include <algorithm>            // std::min
-
-#include "pism/coupler/ocean/PicopPhysics.hh"
+#include <iostream>
 
 #include "pism/util/Config.hh"
+#include "pism/coupler/ocean/PicopPhysics.hh"
 
 namespace pism {
 namespace ocean {
@@ -36,10 +36,10 @@ PicopPhysics::PicopPhysics(const Config &config) {
     m_Cd12GammaTS0   = config.get_number("ocean.picop.heat_exchange_parameter");
     m_gamma1         = config.get_number("ocean.picop.heat_exchange_parameter_1");
     m_gamma2         = config.get_number("ocean.picop.heat_exchange_parameter_2");
-    m_lambda1        = config.get_number("ocean.picop.freezing_point_salinity_coefficient", "kelvin");
+    m_lambda1        = config.get_number("ocean.picop.freezing_point_salinity_coefficient");
     m_lambda2        = config.get_number("ocean.picop.freezing_point_offset", "kelvin");
     m_lambda3        = config.get_number("ocean.picop.freezing_point_depth_coefficient", "kelvin m^-1");
-    m_M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
+    m_M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 degree_Celsius^-2");
     m_x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
 
     m_Cd12 = sqrt(m_Cd);
@@ -47,13 +47,13 @@ PicopPhysics::PicopPhysics(const Config &config) {
 }
 
 //! equation 4 in the PICOP paper.
-double PicopPhysics::characteristic_freezing_point(double s_a, double z) const {
+double PicopPhysics::characteristic_freezing_point(const double s_a, const double z) const {
   // in K * g /kg + K  + K / m
   return m_lambda1 * s_a + m_lambda2 + m_lambda3 * z;
 }
 
 //! equation 5 in the PICOP paper.
-double PicopPhysics::effective_heat_exchange_coefficient(double t_a, double t_f_gl, double alpha) const {
+double PicopPhysics::effective_heat_exchange_coefficient(const double t_a, const double t_f_gl, const double alpha) const {
   const double t2 = (t_a - t_f_gl) / m_lambda3;
   const double num = m_E0 * sin(alpha);
   const double denom = (m_Cd12GammaTS0 + m_E0 * sin(alpha));
@@ -61,7 +61,7 @@ double PicopPhysics::effective_heat_exchange_coefficient(double t_a, double t_f_
 }
 
 //! equation 6 in the PICOP paper.
-double PicopPhysics::geometric_scaling(double GammaTS, double alpha) const {
+double PicopPhysics::geometric_scaling(const double GammaTS, const double alpha) const {
   // 1 * 1 * 1
   const double g1 = sqrt((sin(alpha) / (m_Cd + m_E0 * sin(alpha))));
   const double g2 = sqrt((m_E0 * sin(alpha)) / (m_Cd12 * GammaTS + m_E0 * sin(alpha)));
@@ -70,21 +70,22 @@ double PicopPhysics::geometric_scaling(double GammaTS, double alpha) const {
 }
 
 //! equation 7 in the PICOP paper.
-double PicopPhysics::length_scaling(double t_a, double t_f_gl, double GammaTS, double alpha) const {
+double PicopPhysics::length_scaling(const double t_a, const double t_f_gl, const double GammaTS, const double alpha) const {
   // K * K^-1 * m * 1
+  std::cout << t_f_gl << std::endl;
   const double l1 = (t_a - t_f_gl) / m_lambda3;
-  const double l2 = (m_x0 * m_Cd12 * GammaTS  + m_E0 * sin(alpha));
-  const double l3 =  (m_x0 * (m_Cd12 * GammaTS + m_E0 * sin(alpha)));
+  const double l2 = m_x0 * m_Cd12 * GammaTS  + m_E0 * sin(alpha);
+  const double l3 =  m_x0 * (m_Cd12 * GammaTS + m_E0 * sin(alpha));
   return l1 * l2 / l3;
 }
 
 //! equation 8 in the PICOP paper.
-double PicopPhysics::dimensionless_coordinate(double z_b, double z_gl, double l) const {
+double PicopPhysics::dimensionless_coordinate(const double z_b, const double z_gl,const  double l) const {
   return (z_b - z_gl) / l;
 }
 
 //! equation in Corrigendum of Lazerome et al 2018
-double PicopPhysics::dimensionless_melt_curve(double X_hat) const {
+double PicopPhysics::dimensionless_melt_curve(const double X_hat) const {
     const std::vector<double> ps = {
         1.371330075095435e-01,   // p0
         5.527656234709359e+01,   // p1
@@ -109,15 +110,15 @@ double PicopPhysics::dimensionless_melt_curve(double X_hat) const {
 }
 
 //! equation 9 in the PICOP paper.
-double PicopPhysics::melt_rate(double M, double X_hat) const {
+double PicopPhysics::melt_rate(const double M, const double X_hat) const {
   // 1 * m s^-1
   return dimensionless_melt_curve(X_hat) * M;
 }
 
 //! equation 10 in the PICOP paper.
-double PicopPhysics::melt_function(double t_a, double s_a, double z_gl, double g_alpha) const {
+double PicopPhysics::melt_function(const double t_a, const double t_f_gl, const double g_alpha) const {
   // m s^-1  degC^-2 * 1 * deg_C^2
-  return m_M0 * g_alpha * pow(t_a - characteristic_freezing_point(s_a, z_gl), 2);
+  return m_M0 * g_alpha * pow(t_a - t_f_gl, 2);
 }
 
 } // end of namespace ocean

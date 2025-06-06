@@ -64,7 +64,7 @@ private:
   const array::Scalar &m_salinity_ocean;
   
   array::Vector m_flow_direction;
-  array::Scalar m_work, m_work1,  m_work2;
+  array::Scalar m_work;
   
   //! temporary storage for the shelf base gradient
   array::Staggered1 m_zb_x, m_zb_y;

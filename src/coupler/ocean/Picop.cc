@@ -69,8 +69,6 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
     m_work(grid, "temporary_storage"),
-    m_work1(grid, "temporary_storage 1"),
-    m_work2(grid, "temporary_storage 2"),
     m_zb_x(grid, "staggered slope x"),
     m_zb_y(grid, "staggered slope y") {
 
@@ -94,6 +92,14 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_grounding_line_slope.metadata()["_FillValue"] = { 0.0 };
   m_grounding_line_slope.set(0.0);
       
+  m_length_scale.metadata(0).long_name("length scale").units("m");
+  m_length_scale.metadata()["_FillValue"] = { 0.0 };
+  m_length_scale.set(0.0);
+
+  m_geometric_scale.metadata(0).long_name("length scale").units("");
+  m_geometric_scale.metadata()["_FillValue"] = { 0.0 };
+  m_geometric_scale.set(0.0);
+
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 }
 
@@ -260,28 +266,24 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double alpha = m_grounding_line_slope(i, j);
             
       const double s_a = S_a(i, j);
+      const double t_min = physics.characteristic_freezing_point(s_a, 0.0);
       double t_a = T_a(i, j);
-      
       /* Low bound for Toc to ensure X_hat is between 0 and 1 */
-      if (t_a < physics.characteristic_freezing_point(s_a, 0.0)) {
-        t_a = physics.characteristic_freezing_point(s_a, 0.0);
+      if (t_a < t_min) {
+        t_a = t_min;
       }
-      const double t_f_gl = physics.characteristic_freezing_point(s_a, z_b);
+      
+      const double t_f_gl = physics.characteristic_freezing_point(s_a, z_gl);
       const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
       const double l = physics.length_scaling(t_a, t_f_gl, Gamma_TS, alpha);
       const double g_alpha = physics.geometric_scaling(Gamma_TS, alpha);
       m_geometric_scale(i, j) = g_alpha;
       m_length_scale(i, j) = l;
       double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
-      const double M = physics.melt_function(t_a, s_a, z_gl, g_alpha);
+      const double M = physics.melt_function(t_a, t_f_gl, g_alpha);
       double m =  M * physics.dimensionless_melt_curve(X_hat);
 
-      m_log->message(2, "(%i, %i) s_a=%f, t_a=%f, t_f_gl = %f, l=%f, X_hat=%f\n", i, j, s_a, t_a, t_f_gl, l, X_hat);
-      
-      // if (m > (1000.0 / 31556926.0)) {
-      //   m = 0.001 / 31556926.0;
-      // }
-
+      m_log->message(2, "(%i, %i) s_a=%f, t_a=%f, t_f_gl = %f, t_min=%f, zb=%f, zgl=%f, Gamma_TS=%f, alpha=%f, l=%f, X_hat=%f\n", i, j, s_a, t_a, t_f_gl, t_min, z_b, z_gl, Gamma_TS, alpha, l, X_hat);
       result(i, j) = m;
     }    
   }
@@ -546,6 +548,7 @@ void Picop::compute_shelf_base_elevation(const Inputs &inputs,
     int i = p.i(), j = p.j();      
       result(i, j) = ice_surface_elevation(i, j) - ice_thickness(i, j);
   }
+  result.update_ghosts();
 }
 
 
@@ -638,6 +641,7 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
         h_y = 0.0;
       }
     }
+    
     double slope =  atan(sqrt(h_x*h_x + h_y*h_y));
     if (slope >= M_PI) {
       slope = M_PI - 0.001;

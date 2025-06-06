@@ -27,21 +27,21 @@ class PicopPhysics {
 public:
   PicopPhysics(const Config &config);
 
-  double characteristic_freezing_point(double s_a, double z_gl) const;
+  double characteristic_freezing_point(const double s_a, const double z_gl) const;
 
-  double effective_heat_exchange_coefficient(double t_a, double t_f_gl, double alpha) const;
+  double effective_heat_exchange_coefficient(const double t_a, const double t_f_gl, const double alpha) const;
 
-  double length_scaling(double t_a, double t_f_gl, double GammaTS, double alpha) const;
+  double length_scaling(const double t_a, const double t_f_gl, const double GammaTS, const double alpha) const;
   
-  double geometric_scaling(double GammaTS, double alpha) const;
+  double geometric_scaling(const double GammaTS, const double alpha) const;
 
-  double dimensionless_coordinate(double z_b, double z_gl, double l) const;
+  double dimensionless_coordinate(const double z_b, const double z_gl, const double l) const;
 
-  double dimensionless_melt_curve(double X_hat) const;
+  double dimensionless_melt_curve(const double X_hat) const;
 
-  double melt_function(double t_a, double s_a, double z_gl, double g_alpha) const;
+  double melt_function(const double t_a, const double t_f_gl, const double g_alpha) const;
   
-  double melt_rate(double M, double X_hat) const;
+  double melt_rate(const double M, const double X_hat) const;
   
 private:
 
