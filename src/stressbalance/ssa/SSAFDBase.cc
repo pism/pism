@@ -274,33 +274,37 @@ void SSAFDBase::compute_driving_stress(const array::Scalar1 &ice_thickness,
         // interior of the ice blob: use the "uphill-biased" or centered difference
         h_x = diff_grounded(h.w, h.c, h.e) / dx;
       } else if (east + west > 0) {
-        // standard method, one-sided at GL
-        h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
 
+        double F = 1.0;
         if (floating_ice(M.c) and (ice_free_ocean(M.e) or ice_free_ocean(M.w))) {
-          // at the ice front: use constant extrapolation to approximate the value outside
-          // the ice extent (see the notes in the manual)
-          h_x /= 2.0;
+          // We use constant extrapolation to approximate the value outside the ice extent
+          // when estimating h_x at the ice front. This corresponds to multiplying the
+          // regular FD formula by a factor of 1/2 (see notes in the manual).
+          F = 0.5;
         }
 
-        // -> at the grounding line for GL_centered_surf with centered differences
-        if ((method == CENTERED_SURFACE) and (gl_w or gl_e)) {
-          h_x  = 1.0 / (2.0 * dx) * (h.e - h.w);
-        }
+        // standard method, one-sided at GL
+        h_x = F * 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
 
-        if ((method == CENTERED_THICKNESS) and (gl_w or gl_e)) {
-          if (floating_ice(M.c)) {
-            h_x = 1.0 / (2.0 * dx) * delta * (H.e - H.w);
+        // grounding line
+        if (gl_w or gl_e) {
+          if (method == CENTERED_SURFACE) {
+            h_x = 1.0 / (2.0 * dx) * (h.e - h.w);
           }
 
-          if (grounded(M.c)) {
-            // assuming that dbdx = 0
-            // h_x = 1.0 / (2.0 * dx) * ( (H.e - H.w) + (b.e - b.w));
-            // becomes
-            h_x = 1.0 / (2.0 * dx) * ((H.e - H.w));
+          if (method == CENTERED_THICKNESS) {
+            if (floating_ice(M.c)) {
+              h_x = 1.0 / (2.0 * dx) * delta * (H.e - H.w);
+            }
+
+            if (grounded(M.c)) {
+              // assuming that dbdx = 0
+              // h_x = 1.0 / (2.0 * dx) * ( (H.e - H.w) + (b.e - b.w));
+              // becomes
+              h_x = 1.0 / (2.0 * dx) * ((H.e - H.w));
+            }
           }
         }
-
       } else {                  // east + west == 0
         h_x = 0.0;
 
@@ -360,33 +364,36 @@ void SSAFDBase::compute_driving_stress(const array::Scalar1 &ice_thickness,
         // interior of the ice blob: use the "uphill-biased" or centered difference
         h_y = diff_grounded(h.s, h.c, h.n) / dy;
       } else if (north + south > 0) {
-        h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
 
+        double F = 1.0;
         if (floating_ice(M.c) and (ice_free_ocean(M.s) or ice_free_ocean(M.n))) {
-          // at the ice front: use constant extrapolation to approximate the value outside
-          // the ice extent (see the notes in the manual)
-          h_y /= 2.0;
+          // We use constant extrapolation to approximate the value outside the ice extent
+          // when estimating h_y at the ice front. This corresponds to multiplying the
+          // regular FD formula by a factor of 1/2 (see notes in the manual).
+          F = 0.5;
         }
 
-        // replace the gradient:
-        // -> at the grounding line for GL_centered_surf with centered differences
-        if ((method == CENTERED_SURFACE) and (gl_s or gl_n)) {
-          h_y = 1.0 / (2.0 * dy) * (h.n - h.s);
-        }
+        // standard method, one-sided at GL
+        h_y = F * 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
 
-        // -> at the grounding line for GL_centered_thk
-        if ((method == CENTERED_THICKNESS) and (gl_s or gl_n)) {
-          if (floating_ice(M.c)) {
-            h_y = 1.0 / (2.0 * dy) * delta * (H.n - H.s);
+        // grounding line:
+        if (gl_s or gl_n) {
+          if (method == CENTERED_SURFACE) {
+            h_y = 1.0 / (2.0 * dy) * (h.n - h.s);
           }
-          if (grounded(M.c)) {
-            // assuming that dbdy = 0
-            // h_y = 1.0 / (2.0 * dy) * ( (H.n - H.s) + (b.n - b.s));
-            // becomes
-            h_y = 1.0 / (2.0 * dy) * (H.n - H.s);
+
+          if (method == CENTERED_THICKNESS) {
+            if (floating_ice(M.c)) {
+              h_y = 1.0 / (2.0 * dy) * delta * (H.n - H.s);
+            }
+            if (grounded(M.c)) {
+              // assuming that dbdy = 0
+              // h_y = 1.0 / (2.0 * dy) * ( (H.n - H.s) + (b.n - b.s));
+              // becomes
+              h_y = 1.0 / (2.0 * dy) * (H.n - H.s);
+            }
           }
         }
-
       } else {                  // north + south == 0
         h_y = 0.0;
 
