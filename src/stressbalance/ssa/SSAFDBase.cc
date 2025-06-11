@@ -301,7 +301,7 @@ void SSAFDBase::compute_driving_stress(const array::Scalar1 &ice_thickness,
               // assuming that dbdx = 0
               // h_x = 1.0 / (2.0 * dx) * ( (H.e - H.w) + (b.e - b.w));
               // becomes
-              h_x = 1.0 / (2.0 * dx) * ((H.e - H.w));
+              h_x = 1.0 / (2.0 * dx) * (H.e - H.w);
             }
           }
         }
