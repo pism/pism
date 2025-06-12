@@ -65,6 +65,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_grounding_line_slope(grid, "picop_grounding_line_slope"),
     m_geometric_scale(grid, "picop_geometric_scale"),
     m_length_scale(grid, "picop_length_scale"),
+    m_gammaTS(grid, "picop_GammaTS"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
@@ -255,6 +256,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
                            &ice_surface_elevation, &ice_thickness,
                            &m_geometric_scale, &m_length_scale,
                            &m_grounding_line_slope, &m_grounding_line_elevation,
+                           &m_gammaTS,
                            &result};
 
   for (auto p = m_grid->points(); p; p.next()) {
@@ -267,18 +269,20 @@ void Picop::compute_melt_rate(const Inputs &inputs,
             
       const double s_a = S_a(i, j);
       const double t_min = physics.characteristic_freezing_point(s_a, 0.0);
-      double t_a = T_a(i, j);
+      double t_a = T_a(i, j) - 273.15;
       /* Low bound for Toc to ensure X_hat is between 0 and 1 */
       if (t_a < t_min) {
         t_a = t_min;
       }
-      
+      m_log->message(2, "(%i, %i), z_gl 1 = %f", i, j, z_gl);
       const double t_f_gl = physics.characteristic_freezing_point(s_a, z_gl);
       const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
+      m_gammaTS(i, j) = Gamma_TS;
       const double l = physics.length_scaling(t_a, t_f_gl, Gamma_TS, alpha);
       const double g_alpha = physics.geometric_scaling(Gamma_TS, alpha);
       m_geometric_scale(i, j) = g_alpha;
       m_length_scale(i, j) = l;
+      m_log->message(2, "(%i, %i), z_gl 2 = %f", i, j, z_gl);
       double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
       const double M = physics.melt_function(t_a, t_f_gl, g_alpha);
       double m =  M * physics.dimensionless_melt_curve(X_hat);
@@ -700,6 +704,7 @@ DiagnosticList Picop::diagnostics_impl() const {
     { "picop_grounding_line_slope", Diagnostic::wrap(m_grounding_line_slope) },
     { "picop_geometric_scale", Diagnostic::wrap(m_geometric_scale) },
     { "picop_length_scale", Diagnostic::wrap(m_length_scale) },
+    { "picop_gammaTS", Diagnostic::wrap(m_gammaTS) },
   };
 
   return combine(result, OceanModel::diagnostics_impl());

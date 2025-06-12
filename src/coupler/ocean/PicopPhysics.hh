@@ -46,16 +46,17 @@ public:
 private:
 
   // drag coefficient
-  double m_Cd, m_Cd12;
-  double m_GammaT, m_Cd12GammaT;
+  double Cd;
+  // turbulent heat exchange coefficient
+  double CdT, YT;
   // heat exchange parameters
-  double m_Cd12GammaTS0, m_gamma1, m_gamma2;
+  double CdTS0, gamma1, gamma2;
   // freezing point coefficients
-  double m_lambda1, m_lambda2, m_lambda3;
+  double lambda1, lambda2, lambda3;
   // entrainment coefficient
-  double m_E0, m_M0;
+  double E0, M0;
   // scaling coefficients
-  double  m_x0;
+  double  x0;
 
 };
 
