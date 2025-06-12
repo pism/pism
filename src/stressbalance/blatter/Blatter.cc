@@ -1006,7 +1006,8 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   int snes_total_it = 0;
   int ksp_total_it = 0;
 
-  double ksp_rtol = 1e-5;
+  double ksp_rtol =
+      m_config->get_number("stress_balance.blatter.relative_convergence");
 
   double norm = 0.0;
   {
