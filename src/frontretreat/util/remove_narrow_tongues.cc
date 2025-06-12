@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,13 @@
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
+
+// Apply a function to all data members of Box<int> and return results.
+template <typename IN, typename OUT>
+stencils::Box<OUT> apply(const stencils::Box<IN> &input, OUT (*f)(IN)) {
+  return { f(input.c), f(input.n),  f(input.nw), f(input.w), f(input.sw),
+           f(input.s), f(input.se), f(input.e),  f(input.ne) };
+}
 
 /** Remove tips of one-cell-wide ice tongues ("noses")..
  *
@@ -75,35 +82,16 @@ void remove_narrow_tongues(const Geometry &geometry,
       continue;
     }
 
-    stencils::Box<bool> ice_free;
-    auto M = mask.box_int(i, j);
-
     // Note: i,j cannot be ice-free (see the if-block above), so it is either grounded ice
-    // or floating ice
-    if (mask::grounded_ice(M.c)) {
-      using mask::ice_free_ocean;
-      // if (i,j) is grounded ice then we will remove it if it has
-      // exclusively ice-free ocean neighbors
-      ice_free.n  = ice_free_ocean(M.n);
-      ice_free.e  = ice_free_ocean(M.e);
-      ice_free.s  = ice_free_ocean(M.s);
-      ice_free.w  = ice_free_ocean(M.w);
-      ice_free.ne = ice_free_ocean(M.ne);
-      ice_free.nw = ice_free_ocean(M.nw);
-      ice_free.se = ice_free_ocean(M.se);
-      ice_free.sw = ice_free_ocean(M.sw);
-    } else {
-      // if (i,j) is floating then we will remove it if its neighbors are
-      // ice-free, whether ice-free ocean or ice-free ground
-      ice_free.n  = mask::ice_free(M.n);
-      ice_free.e  = mask::ice_free(M.e);
-      ice_free.s  = mask::ice_free(M.s);
-      ice_free.w  = mask::ice_free(M.w);
-      ice_free.ne = mask::ice_free(M.ne);
-      ice_free.nw = mask::ice_free(M.nw);
-      ice_free.se = mask::ice_free(M.se);
-      ice_free.sw = mask::ice_free(M.sw);
-    }
+    // or floating ice.
+    //
+    // If (i,j) is grounded ice then we will remove it if it has
+    // exclusively ice-free ocean neighbors.
+    //
+    // If (i,j) is floating then we will remove it if its neighbors are
+    // ice-free, whether ice-free ocean or ice-free ground.
+    auto ice_free =
+        apply(mask.box_int(i, j), mask.grounded_ice(i, j) ? mask::ice_free_ocean : mask::ice_free);
 
     if ((not ice_free.w and
          ice_free.nw    and
