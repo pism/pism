@@ -25,8 +25,6 @@
 
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Staggered.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh" // GlobalSum()
 
 namespace pism {
@@ -71,24 +69,86 @@ static inline double flux_out(const stencils::Star<double> &u, double dx, double
  * "regular" flux instead of the "anti-diffusive" flux and with a different limiting
  * criterion (non-negativity instead of monotonicity).
  *
+ * @param[in] Q_c fluxes through sides of the current ("c") cell
+ * @param[in] Q_e fluxes through sides of the eastern ("e") neighbor of the current cell
+ * @param[in] Q_n fluxes through sides of the northern ("n") neighbor of the current cell
+ * @param[in] x_c value at the current cell
+ * @param[in] x_e value at the eastern neighbor
+ * @param[in] x_n value at the northern neighbor
+ * @param[in] dx grid spacing in the X direction
+ * @param[in] dy grid spacing in the Y direction
+ * @param[in] dt time step length
+ * @param[in] eps lower bound of the transported quantity (a small positive constant)
+ *
+ * Returns {Q_e, Q_n} - limited fluxed through eastern and northern sides of the current
+ * grid cell.
  */
-int make_nonnegative_preserving(double dt,
-                                 const array::Scalar1 &x,
-                                 const array::Staggered1 &flux,
-                                 array::Staggered &result) {
+std::array<double, 2> flux_limiter(const stencils::Star<double> &Q_c,
+                                   const stencils::Star<double> &Q_e,
+                                   const stencils::Star<double> &Q_n, double x_c, double x_e,
+                                   double x_n, double dx, double dy, double dt, double eps) {
 
-  using details::pp;
-  using details::np;
   using details::flux_out;
+  using details::np;
+  using details::pp;
+
+  // compute total amounts moved *out* of the current cell and its north and east
+  // neighbors over the course of the time step dt
+  //
+  // see equation (A4) in [Smolarkiewicz1989]
+  //
+  // note that we can compute all these using the width=1 stencil because of the way
+  // PISM's staggered grid is set up
+  double F_out   = flux_out(Q_c, dx, dy, dt);
+  double F_out_n = flux_out(Q_n, dx, dy, dt);
+  double F_out_e = flux_out(Q_e, dx, dy, dt);
+
+  // amounts moved through the eastern and northern cell faces
+  double F_e = Q_c.e * dt / dx;
+  double F_n = Q_c.n * dt / dy;
+
+  // Maximum amounts the current cell and its neighbors can lose while maintaining
+  // non-negativity
+  //
+  // Note: we limit total amounts so that
+  //
+  // - if a cell value X is below eps, the flux is zero
+  //
+  // - otherwise the total flux out of a cell can remove at most (X - eps) over the
+  //   course of a time step
+  //
+  // This is needed to avoid small negative values resulting from rounding errors.
+  double X_c = pp(x_c - eps);
+  double X_e = pp(x_e - eps);
+  double X_n = pp(x_n - eps);
+
+  // limit total amounts (see equation (10) in [Smolarkiewicz1989])
+  double F_e_limited = std::max(std::min(F_e, (pp(F_e) / F_out) * X_c), (-np(F_e) / F_out_e) * X_e);
+
+  assert(x_c - F_e_limited >= 0);
+  assert(x_e + F_e_limited >= 0);
+
+  double F_n_limited = std::max(std::min(F_n, (pp(F_n) / F_out) * X_c), (-np(F_n) / F_out_n) * X_n);
+
+  assert(x_c - F_n_limited >= 0);
+  assert(x_n + F_n_limited >= 0);
+
+  // convert back to fluxes and return:
+  return { F_e_limited * dx / dt, F_n_limited * dy / dt };
+}
+
+/*! Limit fluxes to preserve non-negativity of a transported quantity.
+ *
+ * See flux_limiter() for details.
+ */
+int make_nonnegative_preserving(double dt, const array::Scalar1 &x, const array::Staggered1 &flux,
+                                array::Staggered &result) {
 
   auto grid = result.grid();
 
-  double
-    eps = std::numeric_limits<double>::epsilon(),
-    dx = grid->dx(),
-    dy = grid->dy();
+  double eps = std::numeric_limits<double>::epsilon(), dx = grid->dx(), dy = grid->dy();
 
-  array::AccessScope list{&flux, &x, &result};
+  array::AccessScope list{ &flux, &x, &result };
 
   // flux divergence
   auto div = [dx, dy](const stencils::Star<double> &Q) {
@@ -104,14 +164,15 @@ int make_nonnegative_preserving(double dt,
     auto Q_n = flux.star(i, j + 1);
     auto Q_e = flux.star(i + 1, j);
 
-    const double
-      div_Q   = div(Q),
-      div_Q_e = div(Q_e),
-      div_Q_n = div(Q_n);
+    double x_c = x(i, j);
+    double x_e = x.E(i, j);
+    double x_n = x.N(i, j);
 
-    if ((div_Q   <= 0.0 or x(i, j)     - dt * div_Q   >= eps) and
-        (div_Q_e <= 0.0 or x(i + 1, j) - dt * div_Q_e >= eps) and
-        (div_Q_n <= 0.0 or x(i, j + 1) - dt * div_Q_n >= eps)) {
+    const double div_Q = div(Q), div_Q_e = div(Q_e), div_Q_n = div(Q_n);
+
+    if ((div_Q <= 0.0 or x_c - dt * div_Q >= eps) and
+        (div_Q_e <= 0.0 or x_e - dt * div_Q_e >= eps) and
+        (div_Q_n <= 0.0 or x_n - dt * div_Q_n >= eps)) {
       // No need to limit fluxes: total fluxes out of cells (i, j), (i + 1, j), (i, j + 1)
       // may be able to create a negative thickness, but fluxes *into* these cells make up for it
       //
@@ -124,52 +185,10 @@ int make_nonnegative_preserving(double dt,
 
     limiter_count += 1;
 
-    // compute total amounts moved *out* of the current cell and its north and east
-    // neighbors over the course of the time step dt
-    //
-    // see equation (A4) in [Smolarkiewicz1989]
-    //
-    // note that we can compute all these using the width=1 stencil because of the way
-    // PISM's staggered grid is set up
-    double F_out   = flux_out(Q, dx, dy, dt);
-    double F_out_n = flux_out(Q_n, dx, dy, dt);
-    double F_out_e = flux_out(Q_e, dx, dy, dt);
+    auto Q_l = flux_limiter(Q, Q_e, Q_n, x_c, x_e, x_n, dx, dy, dt, eps);
 
-    // amounts moved through the eastern and northern cell faces
-    double F_e = Q.e * dt / dx;
-    double F_n = Q.n * dt / dy;
-
-    // Maximum amounts the current cell and its neighbors can lose while maintaining
-    // non-negativity
-    //
-    // Note: we limit total amounts so that
-    //
-    // - if a cell value X is below eps, the flux is zero
-    //
-    // - otherwise the total flux out of a cell can remove at most (X - eps) over the
-    //   course of a time step
-    //
-    // This is needed to avoid small negative values resulting from rounding errors.
-    double X_ij = pp(x(i, j) - eps);
-    double X_e  = pp(x(i + 1, j) - eps);
-    double X_n  = pp(x(i, j + 1) - eps);
-
-    // limit total amounts (see equation (10) in [Smolarkiewicz1989])
-    double F_e_limited = std::max(std::min(F_e, (pp(F_e) / F_out) * X_ij),
-                                  (-np(F_e) / F_out_e) * X_e);
-
-    assert(x(i, j) - F_e_limited >= 0);
-    assert(x(i + 1, j) + F_e_limited >= 0);
-
-    double F_n_limited = std::max(std::min(F_n, (pp(F_n) / F_out) * X_ij),
-                                  (-np(F_n) / F_out_n) * X_n);
-
-    assert(x(i, j) - F_n_limited >= 0);
-    assert(x(i, j + 1) + F_n_limited >= 0);
-
-    // convert back to fluxes:
-    result(i, j, 0) = F_e_limited * dx / dt;
-    result(i, j, 1) = F_n_limited * dy / dt;
+    result(i, j, 0) = Q_l[0];
+    result(i, j, 1) = Q_l[1];
   }
 
   return GlobalSum(grid->com, limiter_count);
