@@ -286,10 +286,13 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
     // to allocate this every time step)
     array::Staggered flux_limited(m_grid, "limited_ice_flux");
 
-    make_nonnegative_preserving(dt,
-                                m_impl->ice_thickness,  // in (uses ghosts)
-                                m_impl->flux_staggered, // in (uses ghosts)
-                                flux_limited);
+    int limiter_count = make_nonnegative_preserving(dt,
+                                                    m_impl->ice_thickness,  // in (uses ghosts)
+                                                    m_impl->flux_staggered, // in (uses ghosts)
+                                                    flux_limited);
+    if (limiter_count > 0) {
+      m_log->message(2, "limited ice flux at %d locations\n", limiter_count);
+    }
 
     m_impl->flux_staggered.copy_from(flux_limited);
   }

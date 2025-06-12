@@ -1,4 +1,4 @@
-/* Copyright (C) 2022, 2023 PISM Authors
+/* Copyright (C) 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -72,7 +72,7 @@ static inline double flux_out(const stencils::Star<double> &u, double dx, double
  * criterion (non-negativity instead of monotonicity).
  *
  */
-void make_nonnegative_preserving(double dt,
+int make_nonnegative_preserving(double dt,
                                  const array::Scalar1 &x,
                                  const array::Staggered1 &flux,
                                  array::Staggered &result) {
@@ -172,11 +172,7 @@ void make_nonnegative_preserving(double dt,
     result(i, j, 1) = F_n_limited * dy / dt;
   }
 
-  limiter_count = GlobalSum(grid->com, limiter_count);
-  if (limiter_count > 0) {
-    auto log = grid->ctx()->log();
-    log->message(2, "limited ice flux at %d locations\n", limiter_count);
-  }
+  return GlobalSum(grid->com, limiter_count);
 }
 
 } // end of namespace pism
