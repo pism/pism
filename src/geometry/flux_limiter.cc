@@ -61,6 +61,29 @@ static inline double flux_out(const stencils::Star<double> &u, double dx, double
 
 } // end of namespace details
 
+/*!
+ * Smolarkiewicz-Zalesak flux limiter (equation 10 in [Smolarkiewicz1989])
+ *
+ * @param[in] F total flux across a boundary between two cells over the course of a time step
+ * @param[in] F_out_c total flux leaving the "current" cell over the course of a time step
+ * @param[in] F_out_n total flux leaving the "neighbor" cell over the course of a time step
+ * @param[in] x_c value at the "current" cell (non-negative)
+ * @param[in] x_n value at the "neighbor" cell (non-negative)
+ *
+ * Returns the limited total flux over the course of a time step
+ */
+double flux_limiter(double F, double F_out_c, double F_out_n, double x_c, double x_n) {
+  using details::np;
+  using details::pp;
+
+  double F_limited = std::max(std::min(F, (pp(F) / F_out_c) * x_c), (-np(F) / F_out_n) * x_n);
+
+  assert(x_c - F_limited >= 0);
+  assert(x_n + F_limited >= 0);
+
+  return F_limited;
+}
+
 /*! Limit fluxes to preserve non-negativity of a transported quantity.
  *
  * This method is described in [Smolarkiewicz1989].
@@ -123,15 +146,8 @@ std::array<double, 2> flux_limiter(const stencils::Star<double> &Q_c,
   double X_n = pp(x_n - eps);
 
   // limit total amounts (see equation (10) in [Smolarkiewicz1989])
-  double F_e_limited = std::max(std::min(F_e, (pp(F_e) / F_out) * X_c), (-np(F_e) / F_out_e) * X_e);
-
-  assert(x_c - F_e_limited >= 0);
-  assert(x_e + F_e_limited >= 0);
-
-  double F_n_limited = std::max(std::min(F_n, (pp(F_n) / F_out) * X_c), (-np(F_n) / F_out_n) * X_n);
-
-  assert(x_c - F_n_limited >= 0);
-  assert(x_n + F_n_limited >= 0);
+  double F_e_limited = flux_limiter(F_e, F_out, F_out_e, X_c, X_e);
+  double F_n_limited = flux_limiter(F_n, F_out, F_out_n, X_c, X_n);
 
   // convert back to fluxes and return:
   return { F_e_limited * dx / dt, F_n_limited * dy / dt };
