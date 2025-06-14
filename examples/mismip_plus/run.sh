@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ncgen -o config.nc config.cdl
+
 # This run crashes
 
 # vy$Eh  2D CFL (overrides diffusivity) (dt=1.35834)
