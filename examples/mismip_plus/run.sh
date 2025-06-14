@@ -1,13 +1,19 @@
 #!/bin/bash
 
--yield_stress constant -pseudo_plastic -pseudo_plastic_q 0.333333333 -pseudo_plastic_uthreshold 3.155693e+0
+# This run crashes
 
-run_length=25000
-mpirun -np 12 pism -config_overrides config.nc -grid.dx 2km -grid.dy 2km -i mismip+.nc -input.bootstrap yes  -output.extra.file spatial_g2km_${run_length}a.nc -output.extra.times 100year -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_g2km_5000a.nc -output.sizes.medium sftgif,velsurf_mag,mask,usurf,bmelt,velbar  -stress_balance.model ssa -surface.given.file climate.nc -surface.models given -time.run_length $run_length  -time_stepping.skip.enabled  -time_stepping.skip.max 100
-
+# vy$Eh  2D CFL (overrides diffusivity) (dt=1.35834)
+# S 2289-04-27 04.724h:    0.02886    0.06576         17.83305       1334.53348
+# limited ice flux at 38 locations
+# PISM ERROR: Rank 0 failed with the following message.
+# PISM ERROR: ice thickness would exceed Lz at i=6, j=22 (H=6619.448750, Lz=6000.000000)
+#             Error location: /Users/andy/pism-dev-conda-petsc/src/geometry/GeometryEvolution.cc, line 762
+# PISM ERROR: Failure in a parallel section. See error messages above for more.
+#             while performing a mass transport time step (dt=6329730.000000 s). (Note: Model state was saved to 'state_g2km_ssa+sia_2500a_mass_transport_failed.nc'.)
+#             Error location: /Users/andy/pism-dev-conda-petsc/src/util/error_handling.cc, line 209
 
 N=8
-run_length=5000
+run_length=2500
 sb="ssa+sia"
 resolution="2km"
 out=g${resolution}_${sb}_${run_length}a.nc
@@ -23,6 +29,102 @@ mpirun -np $N pism -config_override config.nc \
        -output.extra.times 100year \
        -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
        -time.run_length $run_length
+
+
+# So we just run 2200 years
+N=8
+run_length=2200
+sb="ssa+sia"
+resolution="2km"
+out=g${resolution}_${sb}_${run_length}a.nc
+mpirun -np $N pism -config_override config.nc \
+       -stress_balance.model $sb \
+       -grid.dx $resolution \
+       -grid.dy $resolution \
+       -i mismip+.nc \
+       -input.bootstrap yes \
+       -o_size medium \
+       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
+       -output.extra.file spatial_$out \
+       -output.extra.times 100year \
+       -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
+       -time.run_length $run_length
+
+
+infile=state_$out
+
+# and then restart, saving every year.
+# This run succeeds *BECAUSE* we save every year.
+# Not writing a spatial time series, or writing every 100yr makes it crash.
+
+N=8
+run_length=500
+sb="ssa+sia"
+resolution="2km"
+out=g${resolution}_${sb}_${run_length}a.nc
+mpirun -np $N pism -config_override config.nc \
+       -stress_balance.model $sb \
+       -grid.dx $resolution \
+       -grid.dy $resolution \
+       -i $infile \
+       -o_size medium \
+       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
+       -output.extra.file spatial_$out \
+       -output.extra.times 100year \
+       -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
+       -time.run_length $run_length
+
+
+
+
+exit
+
+
+
+
+bootfile=boot_$out
+cp state_$out $bootfile
+ncrename -v u_ssa,ubar -v v_ssa,vbar -O boot_$out
+
+N=8
+run_length=1s
+sb="prescribed_sliding"
+resolution="2km"
+out=pico_g${resolution}_${sb}_${run_length}a.nc
+mpirun -np $N pism -config_override config.nc \
+       -stress_balance.model $sb \
+       -grid.dx $resolution \
+       -grid.dy $resolution \
+       -i $bootfile \
+       -stress_balance.prescribed_sliding.file $bootfile \
+       -o_size medium \
+       -ocean.models pico -ocean.pico.continental_shelf_depth -721 -ocean.pico.file ocean.nc -ocean.pico.heat_exchange_coefficent 2e-05 -ocean.pico.maximum_ice_rise_area 10000.0 -ocean.pico.number_of_boxes 5 -ocean.pico.overturning_coefficent 1000000.0 \
+       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
+       -output.extra.file spatial_$out \
+       -output.extra.times 1s \
+       -output.extra.vars pico_temperature,pico_salinity,pico_basal_melt_rate,pico_salinity_box0,pico_temperature_box0,velbase,velsurf,bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
+       -time.run_length $run_length
+
+N=8
+run_length=1s
+sb="prescribed_sliding"
+resolution="2km"
+out=picop_g${resolution}_${sb}_${run_length}a.nc
+mpirun -np $N pism -config_override config.nc \
+       -stress_balance.model $sb \
+       -grid.dx $resolution \
+       -grid.dy $resolution \
+       -i $bootfile \
+       -stress_balance.prescribed_sliding.file $bootfile \
+       -o_size medium \
+       -ocean.models picop -ocean.pico.continental_shelf_depth -721 -ocean.pico.file ocean.nc -ocean.pico.heat_exchange_coefficent 2e-05 -ocean.pico.maximum_ice_rise_area 10000.0 -ocean.pico.number_of_boxes 5 -ocean.pico.overturning_coefficent 1000000.0 \
+       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
+       -output.extra.file spatial_$out \
+       -output.extra.times 1s \
+       -output.extra.vars picop_gammaTS,picop_length_scale,picop_geometric_scale,picop_temperature,picop_salinity,picop_basal_melt_rate,picop_grounding_line_elevation,picop_grounding_line_slope,picop_shelf_base_elevation,velbase,velsurf,bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
+       -time.run_length $run_length
+
+
 
 bootfile=boot_$out
 cp state_$out  $bootfile
