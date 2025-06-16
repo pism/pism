@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2024 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2025 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -752,7 +752,7 @@ public:
     : TSDiag<TSFluxDiagnostic, SurfaceModel>(m, "surface_accumulation_rate") {
 
     set_units("kg s^-1", "kg year^-1");
-    m_variable["long_name"] = "surface accumulation rate (PDD model)";
+    m_variable["long_name"] = "surface accumulation rate";
   }
 
   double compute() {
@@ -769,7 +769,7 @@ public:
     : TSDiag<TSFluxDiagnostic, SurfaceModel>(m, "surface_melt_rate") {
 
     set_units("kg s^-1", "kg year^-1");
-    m_variable["long_name"] = "surface melt rate (PDD model)";
+    m_variable["long_name"] = "surface melt rate";
   }
 
   double compute() {
@@ -786,7 +786,7 @@ public:
     : TSDiag<TSFluxDiagnostic, SurfaceModel>(m, "surface_runoff_rate") {
 
     set_units("kg s^-1", "kg year^-1");
-    m_variable["long_name"] = "surface runoff rate (PDD model)";
+    m_variable["long_name"] = "surface runoff rate";
   }
 
   double compute() {
