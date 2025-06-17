@@ -14,10 +14,12 @@ ncgen -o config.nc config.cdl
 #             while performing a mass transport time step (dt=6329730.000000 s). (Note: Model state was saved to 'state_g2km_ssa+sia_2500a_mass_transport_failed.nc'.)
 #             Error location: /Users/andy/pism-dev-conda-petsc/src/util/error_handling.cc, line 209
 
+
+
 N=8
-run_length=2500
+run_length=10000
 sb="ssa+sia"
-resolution="2km"
+resolution="8km"
 out=g${resolution}_${sb}_${run_length}a.nc
 mpirun -np $N pism -config_override config.nc \
        -stress_balance.model $sb \
@@ -31,6 +33,27 @@ mpirun -np $N pism -config_override config.nc \
        -output.extra.times 100year \
        -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
        -time.run_length $run_length
+
+
+N=8
+run_length=10000
+sb="ssa+sia"
+resolution="8km"
+out=g${resolution}_${sb}_${run_length}a.nc
+mpirun -np $N pism -config_override config.nc \
+       -stress_balance.model $sb \
+       -grid.dx $resolution \
+       -grid.dy $resolution \
+       -i mismip+.nc \
+       -input.bootstrap yes \
+       -o_size medium \
+       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
+       -output.extra.file spatial_$out \
+       -output.extra.times 100year \
+       -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
+       -time.run_length $run_length
+
+
 
 
 # So we just run 2200 years
@@ -72,8 +95,22 @@ mpirun -np $N pism -config_override config.nc \
        -o_size medium \
        -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
        -output.extra.file spatial_$out \
-       -output.extra.times 100year \
+       -output.extra.times 10year \
        -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
+       -time.run_length $run_length
+
+N=8
+run_length=500
+sb="ssa+sia"
+resolution="2km"
+out=g${resolution}_${sb}_${run_length}a.nc
+mpirun -np $N pism -config_override config.nc \
+       -stress_balance.model $sb \
+       -grid.dx $resolution \
+       -grid.dy $resolution \
+       -i $infile \
+       -o_size medium \
+       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
        -time.run_length $run_length
 
 

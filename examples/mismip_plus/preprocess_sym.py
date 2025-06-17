@@ -29,6 +29,25 @@ def By(y, Ly = 80e3, dc = 500, fc = 4e3, wc = 24e3):
     """
     return dc / (1 + np.exp(-2*(y -Ly/2 - wc) /fc)) + dc / (1 + np.exp(2*(y -Ly/2 + wc) /fc))
 
+
+def mirror_dataset(da: xr.DataArray | xr.Dataset, dim="x") -> xr.DataArray:
+    # Extract coordinate and attributes
+    x = da.coords[dim]
+    x_attrs = x.attrs.copy()
+    
+    # Build the mirrored left side (reversed and negated)
+    left = da.isel({dim: slice(None, None, -1)}).copy()
+    left.coords[dim] = - x[::-1]
+    left.coords[dim].attrs = x_attrs  # restore attrs
+
+    # Combine and sort by x
+    combined = xr.concat([left, da], dim=dim).sortby(dim)
+    combined.coords[dim].attrs = x_attrs  # re-apply attrs to final x
+    nx = x[dim].size
+    if np.mod(nx, 2) != 0:
+        combined = combined.isel({dim: list(range(0, nx)) + list(range(nx+1, 2*nx))})
+    return combined
+
 bed = np.maximum(Bx(X) + By(Y), bed_deep)  # Equation 1
 bed[X>Lx] = bed_deep
 bed[X>Lx+140e3] = -800
@@ -98,7 +117,8 @@ ds = xr.Dataset(
     },
     attrs={"Conventions": "CF-1.8"}
 )
-ds.to_netcdf("mismip+.nc")
+ds_sym = mirror_dataset(ds.copy(), dim="x")
+ds_sym.to_netcdf("mismip+_sym.nc")
 
 print("Preparing ocean forcing")
 
@@ -128,7 +148,8 @@ basins =  xr.zeros_like(ds["bed"]) + basins
 basins.name = "basins"
 
 ocean_ds = xr.merge([theta_ocean, salinity_ocean, basins])
-ocean_ds.to_netcdf("ocean.nc")
+ocean_sym_ds = mirror_dataset(ocean_ds.copy(), dim="x")
+ocean_sym_ds.to_netcdf("ocean_sym.nc")
 
 print("Preparing climate forcing")
 
@@ -141,4 +162,5 @@ climatic_mass_balance.name = "climatic_mass_balance"
 climatic_mass_balance.attrs.update({"units": "kg m^-2 yr^-1"})
 
 climate_ds = xr.merge([climatic_mass_balance, ice_surface_temp])
-climate_ds.to_netcdf("climate.nc")
+climate_sym_ds = mirror_dataset(climate_ds.copy(), dim="x")
+climate_sym_ds.to_netcdf("climate_sym.nc")

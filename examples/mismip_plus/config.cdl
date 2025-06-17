@@ -17,9 +17,9 @@ netcdf pism_overrides {
     pism_overrides:geometry.part_grid.enabled = "yes";
     pism_overrides:geometry.remove_icebergs = "yes";
     pism_overrides:grid.Lbz = 0;
-    pism_overrides:grid.Lz = 6000;
+    pism_overrides:grid.Lz = 5000;
     pism_overrides:grid.Mbz = 1;
-    pism_overrides:grid.Mz = 301;
+    pism_overrides:grid.Mz = 101;
     pism_overrides:grid.registration = "corner";
     pism_overrides:ocean.constant.melt_rate = 0.0;
     pism_overrides:ocean.models = "constant";
@@ -37,4 +37,5 @@ netcdf pism_overrides {
     pism_overrides:time_stepping.adaptive_ratio = 250;
     pism_overrides:time_stepping.skip.enabled = "yes";
     pism_overrides:time_stepping.skip.max = 100;
+    pism_overrides:grid.periodicity = "xy";
 }
