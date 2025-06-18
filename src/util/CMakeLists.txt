@@ -39,6 +39,7 @@ add_library (util OBJECT
   io/output_helpers.cc
   io/OutputWriter.cc
   io/SynchronousOutputWriter.cc
+  io/YacOutputWriter.cc
   io/OutputFile.cc
   node_types.cc
   options.cc
@@ -68,6 +69,14 @@ if(Pism_USE_YAC_INTERPOLATION)
     PROPERTIES
     INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")
   target_sources(util PRIVATE InputInterpolationYAC.cc)
+
+  set_source_files_properties(petscwrappers/PetscInitializer.cc
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")
+
+  set_source_files_properties(io/YacOutputWriter.cc
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")
 
   set_source_files_properties(yaxt_wrapper.c
     PROPERTIES

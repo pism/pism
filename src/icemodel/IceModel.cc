@@ -52,6 +52,7 @@
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/coupler/ocean/PyOceanModel.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/YacOutputWriter.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -129,7 +130,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
     m_surface_input_for_hydrology->metadata()["valid_min"] = { 0.0 };
   }
 
-  m_output_writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  m_output_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config, m_geometry);
 }
 
 double IceModel::dt() const {

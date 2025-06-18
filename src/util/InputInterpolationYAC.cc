@@ -266,7 +266,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     {
       // Initialize YAC:
       {
-        yac_cinit_instance(&m_instance_id);
+        yac_cinit_comm_instance(PETSC_COMM_WORLD, &m_instance_id);
         yac_cdef_calendar(YAC_YEAR_OF_365_DAYS);
         // Note: zero-padding of months and days *is* required.
         yac_cdef_datetime_instance(m_instance_id, "-1-01-01", "+1-01-01");

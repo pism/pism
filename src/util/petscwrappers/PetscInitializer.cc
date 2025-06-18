@@ -29,6 +29,10 @@
 #include "pism/util/yaxt_wrapper.h"
 #endif
 
+extern "C" {
+#include "yac.h"
+}
+
 namespace pism {
 namespace petsc {
 
@@ -36,6 +40,19 @@ Initializer::Initializer(int argc, char **argv, const char *help) {
 
   PetscErrorCode ierr = 0;
   PetscBool initialized = PETSC_FALSE;
+  int yac_comp_id;
+  const char * start_datetime = "1850-01-01T00:00:00";
+  const char * end_datetime   = "1850-12-31T00:00:00";
+
+  MPI_Init(&argc, &argv);
+
+  pism_yaxt_initialize(MPI_COMM_WORLD);
+  yac_cinit();
+  yac_cdef_calendar(YAC_YEAR_OF_365_DAYS);
+  yac_cdef_datetime ( start_datetime, end_datetime );
+
+  yac_cdef_comp("pism", &yac_comp_id);
+  yac_cget_comp_comm(yac_comp_id, &PETSC_COMM_WORLD);
 
   ierr = PetscInitialized(&initialized);
   PISM_CHK(ierr, "PetscInitialized");
