@@ -90,7 +90,7 @@ protected:
                                          array::Scalar       &ice_thickness,
                                          array::CellType1    &cell_type,
                                          array::Scalar       &area_specific_volume,
-                                         array::Scalar       &residual,
+                                         array::Scalar1      &residual,
                                          bool                &done);
 
   virtual void compute_interface_fluxes(const array::CellType1 &cell_type,

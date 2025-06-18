@@ -831,7 +831,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
                                                           array::Scalar &ice_thickness,
                                                           array::CellType1 &cell_type,
                                                           array::Scalar &area_specific_volume,
-                                                          array::Scalar &residual, bool &done) {
+                                                          array::Scalar1 &residual, bool &done) {
 
   m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
 
@@ -872,9 +872,10 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
+      auto R = residual.star(i, j);
+
       if (cell_type.ice_free_ocean(i, j)) {
-        area_specific_volume(i, j) +=
-            (residual(i + 1, j) + residual(i - 1, j) + residual(i, j + 1) + residual(i, j - 1));
+        area_specific_volume(i, j) += (R.e + R.w + R.n + R.s);
       }
     }
 
