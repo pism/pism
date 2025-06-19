@@ -53,7 +53,7 @@ void CliffCalvingTensile::init() {
 
   m_log->message(2,
                  "  Scaling factor I: %3.3e m/s.\n", 
-                 m_I
+                 m_I);
   m_log->message(2,
                  "  Exponent: %3.3f.\n",
                  m_alpha);
