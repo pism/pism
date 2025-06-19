@@ -39,28 +39,28 @@ public:
   std::string dump() const;
 
 private:
-  virtual void read_impl(const File &nc);
-  virtual void write_impl(const File &nc) const;
+  void read_impl(const File &nc);
+  void write_impl(const File &nc) const;
 
-  virtual bool is_set_impl(const std::string &name) const;
+  bool is_set_impl(const std::string &name) const;
 
-  virtual Doubles all_doubles_impl() const;
-  virtual double get_number_impl(const std::string &name) const;
-  virtual std::vector<double> get_numbers_impl(const std::string &name) const;
+  Doubles all_doubles_impl() const;
+  double get_number_impl(const std::string &name) const;
+  std::vector<double> get_numbers_impl(const std::string &name) const;
 
-  virtual void set_number_impl(const std::string &name, double value);
-  virtual void set_numbers_impl(const std::string &name,
+  void set_number_impl(const std::string &name, double value);
+  void set_numbers_impl(const std::string &name,
                                 const std::vector<double> &values);
 
-  virtual Strings all_strings_impl() const;
-  virtual std::string get_string_impl(const std::string &name) const;
-  virtual void set_string_impl(const std::string &name, const std::string &value);
+  Strings all_strings_impl() const;
+  std::string get_string_impl(const std::string &name) const;
+  void set_string_impl(const std::string &name, const std::string &value);
 
-  virtual Flags all_flags_impl() const;
+  Flags all_flags_impl() const;
 
-  virtual bool get_flag_impl(const std::string& name) const;
-  virtual void set_flag_impl(const std::string& name, bool value);
-private:
+  bool get_flag_impl(const std::string& name) const;
+  void set_flag_impl(const std::string& name, bool value);
+
   json_t *m_data;
 };
 
