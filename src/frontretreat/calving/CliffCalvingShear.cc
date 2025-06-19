@@ -50,6 +50,10 @@ void CliffCalvingShear::init() {
   m_C0 = m_config->get_number("calving.cliff_calving_shear.C0");
   m_max_cliff_calving_rate = m_config->get_number("calving.cliff_calving_shear.max_cliff_calving_rate");
 
+  // Convert from m/year to m/s
+  m_C0 = convert(m_sys, m_C0, "m year-1", "m second-1");
+  m_max_cliff_calving_rate = convert(m_sys, m_max_cliff_calving_rate, "m year-1", "m second-1");
+
   m_log->message(2,
                  "  Scaling factor C0: %3.3f m/yr.\n", 
                  convert(m_sys, m_C0, "m second-1", "m year-1"));
