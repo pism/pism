@@ -88,6 +88,13 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
+  // Initialize tracking variables
+  int num_calving_cells = 0;
+  int num_extreme_calving = 0;
+  double max_calving_rate = 0.0;
+  int max_rate_i = 0, max_rate_j = 0;
+  double max_cliff_height = 0.0;
+
   for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
@@ -113,7 +120,7 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
       const int m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
       
       // Calculate the parameters for the calving law given in [\ref Schlemm2019]
-      const double F = H_threshold - (sea_level(i, j) - bed_elevation(i, j)),  
+      const double F = H_threshold - (sea_level(i, j) - bed_elevation(i, j));  
                   w = (sea_level(i, j) - bed_elevation(i, j)) / H_threshold,       
                   Fs = 115 * pow(w-0.356, 4) + 21,
                   Fc = 75-49*w,
@@ -131,12 +138,49 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
       m_calving_rate(i, j) =  (std::abs(m_max_cliff_calving_rate) < 1e-12 ?
                         0.0 :
                         C_unbuttressed / (1.0 + C_unbuttressed / m_max_cliff_calving_rate));
+
+      // Track calving statistics
+      if (m_calving_rate(i, j) > 0.0) {
+        num_calving_cells++;
+        
+        // Convert rate to m/year for comparison
+        double rate_per_year = convert(m_sys, m_calving_rate(i, j), "m second-1", "m year-1");
+        
+        if (rate_per_year > 315.0) {  // Same threshold as tensile calving
+          num_extreme_calving++;
+        }
+        
+        if (rate_per_year > convert(m_sys, max_calving_rate, "m second-1", "m year-1")) {
+          max_calving_rate = m_calving_rate(i, j);
+          max_rate_i = i;
+          max_rate_j = j;
+        }
+
+        // Track maximum cliff height
+        max_cliff_height = std::max(max_cliff_height, F);
+      }
     } else {
       m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points
 
-
+  // Log summary
+  if (num_calving_cells > 0) {
+    m_log->message(2,
+                 "* Shear cliff calving summary:\n"
+                 "  - Active calving cells: %d\n"
+                 "  - Cells with extreme rates (>315 m/year): %d\n"
+                 "  - Maximum rate: %.2f m/year at (i,j)=(%d,%d)\n"
+                 "  - Maximum cliff height: %.1f m\n",
+                 num_calving_cells,
+                 num_extreme_calving,
+                 convert(m_sys, max_calving_rate, "m second-1", "m year-1"),
+                 max_rate_i, max_rate_j,
+                 max_cliff_height);
+  } else {
+    m_log->message(2, "* No active shear cliff calving cells at this time step (maximum cliff height: %.1f m).\n",
+                   max_cliff_height);
+  }
 }
 
 const array::Scalar &CliffCalvingShear::calving_rate() const {
