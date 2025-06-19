@@ -85,6 +85,13 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
+  // Add statistics tracking
+  double max_calving_rate = 0.0;
+  double max_cliff_height = 0.0;
+  int num_calving_cells = 0;
+  int num_extreme_calving = 0;
+  int max_rate_i = 0, max_rate_j = 0;
+
   for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
@@ -116,14 +123,43 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
                          m_I * pow(Hc, m_alpha):
                          0.0);
 
-
+      // Track statistics                   
+      if (m_calving_rate(i, j) > 0.0) {
+        num_calving_cells++;
+        if (m_calving_rate(i, j) > max_calving_rate) {
+          max_calving_rate = m_calving_rate(i, j);
+          max_cliff_height = Hc;
+          max_rate_i = i;
+          max_rate_j = j;
+        }
+        // Log very high calving rates that might cause instability
+        if (m_calving_rate(i, j) > 1e-5) {  // More than ~315 m/year
+          num_extreme_calving++;
+          m_log->message(3,
+                     "! High tensile cliff calving rate at (i,j) = (%d,%d): %.2f m/year (H=%.1f m)\n",
+                     i, j, m_calving_rate(i, j) * 31557600.0, Hc);
+        }
+      }
                          
     } else {
       m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points
 
-
+  // Print summary statistics
+  if (num_calving_cells > 0) {
+    m_log->message(2,
+                 "* Tensile cliff calving summary:\n"
+                 "  - Active calving cells: %d\n"
+                 "  - Cells with extreme rates (>315 m/year): %d\n"
+                 "  - Maximum rate: %.2f m/year at (i,j)=(%d,%d)\n"
+                 "  - Maximum cliff height: %.1f m\n",
+                 num_calving_cells,
+                 num_extreme_calving,
+                 max_calving_rate * 31557600.0,
+                 max_rate_i, max_rate_j,
+                 max_cliff_height);
+  }
 }
 
 const array::Scalar &CliffCalvingTensile::calving_rate() const {
