@@ -120,7 +120,7 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
       const int m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
       
       // Calculate the parameters for the calving law given in [\ref Schlemm2019]
-      const double F = H_threshold - (sea_level(i, j) - bed_elevation(i, j));  
+      const double F = H_threshold - (sea_level(i, j) - bed_elevation(i, j)),
                   w = (sea_level(i, j) - bed_elevation(i, j)) / H_threshold,       
                   Fs = 115 * pow(w-0.356, 4) + 21,
                   Fc = 75-49*w,
