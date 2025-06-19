@@ -116,23 +116,7 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
                          m_I * pow(Hc, m_alpha):
                          0.0);
 
-      // Add logging for significant calving events
-      if (m_calving_rate(i, j) > 0.0) {
-        m_log->message(2,
-                     "  Tensile cliff calving at (i,j) = (%d,%d):\n"
-                     "    Cliff height          = %.2f m\n"
-                     "    Calving rate         = %.2e m/s (%.2f m/year)\n"
-                     "    Ice thickness        = %.2f m\n"
-                     "    Bed elevation        = %.2f m\n"
-                     "    Sea level            = %.2f m\n",
-                     i, j,
-                     Hc,
-                     m_calving_rate(i, j),
-                     m_calving_rate(i, j) * 31557600.0, // convert to m/year
-                     H_threshold,
-                     bed_elevation(i, j),
-                     sea_level(i, j));
-      }
+
                          
     } else {
       m_calving_rate(i, j) = 0.0;
