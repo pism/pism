@@ -51,9 +51,12 @@ void CliffCalvingTensile::init() {
   m_I = m_config->get_number("calving.cliff_calving_tensile.I");
   m_alpha = m_config->get_number("calving.cliff_calving_tensile.alpha");
 
+  // Convert from m/day to m/s
+  m_I = convert(m_sys, m_I, "m day-1", "m second-1");
+
   m_log->message(2,
-                 "  Scaling factor I: %3.3e m/s.\n", 
-                 m_I);
+                 "  Scaling factor I: %3.3e m/day.\n", 
+                 convert(m_sys, m_I, "m second-1", "m day-1"));
   m_log->message(2,
                  "  Exponent: %3.3f.\n",
                  m_alpha);
@@ -156,7 +159,7 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
                  "  - Maximum cliff height: %.1f m\n",
                  num_calving_cells,
                  num_extreme_calving,
-                 max_calving_rate * 31557600.0,
+                 max_calving_rate * 365.25,
                  max_rate_i, max_rate_j,
                  max_cliff_height);
   } else {
