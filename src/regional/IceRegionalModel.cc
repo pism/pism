@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,6 +28,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -314,7 +315,7 @@ public:
   CHTemperature(const IceRegionalModel *m)
     : Diag<IceRegionalModel>(m) {
 
-    m_vars = { { m_sys, "ch_temp", m_grid->z() } };
+    m_vars = { { m_sys, "ch_temp", *m_grid, m_grid->z() } };
     m_vars[0].long_name("temperature of the cryo-hydrologic system").units("kelvin");
   }
 
@@ -339,7 +340,7 @@ public:
   CHLiquidWaterFraction(const IceRegionalModel *m)
     : Diag<IceRegionalModel>(m) {
 
-    m_vars = { { m_sys, "ch_liqfrac", m_grid->z() } };
+    m_vars = { { m_sys, "ch_liqfrac", *m_grid, m_grid->z() } };
 
     m_vars[0].long_name("liquid water fraction in the cryo-hydrologic system").units("1");
   }
@@ -365,7 +366,7 @@ public:
   CHHeatFlux(const IceRegionalModel *m)
     : Diag<IceRegionalModel>(m) {
 
-    m_vars = { { m_sys, "ch_heat_flux", m_grid->z() } };
+    m_vars = { { m_sys, "ch_heat_flux", *m_grid, m_grid->z() } };
     m_vars[0].long_name("rate of cryo-hydrologic warming").units("W m^-3");
   }
 

@@ -29,6 +29,7 @@
 #include <mpi.h>                // MPI_Comm
 
 #include "pism/util/Interpolation1D.hh"
+#include "pism/util/GridInfo.hh"
 
 namespace pism {
 
@@ -51,21 +52,11 @@ class System;
 namespace grid {
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} VerticalSpacing;
-typedef enum {NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
-
-typedef enum {CELL_CENTER, CELL_CORNER} Registration;
-
-Registration string_to_registration(const std::string &keyword);
-std::string registration_to_string(Registration registration);
-
-Periodicity string_to_periodicity(const std::string &keyword);
-std::string periodicity_to_string(Periodicity p);
 
 VerticalSpacing string_to_spacing(const std::string &keyword);
 std::string spacing_to_string(VerticalSpacing s);
 
-//! @brief Contains parameters of an input file grid.
-class InputGridInfo {
+class InputGridInfo : public GridInfo {
 public:
   InputGridInfo(const File &file, const std::string &variable,
                 std::shared_ptr<units::System> unit_system, Registration registration);
@@ -74,25 +65,6 @@ public:
 
   // dimension lengths
   unsigned int t_len;
-  //! x-coordinate of the domain center
-  double x0;
-  //! y-coordinate of the domain center
-  double y0;
-  //! domain half-width
-  double Lx;
-  //! domain half-height
-  double Ly;
-  //! minimal value of the z dimension
-  double z_min;
-  //! maximal value of the z dimension
-  double z_max;
-
-  //! x coordinates
-  std::vector<double> x;
-  //! y coordinates
-  std::vector<double> y;
-  //! z coordinates
-  std::vector<double> z;
 
   std::string filename;
 
@@ -104,9 +76,13 @@ public:
   std::map<std::string, AxisType> dimension_types;
 
   bool longitude_latitude;
+
+  //! z coordinates: input grids may be 3-dimensional
+  std::vector<double> z;
 private:
   void reset();
 };
+
 
 //! Grid parameters; used to collect defaults before an Grid is allocated.
 /* Make sure that all of
@@ -185,6 +161,7 @@ class Grid;
  */
 class PointsWithGhosts {
 public:
+  PointsWithGhosts(const grid::DistributedGridInfo &grid, unsigned int stencil_width = 1);
   PointsWithGhosts(const Grid &grid, unsigned int stencil_width = 1);
 
   int i() const {
@@ -224,6 +201,7 @@ private:
  */
 class Points : public PointsWithGhosts {
 public:
+  Points(const grid::DistributedGridInfo &g) : PointsWithGhosts(g, 0) {}
   Points(const Grid &g) : PointsWithGhosts(g, 0) {}
 };
 
@@ -326,6 +304,8 @@ public:
   int max_patch_size() const;
 
   std::shared_ptr<const Context> ctx() const;
+
+  const grid::DistributedGridInfo& info() const;
 
   int xs() const;
   int xm() const;

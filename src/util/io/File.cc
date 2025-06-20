@@ -1,4 +1,4 @@
-// Copyright (C) 2012--2024 PISM Authors
+// Copyright (C) 2012--2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -723,7 +723,7 @@ void File::write_variable(const std::string &variable_name,
 
 
 void File::write_distributed_array(const std::string &variable_name,
-                                   const Grid &grid,
+                                   const grid::DistributedGridInfo &grid,
                                    unsigned int z_count,
                                    bool time_dependent,
                                    const double *input) const {

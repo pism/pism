@@ -236,8 +236,6 @@ pism_class(pism::Logger, "pism/util/Logger.hh");
 %shared_ptr(pism::ColdEnthalpyConverter);
 pism_class(pism::EnthalpyConverter, "pism/util/EnthalpyConverter.hh");
 
-pism_class(pism::Time, "pism/util/Time.hh")
-
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);
 %include "util/Context.hh"
@@ -257,6 +255,8 @@ pism_class(pism::Time, "pism/util/Time.hh")
 %include pism_Vars.i
 
 %include pism_Config.i
+
+pism_class(pism::Time, "pism/util/Time.hh")
 
 %shared_ptr(pism::Diagnostic)
 %include "util/Diagnostic.hh"

@@ -319,11 +319,9 @@ void IBIceModel::prepare_outputs(double time_s) {
 }
 
 void IBIceModel::dumpToFile(const std::string &filename) const {
-  File file(m_grid->com, filename,
-            string_to_backend(m_config->get_string("output.format")), io::PISM_READWRITE_MOVE);
+  OutputFile file(m_output_writer, filename);
 
-  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-  write_run_stats(file, run_stats());
+  write_metadata(file, WRITE_MAPPING);
 
   // assume that "dumpToFile" is expected to save the model state *only*.
   save_variables(file, INCLUDE_MODEL_STATE, {}, m_time->current());

@@ -47,8 +47,12 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
         grid = self.grid
         vecs = self.modeldata.vecs
+        config = grid.ctx().config()
 
-        output = PISM.File(grid.com, filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE)
+        writer = PISM.SynchronousOutputWriter(grid.com, config)
+        output = PISM.OutputFile(writer, filename)
+        if append:
+            output.append()
 
         for name in grid.variables().keys():
             grid.variables().get(name).write(output)

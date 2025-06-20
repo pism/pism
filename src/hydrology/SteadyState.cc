@@ -28,6 +28,8 @@
 #include "pism/util/Context.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 
 /* FIXMEs
  *
@@ -187,25 +189,25 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
   return MaxTimestep(dt, "hydrology 'steady'");
 }
 
-void SteadyState::define_model_state_impl(const File& output) const {
+void SteadyState::define_model_state_impl(const OutputFile& output) const {
   NullTransport::define_model_state_impl(output);
 
-  if (not output.variable_exists(m_time_name)) {
-    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
+  {
+    VariableMetadata t(m_time_name, m_sys);
+    t.long_name("time of the last update of the steady state subglacial water flux")
+        .units(time().units());
+    t["calendar"] = time().calendar();
 
-    output.write_attribute(m_time_name, "long_name",
-                        "time of the last update of the steady state subglacial water flux");
-    output.write_attribute(m_time_name, "calendar", time().calendar());
-    output.write_attribute(m_time_name, "units", time().units_string());
+    output.define_variable(t, {});
   }
 
-  m_Q.define(output, io::PISM_DOUBLE);
+  m_Q.define(output);
 }
 
-void SteadyState::write_model_state_impl(const File& output) const {
+void SteadyState::write_model_state_impl(const OutputFile& output) const {
   NullTransport::write_model_state_impl(output);
 
-  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
+  output.write_array(m_time_name, { 0 }, { 1 }, { m_t_last });
   m_Q.write(output);
 }
 
@@ -307,7 +309,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   // read time bounds data from a file
   m_time_bounds =
-      io::read_bounds(file, bounds_name, time().units_string(), m_grid->ctx()->unit_system());
+      io::read_bounds(file, bounds_name, time().units(), m_grid->ctx()->unit_system());
 
   // time bounds data overrides the time variable: we make t[j] be the
   // left end-point of the j-th interval

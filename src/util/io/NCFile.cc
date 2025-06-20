@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -155,7 +155,7 @@ void NCFile::put_vara_double(const std::string &variable_name,
 
 
 void NCFile::write_darray(const std::string &variable_name,
-                          const Grid &grid,
+                          const grid::DistributedGridInfo &grid,
                           unsigned int z_count,
                           bool time_dependent,
                           unsigned int record,
@@ -168,7 +168,7 @@ void NCFile::write_darray(const std::string &variable_name,
  * The default implementation computes start and count and calls put_vara_double()
  */
 void NCFile::write_darray_impl(const std::string &variable_name,
-                               const Grid &grid,
+                               const grid::DistributedGridInfo &grid,
                                unsigned int z_count,
                                bool time_dependent,
                                unsigned int record,
@@ -176,11 +176,11 @@ void NCFile::write_darray_impl(const std::string &variable_name,
   std::vector<unsigned int> start, count;
 
   if (time_dependent) {
-    start = { record, (unsigned)grid.ys(), (unsigned)grid.xs(), 0 };
-    count = { 1,      (unsigned)grid.ym(), (unsigned)grid.xm(), z_count };
+    start = { record, grid.ys, grid.xs, 0 };
+    count = {      1, grid.ym, grid.xm, z_count };
   } else {
-    start = { (unsigned)grid.ys(), (unsigned)grid.xs(), 0 };
-    count = { (unsigned)grid.ym(), (unsigned)grid.xm(), z_count };
+    start = { grid.ys, grid.xs, 0 };
+    count = { grid.ym, grid.xm, z_count };
   }
 
   this->put_vara_double(variable_name, start, count, input);

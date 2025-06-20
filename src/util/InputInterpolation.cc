@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 PISM Authors
+/* Copyright (C) 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,6 +31,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Config.hh"
 
 #if (Pism_USE_YAC_INTERPOLATION == 1)
 #include "InputInterpolationYAC.hh"
@@ -75,9 +76,10 @@ InputInterpolation3D::InputInterpolation3D(const Grid &target_grid,
 
   input_grid.report(*log, 4, unit_system);
 
-  io::check_input_grid(input_grid, target_grid, levels);
+  bool allow_extrapolation = target_grid.ctx()->config()->get_flag("grid.allow_extrapolation");
+  io::check_input_grid(input_grid, target_grid.info(), levels, allow_extrapolation);
 
-  m_interp_context = std::make_shared<LocalInterpCtx>(input_grid, target_grid, levels, type);
+  m_interp_context = std::make_shared<LocalInterpCtx>(input_grid, target_grid.info(), levels, type);
 }
 
 
@@ -95,6 +97,7 @@ double InputInterpolation3D::regrid_impl(const SpatialVariableMetadata &metadata
     context.start[T_AXIS] = record_index;
 
     io::regrid_spatial_variable(metadata, target_grid, context, file,
+                                *target_grid.ctx()->log(),
                                 output_array.get());
   }
   double end = get_time(target_grid.com);

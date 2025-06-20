@@ -48,7 +48,7 @@
 namespace pism {
 
 //! Internal structures of Grid.
-struct Grid::Impl {
+struct Grid::Impl : public grid::DistributedGridInfo {
   Impl(std::shared_ptr<const Context> context);
 
   std::shared_ptr<petsc::DM> create_dm(unsigned int da_dof, unsigned int stencil_width) const;
@@ -61,49 +61,10 @@ struct Grid::Impl {
 
   MappingInfo mapping_info;
 
-  // int to match types used by MPI
-  int rank;
-  int size;
-
   //! @brief array containing lenghts (in the x-direction) of processor sub-domains
   std::vector<PetscInt> procs_x;
   //! @brief array containing lenghts (in the y-direction) of processor sub-domains
   std::vector<PetscInt> procs_y;
-
-  grid::Periodicity periodicity;
-
-  grid::Registration registration;
-
-  //! x-coordinates of grid points
-  std::vector<double> x;
-  //! y-coordinates of grid points
-  std::vector<double> y;
-  //! vertical grid levels in the ice; correspond to the storage grid
-  std::vector<double> z;
-
-  int xs, xm, ys, ym;
-  //! horizontal grid spacing
-  double dx;
-  //! horizontal grid spacing
-  double dy;
-  //! cell area (meters^2)
-  double cell_area;
-  //! number of grid points in the x-direction
-  unsigned int Mx;
-  //! number of grid points in the y-direction
-  unsigned int My;
-
-  int max_patch_size;
-
-  //! x-coordinate of the grid center
-  double x0;
-  //! y-coordinate of the grid center
-  double y0;
-
-  //! half width of the ice model grid in x-direction (m)
-  double Lx;
-  //! half width of the ice model grid in y-direction (m)
-  double Ly;
 
   std::map<std::array<unsigned int, 2>, std::weak_ptr<petsc::DM> > dms;
 
@@ -121,6 +82,9 @@ struct Grid::Impl {
   gsl_interp_accel *bsearch_accel;
 
   std::map<std::string, std::shared_ptr<InputInterpolation>> regridding_2d;
+
+  //! z coordinates within the ice
+  std::vector<double> z;
 };
 
 Grid::Impl::Impl(std::shared_ptr<const Context> context)
@@ -289,7 +253,8 @@ unsigned int Grid::kBelowHeight(double height) const {
                                   height, Lz());
   }
 
-  return gsl_interp_accel_find(m_impl->bsearch_accel, m_impl->z.data(), m_impl->z.size(), height);
+  return gsl_interp_accel_find(m_impl->bsearch_accel, m_impl->z.data(), m_impl->z.size(),
+                               height);
 }
 
 
@@ -541,6 +506,10 @@ std::shared_ptr<const Context> Grid::ctx() const {
   return m_impl->ctx;
 }
 
+const grid::DistributedGridInfo& Grid::info() const {
+  return *m_impl;
+}
+
 //! @brief Create a DM with the given number of `dof` (degrees of freedom per grid point) and
 //! stencil width.
 std::shared_ptr<petsc::DM> Grid::Impl::create_dm(unsigned int da_dof, unsigned int stencil_width) const {
@@ -665,9 +634,10 @@ double Grid::cell_area() const {
 
 //! Minimum vertical spacing.
 double Grid::dz_min() const {
-  double result = m_impl->z.back();
-  for (unsigned int k = 0; k < m_impl->z.size() - 1; ++k) {
-    const double dz = m_impl->z[k + 1] - m_impl->z[k];
+  const auto &z = m_impl->z;
+  double result = z.back();
+  for (unsigned int k = 0; k < z.size() - 1; ++k) {
+    const double dz = z[k + 1] - z[k];
     result          = std::min(dz, result);
   }
   return result;
@@ -675,9 +645,10 @@ double Grid::dz_min() const {
 
 //! Maximum vertical spacing.
 double Grid::dz_max() const {
+  const auto &z = m_impl->z;
   double result = 0.0;
-  for (unsigned int k = 0; k < m_impl->z.size() - 1; ++k) {
-    const double dz = m_impl->z[k + 1] - m_impl->z[k];
+  for (unsigned int k = 0; k < z.size() - 1; ++k) {
+    const double dz = z[k + 1] - z[k];
     result          = std::max(dz, result);
   }
   return result;
@@ -876,9 +847,6 @@ void InputGridInfo::reset() {
   y0 = 0;
   Ly = 0;
 
-  z_min = 0;
-  z_max = 0;
-
   longitude_latitude = false;
 }
 
@@ -905,8 +873,10 @@ void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr 
   }
 
   if (z.size() > 1) {
+    auto z_min = vector_min(z);
+    auto z_max = vector_max(z);
     log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(),
-                this->z_min, this->z_max);
+                z_min, z_max);
   }
 
   log.message(threshold, "  t:  %5d records\n\n", this->t_len);
@@ -997,9 +967,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
         break;
       }
       case Z_AXIS: {
-        this->z     = data;
-        this->z_min = v_min;
-        this->z_max = v_max;
+        this->z = data;
         break;
       }
       case T_AXIS: {
@@ -1606,16 +1574,21 @@ void Grid::forget_interpolations() {
   m_impl->regridding_2d.clear();
 }
 
-PointsWithGhosts::PointsWithGhosts(const Grid &grid, unsigned int stencil_width) {
+PointsWithGhosts::PointsWithGhosts(const grid::DistributedGridInfo &grid, unsigned int stencil_width) {
   int W = static_cast<int>(stencil_width);
-  m_i_first = grid.xs() - W;
-  m_i_last  = grid.xs() + grid.xm() + W - 1;
-  m_j_first = grid.ys() - W;
-  m_j_last  = grid.ys() + grid.ym() + W - 1;
+  m_i_first = grid.xs - W;
+  m_i_last  = grid.xs + grid.xm + W - 1;
+  m_j_first = grid.ys - W;
+  m_j_last  = grid.ys + grid.ym + W - 1;
 
   m_i    = m_i_first;
   m_j    = m_j_first;
   m_done = false;
+}
+
+PointsWithGhosts::PointsWithGhosts(const Grid &grid, unsigned int stencil_width)
+  : PointsWithGhosts(grid.info(), stencil_width) {
+  // empty
 }
 
 } // end of namespace pism

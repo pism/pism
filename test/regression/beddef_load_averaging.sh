@@ -39,6 +39,8 @@ ctx = PISM.Context().ctx
 
 ice_density = ctx.config().get_number("constants.ice.density")
 
+ctx.config().set_string("time.calendar", "360_day")
+
 Lx = 500e3
 M = 5
 grid = PISM.Grid.Shallow(ctx, Lx, Lx, 0, 0, M, M, PISM.CELL_CENTER, PISM.NOT_PERIODIC)
@@ -70,7 +72,7 @@ def input_data(thickness, filename):
     thk.metadata(0).standard_name("land_ice_thickness").units("m")
 
     try:
-        f = PISM.util.prepare_output(filename, calendar="360_day")
+        f = PISM.util.prepare_output(filename)
         thk.write(f)
         bed.write(f)
     finally:

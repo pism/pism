@@ -209,24 +209,22 @@ protected:
   virtual void initialize_2d();
 
   enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
-  virtual void save_variables(const File &file,
+  virtual void save_variables(const OutputFile &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
-                              double time,
-                              io::Type default_diagnostics_type = io::PISM_FLOAT) const;
+                              double time) const;
 
-  virtual void define_model_state(const File &file) const;
-  virtual void write_model_state(const File &file) const;
+  virtual void define_model_state(const OutputFile &file) const;
+  virtual void write_model_state(const OutputFile &file) const;
+  virtual void define_run_stats(const OutputFile &file) const;
+  virtual void write_run_stats(const OutputFile &file) const;
 
-  enum HistoryTreatment {OVERWRITE_HISTORY = 0, PREPEND_HISTORY};
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
-  virtual void write_metadata(const File &file, MappingTreatment mapping_flag,
-                              HistoryTreatment history_flag) const;
+  virtual void write_metadata(const OutputFile &file, MappingTreatment mapping_flag) const;
 
-  virtual void define_diagnostics(const File &file,
-                                  const std::set<std::string> &variables,
-                                  io::Type default_type) const;
-  virtual void write_diagnostics(const File &file,
+  virtual void define_diagnostics(const OutputFile &file,
+                                  const std::set<std::string> &variables) const;
+  virtual void write_diagnostics(const OutputFile &file,
                                  const std::set<std::string> &variables) const;
 
   std::string save_state_on_error(const std::string &suffix,
@@ -245,8 +243,11 @@ protected:
   //! Time manager
   std::shared_ptr<Time> m_time;
 
+  std::shared_ptr<OutputWriter> m_output_writer;
+  
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
+  std::string m_output_history;
 
   //! the list of sub-models, for writing model states and obtaining diagnostics
   std::map<std::string,const Component*> m_submodels;
@@ -385,7 +386,7 @@ protected:
 
   // see iMutil.cc
   virtual int process_signals();
-  virtual void prepend_history(const std::string &string);
+  virtual void append_history(const std::string &string);
   VariableMetadata run_stats() const;
 
   // working space (a convenience)
@@ -423,7 +424,7 @@ protected:
 
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
-  std::shared_ptr<File> m_snapshot_file;
+  std::shared_ptr<OutputFile> m_snapshot_file;
   bool m_split_snapshots;
   std::vector<double> m_snapshot_times;
   std::set<std::string> m_snapshot_vars;
@@ -433,7 +434,7 @@ protected:
   MaxTimestep save_max_timestep(double my_t);
 
   //! file to write scalar time-series to
-  std::string m_ts_filename;
+  std::shared_ptr<OutputFile> m_ts_file;
   //! requested times for scalar time-series
   std::shared_ptr<std::vector<double>> m_ts_times;
   std::set<std::string> m_ts_vars;
@@ -442,13 +443,12 @@ protected:
   MaxTimestep ts_max_timestep(double my_t);
 
   // spatially-varying time-series
-  bool m_split_extra;
   std::string m_extra_filename;
   std::vector<double> m_extra_times;
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
-  std::unique_ptr<File> m_extra_file;
+  std::shared_ptr<OutputFile> m_extra_file;
   void init_extras();
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);
@@ -473,8 +473,6 @@ protected:
 private:
   double m_start_time;    // this is used in the wall-clock-time checkpoint code
 };
-
-void write_run_stats(const File &file, const pism::VariableMetadata &stats);
 
 MaxTimestep reporting_max_timestep(const std::vector<double> &times,
                                    double t,

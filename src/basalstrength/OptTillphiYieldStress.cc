@@ -28,6 +28,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -272,23 +273,22 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
   } // end of the loop over grid points
 }
 
-void OptTillphiYieldStress::define_model_state_impl(const File &output) const {
+void OptTillphiYieldStress::define_model_state_impl(const OutputFile &output) const {
   MohrCoulombYieldStress::define_model_state_impl(output);
+  {
+    VariableMetadata t(m_time_name, m_sys);
+    t.long_name("time of the last update of the till friction angle")
+        .units(time().units());
+    t["calendar"] = time().calendar();
 
-  if (not output.variable_exists(m_time_name)) {
-    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
-
-    output.write_attribute(m_time_name, "long_name",
-                           "time of the last update of the till friction angle");
-    output.write_attribute(m_time_name, "calendar", time().calendar());
-    output.write_attribute(m_time_name, "units", time().units_string());
+    output.define_variable(t, {});
   }
 }
 
-void OptTillphiYieldStress::write_model_state_impl(const File &output) const {
+void OptTillphiYieldStress::write_model_state_impl(const OutputFile &output) const {
   MohrCoulombYieldStress::write_model_state_impl(output);
 
-  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
+  output.write_array(m_time_name, { 0 }, { 1 }, { m_t_last });
 }
 
 DiagnosticList OptTillphiYieldStress::diagnostics_impl() const {

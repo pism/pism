@@ -22,6 +22,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
@@ -168,14 +169,14 @@ const array::Scalar &InitializationHelper::runoff_impl() const {
   return *m_runoff;
 }
 
-void InitializationHelper::define_model_state_impl(const File &output) const {
+void InitializationHelper::define_model_state_impl(const OutputFile &output) const {
   for (auto *v : m_variables) {
-    v->define(output, io::PISM_DOUBLE);
+    v->define(output);
   }
   m_input_model->define_model_state(output);
 }
 
-void InitializationHelper::write_model_state_impl(const File &output) const {
+void InitializationHelper::write_model_state_impl(const OutputFile &output) const {
   for (auto *v : m_variables) {
     v->write(output);
   }

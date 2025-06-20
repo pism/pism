@@ -46,6 +46,8 @@
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/util/InputInterpolation.hh"
+#include "pism/util/io/OutputWriter.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 
@@ -87,11 +89,11 @@ Array::Array(std::shared_ptr<const Grid> grid, const std::string &name, Kind gho
   if (m_impl->dof > 1) {
     // dof > 1: this is a 2D vector
     for (unsigned int j = 0; j < m_impl->dof; ++j) {
-      m_impl->metadata.push_back({ system, pism::printf("%s[%d]", name.c_str(), j) });
+      m_impl->metadata.push_back({ system, pism::printf("%s[%d]", name.c_str(), j), *grid });
     }
   } else {
     // both 2D and 3D vectors
-    m_impl->metadata = { { system, name, zlevels } };
+    m_impl->metadata = { { system, name, *grid, zlevels } };
   }
 
   if (zlevels.size() > 1) {
@@ -461,38 +463,32 @@ void Array::read_impl(const File &file, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an Array in a file opened using `file`.
-void Array::define(const File &file, io::Type default_type) const {
+void Array::define(const OutputFile &file) const {
   for (unsigned int j = 0; j < ndof(); ++j) {
-    io::Type type = metadata(j).get_output_type();
-    if (type == io::PISM_NAT) {
-      type = default_type;
-    }
-
-    io::define_spatial_variable(metadata(j), *m_impl->grid, file, type);
+    file.define_spatial_variable(metadata(j), grid()->info());
   }
 }
 
 //! @brief Returns a reference to the SpatialVariableMetadata object
 //! containing metadata for the compoment N.
-SpatialVariableMetadata& Array::metadata(unsigned int N) {
+SpatialVariableMetadata &Array::metadata(unsigned int N) {
   assert(N < m_impl->dof);
   return m_impl->metadata[N];
 }
 
-const SpatialVariableMetadata& Array::metadata(unsigned int N) const {
+const SpatialVariableMetadata &Array::metadata(unsigned int N) const {
   assert(N < m_impl->dof);
   return m_impl->metadata[N];
 }
 
 //! Writes an Array to a NetCDF file.
-void Array::write_impl(const File &file) const {
-  auto log = m_impl->grid->ctx()->log();
+void Array::write_impl(const OutputFile &file) const {
+  auto log  = grid()->ctx()->log();
   auto time = timestamp(m_impl->grid->com);
 
   // The simplest case:
   if (ndof() == 1) {
-    log->message(3, "[%s] Writing %s...\n",
-                 time.c_str(), metadata(0).get_name().c_str());
+    log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(0).get_name().c_str());
 
     if (m_impl->ghosted) {
       petsc::TemporaryGlobalVec tmp(dm());
@@ -501,17 +497,17 @@ void Array::write_impl(const File &file) const {
 
       petsc::VecArray tmp_array(tmp);
 
-      io::write_spatial_variable(metadata(0), *grid(), file, tmp_array.get());
+      file.write_spatial_variable(metadata(0), tmp_array.get());
     } else {
       petsc::VecArray v_array(vec());
-      io::write_spatial_variable(metadata(0), *grid(), file, v_array.get());
+      file.write_spatial_variable(metadata(0), v_array.get());
     }
     return;
   }
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  auto da2 = m_impl->grid->get_dm(1, 0);
+  auto da2 = grid()->get_dm(1, 0);
 
   // a temporary one-component vector, distributed across processors
   // the same way v is
@@ -521,24 +517,26 @@ void Array::write_impl(const File &file) const {
     get_dof(da2, tmp, j);
 
     petsc::VecArray tmp_array(tmp);
-    log->message(3, "[%s] Writing %s...\n",
-                 time.c_str(), metadata(j).get_name().c_str());
-    io::write_spatial_variable(metadata(j), *grid(), file, tmp_array.get());
+    log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(j).get_name().c_str());
+    file.write_spatial_variable(metadata(j), tmp_array.get());
   }
 }
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void Array::dump(const char filename[]) const {
-  File file(m_impl->grid->com, filename,
-            string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE_CLOBBER);
+  auto writer = std::make_shared<SynchronousOutputWriter>(grid()->com, *grid()->ctx()->config());
 
-  if (not m_impl->metadata[0].get_time_independent()) {
-    io::define_time(file, *m_impl->grid->ctx());
-    io::append_time(file, *m_impl->grid->ctx()->config(), m_impl->grid->ctx()->time()->current());
+  OutputFile file(writer, filename);
+
+  if (not metadata(0).get_time_independent()) {
+    auto time = m_impl->grid->ctx()->time();
+
+    file.define_dimension(time->variable_name(), io::PISM_UNLIMITED);
+    file.define_variable(time->metadata(), { time->variable_name() });
+    file.append_time(time->current());
   }
 
-  define(file, io::PISM_DOUBLE);
+  define(file);
   write(file);
 }
 
@@ -657,7 +655,8 @@ void Array::check_array_indices(int i, int j, unsigned int k) const {
   }
 
   if (m_array == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s: begin_access() was not called", m_impl->name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s: begin_access() was not called",
+                                  m_impl->name.c_str());
   }
 }
 
@@ -718,15 +717,6 @@ std::vector<double> Array::norm(int n) const {
   } else {
     return result;
   }
-}
-
-void Array::write(const std::string &filename) const {
-  // We expect the file to be present and ready to write into.
-  File file(m_impl->grid->com, filename,
-            string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE);
-
-  this->write(file);
 }
 
 void Array::read(const std::string &filename, unsigned int time) {
@@ -835,8 +825,8 @@ void Array::read(const File &file, const unsigned int time) {
   inc_state_counter();          // mark as modified
 }
 
-void Array::write(const File &file) const {
-  define(file, io::PISM_DOUBLE);
+void Array::write(const OutputFile &file) const {
+  define(file);
 
   MPI_Comm com = m_impl->grid->com;
   double start_time = get_time(com);

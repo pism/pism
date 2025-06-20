@@ -61,12 +61,12 @@ void Verification::init_impl(const Geometry &geometry) {
   update(geometry, time().current(), 0);
 }
 
-void Verification::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output, io::PISM_DOUBLE);
-  m_temperature->define(output, io::PISM_DOUBLE);
+void Verification::define_model_state_impl(const OutputFile &output) const {
+  m_mass_flux->define(output);
+  m_temperature->define(output);
 }
 
-void Verification::write_model_state_impl(const File &output) const {
+void Verification::write_model_state_impl(const OutputFile &output) const {
   m_mass_flux->write(output);
   m_temperature->write(output);
 }

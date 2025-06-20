@@ -103,13 +103,13 @@ const array::Scalar& IBSurfaceModel::runoff_impl() const {
   return *m_runoff;
 }
 
-void IBSurfaceModel::define_model_state_impl(const File &output) const {
+void IBSurfaceModel::define_model_state_impl(const OutputFile &output) const {
   for (const auto *v : {&massxfer, &enthxfer, &deltah, &ice_top_bc_temp, &ice_top_bc_wc}) {
-    v->define(output, io::PISM_DOUBLE);
+    v->define(output);
   }
 }
 
-void IBSurfaceModel::write_model_state_impl(const File &output) const {
+void IBSurfaceModel::write_model_state_impl(const OutputFile &output) const {
   for (const auto *v : {&massxfer, &enthxfer, &deltah, &ice_top_bc_temp, &ice_top_bc_wc}) {
     v->write(output);
   }

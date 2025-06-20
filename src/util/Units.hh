@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -74,7 +74,9 @@ public:
   double time(const DateTime &d, const std::string &calendar) const;
 
   Unit& operator=(const Unit& other);
-  std::string format() const;
+  std::string string() const;
+
+  operator std::string() const;
 
   System::Ptr system() const;
 private:

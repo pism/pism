@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2025 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 #include <cmath>
 #include <string>
 
+#include "Grid.hh"
 #include "pism/util/VariableMetadata.hh"
 
 #include "pism/util/Logger.hh"
@@ -37,7 +38,7 @@ VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr s
       m_unit_system(std::move(system)),
       m_short_name(name),
       m_time_independent(false),
-      m_output_type(io::PISM_NAT) {
+      m_output_type(io::PISM_DOUBLE) {
 
   clear();
 
@@ -121,24 +122,37 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
     }
   }
 }
+DimensionMetadata::DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
+                                     unsigned int length)
+    : VariableMetadata(name, system), m_length(length) {
+  // empty
+}
 
-SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
-                                                 const std::vector<double> &zlevels)
+unsigned int DimensionMetadata::length() const {
+  return m_length;
+}
+
+SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,
+                                                 const std::string &name, unsigned int Mx,
+                                                 double dx, unsigned int My, double dy,
+                                                 const std::vector<double> &levels)
     : VariableMetadata(name, system),
-      m_x("x", system),
-      m_y("y", system),
-      m_z("z", system),
-      m_zlevels(zlevels) {
+      m_x("x", system, Mx),
+      m_y("y", system, My),
+      m_z("z", system, std::max(levels.size(), (size_t)1)),
+      m_zlevels(levels) {
 
-  m_x["axis"]          = "X";
-  m_x["long_name"]     = "X-coordinate in Cartesian system";
-  m_x["standard_name"] = "projection_x_coordinate";
-  m_x["units"]         = "m";
+  m_x["axis"]           = "X";
+  m_x["long_name"]      = "X-coordinate in Cartesian system";
+  m_x["standard_name"]  = "projection_x_coordinate";
+  m_x["units"]          = "m";
+  m_x["spacing_meters"] = { dx };
 
-  m_y["axis"]          = "Y";
-  m_y["long_name"]     = "Y-coordinate in Cartesian system";
-  m_y["standard_name"] = "projection_y_coordinate";
-  m_y["units"]         = "m";
+  m_y["axis"]           = "Y";
+  m_y["long_name"]      = "Y-coordinate in Cartesian system";
+  m_y["standard_name"]  = "projection_y_coordinate";
+  m_y["units"]          = "m";
+  m_y["spacing_meters"] = { dy };
 
   if (m_zlevels.size() > 1) {
     m_z.set_name("z"); // default; can be overridden easily
@@ -148,10 +162,33 @@ SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, cons
     m_z["positive"]  = "up";
 
     m_n_spatial_dims = 3;
+
+    {
+      auto nlevels = m_z.length();
+
+      double dz_max = levels[1] - levels[0];
+      double dz_min = levels.back() - levels.front();
+
+      for (unsigned int k = 0; k < nlevels - 1; ++k) {
+        double dz = levels[k + 1] - levels[k];
+        dz_max    = std::max(dz_max, dz);
+        dz_min    = std::min(dz_min, dz);
+      }
+
+      m_z["spacing_min_meters"] = { dz_min };
+      m_z["spacing_max_meters"] = { dz_max };
+    }
   } else {
     z().set_name("").clear();
     m_n_spatial_dims = 2;
   }
+}
+
+SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,
+                                                 const std::string &name, const Grid &grid,
+                                                 const std::vector<double> &levels)
+    : SpatialVariableMetadata(system, name, grid.Mx(), grid.dx(), grid.My(), grid.dy(), levels) {
+  // empty
 }
 
 const std::vector<double> &SpatialVariableMetadata::levels() const {
@@ -184,27 +221,27 @@ void VariableMetadata::report_range(const Logger &log, double min, double max) c
               name.c_str(), info.c_str(), spacer.c_str(), range.c_str());
 }
 
-VariableMetadata &SpatialVariableMetadata::x() {
+DimensionMetadata &SpatialVariableMetadata::x() {
   return m_x;
 }
 
-VariableMetadata &SpatialVariableMetadata::y() {
+DimensionMetadata &SpatialVariableMetadata::y() {
   return m_y;
 }
 
-VariableMetadata &SpatialVariableMetadata::z() {
+DimensionMetadata &SpatialVariableMetadata::z() {
   return m_z;
 }
 
-const VariableMetadata &SpatialVariableMetadata::x() const {
+const DimensionMetadata &SpatialVariableMetadata::x() const {
   return m_x;
 }
 
-const VariableMetadata &SpatialVariableMetadata::y() const {
+const DimensionMetadata &SpatialVariableMetadata::y() const {
   return m_y;
 }
 
-const VariableMetadata &SpatialVariableMetadata::z() const {
+const DimensionMetadata &SpatialVariableMetadata::z() const {
   return m_z;
 }
 
@@ -311,12 +348,15 @@ VariableMetadata &VariableMetadata::set_string(const std::string &name, const st
   } else if (name == "output_units") {
     m_strings[name] = value;
 
-    units::Unit internal(m_unit_system, get_string("units"));
-    units::Unit output(m_unit_system, value);
+    if (not value.empty()) {
+      units::Unit internal(m_unit_system, get_string("units"));
+      units::Unit output(m_unit_system, value);
 
-    if (not units::are_convertible(internal, output)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "units \"%s\" and \"%s\" are not compatible",
-                                    get_string("units").c_str(), value.c_str());
+      if (not units::are_convertible(internal, output)) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "units \"%s\" and \"%s\" are not compatible",
+                                      get_string("units").c_str(), value.c_str());
+      }
     }
   } else if (name == "short_name") {
     set_name(name);

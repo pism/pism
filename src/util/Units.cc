@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2023 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -138,9 +138,14 @@ bool Unit::is_convertible(const Unit &other) const {
   return ut_are_convertible(m_impl->unit, other.m_impl->unit) != 0;
 }
 
-std::string Unit::format() const {
+std::string Unit::string() const {
   return m_impl->unit_string;
 }
+
+Unit::operator std::string() const {
+  return m_impl->unit_string;
+}
+
 
 void Unit::reset() {
   m_impl->reset();
@@ -198,7 +203,7 @@ struct Converter::Impl {
     }
 
     converter = ut_get_converter(u1.m_impl->unit, u2.m_impl->unit);
-    if (not converter) {
+    if (converter == nullptr) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "cannot create a converter from %s to %s",
                                     spec1.c_str(), spec2.c_str());
@@ -208,14 +213,14 @@ struct Converter::Impl {
   Impl(const Unit &u1, const Unit &u2) {
     if (not u1.is_convertible(u2)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert '%s' to '%s'",
-                                    u1.format().c_str(), u2.format().c_str());
+                                    u1.string().c_str(), u2.string().c_str());
     }
 
     converter = ut_get_converter(u1.m_impl->unit, u2.m_impl->unit);
-    if (not converter) {
+    if (converter == nullptr) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "failed to create a converter from '%s' to '%s'",
-                                    u1.format().c_str(), u2.format().c_str());
+                                    u1.string().c_str(), u2.string().c_str());
     }
 
   }

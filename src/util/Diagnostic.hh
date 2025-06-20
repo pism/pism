@@ -25,13 +25,15 @@
 
 #include "pism/util/Config.hh"
 #include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/OutputWriter.hh"
 
 namespace pism {
+namespace grid {
+class DistributedGridInfo;
+}
 
 class Grid;
 
@@ -74,21 +76,21 @@ public:
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated Array.
   std::shared_ptr<array::Array> compute() const;
 
+  const grid::DistributedGridInfo &grid_info() const;
+
   unsigned int n_variables() const;
 
   SpatialVariableMetadata &metadata(unsigned int N = 0);
 
-  void define(const File &file, io::Type default_type) const;
-
   void init(const File &input, unsigned int time);
-  void define_state(const File &output) const;
-  void write_state(const File &output) const;
+  void define_state(const OutputFile &output) const;
+  void write_state(const OutputFile &output) const;
 
 protected:
-  virtual void define_impl(const File &file, io::Type default_type) const;
   virtual void init_impl(const File &input, unsigned int time);
-  virtual void define_state_impl(const File &output) const;
-  virtual void write_state_impl(const File &output) const;
+
+  virtual void define_state_impl(const OutputFile &output) const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual void update_impl(double dt);
   virtual void reset_impl();
@@ -213,21 +215,18 @@ protected:
     }
   }
 
-  void define_state_impl(const File &output) const {
-    m_accumulator.define(output, io::PISM_DOUBLE);
-    io::define_timeseries(m_time_since_reset,
-                          Diagnostic::m_config->get_string("time.dimension_name"), output,
-                          io::PISM_DOUBLE);
+  void define_state_impl(const OutputFile &output) const {
+    auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
+    m_accumulator.define(output);
+    output.define_variable(m_time_since_reset, { time_name });
   }
 
-  void write_state_impl(const File &output) const {
+  void write_state_impl(const OutputFile &output) const {
     m_accumulator.write(output);
 
-    auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
-
-    unsigned int time_length = output.dimension_length(time_name);
+    unsigned int time_length = output.time_dimension_length();
     unsigned int t_start     = time_length > 0 ? time_length - 1 : 0;
-    io::write_timeseries(output, m_time_since_reset, t_start, { m_interval_length });
+    output.write_array(m_time_since_reset, { t_start }, { 1 }, { m_interval_length });
   }
 
   virtual void update_impl(double dt) {
@@ -286,7 +285,8 @@ public:
 
   void flush();
 
-  void init(const File &output_file, std::shared_ptr<std::vector<double> > requested_times);
+  void init(std::shared_ptr<OutputFile> output_file,
+            std::shared_ptr<std::vector<double> > requested_times);
 
   const VariableMetadata &metadata() const;
 
@@ -333,7 +333,7 @@ protected:
 
   //! the name of the file to save to (stored here because it is used by flush(), which is called
   //! from update())
-  std::string m_output_filename;
+  std::shared_ptr<OutputFile> m_output_file;
   //! starting index used when flushing the buffer
   unsigned int m_start;
   //! size of the buffer used to store data

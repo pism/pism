@@ -22,6 +22,7 @@
 #include <vector>
 #include <memory>
 
+#include "VariableMetadata.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Config.hh"
@@ -86,9 +87,12 @@ public:
 
   std::vector<double> parse_times(const std::string &spec) const;
 
-  //! Internal time units as a string.
-  std::string units_string() const;
+  //! Name of the NetCDF variable to use
+  std::string variable_name() const;
 
+  //! Metadata of the NetCDF variable for writing to an output file.
+  VariableMetadata metadata() const;
+  
   /*!
    * Internal time units.
    */
@@ -149,6 +153,8 @@ protected:
   const units::System::Ptr m_unit_system;
   units::Unit m_time_units;
 
+  std::string m_variable_name;
+  
   //! Time resolution, in seconds.
   double m_t_eps;
 

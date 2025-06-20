@@ -157,8 +157,8 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
     T_pm = m_config->get_number("constants.fresh_water.melting_point_temperature"),
     residual_water_fraction = m_config->get_number("energy.ch_warming.residual_water_fraction");
 
-  const std::vector<double> &z = m_grid->z();
-  const unsigned int Mz = m_grid->Mz();
+  const std::vector<double> &z = m_ice_enthalpy.levels();
+  const unsigned int Mz = z.size();
 
   ParallelSection loop(m_grid->com);
   try {
@@ -233,11 +233,11 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   loop.check();
 }
 
-void CHSystem::define_model_state_impl(const File &output) const {
-  m_ice_enthalpy.define(output, io::PISM_DOUBLE);
+void CHSystem::define_model_state_impl(const OutputFile &output) const {
+  m_ice_enthalpy.define(output);
 }
 
-void CHSystem::write_model_state_impl(const File &output) const {
+void CHSystem::write_model_state_impl(const OutputFile &output) const {
   m_ice_enthalpy.write(output);
 }
 
@@ -258,8 +258,8 @@ void cryo_hydrologic_warming_flux(double k,
 
   auto grid = result.grid();
 
-  const auto &z = grid->z();
-  auto Mz = grid->Mz();
+  const auto &z = ice_enthalpy.levels();
+  auto Mz       = z.size();
 
   auto EC = grid->ctx()->enthalpy_converter();
 

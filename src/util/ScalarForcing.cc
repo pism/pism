@@ -96,7 +96,7 @@ void ScalarForcing::initialize(const Context &ctx,
 
       std::vector<double> times{};
       std::vector<double> bounds{};
-      io::read_time_info(unit_system, file, time_name, ctx.time()->units_string(), times, bounds);
+      io::read_time_info(unit_system, file, time_name, ctx.time()->units(), times, bounds);
       size_t N = times.size();
 
       // Compute values used to extend data read from file

@@ -32,7 +32,19 @@ using namespace pism;
 %rename(_regrid) pism::array::Array::regrid;
 %extend pism::array::Array
 {
-  %pythoncode "Array.py"
+    void write(const std::string &filename) const {
+      auto grid = $self->grid();
+      const auto &config = *grid->ctx()->config();
+      auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, config);
+
+      // We expect the file to be present and ready to write into.
+      OutputFile file(writer, filename);
+      file.append();
+
+      $self->write(file);
+    }
+
+    %pythoncode "Array.py"
 }
 
 // Shenanigans to allow python indexing to get at array::Array entries.  I couldn't figure out a more

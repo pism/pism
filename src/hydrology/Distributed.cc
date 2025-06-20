@@ -25,6 +25,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace hydrology {
@@ -97,12 +98,12 @@ void Distributed::init_impl(const array::Scalar &W_till,
   m_P.copy_from(P);
 }
 
-void Distributed::define_model_state_impl(const File &output) const {
+void Distributed::define_model_state_impl(const OutputFile &output) const {
   Routing::define_model_state_impl(output);
-  m_P.define(output, io::PISM_DOUBLE);
+  m_P.define(output);
 }
 
-void Distributed::write_model_state_impl(const File &output) const {
+void Distributed::write_model_state_impl(const OutputFile &output) const {
   Routing::write_model_state_impl(output);
   m_P.write(output);
 }

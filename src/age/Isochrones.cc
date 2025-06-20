@@ -35,6 +35,9 @@
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -93,9 +96,9 @@ static std::shared_ptr<array::Array3D> allocate_layer_thickness(std::shared_ptr<
                    isochrone_depth_variable_name, layer_thickness_variable_name);
   auto &z = result->metadata(0).z();
   z.clear()
-      .set_name(deposition_time_variable_name)
-      .long_name(z_description)
-      .units(time->units_string());
+    .set_name(deposition_time_variable_name)
+    .long_name(z_description)
+    .units(time->units());
   z["calendar"] = time->calendar();
 
   return result;
@@ -236,21 +239,21 @@ std::vector<double> deposition_times(const Config &config, const Time &time) {
  * Uses bilinear interpolation in the X and Y directions.
  */
 static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<const Grid> grid,
-                                                              const File &input_file, int record) {
+                                                              const File &file, int record) {
 
-  auto result = details::allocate_layer_thickness(grid, deposition_times(input_file));
+  auto result = details::allocate_layer_thickness(grid, deposition_times(file));
 
   auto N = (int)result->levels().size();
 
   auto metadata = result->metadata(0);
 
-  auto variable_info = input_file.find_variable(metadata.get_name(), metadata["standard_name"]);
+  auto variable_info = file.find_variable(metadata.get_name(), metadata["standard_name"]);
 
-  grid::InputGridInfo input_grid(input_file, variable_info.name, metadata.unit_system(),
+  grid::InputGridInfo input_grid(file, variable_info.name, metadata.unit_system(),
                                  grid->registration());
 
   // Set up 2D interpolation:
-  LocalInterpCtx lic(input_grid, *grid, LINEAR);
+  LocalInterpCtx lic(input_grid, grid->info(), LINEAR);
   lic.start[T_AXIS] = record;
   lic.count[T_AXIS] = 1;
   lic.start[Z_AXIS] = 0;
@@ -269,7 +272,9 @@ static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<co
   }
 
   petsc::VecArray tmp(result->vec());
-  io::regrid_spatial_variable(metadata, *grid, lic, input_file, tmp.get());
+  io::regrid_spatial_variable(metadata, *grid, lic, file,
+                              *grid->ctx()->log(),
+                              tmp.get());
 
   return result;
 }
@@ -782,14 +787,14 @@ MaxTimestep Isochrones::max_timestep_deposition_times(double t) const {
  *
  * We are saving layer thicknesses, deposition times, and the number of active layers.
  */
-void Isochrones::define_model_state_impl(const File &output) const {
-  m_layer_thickness->define(output, io::PISM_DOUBLE);
+void Isochrones::define_model_state_impl(const OutputFile &output) const {
+  m_layer_thickness->define(output);
 }
 
 /*!
  * Write the model state to an output file.
  */
-void Isochrones::write_model_state_impl(const File &output) const {
+void Isochrones::write_model_state_impl(const OutputFile &output) const {
   m_layer_thickness->write(output);
 }
 
@@ -807,7 +812,8 @@ public:
 
     const auto &time = m_grid->ctx()->time();
 
-    m_vars = { { m_sys, isochrone_depth_variable_name, model->layer_thicknesses().levels() } };
+    m_vars = { { m_sys, isochrone_depth_variable_name, *m_grid,
+                 model->layer_thicknesses().levels() } };
 
     auto description = pism::printf("depth below surface of isochrones for times in '%s'",
                                     deposition_time_variable_name);
@@ -818,7 +824,7 @@ public:
         .set_name(deposition_time_variable_name)
         .long_name(
             pism::printf("deposition times for isochrones in '%s'", isochrone_depth_variable_name))
-        .units(time->units_string());
+        .units(time->units());
     z["calendar"] = time->calendar();
   }
 

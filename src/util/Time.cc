@@ -384,7 +384,7 @@ static double start_time(const Config &config,
   // FIXME: it would make sense to get the length of the time dimension and read the last
   // number instead.
   if (file->dimension_length(time_name) > 0) {
-    auto time = io::read_1d_variable(*file, time_name, time_units.format(), time_units.system());
+    auto time = io::read_1d_variable(*file, time_name, time_units, time_units.system());
 
     return time.back();
   }
@@ -470,8 +470,17 @@ double Time::end() const {
   return m_run_end;
 }
 
-std::string Time::units_string() const {
-  return m_time_units.format();
+std::string Time::variable_name() const {
+  return m_variable_name;
+}
+
+VariableMetadata Time::metadata() const {
+  VariableMetadata result(variable_name(), units().system());
+  result.long_name("time").units(units());
+  result["axis"]     = "T";
+  result["calendar"] = calendar();
+
+  return result;
 }
 
 units::Unit Time::units() const {
@@ -689,6 +698,8 @@ Time::Time(MPI_Comm com,
     m_unit_system(unit_system),
     m_time_units(unit_system, "seconds since 1-1-1") {
 
+  m_variable_name = config->get_string("time.dimension_name");
+
   m_t_eps = config->get_number("time_stepping.resolution", "seconds");
 
   auto input_file = config->get_string("input.file");
@@ -786,10 +797,10 @@ void Time::init_from_file(MPI_Comm com,
     std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
     if (not time_bounds_name.empty()) {
       // use the time bounds
-      time = io::read_bounds(file, time_bounds_name, m_time_units.format(), m_unit_system);
+      time = io::read_bounds(file, time_bounds_name, m_time_units, m_unit_system);
     } else {
       // use the time axis
-      time = io::read_1d_variable(file, time_name, m_time_units.format(), m_unit_system);
+      time = io::read_1d_variable(file, time_name, m_time_units, m_unit_system);
     }
 
     // Set time.

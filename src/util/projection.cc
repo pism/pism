@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,7 @@
 #include <vector>
 #include <tuple>
 
+#include "io/IO_Flags.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
@@ -895,23 +896,6 @@ std::string cf_to_proj(const VariableMetadata &mapping) {
   }
 
   return mappings[mapping_name](mapping) + common_flags(mapping);
-}
-
-void write_mapping(const File &file, const pism::MappingInfo &info) {
-
-  const auto &mapping = info.cf_mapping;
-  if (mapping.has_attributes()) {
-    auto name = mapping.get_name();
-    if (not file.variable_exists(name)) {
-      file.define_variable(name, io::PISM_DOUBLE, {});
-    }
-    io::write_attributes(file, mapping, io::PISM_DOUBLE);
-
-    // Write the PROJ string to mapping:proj_params (for CDO).
-    if (not info.proj_string.empty()) {
-      file.write_attribute(name, "proj_params", info.proj_string);
-    }
-  }
 }
 
 } // end of namespace pism

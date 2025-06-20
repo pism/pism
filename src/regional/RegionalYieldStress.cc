@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -98,15 +98,15 @@ void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
   set_no_model_yield_stress(m_high_tauc, *inputs.no_model_mask, m_basal_yield_stress);
 }
 
-void RegionalYieldStress::define_model_state_impl(const File &output) const {
+void RegionalYieldStress::define_model_state_impl(const OutputFile &output) const {
   m_input->define_model_state(output);
 
   // define tauc (this is likely to be a no-op because m_input should have defined it by
   // now)
-  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
+  m_basal_yield_stress.define(output);
 }
 
-void RegionalYieldStress::write_model_state_impl(const File &output) const {
+void RegionalYieldStress::write_model_state_impl(const OutputFile &output) const {
   m_input->write_model_state(output);
   // Write basal yield stress that includes the modification containing high yield stress
   // in "no model" areas, overwriting the field written by m_input.

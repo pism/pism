@@ -119,14 +119,14 @@ MaxTimestep OceanModel::max_timestep_impl(double t) const {
   throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-void OceanModel::define_model_state_impl(const File &output) const {
+void OceanModel::define_model_state_impl(const OutputFile &output) const {
   if (m_input_model) {
     return m_input_model->define_model_state(output);
   }
   // no state to define
 }
 
-void OceanModel::write_model_state_impl(const File &output) const {
+void OceanModel::write_model_state_impl(const OutputFile &output) const {
   if (m_input_model) {
     return m_input_model->write_model_state(output);
   }
@@ -160,7 +160,7 @@ namespace diagnostics {
 class PO_shelf_base_temperature : public Diag<OceanModel> {
 public:
   PO_shelf_base_temperature(const OceanModel *m) : Diag<OceanModel>(m) {
-    m_vars = { { m_sys, "shelfbtemp" } };
+    m_vars = { { m_sys, "shelfbtemp", *m_grid } };
     m_vars[0].long_name("ice temperature at the basal surface of ice shelves").units("kelvin");
   }
 
@@ -179,7 +179,7 @@ protected:
 class PO_shelf_base_mass_flux : public Diag<OceanModel> {
 public:
   PO_shelf_base_mass_flux(const OceanModel *m) : Diag<OceanModel>(m) {
-    m_vars = { { m_sys, "shelfbmassflux" } };
+    m_vars = { { m_sys, "shelfbmassflux", *m_grid } };
     m_vars[0].long_name("mass flux at the basal surface of ice shelves").units("kg m^-2 s^-1");
   }
 

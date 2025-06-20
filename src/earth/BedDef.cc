@@ -25,6 +25,7 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 
 namespace pism {
@@ -77,28 +78,27 @@ const array::Scalar &BedDef::uplift() const {
   return m_uplift;
 }
 
-void BedDef::define_model_state_impl(const File &output) const {
-  m_uplift.define(output, io::PISM_DOUBLE);
-  m_topg.define(output, io::PISM_DOUBLE);
-  m_load_accumulator.define(output, io::PISM_DOUBLE);
+void BedDef::define_model_state_impl(const OutputFile &output) const {
+  m_uplift.define(output);
+  m_topg.define(output);
+  m_load_accumulator.define(output);
 
-  if (not output.variable_exists(m_time_name)) {
-    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
+  {
+    VariableMetadata t(m_time_name, m_sys);
+    t.long_name("time of the last update of the Lingle-Clark bed deformation model")
+        .units(time().units());
+    t["calendar"] = time().calendar();
 
-    output.write_attribute(m_time_name, "long_name",
-                           "time of the last update of the Lingle-Clark bed deformation model");
-    output.write_attribute(m_time_name, "calendar", time().calendar());
-    output.write_attribute(m_time_name, "units", time().units_string());
+    output.define_variable(t, {});
   }
-
 }
 
-void BedDef::write_model_state_impl(const File &output) const {
+void BedDef::write_model_state_impl(const OutputFile &output) const {
   m_uplift.write(output);
   m_topg.write(output);
   m_load_accumulator.write(output);
 
-  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
+  output.write_array(m_time_name, { 0 }, { 1 }, { m_t_last });
 }
 
 DiagnosticList BedDef::diagnostics_impl() const {

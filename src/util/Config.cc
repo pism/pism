@@ -65,6 +65,10 @@ Config::~Config() {
   delete m_impl;
 }
 
+std::shared_ptr<units::System> Config::unit_system() const {
+  return m_impl->unit_system;
+}
+
 void Config::read(MPI_Comm com, const std::string &filename) {
 
   File file(com, filename, io::PISM_NETCDF3, io::PISM_READONLY); // OK to use netcdf3
@@ -77,17 +81,8 @@ void Config::read(const File &file) {
   m_impl->filename = file.name();
 }
 
-void Config::write(const File &file) const {
+void Config::write(const OutputFile &file) const {
   this->write_impl(file);
-}
-
-void Config::write(MPI_Comm com, const std::string &filename, bool append) const {
-
-  io::Mode mode = append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
-
-  File file(com, filename, io::PISM_NETCDF3, mode); // OK to use netcdf3
-
-  this->write(file);
 }
 
 //! \brief Returns the name of the file used to initialize the database.
@@ -377,10 +372,6 @@ void Config::set_flag(const std::string& name, bool value,
   }
 
   this->set_flag_impl(name, value);
-}
-
-std::shared_ptr<units::System> Config::unit_system() const {
-  return m_impl->unit_system;
 }
 
 static bool special_parameter(const std::string &name) {

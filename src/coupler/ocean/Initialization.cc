@@ -18,10 +18,10 @@
  */
 
 #include "pism/coupler/ocean/Initialization.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace ocean {
@@ -88,15 +88,15 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   }
 }
 
-void InitializationHelper::define_model_state_impl(const File &output) const {
-  m_water_column_pressure->define(output, io::PISM_DOUBLE);
-  m_shelf_base_mass_flux->define(output, io::PISM_DOUBLE);
-  m_shelf_base_temperature->define(output, io::PISM_DOUBLE);
+void InitializationHelper::define_model_state_impl(const OutputFile &output) const {
+  m_water_column_pressure->define(output);
+  m_shelf_base_mass_flux->define(output);
+  m_shelf_base_temperature->define(output);
 
   m_input_model->define_model_state(output);
 }
 
-void InitializationHelper::write_model_state_impl(const File &output) const {
+void InitializationHelper::write_model_state_impl(const OutputFile &output) const {
   m_water_column_pressure->write(output);
   m_shelf_base_mass_flux->write(output);
   m_shelf_base_temperature->write(output);

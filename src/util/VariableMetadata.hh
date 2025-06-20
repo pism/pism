@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018, 2020, 2021, 2022, 2023, 2024, 2024 Constantine Khroulev
+// Copyright (C) 2009--2018, 2020, 2021, 2022, 2023, 2024, 2024, 2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,18 +19,21 @@
 #ifndef PISM_VARIABLEMETADATA_H
 #define PISM_VARIABLEMETADATA_H
 
-#include <set>
 #include <map>
 #include <vector>
 #include <string>
-
-#include "pism/util/Units.hh"
+#include <memory>
 
 namespace pism {
+namespace units {
+class System;
+}
+
 namespace io {
 enum Type : int;
 }
 
+class Grid;
 class Logger;
 
 //! @brief A class for handling variable metadata, reading, writing and converting
@@ -69,6 +72,13 @@ class Logger;
 
 class VariableMetadata;
 
+/*!
+ * Syntactic sugar used to make it easier to get attributes.
+ *
+ * This class makes it possible to get both string and numeric attributes using code that
+ * looks like `variable = metadata["attribute"]`. It tries to convert to the type of
+ * `variable` and throws an error if there is a type mismatch.
+ */
 class ConstAttribute {
 public:
   friend class VariableMetadata;
@@ -86,6 +96,12 @@ protected:
   VariableMetadata* m_var;
 };
 
+/*!
+ * Syntactic sugar used to make it easier to set attributes.
+ *
+ * This class makes it possible to set both string and numeric attributes using code that
+ * looks like `metadata["attribute"] = value`.
+ */
 class Attribute : public ConstAttribute {
 public:
   friend class VariableMetadata;
@@ -98,7 +114,8 @@ private:
 
 class VariableMetadata {
 public:
-  VariableMetadata(const std::string &name, units::System::Ptr system, unsigned int ndims = 0);
+  VariableMetadata(const std::string &name, std::shared_ptr<units::System> system,
+                   unsigned int ndims = 0);
   virtual ~VariableMetadata() = default;
 
   Attribute operator[](const std::string &name) {
@@ -151,7 +168,7 @@ public:
   VariableMetadata &clear();
 
   // more getters
-  units::System::Ptr unit_system() const;
+  std::shared_ptr<units::System> unit_system() const;
 
   unsigned int n_spatial_dimensions() const;
 
@@ -170,7 +187,7 @@ protected:
 
 private:
   //! @brief The unit system to use.
-  units::System::Ptr m_unit_system;
+  std::shared_ptr<units::System> m_unit_system;
 
   //! string and boolean attributes
   std::map<std::string, std::string> m_strings;
@@ -183,25 +200,38 @@ private:
   io::Type m_output_type;
 };
 
+class DimensionMetadata : public VariableMetadata {
+public:
+  DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
+                    unsigned int length);
+  unsigned int length() const;
+private:
+  unsigned int m_length;
+};
+
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class SpatialVariableMetadata : public VariableMetadata {
 public:
-  SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
-                          const std::vector<double> &zlevels = {0.0});
+  SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
+                          const Grid &grid,
+                          const std::vector<double> &levels = { 0.0 });
+  SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
+                          unsigned int Mx, double dx, unsigned int My, double dy,
+                          const std::vector<double> &levels = { 0.0 });
   virtual ~SpatialVariableMetadata() = default;
 
   const std::vector<double>& levels() const;
 
-  VariableMetadata& x();
-  VariableMetadata& y();
-  VariableMetadata& z();
+  DimensionMetadata& x();
+  DimensionMetadata& y();
+  DimensionMetadata& z();
 
-  const VariableMetadata& x() const;
-  const VariableMetadata& y() const;
-  const VariableMetadata& z() const;
+  const DimensionMetadata& x() const;
+  const DimensionMetadata& y() const;
+  const DimensionMetadata& z() const;
 
 private:
-  VariableMetadata m_x, m_y, m_z;
+  DimensionMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
 };
 

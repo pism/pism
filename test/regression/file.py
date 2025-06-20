@@ -347,7 +347,7 @@ class File(TestCase):
         "File.attribute_name()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.attribute_name("time", 0) == "units"
+            assert f.attribute_name("time", 0) == "axis"
             assert f.attribute_name("PISM_GLOBAL", 0) == "global_text_attr"
             f.close()
 

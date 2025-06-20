@@ -29,6 +29,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -120,12 +121,12 @@ const Profiling &Component::profiling() const {
  * This is needed to allow defining all the variables in an output file before any data is written
  * (an optimization needed to get decent performance writing NetCDF-3).
  */
-void Component::define_model_state(const File &output) const {
+void Component::define_model_state(const OutputFile &output) const {
   this->define_model_state_impl(output);
 }
 
 /*! @brief Write model state variables to an output file. */
-void Component::write_model_state(const File &output) const {
+void Component::write_model_state(const OutputFile &output) const {
   // define variables, if needed (this is a no-op if they are already defined)
   this->define_model_state(output);
 
@@ -133,12 +134,12 @@ void Component::write_model_state(const File &output) const {
 }
 
 /*! @brief The default (empty implementation). */
-void Component::define_model_state_impl(const File &output) const {
+void Component::define_model_state_impl(const OutputFile &output) const {
   (void) output;
 }
 
 /*! @brief The default (empty implementation). */
-void Component::write_model_state_impl(const File &output) const {
+void Component::write_model_state_impl(const OutputFile &output) const {
   (void) output;
 }
 

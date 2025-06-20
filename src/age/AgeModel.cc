@@ -23,6 +23,7 @@
 #include "pism/util/io/File.hh"
 #include <memory>
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -212,11 +213,11 @@ void AgeModel::init(const InputOptions &opts) {
   regrid("Age Model", m_ice_age, REGRID_WITHOUT_REGRID_VARS);
 }
 
-void AgeModel::define_model_state_impl(const File &output) const {
-  m_ice_age.define(output, io::PISM_DOUBLE);
+void AgeModel::define_model_state_impl(const OutputFile &output) const {
+  m_ice_age.define(output);
 }
 
-void AgeModel::write_model_state_impl(const File &output) const {
+void AgeModel::write_model_state_impl(const OutputFile &output) const {
   m_ice_age.write(output);
 }
 

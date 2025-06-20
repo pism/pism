@@ -31,6 +31,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
@@ -483,13 +484,13 @@ const array::Scalar& TemperatureIndex::air_temp_sd() const {
   return *m_air_temp_sd;
 }
 
-void TemperatureIndex::define_model_state_impl(const File &output) const {
+void TemperatureIndex::define_model_state_impl(const OutputFile &output) const {
   SurfaceModel::define_model_state_impl(output);
-  m_firn_depth.define(output, io::PISM_DOUBLE);
-  m_snow_depth.define(output, io::PISM_DOUBLE);
+  m_firn_depth.define(output);
+  m_snow_depth.define(output);
 }
 
-void TemperatureIndex::write_model_state_impl(const File &output) const {
+void TemperatureIndex::write_model_state_impl(const OutputFile &output) const {
   SurfaceModel::write_model_state_impl(output);
   m_firn_depth.write(output);
   m_snow_depth.write(output);

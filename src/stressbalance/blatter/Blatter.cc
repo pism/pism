@@ -39,6 +39,7 @@
 #include "pism/util/pism_utilities.hh" // pism::printf()
 #include "pism/util/fem/Quadrature.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -299,8 +300,8 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
        {"units", "1"},
        {"positive", "up"}};
 
-    m_u_sigma->metadata(0).z().set_name("z_sigma");
-    m_v_sigma->metadata(0).z().set_name("z_sigma");
+    m_u_sigma->metadata(0).z().set_name("z_sigma").clear();
+    m_v_sigma->metadata(0).z().set_name("z_sigma").clear();
 
     for (const auto &z_attr : z_attrs) {
       m_u_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);
@@ -690,12 +691,12 @@ void Blatter::init_impl() {
   }
 }
 
-void Blatter::define_model_state_impl(const File &output) const {
-  m_u_sigma->define(output, io::PISM_DOUBLE);
-  m_v_sigma->define(output, io::PISM_DOUBLE);
+void Blatter::define_model_state_impl(const OutputFile &output) const {
+  m_u_sigma->define(output);
+  m_v_sigma->define(output);
 }
 
-void Blatter::write_model_state_impl(const File &output) const {
+void Blatter::write_model_state_impl(const OutputFile &output) const {
   m_u_sigma->write(output);
   m_v_sigma->write(output);
 }

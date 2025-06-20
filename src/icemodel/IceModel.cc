@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstring>
 #include <algorithm>
+#include <memory>
 #include <petscsys.h>
 
 #include "pism/pism_config.hh"
@@ -50,6 +51,8 @@
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/coupler/ocean/PyOceanModel.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -88,8 +91,12 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_btu = nullptr;
   m_energy_model = nullptr;
 
+  // Set global attributes:
   m_output_global_attributes["Conventions"] = "CF-1.6";
   m_output_global_attributes["source"] = pism::version();
+  m_output_global_attributes["title"] = m_config->get_string("run_info.title");
+  m_output_global_attributes["institution"] = m_config->get_string("run_info.institution");
+  m_output_global_attributes["command"] = args_string();
 
   m_fracture = nullptr;
 
@@ -121,6 +128,8 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
         .output_units("kg m^-2 year^-1");
     m_surface_input_for_hydrology->metadata()["valid_min"] = { 0.0 };
   }
+
+  m_output_writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
 }
 
 double IceModel::dt() const {
@@ -382,12 +391,9 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
 
   filename = filename_add_suffix(filename, suffix, "");
 
-  File file(m_grid->com,
-            filename,
-            string_to_backend(m_config->get_string("output.format")),
-            io::PISM_READWRITE_MOVE);
+  OutputFile file(m_output_writer, filename);
 
-  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+  write_metadata(file, WRITE_MAPPING);
 
   auto variables = output_variables("small");
   for (const auto &v : additional_variables) {
@@ -395,6 +401,8 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
   }
 
   save_variables(file, INCLUDE_MODEL_STATE, variables, m_time->current());
+
+  file.close();
 
   return filename;
 }
@@ -1002,7 +1010,7 @@ void IceModel::prune_diagnostics() {
 
   // scalar time series
   std::vector<std::string> missing;
-  if (not m_ts_filename.empty() and m_ts_vars.empty()) {
+  if (m_ts_file != nullptr and m_ts_vars.empty()) {
     // use all diagnostics
   } else {
     TSDiagnosticList diagnostics;

@@ -35,7 +35,11 @@ add_library (util OBJECT
   io/NC4_Serial.cc
   io/NC4File.cc
   io/NCFile.cc
-  io/io_helpers.cc
+  io/input_helpers.cc
+  io/output_helpers.cc
+  io/OutputWriter.cc
+  io/SynchronousOutputWriter.cc
+  io/OutputFile.cc
   node_types.cc
   options.cc
   petscwrappers/DM.cc

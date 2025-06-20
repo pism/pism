@@ -17,11 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/surface/ConstantPIK.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
@@ -110,12 +110,12 @@ const array::Scalar &PIK::runoff_impl() const {
   return *m_runoff;
 }
 
-void PIK::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output, io::PISM_DOUBLE);
+void PIK::define_model_state_impl(const OutputFile &output) const {
+  m_mass_flux->define(output);
   SurfaceModel::define_model_state_impl(output);
 }
 
-void PIK::write_model_state_impl(const File &output) const {
+void PIK::write_model_state_impl(const OutputFile &output) const {
   m_mass_flux->write(output);
   SurfaceModel::write_model_state_impl(output);
 }

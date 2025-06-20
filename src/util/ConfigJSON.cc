@@ -20,10 +20,13 @@
 #include <vector>
 #include <cstdlib>              // free
 
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/ConfigJSON.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/io/File.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/io/OutputWriter.hh"
 
 namespace pism {
 
@@ -81,8 +84,7 @@ static json_t* pack_json_array(const std::vector<double> &data) {
 /*!
  * Convert a JSON array to an STL vector.
  */
-std::vector<double> unpack_json_array(const char *name,
-                                      const json_t *input) {
+static std::vector<double> unpack_json_array(const char *name, const json_t *input) {
   std::vector<double> result;
 
   if (json_typeof(input) != JSON_ARRAY) {
@@ -344,12 +346,16 @@ bool ConfigJSON::get_flag_impl(const std::string &name) const {
 }
 
 void ConfigJSON::read_impl(const File &nc) {
-  std::string config_string = nc.read_text_attribute("PISM_GLOBAL", "pism_config");
+  std::string config_string = nc.read_text_attribute("pism_config", "json");
   this->init_from_string(config_string);
 }
 
-void ConfigJSON::write_impl(const File &nc) const {
-  nc.write_attribute("PISM_GLOBAL", "pism_config", this->dump());
+void ConfigJSON::write_impl(const OutputFile &file) const {
+
+  VariableMetadata config("pism_config", unit_system());
+  config["json"] = dump();
+
+  file.define_variable(config, {});
 }
 
 bool ConfigJSON::is_set_impl(const std::string &name) const {

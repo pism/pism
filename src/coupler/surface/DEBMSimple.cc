@@ -34,6 +34,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
@@ -547,13 +548,13 @@ const array::Scalar &DEBMSimple::atmosphere_transmissivity() const {
   return m_transmissivity;
 }
 
-void DEBMSimple::define_model_state_impl(const File &output) const {
+void DEBMSimple::define_model_state_impl(const OutputFile &output) const {
   SurfaceModel::define_model_state_impl(output);
-  m_snow_depth.define(output, io::PISM_DOUBLE);
-  m_surface_albedo.define(output, io::PISM_DOUBLE);
+  m_snow_depth.define(output);
+  m_surface_albedo.define(output);
 }
 
-void DEBMSimple::write_model_state_impl(const File &output) const {
+void DEBMSimple::write_model_state_impl(const OutputFile &output) const {
   SurfaceModel::write_model_state_impl(output);
   m_snow_depth.write(output);
   m_surface_albedo.write(output);
@@ -570,7 +571,7 @@ class DEBMSInsolation : public Diag<DEBMSimple>
 {
 public:
   DEBMSInsolation(const DEBMSimple *m) : Diag<DEBMSimple>(m) {
-    m_vars = { { m_sys, "insolation" } };
+    m_vars = { { m_sys, "insolation", *m_grid } };
     m_vars[0]
         .long_name(
             "mean top of atmosphere insolation during the period when the sun is above the critical angle Phi")
@@ -634,7 +635,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)
@@ -690,7 +691,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)
@@ -743,7 +744,7 @@ public:
     }
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)

@@ -32,11 +32,7 @@ options = PISM.PETSc.Options()
 def write_state(model, filename):
     "Write the state of the model to a file"
 
-    PISM.util.prepare_output(filename)
-    f = PISM.File(model.grid().ctx().com(),
-                  filename,
-                  PISM.PISM_NETCDF3,
-                  PISM.PISM_READWRITE)
+    f = PISM.util.prepare_output(filename)
     model.define_model_state(f)
     model.write_model_state(f)
 
@@ -782,11 +778,15 @@ class ISMIP6(TestCase):
         dTdz = PISM.Scalar(grid, "ice_surface_temp_gradient")
         dTdz.metadata(0).long_name("surface temperature gradient").units("K m^-1").output_units("K m^-1")
 
-        out = PISM.util.prepare_output(filename, append_time=False)
+        time = self.ctx.time.metadata()
+        time.set_string("bounds", "time_bounds").units("seconds since 1-1-1")
+        
+        out = PISM.util.prepare_output(filename, append_time=False, time=time)
 
         bounds = PISM.VariableMetadata("time_bounds", self.ctx.unit_system)
 
-        PISM.define_time_bounds(bounds, "time", "nv", out, PISM.PISM_DOUBLE)
+        out.define_dimension("nv", 2)
+        out.define_variable(bounds, ["time", "nv"])
 
         SMB_anomaly  = 1.0
         T_anomaly    = 1.0
@@ -800,9 +800,9 @@ class ISMIP6(TestCase):
 
             t = self.ctx.time.current() + j * dt
 
-            PISM.append_time(out, self.ctx.config, t)
+            out.append_time(t)
 
-            PISM.write_time_bounds(out, bounds, j, [t, t + dt])
+            out.write_array(bounds, [j, 0], [1, 2], [t, t + dt])
 
             aSMB.set(t * SMB_anomaly)
 
@@ -814,10 +814,6 @@ class ISMIP6(TestCase):
 
             for v in [aSMB, dSMBdz, aT, dTdz]:
                 v.write(out)
-
-        out.redef()
-        out.write_attribute("time", "bounds", "time_bounds")
-        out.write_attribute("time", "units", "seconds since 1-1-1")
 
         out.close()
 

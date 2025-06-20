@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,8 +36,8 @@ public:
   ~PSFormulas() = default;
 protected:
 
-  virtual void define_model_state_impl(const File &output) const;
-  virtual void write_model_state_impl(const File &output) const;
+  virtual void define_model_state_impl(const OutputFile &output) const;
+  virtual void write_model_state_impl(const OutputFile &output) const;
 
   const array::Scalar& mass_flux_impl() const;
   const array::Scalar& temperature_impl() const;

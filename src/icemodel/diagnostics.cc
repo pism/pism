@@ -35,6 +35,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 #if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"
@@ -65,7 +66,7 @@ public:
     }
 
     // set metadata:
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name(long_name).units(internal_units).output_units(external_units);
 
     auto large_number         = to_internal(1e6);
@@ -170,7 +171,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name(long_name).units(internal_units).output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
@@ -226,7 +227,7 @@ public:
 
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .standard_name(standard_name)
@@ -281,7 +282,7 @@ public:
     }
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .standard_name(standard_name)
@@ -336,7 +337,7 @@ public:
 
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)
@@ -440,7 +441,7 @@ public:
 
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .standard_name(standard_name)
@@ -497,7 +498,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .standard_name(standard_name)
@@ -547,7 +548,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name("frontal melt flux").units(internal_units).output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
@@ -591,7 +592,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name("forced (prescribed) retreat flux")
         .units(internal_units)
@@ -757,7 +758,7 @@ protected:
 IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m) : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars                  = { { m_sys, "ice_margin_pressure_difference" } };
+  m_vars                  = { { m_sys, "ice_margin_pressure_difference", *m_grid } };
   m_vars[0]["_FillValue"] = { m_fill_value };
   m_vars[0]
       .long_name(
@@ -844,7 +845,7 @@ public:
 
     m_accumulator.metadata()["units"] = "kg m^-2";
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(description)
         .standard_name(standard_name)
@@ -897,7 +898,7 @@ protected:
 HardnessAverage::HardnessAverage(const IceModel *m) : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = { { m_sys, "hardav" } };
+  m_vars = { { m_sys, "hardav", *m_grid } };
   m_vars[0]
       .long_name("vertical average of ice hardness")
       .set_units_without_validation(
@@ -960,7 +961,7 @@ protected:
 };
 
 Rank::Rank(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "rank" } };
+  m_vars = { { m_sys, "rank", *m_grid } };
   m_vars[0]
       .long_name("processor rank")
       .units("1")
@@ -992,7 +993,7 @@ protected:
 };
 
 CTS::CTS(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "cts", m_grid->z() } };
+  m_vars = { { m_sys, "cts", *m_grid, m_grid->z() } };
   m_vars[0]
       .long_name("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1")
       .units("1");
@@ -1019,7 +1020,7 @@ protected:
 };
 
 Temperature::Temperature(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "temp", m_grid->z() } };
+  m_vars = { { m_sys, "temp", *m_grid, m_grid->z() } };
   m_vars[0]
       .long_name("ice temperature")
       .standard_name("land_ice_temperature")
@@ -1076,7 +1077,7 @@ protected:
 
 TemperaturePA::TemperaturePA(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars = {{m_sys, "temp_pa", m_grid->z()}};
+  m_vars = { { m_sys, "temp_pa", *m_grid, m_grid->z() } };
   m_vars[0]
       .long_name("pressure-adjusted ice temperature (degrees above pressure-melting point)")
       .units("deg_C");
@@ -1142,7 +1143,7 @@ protected:
 
 TemperaturePABasal::TemperaturePABasal(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "temppabase" } };
+  m_vars = { { m_sys, "temppabase", *m_grid } };
   m_vars[0].long_name("pressure-adjusted ice temperature at the base of ice").units("degree_Celsius");
 }
 
@@ -1200,7 +1201,7 @@ protected:
 
 IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "enthalpysurf" } };
+  m_vars = { { m_sys, "enthalpysurf", *m_grid } };
   m_vars[0].long_name("ice enthalpy at 1m below the ice surface").units("J kg^-1");
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
@@ -1247,7 +1248,7 @@ protected:
 
 IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars = {{m_sys, "enthalpybase"}};
+  m_vars = { { m_sys, "enthalpybase", *m_grid } };
   m_vars[0].long_name("ice enthalpy at the base of ice").units("J kg^-1");
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
@@ -1297,7 +1298,7 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
     break;
   }
 
-  m_vars = { { m_sys, name } };
+  m_vars = { { m_sys, name, *m_grid } };
   m_vars[0].long_name(long_name).standard_name(standard_name).units("kelvin");
   m_vars[0]["_FillValue"] = { m_fill_value };
 }
@@ -1351,7 +1352,7 @@ protected:
 };
 
 TemperatureSurface::TemperatureSurface(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "tempsurf" } };
+  m_vars = { { m_sys, "tempsurf", *m_grid } };
   m_vars[0]
       .long_name("ice temperature at 1m below the ice surface")
       .standard_name("temperature_at_ground_level_in_snow_or_firn") // InitMIP "standard" name
@@ -1404,7 +1405,7 @@ protected:
 };
 
 LiquidFraction::LiquidFraction(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "liqfrac", m_grid->z() } };
+  m_vars = { { m_sys, "liqfrac", *m_grid,  m_grid->z() } };
   m_vars[0].long_name("liquid water fraction in ice (between 0 and 1)").units("1");
   m_vars[0]["valid_range"] = { 0.0, 1.0 };
 }
@@ -1437,7 +1438,7 @@ protected:
 };
 
 TemperateIceThickness::TemperateIceThickness(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "tempicethk" } };
+  m_vars = { { m_sys, "tempicethk", *m_grid } };
   m_vars[0].long_name("temperate ice thickness (total column content)").units("m");
   m_vars[0]["_FillValue"] = { m_fill_value };
 }
@@ -1502,7 +1503,7 @@ protected:
 };
 
 TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "tempicethk_basal" } };
+  m_vars = { { m_sys, "tempicethk_basal", *m_grid } };
   m_vars[0].long_name("thickness of the basal layer of temperate ice").units("m");
   m_vars[0]["_FillValue"] = { m_fill_value };
 }
@@ -2469,7 +2470,7 @@ public:
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
     // set metadata:
-    m_vars = { { m_sys, ismip6 ? "dlithkdt" : "dHdt" } };
+    m_vars = { { m_sys, ismip6 ? "dlithkdt" : "dHdt", *m_grid } };
     m_vars[0]
         .long_name("ice thickness rate of change")
         .standard_name("tendency_of_land_ice_thickness")
@@ -2536,7 +2537,7 @@ LatLonBounds::LatLonBounds(const IceModel *m, const std::string &var_name,
   m_var_name = var_name;
 
   // set metadata:
-  m_vars = { { m_sys, m_var_name + "_bnds", { 0.0, 1.0, 2.0, 3.0 } } };
+  m_vars = { { m_sys, m_var_name + "_bnds", *m_grid, { 0.0, 1.0, 2.0, 3.0 } } };
   m_vars[0].z().clear().set_name("nv4");
 
   m_vars[0].set_time_independent(true);
@@ -2582,7 +2583,7 @@ protected:
 };
 
 IceAreaFraction::IceAreaFraction(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, land_ice_area_fraction_name } };
+  m_vars = { { m_sys, land_ice_area_fraction_name, *m_grid } };
   m_vars[0]
       .long_name("fraction of a grid cell covered by ice (grounded or floating)")
       .standard_name("land_ice_area_fraction") // InitMIP "standard" name
@@ -2659,7 +2660,7 @@ protected:
 };
 
 IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, grounded_ice_sheet_area_fraction_name } };
+  m_vars = { { m_sys, grounded_ice_sheet_area_fraction_name, *m_grid } };
   m_vars[0]
       .long_name("fraction of a grid cell covered by grounded ice")
       .standard_name("grounded_ice_sheet_area_fraction") // InitMIP "standard" name
@@ -2712,7 +2713,7 @@ protected:
 };
 
 IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, floating_ice_sheet_area_fraction_name } };
+  m_vars = { { m_sys, floating_ice_sheet_area_fraction_name, *m_grid } };
   m_vars[0]
       .long_name("fraction of a grid cell covered by floating ice")
       .standard_name("floating_ice_shelf_area_fraction")
@@ -2745,7 +2746,7 @@ protected:
 HeightAboveFloatation::HeightAboveFloatation(const IceModel *m) : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = { { m_sys, "height_above_flotation" } };
+  m_vars = { { m_sys, "height_above_flotation", *m_grid } };
   m_vars[0].long_name("ice thickness in excess of the maximum floating ice thickness").units("m");
   m_vars[0]["_FillValue"] = { m_fill_value };
   m_vars[0]["comment"]    = "shows how close to floatation the ice is at a given location";
@@ -2799,7 +2800,7 @@ protected:
 };
 
 IceMass::IceMass(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "ice_mass" } };
+  m_vars = { { m_sys, "ice_mass", *m_grid } };
   m_vars[0].long_name("ice mass per cell").units("kg");
   m_vars[0]["_FillValue"] = { m_fill_value };
 }
@@ -2864,7 +2865,7 @@ protected:
 
 BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
     : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "topg_sl_adjusted" } };
+  m_vars = { { m_sys, "topg_sl_adjusted", *m_grid } };
   m_vars[0].long_name("sea-level adjusted bed topography (zero is at sea level)").units("meters");
 }
 
@@ -2896,7 +2897,7 @@ protected:
 };
 
 IceHardness::IceHardness(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "hardness", m_grid->z() } };
+  m_vars = { { m_sys, "hardness", *m_grid, m_grid->z() } };
   m_vars[0]
       .long_name("ice hardness computed using the SIA flow law")
       .set_units_without_validation(
@@ -2957,7 +2958,7 @@ protected:
 };
 
 IceViscosity::IceViscosity(IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "effective_viscosity", m_grid->z() } };
+  m_vars = { { m_sys, "effective_viscosity", *m_grid, m_grid->z() } };
   m_vars[0]
       .long_name("effective viscosity of ice")
       .units("Pascal second")
@@ -3113,7 +3114,7 @@ public:
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-    m_vars = { { m_sys, ismip6 ? "lithk" : "thk" } };
+    m_vars = { { m_sys, ismip6 ? "lithk" : "thk", *m_grid } };
 
     m_vars[0].long_name("land ice thickness").standard_name("land_ice_thickness").units("m");
     m_vars[0]["valid_min"] = { 0.0 };
@@ -3137,7 +3138,7 @@ public:
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-    m_vars = { { m_sys, ismip6 ? "base" : "ice_base_elevation" } };
+    m_vars = { { m_sys, ismip6 ? "base" : "ice_base_elevation", *m_grid } };
     m_vars[0].long_name("ice bottom surface elevation").units("m");
   }
 
@@ -3159,7 +3160,7 @@ public:
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-    m_vars = { { m_sys, ismip6 ? "orog" : "usurf" } };
+    m_vars = { { m_sys, ismip6 ? "orog" : "usurf", *m_grid } };
     m_vars[0].long_name("ice top surface elevation").standard_name("surface_altitude").units("m");
   }
 
@@ -3182,7 +3183,7 @@ public:
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-    m_vars = { { m_sys, ismip6 ? "ligroundf" : "grounding_line_flux" } };
+    m_vars = { { m_sys, ismip6 ? "ligroundf" : "grounding_line_flux", *m_grid } };
 
     m_vars[0]
         .long_name("grounding line flux")
@@ -3222,7 +3223,7 @@ public:
 
     m_accumulator.metadata()["units"] = "kg";
 
-    m_vars = { { m_sys, "ice_mass_transport_across_grounding_line" } };
+    m_vars = { { m_sys, "ice_mass_transport_across_grounding_line", *m_grid } };
 
     m_vars[0]
         .long_name("ice mass flow rate across the grounding line")

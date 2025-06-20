@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,8 +36,8 @@ protected:
   void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
   void init_impl(const YieldStressInputs &inputs);
 
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
+  void define_model_state_impl(const OutputFile &output) const;
+  void write_model_state_impl(const OutputFile &output) const;
 
   DiagnosticList diagnostics_impl() const;
 

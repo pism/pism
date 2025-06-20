@@ -1,6 +1,9 @@
 %{
 #include "util/io/File.hh"
 #include "util/io/io_helpers.hh"
+#include "util/io/IO_Flags.hh"
+#include "util/io/OutputWriter.hh"
+#include "util/io/SynchronousOutputWriter.hh"
 %}
 
 %ignore pism::File::read_variable(const std::string &, const std::vector<unsigned int> &, const std::vector<unsigned int> &, double *) const;
@@ -9,6 +12,13 @@
 %include "util/io/IO_Flags.hh"
 %include "util/io/File.hh"
 %include "util/io/io_helpers.hh"
+
+%shared_ptr(pism::OutputWriter)
+%shared_ptr(pism::SynchronousOutputWriter)
+%shared_ptr(pism::OutputFile)
+
+%include "util/io/OutputWriter.hh"
+%include "util/io/SynchronousOutputWriter.hh"
 
 %extend pism::File
 {

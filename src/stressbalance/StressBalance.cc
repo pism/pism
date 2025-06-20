@@ -17,25 +17,28 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/stressbalance/SSB_Modifier.hh"
-#include "pism/util/EnthalpyConverter.hh"
+#include "pism/geometry/Geometry.hh"
 #include "pism/rheology/FlowLaw.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/util/Config.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/util/Time.hh"
-#include "pism/geometry/Geometry.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
+#include <memory>
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace stressbalance {
 
 Inputs::Inputs() {
-  geometry = NULL;
+  geometry          = NULL;
   new_bed_elevation = true;
 
   basal_melt_rate       = NULL;
@@ -62,17 +65,22 @@ void Inputs::dump(const char *filename) const {
     return;
   }
 
-  auto ctx = geometry->ice_thickness.grid()->ctx();
+  auto grid   = geometry->ice_thickness.grid();
+  auto ctx    = grid->ctx();
   auto config = ctx->config();
 
-  File output(ctx->com(), filename,
-              string_to_backend(config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE);
+  VariableMetadata mapping{ "mapping", ctx->unit_system() };
+  auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *config);
+
+  OutputFile output(writer, filename);
 
   config->write(output);
 
-  io::define_time(output, *ctx);
-  io::append_time(output, config->get_string("time.dimension_name"), ctx->time()->current());
+  auto time = ctx->time();
+  auto time_name = time->variable_name();
+  output.define_dimension(time_name, io::PISM_UNLIMITED);
+  output.define_variable(time->metadata(), { time_name });
+  output.append_time(time->current());
 
   {
     geometry->latitude.write(output);
@@ -654,12 +662,12 @@ const SSB_Modifier* StressBalance::modifier() const {
 }
 
 
-void StressBalance::define_model_state_impl(const File &output) const {
+void StressBalance::define_model_state_impl(const OutputFile &output) const {
   m_shallow_stress_balance->define_model_state(output);
   m_modifier->define_model_state(output);
 }
 
-void StressBalance::write_model_state_impl(const File &output) const {
+void StressBalance::write_model_state_impl(const OutputFile &output) const {
   m_shallow_stress_balance->write_model_state(output);
   m_modifier->write_model_state(output);
 }

@@ -27,6 +27,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
@@ -297,16 +298,16 @@ MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
   return std::min(input_max_dt, MaxTimestep(max_dt, "surface forcing"));
 }
 
-void ForceThickness::define_model_state_impl(const File &output) const {
-  m_ftt_mask.define(output, io::PISM_DOUBLE);
-  m_target_thickness.define(output, io::PISM_DOUBLE);
+void ForceThickness::define_model_state_impl(const OutputFile &output) const {
+  m_ftt_mask.define(output);
+  m_target_thickness.define(output);
 
   if (m_input_model != NULL) {
     m_input_model->define_model_state(output);
   }
 }
 
-void ForceThickness::write_model_state_impl(const File &output) const {
+void ForceThickness::write_model_state_impl(const OutputFile &output) const {
   m_ftt_mask.write(output);
   m_target_thickness.write(output);
 
