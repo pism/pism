@@ -254,6 +254,11 @@ int main(int argc, char *argv[]) {
       config->resolve_filenames();
     }
 
+    if (options::Bool("-version", "print PISM version and stop")) {
+      log->message(1, pism::version());
+      return 0;
+    }
+
     if (not(verification_test.is_set() or eisII.is_set()) and
         config->get_string("input.file").empty()) {
       throw RuntimeError(PISM_ERROR_LOCATION,
