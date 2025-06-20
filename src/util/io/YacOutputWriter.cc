@@ -123,6 +123,12 @@ void YacOutputWriter::define_yac_field(const VariableMetadata &metadata,
     field_metadata["dimensions"] = dims;
     field_metadata["dtype"] = pism_type_to_python_nc_type(metadata.get_output_type());
 
+    for (auto string_attribute : metadata.all_strings())
+        field_metadata[string_attribute.first] = string_attribute.second;
+
+    for (auto double_attribute : metadata.all_doubles())
+        field_metadata[double_attribute.first] = double_attribute.second;
+
     if(dims.size() > 3)
         collection_size = dim_sizes[dims[3]];
 
@@ -163,12 +169,18 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     return;
   }
 
-  if(file_name.find("snapshot") != std::string::npos)
+  if(file_name.find("snapshot") != std::string::npos and !yac_init_finished)
     if(dims.size() > 1)
       define_yac_field(metadata, dims);
     else {
       non_spatial_variables_metadata[metadata.get_name()]["dimensions"] = dims;
       non_spatial_variables_metadata[metadata.get_name()]["dtype"] = pism_type_to_python_nc_type(metadata.get_output_type());
+
+    for (auto string_attribute : metadata.all_strings())
+        non_spatial_variables_metadata[metadata.get_name()][string_attribute.first] = string_attribute.second;
+
+    for (auto double_attribute : metadata.all_doubles())
+        non_spatial_variables_metadata[metadata.get_name()][double_attribute.first] = double_attribute.second;
 
       if (dims.size() == 1) {
           non_spatial_variables_metadata[metadata.get_name()]["tag"] = variable_tags.size();
@@ -232,6 +244,13 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
 void YacOutputWriter::set_global_attributes_impl(
     const std::string &file_name, const std::map<std::string, std::string> &strings,
     const std::map<std::string, std::vector<double> > &numbers) {
+
+    for (auto string_attribute : strings)
+        global_attributes[string_attribute.first] = string_attribute.second;
+
+    for (auto double_attribute : numbers)
+        global_attributes[double_attribute.first] = double_attribute.second;
+
   write_attributes(file_name, "PISM_GLOBAL", strings, numbers, io::PISM_DOUBLE);
 }
 
@@ -293,6 +312,7 @@ void YacOutputWriter::finalize_yac_initialization() {
     for (auto dim : dim_sizes)
         serialized_dims[dim.first] = dim.second;
 
+    non_spatial_variables["global"] = global_attributes;
     non_spatial_variables["non_field_variables"] = non_spatial_variables_metadata;
     yac_cdef_component_metadata("pism", non_spatial_variables.dump().c_str());
     yac_cdef_grid_metadata("pism_grid", serialized_dims.dump().c_str());
