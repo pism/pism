@@ -94,13 +94,19 @@ struct OutputWriter::Impl {
   MPI_Comm comm;
   std::map<std::string, std::map<std::string, std::string> > extra_attributes;
   bool use_internal_units;
-  std::map<std::tuple<std::string, std::string>, bool> written;
+  std::map<std::tuple<std::string, std::string>, bool> written_time_independent;
+  std::map<std::tuple<std::string, std::string>, bool> written_time_dependent;
   std::map<std::string, grid::DistributedGridInfo> grids;
 };
 
 bool &OutputWriter::already_written(const std::string &file_name,
-                                    const std::string &variable_name) {
-  return m_impl->written[{ file_name, variable_name }];
+                                    const std::string &variable_name,
+                                    bool time_dependent) {
+  if (time_dependent) {
+    return m_impl->written_time_dependent[{ file_name, variable_name }];
+  }
+
+  return m_impl->written_time_independent[{ file_name, variable_name }];
 }
 
 OutputWriter::OutputWriter(MPI_Comm comm, const Config &config)
@@ -210,6 +216,8 @@ void OutputWriter::set_global_attributes(
 
 void OutputWriter::append_time(const std::string &file_name, double time_seconds) {
   append_time_impl(file_name, time_seconds);
+  // mark all time-dependent variables as "not written yet"
+  m_impl->written_time_dependent.clear();
 }
 
 void OutputWriter::append_history(const std::string &file_name, const std::string &text) {
@@ -244,10 +252,12 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   const auto &grid          = grid_info(variable_name);
 
   // check if we need to write this variable
-  bool time_independent = metadata.get_time_independent();
-  // avoid writing time-independent variables more than once (saves time when writing to
-  // extra_files)
-  if (time_independent and already_written(file_name, variable_name)) {
+  bool time_dependent = not metadata.get_time_independent();
+
+  // Avoid writing time-independent variables more than once (saves time when writing to
+  // extra_files) and also avoid writing time-dependent variables more than once per time
+  // record
+  if (already_written(file_name, variable_name, time_dependent)) {
     return;
   }
 
@@ -265,10 +275,10 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
         continue;
       }
 
-      if (not already_written(file_name, dimension_name)) {
+      if (not already_written(file_name, dimension_name, false)) {
         write_array(file_name, dimension_name, { 0 }, { (unsigned int)coordinates.size() },
                     coordinates);
-        already_written(file_name, dimension_name) = true;
+        already_written(file_name, dimension_name, false) = true;
       }
     }
   }
@@ -297,7 +307,7 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   } else {
     write_spatial_variable_impl(file_name, metadata, input);
   }
-  already_written(file_name, variable_name) = true;
+  already_written(file_name, variable_name, time_dependent) = true;
 }
 
 void OutputWriter::append(const std::string &file_name) {

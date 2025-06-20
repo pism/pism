@@ -271,7 +271,8 @@ protected:
    * `file_name`. Used to avoid writing coordinate variables and time-independent 2D and
    * 3D arrays more than once.
    */
-  bool &already_written(const std::string &file_name, const std::string &variable_name);
+  bool &already_written(const std::string &file_name, const std::string &variable_name,
+                        bool time_dependent);
 
   /*!
    * Return the name of the time dimension and the corresponding coordinate variable.
