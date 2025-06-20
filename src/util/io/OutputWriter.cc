@@ -180,6 +180,9 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
     }
   }
 
+  std::string ID = "ensemble_id";
+  define_dimension(file_name, ID, 1);
+
   std::vector<std::string> dims;
 
   if (not var.get_time_independent()) {
@@ -203,6 +206,8 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
   }
 
   assert(dims.size() > 1);
+
+  dims.push_back(ID);
 
   // define the variable itself:
   define_variable(file_name, var, dims);
