@@ -111,6 +111,7 @@ def run(Mx, My, t_final, part_grid, C=1.0):
     while t < t_final:
         cfl_data = PISM.max_timestep_cfl_2d(geometry.ice_thickness,
                                             geometry.cell_type,
+                                            None, # no_model_mask
                                             v)
 
         dt = cfl_data.dt_max.value() * C
