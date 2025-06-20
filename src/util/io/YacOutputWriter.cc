@@ -156,6 +156,11 @@ YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const Geom
   m_backend = string_to_backend(config.get_string("output.format"));
 }
 
+YacOutputWriter::~YacOutputWriter() {
+    int continue_receiving = false;
+    MPI_Bcast((void *) &continue_receiving, 1, MPI_INT, MPI_ROOT, intercomm);
+}
+
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
                                            const VariableMetadata &metadata,
                                            const std::vector<std::string> &dims) {
@@ -167,6 +172,13 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 
   if (output_file.variable_exists(metadata.get_name())) {
     return;
+  }
+
+  if(file_name.find("snapshot") != std::string::npos and
+     file_name != current_snapshot_file) {
+      int continue_receiving = true;
+      MPI_Bcast((void *) &continue_receiving, 1, MPI_INT, MPI_ROOT, intercomm);
+      current_snapshot_file = file_name;
   }
 
   if(file_name.find("snapshot") != std::string::npos and !yac_init_finished)
@@ -368,7 +380,9 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   if(not yac_init_finished and file_name.find("snapshot") != std::string::npos)
     finalize_yac_initialization();
 
-  if(file_name.find("snapshot") != std::string::npos) {
+  if(file_name.find("snapshot") != std::string::npos and
+    (not metadata.get_time_independent() or
+     written_vars[variable_name] == false)) {
     int info, error;
     int collection_size = metadata.z().length();
 
@@ -380,7 +394,8 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
             send_field[i][0][j] = data[grid_size * i + j];
     }
 
-    yac_cput(field_ids[metadata.get_name()], collection_size, send_field, &info, &error);
+    yac_cput(field_ids[variable_name], collection_size, send_field, &info, &error);
+    written_vars[variable_name] = true;
   }
 
   if (metadata.get_time_independent()) {

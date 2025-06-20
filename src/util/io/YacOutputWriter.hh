@@ -42,7 +42,7 @@ enum Backend : int;
 class YacOutputWriter : public OutputWriter {
 public:
   YacOutputWriter(MPI_Comm comm, const Config &config, const Geometry & geometry);
-  virtual ~YacOutputWriter() = default;
+  ~YacOutputWriter();
 
 private:
   std::map<std::string, std::shared_ptr<File> > m_files;
@@ -54,10 +54,12 @@ private:
   int x_size;
   int y_size;
   int grid_size;
+  std::string current_snapshot_file = "";
   const Geometry& m_geometry;
   std::map<std::string, int> field_ids;
   std::map<std::string, int> dim_sizes;
   std::map<std::string, unsigned int> variable_tags;
+  std::map<std::string, bool> written_vars;
   nlohmann::json non_spatial_variables_metadata, global_attributes;
 
   std::vector<MPI_Request> field_reqs;
