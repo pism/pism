@@ -86,8 +86,10 @@ static VariableMetadata format_attributes(const VariableMetadata &metadata) {
 struct OutputWriter::Impl {
   Impl(MPI_Comm comm_, const Config &config)
       : comm(comm_) {
-    time_name          = config.get_string("time.dimension_name");
-    use_internal_units = config.get_flag("output.use_MKS");
+    time_name                    = config.get_string("time.dimension_name");
+    use_internal_units           = config.get_flag("output.use_MKS");
+    experiment_id                = config.get_string("output.experiment_id");
+    experiment_id_dimension_name = config.get_string("output.experiment_id_dimension");
   }
 
   std::string time_name;
@@ -97,6 +99,8 @@ struct OutputWriter::Impl {
   std::map<std::tuple<std::string, std::string>, bool> written_time_independent;
   std::map<std::tuple<std::string, std::string>, bool> written_time_dependent;
   std::map<std::string, grid::DistributedGridInfo> grids;
+  std::string experiment_id_dimension_name;
+  std::string experiment_id;
 };
 
 bool &OutputWriter::already_written(const std::string &file_name,
@@ -180,13 +184,16 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
     }
   }
 
-  std::string ID = "ensemble_id";
-  define_dimension(file_name, ID, 1);
+  std::vector<std::string> dims{};
 
-  std::vector<std::string> dims;
+  if (not m_impl->experiment_id.empty()) {
+    // add the "experiment_id" dimension to the beginning of the list of dimensions
+    define_dimension(file_name, m_impl->experiment_id_dimension_name, 1);
+    dims = { m_impl->experiment_id_dimension_name };
+  }
 
   if (not var.get_time_independent()) {
-    dims = { m_impl->time_name };
+    dims.push_back(m_impl->time_name);
   }
 
   // define dimensions and coordinate variables; assemble the list of dimension names:
@@ -197,6 +204,7 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
     auto dimension_name = dimension.get_name();
 
     if (dimension_name.empty()) {
+      // var.z().dimension_name() is empty if var is a 2D variable
       continue;
     }
 
@@ -207,11 +215,26 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
 
   assert(dims.size() > 1);
 
-  dims.push_back(ID);
-
   // define the variable itself:
   define_variable(file_name, var, dims);
 }
+
+void OutputWriter::define_timeseries_variable(const std::string &file_name,
+                                              const SpatialVariableMetadata &metadata) {
+
+  std::vector<std::string> dims{};
+
+  if (not m_impl->experiment_id.empty()) {
+    // add the "experiment_id" dimension to the beginning of the list of dimensions
+    define_dimension(file_name, m_impl->experiment_id_dimension_name, 1);
+    dims = { m_impl->experiment_id_dimension_name };
+  }
+
+  dims.push_back(m_impl->time_name);
+
+  define_variable(file_name, metadata, dims);
+}
+
 
 void OutputWriter::set_global_attributes(
     const std::string &file_name, const std::map<std::string, std::string> &strings,

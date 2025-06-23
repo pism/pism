@@ -132,6 +132,9 @@ public:
   /*!
    * Define a variable given a list of dimension names and set its attributes.
    *
+   * Use this method to define coordinate variables (`x`, `y`, `time`, etc). For scalar
+   * time-dependent model outputs, use `define_timeseries_variable()`.
+   *
    * No-op if the variable already exists.
    *
    * The name of the variable is obtained using `metadata.get_name()` and its type using `metadata.get_output_type()`.
@@ -153,6 +156,21 @@ public:
   void define_spatial_variable(const std::string &file_name,
                                const SpatialVariableMetadata &metadata,
                                const grid::DistributedGridInfo &grid);
+
+  /*!
+   * Define a scalar time-dependent variable and set its attributes.
+   *
+   * This method should be used to define variables containing scalar time-dependent model
+   * outputs. Use `define_variable()` to define coordinate variables (`x`, `y`, `time`,
+   * etc).
+   *
+   * No-op if the variable already exists.
+   *
+   * @param[in] file_name name of the output file
+   * @param[in] metadata variable metadata (name, attributes, etc)
+   */
+  void define_timeseries_variable(const std::string &file_name,
+                                  const SpatialVariableMetadata &metadata);
 
   /*!
    * Set global attributes for a given output file.
@@ -373,6 +391,9 @@ public:
 
   void define_spatial_variable(const SpatialVariableMetadata &metadata,
                                const grid::DistributedGridInfo &grid) const;
+
+  void define_timeseries_variable(const SpatialVariableMetadata &metadata,
+                                  const std::string &dimension_name) const;
 
   void set_global_attributes(const std::map<std::string, std::string> &strings,
                              const std::map<std::string, std::vector<double> > &numbers) const;
