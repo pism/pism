@@ -151,7 +151,7 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
 
   // Print summary statistics
   if (num_calving_cells > 0) {
-    m_log->message(2,
+    m_log->message(3,
                  "* Tensile cliff calving summary:\n"
                  "  - Active calving cells: %d\n"
                  "  - Cells with extreme rates (>315 m/year): %d\n"
