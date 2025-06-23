@@ -18,8 +18,8 @@
 
 #include "pism/basalstrength/OptTillphiYieldStress.hh"
 
+#include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -297,7 +297,7 @@ DiagnosticList OptTillphiYieldStress::diagnostics_impl() const {
                   {"usurf_difference", Diagnostic::wrap(m_usurf_difference)},
                   {"usurf_target", Diagnostic::wrap(m_usurf_target)},
                   {"diff_mask", Diagnostic::wrap(m_mask)}},
-    YieldStress::diagnostics_impl());
+    MohrCoulombYieldStress::diagnostics_impl());
 }
 
 } // end of namespace pism
