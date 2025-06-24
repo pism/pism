@@ -25,6 +25,7 @@
 #include <vector>
 #include <cassert>
 
+#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/GridInfo.hh"
 #include "pism/util/VariableMetadata.hh"
@@ -225,9 +226,16 @@ void OutputWriter::define_timeseries_variable(const std::string &file_name,
   std::vector<std::string> dims{};
 
   if (not m_impl->experiment_id.empty()) {
+    auto &dim_name = m_impl->experiment_id_dimension_name;
     // add the "experiment_id" dimension to the beginning of the list of dimensions
-    define_dimension(file_name, m_impl->experiment_id_dimension_name, 1);
-    dims = { m_impl->experiment_id_dimension_name };
+    define_dimension(file_name, dim_name, 1);
+
+    VariableMetadata exp_id(dim_name, metadata.unit_system());
+    exp_id.set_output_type(io::PISM_STRING).long_name("experiment ID");;
+
+    define_variable(file_name, exp_id, { dim_name });
+
+    dims.push_back(dim_name);
   }
 
   dims.push_back(m_impl->time_name);

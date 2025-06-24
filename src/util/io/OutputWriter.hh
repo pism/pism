@@ -392,8 +392,7 @@ public:
   void define_spatial_variable(const SpatialVariableMetadata &metadata,
                                const grid::DistributedGridInfo &grid) const;
 
-  void define_timeseries_variable(const SpatialVariableMetadata &metadata,
-                                  const std::string &dimension_name) const;
+  void define_timeseries_variable(const SpatialVariableMetadata &metadata) const;
 
   void set_global_attributes(const std::map<std::string, std::string> &strings,
                              const std::map<std::string, std::vector<double> > &numbers) const;

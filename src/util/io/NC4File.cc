@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -173,6 +173,12 @@ void NC4File::put_vara_double_impl(const std::string &variable_name,
                                   false /*put*/);
 }
 
+
+void NC4File::put_var_string_impl(const std::string &variable_name, const std::string &data) const {
+  const char* ptr = data.c_str();
+  int stat = nc_put_var_string(m_file_id, get_varid(variable_name), &ptr);
+  check(PISM_ERROR_LOCATION, stat);
+}
 
 void NC4File::inq_nvars_impl(int &result) const {
   int stat = nc_inq_nvars(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);

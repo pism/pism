@@ -154,6 +154,16 @@ void NCFile::put_vara_double(const std::string &variable_name,
 }
 
 
+void NCFile::put_var_string(const std::string &variable_name, const std::string &data) const {
+  enddef();
+  this->put_var_string_impl(variable_name, data);
+}
+
+void NCFile::put_var_string_impl(const std::string & /*variable_name*/,
+                                 const std::string & /*data*/) const {
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "writing string variables is not supported");
+}
+
 void NCFile::write_darray(const std::string &variable_name,
                           const grid::DistributedGridInfo &grid,
                           unsigned int z_count,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2018, 2019, 2020, 2023, 2024 PISM Authors
+/* Copyright (C) 2014, 2015, 2018, 2019, 2020, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,7 +49,8 @@ enum Type : int {
   PISM_SHORT  = 3,              /* signed 2 byte integer */
   PISM_INT    = 4,              /* signed 4 byte integer */
   PISM_FLOAT  = 5,              /* single precision floating point number */
-  PISM_DOUBLE = 6               /* double precision floating point number */
+  PISM_DOUBLE = 6,              /* double precision floating point number */
+  PISM_STRING = 12              /* string */
 };
 
 enum Backend : int {
