@@ -41,6 +41,10 @@ namespace io {
 enum Type : int;
 }
 
+namespace units {
+class System;
+}
+
 /*!
  * File output API
  *
@@ -367,6 +371,10 @@ protected:
   virtual void close_impl(const std::string &file_name) = 0;
 
 private:
+  void define_experiment_id(const std::string &file_name,
+                            std::shared_ptr<units::System> unit_system);
+  void write_experiment_id(const std::string &file_name);
+
   struct Impl;
   Impl *m_impl;
 };

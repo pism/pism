@@ -226,16 +226,8 @@ void OutputWriter::define_timeseries_variable(const std::string &file_name,
   std::vector<std::string> dims{};
 
   if (not m_impl->experiment_id.empty()) {
-    auto &dim_name = m_impl->experiment_id_dimension_name;
-    // add the "experiment_id" dimension to the beginning of the list of dimensions
-    define_dimension(file_name, dim_name, 1);
-
-    VariableMetadata exp_id(dim_name, metadata.unit_system());
-    exp_id.set_output_type(io::PISM_STRING).long_name("experiment ID");;
-
-    define_variable(file_name, exp_id, { dim_name });
-
-    dims.push_back(dim_name);
+    define_experiment_id(file_name, metadata.unit_system());
+    dims.push_back(m_impl->experiment_id_dimension_name);
   }
 
   dims.push_back(m_impl->time_name);
@@ -319,6 +311,11 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
     }
   }
 
+  // write experiment ID
+  {
+    
+  }
+
   // make sure we have at least one level
   unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
 
@@ -364,6 +361,22 @@ unsigned int OutputWriter::time_dimension_length(const std::string &file_name) {
 
 double OutputWriter::last_time_value(const std::string &file_name) {
   return last_time_value_impl(file_name);
+}
+
+void OutputWriter::define_experiment_id(const std::string &file_name,
+                                        std::shared_ptr<units::System> unit_system) {
+  auto &dim_name = m_impl->experiment_id_dimension_name;
+  // add the "experiment_id" dimension to the beginning of the list of dimensions
+  define_dimension(file_name, dim_name, 1);
+
+  VariableMetadata exp_id(dim_name, unit_system);
+  exp_id.set_output_type(io::PISM_STRING).long_name("experiment ID");
+
+  define_variable(file_name, exp_id, { dim_name });
+}
+
+void OutputWriter::write_experiment_id(const std::string &file_name) {
+
 }
 
 } // namespace pism
