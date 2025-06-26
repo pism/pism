@@ -27,6 +27,8 @@
 #include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/CalvingMIP.hh"
+#include "pism/frontretreat/calving/GivenRate.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
@@ -890,6 +892,19 @@ void IceModel::init_calving() {
     m_submodels["thickness threshold calving"] = m_thickness_threshold_calving.get();
   }
 
+  if (member("given_calving", methods)) {
+    allocate_front_retreat = true;
+
+    if (not m_given_calving) {
+      m_given_calving = std::make_shared<calving::GivenRate>(m_grid);
+    }
+
+    m_given_calving->init();
+    methods.erase("given_calving");
+
+    m_submodels["given calving"] = m_given_calving.get();
+  }
+
 
   if (member("eigen_calving", methods)) {
     allocate_front_retreat = true;
@@ -903,6 +918,20 @@ void IceModel::init_calving() {
 
     m_submodels["eigen calving"] = m_eigen_calving.get();
   }
+
+  if (member("calvingmip_calving", methods)) {
+    allocate_front_retreat = true;
+
+    if (not m_calvingmip) {
+      m_calvingmip = std::make_shared<calving::CalvingMIP>(m_grid);
+    }
+
+    m_calvingmip->init();
+    methods.erase("calvingmip_calving");
+
+    m_submodels["CalvingMIP calving"] = m_calvingmip.get();
+  }
+
 
   if (member("vonmises_calving", methods)) {
     allocate_front_retreat = true;

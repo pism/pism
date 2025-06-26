@@ -12,7 +12,7 @@ All mechanisms described below fall into two categories:
 
 - mechanisms computing a *retreat rate* due to calving and using it to update ice geometry
   (:ref:`sec-calving-eigen-calving`, :ref:`sec-calving-vonmises`,
-  :ref:`sec-calving-hayhurst`), and
+  :ref:`sec-calving-hayhurst`, :ref:`sec-calving-given`), and
 - mechanisms removing ice at a grid point according to a certain criterion
   (:ref:`sec-calving-thickness-threshold`, :ref:`sec-calving-floating-ice`,
   :ref:`sec-prescribed-retreat`).
@@ -165,6 +165,31 @@ Prefix: ``calving.hayhurst_calving.``
 .. pism-parameters::
    :prefix: calving.hayhurst_calving.
 
+
+.. _sec-calving-given:
+
+Given calving
+^^^^^^^^^^^^^
+
+The option :opt:`-calving given_calving` either defines a constant calving rate or
+reads a given calving rate field from file. This option allows for running CalvingMIP
+experiments as suggested in:
+
+    https://github.com/JRowanJordan/CalvingMIP/wiki
+
+.. note::
+
+   This implements a predefined calving rate, while CalvingMIP calving allows the
+   calving rate to adjust to the evolving terminal  ice shelf velocities
+
+.. rubric:: Parameters
+
+Prefix: ``calving.given_calving.``
+
+.. pism-parameters::
+   :prefix: calving.given_calving.
+
+
 .. _sec-calving-thickness-threshold:
 
 Calving of thin floating ice
@@ -237,3 +262,45 @@ Prefix: ``geometry.front_retreat.prescribed.``
 
 .. pism-parameters::
    :prefix: geometry.front_retreat.prescribed.
+
+
+.. _sec-calving_calvingmip:
+
+CalvingMIP - phase 1
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+With the option :opt:`-calving calvingmip_calving` a calving rate is applied to the ice
+shelf calving front, which has the opposite direction of the terminal SSA velocity vector,
+if option :opt:`calve_along_flow_direction` is set.
+This allows to sustain a circular symmetric calving front or to keep a calving front fixed,
+when the calving rate magnitude equals the terminal ice flow speed, as in Experiment 1
+and 2 in the first phase of CalvingMIP
+
+      https://github.com/JRowanJordan/CalvingMIP/wiki/Experiments---Phase-1.
+
+The five experiments with PISM can be run with the options :opt:`-calvingmip_experiment 1` as
+shown in `examples/marine/calvingmip/run_experiments.sh`. In order to obtain good results
+model resolution should be fine (e.g. 5km) and timestepping should be limited, e.g.
+with :opt:`-max_dt 1.0` year. In Experiment 5 a simple calving law is applied with a
+threshold terminal thickness of :opt:`-exp5_calving_threshold 275` meter. Calving rate
+can be written to file as :var:`calvingmip_calving_rate`.
+
+Ice thickness evolution and calving are generally treated as independent and isolated
+processes in PISM, which is different from the assumptions of the level-set method in many
+other participating ice sheet models. The first-order upwind transport scheme can be 
+considered to be mass conserving, where velocity components are defined on a staggered grid.
+Hance, the inferred calving rate can be considered as negative horizontal mass flux,
+which scales with the terminal velocity.
+
+.. note::
+
+   This calving rates are not predefined, but scale with the terminal velocity vector.
+
+.. rubric:: Parameters
+
+Prefix: ``calving.calvingmip_calving.``
+
+.. pism-parameters::
+   :prefix: calving.calvingmip_calving.
+
+

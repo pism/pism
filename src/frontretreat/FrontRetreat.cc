@@ -25,16 +25,24 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Vector.hh"
+
 
 namespace pism {
 
 FrontRetreat::FrontRetreat(std::shared_ptr<const Grid> g)
   : Component(g),
     m_cell_type(m_grid, "cell_type"),
-    m_tmp(m_grid, "temporary_storage") {
+    m_tmp(m_grid, "temporary_storage"),
+    m_wx(m_grid, "weights_calving_x"),
+    m_wy(m_grid, "weights_calving_y") {
 
   m_tmp.metadata(0).long_name("additional mass loss at points near the front").units("m");
   m_cell_type.metadata(0).long_name("cell type mask");
+
+  m_wx.metadata(0).long_name("weight of mass loss at calving front in x-direction");
+  m_wy.metadata(0).long_name("weight of mass loss at calving front in y-direction");
+
 }
 
 /*!
@@ -144,6 +152,7 @@ void FrontRetreat::update_geometry(double dt,
                                    const Geometry &geometry,
                                    const array::Scalar1 &bc_mask,
                                    const array::Scalar &retreat_rate,
+                                   const array::Vector1 &ice_velocity,
                                    array::Scalar &Href,
                                    array::Scalar1 &ice_thickness) {
 
@@ -159,13 +168,24 @@ void FrontRetreat::update_geometry(double dt,
     compute_modified_mask(geometry.cell_type, m_cell_type);
   }
 
+  // calving retreat along terminal ice flow direction, as for calving ratw in calving/CalvinMIP.cc
+  m_calving_along_flow = m_config->get_flag("calving.calvingmip_calving.calve_along_flow_direction");
+  if (m_calving_along_flow) {
+    m_log->message(2, "  CalvingMIP calving along terminal ice flow.\n");
+  }
+
+  //FIXME: Assuming dx=dy, add warning as for eigencalving?
   const double dx = m_grid->dx();
 
   m_tmp.set(0.0);
 
+  double vcr = 1e-20; //lower bound to evaluate terminal ice velocities
+  m_wx.set(0.0);
+  m_wy.set(0.0);
+
   array::AccessScope list{&ice_thickness, &bc_mask,
       &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
-      &surface_elevation};
+      &surface_elevation, &ice_velocity, &m_wx, &m_wy};
 
   // Step 1: Apply the computed horizontal retreat rate:
   for (auto pt = m_grid->points(); pt; pt.next()) {
@@ -226,7 +246,50 @@ void FrontRetreat::update_geometry(double dt,
         }
 
         if (N > 0) {
-          m_tmp(i, j) = (Href_old + Href_change) / (double)N;
+
+          if (m_calving_along_flow) { //weight with velocity vector
+            m_tmp(i, j) = (Href_old + Href_change);
+            //set weights according to inflow vectors
+            double velsum = 0.0,
+                   vw = ice_velocity(i-1, j).u,
+                   ve = ice_velocity(i+1, j).u,
+                   vs = ice_velocity(i, j-1).v,
+                   vn = ice_velocity(i, j+1).v;
+
+            if (vw > vcr) {
+              m_wx(i,j) = vw; //ww
+              velsum += vw;
+            }
+            if (ve < -vcr) {
+              m_wx(i+1,j) = -ve; //we
+              velsum -= ve;
+            }
+            if (vs > vcr) {
+              m_wy(i,j) = vs;  //ws
+              velsum += vs;
+            }
+            if (vn < -vcr) {
+              m_wy(i,j+1) = -vn; //wn
+              velsum -= vn;
+            }
+
+            if (velsum > vcr) {
+              m_wx(i,j)   /= velsum;
+              m_wx(i+1,j) /= velsum;
+              m_wy(i,j)   /= velsum;
+              m_wy(i,j+1) /= velsum;
+
+            } else { //N2 != N
+
+              if (m_cell_type.floating_ice(i-1, j)) m_wx(i,j)  = 1.0 / (double)N;
+              if (m_cell_type.floating_ice(i+1, j)) m_wx(i+1,j)= 1.0 / (double)N;
+              if (m_cell_type.floating_ice(i, j-1)) m_wy(i,j)  = 1.0 / (double)N;
+              if (m_cell_type.floating_ice(i, j+1)) m_wy(i,j+1)= 1.0 / (double)N;
+            }
+
+          } else { //eqal weights to neighbor icy cells
+            m_tmp(i, j) = (Href_old + Href_change) / (double)N;
+          }
         } else {
           // No shelf calving front of grounded terminus to distribute to: retreat stops here.
           m_tmp(i, j) = 0.0;
@@ -238,6 +301,8 @@ void FrontRetreat::update_geometry(double dt,
 
   // Step 2: update ice thickness and Href in neighboring cells if we need to propagate mass losses.
   m_tmp.update_ghosts();
+  m_wx.update_ghosts();
+  m_wy.update_ghosts();
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -247,18 +312,38 @@ void FrontRetreat::update_geometry(double dt,
         (m_cell_type.floating_ice(i, j) or
          (m_cell_type.grounded_ice(i, j) and bed(i, j) < sea_level(i, j)))) {
 
-      const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
-                              m_tmp(i, j + 1) + m_tmp(i, j - 1));
+      double wn = 1.0,
+             we = 1.0,
+             ws = 1.0,
+             ww = 1.0;
 
-      if (delta_H < 0.0) {
-        Href(i, j) = ice_thickness(i, j) + delta_H; // in m
-        ice_thickness(i, j) = 0.0;
-      }
+      const double mass_to_redistribute = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
+                                           m_tmp(i, j + 1) + m_tmp(i, j - 1));
 
-      // Stop retreat if the current cell does not have enough ice to absorb the loss.
-      if (Href(i, j) < 0.0) {
-        Href(i, j) = 0.0;
-      }
+      if (mass_to_redistribute != 0.0) {
+
+        if (m_calving_along_flow) { //weight with velocity vector
+
+          we = m_wx(i+1,j);
+          ww = m_wx(i,j);
+          wn = m_wy(i,j+1);
+          ws = m_wy(i,j);
+
+        }
+
+        const double delta_H = (we * m_tmp(i + 1, j) + ww * m_tmp(i - 1, j) +
+                                wn * m_tmp(i, j + 1) + ws * m_tmp(i, j - 1));
+
+        if (delta_H < 0.0) {
+          Href(i, j) = ice_thickness(i, j) + delta_H; // in m
+          ice_thickness(i, j) = 0.0;
+        }
+
+        // Stop retreat if the current cell does not have enough ice to absorb the loss.
+        if (Href(i, j) < 0.0) {
+          Href(i, j) = 0.0;
+        }
+      } // end of mass_to_redistribute
     }
   }
 }

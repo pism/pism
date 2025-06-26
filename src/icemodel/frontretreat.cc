@@ -24,6 +24,8 @@
 #include "pism/frontretreat/FrontRetreat.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/CalvingMIP.hh"
+#include "pism/frontretreat/calving/GivenRate.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
@@ -86,7 +88,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
 
 void IceModel::front_retreat_step() {
 
-  bool retreat_rate_based_calving = m_eigen_calving or m_vonmises_calving or m_hayhurst_calving;
+  bool retreat_rate_based_calving = m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_given_calving or m_calvingmip;
   bool calving_is_active =
       retreat_rate_based_calving or m_float_kill_calving or m_thickness_threshold_calving;
   bool frontal_melt_only_open_ocean = m_config->get_flag("frontal_melt.open_ocean_margins_only");
@@ -107,6 +109,11 @@ void IceModel::front_retreat_step() {
                               m_stress_balance->shallow()->velocity());
     }
 
+    if (m_given_calving) {
+      m_given_calving->update(m_time->current(), m_dt);
+    }
+
+
     if (m_hayhurst_calving) {
       m_hayhurst_calving->update(m_geometry.cell_type,
                                  m_geometry.ice_thickness,
@@ -122,6 +129,13 @@ void IceModel::front_retreat_step() {
                                  m_stress_balance->shallow()->velocity(),
                                  m_energy_model->enthalpy());
     }
+
+    if (m_calvingmip) {
+      m_calvingmip->update(m_geometry.cell_type,
+                             m_stress_balance->shallow()->velocity(),
+                             m_geometry.ice_thickness);
+    }
+
 
     if (m_frontal_melt) {
       array::Scalar &flux_magnitude = *m_work2d[0];
@@ -166,6 +180,7 @@ void IceModel::front_retreat_step() {
     // apply the frontal melt rate
     m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
                                      retreat_rate,
+                                     m_stress_balance->shallow()->velocity(),
                                      m_geometry.ice_area_specific_volume,
                                      m_geometry.ice_thickness);
     bool add_values = false;
@@ -195,6 +210,10 @@ void IceModel::front_retreat_step() {
         retreat_rate.add(1.0, m_eigen_calving->calving_rate());
       }
 
+      if (m_given_calving) {
+        retreat_rate.add(1.0, m_given_calving->calving_rate());
+      }
+
       if (m_hayhurst_calving) {
         retreat_rate.add(1.0, m_hayhurst_calving->calving_rate());
       }
@@ -202,6 +221,11 @@ void IceModel::front_retreat_step() {
       if (m_vonmises_calving) {
         retreat_rate.add(1.0, m_vonmises_calving->calving_rate());
       }
+
+      if (m_calvingmip) {
+        retreat_rate.add(1.0, m_calvingmip->calving_rate());
+      }
+
 
       if (m_calving_rate_factor) {
         double T = m_time->current() + 0.5 * m_dt;
@@ -224,6 +248,7 @@ void IceModel::front_retreat_step() {
 
       m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
                                        retreat_rate,
+                                       m_stress_balance->shallow()->velocity(),
                                        m_geometry.ice_area_specific_volume,
                                        m_geometry.ice_thickness);
 
@@ -231,7 +256,7 @@ void IceModel::front_retreat_step() {
 
       m_geometry.ensure_consistency(thickness_threshold);
 
-      if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
+      if (retreat_rate_based_calving) {
         remove_narrow_tongues(m_geometry, m_geometry.ice_thickness);
 
         m_geometry.ensure_consistency(thickness_threshold);

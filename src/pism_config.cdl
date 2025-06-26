@@ -615,6 +615,23 @@ netcdf pism_config {
     pism_config:bootstrapping.temperature_heuristic_option = "boot_temperature_heuristic";
     pism_config:bootstrapping.temperature_heuristic_type = "keyword";
 
+    pism_config:calving.calvingmip_calving.calve_along_flow_direction = "no";
+    pism_config:calving.calvingmip_calving.calve_along_flow_direction_doc = "Calve in opposite direction of terminal ice flow.";
+    pism_config:calving.calvingmip_calving.calve_along_flow_direction_option = "calve_along_flow_direction";
+    pism_config:calving.calvingmip_calving.calve_along_flow_direction_type = "flag";
+
+    pism_config:calving.calvingmip_calving.experiment = 1;
+    pism_config:calving.calvingmip_calving.experiment_doc = "Type of CalvingMIP experiment 1 to 5 as indicated in `https://github.com/JRowanJordan/CalvingMIP/wiki/Experiments---Phase-1`";
+    pism_config:calving.calvingmip_calving.experiment_type = "integer";
+    pism_config:calving.calvingmip_calving.experiment_option = "calvingmip_experiment";
+    pism_config:calving.calvingmip_calving.experiment_units = "count";
+
+    pism_config:calving.calvingmip_calving.threshold = 275.0;
+    pism_config:calving.calvingmip_calving.threshold_doc = "Is used as parameter in CalvingMIP EXP5 calving law dependent on terminal ice thickness of floating or grounded ice and termial ice velocity.";
+    pism_config:calving.calvingmip_calving.threshold_option = "exp5_calving_threshold";
+    pism_config:calving.calvingmip_calving.threshold_type = "number";
+    pism_config:calving.calvingmip_calving.threshold_units = "meters";
+
     pism_config:calving.eigen_calving.K = 0.0;
     pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \\times 10^{11}` m a, that is, `3 \\times 10^{16}` to `10^{19}` m s.";
     pism_config:calving.eigen_calving.K_option = "eigen_calving_K";
@@ -630,6 +647,21 @@ netcdf pism_config {
     pism_config:calving.float_kill.margin_only_doc = "Apply float_kill at ice margin cells only.";
     pism_config:calving.float_kill.margin_only_option = "float_kill_margin_only";
     pism_config:calving.float_kill.margin_only_type = "flag";
+
+    pism_config:calving.given_calving.file = "";
+    pism_config:calving.given_calving.file_doc = "Name of the file containing the spatially-variable calving rate.";
+    pism_config:calving.given_calving.file_option = "given_calving_file";
+    pism_config:calving.given_calving.file_type = "string";
+
+    pism_config:calving.given_calving.periodic = "no";
+    pism_config:calving.given_calving.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:calving.given_calving.periodic_type = "flag";
+
+    pism_config:calving.given_calving.rate = 0.0;
+    pism_config:calving.given_calving.rate_doc = "This option sets a constant calving rate applied to all calving fronts.";
+    pism_config:calving.given_calving.rate_option = "calving_rate";
+    pism_config:calving.given_calving.rate_type = "number";
+    pism_config:calving.given_calving.rate_units = "meters year-1";
 
     pism_config:calving.hayhurst_calving.B_tilde = 65.0;
     pism_config:calving.hayhurst_calving.B_tilde_doc = "Effective damage rate :cite:`Mercenier2018`";
@@ -647,7 +679,7 @@ netcdf pism_config {
     pism_config:calving.hayhurst_calving.sigma_threshold_units = "MPa";
 
     pism_config:calving.methods = "";
-    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``";
+    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``, ``given_calving``, ``calvingmip_calving``";
     pism_config:calving.methods_option = "calving";
     pism_config:calving.methods_type = "string";
 
