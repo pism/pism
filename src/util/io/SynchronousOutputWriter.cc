@@ -174,8 +174,8 @@ void SynchronousOutputWriter::write_array_impl(const std::string &file_name,
 }
 
 void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &file_name,
-                                           const SpatialVariableMetadata &metadata,
-                                           const double *data) {
+                                                          const SpatialVariableMetadata &metadata,
+                                                          const double *data) {
 
   const auto &output_file = file(file_name);
 
@@ -186,14 +186,14 @@ void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &fil
   std::vector<unsigned int> start, count;
 
   if (metadata.get_time_independent()) {
-    start = { grid.ys, grid.xs, 0, 0 };
-    count = { grid.ym, grid.xm, n_levels, 1 };
+    start = { grid.ys, grid.xs, 0 };
+    count = { grid.ym, grid.xm, n_levels };
   } else {
     auto t_length = time_dimension_length(file_name);
     auto t_start  = t_length > 0 ? t_length - 1 : 0;
 
-    start = { t_start, grid.ys, grid.xs, 0, 0 };
-    count = { 1, grid.ym, grid.xm, n_levels, 1 };
+    start = { t_start, grid.ys, grid.xs, 0 };
+    count = { 1, grid.ym, grid.xm, n_levels };
   }
 
   output_file.write_variable(variable_name, start, count, data);

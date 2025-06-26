@@ -242,6 +242,13 @@ public:
                               const double *input);
 
   /*!
+   * Write a scalar time-dependent variable.
+   */
+  void write_timeseries_variable(const std::string &file_name, const VariableMetadata &metadata,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<double> &input);
+  /*!
    * Indicate that the file `file_name` should be open for appending.
    *
    * This implies that if `file_name` should not be deleted if it already exists.

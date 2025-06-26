@@ -87,10 +87,10 @@ static VariableMetadata format_attributes(const VariableMetadata &metadata) {
 struct OutputWriter::Impl {
   Impl(MPI_Comm comm_, const Config &config)
       : comm(comm_) {
-    time_name                    = config.get_string("time.dimension_name");
-    use_internal_units           = config.get_flag("output.use_MKS");
-    experiment_id                = config.get_string("output.experiment_id");
-    experiment_id_dimension_name = config.get_string("output.experiment_id_dimension");
+    time_name          = config.get_string("time.dimension_name");
+    use_internal_units = config.get_flag("output.use_MKS");
+    experiment_id      = config.get_string("output.experiment_id");
+    experiment_id_name = config.get_string("output.experiment_id_dimension");
   }
 
   std::string time_name;
@@ -100,7 +100,7 @@ struct OutputWriter::Impl {
   std::map<std::tuple<std::string, std::string>, bool> written_time_independent;
   std::map<std::tuple<std::string, std::string>, bool> written_time_dependent;
   std::map<std::string, grid::DistributedGridInfo> grids;
-  std::string experiment_id_dimension_name;
+  std::string experiment_id_name;
   std::string experiment_id;
 };
 
@@ -188,9 +188,9 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
   std::vector<std::string> dims{};
 
   if (not m_impl->experiment_id.empty()) {
+    define_experiment_id(file_name, metadata.unit_system());
     // add the "experiment_id" dimension to the beginning of the list of dimensions
-    define_dimension(file_name, m_impl->experiment_id_dimension_name, 1);
-    dims = { m_impl->experiment_id_dimension_name };
+    dims = { m_impl->experiment_id_name };
   }
 
   if (not var.get_time_independent()) {
@@ -227,7 +227,8 @@ void OutputWriter::define_timeseries_variable(const std::string &file_name,
 
   if (not m_impl->experiment_id.empty()) {
     define_experiment_id(file_name, metadata.unit_system());
-    dims.push_back(m_impl->experiment_id_dimension_name);
+    // add the "experiment_id" dimension to the beginning of the list of dimensions
+    dims = { m_impl->experiment_id_name };
   }
 
   dims.push_back(m_impl->time_name);
@@ -312,8 +313,8 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   }
 
   // write experiment ID
-  {
-    
+  if (not m_impl->experiment_id.empty()) {
+    write_experiment_id(file_name);
   }
 
   // make sure we have at least one level
@@ -343,6 +344,28 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   already_written(file_name, variable_name, time_dependent) = true;
 }
 
+void OutputWriter::write_timeseries_variable(const std::string &file_name,
+                                             const VariableMetadata &metadata,
+                                             const std::vector<unsigned int> &start,
+                                             const std::vector<unsigned int> &count,
+                                             const std::vector<double> &input) {
+  std::vector<unsigned int> S{};
+  std::vector<unsigned int> C{};
+
+  if (not m_impl->experiment_id.empty()) {
+    write_experiment_id(file_name);
+    S = { 0 };
+    C = { 1 };
+  }
+
+  for (size_t k = 0; k < start.size(); ++k) {
+    S.push_back(start[k]);
+    C.push_back(count[k]);
+  }
+
+  write_array(file_name, metadata, S, C, input);
+}
+
 void OutputWriter::append(const std::string &file_name) {
   append_impl(file_name);
 }
@@ -365,18 +388,25 @@ double OutputWriter::last_time_value(const std::string &file_name) {
 
 void OutputWriter::define_experiment_id(const std::string &file_name,
                                         std::shared_ptr<units::System> unit_system) {
-  auto &dim_name = m_impl->experiment_id_dimension_name;
-  // add the "experiment_id" dimension to the beginning of the list of dimensions
-  define_dimension(file_name, dim_name, 1);
+  auto &dim_name = m_impl->experiment_id_name;
 
   VariableMetadata exp_id(dim_name, unit_system);
   exp_id.set_output_type(io::PISM_STRING).long_name("experiment ID");
 
+  define_dimension(file_name, dim_name, 1);
   define_variable(file_name, exp_id, { dim_name });
 }
 
 void OutputWriter::write_experiment_id(const std::string &file_name) {
+  const auto &variable_name = m_impl->experiment_id_name;
+  if (already_written(file_name, variable_name, false)) {
+    return;
+  }
 
+  write_string_variable(file_name, variable_name, m_impl->experiment_id);
+
+  // mark experiment ID as "already written"
+  already_written(file_name, m_impl->experiment_id_name, false) = true;
 }
 
 } // namespace pism
