@@ -114,9 +114,6 @@ public:
                       const std::vector<unsigned int> &count,
                       const double *op) const;
 
-  void write_string_variable(const std::string &variable_name,
-                             const std::string &data) const;
-
   void set_variable_was_written(const std::string &name) const;
   bool get_variable_was_written(const std::string &name) const;
 

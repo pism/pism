@@ -721,15 +721,6 @@ void File::write_variable(const std::string &variable_name,
   }
 }
 
-void File::write_string_variable(const std::string &variable_name, const std::string &data) const {
-  try {
-    m_impl->nc->put_var_string(variable_name, data);
-  } catch (RuntimeError &e) {
-    e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), name().c_str());
-    throw;
-  }
-}
-
 
 void File::write_distributed_array(const std::string &variable_name,
                                    const grid::DistributedGridInfo &grid,
