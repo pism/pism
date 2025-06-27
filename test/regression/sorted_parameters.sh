@@ -14,6 +14,8 @@ cat ${pism_config_cdl} | \
   grep -v "_type =" | \
   grep -v "_option =" | \
   grep -v "_choices =" | \
+  grep -v "_valid_min =" | \
+  grep -v "_valid_max =" | \
   sed "s/^ *pism_config://" | \
   sed "s/ =.*//" > ${temp_dir}/raw_config.txt
 
