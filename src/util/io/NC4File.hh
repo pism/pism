@@ -69,7 +69,9 @@ protected:
                                    const std::vector<unsigned int> &count,
                                    const double *op) const;
 
-  virtual void put_var_string_impl(const std::string &variable_name, const std::string &data) const;
+  virtual void put_vara_text_impl(const std::string &variable_name,
+                                  const std::vector<unsigned int> &start,
+                                  const std::vector<unsigned int> &count, const char *data) const;
 
   virtual void inq_nvars_impl(int &result) const;
 

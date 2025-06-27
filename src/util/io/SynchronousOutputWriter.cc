@@ -173,6 +173,16 @@ void SynchronousOutputWriter::write_array_impl(const std::string &file_name,
   output_file.write_variable(variable_name, start, count, data);
 }
 
+void SynchronousOutputWriter::write_text_impl(const std::string &file_name,
+                                              const std::string &variable_name,
+                                              const std::vector<unsigned int> &start,
+                                              const std::vector<unsigned int> &count,
+                                              const std::string &input) {
+  const auto &output_file = file(file_name);
+
+  output_file.write_text_variable(variable_name, start, count, input);
+}
+
 void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &file_name,
                                                           const SpatialVariableMetadata &metadata,
                                                           const double *data) {
@@ -196,6 +206,11 @@ void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &fil
     count = { 1, grid.ym, grid.xm, n_levels };
   }
 
+  if (not experiment_id().empty()) {
+    start.insert(start.cbegin(), 0);
+    count.insert(count.cbegin(), 1);
+  }
+  
   output_file.write_variable(variable_name, start, count, data);
 }
 

@@ -49,8 +49,7 @@ enum Type : int {
   PISM_SHORT  = 3,              /* signed 2 byte integer */
   PISM_INT    = 4,              /* signed 4 byte integer */
   PISM_FLOAT  = 5,              /* single precision floating point number */
-  PISM_DOUBLE = 6,              /* double precision floating point number */
-  PISM_STRING = 12              /* string */
+  PISM_DOUBLE = 6               /* double precision floating point number */
 };
 
 enum Backend : int {

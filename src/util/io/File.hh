@@ -114,6 +114,9 @@ public:
                       const std::vector<unsigned int> &count,
                       const double *op) const;
 
+  void write_text_variable(const std::string &variable_name, const std::vector<unsigned int> &start,
+                           const std::vector<unsigned int> &count, const std::string &input) const;
+
   void set_variable_was_written(const std::string &name) const;
   bool get_variable_was_written(const std::string &name) const;
 

@@ -226,6 +226,16 @@ public:
                    const std::vector<double> &input);
 
   /*!
+   * Write a text (string) variable.
+   *
+   * The array `input` is stored *redundantly* on all MPI ranks.
+   *
+   */
+  void write_text(const std::string &file_name, const std::string &variable_name,
+                  const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
+                  const std::string &input);
+
+  /*!
    * Write a 2D or 3D array `input` described by `metadata` to the file `file_name`.
    *
    * Write coordinate variables (`x`, `y`, `z`, etc) required by this variable.
@@ -356,6 +366,14 @@ protected:
                                 const std::vector<unsigned int> &count, const double *data) = 0;
 
   /*!
+   * Implementation of write_text()
+   */
+  virtual void write_text_impl(const std::string &file_name, const std::string &variable_name,
+                               const std::vector<unsigned int> &start,
+                               const std::vector<unsigned int> &count,
+                               const std::string &input) = 0;
+
+  /*!
    * Implementation of write_spatial_variable()
    */
   virtual void write_spatial_variable_impl(const std::string &file_name,
@@ -377,6 +395,7 @@ protected:
    */
   virtual void close_impl(const std::string &file_name) = 0;
 
+  const std::string &experiment_id() const;
 private:
   void define_experiment_id(const std::string &file_name,
                             std::shared_ptr<units::System> unit_system);

@@ -98,7 +98,8 @@ public:
   void put_vara_double(const std::string &variable_name, const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count, const double *op) const;
 
-  void put_var_string(const std::string &variable_name, const std::string &data) const;
+  void put_vara_text(const std::string &variable_name, const std::vector<unsigned int> &start,
+                     const std::vector<unsigned int> &count, const std::string &data) const;
 
   void write_darray(const std::string &variable_name, const grid::DistributedGridInfo &grid,
                     unsigned int z_count, bool time_dependent, unsigned int record,
@@ -180,7 +181,9 @@ protected:
                                     const std::vector<unsigned int> &count,
                                     const double *op) const = 0;
 
-  virtual void put_var_string_impl(const std::string &variable_name, const std::string &data) const;
+  virtual void put_vara_text_impl(const std::string &variable_name,
+                                  const std::vector<unsigned int> &start,
+                                  const std::vector<unsigned int> &count, const char *data) const = 0;
 
   virtual void write_darray_impl(const std::string &variable_name,
                                  const grid::DistributedGridInfo &grid, unsigned int z_count,

@@ -721,6 +721,18 @@ void File::write_variable(const std::string &variable_name,
   }
 }
 
+void File::write_text_variable(const std::string &variable_name,
+                               const std::vector<unsigned int> &start,
+                               const std::vector<unsigned int> &count,
+                               const std::string &input) const {
+  try {
+    m_impl->nc->put_vara_text(variable_name, start, count, input);
+  } catch (RuntimeError &e) {
+    e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), name().c_str());
+    throw;
+  }
+}
+
 
 void File::write_distributed_array(const std::string &variable_name,
                                    const grid::DistributedGridInfo &grid,

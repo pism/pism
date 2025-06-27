@@ -87,10 +87,11 @@ static VariableMetadata format_attributes(const VariableMetadata &metadata) {
 struct OutputWriter::Impl {
   Impl(MPI_Comm comm_, const Config &config)
       : comm(comm_) {
-    time_name          = config.get_string("time.dimension_name");
-    use_internal_units = config.get_flag("output.use_MKS");
-    experiment_id      = config.get_string("output.experiment_id");
-    experiment_id_name = config.get_string("output.experiment_id_dimension");
+    time_name            = config.get_string("time.dimension_name");
+    use_internal_units   = config.get_flag("output.use_MKS");
+    experiment_id        = config.get_string("output.experiment_id");
+    experiment_id_name   = config.get_string("output.experiment_id_dimension");
+    experiment_id_length = (int)config.get_number("output.experiment_id_max_length");
   }
 
   std::string time_name;
@@ -102,6 +103,7 @@ struct OutputWriter::Impl {
   std::map<std::string, grid::DistributedGridInfo> grids;
   std::string experiment_id_name;
   std::string experiment_id;
+  int experiment_id_length;
 };
 
 bool &OutputWriter::already_written(const std::string &file_name,
@@ -187,7 +189,7 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
 
   std::vector<std::string> dims{};
 
-  if (not m_impl->experiment_id.empty()) {
+  if (not experiment_id().empty()) {
     define_experiment_id(file_name, metadata.unit_system());
     // add the "experiment_id" dimension to the beginning of the list of dimensions
     dims = { m_impl->experiment_id_name };
@@ -225,7 +227,7 @@ void OutputWriter::define_timeseries_variable(const std::string &file_name,
 
   std::vector<std::string> dims{};
 
-  if (not m_impl->experiment_id.empty()) {
+  if (not experiment_id().empty()) {
     define_experiment_id(file_name, metadata.unit_system());
     // add the "experiment_id" dimension to the beginning of the list of dimensions
     dims = { m_impl->experiment_id_name };
@@ -258,6 +260,13 @@ void OutputWriter::write_array(const std::string &file_name, const std::string &
                                const std::vector<unsigned int> &count,
                                const std::vector<double> &input) {
   write_array_impl(file_name, variable_name, start, count, input.data());
+}
+
+void OutputWriter::write_text(const std::string &file_name, const std::string &variable_name,
+                               const std::vector<unsigned int> &start,
+                               const std::vector<unsigned int> &count,
+                              const std::string &input) {
+  write_text_impl(file_name, variable_name, start, count, input);
 }
 
 void OutputWriter::write_array(const std::string &file_name, const VariableMetadata &metadata,
@@ -313,7 +322,7 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   }
 
   // write experiment ID
-  if (not m_impl->experiment_id.empty()) {
+  if (not experiment_id().empty()) {
     write_experiment_id(file_name);
   }
 
@@ -352,7 +361,7 @@ void OutputWriter::write_timeseries_variable(const std::string &file_name,
   std::vector<unsigned int> S{};
   std::vector<unsigned int> C{};
 
-  if (not m_impl->experiment_id.empty()) {
+  if (not experiment_id().empty()) {
     write_experiment_id(file_name);
     S = { 0 };
     C = { 1 };
@@ -391,10 +400,11 @@ void OutputWriter::define_experiment_id(const std::string &file_name,
   auto &dim_name = m_impl->experiment_id_name;
 
   VariableMetadata exp_id(dim_name, unit_system);
-  exp_id.set_output_type(io::PISM_STRING).long_name("experiment ID");
+  exp_id.set_output_type(io::PISM_CHAR).long_name("experiment ID");
 
   define_dimension(file_name, dim_name, 1);
-  define_variable(file_name, exp_id, { dim_name });
+  define_dimension(file_name, "nc", m_impl->experiment_id_length);
+  define_variable(file_name, exp_id, { dim_name, "nc" });
 }
 
 void OutputWriter::write_experiment_id(const std::string &file_name) {
@@ -403,10 +413,16 @@ void OutputWriter::write_experiment_id(const std::string &file_name) {
     return;
   }
 
-  write_string_variable(file_name, variable_name, m_impl->experiment_id);
+  const auto &exp_id = experiment_id();
+  write_text(file_name, variable_name, { 0, 0 }, { 1, (unsigned)exp_id.size() + 1 }, exp_id);
 
   // mark experiment ID as "already written"
   already_written(file_name, m_impl->experiment_id_name, false) = true;
 }
+
+const std::string &OutputWriter::experiment_id() const {
+  return m_impl->experiment_id;
+}
+
 
 } // namespace pism

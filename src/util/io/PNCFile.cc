@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2023, 2024 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -191,6 +191,26 @@ void PNCFile::put_vara_double_impl(const std::string &variable_name,
   stat = ncmpi_put_vara_double_all(m_file_id, varid, nc_start.data(), nc_count.data(), op);
   check(PISM_ERROR_LOCATION, stat);
 }
+
+void PNCFile::put_vara_text_impl(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count, const char *data) const {
+  int stat, varid, ndims = static_cast<int>(start.size());
+
+  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims);
+
+  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid);
+  check(PISM_ERROR_LOCATION, stat);
+
+  for (int j = 0; j < ndims; ++j) {
+    nc_start[j] = start[j];
+    nc_count[j] = count[j];
+  }
+
+  stat = ncmpi_put_vara_text_all(m_file_id, varid, nc_start.data(), nc_count.data(), data);
+  check(PISM_ERROR_LOCATION, stat);
+}
+
 
 void PNCFile::inq_nvars_impl(int &result) const {
   int stat;
