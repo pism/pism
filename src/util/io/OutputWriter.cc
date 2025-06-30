@@ -31,6 +31,7 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/OutputWriter.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 
@@ -92,6 +93,16 @@ struct OutputWriter::Impl {
     experiment_id        = config.get_string("output.experiment_id");
     experiment_id_name   = config.get_string("output.experiment_id_dimension");
     experiment_id_length = (int)config.get_number("output.experiment_id_max_length");
+
+    if (not experiment_id.empty()) {
+      auto format = config.get_string("output.format");
+      if (format == "netcdf3" or format == "pnetcdf") {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "cannot save experiment ID \"%s\" to NetCDF-3 output files ('output.format' == \"%s\")",
+            experiment_id.c_str(), format.c_str());
+      }
+    }
   }
 
   std::string time_name;
