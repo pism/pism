@@ -16,9 +16,11 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <vector>
 
 #include "pism/util/NetCDFConfig.hh"
 #include "VariableMetadata.hh"
+#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/OutputWriter.hh"
@@ -195,13 +197,39 @@ void NetCDFConfig::read_impl(const File &file) {
 
 //! Write a config variable to a file (with all its attributes).
 void NetCDFConfig::define_impl(const OutputFile &file) const {
-  VariableMetadata config = m_data;
-  file.define_variable(config.set_string("json", json()), {});
+  int max_length = 32768;
+
+  file.define_dimension("cfg", max_length);
+
+  std::vector<std::string> dims = {"cfg"};
+
+  if (not get_string("output.experiment_id").empty()) {
+    auto exp_id_name = get_string("output.experiment_id_dimension");
+
+    file.define_dimension(exp_id_name, 1);
+
+    dims.insert(dims.cbegin(), exp_id_name);
+  }
+
+  VariableMetadata config(m_data.get_name(), m_data.unit_system());
+  config.set_output_type(io::PISM_CHAR);
+  file.define_variable(config, dims);
 }
 
 //! Write a config variable to a file (with all its attributes).
 void NetCDFConfig::write_impl(const OutputFile &file) const {
-  // no-op (so far)
+  define(file);
+
+  std::string data = json();
+
+  std::vector<unsigned int> start = { 0 };
+  std::vector<unsigned int> count = { (unsigned int)data.size() + 1 };
+
+  if (not get_string("output.experiment_id").empty()) {
+    start.insert(start.cbegin(), 0);
+    count.insert(count.cbegin(), 1);
+  }
+  file.write_text(m_data.get_name(), start, count, data);
 }
 
 } // end of namespace pism
