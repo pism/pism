@@ -82,6 +82,10 @@ void Config::read(const File &file) {
   m_impl->filename = file.name();
 }
 
+void Config::define(const OutputFile &file) const {
+  this->define_impl(file);
+}
+
 void Config::write(const OutputFile &file) const {
   this->write_impl(file);
 }
