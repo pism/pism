@@ -129,6 +129,8 @@ public:
   std::pair<bool, double> valid_max(const std::string &parameter) const;
 
   std::shared_ptr<units::System> unit_system() const;
+
+  std::string json() const;
   // Implementations
 protected:
   virtual void read_impl(const File &nc) = 0;

@@ -30,6 +30,7 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/external/nlohmann/json.hpp"
 
 // include an implementation header so that we can allocate a NetCDFConfig instance in
 // config_from_options()
@@ -886,6 +887,40 @@ std::pair<bool, double> Config::valid_max(const std::string &parameter) const {
     return { true, get_number(parameter + "_valid_max", Config::FORGET_THIS_USE) };
   }
   return { false, {} };
+}
+
+std::string Config::json() const {
+  nlohmann::json json;
+
+  for (const auto &p : all_strings()) {
+    if (special_parameter(p.first)) {
+      continue;
+    }
+    json[p.first] = p.second;
+  }
+
+  for (const auto &p : all_doubles()) {
+    if (special_parameter(p.first)) {
+      continue;
+    }
+    if (p.second.size() == 1) {
+      json[p.first] = p.second[0];
+    } else {
+      json[p.first] = p.second;
+    }
+  }
+
+  for (const auto &p : all_flags()) {
+    if (special_parameter(p.first)) {
+      continue;
+    }
+    json[p.first] = p.second;
+  }
+
+  int indent = -1;
+  char indent_char = ' ';
+  bool ensure_ascii = true;
+  return json.dump(indent, indent_char, ensure_ascii);
 }
 
 } // end of namespace pism
