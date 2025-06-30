@@ -808,31 +808,6 @@ std::shared_ptr<Config> config_from_options(MPI_Comm com,
   return config;
 }
 
-ConfigWithPrefix::ConfigWithPrefix(std::shared_ptr<const Config> c, const std::string &prefix)
-    : m_prefix(prefix), m_config(c) {
-  // empty
-}
-
-double ConfigWithPrefix::get_number(const std::string &name) const {
-  return m_config->get_number(m_prefix + name);
-}
-
-double ConfigWithPrefix::get_number(const std::string &name, const std::string &units) const {
-  return m_config->get_number(m_prefix + name, units);
-}
-
-std::string ConfigWithPrefix::get_string(const std::string &name) const {
-  return m_config->get_string(m_prefix + name);
-}
-
-bool ConfigWithPrefix::get_flag(const std::string &name) const {
-  return m_config->get_flag(m_prefix + name);
-}
-
-void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
-  m_prefix = prefix;
-}
-
 std::set<std::string> Config::keys() const {
   std::set<std::string> result;
 

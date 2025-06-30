@@ -159,24 +159,6 @@ private:
   Impl *m_impl;
 };
 
-class ConfigWithPrefix {
-public:
-  ConfigWithPrefix(std::shared_ptr<const Config> c, const std::string &prefix);
-
-  double get_number(const std::string &name) const;
-  double get_number(const std::string &name, const std::string &units) const;
-
-  std::string get_string(const std::string &name) const;
-
-  bool get_flag(const std::string& name) const;
-
-  void reset_prefix(const std::string &prefix);
-
-private:
-  std::string m_prefix;
-  std::shared_ptr<const Config> m_config;
-};
-
 std::shared_ptr<Config> config_from_options(MPI_Comm com, std::shared_ptr<units::System> unit_system);
 
 //! Set configuration parameters using command-line options.
