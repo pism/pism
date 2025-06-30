@@ -82,6 +82,12 @@ void OutputFile::write_spatial_variable(const SpatialVariableMetadata &metadata,
   m_writer->write_spatial_variable(m_file_name, metadata, input);
 }
 
+void OutputFile::write_text(const std::string &variable_name,
+                            const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, const std::string &input) const {
+  m_writer->write_text(m_file_name, variable_name, start, count, input);
+}
+
 void OutputFile::append() {
   m_writer->append(m_file_name);
 }
