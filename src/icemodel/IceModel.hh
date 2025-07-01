@@ -81,6 +81,7 @@ class CalvingAtThickness;
 class IcebergRemover;
 class CliffCalvingShear;
 class CliffCalvingTensile;
+class CliffCalvingLinear;
 }
 
 class FractureDensity;
@@ -272,6 +273,7 @@ protected:
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
   std::shared_ptr<calving::CliffCalvingShear>   m_cliff_calving_shear;
   std::shared_ptr<calving::CliffCalvingTensile> m_cliff_calving_tensile;
+  std::shared_ptr<calving::CliffCalvingLinear>  m_cliff_calving_linear;
   std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
 
   // scalar time-dependent scaling for retreat rates coming from eigen calving, von Mises
