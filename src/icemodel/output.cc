@@ -20,6 +20,8 @@
 
 #include <algorithm>
 #include <set>
+#include <string>
+#include <vector>
 
 #include "pism/icemodel/IceModel.hh"
 
@@ -127,10 +129,6 @@ void IceModel::save_results() {
 
 void IceModel::define_run_stats(const OutputFile &file) const {
 
-  auto time_name = m_time->variable_name();
-
-  // define the "timestamp" (wall clock time since the beginning of the run)
-  // Note: it is time-dependent, so we need to define time first.
   VariableMetadata wall_clock("wall_clock_time", m_sys);
   wall_clock.long_name("wall-clock time since the beginning of the run")
       .units("hours")
@@ -146,9 +144,9 @@ void IceModel::define_run_stats(const OutputFile &file) const {
       .units("")
       .set_output_type(io::PISM_INT);
 
-  file.define_variable(wall_clock, { time_name });
-  file.define_variable(myph, { time_name });
-  file.define_variable(step_counter, { time_name });
+  file.define_timeseries_variable(wall_clock);
+  file.define_timeseries_variable(myph);
+  file.define_timeseries_variable(step_counter);
 }
 
 void IceModel::write_run_stats(const OutputFile &file) const {
@@ -162,10 +160,18 @@ void IceModel::write_run_stats(const OutputFile &file) const {
          proc_hours       = m_grid->size() * wall_clock_hours,
          model_years = m_time->convert_time_interval(m_time->current() - m_time->start(), "years");
 
-  file.write_array({ "wall_clock_time", m_sys }, { t_start }, { 1 }, { wall_clock_hours });
-  file.write_array({ "model_years_per_processor_hour", m_sys }, { t_start }, { 1 },
+  std::vector<unsigned int> start = { t_start };
+  std::vector<unsigned int> count = { 1 };
+
+  if (not m_config->get_string("output.experiment_id").empty()) {
+    start.insert(start.cbegin(), 0);
+    count.insert(count.cbegin(), 1);
+  }
+
+  file.write_array({ "wall_clock_time", m_sys }, start, count, { wall_clock_hours });
+  file.write_array({ "model_years_per_processor_hour", m_sys }, start, count,
                    { model_years / proc_hours });
-  file.write_array({ "step_counter", m_sys }, { t_start }, { 1 }, { (double)m_step_counter });
+  file.write_array({ "step_counter", m_sys }, start, count, { (double)m_step_counter });
 }
 
 void IceModel::save_variables(const OutputFile &file, OutputKind kind,

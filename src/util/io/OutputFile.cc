@@ -45,7 +45,7 @@ void OutputFile::define_spatial_variable(const SpatialVariableMetadata &metadata
   m_writer->define_spatial_variable(m_file_name, metadata, grid);
 }
 
-void OutputFile::define_timeseries_variable(const SpatialVariableMetadata &metadata) const {
+void OutputFile::define_timeseries_variable(const VariableMetadata &metadata) const {
   m_writer->define_timeseries_variable(m_file_name, metadata);
 }
 

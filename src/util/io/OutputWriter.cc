@@ -234,7 +234,7 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
 }
 
 void OutputWriter::define_timeseries_variable(const std::string &file_name,
-                                              const SpatialVariableMetadata &metadata) {
+                                              const VariableMetadata &metadata) {
 
   std::vector<std::string> dims{};
 

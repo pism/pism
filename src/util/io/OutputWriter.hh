@@ -174,7 +174,7 @@ public:
    * @param[in] metadata variable metadata (name, attributes, etc)
    */
   void define_timeseries_variable(const std::string &file_name,
-                                  const SpatialVariableMetadata &metadata);
+                                  const VariableMetadata &metadata);
 
   /*!
    * Set global attributes for a given output file.
@@ -426,7 +426,7 @@ public:
   void define_spatial_variable(const SpatialVariableMetadata &metadata,
                                const grid::DistributedGridInfo &grid) const;
 
-  void define_timeseries_variable(const SpatialVariableMetadata &metadata) const;
+  void define_timeseries_variable(const VariableMetadata &metadata) const;
 
   void set_global_attributes(const std::map<std::string, std::string> &strings,
                              const std::map<std::string, std::vector<double> > &numbers) const;
