@@ -84,29 +84,6 @@ int IceModel::process_signals() {
   return 0;
 }
 
-
-VariableMetadata IceModel::run_stats() const {
-
-  VariableMetadata result("run_stats", m_sys);
-
-  result["source"]    = std::string("PISM ") + pism::revision;
-  result["long_name"] = "Run statistics";
-
-  // timing stats
-  double
-    wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time),
-    proc_hours       = m_grid->size() * wall_clock_hours,
-    model_years      = units::convert(m_sys, m_time->current() - m_time->start(),
-                                      "seconds", "years");
-
-  result["wall_clock_hours"]               = { wall_clock_hours };
-  result["processor_hours"]                = { proc_hours };
-  result["model_years_per_processor_hour"] = { model_years / proc_hours };
-  result["number_of_time_steps"]           = { (double)m_step_counter };
-
-  return result;
-}
-
 //! Get time and user/host name and add it to the given string.
 void  IceModel::append_history(const std::string &str) {
   m_output_history = m_output_history + "\n" + username_prefix(m_grid->com) + str;

@@ -387,7 +387,6 @@ protected:
   // see iMutil.cc
   virtual int process_signals();
   virtual void append_history(const std::string &string);
-  VariableMetadata run_stats() const;
 
   // working space (a convenience)
   static const int m_n_work2d = 4;
