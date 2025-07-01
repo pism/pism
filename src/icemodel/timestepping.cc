@@ -32,6 +32,8 @@
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/calving/CliffCalvingShear.hh"
+#include "pism/frontretreat/calving/CliffCalvingTensile.hh"
+#include "pism/frontretreat/calving/CliffCalvingLinear.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
 
 #include "pism/coupler/FrontalMelt.hh"
