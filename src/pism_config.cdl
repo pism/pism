@@ -682,7 +682,7 @@ netcdf pism_config {
     pism_config:calving.cliff_calving_linear.b_units = "m year-1";
 
     pism_config:calving.methods = "";
-    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``, ``vonmises_calving``, ``hayhurst_calving``, ``cliff_calving_shear``, ``cliff_calving_tensile``, ``cliff_calving_linear``";
+    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``, ``vonmises_calving``, ``hayhurst_calving``, ``cliff_calving_shear``, ``cliff_calving_tensile``";
     pism_config:calving.methods_option = "calving";
     pism_config:calving.methods_type = "string";
 
