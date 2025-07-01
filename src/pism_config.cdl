@@ -664,15 +664,25 @@ netcdf pism_config {
     pism_config:calving.cliff_calving_tensile.I = 3.7e-16;
     pism_config:calving.cliff_calving_tensile.I_doc = "Scaling factor for tensile cliff calving rate :cite:`Crawford2021`";
     pism_config:calving.cliff_calving_tensile.I_type = "number";
-    pism_config:calving.cliff_calving_tensile.I_units = "m second-1";
+    pism_config:calving.cliff_calving_tensile.I_units = "m day-1";
 
     pism_config:calving.cliff_calving_tensile.alpha = 6.9;
     pism_config:calving.cliff_calving_tensile.alpha_doc = "Exponent for tensile cliff calving rate :cite:`Crawford2021`";
     pism_config:calving.cliff_calving_tensile.alpha_type = "number";
     pism_config:calving.cliff_calving_tensile.alpha_units = "1";
 
+    pism_config:calving.cliff_calving_linear.a = 39.08;
+    pism_config:calving.cliff_calving_linear.a_doc = "Coefficient for linear cliff calving rate :cite:`Parsons2025`";
+    pism_config:calving.cliff_calving_linear.a_type = "number";
+    pism_config:calving.cliff_calving_linear.a_units = "year-1";
+
+    pism_config:calving.cliff_calving_linear.b = -456.87;
+    pism_config:calving.cliff_calving_linear.b_doc = "Constant for linear cliff calving rate :cite:`Parsons2025`";
+    pism_config:calving.cliff_calving_linear.b_type = "number";
+    pism_config:calving.cliff_calving_linear.b_units = "m year-1";
+
     pism_config:calving.methods = "";
-    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``";
+    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``, ``vonmises_calving``, ``hayhurst_calving``, ``cliff_calving_shear``, ``cliff_calving_tensile``, ``cliff_calving_linear``";
     pism_config:calving.methods_option = "calving";
     pism_config:calving.methods_type = "string";
 
