@@ -139,6 +139,11 @@ void SynchronousOutputWriter::write_attributes(
       continue;
     }
 
+    if (output_type == io::PISM_CHAR) {
+      // save attributes of a character variable as "double"
+      output_type = io::PISM_DOUBLE;
+    }
+
     output_file.write_attribute(var_name, name, output_type, values);
   }
 }
