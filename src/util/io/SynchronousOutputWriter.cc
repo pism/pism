@@ -198,17 +198,15 @@ void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &fil
   const auto &grid = grid_info(variable_name);
   unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
   
-  std::vector<unsigned int> start, count;
+  std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };
+  std::vector<unsigned int> count = { grid.ym, grid.xm, n_levels };
 
-  if (metadata.get_time_independent()) {
-    start = { grid.ys, grid.xs, 0 };
-    count = { grid.ym, grid.xm, n_levels };
-  } else {
+  if (not metadata.get_time_independent()) {
     auto t_length = time_dimension_length(file_name);
     auto t_start  = t_length > 0 ? t_length - 1 : 0;
 
-    start = { t_start, grid.ys, grid.xs, 0 };
-    count = { 1, grid.ym, grid.xm, n_levels };
+    start.insert(start.cbegin(), t_start);
+    count.insert(count.cbegin(), 1);
   }
 
   if (not experiment_id().empty()) {
