@@ -868,6 +868,11 @@ std::pair<bool, double> Config::valid_max(const std::string &parameter) const {
   return { false, {} };
 }
 
+/*!
+ * Return the configuration as a JSON string containing parameter names, their values and
+ * (for numerical parameters) their units. Documentation strings, type information and
+ * command-line options are omitted to make this string as short as possible.
+ */
 std::string Config::json() const {
   nlohmann::json json;
 
@@ -879,14 +884,26 @@ std::string Config::json() const {
   }
 
   for (const auto &p : all_doubles()) {
-    if (special_parameter(p.first)) {
+    const auto &name  = p.first;
+    const auto &value = p.second;
+    if (special_parameter(name)) {
       continue;
     }
-    if (p.second.size() == 1) {
-      json[p.first] = p.second[0];
+
+    nlohmann::json entry;
+
+    if (value.size() == 1) {
+      if (type(name) == "integer") {
+        entry.push_back((int)value[0]);
+      } else {
+        entry.push_back(value[0]);
+      }
     } else {
-      json[p.first] = p.second;
+      entry.push_back(value);
     }
+    entry.push_back(units(name));
+
+    json[name] = entry;
   }
 
   for (const auto &p : all_flags()) {
@@ -896,7 +913,7 @@ std::string Config::json() const {
     json[p.first] = p.second;
   }
 
-  int indent = -1;
+  int indent = -1;              // compact form
   char indent_char = ' ';
   bool ensure_ascii = true;
   return json.dump(indent, indent_char, ensure_ascii);
