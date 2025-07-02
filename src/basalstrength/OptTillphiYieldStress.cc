@@ -29,6 +29,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -40,8 +41,13 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
   : MohrCoulombYieldStress(grid),
     m_mask(m_grid, "diff_mask"),
     m_usurf_difference(m_grid, "usurf_difference"),
-    m_usurf_target(m_grid, "usurf")
+    m_usurf_target(m_grid, "usurf"),
+    m_time(m_config->get_string("time.dimension_name") + "_tillphi_opt", m_sys)
 {
+  m_time.long_name("time of the last update of the till friction angle")
+      .units(time().units());
+  m_time["calendar"] = time().calendar();
+
   // In this model tillphi is NOT time-independent.
   m_till_phi.metadata().set_time_independent(false);
 
@@ -94,7 +100,6 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
   }
 
   {
-    m_time_name = m_config->get_string("time.dimension_name") + "_tillphi_opt";
     m_t_last = time().current();
     m_update_interval = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dt", "seconds");
     m_t_eps = m_config->get_number("time_stepping.resolution", "seconds");
@@ -115,8 +120,12 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
  * Initialize the last time tillphi was updated.
  */
 void OptTillphiYieldStress::init_t_last(const File &input_file) {
-  if (input_file.variable_exists(m_time_name)) {
-    input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
+  auto time_name = m_time.get_name();
+  if (input_file.variable_exists(time_name)) {
+    auto t_length = input_file.nrecords(time_name, "", m_sys);
+    auto t_last = t_length > 0 ? t_length - 1 : 0;
+
+    auto t = io::read_timeseries_variable(input_file, time_name, m_time["units"], m_sys, t_last, 1);
   } else {
     m_t_last = time().current();
   }
@@ -275,20 +284,13 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
 
 void OptTillphiYieldStress::define_model_state_impl(const OutputFile &output) const {
   MohrCoulombYieldStress::define_model_state_impl(output);
-  {
-    VariableMetadata t(m_time_name, m_sys);
-    t.long_name("time of the last update of the till friction angle")
-        .units(time().units());
-    t["calendar"] = time().calendar();
-
-    output.define_variable(t, {});
-  }
+  output.define_timeseries_variable(m_time);
 }
 
 void OptTillphiYieldStress::write_model_state_impl(const OutputFile &output) const {
   MohrCoulombYieldStress::write_model_state_impl(output);
 
-  output.write_array(m_time_name, { 0 }, { 1 }, { m_t_last });
+  output.write_timeseries_variable(m_time, { 0 }, { 1 }, { m_t_last });
 }
 
 DiagnosticList OptTillphiYieldStress::diagnostics_impl() const {

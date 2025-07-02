@@ -71,14 +71,14 @@ private:
   // the upper bound of tillphi:
   double m_phi_max;
 
+  //! Metadata for the variable used to store the last update time.
+  VariableMetadata m_time;
   //! time of the last till friction angle update
   double m_t_last;
   //! Update interval in seconds
   double m_update_interval;
   //! Temporal resolution to use when checking whether it's time to update
   double m_t_eps;
-  //! Name of the variable used to store the last update time.
-  std::string m_time_name;
 };
 
 } // end of namespace pism
