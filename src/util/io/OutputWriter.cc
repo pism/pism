@@ -369,18 +369,13 @@ void OutputWriter::write_timeseries_variable(const std::string &file_name,
                                              const std::vector<unsigned int> &start,
                                              const std::vector<unsigned int> &count,
                                              const std::vector<double> &input) {
-  std::vector<unsigned int> S{};
-  std::vector<unsigned int> C{};
+  auto S = start;
+  auto C = count;
 
   if (not experiment_id().empty()) {
     write_experiment_id(file_name);
-    S = { 0 };
-    C = { 1 };
-  }
-
-  for (size_t k = 0; k < start.size(); ++k) {
-    S.push_back(start[k]);
-    C.push_back(count[k]);
+    S.insert(S.cbegin(), 0);
+    C.insert(C.cbegin(), 1);
   }
 
   write_array(file_name, metadata, S, C, input);

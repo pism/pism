@@ -443,6 +443,11 @@ public:
 
   void write_spatial_variable(const SpatialVariableMetadata &metadata, const double *input) const;
 
+  void write_timeseries_variable(const VariableMetadata &metadata,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<double> &input) const;
+
   void write_text(const std::string &variable_name, const std::vector<unsigned int> &start,
                   const std::vector<unsigned int> &count, const std::string &input) const;
 
