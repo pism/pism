@@ -17,34 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cassert>
-#include <cmath> // isfinite
-#include <cstddef>
-#include <memory>
-#include <array>
+#include <mpi.h>
 #include <string>
-#include <vector>
-
-#include "pism/util/Config.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/Profiling.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/Interpolation1D.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/io/IO_Flags.hh"
-#include "pism/util/io/LocalInterpCtx.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/projection.hh"
+#include <cstdio>
 
 namespace pism {
 namespace io {
-
-
 
 bool file_exists(MPI_Comm com, const std::string &filename) {
   int file_exists_flag = 0, rank = 0;

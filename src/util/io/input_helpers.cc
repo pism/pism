@@ -450,6 +450,48 @@ std::vector<double> read_1d_variable(const File &file, const std::string &variab
   }
 }
 
+std::vector<double> read_timeseries_variable(const File &file, const std::string &variable_name,
+                                             const std::string &units,
+                                             std::shared_ptr<units::System> unit_system,
+                                             size_t start, size_t count) {
+
+  auto input_units_string = file.read_text_attribute(variable_name, "units");
+
+  if (input_units_string.empty()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "variable '%s' does not have the units attribute",
+                                  variable_name.c_str());
+  }
+
+  std::vector<double> result(count); // memory allocation happens here
+  // read from a file
+  {
+    std::vector<unsigned int> start_{}, count_{};
+
+    for (const auto &dim : file.dimensions(variable_name)) {
+      if (file.dimension_type(dim, unit_system) == T_AXIS) {
+        start_.push_back(start);
+        count_.push_back(count);
+      } else {
+        start_.push_back(0);
+        count_.push_back(1);
+      }
+    }
+    file.read_variable(variable_name, start_, count_, result.data());
+  }
+
+  // convert units
+  {
+    auto input_units = units::Unit(unit_system, input_units_string);
+
+    units::Unit internal_units(unit_system, units);
+    units::Converter(input_units, internal_units).convert_doubles(result.data(), result.size());
+  }
+
+  return result;
+}
+
+
 std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
                                 const std::string &internal_units,
                                 std::shared_ptr<units::System> unit_system) {

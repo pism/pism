@@ -70,6 +70,11 @@ std::vector<double> read_1d_variable(const File &file, const std::string &name,
                                      const std::string &units,
                                      std::shared_ptr<units::System> unit_system);
 
+std::vector<double> read_timeseries_variable(const File &file, const std::string &variable_name,
+                                             const std::string &units,
+                                             std::shared_ptr<units::System> unit_system,
+                                             size_t start, size_t count);
+
 std::vector<double> read_bounds(const File &file, const std::string &bounds_variable_name,
                                 const std::string &units,
                                 std::shared_ptr<units::System> unit_system);
