@@ -218,7 +218,7 @@ protected:
   void define_state_impl(const OutputFile &output) const {
     auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
     m_accumulator.define(output);
-    output.define_variable(m_time_since_reset, { time_name });
+    output.define_timeseries_variable(m_time_since_reset);
   }
 
   void write_state_impl(const OutputFile &output) const {
@@ -312,13 +312,10 @@ protected:
   //! Configuration flags and parameters
   std::shared_ptr<const Config> m_config;
   //! the unit system
-  const units::System::Ptr m_sys;
-
-  //! time series object used to store computed values and metadata
-  std::string m_time_name;
+  std::shared_ptr<units::System> m_sys;
 
   VariableMetadata m_variable;
-  VariableMetadata m_dimension;
+  VariableMetadata m_time_dimension;
   VariableMetadata m_time_bounds;
 
   // buffer for diagnostic time series
@@ -331,8 +328,8 @@ protected:
   //! index into m_times
   unsigned int m_current_time;
 
-  //! the name of the file to save to (stored here because it is used by flush(), which is called
-  //! from update())
+  //! the file to save to (stored here because it is used by flush(), which is called from
+  //! update())
   std::shared_ptr<OutputFile> m_output_file;
   //! starting index used when flushing the buffer
   unsigned int m_start;

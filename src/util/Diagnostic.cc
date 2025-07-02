@@ -143,10 +143,9 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   : m_grid(grid),
     m_config(grid->ctx()->config()),
     m_sys(grid->ctx()->unit_system()),
-    m_time_name(grid->ctx()->config()->get_string("time.dimension_name")),
     m_variable(name, m_sys),
-    m_dimension(m_time_name, m_sys),
-    m_time_bounds(m_time_name + "_bounds", m_sys) {
+    m_time_dimension(grid->ctx()->time()->variable_name(), m_sys),
+    m_time_bounds(m_time_dimension.get_name() + "_bounds", m_sys) {
 
   m_current_time = 0;
   m_start        = 0;
@@ -155,9 +154,10 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
 
   m_variable["ancillary_variables"] = name + "_aux";
 
-  m_dimension.long_name("time").units(m_grid->ctx()->time()->units());
-  m_dimension["calendar"] = m_grid->ctx()->time()->calendar();
-  m_dimension["axis"] = "T";
+  const auto &time = m_grid->ctx()->time();
+  m_time_dimension.long_name("time").units(time->units());
+  m_time_dimension["calendar"] = time->calendar();
+  m_time_dimension["axis"] = "T";
 }
 
 TSDiagnostic::~TSDiagnostic() {
@@ -345,22 +345,23 @@ void TSDiagnostic::flush() {
   }
 
   if (len == m_start) {
-    file.define_dimension(m_time_name, io::PISM_UNLIMITED);
-    file.define_variable(m_dimension, { m_time_name });
+    auto time_name = m_time_dimension.get_name();
+    file.define_dimension(time_name, io::PISM_UNLIMITED);
+    file.define_variable(m_time_dimension, { time_name });
 
     file.define_dimension("nv", 2);
-    file.define_variable(m_time_bounds, { m_time_name, "nv" });
+    file.define_variable(m_time_bounds, { time_name, "nv" });
 
     // write requested times
-    file.write_array(m_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);
+    file.write_array(m_time_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);
     // write time bounds
     file.write_array(m_time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
                      m_bounds);
   }
 
-  file.define_variable(m_variable, { m_time_name });
+  file.define_timeseries_variable(m_variable);
   // write values of a diagnostic
-  file.write_array(m_variable, { m_start }, { (unsigned int)m_values.size() }, m_values);
+  file.write_timeseries_variable(m_variable, { m_start }, { (unsigned int)m_values.size() }, m_values);
 
   file.sync();
 
