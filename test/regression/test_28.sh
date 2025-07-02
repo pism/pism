@@ -31,7 +31,7 @@ set +e
 set +x
 
 # Check results:
-$PISM_PATH/pism_nccmp -x -v timestamp,step_counter,model_years_per_processor_hour,wall_clock_time bar-28.nc baz-28.nc
+$PISM_PATH/pism_nccmp -x -v timestamp,step_counter,model_years_per_processor_hour,wall_clock_time,pism_config bar-28.nc baz-28.nc
 if [ $? != 0 ];
 then
     exit 1

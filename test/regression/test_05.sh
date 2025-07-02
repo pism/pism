@@ -25,7 +25,7 @@ $MPIEXEC -n 2 $PISM_PATH/pism $OPTS -o baz-05.nc
 set +e
 
 # Compare bar-05.nc and baz-05.nc:
-$PISM_PATH/pism_nccmp -x -v timestamp,step_counter,model_years_per_processor_hour,wall_clock_time bar-05.nc baz-05.nc
+$PISM_PATH/pism_nccmp -x -v timestamp,step_counter,model_years_per_processor_hour,wall_clock_time,pism_config bar-05.nc baz-05.nc
 if [ $? != 0 ];
 then
     exit 1
