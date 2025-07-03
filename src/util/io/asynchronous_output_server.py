@@ -33,6 +33,7 @@ recvbuf = np.empty(global_comm.Get_size(), dtype='i')
 
 global_comm.Allgather([sendbuf, MPI.INT], [recvbuf, MPI.INT])
 remote_leader = recvbuf[0]
+remote_size = global_comm.Get_size() - local_comm.Get_size()
 
 intercomm = local_comm.Create_intercomm(
     0,
@@ -48,23 +49,33 @@ y_size = np.empty(1, dtype='i')
 
 intercomm.Bcast(x_size, root = remote_leader)
 intercomm.Bcast(y_size, root = remote_leader)
-
 grid_points = x_size[0] * y_size[0]
 
 longitudes = np.empty(grid_points, dtype='d')
 latitudes = np.empty(grid_points, dtype='d')
+global_vertex_indices = np.empty(grid_points, dtype='i')
+displacements = np.empty(remote_size, dtype='i')
+gather_buf = np.empty(remote_size, dtype='i')
 
-intercomm.Bcast(latitudes, root = remote_leader)
-intercomm.Bcast(longitudes, root = remote_leader)
+intercomm.Gather(None, gather_buf, root = MPI.ROOT)
 
-latitudes = latitudes.reshape(x_size[0], y_size[0])
-longitudes = longitudes.reshape(x_size[0], y_size[0])
+displacements[0] = 0
+for i in range(1, remote_size):
+    displacements[i] = displacements[i-1] + gather_buf[i-1]
 
-grid = Curve2dGrid(target_grid_name,
-                   longitudes, latitudes)
+intercomm.Gatherv(None, (global_vertex_indices, (gather_buf, displacements)), root = MPI.ROOT)
+intercomm.Gatherv(None, (latitudes, (gather_buf, displacements)), root = MPI.ROOT)
+intercomm.Gatherv(None, (longitudes, (gather_buf, displacements)), root = MPI.ROOT)
+# print("latitudes: ", latitudes)
+# print("longitudes: ", longitudes)
 
-vertex_points = grid.def_points(Location.CORNER,
-                                longitudes, latitudes)
+# latitudes = latitudes.reshape(x_size[0], y_size[0])
+# longitudes = longitudes.reshape(x_size[0], y_size[0])
+
+grid = CloudGrid(target_grid_name, longitudes, latitudes)
+grid.set_global_index(global_vertex_indices, Location.CORNER)
+
+vertex_points = grid.def_points(longitudes, latitudes)
 grid.corner_points = vertex_points
 
 interpolation_stack = InterpolationStack()
@@ -167,14 +178,21 @@ while True:
         values = []
         if field_name not in time_independent_var_values:
             data = fields[field_name].get()[0]
+
+            # if(field_name == "enthalpy"):
+            #     print("enthalpy server: ", data[0])
+
             if (fields[field_name].collection_size > 1):
                 values = np.ndarray(shape = (x_size[0], y_size[0], fields[field_name].collection_size),
                                     buffer = data,
-                                    dtype = fields_metadata[field_name]["dtype"])
+                                    dtype = "f8")
             else:
                 values = np.ndarray(shape = (x_size[0], y_size[0]),
                                     buffer = data[0, :],
-                                    dtype = fields_metadata[field_name]["dtype"])
+                                    dtype = "f8")
+
+            if fields_metadata[field_name]["dtype"] != "f8":
+                values = values.astype(fields_metadata[field_name]["dtype"])
 
             if "time" not in var_dims:
                 time_independent_var_values[field_name] = values

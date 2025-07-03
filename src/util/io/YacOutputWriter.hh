@@ -32,6 +32,11 @@ namespace pism {
 
 class File;
 
+namespace grid {
+class DistributedGridInfo;
+}
+
+
 namespace io {
 enum Backend : int;
 }
@@ -51,9 +56,11 @@ private:
   MPI_Comm intercomm;
   bool yac_initialized = false;
   bool yac_init_finished = false;
+  bool yac_grid_initialized = false;
   int x_size;
   int y_size;
   int grid_size;
+  int local_rank = -1;
   std::string current_snapshot_file = "";
   const Geometry& m_geometry;
   std::map<std::string, int> field_ids;
@@ -107,7 +114,11 @@ private:
   void initialize_yac();
   void define_yac_field(const VariableMetadata &metadata,
                         const std::vector<std::string> &dims);
+  void initialize_grid(const grid::DistributedGridInfo &distributed_grid);
   void finalize_yac_initialization();
+
+  // Utility: Given grid size and patch bounds, return global indices of patch vertices
+  static std::vector<int> compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size);
 };
 
 } // namespace pism

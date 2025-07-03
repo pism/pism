@@ -60,23 +60,55 @@ void YacOutputWriter::initialize_yac() {
   const char * comp_names[] = {"pism", "pism_output_server"};
   const int local_leader_rank[]  = {0};
   int global_leader_rank[] = {-1};
-  int component_leaders_ranks[2];
   int remote_leader;
+  int global_size;
 
   MPI_Comm local_comm, global_comm;
   MPI_Group local_group, global_group;
 
   yac_cget_comp_comm(1, &local_comm);
   yac_cget_comps_comm(comp_names, nbr_comps, &global_comm);
+  MPI_Comm_size(global_comm, &global_size);
+  MPI_Comm_rank(local_comm, &local_rank);
+  std::vector<int> component_leaders_ranks(global_size);
 
   MPI_Comm_group(local_comm, &local_group);
   MPI_Comm_group(global_comm, &global_group);
 
   MPI_Group_translate_ranks(local_group, 1, local_leader_rank, global_group, global_leader_rank);
-  MPI_Allgather(global_leader_rank, 1, MPI_INT, component_leaders_ranks, 1, MPI_INT, global_comm);
-  remote_leader = component_leaders_ranks[1];
+  MPI_Allgather(global_leader_rank, 1, MPI_INT, component_leaders_ranks.data(), 1, MPI_INT, global_comm);
+  remote_leader = component_leaders_ranks.back();
 
   MPI_Intercomm_create(local_comm, 0, global_comm, remote_leader, 0, &intercomm);
+  yac_initialized = true;
+}
+
+
+void YacOutputWriter::initialize_grid(const grid::DistributedGridInfo &distributed_grid) {
+  int local_patch_size = -1;
+  auto grid = m_geometry.latitude.grid();
+  x_size = grid->Mx();
+  y_size = grid->My();
+  int local_x_size = distributed_grid.xm;
+  int local_y_size = distributed_grid.ym;
+
+  if(local_rank == 0) {
+    MPI_Bcast((void *) &x_size, 1, MPI_INT, MPI_ROOT, intercomm);
+    MPI_Bcast((void *) &y_size, 1, MPI_INT, MPI_ROOT, intercomm);
+  } else {
+    MPI_Bcast(NULL, 1, MPI_INT, MPI_PROC_NULL, intercomm);
+    MPI_Bcast(NULL, 1, MPI_INT, MPI_PROC_NULL, intercomm);
+  }
+
+  std::vector<int> patch_global_indices = compute_patch_global_indices(
+                                                x_size, 
+                                                distributed_grid.xs, 
+                                                distributed_grid.xm,
+                                                distributed_grid.ys, 
+                                                distributed_grid.ym);
+  local_patch_size = patch_global_indices.size();
+
+  MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, intercomm);
 
   array::AccessScope list
     {
@@ -84,33 +116,30 @@ void YacOutputWriter::initialize_yac() {
       &m_geometry.longitude,
     };
 
-  auto grid = m_geometry.latitude.grid();
-  x_size = grid->Mx();
-  y_size = grid->My();
-  grid_size = x_size * y_size;
+  grid_size = local_x_size * local_y_size;
   int cyclic_dims[] = {0, 0};
-  int nbr_vertices[] = {x_size, y_size};
-  std::vector<double> latitudes(grid_size);
-  std::vector<double> longitudes(grid_size);
+  int nbr_vertices[] = {local_x_size, local_y_size};
+  std::vector<double> latitudes(local_patch_size);
+  std::vector<double> longitudes(local_patch_size);
 
-  MPI_Bcast((void *) &x_size, 1, MPI_INT, MPI_ROOT, intercomm);
-  MPI_Bcast((void *) &y_size, 1, MPI_INT, MPI_ROOT, intercomm);
-
-  for (auto p = grid->points(); p; p.next()) {
+  int it = 0;
+  for (auto p = grid->points(); p; p.next(), it++) {
     const int i = p.i(), j = p.j();
-    latitudes[j * y_size + i] = (m_geometry.latitude(i, j) * M_PI) / 180.0;
-    longitudes[j * y_size + i] = (m_geometry.longitude(i, j) * M_PI) / 180.0;
+    latitudes[it] = (m_geometry.latitude(i, j) * M_PI) / 180.0;
+    longitudes[it] = (m_geometry.longitude(i, j) * M_PI) / 180.0;
   }
 
-  MPI_Bcast(latitudes.data(), grid_size, MPI_DOUBLE, MPI_ROOT, intercomm);
-  MPI_Bcast(longitudes.data(), grid_size, MPI_DOUBLE, MPI_ROOT, intercomm);
+  MPI_Gatherv(patch_global_indices.data(), local_patch_size, MPI_INT, NULL, NULL, NULL, MPI_INT, 0, intercomm);
+  MPI_Gatherv(latitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0, intercomm);
+  MPI_Gatherv(longitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0, intercomm);
 
   yac_cdef_grid_curve2d("pism_grid", nbr_vertices, cyclic_dims,
                         longitudes.data(), latitudes.data(), &grid_id);
 
   yac_cdef_points_unstruct(grid_id, grid_size, YAC_LOCATION_CORNER,
                            longitudes.data(), latitudes.data(), &vertex_points_id);
-  yac_initialized = true;
+
+  yac_grid_initialized = true;
 }
 
 void YacOutputWriter::define_yac_field(const VariableMetadata &metadata,
@@ -168,13 +197,17 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
   if(not yac_initialized)
     initialize_yac();
 
+  if(file_name.find("snapshot") != std::string::npos and not yac_grid_initialized and dims.size() > 1) {
+    initialize_grid(grid_info(metadata.get_name()));
+  }
+
   const auto &output_file = file(file_name);
 
   if (output_file.variable_exists(metadata.get_name())) {
     return;
   }
 
-  if(file_name.find("snapshot") != std::string::npos and
+  if(file_name.find("snapshot") != std::string::npos and yac_grid_initialized and
      file_name != current_snapshot_file) {
       int continue_receiving = true;
       MPI_Bcast((void *) &continue_receiving, 1, MPI_INT, MPI_ROOT, intercomm);
@@ -410,6 +443,17 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   }
 
   output_file.write_variable(variable_name, start, count, data);
+}
+
+std::vector<int> YacOutputWriter::compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size) {
+    std::vector<int> indices;
+    indices.reserve(x_size * y_size);
+    for (int j = y_start; j < y_start + y_size; ++j) {
+        for (int i = x_start; i < x_start + x_size; ++i) {
+            indices.push_back(j * x_global_size + i);
+        }
+    }
+    return indices;
 }
 
 } // namespace pism
