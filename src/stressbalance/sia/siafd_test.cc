@@ -40,7 +40,7 @@ static char help[] =
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
-#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -382,10 +382,8 @@ int main(int argc, char *argv[]) {
     // Write results to an output file:
     OutputFile file(writer, output_file);
 
-    auto time      = ctx->time();
-    auto time_name = time->variable_name();
-    file.define_dimension(time_name, io::PISM_UNLIMITED);
-    file.define_variable(time->metadata(), { time_name });
+    auto time = ctx->time();
+    io::define_time_dimension(file, time->metadata());
     file.append_time(time->current());
 
     geometry.ice_surface_elevation.write(file);

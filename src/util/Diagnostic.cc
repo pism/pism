@@ -345,12 +345,8 @@ void TSDiagnostic::flush() {
   }
 
   if (len == m_start) {
-    auto time_name = m_time_dimension.get_name();
-    file.define_dimension(time_name, io::PISM_UNLIMITED);
-    file.define_variable(m_time_dimension, { time_name });
-
-    file.define_dimension("nv", 2);
-    file.define_variable(m_time_bounds, { time_name, "nv" });
+    bool with_bounds = true;
+    io::define_time_dimension(file, m_time_dimension, with_bounds);
 
     // write requested times
     file.write_array(m_time_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);

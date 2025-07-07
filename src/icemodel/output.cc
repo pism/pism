@@ -35,7 +35,7 @@
 #include "pism/util/projection.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/io/IO_Flags.hh"
-
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -181,11 +181,8 @@ void IceModel::save_variables(const OutputFile &file, OutputKind kind,
 
   // define the time dimension if necessary (no-op if it is already defined)
   {
-    auto time      = m_time->metadata();
-    time["bounds"] = "time_bounds";
-
-    file.define_dimension(time_name, io::PISM_UNLIMITED);
-    file.define_variable(time, { time_name });
+    bool with_bounds = true;
+    io::define_time_dimension(file, m_time->metadata(), with_bounds);
   }
 
   define_run_stats(file);

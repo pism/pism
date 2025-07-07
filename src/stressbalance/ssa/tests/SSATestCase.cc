@@ -31,6 +31,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -291,10 +292,7 @@ void SSATestCase::write(const std::string &filename) {
   OutputFile file(writer, filename);
 
   // Write results to an output file:
-  auto time      = m_ctx->time();
-  auto time_name = time->variable_name();
-  file.define_dimension(time_name, io::PISM_UNLIMITED);
-  file.define_variable(time->metadata(), { time_name });
+  io::define_time_dimension(file, m_ctx->time()->metadata());
   file.append_time(0.0);
 
   m_geometry.ice_surface_elevation.write(file);

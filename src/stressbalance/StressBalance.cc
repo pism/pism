@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#include <memory>
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
@@ -31,8 +32,7 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
-#include <memory>
-#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -77,9 +77,7 @@ void Inputs::dump(const char *filename) const {
   config->write(output);
 
   auto time = ctx->time();
-  auto time_name = time->variable_name();
-  output.define_dimension(time_name, io::PISM_UNLIMITED);
-  output.define_variable(time->metadata(), { time_name });
+  io::define_time_dimension(output, time->metadata());
   output.append_time(time->current());
 
   {

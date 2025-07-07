@@ -7,7 +7,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Array.hh"
-#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 
@@ -27,11 +27,8 @@ VecBundleWriter::VecBundleWriter(std::shared_ptr<pism::Grid> _grid, std::string 
 void VecBundleWriter::init() {
   pism::OutputFile file(output_writer, fname);
 
-  auto time      = m_grid->ctx()->time();
-  auto time_name = time->variable_name();
-  file.define_dimension(time_name, io::PISM_UNLIMITED);
-  file.define_variable(time->metadata(), { time_name });
-
+  io::define_time_dimension(file, m_grid->ctx()->time()->metadata());
+  
   for (const auto *vec : vecs) {
     vec->define(file);
   }

@@ -18,6 +18,8 @@
  */
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/io/OutputWriter.hh"
 
 namespace pism {
 namespace io {
@@ -86,6 +88,30 @@ void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_
   if (global_stat != 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "PISM ERROR: can't remove '%s'",
                                   file_to_remove.c_str());
+  }
+}
+
+void define_time_dimension(const OutputFile &output_file, const VariableMetadata &metadata,
+                           bool with_bounds, int length) {
+
+  // make a copy of "metadata" so we can modify it
+  auto time             = metadata;
+  // shortcut
+  const auto &time_name = time.get_name();
+
+  VariableMetadata time_bounds("time_bounds", time.unit_system());
+
+  time_bounds.units(time["units"]);
+  if (with_bounds) {
+    time["bounds"] = time_bounds.get_name();
+  }
+
+  output_file.define_dimension(time_name, length);
+  output_file.define_variable(time, { time_name });
+
+  if (with_bounds) {
+    output_file.define_dimension("nv", 2);
+    output_file.define_variable(time_bounds, { time_name, "nv" });
   }
 }
 

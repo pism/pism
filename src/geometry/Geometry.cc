@@ -205,9 +205,8 @@ void Geometry::dump(const char *filename) const {
   OutputFile file(writer, filename);
 
   auto time = grid->ctx()->time();
-  auto time_name = time->variable_name();
-  file.define_dimension(time_name, io::PISM_UNLIMITED);
-  file.define_variable(time->metadata(), { time_name });
+
+  io::define_time_dimension(file, time->metadata());
   file.append_time(time->current());
 
   latitude.write(file);

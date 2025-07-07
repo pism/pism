@@ -16,13 +16,14 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <memory>
 
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
-#include <memory>
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -108,26 +109,6 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
   return result;
 }
 
-static void define_time(const OutputFile &file,
-                        const VariableMetadata &T) {
-
-  // make a copy of "T" to be able to modify it
-  auto time = T;
-  auto time_name = time.get_name();
-
-  VariableMetadata time_bounds("time_bounds", time.unit_system());
-
-  time_bounds.units(time["units"]);
-
-  time["bounds"] = time_bounds.get_name();
-
-  file.define_dimension(time_name, io::PISM_UNLIMITED);
-  file.define_variable(time, { time_name });
-
-  file.define_dimension("nv", 2);
-  file.define_variable(time_bounds, { time_name, "nv" });
-}
-
 //! Initialize the code saving spatially-variable diagnostic quantities.
 void IceModel::init_extras() {
 
@@ -203,7 +184,8 @@ void IceModel::init_extras() {
       }
     } else {
       // prepare the file
-      define_time(*m_extra_file, m_time->metadata());
+      bool with_bounds = true;
+      io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
       write_metadata(*m_extra_file, WRITE_MAPPING);
     }
   }
@@ -341,7 +323,8 @@ void IceModel::write_extras() {
         m_extra_file->append();
       } else {
         // Prepare the file:
-        define_time(*m_extra_file, m_time->metadata());
+        bool with_bounds = true;
+        io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
         write_metadata(*m_extra_file, WRITE_MAPPING);
       }
     }

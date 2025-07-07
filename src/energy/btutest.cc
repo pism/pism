@@ -38,7 +38,7 @@ static char help[] =
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
-#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 
 //! Allocate the verification context. Uses ColdEnthalpyConverter.
 std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &prefix) {
@@ -223,9 +223,7 @@ int main(int argc, char *argv[]) {
     // Write results to an output file:
     OutputFile file(writer, outname);
 
-    auto time_name = time->variable_name();
-    file.define_dimension(time_name, io::PISM_UNLIMITED);
-    file.define_variable(time->metadata(), { time_name });
+    io::define_time_dimension(file, time->metadata());
     file.append_time(time->current());
 
     btu->write_model_state(file);

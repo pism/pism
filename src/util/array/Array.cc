@@ -524,15 +524,14 @@ void Array::write_impl(const OutputFile &file) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void Array::dump(const char filename[]) const {
-  auto writer = std::make_shared<SynchronousOutputWriter>(grid()->com, *grid()->ctx()->config());
+  auto ctx = grid()->ctx();
+  auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *ctx->config());
 
   OutputFile file(writer, filename);
 
   if (not metadata(0).get_time_independent()) {
-    auto time = m_impl->grid->ctx()->time();
-
-    file.define_dimension(time->variable_name(), io::PISM_UNLIMITED);
-    file.define_variable(time->metadata(), { time->variable_name() });
+    auto time = ctx->time();
+    io::define_time_dimension(file, time->metadata());
     file.append_time(time->current());
   }
 

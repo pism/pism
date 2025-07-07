@@ -20,6 +20,7 @@
 #ifndef PISM_IO_HELPERS_H
 #define PISM_IO_HELPERS_H
 
+#include "OutputWriter.hh"
 #include <memory>
 #include <string>
 #include <vector>
@@ -43,6 +44,8 @@ class DistributedGridInfo;
 }
 
 class LocalInterpCtx;
+
+class OutputFile;
 
 namespace io {
 
@@ -87,6 +90,12 @@ VariableMetadata read_attributes(const File &file, const std::string &variable_n
                                  std::shared_ptr<units::System> unit_system);
 
 // writing utilities
+
+/*!
+ * Define the time dimension
+ */
+void define_time_dimension(const OutputFile &output_file, const VariableMetadata &metadata,
+                           bool with_bounds = false, int length = 0);
 
 void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
 
