@@ -64,8 +64,8 @@ protected:
   double m_update_interval;
   //! Temporal resolution to use when checking whether it's time to update
   double m_t_eps;
-  //! Name of the variable used to store the last update time.
-  std::string m_time_name;
+  //! Metadata of the variable used to store the last update time.
+  VariableMetadata m_time_dimension;
 
   //! Times corresponding to records in the input file
   std::vector<double> m_time;
