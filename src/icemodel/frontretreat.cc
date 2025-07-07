@@ -29,7 +29,7 @@
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/calving/CliffCalvingShear.hh"
 #include "pism/frontretreat/calving/CliffCalvingTensile.hh"
-#include "pism/frontretreat/calving/CliffCalvingLinear.hh"
+#include "pism/frontretreat/calving/LinearCalving.hh"
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/coupler/FrontalMelt.hh"
@@ -89,7 +89,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
 
 void IceModel::front_retreat_step() {
 
-  bool retreat_rate_based_calving = m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_cliff_calving_shear or m_cliff_calving_tensile or m_cliff_calving_linear;
+  bool retreat_rate_based_calving = m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_cliff_calving_shear or m_cliff_calving_tensile or m_linear_calving;
   bool calving_is_active =
       retreat_rate_based_calving or m_float_kill_calving or m_thickness_threshold_calving;
   bool frontal_melt_only_open_ocean = m_config->get_flag("frontal_melt.open_ocean_margins_only");
@@ -140,11 +140,11 @@ void IceModel::front_retreat_step() {
                                      m_geometry.bed_elevation);
     }
 
-    if (m_cliff_calving_linear) {
-      m_cliff_calving_linear->update(m_geometry.cell_type,
-                                     m_geometry.ice_thickness,
-                                     m_geometry.sea_level_elevation,
-                                     m_geometry.bed_elevation);
+    if (m_linear_calving) {
+      m_linear_calving->update(m_geometry.cell_type,
+                               m_geometry.ice_thickness,
+                               m_geometry.sea_level_elevation,
+                               m_geometry.bed_elevation);
     }
 
     if (m_frontal_melt) {
@@ -235,8 +235,8 @@ void IceModel::front_retreat_step() {
         retreat_rate.add(1.0, m_cliff_calving_tensile->calving_rate());
       }
 
-      if (m_cliff_calving_linear) {
-        retreat_rate.add(1.0, m_cliff_calving_linear->calving_rate());
+      if (m_linear_calving) {
+        retreat_rate.add(1.0, m_linear_calving->calving_rate());
       }
 
       if (m_calving_rate_factor) {
@@ -268,7 +268,7 @@ void IceModel::front_retreat_step() {
       m_geometry.ensure_consistency(thickness_threshold);
 
       if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or 
-          m_cliff_calving_shear or m_cliff_calving_tensile or m_cliff_calving_linear) {
+          m_cliff_calving_shear or m_cliff_calving_tensile or m_linear_calving) {
         remove_narrow_tongues(m_geometry, m_geometry.ice_thickness);
 
         m_geometry.ensure_consistency(thickness_threshold);

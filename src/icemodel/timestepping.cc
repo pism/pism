@@ -33,7 +33,7 @@
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/calving/CliffCalvingShear.hh"
 #include "pism/frontretreat/calving/CliffCalvingTensile.hh"
-#include "pism/frontretreat/calving/CliffCalvingLinear.hh"
+#include "pism/frontretreat/calving/LinearCalving.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
 
 #include "pism/coupler/FrontalMelt.hh"
@@ -113,9 +113,8 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
   }
 
   // mechanisms that use a retreat rate
-  bool front_retreat =
-      (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_cliff_calving_shear or m_cliff_calving_tensile or m_cliff_calving_linear or m_frontal_melt);
-  if (front_retreat and m_config->get_flag("geometry.front_retreat.use_cfl")) {
+  bool retreat_rate_based_calving = (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_cliff_calving_shear or m_cliff_calving_tensile or m_linear_calving or m_frontal_melt);
+  if (retreat_rate_based_calving and m_config->get_flag("geometry.front_retreat.use_cfl")) {
     // at least one of front retreat mechanisms is active *and* PISM is told to use a CFL
     // restriction
 
@@ -142,8 +141,8 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
       retreat_rate.add(1.0, m_cliff_calving_tensile->calving_rate());
     }
 
-    if (m_cliff_calving_linear) {
-      retreat_rate.add(1.0, m_cliff_calving_linear->calving_rate());
+    if (m_linear_calving) {
+      retreat_rate.add(1.0, m_linear_calving->calving_rate());
     }
 
     if (m_frontal_melt) {
