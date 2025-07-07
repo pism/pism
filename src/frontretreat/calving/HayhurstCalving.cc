@@ -78,13 +78,11 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
-  // Add statistics tracking
-  double max_calving_rate = 0.0;
-  double max_omega = 0.0;
-  double max_ice_thickness = 0.0;
-  int num_calving_cells = 0;
-  int num_extreme_calving = 0;
-  int max_rate_i = 0, max_rate_j = 0;
+  // Create temporary arrays to store omega and H values for statistics tracking
+  array::Scalar omega_array(m_grid, "omega_temp");
+  array::Scalar H_array(m_grid, "H_temp");
+  omega_array.set(0.0);
+  H_array.set(0.0);
 
   for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
@@ -111,6 +109,10 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
         omega = water_depth / H;
       }
 
+      // Store omega and H for statistics tracking
+      omega_array(i, j) = omega;
+      H_array(i, j) = H;
+
       // [\ref Mercenier2018] maximum tensile stress approximation
       double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0)) * ice_density * gravity * H;
 
@@ -122,20 +124,23 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
                               (1.0 - pow(omega, 2.8)) *
                               pow(sigma_0 - m_sigma_threshold, m_exponent_r) * H);
 
-      // Track statistics                   
-
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points
-
-
 
   // Set calving rate *near* grounded termini to the average of grounded icy
   // neighbors: front retreat code uses values at these locations (the rest is for
   // visualization).
 
   m_calving_rate.update_ghosts();
+  omega_array.update_ghosts();
+  H_array.update_ghosts();
+
+  // Add statistics tracking
+  double max_calving_rate = 0.0;
+  double max_cliff_height = 0.0;
+  int max_rate_i = 0, max_rate_j = 0;
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -147,56 +152,38 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
 
       int N = 0;
       double R_sum = 0.0;
+      double H_sum = 0.0;
       for (auto d : {North, East, South, West}) {
         if (mask::icy(M[d])) {
           R_sum += R[d];
+          if (d == North) H_sum += ice_thickness(i, j+1);
+          else if (d == East) H_sum += ice_thickness(i+1, j);
+          else if (d == South) H_sum += ice_thickness(i, j-1);
+          else if (d == West) H_sum += ice_thickness(i-1, j);
           N++;
         }
       }
 
       if (N > 0) {
         m_calving_rate(i, j) = R_sum / N;
-      
-        if (m_calving_rate(i, j) > 0.0) {
-        num_calving_cells++;
+        double avg_H = H_sum / N;
         if (m_calving_rate(i, j) > max_calving_rate) {
           max_calving_rate = m_calving_rate(i, j);
-          max_omega = omega;
-          max_ice_thickness = H;
+          max_cliff_height = avg_H;
           max_rate_i = i;
           max_rate_j = j;
         }
-        // Log very high calving rates that might cause instability
-        if (m_calving_rate(i, j) > 1e-5) {  // More than ~315 m/year
-          num_extreme_calving++;
-          m_log->message(3,
-                     "! High Hayhurst calving rate at (i,j) = (%d,%d): %.2f m/year (omega=%.3f, H=%.1f m)\n",
-                     i, j, m_calving_rate(i, j) * 31557600.0, omega, H);
-        }
       }
-
-        // Print summary statistics
-         if (num_calving_cells > 0) {
-        m_log->message(3,
-                    "* Hayhurst calving summary:\n"
-                    "  - Active calving cells: %d\n"
-                    "  - Cells with extreme rates (>315 m/year): %d\n"
-                    "  - Maximum rate: %.2f m/year at (i,j)=(%d,%d)\n"
-                    "  - Maximum omega (water depth ratio): %.3f\n"
-                    "  - Maximum ice thickness: %.1f m\n",
-                    num_calving_cells,
-                    num_extreme_calving,
-                    max_calving_rate * 31557600.0,
-                    max_rate_i, max_rate_j,
-                    max_omega,
-                    max_ice_thickness);
-      } else {
-        m_log->message(3, "* No active Hayhurst calving cells at this time step (maximum omega: %.3f).\n",
-                      max_omega);
-      }
-      } 
-
     }
+  }
+
+  // Print summary statistics
+  if (max_calving_rate > 0.0) {
+    m_log->message(3,
+                "* Hayhurst calving summary: max rate = %.2f m/year at (i,j) = (%d,%d), max cliff height = %.1f m\n",
+                max_calving_rate * 31557600.0, max_rate_i, max_rate_j, max_cliff_height);
+  } else {
+    m_log->message(3, "* No active Hayhurst calving cells at this time step.\n");
   }
 }
 
