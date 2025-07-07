@@ -99,7 +99,6 @@ void BedDef::write_model_state_impl(const OutputFile &output) const {
   auto t_length = output.time_dimension_length();
   auto t_start = t_length > 0 ? t_length - 1 : 0;
 
-
   output.write_timeseries_variable(m_time_dimension, { t_start }, { 1 }, { m_t_last });
 }
 
@@ -122,10 +121,9 @@ void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
     File input_file(m_grid->com, opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    auto t_length = input_file.nrecords(m_time_dimension.get_name(), "", m_sys);
-    auto t_last   = t_length > 0 ? t_length - 1 : 0;
-
     if (input_file.variable_exists(m_time_dimension.get_name())) {
+      auto t_length = input_file.nrecords(m_time_dimension.get_name(), "", m_sys);
+      auto t_last   = t_length > 0 ? t_length - 1 : 0;
 
       auto t   = io::read_timeseries_variable(input_file, m_time_dimension.get_name(),
                                               m_time_dimension["units"], m_sys, t_last, 1);
