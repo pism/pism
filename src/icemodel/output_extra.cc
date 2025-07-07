@@ -111,6 +111,7 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
 static void define_time(const OutputFile &file,
                         const VariableMetadata &T) {
 
+  // make a copy of "T" to be able to modify it
   auto time = T;
   auto time_name = time.get_name();
 
