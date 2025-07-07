@@ -178,7 +178,7 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
                  max_rate_i, max_rate_j,
                  max_cliff_height);
   } else {
-    m_log->message(2, "* No active shear cliff calving cells at this time step (maximum cliff height: %.1f m).\n",
+    m_log->message(3, "* No active shear cliff calving cells at this time step (maximum cliff height: %.1f m).\n",
                    max_cliff_height);
   }
 }
