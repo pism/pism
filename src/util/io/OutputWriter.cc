@@ -406,6 +406,9 @@ void OutputWriter::define_experiment_id(const std::string &file_name,
   auto &dim_name = m_impl->experiment_id_name;
 
   VariableMetadata exp_id(dim_name, unit_system);
+  // NOTE: this long name is significant: we use it to recognize the experiment ID
+  // dimension in File::dimension_type(). This is needed to compute start and count arrays
+  // correctly when re-starting from a file containing this dimension.
   exp_id.set_output_type(io::PISM_CHAR).long_name("experiment ID");
 
   define_dimension(file_name, dim_name, 1);

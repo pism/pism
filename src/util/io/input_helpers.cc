@@ -308,6 +308,10 @@ static StartCountInfo compute_start_and_count(std::vector<AxisType> &dim_types,
       result.start[j] = start[X_AXIS];
       result.count[j] = count[X_AXIS];
       break;
+    case EXP_ID_AXIS:
+      result.start[j] = 0;
+      result.count[j] = 1;
+      break;
     default:
       // Note: the "default" case is used to handle "3D" variables where the third axis is
       // not a "Z" axis, i.e. dim_types[j] == UNKNOWN_AXIS. We use this to write
@@ -636,7 +640,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
     for (const auto &d : input_dims) {
       auto dim_type = file.dimension_type(d, variable.unit_system());
 
-      if (dim_type != T_AXIS) {
+      if (dim_type == X_AXIS or dim_type == Y_AXIS or dim_type == Z_AXIS) {
         ++input_spatial_dim_count;
       }
 

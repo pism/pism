@@ -467,7 +467,12 @@ AxisType File::dimension_type(const std::string &dimension_name,
     std::string
       axis          = read_text_attribute(dimension_name, "axis"),
       standard_name = read_text_attribute(dimension_name, "standard_name"),
+      long_name     = read_text_attribute(dimension_name, "long_name"),
       units         = read_text_attribute(dimension_name, "units");
+
+    if (long_name == "experiment ID") {
+      return EXP_ID_AXIS;
+    }
 
     // check if it has units compatible with "seconds":
 

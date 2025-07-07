@@ -27,10 +27,11 @@ namespace pism {
 /*!
  * Axis corresponding to dimensions (and coordinate variables) in a NetCDF file.
  *
- * These values are also used as indexes in `start` and `count` arrays -- this is why they
- * have consecutive values starting from 0.
+ * Values of T_AXIS, X_AXIS, Y_AXIS, Z_AXIS are also used as indexes
+ * in `start` and `count` arrays -- this is why they have consecutive values
+ * starting from 0.
  */
-enum AxisType : int { T_AXIS = 0, X_AXIS = 1, Y_AXIS = 2, Z_AXIS = 3, UNKNOWN_AXIS = 4 };
+enum AxisType : int { T_AXIS = 0, X_AXIS = 1, Y_AXIS = 2, Z_AXIS = 3, UNKNOWN_AXIS = 4, EXP_ID_AXIS = 5 };
 
 AxisType axis_type_from_string(const std::string &input);
 
