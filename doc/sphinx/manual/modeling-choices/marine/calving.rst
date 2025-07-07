@@ -295,12 +295,12 @@ Prefix: ``calving.cliff_calving_tensile.``
 .. pism-parameters::
    :prefix: calving.cliff_calving_tensile.
 
-.. _sec-calving-cliff-linear:
+.. _sec-calving-linear:
 
-Cliff calving with linear dependence on cliff height
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Linear calving with linear dependence on cliff height
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The option :opt:`-calving cliff_calving_linear` implements a parameterization for calving of ice cliffs
+The option :opt:`-calving linear_calving` implements a parameterization for calving of ice cliffs
 based on a linear relationship between calving rate and cliff height :cite:`Parsons2025` derived from 
 observations of tidewater glaciers around the Antarctic Peninsula.
 
@@ -310,7 +310,7 @@ a simpler alternative to the power-law relationships used in other cliff calving
 The calving rate is computed as:
 
 .. math::
-   :label: eq-cliff-linear
+   :label: eq-linear-calving
 
    c = a H_c + b
 
@@ -331,12 +331,10 @@ meaningful results.
 
 .. rubric:: Parameters
 
-Prefix: ``calving.cliff_calving_linear.``
+Prefix: ``calving.linear_calving.``
 
 .. pism-parameters::
-   :prefix: calving.cliff_calving_linear.
-
-
+   :prefix: calving.linear_calving.
 
 .. _sec-calving-thickness-threshold:
 
