@@ -22,6 +22,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/stencils.hh"
 
 namespace pism {
 namespace calving {
@@ -149,6 +150,14 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
 
       auto R = m_calving_rate.star(i, j);
       auto M = cell_type.star(i, j);
+      
+      // Create star stencil for ice thickness like in LinearCalving
+      stencils::Star<double> H;
+      H.c = ice_thickness(i, j);
+      H.e = ice_thickness(i+1, j);
+      H.w = ice_thickness(i-1, j);
+      H.n = ice_thickness(i, j+1);
+      H.s = ice_thickness(i, j-1);
 
       int N = 0;
       double R_sum = 0.0;
@@ -156,10 +165,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       for (auto d : {North, East, South, West}) {
         if (mask::icy(M[d])) {
           R_sum += R[d];
-          if (d == North) H_sum += ice_thickness(i, j+1);
-          else if (d == East) H_sum += ice_thickness(i+1, j);
-          else if (d == South) H_sum += ice_thickness(i, j-1);
-          else if (d == West) H_sum += ice_thickness(i-1, j);
+          H_sum += H[d];
           N++;
         }
       }
