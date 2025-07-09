@@ -79,10 +79,6 @@ if(Pism_DEBUG)
   target_sources(util PRIVATE Poisson.cc)
 endif()
 
-if(Pism_USE_JANSSON)
-  target_sources(util PRIVATE ConfigJSON.cc)
-endif()
-
 # Check if NetCDF-4 parallel I/O is enabled and add a source code file if necessary.
 if (Pism_USE_PARALLEL_NETCDF4)
   target_sources(util PRIVATE io/NC4_Par.cc)

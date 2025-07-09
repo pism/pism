@@ -123,10 +123,6 @@ if (Pism_DEBUG)
   )
 endif()
 
-if (Pism_USE_JANSSON)
-  target_link_libraries(libpism ${JANSSON_LIBRARIES})
-endif()
-
 if (Pism_USE_PROJ)
   target_link_libraries(libpism PkgConfig::PROJ)
 endif()

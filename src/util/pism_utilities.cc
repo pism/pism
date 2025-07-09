@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,10 +42,6 @@
 
 #if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"    // pj_release
-#endif
-
-#if (Pism_USE_JANSSON==1)
-#include <jansson.h>            // JANSSON_VERSION
 #endif
 
 #include <petsctime.h>          // PetscTime
@@ -255,10 +251,6 @@ std::string version() {
 
 #if (Pism_USE_PROJ==1)
   result += pism::printf("PROJ %s.\n", pj_release);
-#endif
-
-#if (Pism_USE_JANSSON==1)
-  result += pism::printf("Jansson %s.\n", JANSSON_VERSION);
 #endif
 
 #if (Pism_BUILD_PYTHON_BINDINGS==1)

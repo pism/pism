@@ -49,10 +49,6 @@
 #include "util/Diagnostic.hh"
 #include "util/NetCDFConfig.hh"
 
-#if (Pism_USE_JANSSON==1)
-#include "util/ConfigJSON.hh"
-#endif
-
 #include "util/MaxTimestep.hh"
 #include "stressbalance/timestepping.hh"
 #include "util/Context.hh"
@@ -226,11 +222,6 @@ pism_class(pism::Logger, "pism/util/Logger.hh");
 %shared_ptr(pism::NetCDFConfig);
 %include "util/Config.hh"
 %include "util/NetCDFConfig.hh"
-
-#if (Pism_USE_JANSSON==1)
-%shared_ptr(pism::ConfigJSON);
-%include "util/ConfigJSON.hh"
-#endif
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::ColdEnthalpyConverter);
