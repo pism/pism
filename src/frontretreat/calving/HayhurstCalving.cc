@@ -79,12 +79,6 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
-  // Create temporary arrays to store omega and H values for statistics tracking
-  array::Scalar omega_array(m_grid, "omega_temp");
-  array::Scalar H_array(m_grid, "H_temp");
-  omega_array.set(0.0);
-  H_array.set(0.0);
-
   for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
@@ -110,10 +104,6 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
         omega = water_depth / H;
       }
 
-      // Store omega and H for statistics tracking
-      omega_array(i, j) = omega;
-      H_array(i, j) = H;
-
       // [\ref Mercenier2018] maximum tensile stress approximation
       double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0)) * ice_density * gravity * H;
 
@@ -135,10 +125,8 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
   // visualization).
 
   m_calving_rate.update_ghosts();
-  omega_array.update_ghosts();
-  H_array.update_ghosts();
 
-  // Add statistics tracking
+  // Add statistics tracking for ice-ocean boundary cells
   double max_calving_rate = 0.0;
   double max_cliff_height = 0.0;
   int max_rate_i = 0, max_rate_j = 0;
@@ -150,14 +138,6 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
 
       auto R = m_calving_rate.star(i, j);
       auto M = cell_type.star(i, j);
-      
-      // Create star stencil for ice thickness like in LinearCalving
-      stencils::Star<double> H;
-      H.c = ice_thickness(i, j);
-      H.e = ice_thickness(i+1, j);
-      H.w = ice_thickness(i-1, j);
-      H.n = ice_thickness(i, j+1);
-      H.s = ice_thickness(i, j-1);
 
       int N = 0;
       double R_sum = 0.0;
@@ -165,7 +145,11 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       for (auto d : {North, East, South, West}) {
         if (mask::icy(M[d])) {
           R_sum += R[d];
-          H_sum += H[d];
+          // Get ice thickness from the neighboring icy cell
+          if (d == North && j+1 < m_grid->My()) H_sum += ice_thickness(i, j+1);
+          else if (d == East && i+1 < m_grid->Mx()) H_sum += ice_thickness(i+1, j);
+          else if (d == South && j-1 >= 0) H_sum += ice_thickness(i, j-1);
+          else if (d == West && i-1 >= 0) H_sum += ice_thickness(i-1, j);
           N++;
         }
       }
@@ -173,6 +157,8 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       if (N > 0) {
         m_calving_rate(i, j) = R_sum / N;
         double avg_H = H_sum / N;
+        
+        // Track statistics for this boundary cell
         if (m_calving_rate(i, j) > max_calving_rate) {
           max_calving_rate = m_calving_rate(i, j);
           max_cliff_height = avg_H;
