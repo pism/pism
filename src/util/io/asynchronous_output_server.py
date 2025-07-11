@@ -134,25 +134,19 @@ while True:
         setattr(output_dataset, attr, val)
 
     for field_name in fields_metadata:
-        if('_FillValue' in fields_metadata[field_name]):
-            fields_nc_var[field_name] = output_dataset.createVariable(field_name,
-                                                                      fields_metadata[field_name]["dtype"],
-                                                                      fields_metadata[field_name]["dimensions"],
-                                                                      fill_value = fields_metadata[field_name]["_FillValue"])
-        else:
-            fields_nc_var[field_name] = output_dataset.createVariable(field_name,
-                                                                      fields_metadata[field_name]["dtype"],
-                                                                      fields_metadata[field_name]["dimensions"])
-#
-        for attribute_name in fields_metadata[field_name]:
-            if (attribute_name != '_FillValue' and
-                attribute_name != 'dimensions' and
-                attribute_name != 'output_units' and
-                attribute_name != 'tag' and
-                attribute_name != 'dtype'):
-                if fields_metadata[field_name][attribute_name] != "":
-                    fields_nc_var[field_name].setncattr(attribute_name,
-                                                        fields_metadata[field_name][attribute_name])
+        attributes = fields_metadata[field_name]
+
+        fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
+
+        fields_nc_var[field_name] = output_dataset.createVariable(field_name,
+                                                                  attributes["dtype"],
+                                                                  attributes["dimensions"],
+                                                                  fill_value=fill_value)
+
+        special = ['_FillValue', 'dimensions', 'output_units', 'tag', 'dtype']
+        for attr in attributes:
+            if attr not in special and attributes[attr] != "":
+                fields_nc_var[field_name].setncattr(attr, attributes[attr])
 
 #
 # ###### DATA RECEIVAL - LOOP ########
