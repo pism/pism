@@ -1,4 +1,4 @@
-all: result extra extra_split extra_append snapshots snapshots_split timeseries timeseries_append checkpointing compression grid_mapping beddef_lc
+all: result extra extra_split extra_append snapshots snapshots_split timeseries timeseries_append checkpointing compression grid_mapping beddef_lc signals
 
 result: test_result.sh
 	bash $^
@@ -31,13 +31,16 @@ checkpointing: test_checkpoints.sh
 
 compression: test_compression.sh
 	bash $^
-# use "head -100" to stop ncdump from reading doing more than necessary
+# use "head -100" to stop ncdump from doing more than necessary
 	ncdump -h -s result_compressed.nc | grep -v pism_config | head -100 | grep _DeflateLevel
 
 grid_mapping: test_grid_mapping.sh
 	bash $^
 
 beddef_lc: test_beddef_lc.sh
+	bash $^
+
+signals: test_signals.sh
 	bash $^
 
 clean:
