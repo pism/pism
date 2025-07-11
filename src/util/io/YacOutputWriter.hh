@@ -61,6 +61,8 @@ private:
   int y_size;
   int grid_size;
   int local_rank = -1;
+  int local_x_size;
+  int local_y_size;
   std::string current_snapshot_file = "";
   const Geometry& m_geometry;
   std::map<std::string, int> field_ids;

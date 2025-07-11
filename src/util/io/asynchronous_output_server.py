@@ -179,16 +179,14 @@ while True:
         if field_name not in time_independent_var_values:
             data = fields[field_name].get()[0]
 
-            # if(field_name == "enthalpy"):
-            #     print("enthalpy server: ", data[0])
-
             if (fields[field_name].collection_size > 1):
                 values = np.ndarray(shape = (x_size[0], y_size[0], fields[field_name].collection_size),
                                     buffer = data,
                                     dtype = "f8")
             else:
+                data = data[0, np.argsort(global_vertex_indices)]
                 values = np.ndarray(shape = (x_size[0], y_size[0]),
-                                    buffer = data[0, :],
+                                    buffer = data,
                                     dtype = "f8")
 
             if fields_metadata[field_name]["dtype"] != "f8":

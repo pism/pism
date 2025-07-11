@@ -89,8 +89,8 @@ void YacOutputWriter::initialize_grid(const grid::DistributedGridInfo &distribut
   auto grid = m_geometry.latitude.grid();
   x_size = grid->Mx();
   y_size = grid->My();
-  int local_x_size = distributed_grid.xm;
-  int local_y_size = distributed_grid.ym;
+  local_x_size = distributed_grid.xm;
+  local_y_size = distributed_grid.ym;
 
   if(local_rank == 0) {
     MPI_Bcast((void *) &x_size, 1, MPI_INT, MPI_ROOT, intercomm);
@@ -423,9 +423,18 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     for (int i = 0; i < collection_size; i++) {
         send_field[i] = new double*[1];
         send_field[i][0] = new double[grid_size];
-        for (int j = 0; j < grid_size; j++)
-            send_field[i][0][j] = data[grid_size * i + j];
+        for (int j = 0; j < local_x_size; j++)
+          for (int k = 0; k < local_y_size; k++) {
+            send_field[i][0][local_y_size * j + k] = data[k + j * local_y_size + i * grid_size];
+          }
     }
+   
+   if (local_rank == 0 and variable_name == "enthalpy") {
+    for (int i = 0; i < grid_size; i++) {
+      std::cout << send_field[0][0][i] << " ";
+    }
+    std::cout << std::endl;
+   }
 
     yac_cput(field_ids[variable_name], collection_size, send_field, &info, &error);
     written_vars[variable_name] = true;
