@@ -21,6 +21,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -73,10 +74,15 @@ bool IceModel::write_checkpoint() {
     // Ensure that the checkpoint file is closed to force PISM to open a new file every
     // time we write a checkpoint, moving the old file aside if it exists.
     file.close();
-    
-    write_metadata(file, WRITE_MAPPING);
 
-    save_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
+    io::define_time_dimension(file, m_time->metadata());
+    define_metadata(file, WRITE_MAPPING);
+    define_run_stats(file);
+
+    write_metadata(file);
+    write_run_stats(file);
+
+    write_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
   }
   profiling.end("io.checkpoint");
   double checkpoint_end_time = get_time(m_grid->com);

@@ -380,33 +380,6 @@ YieldStressInputs IceModel::yield_stress_inputs() {
   return result;
 }
 
-std::string IceModel::save_state_on_error(const std::string &suffix,
-                                          const std::set<std::string> &additional_variables) {
-  std::string filename = m_config->get_string("output.file");
-
-  if (filename.empty()) {
-    m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.");
-    filename = "unnamed.nc";
-  }
-
-  filename = filename_add_suffix(filename, suffix, "");
-
-  OutputFile file(m_output_writer, filename);
-
-  write_metadata(file, WRITE_MAPPING);
-
-  auto variables = output_variables("small");
-  for (const auto &v : additional_variables) {
-    variables.insert(v);
-  }
-
-  save_variables(file, INCLUDE_MODEL_STATE, variables, m_time->current());
-
-  file.close();
-
-  return filename;
-}
-
 //! The contents of the main PISM time-step.
 /*!
 During the time-step we perform the following actions:

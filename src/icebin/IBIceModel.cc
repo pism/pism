@@ -321,10 +321,12 @@ void IBIceModel::prepare_outputs(double time_s) {
 void IBIceModel::dumpToFile(const std::string &filename) const {
   OutputFile file(m_output_writer, filename);
 
-  write_metadata(file, WRITE_MAPPING);
+  define_metadata(file, WRITE_MAPPING);
+  define_variables(file, INCLUDE_MODEL_STATE, {});
 
+  write_metadata(file);
   // assume that "dumpToFile" is expected to save the model state *only*.
-  save_variables(file, INCLUDE_MODEL_STATE, {}, m_time->current());
+  write_variables(file, INCLUDE_MODEL_STATE, {}, m_time->current());
 }
 
 void IBIceModel::time_setup() {

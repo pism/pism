@@ -209,10 +209,11 @@ protected:
   virtual void initialize_2d();
 
   enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
-  virtual void save_variables(const OutputFile &file,
-                              OutputKind kind,
-                              const std::set<std::string> &variables,
-                              double time) const;
+  virtual void define_variables(const OutputFile &file, OutputKind kind,
+                                const std::set<std::string> &variables) const;
+
+  virtual void write_variables(const OutputFile &file, OutputKind kind,
+                               const std::set<std::string> &variables, double time) const;
 
   virtual void define_model_state(const OutputFile &file) const;
   virtual void write_model_state(const OutputFile &file) const;
@@ -220,7 +221,8 @@ protected:
   virtual void write_run_stats(const OutputFile &file) const;
 
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
-  virtual void write_metadata(const OutputFile &file, MappingTreatment mapping_flag) const;
+  virtual void define_metadata(const OutputFile &file, MappingTreatment mapping_flag) const;
+  virtual void write_metadata(const OutputFile &file) const;
 
   virtual void define_diagnostics(const OutputFile &file,
                                   const std::set<std::string> &variables) const;

@@ -186,7 +186,8 @@ void IceModel::init_extras() {
       // prepare the file
       bool with_bounds = true;
       io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
-      write_metadata(*m_extra_file, WRITE_MAPPING);
+      define_metadata(*m_extra_file, WRITE_MAPPING);
+      define_run_stats(*m_extra_file);
     }
   }
 
@@ -325,17 +326,19 @@ void IceModel::write_extras() {
         // Prepare the file:
         bool with_bounds = true;
         io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
-        write_metadata(*m_extra_file, WRITE_MAPPING);
+        define_metadata(*m_extra_file, WRITE_MAPPING);
+        define_run_stats(*m_extra_file);
       }
     }
 
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
+    write_metadata(*m_extra_file);
     // use the mid-point of the current reporting interval
     double time = 0.5 * (m_last_extra + current_time);
-    save_variables(*m_extra_file, m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
-                   m_extra_vars, time);
+    write_variables(*m_extra_file, m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
+                    m_extra_vars, time);
 
     // Get the length of the time dimension *after* it is appended to.
     auto time_length = m_extra_file->time_dimension_length();

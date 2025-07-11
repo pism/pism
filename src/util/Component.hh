@@ -106,7 +106,7 @@ InputOptions process_input_options(MPI_Comm com, std::shared_ptr<const Config> c
   - Assemble the list of variables to be written (see
   IceModel::output_variables()); calls add_vars_to_output()
   - Create a NetCDF file
-  - Define all the variables in the file (see IceModel::write_variables());
+  - Define all the variables in the file (see IceModel::define_variables());
   calls define_variables()
   - Write all the variables to the file (same method); calls write_variables().
 

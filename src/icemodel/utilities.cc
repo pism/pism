@@ -22,9 +22,7 @@
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/Grid.hh"
-#include "pism/util/Config.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_signal.h"
 
@@ -66,7 +64,12 @@ int IceModel::process_signals() {
     pism_signal = 0;
 
     OutputFile file(m_output_writer, file_name);
-    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
+
+    define_metadata(file, WRITE_MAPPING);
+    define_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+
+    write_metadata(file);
+    write_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
     // flush all the time-series buffers:
     flush_timeseries();

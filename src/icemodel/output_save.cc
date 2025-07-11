@@ -16,12 +16,13 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <memory>
 
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
-#include <memory>
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -141,14 +142,18 @@ void IceModel::write_snapshot() {
 
     m_snapshot_file = std::make_shared<OutputFile>(m_output_writer, filename);
 
-    write_metadata(*m_snapshot_file, WRITE_MAPPING);
+    io::define_time_dimension(*m_snapshot_file, m_time->metadata());
+    define_metadata(*m_snapshot_file, WRITE_MAPPING);
+    define_run_stats(*m_snapshot_file);
   }
 
   {
     m_log->message(2, "saving snapshot to %s at %s, for time-step goal %s\n", filename.c_str(),
                    m_time->date(m_time->current()).c_str(), m_time->date(saving_after).c_str());
 
-    save_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
+    write_metadata(*m_snapshot_file);
+    write_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
+    write_run_stats(*m_snapshot_file);
   }
 
   if (m_split_snapshots) {

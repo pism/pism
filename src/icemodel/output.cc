@@ -69,8 +69,8 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
   return MaxTimestep(dt, description);
 }
 
-//! Write time-independent metadata to a file.
-void IceModel::write_metadata(const OutputFile &file, MappingTreatment mapping_flag) const {
+//! Define metadata variables and attributes in an output file
+void IceModel::define_metadata(const OutputFile &file, MappingTreatment mapping_flag) const {
 
   if (mapping_flag == WRITE_MAPPING) {
     auto info = m_grid->get_mapping_info();
@@ -86,7 +86,7 @@ void IceModel::write_metadata(const OutputFile &file, MappingTreatment mapping_f
     }
   }
 
-  m_config->write(file);
+  m_config->define(file);
 
   {
     file.append_history(m_output_history);
@@ -95,9 +95,13 @@ void IceModel::write_metadata(const OutputFile &file, MappingTreatment mapping_f
   }
 }
 
+void IceModel::write_metadata(const OutputFile &file) const {
+  m_config->write(file);
+}
+
 //! Save model state in NetCDF format.
 /*!
-Calls save_variables() to do the actual work.
+Calls write_variables() to do the actual work.
  */
 void IceModel::save_results() {
   append_history("PISM done");
@@ -120,9 +124,11 @@ void IceModel::save_results() {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
     OutputFile file(m_output_writer, filename);
 
-    write_metadata(file, WRITE_MAPPING);
+    define_metadata(file, WRITE_MAPPING);
+    define_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
 
-    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
+    write_metadata(file);
+    write_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
   }
   profiling.end("io.model_state");
 }
@@ -174,8 +180,8 @@ void IceModel::write_run_stats(const OutputFile &file) const {
   file.write_array({ "step_counter", m_sys }, start, count, { (double)m_step_counter });
 }
 
-void IceModel::save_variables(const OutputFile &file, OutputKind kind,
-                              const std::set<std::string> &variables, double time_seconds) const {
+void IceModel::define_variables(const OutputFile &file, OutputKind kind,
+                                const std::set<std::string> &variables) const {
 
   auto time_name = m_time->variable_name();
 
@@ -204,9 +210,10 @@ void IceModel::save_variables(const OutputFile &file, OutputKind kind,
   }
 
   define_diagnostics(file, variables);
+}
 
-  // Done defining variables
-
+void IceModel::write_variables(const OutputFile &file, OutputKind kind,
+                               const std::set<std::string> &variables, double time_seconds) const {
   // append to the time dimension
   file.append_time(time_seconds);
 
@@ -278,6 +285,35 @@ void IceModel::write_model_state(const OutputFile &file) const {
   for (const auto& d : m_diagnostics) {
     d.second->write_state(file);
   }
+}
+
+std::string IceModel::save_state_on_error(const std::string &suffix,
+                                          const std::set<std::string> &additional_variables) {
+  std::string filename = m_config->get_string("output.file");
+
+  if (filename.empty()) {
+    m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.");
+    filename = "unnamed.nc";
+  }
+
+  filename = filename_add_suffix(filename, suffix, "");
+
+  auto variables = output_variables("small");
+  for (const auto &v : additional_variables) {
+    variables.insert(v);
+  }
+
+  OutputFile file(m_output_writer, filename);
+
+  define_metadata(file, WRITE_MAPPING);
+  define_variables(file, INCLUDE_MODEL_STATE, variables);
+
+  write_metadata(file);
+  write_variables(file, INCLUDE_MODEL_STATE, variables, m_time->current());
+
+  file.close();
+
+  return filename;
 }
 
 } // end of namespace pism
