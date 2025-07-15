@@ -11,7 +11,7 @@ lib_dir=${lib_dir:-$HOME/local}
 hdf5=${lib_dir}/hdf5
 pnetcdf=${lib_dir}/pnetcdf
 
-version=4.9.2
+version=4.9.3
 prefix=${prefix:-$HOME/local/netcdf}
 build_dir=${build_dir:-$HOME/local/build/netcdf}
 url=https://github.com/Unidata/netcdf-c/archive/refs/tags/v${version}.tar.gz
