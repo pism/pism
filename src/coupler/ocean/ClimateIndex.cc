@@ -112,17 +112,9 @@ void ClimateIndex::init_forcing() {
 
   // Annual anomaly for Paleo time slices 0=Glacial, 1=Interglacial, 1X= Super InterGlacial e.g. mPWP
   m_theta_anomaly_0.regrid(input, None);
-
-    m_log->message(2,
-            " m_theta_ocean_0 loaded ");
   m_theta_anomaly_1.regrid(input, None);
 
-  m_log->message(2,
-            " m_theta_ocean_1 loaded ");
-
   m_salinity_anomaly_0.regrid(input, None);
-    m_log->message(2,
-            " m_salinity_ocean_1 loaded ");
   m_salinity_anomaly_1.regrid(input, None);
 
   if (m_use_1X) {

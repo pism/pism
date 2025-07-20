@@ -454,7 +454,7 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
       m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, temperature[basin_id], salinity[basin_id]);
     } else {
       m_log->message(
-          2,
+          4,
           "PICO WARNING: basin %d contains no cells with ocean data on continental shelf\n"
           "              (no values with ocean_contshelf_mask=2).\n"
           "              Using default temperature (%.3f K) and salinity (%.3f g/kg)\n"
@@ -584,7 +584,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
   low_temperature_counter = GlobalSum(m_grid->com, low_temperature_counter);
   if (low_temperature_counter > 0) {
     m_log->message(
-        2,
+        4,
         "PICO WARNING: temperature has been below pressure melting temperature in %d cases,\n"
         "              setting it to pressure melting temperature\n",
         low_temperature_counter);
@@ -705,7 +705,7 @@ void Pico::process_box1(const PicoPhysics &physics,
 
   n_Toc_failures = GlobalSum(m_grid->com, n_Toc_failures);
   if (n_Toc_failures > 0) {
-    m_log->message(2,
+    m_log->message(4,
                    "PICO WARNING: square-root argument for temperature calculation\n"
                    "              has been negative in %d cases.\n",
                    n_Toc_failures);
@@ -789,7 +789,7 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
     n_beckmann_goosse_cells = GlobalSum(m_grid->com, n_beckmann_goosse_cells);
     if (n_beckmann_goosse_cells > 0) {
       m_log->message(
-          2,
+          4,
           "PICO WARNING: [box %d]: switched to the Beckmann Goosse (2003) model at %d locations\n"
           "              (no boundary data from the previous box)\n",
           box, n_beckmann_goosse_cells);

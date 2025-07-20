@@ -314,9 +314,10 @@ void ClimateIndex::update_impl(const Geometry &geometry, double t, double dt) {
     // precipitation
     {
       if (m_use_precip_scaling) {
-        double F = m_spatially_variable_scaling ? m_spatial_precip_scaling(i, j) : m_preciplinfactor;
+        double alpha = m_spatially_variable_scaling ? m_spatial_precip_scaling(i, j) : m_preciplinfactor;
 
-        m_precipitation(i, j) = P_ref(i, j) * (1 + annual_anomaly * F);
+        //m_precipitation(i, j) = P_ref(i, j) * (1 + annual_anomaly * F);
+        m_precipitation(i, j) = P_ref(i, j) * exp(alpha * annual_anomaly);
       } else {
         m_precipitation(i, j) =
             P_ref(i, j) + w_0 * dP_0(i, j) + w_1 * dP_1(i, j) + w_1X * (dP_1X(i, j) - dP_1(i, j));
@@ -367,8 +368,9 @@ void ClimateIndex::precip_time_series_impl(int i, int j, std::vector<double> &re
     if (m_use_cos and m_use_precip_cos) {
       // If use cosinus for yearly cycle of temperature, precipitation anomalies between annual and summer mean are added to the mean precipitation 
       // Precipitation anomalies between annual and summer are calculated using temperature difference and either the uniform linear precip scaling or spatial from file
-      double F = m_spatially_variable_scaling ? m_spatial_precip_scaling(i, j) : m_preciplinfactor;
-      result[k] = m_precipitation(i,j) + (1 + F * (m_air_temp_summer(i, j) - m_air_temp_annual(i, j)) * m_cosine_cycle[k]);
+      double alpha = m_spatially_variable_scaling ? m_spatial_precip_scaling(i, j) : m_preciplinfactor;
+      //result[k] = m_precipitation(i,j) + (1 + F * (m_air_temp_summer(i, j) - m_air_temp_annual(i, j)) * m_cosine_cycle[k]);
+      result[k] = m_precipitation(i,j) * exp(alpha * (m_air_temp_summer(i, j) - m_air_temp_annual(i, j) * m_cosine_cycle[k]));
     } else {
       result[k] = m_precipitation(i,j);
     }

@@ -133,17 +133,24 @@ function(pism_find_library PREFIX SPEC)
   # Trick pkg-config into using "Libs.private" instead of "Libs" to get the full list of
   # libraries (e.g. not just PETSc, but PETSc and its dependencies). This is needed to
   # build PISM on some systems. See also: https://gitlab.kitware.com/cmake/cmake/-/issues/21714
-  if (Pism_PKG_CONFIG_STATIC)
-    if (CMAKE_VERSION VERSION_LESS "3.22")
-      list(APPEND PKG_CONFIG_EXECUTABLE "--static")
-    else()
-      set(PKG_CONFIG_ARGN "--static" CACHE INTERNAL "command-line arguments for pkg-config")
-    endif()
-  endif()
+  
+  list(APPEND PKG_CONFIG_EXECUTABLE "--static")
   pkg_search_module(${PREFIX} REQUIRED IMPORTED_TARGET ${SPEC})
   if (${${PREFIX}_FOUND})
     message(STATUS "Found ${PREFIX}: ${${PREFIX}_PREFIX} (found version \"${${PREFIX}_VERSION}\")")
-  endif()
+  endif() 
+  
+  # if (Pism_PKG_CONFIG_STATIC)
+  #   if (CMAKE_VERSION VERSION_LESS "3.22")
+  #     list(APPEND PKG_CONFIG_EXECUTABLE "--static")
+  #   else()
+  #     set(PKG_CONFIG_ARGN "--static" CACHE INTERNAL "command-line arguments for pkg-config")
+  #   endif()
+  # endif()
+  # pkg_search_module(${PREFIX} REQUIRED IMPORTED_TARGET ${SPEC})
+  # if (${${PREFIX}_FOUND})
+  #   message(STATUS "Found ${PREFIX}: ${${PREFIX}_PREFIX} (found version \"${${PREFIX}_VERSION}\")")
+  # endif()
 endfunction()
 
 macro(pism_find_petsc)
@@ -193,6 +200,7 @@ macro(pism_find_prerequisites)
   endif()
 
   if (Pism_USE_PARALLEL_NETCDF4)
+    set(NETCDF_INCLUDE_DIRS "/software.9/software/netCDF/4.9.2-gompi-2023a/include")
     # Try to find netcdf_par.h. We assume that NetCDF was compiled with
     # parallel I/O if this header is present.
     find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDE_DIRS} NO_DEFAULT_PATH)
@@ -216,7 +224,7 @@ macro(pism_set_dependencies)
   #
   # Note: PISM does not use HDF5 directly, but we still need to be able to include hdf5.h
   # to record its version.
-  include_directories (BEFORE SYSTEM
+  include_directories (
     ${PETSC_INCLUDE_DIRS}
     ${FFTW_INCLUDE_DIRS}
     ${GSL_INCLUDE_DIRS}
@@ -228,6 +236,8 @@ macro(pism_set_dependencies)
 
   # Use option values to set compiler and linker flags
   set (Pism_EXTERNAL_LIBS "")
+
+  link_directories(/storage/workspaces/climate_charibdis/climate_ism/Software/epyc2.9/easybuild/software/SCOTCH/7.0.3-gompi-2023a)
 
   # required libraries
   list (APPEND Pism_EXTERNAL_LIBS
