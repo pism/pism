@@ -419,6 +419,7 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
 
     double ***send_field = new double **[collection_size];
     for (int c = 0; c < collection_size; c++) {
+      // FIXME: memory leaks
       send_field[c]    = new double *[1];
       send_field[c][0] = new double[grid_size];
       for (int x = 0; x < local_x_size; x++) {
