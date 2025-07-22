@@ -428,13 +428,6 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
             send_field[i][0][local_y_size * j + k] = data[k + j * local_y_size + i * grid_size];
           }
     }
-   
-   if (local_rank == 0 and variable_name == "enthalpy") {
-    for (int i = 0; i < grid_size; i++) {
-      std::cout << send_field[0][0][i] << " ";
-    }
-    std::cout << std::endl;
-   }
 
     yac_cput(field_ids[variable_name], collection_size, send_field, &info, &error);
     written_vars[variable_name] = true;
