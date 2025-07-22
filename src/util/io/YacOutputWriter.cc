@@ -413,22 +413,29 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   if(not yac_init_finished and file_name.find("snapshot") != std::string::npos)
     finalize_yac_initialization();
 
-  if(file_name.find("snapshot") != std::string::npos and
-    (not metadata.get_time_independent() or
-     written_vars[variable_name] == false)) {
-    int info, error;
+  if (file_name.find("snapshot") != std::string::npos and
+      (not metadata.get_time_independent() or not written_vars[variable_name])) {
     int collection_size = metadata.z().length();
 
-    double *** send_field = new double**[collection_size];
-    for (int i = 0; i < collection_size; i++) {
-        send_field[i] = new double*[1];
-        send_field[i][0] = new double[grid_size];
-        for (int j = 0; j < local_x_size; j++)
-          for (int k = 0; k < local_y_size; k++) {
-            send_field[i][0][local_y_size * j + k] = data[k + j * local_y_size + i * grid_size];
-          }
+    double ***send_field = new double **[collection_size];
+    for (int c = 0; c < collection_size; c++) {
+      send_field[c]    = new double *[1];
+      send_field[c][0] = new double[grid_size];
+      for (int x = 0; x < local_x_size; x++) {
+        for (int y = 0; y < local_y_size; y++) {
+          int delta_x = collection_size;
+          int delta_y = collection_size * local_x_size;
+
+          int pism_index = y * delta_y + x * delta_x + c;
+
+          int yac_index = x + y * local_x_size;
+
+          send_field[c][0][yac_index] = data[pism_index];
+        }
+      }
     }
 
+    int info, error;
     yac_cput(field_ids[variable_name], collection_size, send_field, &info, &error);
     written_vars[variable_name] = true;
   }

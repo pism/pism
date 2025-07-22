@@ -169,22 +169,14 @@ while True:
     for field_name in pism_field_names:
         var_dims = fields_metadata[field_name]["dimensions"]
 
+        collection_size = fields[field_name].collection_size
+
         values = []
         if field_name not in time_independent_var_values:
             data = fields[field_name].get()[0]
 
-            if (fields[field_name].collection_size > 1):
-                values = np.ndarray(shape = (x_size[0], y_size[0], fields[field_name].collection_size),
-                                    buffer = data,
-                                    dtype = "f8")
-            else:
-                data = data[0, np.argsort(global_vertex_indices)]
-                values = np.ndarray(shape = (x_size[0], y_size[0]),
-                                    buffer = data,
-                                    dtype = "f8")
-
-            if fields_metadata[field_name]["dtype"] != "f8":
-                values = values.astype(fields_metadata[field_name]["dtype"])
+            values = np.ndarray(shape=(collection_size, y_size[0], x_size[0]),
+                                buffer=data, dtype="f8")
 
             if "time" not in var_dims:
                 time_independent_var_values[field_name] = values
@@ -192,11 +184,19 @@ while True:
             values = time_independent_var_values[field_name]
 
         if len(fields_nc_var[field_name].shape) == 2:
-            fields_nc_var[field_name][:, :] = values
+            fields_nc_var[field_name][:, :] = values[0]
         elif len(fields_nc_var[field_name].shape) == 3:
-            fields_nc_var[field_name][0, :, :] = values
+            fields_nc_var[field_name][0, :, :] = values[0]
         else:
-            fields_nc_var[field_name][0, :, :, :] = values
+            assert collection_size > 1
+
+            tmp = np.ndarray(shape=(y_size[0], x_size[0], collection_size),
+                             dtype=values.dtype)
+
+            for c in range(collection_size):
+                tmp[:, :, c] = values[c]
+
+            fields_nc_var[field_name][0, :, :, :] = tmp
 
     MPI.Request.Waitall(comm_reqs)
     for variable in values_vars:
