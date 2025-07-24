@@ -66,11 +66,6 @@ for i in range(1, remote_size):
 intercomm.Gatherv(None, (global_vertex_indices, (gather_buf, displacements)), root = MPI.ROOT)
 intercomm.Gatherv(None, (latitudes, (gather_buf, displacements)), root = MPI.ROOT)
 intercomm.Gatherv(None, (longitudes, (gather_buf, displacements)), root = MPI.ROOT)
-# print("latitudes: ", latitudes)
-# print("longitudes: ", longitudes)
-
-# latitudes = latitudes.reshape(x_size[0], y_size[0])
-# longitudes = longitudes.reshape(x_size[0], y_size[0])
 
 grid = CloudGrid(target_grid_name, longitudes, latitudes)
 grid.set_global_index(global_vertex_indices, Location.CORNER)
@@ -174,6 +169,9 @@ while True:
         values = []
         if field_name not in time_independent_var_values:
             data = fields[field_name].get()[0]
+
+            for level in range(collection_size):
+                data[level] = data[level, np.argsort(global_vertex_indices)]
 
             values = np.ndarray(shape=(collection_size, y_size[0], x_size[0]),
                                 buffer=data, dtype="f8")
