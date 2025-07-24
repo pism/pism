@@ -462,9 +462,11 @@ static void compute_lon_lat(const std::string &projection,
     PJ_COORD out = proj_trans(crs, PJ_FWD, proj_coord(grid->x(i), grid->y(j), 0, 0));
 
     if (which == LONGITUDE) {
-      result(i, j) = out.lp.phi;
-    } else {
+      // longitude: lambda
       result(i, j) = out.lp.lam;
+    } else {
+      // latitude: phi
+      result(i, j) = out.lp.phi;
     }
   }
 }
@@ -497,9 +499,11 @@ static void compute_lon_lat_bounds(const std::string &projection,
       // compute lon,lat coordinates:
       out = proj_trans(crs, PJ_FWD, proj_coord(x0 + x_offsets[k], y0 + y_offsets[k], 0, 0));
 
-      if (which == LATITUDE) {
+      if (which == LONGITUDE) {
+        // longitude: lambda
         values[k] = out.lp.lam;
       } else {
+        // latitude: phi
         values[k] = out.lp.phi;
       }
     }

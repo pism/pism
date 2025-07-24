@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,9 +39,20 @@ public:
       input_with_crs += " +type=crs";
     }
 
-    m_pj = proj_create_crs_to_crs(PJ_DEFAULT_CTX, input_with_crs.c_str(), output.c_str(), 0);
+    m_pj = nullptr;
+    {
+      PJ *pj = proj_create_crs_to_crs(PJ_DEFAULT_CTX, input_with_crs.c_str(), output.c_str(), 0);
 
-    if (m_pj == 0) {
+      if (pj != nullptr) {
+        // ensure that this transformation returns coordinates in the predictable order
+        // (x,y or lon,lat)
+        m_pj = proj_normalize_for_visualization(PJ_DEFAULT_CTX, pj);
+
+        proj_destroy(pj);
+      }
+    }
+
+    if (m_pj == nullptr) {
       throw RuntimeError::formatted(
           PISM_ERROR_LOCATION,
           "Failed to initialize projection transformation '%s' to '%s' (errno: %d, %s).",
@@ -50,7 +61,10 @@ public:
   }
 
   ~Proj() {
-    proj_destroy(m_pj);
+    if (m_pj != nullptr) {
+      proj_destroy(m_pj);
+      m_pj = nullptr;
+    }
   }
   operator PJ*() {
     return m_pj;
