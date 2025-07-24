@@ -65,6 +65,7 @@ private:
   int local_y_size;
   std::string current_snapshot_file = "";
   const Geometry& m_geometry;
+  std::map<std::string, int> file_time_lengths;
   std::map<std::string, int> field_ids;
   std::map<std::string, int> dim_sizes;
   std::map<std::string, unsigned int> variable_tags;

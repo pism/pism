@@ -112,36 +112,44 @@ for field_name in pism_field_names:
 #
 time_independent_var_values = {}
 snapshot_counter = 0
+fields_nc_var = {}
+file_type_split = False
+no_files_initialized = True
+received_non_grid_time_independent = False
+
 while True:
     intercomm.Bcast(continue_recieving, root = remote_leader)
     if continue_recieving[0] == False:
         break
 
-    fields_nc_var = {}
-    output_dataset = Dataset("snapshot_" + str(snapshot_counter) + ".nc", 'w')
+    if file_type_split == True or no_files_initialized == True:
+        fields_nc_var = {}
+        output_dataset = Dataset("snapshot_" + str(snapshot_counter) + ".nc", 'w')
 
-    for dimension in dimensions:
-        output_dataset.createDimension(dimension,
-                                       dimensions[dimension] if dimensions[dimension] > 0
-                                       else None)
+        for dimension in dimensions:
+            output_dataset.createDimension(dimension,
+                                        dimensions[dimension] if dimensions[dimension] > 0
+                                        else None)
 
-    for attr, val in non_field_variables.get("global", {}).items():
-        setattr(output_dataset, attr, val)
+        for attr, val in non_field_variables.get("global", {}).items():
+            setattr(output_dataset, attr, val)
 
-    for field_name in fields_metadata:
-        attributes = fields_metadata[field_name]
+        for field_name in fields_metadata:
+            attributes = fields_metadata[field_name]
 
-        fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
+            fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
 
-        fields_nc_var[field_name] = output_dataset.createVariable(field_name,
-                                                                  attributes["dtype"],
-                                                                  attributes["dimensions"],
-                                                                  fill_value=fill_value)
+            fields_nc_var[field_name] = output_dataset.createVariable(field_name,
+                                                                    attributes["dtype"],
+                                                                    attributes["dimensions"],
+                                                                    fill_value=fill_value)
 
-        special = ['_FillValue', 'dimensions', 'output_units', 'tag', 'dtype']
-        for attr in attributes:
-            if attr not in special and attributes[attr] != "":
-                fields_nc_var[field_name].setncattr(attr, attributes[attr])
+            special = ['_FillValue', 'dimensions', 'output_units', 'tag', 'dtype']
+            for attr in attributes:
+                if attr not in special and attributes[attr] != "":
+                    fields_nc_var[field_name].setncattr(attr, attributes[attr])
+
+        no_files_initialized = False
 
 #
 # ###### DATA RECEIVAL - LOOP ########
@@ -152,15 +160,23 @@ while True:
         var_dims = fields_metadata[variable]["dimensions"]
         if len(var_dims) > 0:
             size = dimensions[var_dims[0]]
-            if len(var_dims) == 1 and var_dims[0] == "time":
-                size = size + 1
-            values_vars[variable] = np.empty(size, dtype = fields_metadata[variable]["dtype"])
-            tag = int(fields_metadata[variable]["tag"])
-            if(fields_metadata[variable]["dtype"] == "f8"):
-                comm_reqs.append(intercomm.Irecv([values_vars[variable], MPI.DOUBLE], source = remote_leader, tag = tag))
-            else:
-                comm_reqs.append(intercomm.Irecv([values_vars[variable], MPI.INT], source = remote_leader, tag = tag))
+            if len(var_dims) == 1 and var_dims[0] == "time" and size == 0:
+                size = 1
+
+            if var_dims[0] == "time" or not received_non_grid_time_independent:
+                values_vars[variable] = np.empty(size, dtype = fields_metadata[variable]["dtype"])
+                tag = int(fields_metadata[variable]["tag"])
+                if(fields_metadata[variable]["dtype"] == "f8"):
+                    comm_reqs.append(intercomm.Irecv([values_vars[variable], MPI.DOUBLE], source = remote_leader, tag = tag))
+                else:
+                    comm_reqs.append(intercomm.Irecv([values_vars[variable], MPI.INT], source = remote_leader, tag = tag))
 #
+    received_non_grid_time_independent = True
+
+    time_index = 0
+    if file_type_split != True:
+        time_index = snapshot_counter
+
     for field_name in pism_field_names:
         var_dims = fields_metadata[field_name]["dimensions"]
 
@@ -184,7 +200,7 @@ while True:
         if len(fields_nc_var[field_name].shape) == 2:
             fields_nc_var[field_name][:, :] = values[0]
         elif len(fields_nc_var[field_name].shape) == 3:
-            fields_nc_var[field_name][0, :, :] = values[0]
+            fields_nc_var[field_name][time_index, :, :] = values[0]
         else:
             assert collection_size > 1
 
@@ -194,11 +210,17 @@ while True:
             for c in range(collection_size):
                 tmp[:, :, c] = values[c]
 
-            fields_nc_var[field_name][0, :, :, :] = tmp
+            fields_nc_var[field_name][time_index, :, :, :] = tmp
 
     MPI.Request.Waitall(comm_reqs)
     for variable in values_vars:
-        fields_nc_var[variable][:] = values_vars[variable]
+        if "time" not in fields_metadata[field_name]["dimensions"]:
+            fields_nc_var[variable][:] = values_vars[variable]
+        else:
+            fields_nc_var[variable][time_index] = values_vars[variable]
 
-    output_dataset.close()
+
     snapshot_counter = snapshot_counter + 1
+
+    if file_type_split == True:
+        output_dataset.close()

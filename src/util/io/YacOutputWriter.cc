@@ -174,6 +174,7 @@ const File &YacOutputWriter::file(const std::string &file_name) {
     file->set_compression_level(m_compression_level);
 
     m_files[file_name] = file;
+    file_time_lengths[file_name] = 1;
   }
 
   return *m_files[file_name];
@@ -409,6 +410,12 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
 
   std::vector<unsigned int> start, count;
+
+  if(file_name.find("snapshot") != std::string::npos and time_dimension_length(file_name) != file_time_lengths[file_name]) {
+      int continue_receiving = true;
+      MPI_Bcast((void *) &continue_receiving, 1, MPI_INT, MPI_ROOT, intercomm);
+      file_time_lengths[file_name] = time_dimension_length(file_name);
+  }
 
   if(not yac_init_finished and file_name.find("snapshot") != std::string::npos)
     finalize_yac_initialization();
