@@ -38,10 +38,7 @@ public:
   }
 
   std::array<double, 2> lonlat(double x, double y) {
-    PJ_COORD in, out;
-
-    in.xy = { x, y };
-    out   = proj_trans(m_coordinate_mapping, PJ_FWD, in);
+    PJ_COORD out = proj_trans(m_coordinate_mapping, PJ_FWD, proj_coord(x, y, 0, 0));
 
     return { out.lp.phi, out.lp.lam };
   }

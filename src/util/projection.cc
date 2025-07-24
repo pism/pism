@@ -418,22 +418,18 @@ void compute_cell_areas(const std::string &projection, array::Scalar &result) {
       x_se = x + dx2, y_se = y - dy2,
       x_sw = x - dx2, y_sw = y - dy2;
 
-    PJ_COORD in, out;
+    PJ_COORD out;
 
-    in.xy = {x_nw, y_nw};
-    out = proj_trans(pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_nw, y_nw, 0, 0));
     double nw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    in.xy = {x_ne, y_ne};
-    out = proj_trans(pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_ne, y_ne, 0, 0));
     double ne[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    in.xy = {x_se, y_se};
-    out = proj_trans(pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_se, y_se, 0, 0));
     double se[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    in.xy = {x_sw, y_sw};
-    out = proj_trans(pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_sw, y_sw, 0, 0));
     double sw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
     result(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
@@ -463,10 +459,7 @@ static void compute_lon_lat(const std::string &projection,
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    PJ_COORD in, out;
-
-    in.xy = {grid->x(i), grid->y(j)};
-    out = proj_trans(crs, PJ_FWD, in);
+    PJ_COORD out = proj_trans(crs, PJ_FWD, proj_coord(grid->x(i), grid->y(j), 0, 0));
 
     if (which == LONGITUDE) {
       result(i, j) = out.lp.phi;
@@ -499,12 +492,10 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
     for (int k = 0; k < 4; ++k) {
 
-      PJ_COORD in, out;
-
-      in.xy = {x0 + x_offsets[k], y0 + y_offsets[k]};
+      PJ_COORD out;
 
       // compute lon,lat coordinates:
-      out = proj_trans(crs, PJ_FWD, in);
+      out = proj_trans(crs, PJ_FWD, proj_coord(x0 + x_offsets[k], y0 + y_offsets[k], 0, 0));
 
       if (which == LATITUDE) {
         values[k] = out.lp.lam;

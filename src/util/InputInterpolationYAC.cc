@@ -152,7 +152,7 @@ static std::vector<double> grid_subset(int xs, int xm, const std::vector<double>
 }
 
 static double dx_estimate(Proj &mapping, double x1, double x2, double y) {
-  PJ_COORD p1, p2;
+  PJ_COORD p1 = proj_coord(0, 0, 0, 0), p2 = proj_coord(0, 0, 0, 0);
   p1.lp = {proj_torad(x1), proj_torad(y)};
   p2.lp = {proj_torad(x2), proj_torad(y)};
 
@@ -177,7 +177,7 @@ static double dx_min(const std::string &proj_string,
 }
 
 static double dy_estimate(Proj &mapping, double x, double y1, double y2) {
-  PJ_COORD p1, p2;
+  PJ_COORD p1 = proj_coord(0, 0, 0, 0), p2 = proj_coord(0, 0, 0, 0);
   p1.lp = {proj_torad(x), proj_torad(y1)};
   p2.lp = {proj_torad(x), proj_torad(y2)};
 
