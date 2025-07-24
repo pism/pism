@@ -853,21 +853,21 @@ void InputGridInfo::reset() {
 void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr s) const {
   if (longitude_latitude) {
     log.message(threshold,
-                "  x:  %5d points, [%7.3f, %7.3f] degree, x0 = %7.3f degree, Lx = %7.3f degree\n",
+                " lon:  %5d points, [%7.3f, %7.3f] degree, x0 = %7.3f degree, Lx = %7.3f degree\n",
                 (int)this->x.size(), this->x0 - this->Lx, this->x0 + this->Lx, this->x0, this->Lx);
     log.message(threshold,
-                "  y:  %5d points, [%7.3f, %7.3f] degree, y0 = %7.3f degree, Ly = %7.3f degree\n",
+                " lat:  %5d points, [%7.3f, %7.3f] degree, y0 = %7.3f degree, Ly = %7.3f degree\n",
                 (int)this->y.size(), this->y0 - this->Ly, this->y0 + this->Ly, this->y0, this->Ly);
   } else {
     units::Converter km(s, "m", "km");
 
     log.message(threshold,
-                "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
+                "   x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
                 (int)this->x.size(), km(this->x0 - this->Lx), km(this->x0 + this->Lx), km(this->x0),
                 km(this->Lx));
 
     log.message(threshold,
-                "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
+                "   y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
                 (int)this->y.size(), km(this->y0 - this->Ly), km(this->y0 + this->Ly), km(this->y0),
                 km(this->Ly));
   }
@@ -875,11 +875,11 @@ void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr 
   if (z.size() > 1) {
     auto z_min = vector_min(z);
     auto z_max = vector_max(z);
-    log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(),
+    log.message(threshold, "   z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(),
                 z_min, z_max);
   }
 
-  log.message(threshold, "  t:  %5d records\n\n", this->t_len);
+  log.message(threshold, "   t:  %5d records\n\n", this->t_len);
 }
 
 InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
