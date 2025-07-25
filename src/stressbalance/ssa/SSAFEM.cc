@@ -871,17 +871,18 @@ void SSAFEM::compute_local_function(Vector2d const *const *const velocity_global
           const Vector2d tau_b = U[q] * (- beta); // basal shear stress
 
           const double
-            u_x          = U_x[q].u,
-            v_y          = U_y[q].v,
-            u_y_plus_v_x = U_y[q].u + U_x[q].v;
+            ux          = U_x[q].u,
+            uy          = U_y[q].u,
+            vx          = U_x[q].v,
+            vy          = U_y[q].v;
 
           // Loop over test functions.
           for (int k = 0; k < E->n_chi(); k++) {
             const fem::Germ &psi = E->chi(q, k);
 
-            residual[k].u += W * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
+            residual[k].u += W * (eta * (psi.dx * (4.0 * ux + 2.0 * vy) + psi.dy * (uy + vx))
                                    - psi.val * (tau_b.u + tau_d[q].u));
-            residual[k].v += W * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
+            residual[k].v += W * (eta * (psi.dx * (uy + vx) + psi.dy * (2.0 * ux + 4.0 * vy))
                                    - psi.val * (tau_b.v + tau_d[q].v));
           } // k (test functions)
         }   // q (quadrature points)
@@ -1068,9 +1069,10 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
             W            = E->weight(q),
             u            = U[q].u,
             v            = U[q].v,
-            u_x          = U_x[q].u,
-            v_y          = U_y[q].v,
-            u_y_plus_v_x = U_y[q].u + U_x[q].v;
+            ux           = U_x[q].u,
+            uy           = U_y[q].u,
+            vx           = U_x[q].v,
+            vy           = U_y[q].v;
 
           double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
           PointwiseNuHAndBeta(thickness[q], hardness[q], mask[q], tauc[q],
@@ -1084,8 +1086,8 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
 
             // Derivatives of \gamma with respect to u_l and v_l:
             const double
-              gamma_u = (2.0 * u_x + v_y) * phi.dx + 0.5 * u_y_plus_v_x * phi.dy,
-              gamma_v = 0.5 * u_y_plus_v_x * phi.dx + (u_x + 2.0 * v_y) * phi.dy;
+              gamma_u = (2.0 * ux + vy) * phi.dx + 0.5 * (uy + vx) * phi.dy,
+              gamma_v = 0.5 * (uy + vx) * phi.dx + (ux + 2.0 * vy) * phi.dy;
 
             // Derivatives of \eta = \nu*H with respect to u_l and v_l:
             const double
@@ -1111,16 +1113,16 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
               }
 
               // u-u coupling
-              K[k*2 + 0][l*2 + 0] += W * (eta_u * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
+              K[k*2 + 0][l*2 + 0] += W * (eta_u * (psi.dx * (4 * ux + 2 * vy) + psi.dy * (uy + vx))
                                           + eta * (4 * psi.dx * phi.dx + psi.dy * phi.dy) - psi.val * taub_xu);
               // u-v coupling
-              K[k*2 + 0][l*2 + 1] += W * (eta_v * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
+              K[k*2 + 0][l*2 + 1] += W * (eta_v * (psi.dx * (4 * ux + 2 * vy) + psi.dy * (uy + vx))
                                           + eta * (2 * psi.dx * phi.dy + psi.dy * phi.dx) - psi.val * taub_xv);
               // v-u coupling
-              K[k*2 + 1][l*2 + 0] += W * (eta_u * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
+              K[k*2 + 1][l*2 + 0] += W * (eta_u * (psi.dx * (uy + vx) + psi.dy * (2 * ux + 4 * vy))
                                           + eta * (psi.dx * phi.dy + 2 * psi.dy * phi.dx) - psi.val * taub_yu);
               // v-v coupling
-              K[k*2 + 1][l*2 + 1] += W * (eta_v * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
+              K[k*2 + 1][l*2 + 1] += W * (eta_v * (psi.dx * (uy + vx) + psi.dy * (2 * ux + 4 * vy))
                                           + eta * (psi.dx * phi.dx + 4 * psi.dy * phi.dy) - psi.val * taub_yv);
 
             } // l

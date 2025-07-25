@@ -1,0 +1,250 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{dsfont}
+\usepackage{comment}
+\usepackage{subfigure}
+\usepackage[english]{babel}
+\usepackage[top=3cm, bottom=3cm, left=3cm, right=3cm]{geometry}   
+\title{Implementation of Boundary Conditions at the Calving Front}
+\author{Marianne Haseloff \& Torsten Albrecht,\\ Maria Martin, Ricarda Winkelmann, Anders Levermann}
+\begin{document}
+\maketitle
+\section{Theoretics}
+The force balance at calving fronts has been formulated by Morland~\cite{Morland87} in the following way:
+\begin{equation}%MacAyeal1
+\int_{-\frac{\rho}{\rho_w}H}^{(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}dz = -\frac{\rho_w}{2}g\left(\frac{\rho}{\rho_w}H \right)^2\mathbf{n}
+\label{MacAyeal1}
+\end{equation}
+with $\mathbf{n}$ being the normal vector pointing from the ice
+oceanward, $\mathbf{\sigma}$ the \emph{Cauchy} stress tensor, $H$ the ice thickness and $\rho$ and $\rho_{w}$ the densities of ice and seawater, respectively. A slightly different form allows for changing sealevel $z_s$:
+\begin{equation}
+\int_{z_s-\frac{\rho}{\rho_w}H}^{z_s+(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}dz = \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s}\rho_w g (z-z_s) dz\mathbf{n}.
+\label{MacAyeal2}
+\end{equation}
+The integration limits on the right hand side of Eq.~\eqref{MacAyeal2} account for the pressure exerted by the ocean on that part of the shelf, which is below sea level. For grounded ice the following calculations are similar but with different integration limits:
+\begin{equation}
+\int_{b}^{H+b}\mathbf{\sigma}\cdot\mathbf{n}dz = \int_{b}^{z_s}\rho_w g (z-z_s) dz\mathbf{n}.
+\label{BC_sheet}
+\end{equation} 
+Integration of the right-hand side of \eqref{MacAyeal2} yields:
+\begin{eqnarray}
+\int_{z_s-\frac{\rho}{\rho_w}H}^{z_s+(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}dz & = & \rho_w g \left(\frac{z^2}{2}-z_s z\right)\mid_{z_s-\frac{\rho}{\rho_w}H}^{z_s}\mathbf{n} \\
+& = &  -\frac{\rho_w}{2}g\left(\frac{\rho}{\rho_w}H \right)^2\mathbf{n}  \label{MacAyeal3} 
+\end{eqnarray}
+\noindent Using cartesian coordinates,
+i.e. $\mathbf{n}=n_x\overrightarrow{e_x}+n_y\overrightarrow{e_y}$, equation
+\eqref{MacAyeal3} can be rewritten in terms of tensor components:
+\begin{eqnarray*}
+\int_{h_m}^{h_s}(n_x\sigma_{xx}+n_y\sigma_{xy})dz & = & -\frac{\rho_w}{2}g\left(\frac{\rho}{\rho_w}H\right)^2n_x  \\
+\int_{h_m}^{h_s}(n_x\sigma_{yx}+n_y\sigma_{yy})dz & = & -\frac{\rho_w}{2}g\left(\frac{\rho}{\rho_w}H\right)^2n_y  \\
+\int_{h_m}^{h_s}(n_x\sigma_{zx}+n_y\sigma_{zy})dz & = & 0
+\end{eqnarray*}
+$h_s=z_s+(1-\frac{\rho}{\rho_w})H$ and
+$h_m=z_s-\frac{\rho}{\rho_w}H$ denote the ice shelf's upper and lower boundary,
+respectively. As PISM deals with velocities instead of stresses, the above equations have to be rewritten in terms of velocities. The stress is related to the strain rate $\dot{\epsilon_{ij}}$ by:
+\begin{equation*}
+\sigma_{ij}=\frac{1}{\left[A(T)\right]^{\frac{1}{n}}}d^{\frac{1-n}{n}} \dot{\epsilon_{ij}} - p\delta_{ij}
+\end{equation*}
+and
+\begin{equation*}
+\dot{\epsilon_{ij}}=\frac{1}{2}\left(\frac{\partial v_i}{\partial x_j}+\frac{\partial v_j}{\partial x_i}  \right)
+\end{equation*}
+Hence, the velocities enter into the above equations via:
+\begin{eqnarray*}
+\int_{h_m}^{h_s}\sigma_{xx}dz & = & \int_{h_m}^{h_s}\left(\frac{1}{\left[A(T)\right]^{\frac{1}{n}}}d^{\frac{1-n}{n}}\frac{\partial u}{\partial x}-p \right) dz\\
+\int_{h_m}^{h_s}\sigma_{yy}dz & = & \int_{h_m}^{h_s}\left(\frac{1}{\left[A(T)\right]^{\frac{1}{n}}}d^{\frac{1-n}{n}}\frac{\partial v}{\partial y}-p \right) dz\\
+\int_{h_m}^{h_s}\sigma_{xy}dz & = &  \int_{h_m}^{h_s}\frac{1}{2}\frac{1}{\left[A(T)\right]^{\frac{1}{n}}}d^{\frac{1-n}{n}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x} \right)dz  \\
+\end{eqnarray*}
+It is an essential result of the SSA, that horiontal velocities do not depend on depth. Thus, the above equations can be further simplified:
+\begin{eqnarray*}
+\int_{h_m}^{h_s}\sigma_{xx}dz & = & \frac{\partial u}{\partial x} \int_{h_m}^{h_s}\frac{1}{\left[A(T)\right]^{\frac{1}{n}}}d^{\frac{1-n}{n}}dz-\int_{h_m}^{h_s}p dz \\
+\int_{h_m}^{h_s}\sigma_{yy}dz & = & \frac{\partial v}{\partial y} \int_{h_m}^{h_s}\frac{1}{\left[A(T)\right]^{\frac{1}{n}}}d^{\frac{1-n}{n}}dz-\int_{h_m}^{h_s}p dz \\
+\int_{h_m}^{h_s}\sigma_{xy}dz & = & \frac{1}{2}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x} \right)\int_{h_m}^{h_s}\frac{1}{\left[A(T)\right]^{\frac{1}{n}}}d^{\frac{1-n}{n}}dz
+\end{eqnarray*}
+Defining the vertically integrated effective viscosity as
+\begin{equation}%myNu: effective viscosity
+\tilde{\nu}=\frac{1}{\rho g}d^{\frac{1-n}{n}}\int_{h_m}^{h_s}\frac{1}{\left[A(T)\right]^{\frac{1}{n}}}dz
+\label{myNu}
+\end{equation} 
+further simplification yields:
+\begin{eqnarray}%tesnorX tensorY tensorZ
+\int_{h_m}^{h_s}\sigma_{xx}dz & = &
+\rho g\tilde{\nu} \frac{\partial u}{\partial x} - \int_{h_m}^{h_s}p dz \label{tensorX}\\
+\int_{h_m}^{h_s}\sigma_{yy}dz & = &
+\rho g\tilde{\nu} \frac{\partial v}{\partial y} - \int_{h_m}^{h_s}p dz \label{tensorY}\\
+\int_{h_m}^{h_s}\sigma_{xy}dz & = &
+\frac{1}{2} \rho g\tilde{\nu} \left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x} \right) \label{tensorXY}
+\end{eqnarray}
+By calculating the depth-integrated pressure, an expression for the derivative of the horizontal velocity at the calving front can be obtained. The pressure can be shown to satisfy (cp.~\cite{Weis01}):
+\begin{eqnarray*}
+-p(z) & = & \sigma_z - \tau_z \\
+      & = & \rho g\left[z-\left(z_s-\varrho H\right)\right] -\frac{1}{A(T)^\frac{1}{n}}d^\frac{1-n}{n}\frac{\partial v_z}{\partial z}
+\end{eqnarray*}
+with $\varrho=1-\frac{\rho}{\rho_w}$ the reduced density and $\mathbf{\tau}$ the deviatoric stress tensor.  Furthermore, the equation of continuity is valid within the SSA limit, too and ice is assumed to be density preserving. Thus:
+\begin{equation*}
+\frac{\partial v_i}{\partial x_i} = 0,
+\end{equation*}
+and as horiziontal velocities do not depend on depth, $\partial v_z/ \partial
+z$ may not depend on z, too. This allows to rewrite the left side of eq.\eqref{tensorX}:
+\begin{eqnarray*}
+\int_{h_m}^{h_s}\sigma_{xx}dz & = & \rho g\tilde{\nu} \frac{\partial u}{\partial x} + \int_{h_m}^{h_s} \left[ \rho g(z-z_s) - \varrho\rho gH+\frac{1}{A(T)^\frac{1}{n}}d^\frac{1-n}{n} \left( \frac{\partial u}{\partial x}+\frac{\partial v}{\partial y} \right) \right] dz \\
+& = & \rho g\tilde{\nu} \frac{\partial u}{\partial x} +  \frac{1}{2}\rho gH^2 - \rho g \frac{\rho}{\rho_w}H^2 -\varrho\rho gH^2+\rho g \tilde{\nu}\left( \frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right) \\
+& = & \rho g \left(2\tilde{\nu}\frac{\partial u}{\partial x} + \tilde{\nu}\frac{\partial v}{\partial y} - \frac{1}{2}H^2   \right) 
+\end{eqnarray*}
+and of eq.\eqref{tensorY}, accordingly. Therefore, the boundary conditions at the calving front for an arbitrary normal vector $\mathbf{n}=n_x\overrightarrow{e}_x+n_y\overrightarrow{e}_y$ in terms of velocity gradients are: 
+\begin{eqnarray*}
+n_x\left(2\tilde{\nu}\frac{\partial u}{\partial x}+\tilde{\nu}\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\tilde{\nu}\frac{\partial u}{\partial y} + \tilde{\nu}\frac{\partial v}{\partial x} \right) & =  & \frac{n_x}{2}\left(1-\frac{\rho}{\rho_w}\right)H^2\\  
+\frac{n_x}{2} \left(\tilde{\nu}\frac{\partial u}{\partial y} + \tilde{\nu}\frac{\partial v}{\partial x} \right) + n_y\left(\tilde{\nu}\frac{\partial u}{\partial x}+2\tilde{\nu}\frac{\partial v}{\partial y}  \right) & = & \frac{n_y}{2}\left(1-\frac{\rho}{\rho_w}\right)H^2 
+\end{eqnarray*}
+The effective viscosity $\tilde{\nu}$ defined by \eqref{myNu} and the viscosity used by PISM $\overline{\nu}$ are linked via:
+\begin{equation*}%nuLink
+2H\overline\nu\approx\rho g\tilde{\nu}
+\label{nuLink}
+\end{equation*}
+Thus, the calving front boundary conditions at a \textbf{shelf} front can be formulated as:
+\begin{eqnarray}%calv_BC1 and calv_BC2
+n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\frac{\rho g}{4}\left(1-\frac{\rho}{\rho_w}\right)H^2 \label{calv_BC1}\\  
+ n_y\left(\overline{\nu}H\frac{\partial u}{\partial x}+2\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_x}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & = & n_y\frac{\rho g}{4}\left(1-\frac{\rho}{\rho_w}\right)H^2 . \label{calv_BC2}
+\end{eqnarray}
+Similar calculations to rewrite \eqref{BC_sheet} yield the boundary condition on a \textbf{grounded} front:
+\begin{eqnarray}%sheet_BC1 and sheet_BC2
+n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}( z_s-b)^2  \right) \label{sheet_BC1}\\  
+ n_y\left(\overline{\nu}H\frac{\partial u}{\partial x}+2\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_x}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & = & n_y\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}(z_s - b)^2 \right). \label{sheet_BC2}
+\end{eqnarray}
+As the only difference between shelf and sheet is the right hand side of the boundary condition (this is not surprising as the only difference is the area on which the pressure is exerted), both boundary conditions can be formulated as one:
+\begin{eqnarray}%sheet_BC1 and sheet_BC2
+n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\tau_{ocean} \label{BC1}\\  
+ n_y\left(\overline{\nu}H\frac{\partial u}{\partial x}+2\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_x}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & = & n_y\tau_{ocean}. \label{BC2}
+\end{eqnarray}
+with 
+\begin{equation}
+\tau_{ocean} = \left\{
+\begin{array}{ll}
+\frac{\rho g}{4}\left(1-\frac{\rho}{\rho_w}\right)H^2 & \text{if shelf} \\
+\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho} ( z_s-b)^2 \right) & \text{if sheet}
+\end{array} \right.
+\end{equation}
+Obviously, there is no need to normalize the `normal vector' $\mathbf{n}$.
+%\newpage
+\section{Discretization}
+
+\noindent The calving front boundary condition determines the behavior of the velocity gradients at the calving front. To understand the implementation of the calving front boundary condition consider the SSA-equations:
+
+\begin{align}
+\frac{\partial}{\partial x}\left[ 2\bar\nu H\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)\right] + \frac{\partial }{\partial y}\left[\bar\nu H\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}  \right) \right] &= \rho gH \frac{\partial h}{\partial x} \label{SSA1} \\
+\frac{\partial}{\partial x}\left[ \bar\nu H\left( \frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)\right] + \frac{\partial }{\partial y}\left[2\bar\nu H\left(\frac{\partial u}{\partial x}+2\frac{\partial v}{\partial y}  \right) \right] &= \rho gH \frac{\partial h}{\partial y} \label{SSA2}
+\end{align}
+\noindent In the first step of discretization the outer derivatives of \eqref{SSA1} yield:
+\begin{align}
+\frac{2}{\Delta x}(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j
+- \frac{2}{\Delta x}(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j \nonumber \\
++ \frac{1}{\Delta y}(\bar{\nu} H)|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}} 
+- \frac{1}{\Delta y}(\bar{\nu} H)|_i^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j-\frac{1}{2}} 
+&= \rho gH \frac{\partial h}{\partial x} \label{SSA1_dis1} 
+\end{align}
+If one or more of the four nearest neighbors of the shelf box under consideration $[i,j]$ is an partially filled grid cell or ice-free ocean (\cite{Albrecht_Martin10}), the boundary between these two boxes will be a calving front and evaluating the boundary condition at these points allows to substitute the whole block which is calculated at this point:
+\begin{itemize} 
+\item calving front at $[i+\frac{1}{2},j]$: $\hat{n}=(1,0)$: 
+\begin{align}
+(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left(2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j &= \tau_{ocean} \nonumber \\
+(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i+\frac{1}{2}}^j &= 0
+\end{align}
+\item calving front at $[i-\frac{1}{2},j]$: $\hat{n}=(-1,0)$: 
+\begin{align}
+(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left(2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j &= \tau_{ocean} \nonumber \\
+(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i-\frac{1}{2}}^j &= 0
+\end{align}
+\item calving front at $[i,j+\frac{1}{2}]$: $\hat{n}=(0,1)$: 
+\begin{align}
+(\bar{\nu} H)|_{i}^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i}^{j+\frac{1}{2}} &= 0 \nonumber \\
+(\bar{\nu} H)|_{i}^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial x} + 2\frac{\partial v}{\partial y} \right)_{i}^{j+\frac{1}{2}} &= \tau_{ocean}
+\end{align}
+\item calving front at $[i,j-\frac{1}{2}]$: $\hat{n}=(0,-1)$: 
+\begin{align}
+(\bar{\nu} H)|_{i}^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i}^{j-\frac{1}{2}} &= 0 \nonumber \\
+(\bar{\nu} H)|_{i}^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial x} + 2\frac{\partial v}{\partial y} \right)_{i}^{j-\frac{1}{2}} &= \tau_{ocean}
+\end{align}
+\end{itemize}
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[height=80mm, width=8cm]{f07.pdf}
+\caption{\emph{SSA stencil}}
+\label{result3}
+\end{center}
+\end{figure}
+By rewriting equation \eqref{SSA1_dis1} with booleans $a_+, a_-, b_+, b_-$ equal zero if the boundary is a calving front and one otherwise (see Fig.~\ref{result3}), these boundary conditions can be taken into account:
+\begin{align}
+&\qquad a_+\frac{2}{\Delta x}(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j
+- a_-\frac{2}{\Delta x}(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j \nonumber \\
++ &\qquad b_+\frac{1}{\Delta y}(\bar{\nu} H)|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}} 
+- b_-\frac{1}{\Delta y}(\bar{\nu} H)|_i^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j-\frac{1}{2}} \nonumber \\
+= &\qquad \rho gH \frac{\partial h}{\partial x} + (a_+ - a_-)\frac{2}{\Delta x}\tau_{ocean} \label{SSA1_dis2}
+\end{align}
+Next, the calculation of the velocity gradients in \eqref{SSA1_dis2} is further specified by rewriting these in a way that allows to calculate the velocity derivatives as differential quotient between two neighboring points
+\begin{align}
+&\qquad a_+\frac{4}{\Delta x}(\bar{\nu}H)|_{i+\frac{1}{2}}^j\left[\frac{\partial u}{\partial x}_{i+\frac{1}{2}}^j + \frac{1}{8}\left( b_{+E}\frac{\partial v}{\partial y}_{i+1}^{j+\frac{1}{2}}+b_{-E}\frac{\partial v}{\partial y}_{i+1}^{j-\frac{1}{2}}+b_+\frac{\partial v}{\partial y}_{i}^{j+\frac{1}{2}}+b_-\frac{\partial v}{\partial y}_{i}^{j-\frac{1}{2}}  \right) \right] \nonumber \\
+- &\qquad a_-\frac{4}{\Delta x}(\bar{\nu}H)|_{i-\frac{1}{2}}^j\left[\frac{\partial u}{\partial x}_{i-\frac{1}{2}}^j + \frac{1}{8}\left( b_+\frac{\partial v}{\partial y}_{i}^{j+\frac{1}{2}} + b_-\frac{\partial v}{\partial y}_{i}^{j-\frac{1}{2}} + b_{+W}\frac{\partial v}{\partial y}_{i-1}^{j+\frac{1}{2}} + b_{-W}\frac{\partial v}{\partial y}_{i-1}^{j-\frac{1}{2}} \right) \right] \nonumber \\
++ &\qquad b_+\frac{1}{\Delta y}(\bar{\nu}H)|_i^{j+\frac{1}{2}}\left[\frac{\partial u}{\partial y}_i^{j+\frac{1}{2}}+\frac{1}{4}\left( a_{+N}\frac{\partial v}{\partial x}_{i+\frac{1}{2}}^{j+1} + a_+\frac{\partial v}{\partial x}_{i+\frac{1}{2}}^{j} + a_{-N}\frac{\partial v}{\partial x}_{i-\frac{1}{2}}^{j+1} + a_-\frac{\partial v}{\partial x}_{i-\frac{1}{2}}^{j} \right) \right] \nonumber \\
+- &\qquad b_-\frac{1}{\Delta y} (\bar{\nu}H)|_i^{j-\frac{1}{2}} \left[\frac{\partial u}{\partial y}_i^{j-\frac{1}{2}}+\frac{1}{4}\left( a_+\frac{\partial v}{\partial x}_{i+\frac{1}{2}}^{j} + a_{+S}\frac{\partial v}{\partial x}_{i+\frac{1}{2}}^{j-1} + a_-\frac{\partial v}{\partial x}_{i-\frac{1}{2}}^{j} + a_{-S}\frac{\partial v}{\partial x}_{i-\frac{1}{2}}^{j-1} \right) \right] \nonumber \\
+%%
+= &\qquad \rho gH \frac{\partial h}{\partial x} + (a_+ - a_-)\frac{2}{\Delta x}\tau_{ocean}. \label{SSA1_dis3}
+\end{align}
+Again, the coefficients $a_{\pm N,S}$, $b_{\pm E,W}$ etc. are determined by the nature of the boundary between the two points used to calculate the differential quotient: zero if it is a calving front boundary and one if it is an ice-ice boundary. Thus an ice-inward scheme is used to calculate gradients, justified by assuming that the only influence of the ocean on the shelf is by exerting the extra pressure introduced on the right hand side of equation \eqref{SSA1_dis3}.\newline
+\newline
+With $c_{01}=(\bar{\nu}H)|_{i+\frac{1}{2}}^j, c_{00}=(\bar{\nu}H)|_{i-\frac{1}{2}}^j, c_{11}=(\bar{\nu}H)|_{i}^{j+\frac{1}{2}}, c_{10}=(\bar{\nu}H)|_{i}^{j-\frac{1}{2}}$ and if not both boundary sides exist at the same time ($a_{\pm}=0$), we can reorganize \eqref{SSA1_dis3} for each velocity contributions
+\begin{align}
+& u_{i}^{j}\left(\frac{-4a_+c_{01}-4a_-c_{00}}{\Delta x^2}+\frac{-b_+c_{11}-b_-c_{10}}{\Delta y^2}\right)+ \nonumber \\
+& u_{i+1}^{j}\left(\frac{4a_+c_{01}}{\Delta x^2}\right)+u_{i-1}^{j}\left(\frac{4a_-c_{00}}{\Delta x^2}\right)+u_{i}^{j+1}\left(\frac{b_+c_{11}}{\Delta y^2}\right)+u_{i}^{j-1}\left(\frac{b_-c_{10}}{\Delta y^2}\right)+ \nonumber \\
+& v_{i}^{j}\left(\frac{-(b_+-b_-)(a_+ c_{01}-a_- c_{00})}{2 \Delta x \Delta y}+\frac{-(a_+-a_-)(b_+ c_{11}-b_- c_{10})}{4 \Delta x \Delta y}\right)+ \nonumber \\
+& v_{i+1}^{j}\left(\frac{-a_+ c_{01} (b_{+E}-b_{-E})}{2 \Delta x \Delta y}+\frac{a_+ (b_{+}c_{11}-b_{-}c_{10})}{4 \Delta x \Delta y}\right)+ \nonumber \\
+& v_{i-1}^{j}\left(\frac{a_- c_{00} (b_{+W}-b_{-W})}{2 \Delta x \Delta y}+\frac{-a_-(b_{+}c_{11}-b_{-}c_{10})}{4 \Delta x \Delta y}\right)+ \nonumber \\
+& v_{i}^{j+1}\left(\frac{-b_+ c_{11} (a_{+N}-a_{-N})}{4 \Delta x \Delta y}+\frac{b_+(a_{+}c_{01}-a_{-}c_{00})}{2 \Delta x \Delta y}\right)+ \nonumber \\
+& v_{i}^{j-1}\left(\frac{b_- c_{10} (a_{+S}-a_{-S})}{4 \Delta x \Delta y}+\frac{-b_-(a_{+}c_{01}-a_{-}c_{00})}{2 \Delta x \Delta y}\right)+ \nonumber \\
+& v_{i+1}^{j+1}\left(\frac{a_+ b_{+E} c_{01}}{2 \Delta x \Delta y}+\frac{a_{+N} b_{+} c_{11}}{4 \Delta x \Delta y}\right)+ v_{i-1}^{j+1}\left(\frac{-a_- b_{+W} c_{00}}{2 \Delta x \Delta y}+\frac{-a_{-N} b_{+} c_{11}}{4 \Delta x \Delta y}\right)+ \nonumber \\
+& v_{i+1}^{j-1}\left(\frac{-a_+ b_{+E} c_{01}}{2 \Delta x \Delta y}+\frac{-a_{+S} b_{-} c_{10}}{4 \Delta x \Delta y}\right)+ v_{i-1}^{j-1}\left(\frac{a_+ b_{-W} c_{00}}{2 \Delta x \Delta y}+\frac{a_{-S} b_{-} c_{10}}{4 \Delta x \Delta y}\right)+ \nonumber \\
+%%
+= &\qquad \rho gH_{i}^{j} \left(\frac{a_+(h_{i+1}^{j}-h_{i}^{j})+a_-(h_{i}^{j}-h_{i-1}^{j})}{(a_++a_-)\Delta x}\right) + (a_+ - a_-)\frac{2}{\Delta x}\tau_{ocean}. \label{SSA1_dis4}
+\end{align}
+The coefficients enter the matrix to calculate SSA-velocities for a given right-hand side of the equation. The second SSA-equation \eqref{SSA2} is discretized accordingly.
+The beauty is, that if there is any boundary between the neighbor cells, the stencil is identical with the default stencil used for the interior of the SSA-domain.\newline
+However, as mentioned in \cite{Winkelmann_Martin10}, there is an inconsistency regarding the mixed derivatives. For the example of Fig.~\ref{result3}, we get for the left hand side of the grid cell $a_-=b_{+W}=b_+=1, b_-=b_{-W}=0$ and hence the second term of Eq.~\eqref{SSA1_dis3} turns into
+\begin{align}
+-\frac{2}{\Delta x}(\bar{\nu}H)|_{i-\frac{1}{2}}^j\left[2\frac{\partial u}{\partial x}_{i-\frac{1}{2}}^j + \frac{1}{4}\left( \frac{\partial v}{\partial y}_{i}^{j+\frac{1}{2}} + 0 + \frac{\partial v}{\partial y}_{i-1}^{j+\frac{1}{2}} + 0 \right) \right].
+\label{SSA1_dis3b}
+\end{align}
+%\begin{comment}
+The part in round parantheses means an average over the adjacent derivatives $\frac{\partial v}{\partial y}$. If one of theses derivatives does not exist due to a boundary between adjacent neighbors, it will vanish and not substituted by a pressure term on the right-hand side. It would be actually more reasonable to calculate the average by dividing by $(b_{+W}+b_++b_-+b_{-W}>0)$ instead of dividing by a constant $4$, and we would get
+\begin{align}
+-\frac{2}{\Delta x}(\bar{\nu}H)|_{i-\frac{1}{2}}^j\left[2\frac{\partial u}{\partial x}_{i-\frac{1}{2}}^j + \frac{1}{2}\left( \frac{\partial v}{\partial y}_{i}^{j+\frac{1}{2}} + \frac{\partial v}{\partial y}_{i-1}^{j+\frac{1}{2}}\right) \right].
+\label{SSA1_dis3c}
+\end{align}
+
+%\end{comment}
+
+\begin{thebibliography}{9}
+
+\bibitem{Bueler2009a} Bueler, E., and J. Brown. “Shallow shelf approximation as a ‘sliding law’ in a thermomechanically coupled ice sheet model.” Journal of Geophysical Research 114, no. 3 (2009): F03008.
+
+\bibitem{Bueler2011}Bueler, Ed, Constantine Khroulev, Andy Aschwanden, Jed Brown, and Nathan Shemonski. “Documentation for PISM, a Parallel Ice Sheet Model”, 2011. http://www.pism-docs.org/wiki/doku.php.
+
+\bibitem{Albrecht_Martin10} Albrecht, T., M. Martin, M. Haseloff, R. Winkelmann, and A. Levermann. “Parameterization for subgrid-scale motion of ice-shelf calving fronts.” The Cryosphere 5 (2011): 35-44.
+
+\bibitem{Winkelmann_Martin10} R. Winkelmann, M. A. Martin, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann
+The Potsdam Parallel Ice Sheet Model (PISM-PIK), Part I: Model Description
+(2010), The Cryosphere Discussions 4, 1277-1306, DOI:10.5194/tcd-4-1277-2010.
+	 
+\bibitem{Martin_Winkelmann10} M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann
+The Potsdam Parallel Ice Sheet Model (PISM-PIK), Part II: Dynamical Equilibrium Simulation of the Antarctic Ice Sheet
+(2010), The Cryosphere Discussions 4, 1307-1341, DOI:10.5194/tcd-4-1307-2010.
+
+\bibitem{Morland87} Morland, L. W. “Unconfined ice-shelf flow.” In Dynamics of the West Antarctic Ice Sheet: Proceedings of a Workshop held in Utrecht, May 6–8, 1987, 99–116, 1987.
+
+%\bibitem{MacAyeal96} MacAyeal, D. R., V. Rommelaere, P. Huybrechts, C. L. Hulbe, J. Determan, and C. Ritz. “An ice-shelf model test based on the Ross Ice Shell, Antarctica.” Annals of Glaciology 23 (1996): 46–51.
+
+\bibitem{Weis01} Weis, M. “Theory and finite element analysis of shallow ice shelves” (2001).
+
+
+\end{thebibliography}
+
+\end{document}

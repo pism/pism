@@ -1,4 +1,4 @@
-all: ssafem_notes.pdf
+all: ssafem_notes.pdf molhofem_notes.pdf
 
 %.pdf: %.tex
 	pdflatex $^
