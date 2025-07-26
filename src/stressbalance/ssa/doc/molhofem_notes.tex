@@ -39,8 +39,10 @@
 \newcommand{\diffbasisexpansion}[3]{\ensuremath{\sum_{#3 = 1}^{N_k} {#1}_{#3} \diff{\phi_{#3}}{#2} }}
 \newcommand{\UX}{\diffbasisexpansion{u}{x}{m}}
 \newcommand{\UY}{\diffbasisexpansion{u}{y}{m}}
+\newcommand{\UZ}{\diffbasisexpansion{u}{z}{m}}
 \newcommand{\VX}{\diffbasisexpansion{v}{x}{m}}
 \newcommand{\VY}{\diffbasisexpansion{v}{y}{m}}
+\newcommand{\VZ}{\diffbasisexpansion{v}{z}{m}}
 % drag coefficient as a function of velocity
 \newcommand{\betaU}{\beta(\U)}
 
@@ -259,23 +261,23 @@ In this and following sections we focus on element contributions to the residual
 
 Equations (\ref{eq:13}) and (\ref{eq:14}) define a map from $\R^{2\times N}$ to $\R^{2\times N}$, where $N$ is the number of nodes in a FEM mesh. To use Newton's method, we need to be able to compute the Jacobian \emph{of this map}.
 
-It is helpful to rewrite equations defining $F_{k,1}$ and $F_{k,2}$ using basis expansions for $u_x$, $u_y$, $v_x$, and $v_y$ (see (\ref{eq:12})), as follows:
+It is helpful to rewrite equations defining $F_{k,1}$ and $F_{k,2}$ using basis expansions for $u_x$, $u_y$, $u_z$, $v_x$, $v_y$, and $v_z$ (see (\ref{eq:12})), as follows:
 
 \begin{align*}
   F_{k,1} &= \highlight{
             \begin{aligned}[t]
-              \sumQ |J_q| \cdot w_q\cdot \Bigg[ &\eta \left(\diff{\psi_k}{x} \left(4 \UX + 2 \VY\right)
-                + \diff{\psi_k}{y} \left(\UY + \VX\right)\right) \\
-              & - \psi_k \left(\taubx + \taudx\right) \Bigg]_{\text{evaluated at } q} - \Phi_{k,1}\\
+              \sumQ |J_q| \cdot w_q\cdot \Bigg[ &\eta \Bigg(\diff{\psi_k}{x} \left(4 \UX + 2 \VY\right) 
+                + \diff{\psi_k}{y} \left(\UY + \VX\right) \\
+              & + \diff{\psi_k}{z}\left( \UZ \right)  \Bigg)  - \psi_k \left(\taubx + \taudx\right) \Bigg]_{\text{evaluated at } q} - \Phi_{k,1}\\
             \end{aligned} }\\
   F_{k,2} &= \highlight{
             \begin{aligned}[t]
-              \sumQ |J_q| \cdot w_q\cdot \Bigg[ &\eta \left(\diff{\psi_k}{x} \left(\UY + \VX\right)
-                + \diff{\psi_k}{y} \left(2 \UX + 4 \VY\right) \right) \\
-              & - \psi_k \left(\tauby + \taudy\right) \Bigg]_{\text{evaluated at } q} - \Phi_{k,2}\\
+              \sumQ |J_q| \cdot w_q\cdot \Bigg[ &\eta \Bigg(\diff{\psi_k}{x} \left(\UY + \VX\right)
+                + \diff{\psi_k}{y} \left(2 \UX + 4 \VY\right) \Bigg) \\
+              &  + \diff{\psi_k}{z}\left( \VZ \right)  \Bigg) - \psi_k \left(\tauby + \taudy\right) \Bigg]_{\text{evaluated at } q} - \Phi_{k,2}\\
             \end{aligned}}
 \end{align*}
-
+STOPPED HERE
 The Jacobian has elements
 \begin{align*}
   J_{k,l,1} & = \diff{F_{k,1}}{u_l}, & J_{k,l,2} & = \diff{F_{k,1}}{v_l},\\
