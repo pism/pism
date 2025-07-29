@@ -26,3 +26,4 @@ install (TARGETS
 add_subdirectory (ssa/tests)
 
 add_subdirectory (blatter)
+add_subdirectory (molho)

@@ -26,6 +26,8 @@
 #include "pism/stressbalance/WeertmanSliding.hh"
 #include "pism/stressbalance/blatter/Blatter.hh"
 #include "pism/stressbalance/blatter/BlatterMod.hh"
+#include "pism/stressbalance/molho/MOLHO.hh"
+#include "pism/stressbalance/molho/MOLHOMod.hh"
 #include "pism/stressbalance/sia/SIAFD.hh"
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFD_SNES.hh"
@@ -51,6 +53,14 @@ std::shared_ptr<StressBalance> create(const std::string &model,
 
     return std::make_shared<StressBalance>(grid, blatter, mod);
   }
+
+  if (model == "molho") {
+    auto molho = std::make_shared<MOLHO>(grid);
+    auto mod = std::make_shared<MOLHOMod>(molho);
+
+    return std::make_shared<StressBalance>(grid, molho, mod);
+  }
+  
 
   auto ssa_method = config->get_string("stress_balance.ssa.method");
   std::shared_ptr<ShallowStressBalance> sliding;

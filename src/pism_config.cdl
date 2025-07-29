@@ -2136,10 +2136,39 @@ netcdf pism_config {
     pism_config:stress_balance.ice_free_thickness_standard_units = "meters";
 
     pism_config:stress_balance.model = "sia";
-    pism_config:stress_balance.model_choices = "none,prescribed_sliding,weertman_sliding,sia,ssa,prescribed_sliding+sia,weertman_sliding+sia,ssa+sia,blatter";
+    pism_config:stress_balance.model_choices = "none,prescribed_sliding,weertman_sliding,sia,ssa,prescribed_sliding+sia,weertman_sliding+sia,ssa+sia,molho,blatter";
     pism_config:stress_balance.model_doc = "Stress balance model";
     pism_config:stress_balance.model_option = "stress_balance";
     pism_config:stress_balance.model_type = "keyword";
+
+    pism_config:stress_balance.molho.Glen_exponent = 3.0;
+    pism_config:stress_balance.molho.Glen_exponent_doc = "Glen exponent in ice flow law for MOLHO";
+    pism_config:stress_balance.molho.Glen_exponent_option = "molho_n";
+    pism_config:stress_balance.molho.Glen_exponent_type = "number";
+    pism_config:stress_balance.molho.Glen_exponent_units = "pure number";
+
+    pism_config:stress_balance.molho.dirichlet_bc = "no";
+    pism_config:stress_balance.molho.dirichlet_bc_doc = "apply MOLHO velocity Dirichlet boundary condition";
+    pism_config:stress_balance.molho.dirichlet_bc_option = "molho_dirichlet_bc";
+    pism_config:stress_balance.molho.dirichlet_bc_type = "flag";
+
+    pism_config:stress_balance.molho.enhancement_factor = 1.0;
+    pism_config:stress_balance.molho.enhancement_factor_doc = "Flow enhancement factor for MOLHO";
+    pism_config:stress_balance.molho.enhancement_factor_option = "molho_e";
+    pism_config:stress_balance.molho.enhancement_factor_type = "number";
+    pism_config:stress_balance.molho.enhancement_factor_units = "1";
+
+    pism_config:stress_balance.molho.viscosity_integration_order = 5;
+    pism_config:stress_balance.molho.viscosity_integration_order_doc = "Viscosity integration order for MOLHO";
+    pism_config:stress_balance.molho.viscosity_integration_order_option = "molho_integration_order";
+    pism_config:stress_balance.molho.viscosity_integration_order_type = "number";
+    pism_config:stress_balance.molho.viscosity_integration_order_units = "1";
+    
+    pism_config:stress_balance.molho.epsilon = 1.0e13;
+    pism_config:stress_balance.molho.epsilon_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (`\\nu H`).  This default value for `\\nu H` comes e.g. from a hardness for the Ross ice shelf (`\\bar B`) = 1.9e8 Pa `s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving `\\nu = (\\bar B) / (2 \\cdot 0.001^{2/3})` = 9.49e+14 Pa s ~ 30 MPa year, the value in :cite:`Ritzetal2001`, but with a tiny thickness `H` of about 1 cm.";
+    pism_config:stress_balance.molho.epsilon_option = "molho_eps";
+    pism_config:stress_balance.molho.epsilon_type = "number";
+    pism_config:stress_balance.molho.epsilon_units = "Pascal second meter";
 
     pism_config:stress_balance.prescribed_sliding.file = "";
     pism_config:stress_balance.prescribed_sliding.file_doc = "The name of the file containing prescribed sliding velocity (variable names: :var:`ubar`, :var:`vbar`).";
