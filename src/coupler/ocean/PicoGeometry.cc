@@ -872,6 +872,13 @@ void eikonal_equation(array::Scalar1 &mask) {
   std::queue<std::pair<int, int>> unmarked_cells;
   auto grid = mask.grid();
   double continue_loop = 1;
+  int local_x_size = grid->info().xm;
+  int local_x_start = grid->info().xs;
+  int local_y_size = grid->info().ym;
+  int local_y_start = grid->info().ys;
+  unsigned int global_x_size = grid->Mx();
+  unsigned int global_y_size = grid->My();
+  int north_cell, south_cell, east_cell, west_cell, center_cell;
 
   for (auto p : grid->points()) {
        const int i = p.i(), j = p.j();
@@ -898,57 +905,55 @@ void eikonal_equation(array::Scalar1 &mask) {
     }
   } // loop over grid points
 
-  int local_x_size = grid->info().xm;
-  int local_x_start = grid->info().xs;
-  int local_y_size = grid->info().ym;
-  int local_y_start = grid->info().ys;
-  unsigned int global_x_size = grid->Mx();
-  unsigned int global_y_size = grid->My();
-  int north_cell, south_cell, east_cell, west_cell, center_cell;
-
-  while(unmarked_cells.size() > 0) {
-
-    std::pair<int, int> cell = unmarked_cells.front();
-    unmarked_cells.pop();
-
-    north_cell = -1;
-    south_cell = -1;
-    east_cell = -1;
-    west_cell = -1;
-
-    if (mask.as_int(cell.first, cell.second) == 0) {
-
-      if (cell.second + 1 < local_y_start + local_y_size) north_cell = mask.as_int(cell.first, cell.second + 1);
-      if (cell.second - 1 >= local_y_start) south_cell = mask.as_int(cell.first, cell.second - 1);
-      if (cell.first + 1 < local_x_start + local_x_size) east_cell = mask.as_int(cell.first + 1, cell.second);
-      if (cell.first - 1 >= local_x_start) west_cell = mask.as_int(cell.first - 1, cell.second);
-
-      if (north_cell > 0 or south_cell > 0 or east_cell > 0 or west_cell > 0) {
-
-        int min_label = 10000;
-        if (north_cell > 0) min_label = std::min(min_label, north_cell);
-        if (south_cell > 0) min_label = std::min(min_label, south_cell);
-        if (east_cell > 0) min_label = std::min(min_label, east_cell);
-        if (west_cell > 0) min_label = std::min(min_label, west_cell);
-
-        mask(cell.first, cell.second) = min_label + 1;
-
-        if (north_cell == 0)
-          unmarked_cells.push(std::make_pair(cell.first, cell.second + 1));
-        if (south_cell == 0)
-          unmarked_cells.push(std::make_pair(cell.first, cell.second - 1));
-        if (east_cell == 0)
-          unmarked_cells.push(std::make_pair(cell.first + 1, cell.second));
-        if (west_cell == 0)
-          unmarked_cells.push(std::make_pair(cell.first - 1, cell.second));
-      }
-    }
-  }
-
-
   while (continue_loop != 0) {
 
     continue_loop = 0;
+    while(unmarked_cells.size() > 0) {
+
+      std::pair<int, int> cell = unmarked_cells.front();
+      unmarked_cells.pop();
+
+      north_cell = -1;
+      south_cell = -1;
+      east_cell = -1;
+      west_cell = -1;
+      center_cell = mask.as_int(cell.first, cell.second);
+
+      if (cell.second >= local_y_start and cell.second < local_y_start + local_y_size and
+          cell.first >= local_x_start and cell.first < local_x_start + local_x_size) {
+
+        if (cell.second + 1 < global_y_size) north_cell = mask.as_int(cell.first, cell.second + 1);
+        if (cell.second - 1 >= 0) south_cell = mask.as_int(cell.first, cell.second - 1);
+        if (cell.first + 1 < global_x_size) east_cell = mask.as_int(cell.first + 1, cell.second);
+        if (cell.first - 1 >= 0) west_cell = mask.as_int(cell.first - 1, cell.second);
+
+        if (north_cell > 0 or south_cell > 0 or east_cell > 0 or west_cell > 0) {
+
+          int min_label = 10000;
+          if (north_cell > 0) min_label = std::min(min_label, north_cell);
+          if (south_cell > 0) min_label = std::min(min_label, south_cell);
+          if (east_cell > 0) min_label = std::min(min_label, east_cell);
+          if (west_cell > 0) min_label = std::min(min_label, west_cell);
+          if (center_cell != 0)
+            min_label = std::min(min_label, center_cell);
+
+          if(center_cell == 0 or center_cell > min_label + 1) {
+            mask(cell.first, cell.second) = min_label + 1;
+            continue_loop = 1;
+
+            if (north_cell == 0 or north_cell > min_label + 2)
+              unmarked_cells.push(std::make_pair(cell.first, cell.second + 1));
+            if (south_cell == 0 or south_cell > min_label + 2)
+              unmarked_cells.push(std::make_pair(cell.first, cell.second - 1));
+            if (east_cell == 0 or east_cell > min_label + 2)
+              unmarked_cells.push(std::make_pair(cell.first + 1, cell.second));
+            if (west_cell == 0 or west_cell > min_label + 2)
+              unmarked_cells.push(std::make_pair(cell.first - 1, cell.second));
+          }
+        }
+      }
+    }
+
     mask.update_ghosts();
 
     for (int i = local_x_start; i < local_x_start + local_x_size; i++) {
@@ -1011,53 +1016,7 @@ void eikonal_equation(array::Scalar1 &mask) {
       }
     }
 
-    while(unmarked_cells.size() > 0) {
-
-      std::pair<int, int> cell = unmarked_cells.front();
-      unmarked_cells.pop();
-
-      north_cell = -1;
-      south_cell = -1;
-      east_cell = -1;
-      west_cell = -1;
-      center_cell = mask.as_int(cell.first, cell.second);
-
-      if (cell.second >= local_y_start and cell.second < local_y_start + local_y_size and
-	  cell.first >= local_x_start and cell.first < local_x_start + local_x_size) {
-
-	if (cell.second + 1 < global_y_size) north_cell = mask.as_int(cell.first, cell.second + 1);
-	if (cell.second - 1 >= 0) south_cell = mask.as_int(cell.first, cell.second - 1);
-	if (cell.first + 1 < global_x_size) east_cell = mask.as_int(cell.first + 1, cell.second);
-	if (cell.first - 1 >= 0) west_cell = mask.as_int(cell.first - 1, cell.second);
-
-        if (north_cell > 0 or south_cell > 0 or east_cell > 0 or west_cell > 0) {
-
-	  int min_label = 10000;
-	  if (north_cell > 0) min_label = std::min(min_label, north_cell);
-	  if (south_cell > 0) min_label = std::min(min_label, south_cell);
-	  if (east_cell > 0) min_label = std::min(min_label, east_cell);
-	  if (west_cell > 0) min_label = std::min(min_label, west_cell);
-	  if (center_cell != 0)
-             min_label = std::min(min_label, center_cell);
-
-	  if(center_cell == 0 or center_cell > min_label + 1) {
-	      mask(cell.first, cell.second) = min_label + 1;
-	      continue_loop = 1;
-
-	      if (north_cell == 0 or north_cell > min_label + 2)
-	          unmarked_cells.push(std::make_pair(cell.first, cell.second + 1));
-	      if (south_cell == 0 or south_cell > min_label + 2)
-	          unmarked_cells.push(std::make_pair(cell.first, cell.second - 1));
-	      if (east_cell == 0 or east_cell > min_label + 2)
-	          unmarked_cells.push(std::make_pair(cell.first + 1, cell.second));
-	      if (west_cell == 0 or west_cell > min_label + 2)
-	          unmarked_cells.push(std::make_pair(cell.first - 1, cell.second));
-	  }
-
-        }
-      }
-    }
-
+    if(unmarked_cells.size() > 0) continue_loop = 1;
     continue_loop = GlobalMax(grid->com, continue_loop);
   }
 }
