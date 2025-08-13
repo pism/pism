@@ -880,6 +880,8 @@ void eikonal_equation(array::Scalar1 &mask) {
   unsigned int global_y_size = grid->My();
   int north_cell, south_cell, east_cell, west_cell, center_cell;
 
+  // Loops over the grid points and creates a queue with all the cells which have not
+  // yet been marked with a distance to the grounding line
   for (auto p : grid->points()) {
        const int i = p.i(), j = p.j();
 
@@ -908,6 +910,11 @@ void eikonal_equation(array::Scalar1 &mask) {
   while (continue_loop != 0) {
 
     continue_loop = 0;
+    // This is the main loop for updating the distances, it comprises two ways of operating.
+    // The first is the initial assignment of distances to unmarked cells, in this case the unmarked cells
+    // have a value of zero. The second is the update of cell distances after the update_ghosts call, when
+    // there might be cells in the local domain which are closer to grouding lines in a neighboring domain.
+    // In both cases the current cell is marked based on the smallest label of the neighboring cells.
     while(unmarked_cells.size() > 0) {
 
       std::pair<int, int> cell = unmarked_cells.front();
@@ -919,28 +926,36 @@ void eikonal_equation(array::Scalar1 &mask) {
       west_cell = -1;
       center_cell = mask.as_int(cell.first, cell.second);
 
+      // Checks if the current cell is inside of the local domain
       if (cell.second >= local_y_start and cell.second < local_y_start + local_y_size and
           cell.first >= local_x_start and cell.first < local_x_start + local_x_size) {
 
+	// Checks if there are neighboring cells in each direction, and if yes takes their values.
         if (cell.second + 1 < global_y_size) north_cell = mask.as_int(cell.first, cell.second + 1);
         if (cell.second - 1 >= 0) south_cell = mask.as_int(cell.first, cell.second - 1);
         if (cell.first + 1 < global_x_size) east_cell = mask.as_int(cell.first + 1, cell.second);
         if (cell.first - 1 >= 0) west_cell = mask.as_int(cell.first - 1, cell.second);
 
+	// Update the current cell value only if some of the neighbors are already labelled
         if (north_cell > 0 or south_cell > 0 or east_cell > 0 or west_cell > 0) {
 
+	  // Gets the minimum label in the neighboring cells
           int min_label = 10000;
           if (north_cell > 0) min_label = std::min(min_label, north_cell);
           if (south_cell > 0) min_label = std::min(min_label, south_cell);
           if (east_cell > 0) min_label = std::min(min_label, east_cell);
           if (west_cell > 0) min_label = std::min(min_label, west_cell);
+
+	  // If the cell is not zero, the minimum label might be its own
           if (center_cell != 0)
             min_label = std::min(min_label, center_cell);
 
+	  // Update the cell if its value is zero or the minimum label around is smaller than original
           if(center_cell == 0 or center_cell > min_label + 1) {
             mask(cell.first, cell.second) = min_label + 1;
             continue_loop = 1;
 
+	    // Add cells to be updated
             if (north_cell == 0 or north_cell > min_label + 2)
               unmarked_cells.push(std::make_pair(cell.first, cell.second + 1));
             if (south_cell == 0 or south_cell > min_label + 2)
@@ -956,6 +971,7 @@ void eikonal_equation(array::Scalar1 &mask) {
 
     mask.update_ghosts();
 
+    // Loops over the first row of the domain and add cells to the queue if they need updating
     for (int i = local_x_start; i < local_x_start + local_x_size; i++) {
       if(local_y_start == 0) break;
 
@@ -971,6 +987,7 @@ void eikonal_equation(array::Scalar1 &mask) {
       }
     }
 
+    // Loops over the last row of the domain and add cells to the queue if they need updating
     for (int i = local_x_start; i < local_x_start + local_x_size; i++) {
       if(local_y_start + local_y_size == global_y_size) break;
 
@@ -986,6 +1003,7 @@ void eikonal_equation(array::Scalar1 &mask) {
       }
     }
 
+    // Loops over the first column of the domain and add cells to the queue if they need updating
     for (int j = local_y_start; j < local_y_start + local_y_size; j++) {
       if(local_x_start == 0) break;
 
@@ -1001,6 +1019,7 @@ void eikonal_equation(array::Scalar1 &mask) {
       }
     }
 
+    // Loops over the last column of the domain and add cells to the queue if they need updating
     for (int j = local_y_start; j < local_y_start + local_y_size; j++) {
       if(local_x_start + local_x_size == global_x_size) break;
 
@@ -1016,6 +1035,8 @@ void eikonal_equation(array::Scalar1 &mask) {
       }
     }
 
+    // If some cell was updated in the global domain or there are still cells
+    // to be updated, continue the loop
     if(unmarked_cells.size() > 0) continue_loop = 1;
     continue_loop = GlobalMax(grid->com, continue_loop);
   }
