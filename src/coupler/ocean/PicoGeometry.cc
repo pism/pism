@@ -869,13 +869,13 @@ void eikonal_equation(array::Scalar1 &mask) {
 
   assert(mask.stencil_width() > 0);
 
-  std::queue<std::pair<int, int>> unmarked_cells;
+  std::queue<std::pair<unsigned int, unsigned int>> unmarked_cells;
   auto grid = mask.grid();
   double continue_loop = 1;
-  int local_x_size = grid->info().xm;
-  int local_x_start = grid->info().xs;
-  int local_y_size = grid->info().ym;
-  int local_y_start = grid->info().ys;
+  unsigned int local_x_size = grid->info().xm;
+  unsigned int local_x_start = grid->info().xs;
+  unsigned int local_y_size = grid->info().ym;
+  unsigned int local_y_start = grid->info().ys;
   unsigned int global_x_size = grid->Mx();
   unsigned int global_y_size = grid->My();
   int north_cell, south_cell, east_cell, west_cell, center_cell;
@@ -917,7 +917,7 @@ void eikonal_equation(array::Scalar1 &mask) {
     // In both cases the current cell is marked based on the smallest label of the neighboring cells.
     while(unmarked_cells.size() > 0) {
 
-      std::pair<int, int> cell = unmarked_cells.front();
+      std::pair<unsigned int, unsigned int> cell = unmarked_cells.front();
       unmarked_cells.pop();
 
       north_cell = -1;
@@ -932,9 +932,9 @@ void eikonal_equation(array::Scalar1 &mask) {
 
 	// Checks if there are neighboring cells in each direction, and if yes takes their values.
         if (cell.second + 1 < global_y_size) north_cell = mask.as_int(cell.first, cell.second + 1);
-        if (cell.second - 1 >= 0) south_cell = mask.as_int(cell.first, cell.second - 1);
+        if (cell.second > 0) south_cell = mask.as_int(cell.first, cell.second - 1);
         if (cell.first + 1 < global_x_size) east_cell = mask.as_int(cell.first + 1, cell.second);
-        if (cell.first - 1 >= 0) west_cell = mask.as_int(cell.first - 1, cell.second);
+        if (cell.first > 0) west_cell = mask.as_int(cell.first - 1, cell.second);
 
 	// Update the current cell value only if some of the neighbors are already labelled
         if (north_cell > 0 or south_cell > 0 or east_cell > 0 or west_cell > 0) {
@@ -972,7 +972,7 @@ void eikonal_equation(array::Scalar1 &mask) {
     mask.update_ghosts();
 
     // Loops over the first row of the domain and add cells to the queue if they need updating
-    for (int i = local_x_start; i < local_x_start + local_x_size; i++) {
+    for (auto i = local_x_start; i < local_x_start + local_x_size; i++) {
       if(local_y_start == 0) break;
 
       int j = local_y_start;
@@ -988,7 +988,7 @@ void eikonal_equation(array::Scalar1 &mask) {
     }
 
     // Loops over the last row of the domain and add cells to the queue if they need updating
-    for (int i = local_x_start; i < local_x_start + local_x_size; i++) {
+    for (auto i = local_x_start; i < local_x_start + local_x_size; i++) {
       if(local_y_start + local_y_size == global_y_size) break;
 
       int j = local_y_start + local_y_size - 1;
@@ -1004,7 +1004,7 @@ void eikonal_equation(array::Scalar1 &mask) {
     }
 
     // Loops over the first column of the domain and add cells to the queue if they need updating
-    for (int j = local_y_start; j < local_y_start + local_y_size; j++) {
+    for (auto j = local_y_start; j < local_y_start + local_y_size; j++) {
       if(local_x_start == 0) break;
 
       int i = local_x_start;
@@ -1020,7 +1020,7 @@ void eikonal_equation(array::Scalar1 &mask) {
     }
 
     // Loops over the last column of the domain and add cells to the queue if they need updating
-    for (int j = local_y_start; j < local_y_start + local_y_size; j++) {
+    for (auto j = local_y_start; j < local_y_start + local_y_size; j++) {
       if(local_x_start + local_x_size == global_x_size) break;
 
       int i = local_x_start + local_x_size - 1;
