@@ -410,18 +410,28 @@ double get_time(MPI_Comm comm) {
   return result;
 }
 
-std::string printf(const char *format, ...) {
-  std::string result(1024, ' ');
-  va_list arglist;
-  size_t length;
+std::string printf(const char* format, ...) {
+    std::string result(1024, '\0');          // allocate and zero-terminate
+    va_list ap;
+    va_start(ap, format);
 
-  va_start(arglist, format);
-  if((length = vsnprintf(&result[0], result.size(), format, arglist)) > result.size()) {
-    result.reserve(length);
-    vsnprintf(&result[0], result.size(), format, arglist);
-  }
-  va_end(arglist);
-  return result.substr(0, length);
+    // first try
+    va_list ap1; va_copy(ap1, ap);
+    int n = std::vsnprintf(&result[0], result.size(), format, ap1);
+    va_end(ap1);
+    if (n < 0) { va_end(ap); return {}; }
+
+    if (static_cast<size_t>(n) >= result.size()) {
+        // need a bigger buffer: resize (not reserve), and use a *fresh* va_list
+        result.resize(static_cast<size_t>(n) + 1);        // +1 for '\0' space
+        va_list ap2; va_copy(ap2, ap);
+        std::vsnprintf(&result[0], result.size(), format, ap2);
+        va_end(ap2);
+    }
+
+    va_end(ap);
+    result.resize(static_cast<size_t>(n));                // drop the '\0'
+    return result;
 }
 
 /*!
