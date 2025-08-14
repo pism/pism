@@ -18,6 +18,7 @@ Changes since v2.2.0
 
   To get correct behavior with PISM 2.2.0 run `pism -energy cold -eisII ...` instead of
   `pism -eisII ...`.
+- Implemented a new more efficient algorithm for the solution of the Eikonal equation.
 
 
 Changes since v2.1
