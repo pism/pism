@@ -859,11 +859,6 @@ void PicoGeometry::compute_distances_cf(const array::Scalar1 &ocean_mask,
  * generic ice shelf locations with zeros, set neighbors of the grounding line to 1, and
  * the rest of the grid with -1 or some other negative number.
  *
- * Note that this implementation updates ghosts *every* iteration. We could speed this
- * up by checking if a point at a boundary of the processor sub-domain was updated and
- * update ghosts in those cases only.
- *
- * FIXME: replace this with a better algorithm.
  */
 void eikonal_equation(array::Scalar1 &mask) {
 
