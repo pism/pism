@@ -172,25 +172,19 @@ public:
   }
 
   void next() {
-    assert(not m_done);
     m_i += 1;
     if (m_i > m_i_last) {
       m_i = m_i_first;        // wrap around
       m_j += 1;
     }
-    if (m_j > m_j_last) {
-      m_j = m_j_first;        // ensure that indexes are valid
-      m_done = true;
-    }
   }
 
   operator bool() const {
-    return not m_done;
+    return m_j <= m_j_last;
   }
 private:
   int m_i, m_j;
   int m_i_first, m_i_last, m_j_first, m_j_last;
-  bool m_done;
 };
 
 /** Iterator class for traversing the grid (without ghost points).
