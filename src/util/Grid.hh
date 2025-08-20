@@ -391,6 +391,80 @@ std::vector<unsigned int> ownership_ranges(unsigned int Mx, unsigned int Nx);
 
 } // namespace grid
 
+class GridPoint {
+public:
+  GridPoint() : GridPoint(0, 0, 0, 0) {
+  }
+
+  GridPoint(int i_, int j_, int i_first, int i_last) {
+    m_i = i_;
+    m_j = j_;
+    m_i_first = i_first;
+    m_i_last = i_last;
+  }
+
+  inline GridPoint &operator++() {
+    m_i += 1;
+    if (m_i > m_i_last) {
+      m_i = m_i_first;        // wrap around
+      m_j += 1;
+    }
+
+    return *this;
+  }
+
+  inline GridPoint& operator*() {
+    return *this;
+  }
+
+  inline bool operator!=(GridPoint &other) const {
+    return (m_j != other.m_j) or (m_i != other.m_i);
+  }
+
+  inline int i() const {
+    return m_i;
+  }
+
+  inline int j() const {
+    return m_j;
+  }
+
+  int m_i, m_j;
+private:
+  int m_i_first;
+  int m_i_last;
+};
+
+class GridPoints {
+public:
+  GridPoints(const Grid &grid, unsigned int stencil_width = 0)
+    : GridPoints(grid.info(), stencil_width) {}
+
+  GridPoints(const std::shared_ptr<const Grid> grid, unsigned int stencil_width = 0)
+    : GridPoints(grid->info(), stencil_width) {}
+
+  GridPoints(const grid::DistributedGridInfo &grid, unsigned int stencil_width = 0) {
+    int W       = static_cast<int>(stencil_width);
+    int i_first = grid.xs - W;
+    int i_last  = grid.xs + grid.xm + W - 1;
+
+    int j_first = grid.ys - W;
+    int j_last  = grid.ys + grid.ym + W - 1;
+
+    m_begin = GridPoint(i_first, j_first, i_first, i_last);
+    m_end   = GridPoint(i_first, j_last + 1, i_first, i_last);
+  }
+  GridPoint &begin() {
+    return m_begin;
+  }
+  GridPoint &end() {
+    return m_end;
+  }
+private:
+  GridPoint m_begin;
+  GridPoint m_end;
+};
+
 } // end of namespace pism
 
 #endif  /* PISM_GRID_H */
