@@ -153,7 +153,7 @@ void IBIceModel::massContExplicitStep() {
     array::AccessScope access{ &ib_surface->massxfer, &ib_surface->enthxfer, &ib_surface->deltah,
                                &cur.smb, &cur.deltah };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       cur.smb.mass(i, j) += m_dt * ib_surface->massxfer(i, j);
@@ -238,7 +238,7 @@ void IBIceModel::set_rate(double dt) {
 
     {
       array::AccessScope access{ &vbase, &vcur, &vrate };
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         // rate = cur - base: Just for DELTA and EPSILON flagged vectors
@@ -264,7 +264,7 @@ void IBIceModel::reset_rate() {
     // This cannot go in the loop above with PETSc because
     // vbase is needed on the RHS of the equations above.
     array::AccessScope access{ &vbase, &vcur };
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
       // base = cur: For ALL vectors
       vbase(i, j) = vcur(i, j);
@@ -378,7 +378,7 @@ void IBIceModel::compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &
 
   array::AccessScope access{ &ice_thickness, &ice_enthalpy, // Inputs
                              &enth2, &mass2 };              // Outputs
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     enth2(i, j) = 0;

@@ -146,7 +146,7 @@ allocate_layer_thickness(const array::Array3D &input, double T_start,
 
   array::AccessScope scope{ &input, result.get() };
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     const auto *in = input.get_column(i, j);
@@ -337,7 +337,7 @@ static void renormalize(const array::Scalar &ice_thickness, array::Array3D &laye
 
   array::AccessScope scope{ &ice_thickness, &layer_thickness };
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     double *H = layer_thickness.get_column(i, j);
@@ -442,7 +442,7 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
 
       array::AccessScope scope{ &ice_thickness, m_layer_thickness.get() };
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         double H = ice_thickness(i, j);
@@ -459,7 +459,7 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
 
       array::AccessScope scope{ &ice_thickness, m_layer_thickness.get() };
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
         m_layer_thickness->get_column(i, j)[0] = ice_thickness(i, j);
       }
@@ -570,7 +570,7 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
     array::AccessScope scope{ &top_surface_mass_balance, &bottom_surface_mass_balance,
                               m_layer_thickness.get() };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double *H = m_layer_thickness->get_column(i, j);
@@ -628,7 +628,7 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
     // flux estimated using first-order upwinding
     auto Q = [](double U, double f_n, double f_p) { return U * (U >= 0 ? f_n : f_p); };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double *d_c = m_tmp->get_column(i, j), *d_n = m_tmp->get_column(i, j + 1),
@@ -840,7 +840,7 @@ protected:
 
     array::AccessScope scope{ &layer_thicknesses, result.get() };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double *column  = result->get_column(i, j);

@@ -406,7 +406,7 @@ void compute_cell_areas(const std::string &projection, array::Scalar &result) {
 
   array::AccessScope list(result);
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -456,7 +456,7 @@ static void compute_lon_lat(const std::string &projection,
 
   array::AccessScope list{&result};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     PJ_COORD out = proj_trans(crs, PJ_FWD, proj_coord(grid->x(i), grid->y(j), 0, 0));
@@ -485,7 +485,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
   array::AccessScope list{&result};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     double x0 = grid->x(i), y0 = grid->y(j);

@@ -189,7 +189,7 @@ void averaged_hardness_vec(const FlowLaw &ice,
 
   ParallelSection loop(grid.com);
   try {
-    for (auto p = grid.points(); p; p.next()) {
+    for (auto p : grid.points()) {
       const int i = p.i(), j = p.j();
 
       // Evaluate column integrals in flow law at every quadrature point's column

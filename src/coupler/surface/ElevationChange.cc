@@ -117,7 +117,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
     {
       array::AccessScope list{&surface, m_reference_surface.get(), m_mass_flux.get()};
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         double dT = -m_temp_lapse_rate * (surface(i, j) - (*m_reference_surface)(i, j));

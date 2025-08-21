@@ -125,7 +125,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   {
     ParallelSection loop(grid->com);
     try {
-      for (auto p = grid->points(); p; p.next()) {
+      for (auto p : grid->points()) {
         const int i = p.i(), j = p.j();
 
         if (ice_thickness(i, j) < 0.0) {
@@ -152,7 +152,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
     ParallelSection loop(grid->com);
     try {
-      for (auto p = grid->points(); p; p.next()) {
+      for (auto p : grid->points()) {
         const int i = p.i(), j = p.j();
 
         int mask = 0;
@@ -240,7 +240,7 @@ void ice_bottom_surface(const Geometry &geometry, array::Scalar &result) {
 
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -269,7 +269,7 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   auto cell_area = grid->cell_area();
 
   {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (geometry.ice_thickness(i,j) >= thickness_threshold) {
@@ -281,7 +281,7 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   // Add the volume of the ice in Href:
   if (config->get_flag("geometry.part_grid.enabled")) {
     list.add(geometry.ice_area_specific_volume);
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       volume += geometry.ice_area_specific_volume(i,j) * cell_area;
@@ -306,7 +306,7 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
 
   double volume = 0.0;
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -328,7 +328,7 @@ static double compute_area(const Grid &grid, std::function<bool(int, int)> condi
   double cell_area = grid.cell_area();
   double area = 0.0;
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     if (condition(i, j)) {
@@ -396,7 +396,7 @@ void set_no_model_strip(const Grid &grid, double width, array::Scalar &result) {
 
   array::AccessScope list(result);
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     if (grid::in_null_strip(grid, i, j, width)) {

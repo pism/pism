@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
       // compute exact ice temperature at z=0 at time y
       {
         array::AccessScope list(bedtoptemp);
-        for (auto p = grid->points(); p; p.next()) {
+        for (auto p : grid->points()) {
           const int i = p.i(), j = p.j();
 
           bedtoptemp(i,j) = exactK(time, 0.0, 0).T;

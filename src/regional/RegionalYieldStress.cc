@@ -43,7 +43,7 @@ static void set_no_model_yield_stress(double tauc,
 
   array::AccessScope list{&mask, &basal_yield_stress};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask(i, j) > 0.5) {

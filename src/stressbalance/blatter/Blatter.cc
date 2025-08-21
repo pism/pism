@@ -548,7 +548,7 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
   {
     array::AccessScope list{&tauc, &H, &b, &sea_level, &m_parameters};
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -600,7 +600,7 @@ void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
 
   array::AccessScope list{enthalpy, &ice_thickness};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double H = ice_thickness(i, j);
@@ -1112,7 +1112,7 @@ void Blatter::copy_solution() {
 
   array::AccessScope list{m_u_sigma.get(), m_v_sigma.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     auto *u = m_u_sigma->get_column(i, j);
@@ -1133,7 +1133,7 @@ void Blatter::get_basal_velocity(array::Vector &result) {
 
   array::AccessScope list{&result};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = x[j][i][0];      // STORAGE_ORDER
@@ -1152,7 +1152,7 @@ void Blatter::set_initial_guess(const array::Array3D &u_sigma,
 
   array::AccessScope list{&u_sigma, &v_sigma};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const auto *u = u_sigma.get_column(i, j);
@@ -1177,7 +1177,7 @@ void Blatter::compute_averaged_velocity(array::Vector &result) {
 
   array::AccessScope list{&result, &m_parameters};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double H = m_parameters(i, j).thickness;

@@ -59,7 +59,7 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
   unsigned int CFL_violation_count = 0;
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       const int ks = grid->kBelowHeight(ice_thickness(i,j));

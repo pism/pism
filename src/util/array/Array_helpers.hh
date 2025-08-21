@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021, 2022, 2023, 2024 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,7 +37,7 @@ template <class V>
 void add(const V &x, double alpha, const V &y, V &result, bool scatter = true) {
 
   array::AccessScope list{ &x, &y, &result };
-  for (auto p = result.grid()->points(); p; p.next()) {
+  for (auto p : result.grid()->points()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = x(i, j) + y(i, j) * alpha;
@@ -55,7 +55,7 @@ void copy(const V &input, V &result, bool scatter = true) {
 
   array::AccessScope list{ &input, &result };
 
-  for (auto p = result.grid()->points(); p; p.next()) {
+  for (auto p : result.grid()->points()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = input(i, j);

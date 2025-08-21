@@ -62,7 +62,7 @@ static void compute_strain_heating_errors(const array::Array3D &strain_heating,
 
   ParallelSection loop(grid.com);
   try {
-    for (auto p = grid.points(); p; p.next()) {
+    for (auto p : grid.points()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -115,7 +115,7 @@ static void computeSurfaceVelocityErrors(const Grid &grid,
 
   array::AccessScope list{&ice_thickness, &u3, &v3, &w3};
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     double xx = grid.x(i), yy = grid.y(j),
@@ -157,7 +157,7 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 
   array::AccessScope list{&temperature, &enthalpy, &thickness};
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     const double *T_ij = temperature.get_column(i,j);
@@ -194,7 +194,7 @@ static void setInitStateF(Grid &grid,
 
   array::AccessScope list{&thickness, &enthalpy};
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     const double

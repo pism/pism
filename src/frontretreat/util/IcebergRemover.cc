@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -58,7 +58,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
 
     array::AccessScope list{&cell_type, &m_iceberg_mask, &bc_mask};
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.grounded_ice(i,j)) {
@@ -69,7 +69,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
     }
 
     // Mark icy Dirichlet B.C. cells as "grounded" because we don't want them removed.
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (bc_mask(i, j) > 0.5 and cell_type.icy(i, j)) {
@@ -85,7 +85,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
   {
     array::AccessScope list{&ice_thickness, &cell_type, &m_iceberg_mask, &bc_mask};
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {

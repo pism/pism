@@ -430,7 +430,7 @@ void SSAFD::picard_manager(const Inputs &inputs, double nuH_regularization,
 
       array::AccessScope list{ &m_velocity_global };
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         auto speed = m_velocity_global(i, j).magnitude();
@@ -611,7 +611,7 @@ void SSAFD::update_nuH_viewers(const array::Staggered &nuH) {
 
   array::AccessScope list{&nuH, &tmp};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));

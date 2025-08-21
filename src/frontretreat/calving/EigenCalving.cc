@@ -79,7 +79,7 @@ void EigenCalving::update(const array::CellType &cell_type,
   array::AccessScope list{&m_cell_type, &m_calving_rate, &m_strain_rates};
 
   // Compute the horizontal calving rate
-  for (auto pt = m_grid->points(); pt; pt.next()) {
+  for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
 
     // Find partially filled or empty grid boxes on the icefree ocean, which

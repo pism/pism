@@ -125,7 +125,7 @@ protected:
     array::AccessScope list(*result);
     ParallelSection loop(m_grid->com);
     try {
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         model->temp_time_series(i, j, temperature);

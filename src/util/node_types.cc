@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -71,7 +71,7 @@ void compute_node_types(const array::Scalar1 &ice_thickness,
 
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       auto H = ice_thickness.box(i, j);

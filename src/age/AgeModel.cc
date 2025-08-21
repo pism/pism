@@ -134,7 +134,7 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       system.init(i, j, ice_thickness(i, j));

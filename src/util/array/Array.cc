@@ -261,7 +261,7 @@ void Array::get_dof(std::shared_ptr<petsc::DM> da_result, petsc::Vec &result, un
 
   ParallelSection loop(m_impl->grid->com);
   try {
-    for (auto p = m_impl->grid->points(); p; p.next()) {
+    for (auto p : m_impl->grid->points()) {
       const int i = p.i(), j = p.j();
       PetscErrorCode ierr =
           PetscMemcpy(result_a[j][i], &source_a[j][i][start], count * sizeof(PetscScalar));
@@ -286,7 +286,7 @@ void Array::set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &source, un
 
   ParallelSection loop(m_impl->grid->com);
   try {
-    for (auto p = m_impl->grid->points(); p; p.next()) {
+    for (auto p : m_impl->grid->points()) {
       const int i = p.i(), j = p.j();
       PetscErrorCode ierr =
           PetscMemcpy(&result_a[j][i][start], source_a[j][i], count * sizeof(PetscScalar));

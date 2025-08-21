@@ -50,7 +50,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
 
   // assume that ice-free ocean points at the edge of the domain belong to the "global
   // ocean"
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free_ocean(i, j)) {
@@ -71,7 +71,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
 
   // create a mask that contains ones at "ice free ocean" locations connected to the edge
   // of the domain and zeros elsewhere:
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free_ocean(i, j) and result.as_int(i, j) == 0) {
@@ -154,7 +154,7 @@ void IceModel::front_retreat_step() {
     if (frontal_melt_only_open_ocean) {
       array::AccessScope list{ &retreat_rate, &open_ocean_mask };
 
-      for (Points p(*m_grid); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         if (open_ocean_mask(i, j) < 0.5) {
@@ -213,7 +213,7 @@ void IceModel::front_retreat_step() {
       {
         array::AccessScope list{ &open_ocean_mask, &retreat_rate };
 
-        for (Points p(*m_grid); p; p.next()) {
+        for (auto p : m_grid->points()) {
           const int i = p.i(), j = p.j();
 
           if (open_ocean_mask(i, j) < 0.5) {
@@ -249,7 +249,7 @@ void IceModel::front_retreat_step() {
 
         array::AccessScope list{ &modified_cell_type, &cell_type, &open_ocean_mask };
 
-        for (Points p(*m_grid); p; p.next()) {
+        for (auto p : m_grid->points()) {
           const int i = p.i(), j = p.j();
 
           if (cell_type.ice_free_ocean(i, j) and open_ocean_mask(i, j) < 0.5) {
@@ -344,7 +344,7 @@ void IceModel::compute_geometry_change(const array::Scalar &thickness,
   array::AccessScope list{&thickness, &thickness_old,
       &Href, &Href_old, &output};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double

@@ -185,7 +185,7 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
 
   array::AccessScope list{ &h, &h_ref, &SMB, &SMB_ref, &aSMB, &dSMBdz, &T, &T_ref, &aT, &dTdz };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     SMB(i, j) = SMB_ref(i, j) + aSMB(i, j) + dSMBdz(i, j) * (h(i, j) - h_ref(i, j));

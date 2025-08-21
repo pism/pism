@@ -63,7 +63,7 @@ void Delta_MBP::update_impl(const Inputs &inputs, double t, double dt) {
   auto &P_new = *m_water_column_pressure;
   array::AccessScope list{&P, &H, &P_new};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double dP = H(i, j) > 0.0 ? (melange_thickness * dP_melange) / H(i, j) : 0.0;

@@ -378,7 +378,7 @@ void Forcing::init_periodic_data(const File &file) {
   // compute values at the beginning (and so at the end) of the period
   double **a2  = array();
   double ***a3 = array3();
-  for (auto p = grid()->points(); p; p.next()) {
+  for (auto p : grid()->points()) {
     const int i = p.i(), j = p.j();
 
     a2[j][i] = (1.0 - alpha) * a3[j][i][last] + alpha * a3[j][i][first];
@@ -559,7 +559,7 @@ void Forcing::discard(int number) {
   array::AccessScope l{this};
 
   double ***a3 = array3();
-  for (auto p = m_impl->grid->points(); p; p.next()) {
+  for (auto p : grid()->points()) {
     const int i = p.i(), j = p.j();
 
     for (unsigned int k = 0; k < m_data->n_records; ++k) {
@@ -575,7 +575,7 @@ void Forcing::set_record(int n) {
 
   double  **a2 = array();
   double ***a3 = array3();
-  for (auto p = m_impl->grid->points(); p; p.next()) {
+  for (auto p : grid()->points()) {
     const int i = p.i(), j = p.j();
     a3[j][i][n] = a2[j][i];
   }
@@ -641,7 +641,7 @@ void Forcing::interp(double t) {
   double ***a3 = array3();
   double  **a2 = array();
 
-  for (auto p = m_impl->grid->points(); p; p.next()) {
+  for (auto p : m_impl->grid->points()) {
     const int i = p.i(), j = p.j();
     auto *column = a3[j][i];
     // result (LHS) is a weighted average of two values.
@@ -738,7 +738,7 @@ void Forcing::average(double t, double dt) {
   double **a2 = array();
   double ***a3 = array3();
 
-  for (auto p = m_impl->grid->points(); p; p.next()) {
+  for (auto p : m_impl->grid->points()) {
     const int i = p.i(), j = p.j();
 
     a2[j][i] = 0.0;

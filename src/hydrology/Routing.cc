@@ -83,7 +83,7 @@ protected:
       &Po = model->overburden_pressure();
 
     array::AccessScope list{result.get(), &Po, &P};
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (Po(i,j) > 0.0) {
@@ -123,7 +123,7 @@ protected:
 
     array::AccessScope list{&Po, &P, result.get()};
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       (*result)(i, j) = Po(i, j) - P(i, j);
@@ -205,7 +205,7 @@ void hydraulic_potential(const array::Scalar &W,
 
   array::AccessScope list{&P, &W, &sea_level, &ice_thickness, &bed, &result};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     double b = std::max(bed(i, j), sea_level(i, j) - C * ice_thickness(i, j));
@@ -384,7 +384,7 @@ void Routing::water_thickness_staggered(const array::Scalar &W,
 
   array::AccessScope list{ &mask, &W, &result };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (include_floating) {
@@ -462,7 +462,7 @@ void Routing::compute_conductivity(const array::Staggered &W,
       P.add(m_rg, bed_elevation, m_R);  // yes, it updates ghosts
 
       list.add(m_R);
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         double dRdx, dRdy;
@@ -480,7 +480,7 @@ void Routing::compute_conductivity(const array::Staggered &W,
     // head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m.
     const double eps = beta < 2.0 ? 1.0 : 0.0;
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       for (int o = 0; o < 2; ++o) {
@@ -496,7 +496,7 @@ void Routing::compute_conductivity(const array::Staggered &W,
       }
     }
   } else {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       for (int o = 0; o < 2; ++o) {
@@ -564,7 +564,7 @@ void wall_melt(const Routing &model,
   double dx = grid->dx();
   double dy = grid->dy();
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
     double dRdx, dRdy;
 
@@ -621,7 +621,7 @@ void Routing::compute_velocity(const array::Staggered &W,
 
   array::AccessScope list{&P, &W, &K, &bed, &result};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (W(i, j, 0) > 0.0) {
@@ -646,7 +646,7 @@ void Routing::compute_velocity(const array::Staggered &W,
   if (no_model_mask) {
     list.add(*no_model_mask);
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       auto M = no_model_mask->star(i, j);
@@ -676,7 +676,7 @@ void Routing::advective_fluxes(const array::Staggered &V,
 
   assert(W.stencil_width() >= 1);
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     result(i, j, 0) = V(i, j, 0) * (V(i, j, 0) >= 0.0 ? W(i, j) :  W(i + 1, j));
@@ -745,7 +745,7 @@ void Routing::update_Wtill(double dt,
     list.add(surface_input_rate);
   }
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double input_rate = basal_melt_rate(i, j);
@@ -770,7 +770,7 @@ void Routing::W_change_due_to_flow(double dt,
 
   array::AccessScope list{&W, &Wstag, &K, &Q, &result};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     auto q = Q.star(i, j);
@@ -811,7 +811,7 @@ void Routing::update_W(double dt,
   array::AccessScope list{&W, &Wtill, &Wtill_new, &surface_input_rate,
                                &basal_melt_rate, &m_flow_change_incremental, &W_new};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double input_rate = surface_input_rate(i, j) + basal_melt_rate(i, j);

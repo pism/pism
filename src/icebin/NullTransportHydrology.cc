@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014, 2016, 2023 PISM Authors
+// Copyright (C) 2012-2014, 2016, 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -62,7 +62,7 @@ void NullTransportHydrology::update_impl(double t, double dt,
 
   array::AccessScope scope{ &cell_type, &m_Wtill, &m_surface_input_rate, &basal_runoff_sum };
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ocean(i, j) || cell_type.ice_free(i, j)) {

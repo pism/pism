@@ -80,7 +80,7 @@ static void interpolate(const grid::DistributedGridInfo &grid, const LocalInterp
     return input_array[index];
   };
 
-  for (Points p(grid); p; p.next()) {
+  for (auto p : GridPoints(grid)) {
     const int i_global = p.i(), j_global = p.j();
 
     const int i = i_global - grid.xs, j = j_global - grid.ys;

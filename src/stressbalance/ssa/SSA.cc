@@ -159,7 +159,7 @@ void SSA::extrapolate_velocity(const array::CellType1 &cell_type,
                                array::Vector1 &velocity) const {
   array::AccessScope list{&cell_type, &velocity};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {

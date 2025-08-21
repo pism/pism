@@ -64,7 +64,7 @@ void PrescribedRetreat::update(double t, double dt, array::Scalar &ice_thickness
 
   array::AccessScope list{ m_retreat_mask.get(), &ice_thickness, &ice_area_specific_volume };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double f = (*m_retreat_mask)(i, j);

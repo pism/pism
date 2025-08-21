@@ -114,7 +114,7 @@ std::shared_ptr<array::Array> PSB_velbar::compute_impl() const {
 
   array::AccessScope list{thickness, result.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     double thk = (*thickness)(i,j);
 
@@ -196,7 +196,7 @@ std::shared_ptr<array::Array> PSB_flux::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double H = (*thickness)(i,j);
@@ -268,7 +268,7 @@ std::shared_ptr<array::Array> PSB_flux_mag::compute_impl() const {
 
   array::AccessScope list{thickness, result.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) *= (*thickness)(i,j);
@@ -302,7 +302,7 @@ std::shared_ptr<array::Array> PSB_velbase_mag::compute_impl() const {
 
   array::AccessScope list{&mask, result.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
@@ -335,7 +335,7 @@ std::shared_ptr<array::Array> PSB_velsurf_mag::compute_impl() const {
 
   array::AccessScope list{&mask, result.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
@@ -389,7 +389,7 @@ std::shared_ptr<array::Array> PSB_velsurf::compute_impl() const {
 
   array::AccessScope list{ &cell_type, &u_surf, &v_surf, result.get() };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j)) {
@@ -436,7 +436,7 @@ std::shared_ptr<array::Array> PSB_wvel::compute(bool zero_above_ice) const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double *u = u3.get_column(i, j), *v = v3.get_column(i, j), *w = w3.get_column(i, j);
@@ -519,7 +519,7 @@ std::shared_ptr<array::Array> PSB_wvelsurf::compute_impl() const {
 
   array::AccessScope list{ &mask, result.get() };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
@@ -561,7 +561,7 @@ std::shared_ptr<array::Array> PSB_wvelbase::compute_impl() const {
 
   array::AccessScope list{ &mask, result.get() };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
@@ -613,7 +613,7 @@ std::shared_ptr<array::Array> PSB_velbase::compute_impl() const {
 
   array::AccessScope list{ &mask, &u_base, &v_base, result.get() };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i, j)) {
@@ -665,7 +665,7 @@ static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
 
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       int ks = grid->kBelowHeight(H(i, j));
@@ -857,7 +857,7 @@ std::shared_ptr<array::Array> PSB_pressure::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       unsigned int ks  = m_grid->kBelowHeight((*thickness)(i, j));
@@ -911,7 +911,7 @@ std::shared_ptr<array::Array> PSB_tauxz::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       unsigned int ks      = m_grid->kBelowHeight((*thickness)(i, j));
@@ -964,7 +964,7 @@ std::shared_ptr<array::Array> PSB_tauyz::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       unsigned int ks      = m_grid->kBelowHeight((*thickness)(i, j));
@@ -1031,7 +1031,7 @@ std::shared_ptr<array::Array> PSB_vonmises_stress::compute_impl() const {
   array::AccessScope list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
       enthalpy, &mask};
 
-  for (auto pt = m_grid->points(); pt; pt.next()) {
+  for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
 
     if (mask.icy(i, j)) {

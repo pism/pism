@@ -1578,21 +1578,25 @@ void Grid::forget_interpolations() {
   m_impl->regridding_2d.clear();
 }
 
-PointsWithGhosts::PointsWithGhosts(const grid::DistributedGridInfo &grid,
-                                   unsigned int stencil_width) {
-  int W     = static_cast<int>(stencil_width);
-  m_i_first = grid.xs - W;
-  m_i_last  = grid.xs + grid.xm + W - 1;
-  m_j_first = grid.ys - W;
-  m_j_last  = grid.ys + grid.ym + W - 1;
-
-  m_i = m_i_first;
-  m_j = m_j_first;
+GridPoints::GridPoints(const Grid &grid, unsigned int stencil_width)
+    : GridPoints(grid.info(), stencil_width) {
 }
 
-PointsWithGhosts::PointsWithGhosts(const Grid &grid, unsigned int stencil_width)
-  : PointsWithGhosts(grid.info(), stencil_width) {
-  // empty
+GridPoints::GridPoints(const std::shared_ptr<const Grid> grid, unsigned int stencil_width)
+    : GridPoints(grid->info(), stencil_width) {
 }
+
+GridPoints::GridPoints(const grid::DistributedGridInfo &grid, unsigned int stencil_width) {
+  int W       = static_cast<int>(stencil_width);
+  int i_first = grid.xs - W;
+  int i_last  = grid.xs + grid.xm + W - 1;
+
+  int j_first = grid.ys - W;
+  int j_last  = grid.ys + grid.ym + W - 1;
+
+  m_begin = GridPoint(i_first, j_first, i_first, i_last);
+  m_end   = GridPoint(i_first, j_last + 1, i_first, i_last);
+}
+
 
 } // end of namespace pism

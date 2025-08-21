@@ -84,7 +84,7 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
 
   const double x_min = m_grid->x(0);
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double x = m_grid->x(i);

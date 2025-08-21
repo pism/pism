@@ -112,7 +112,7 @@ void Verification::update_L() {
     Lsqr        = L * L;
 
   array::AccessScope list(*m_mass_flux);
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double r = grid::radius(*m_grid, i, j);
@@ -189,7 +189,7 @@ void Verification::update_ABCDH(double time) {
   array::AccessScope list(*m_mass_flux);
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double r = grid::radius(*m_grid, i, j);
@@ -228,7 +228,7 @@ void Verification::update_FG(double time) {
 
   array::AccessScope list{m_mass_flux.get(), m_temperature.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin

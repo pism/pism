@@ -58,7 +58,7 @@ void IPDesignVariableParameterization::convertToDesignVariable(array::Scalar &ze
 
   ParallelSection loop(grid.com);
   try {
-    for (auto p = grid.points(); p; p.next()) {
+    for (auto p : grid.points()) {
       const int i = p.i(), j = p.j();
 
       this->toDesignVariable(zeta(i, j), &d(i, j), NULL);
@@ -90,7 +90,7 @@ void IPDesignVariableParameterization::convertFromDesignVariable(array::Scalar &
 
   ParallelSection loop(grid.com);
   try {
-    for (auto p = grid.points(); p; p.next()) {
+    for (auto p : grid.points()) {
       const int i = p.i(), j = p.j();
 
       this->fromDesignVariable(d(i, j), &zeta(i, j));

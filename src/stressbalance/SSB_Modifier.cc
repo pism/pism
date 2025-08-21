@@ -115,7 +115,7 @@ void ConstantInColumn::update(const array::Vector &sliding_velocity,
   // horizontal velocity and its maximum:
   array::AccessScope list{&m_u, &m_v, &sliding_velocity};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     m_u.set_column(i,j, sliding_velocity(i,j).u);

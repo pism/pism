@@ -56,7 +56,7 @@ void compute_enthalpy_cold(const array::Array3D &temperature, const array::Scala
   const std::vector<double> &z = temperature.levels();
   const unsigned int Mz        = z.size();
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double *Tij = temperature.get_column(i, j);
@@ -84,7 +84,7 @@ void compute_temperature(const array::Array3D &enthalpy, const array::Scalar &ic
   const std::vector<double> &z = enthalpy.levels();
   const unsigned int Mz        = z.size();
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double *E = enthalpy.get_column(i, j), H = ice_thickness(i, j);
@@ -114,7 +114,7 @@ void compute_enthalpy(const array::Array3D &temperature,
   const std::vector<double> &z = temperature.levels();
   const unsigned int Mz        = z.size();
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double *T     = temperature.get_column(i, j);
@@ -149,7 +149,7 @@ void compute_liquid_water_fraction(const array::Array3D &enthalpy,
 
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double *Enthij = enthalpy.get_column(i, j);
@@ -192,7 +192,7 @@ void compute_cts(const array::Array3D &ice_enthalpy, const array::Scalar &ice_th
   const std::vector<double> &z = ice_enthalpy.levels();
   const unsigned int Mz = z.size();
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     double *CTS  = result.get_column(i,j);
@@ -229,7 +229,7 @@ double total_ice_enthalpy(double thickness_threshold,
   array::AccessScope list{&ice_enthalpy, &ice_thickness};
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double H = ice_thickness(i, j);
@@ -362,7 +362,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
 
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double

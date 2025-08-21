@@ -173,7 +173,7 @@ int make_nonnegative_preserving(double dt, const array::Scalar1 &x, const array:
 
   int limiter_count = 0;
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     auto Q   = flux.star(i, j);

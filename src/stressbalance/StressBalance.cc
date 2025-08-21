@@ -305,7 +305,7 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
 
   std::vector<double> u_x_plus_v_y(Mz);
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double *w_ij = result.get_column(i,j);
@@ -535,7 +535,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double H = thickness(i, j);
@@ -699,7 +699,7 @@ void compute_2D_principal_strain_rates(const array::Vector1 &V,
 
   array::AccessScope list{&V, &mask, &result};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i,j)) {
@@ -783,7 +783,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
 
   array::AccessScope list{&velocity, &hardness, &result, &cell_type};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j)) {

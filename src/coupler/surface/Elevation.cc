@@ -175,7 +175,7 @@ void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &r
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double z = surface(i, j);
@@ -213,7 +213,7 @@ void Elevation::compute_temperature(const array::Scalar &surface, array::Scalar 
   double dTdz = (m_T_max - m_T_min)/(m_z_T_max - m_z_T_min);
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double z = surface(i, j);

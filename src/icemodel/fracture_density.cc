@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2020, 2023 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2020, 2023, 2025 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,7 @@ void IceModel::update_fracture_density() {
       list.add(m_velocity_bc_values);
     }
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.cell_type.grounded(i, j) and not do_fracground) {

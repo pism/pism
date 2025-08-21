@@ -1,4 +1,4 @@
-/* Copyright (C) 2023, 2024 PISM Authors
+/* Copyright (C) 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -74,7 +74,7 @@ static std::map<int, std::set<int> > detect_connections(array::Scalar1 &mask) {
     }
   };
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     int M = mask.as_int(i, j);
@@ -280,7 +280,7 @@ void relabel(array::Scalar &mask, const std::map<int, int> &labels) {
 
   array::AccessScope list{ &mask };
 
-  for (Points p(*mask.grid()); p; p.next()) {
+  for (auto p : mask.grid()->points()) {
     const int i = p.i(), j = p.j();
 
     int old_label = mask.as_int(i, j);

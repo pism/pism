@@ -148,7 +148,7 @@ void SSATestCase::report(const std::string &testname) {
   array::AccessScope list{ &vel_ssa };
 
   double exactvelmax = 0, gexactvelmax = 0;
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double uexact, vexact;
@@ -327,7 +327,7 @@ void SSATestCase::write(const std::string &filename) {
       .units("m s^-1");
 
   array::AccessScope list(tmp);
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     exactSolution(i, j, m_grid->x(i), m_grid->y(j),
