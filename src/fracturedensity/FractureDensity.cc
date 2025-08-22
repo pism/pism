@@ -119,12 +119,12 @@ void FractureDensity::initialize() {
   m_age.set(0.0);
 }
 
-void FractureDensity::define_model_state_impl(const OutputFile &output) const {
+void FractureDensity::define_state_impl(const OutputFile &output) const {
   m_density.define(output);
   m_age.define(output);
 }
 
-void FractureDensity::write_model_state_impl(const OutputFile &output) const {
+void FractureDensity::write_state_impl(const OutputFile &output) const {
   m_density.write(output);
   m_age.write(output);
 }

@@ -169,14 +169,14 @@ const array::Scalar &InitializationHelper::runoff_impl() const {
   return *m_runoff;
 }
 
-void InitializationHelper::define_model_state_impl(const OutputFile &output) const {
+void InitializationHelper::define_state_impl(const OutputFile &output) const {
   for (auto *v : m_variables) {
     v->define(output);
   }
   m_input_model->define_state(output);
 }
 
-void InitializationHelper::write_model_state_impl(const OutputFile &output) const {
+void InitializationHelper::write_state_impl(const OutputFile &output) const {
   for (auto *v : m_variables) {
     v->write(output);
   }

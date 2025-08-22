@@ -352,13 +352,13 @@ void Routing::init_impl(const array::Scalar &W_till,
   m_W.copy_from(W);
 }
 
-void Routing::define_model_state_impl(const OutputFile &output) const {
-  Hydrology::define_model_state_impl(output);
+void Routing::define_state_impl(const OutputFile &output) const {
+  Hydrology::define_state_impl(output);
   m_W.define(output);
 }
 
-void Routing::write_model_state_impl(const OutputFile &output) const {
-  Hydrology::write_model_state_impl(output);
+void Routing::write_state_impl(const OutputFile &output) const {
+  Hydrology::write_state_impl(output);
   m_W.write(output);
 }
 

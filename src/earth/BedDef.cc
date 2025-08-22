@@ -83,7 +83,7 @@ const array::Scalar &BedDef::uplift() const {
   return m_uplift;
 }
 
-void BedDef::define_model_state_impl(const OutputFile &output) const {
+void BedDef::define_state_impl(const OutputFile &output) const {
   m_uplift.define(output);
   m_topg.define(output);
   m_load_accumulator.define(output);
@@ -91,7 +91,7 @@ void BedDef::define_model_state_impl(const OutputFile &output) const {
   output.define_timeseries_variable(m_time_dimension);
 }
 
-void BedDef::write_model_state_impl(const OutputFile &output) const {
+void BedDef::write_state_impl(const OutputFile &output) const {
   m_uplift.write(output);
   m_topg.write(output);
   m_load_accumulator.write(output);

@@ -54,8 +54,8 @@ protected:
   const array::Scalar& melt_impl() const;
   const array::Scalar& runoff_impl() const;
 
-  void define_model_state_impl(const OutputFile &output) const;
-  void write_model_state_impl(const OutputFile &output) const;
+  void define_state_impl(const OutputFile &output) const;
+  void write_state_impl(const OutputFile &output) const;
 
 private:
   // store pointers to fields so that we can iterate over them

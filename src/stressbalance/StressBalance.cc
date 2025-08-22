@@ -660,12 +660,12 @@ const SSB_Modifier* StressBalance::modifier() const {
 }
 
 
-void StressBalance::define_model_state_impl(const OutputFile &output) const {
+void StressBalance::define_state_impl(const OutputFile &output) const {
   m_shallow_stress_balance->define_state(output);
   m_modifier->define_state(output);
 }
 
-void StressBalance::write_model_state_impl(const OutputFile &output) const {
+void StressBalance::write_state_impl(const OutputFile &output) const {
   m_shallow_stress_balance->write_state(output);
   m_modifier->write_state(output);
 }

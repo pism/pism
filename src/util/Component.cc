@@ -122,7 +122,7 @@ const Profiling &Component::profiling() const {
  * (an optimization needed to get decent performance writing NetCDF-3).
  */
 void Component::define_state(const OutputFile &output) const {
-  this->define_model_state_impl(output);
+  this->define_state_impl(output);
 }
 
 /*! @brief Write model state variables to an output file. */
@@ -130,16 +130,16 @@ void Component::write_state(const OutputFile &output) const {
   // define variables, if needed (this is a no-op if they are already defined)
   this->define_state(output);
 
-  this->write_model_state_impl(output);
+  this->write_state_impl(output);
 }
 
 /*! @brief The default (empty implementation). */
-void Component::define_model_state_impl(const OutputFile &output) const {
+void Component::define_state_impl(const OutputFile &output) const {
   (void) output;
 }
 
 /*! @brief The default (empty implementation). */
-void Component::write_model_state_impl(const OutputFile &output) const {
+void Component::write_state_impl(const OutputFile &output) const {
   (void) output;
 }
 

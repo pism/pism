@@ -65,9 +65,9 @@ protected:
 
   virtual void update_impl(const YieldStressInputs &inputs, double t, double dt) = 0;
 
-  virtual void define_model_state_impl(const OutputFile &output) const;
+  virtual void define_state_impl(const OutputFile &output) const;
 
-  virtual void write_model_state_impl(const OutputFile &output) const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   DiagnosticList diagnostics_impl() const;
 

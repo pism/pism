@@ -319,15 +319,15 @@ void LingleClark::update_impl(const array::Scalar &load, double /*t*/, double dt
   m_topg.inc_state_counter();
 }
 
-void LingleClark::define_model_state_impl(const OutputFile &output) const {
-  BedDef::define_model_state_impl(output);
+void LingleClark::define_state_impl(const OutputFile &output) const {
+  BedDef::define_state_impl(output);
 
   m_viscous_displacement->define(output);
   m_elastic_displacement.define(output);
 }
 
-void LingleClark::write_model_state_impl(const OutputFile &output) const {
-  BedDef::write_model_state_impl(output);
+void LingleClark::write_state_impl(const OutputFile &output) const {
+  BedDef::write_state_impl(output);
 
   m_viscous_displacement->write(output);
   m_elastic_displacement.write(output);

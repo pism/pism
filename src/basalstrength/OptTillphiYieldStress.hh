@@ -46,8 +46,8 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  void define_model_state_impl(const OutputFile &output) const;
-  void write_model_state_impl(const OutputFile &output) const;
+  void define_state_impl(const OutputFile &output) const;
+  void write_state_impl(const OutputFile &output) const;
 
   array::Scalar1 m_mask;
   array::Scalar1 m_usurf_difference;

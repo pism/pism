@@ -282,13 +282,13 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
   } // end of the loop over grid points
 }
 
-void OptTillphiYieldStress::define_model_state_impl(const OutputFile &output) const {
-  MohrCoulombYieldStress::define_model_state_impl(output);
+void OptTillphiYieldStress::define_state_impl(const OutputFile &output) const {
+  MohrCoulombYieldStress::define_state_impl(output);
   output.define_timeseries_variable(m_time);
 }
 
-void OptTillphiYieldStress::write_model_state_impl(const OutputFile &output) const {
-  MohrCoulombYieldStress::write_model_state_impl(output);
+void OptTillphiYieldStress::write_state_impl(const OutputFile &output) const {
+  MohrCoulombYieldStress::write_state_impl(output);
 
   output.write_timeseries_variable(m_time, { 0 }, { 1 }, { m_t_last });
 }

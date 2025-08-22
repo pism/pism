@@ -63,8 +63,8 @@ protected:
 
   std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
-  void define_model_state_impl(const OutputFile &output) const;
-  void write_model_state_impl(const OutputFile &output) const;
+  void define_state_impl(const OutputFile &output) const;
+  void write_state_impl(const OutputFile &output) const;
 
   void check_P_bounds(array::Scalar &P,
                       const array::Scalar &P_o,

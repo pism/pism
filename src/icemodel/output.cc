@@ -206,7 +206,7 @@ void IceModel::define_variables(const OutputFile &file, OutputKind kind,
   }
 
   if (kind == INCLUDE_MODEL_STATE) {
-    define_model_state(file);
+    define_state(file);
   }
 
   define_diagnostics(file, variables);
@@ -218,7 +218,7 @@ void IceModel::write_variables(const OutputFile &file, OutputKind kind,
   file.append_time(time_seconds);
 
   if (kind == INCLUDE_MODEL_STATE) {
-    write_model_state(file);
+    write_state(file);
   }
   write_diagnostics(file, variables);
 
@@ -259,7 +259,7 @@ void IceModel::write_diagnostics(const OutputFile &file, const std::set<std::str
   }
 }
 
-void IceModel::define_model_state(const OutputFile &file) const {
+void IceModel::define_state(const OutputFile &file) const {
   for (auto *v : m_model_state) {
     v->define(file);
   }
@@ -273,7 +273,7 @@ void IceModel::define_model_state(const OutputFile &file) const {
   }
 }
 
-void IceModel::write_model_state(const OutputFile &file) const {
+void IceModel::write_state(const OutputFile &file) const {
   for (auto *v : m_model_state) {
     v->write(file);
   }

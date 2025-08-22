@@ -62,12 +62,12 @@ public:
   /*!
    * Define model state variables and set their attributes
    */
-  virtual void define_model_state(const OutputFile &output) const;
+  virtual void define_state(const OutputFile &output) const;
 
   /*!
    * Write model state variables and set their attributes
    */
-  virtual void write_model_state(const OutputFile &output) const;
+  virtual void write_state(const OutputFile &output) const;
 };
 
 //! The adapter class for Python ocean models
@@ -86,8 +86,8 @@ private:
   void update_impl(const Inputs &inputs, double my_t, double my_dt);
   void init_impl(const Geometry &geometry);
 
-  void define_model_state_impl(const OutputFile &output) const;
-  void write_model_state_impl(const OutputFile &output) const;
+  void define_state_impl(const OutputFile &output) const;
+  void write_state_impl(const OutputFile &output) const;
 
   std::shared_ptr<PyOceanModel> m_impl;
 };

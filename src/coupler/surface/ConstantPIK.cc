@@ -110,14 +110,14 @@ const array::Scalar &PIK::runoff_impl() const {
   return *m_runoff;
 }
 
-void PIK::define_model_state_impl(const OutputFile &output) const {
+void PIK::define_state_impl(const OutputFile &output) const {
   m_mass_flux->define(output);
-  SurfaceModel::define_model_state_impl(output);
+  SurfaceModel::define_state_impl(output);
 }
 
-void PIK::write_model_state_impl(const OutputFile &output) const {
+void PIK::write_state_impl(const OutputFile &output) const {
   m_mass_flux->write(output);
-  SurfaceModel::write_model_state_impl(output);
+  SurfaceModel::write_state_impl(output);
 }
 
 } // end of namespace surface

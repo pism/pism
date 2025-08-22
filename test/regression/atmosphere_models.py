@@ -37,8 +37,8 @@ def write_state(model):
 
     try:
         output = PISM.util.prepare_output(o_filename)
-        model.define_model_state(output)
-        model.write_model_state(output)
+        model.define_state(output)
+        model.write_state(output)
         output.close()
 
         ds = model.diagnostics()

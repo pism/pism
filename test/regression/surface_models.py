@@ -33,8 +33,8 @@ def write_state(model, filename):
     "Write the state of the model to a file"
 
     f = PISM.util.prepare_output(filename)
-    model.define_model_state(f)
-    model.write_model_state(f)
+    model.define_state(f)
+    model.write_state(f)
 
     diags = model.diagnostics()
     for k in diags.keys():

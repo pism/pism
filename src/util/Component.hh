@@ -92,8 +92,8 @@ InputOptions process_input_options(MPI_Comm com, std::shared_ptr<const Config> c
 
   A PISM component needs to implement the following I/O methods:
 
-  - define_model_state_impl()
-  - write_model_state_impl()
+  - define_state_impl()
+  - write_state_impl()
 
   Why are all these methods needed? In PISM we separate defining and writing
   NetCDF variables because defining all the NetCDF variables before writing
@@ -138,8 +138,8 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void define_model_state_impl(const OutputFile &output) const;
-  virtual void write_model_state_impl(const OutputFile &output) const;
+  virtual void define_state_impl(const OutputFile &output) const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;

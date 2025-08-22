@@ -136,8 +136,8 @@ protected:
   virtual double depth_impl() const = 0;
   virtual unsigned int Mz_impl() const = 0;
 
-  virtual void define_model_state_impl(const OutputFile &output) const;
-  virtual void write_model_state_impl(const OutputFile &output) const;
+  virtual void define_state_impl(const OutputFile &output) const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
 

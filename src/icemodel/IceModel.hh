@@ -215,8 +215,8 @@ protected:
   virtual void write_variables(const OutputFile &file, OutputKind kind,
                                const std::set<std::string> &variables, double time) const;
 
-  virtual void define_model_state(const OutputFile &file) const;
-  virtual void write_model_state(const OutputFile &file) const;
+  virtual void define_state(const OutputFile &file) const;
+  virtual void write_state(const OutputFile &file) const;
   virtual void define_run_stats(const OutputFile &file) const;
   virtual void write_run_stats(const OutputFile &file) const;
 

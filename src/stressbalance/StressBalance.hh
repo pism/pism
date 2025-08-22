@@ -125,8 +125,8 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-  virtual void define_model_state_impl(const OutputFile &output) const;
-  virtual void write_model_state_impl(const OutputFile &output) const;
+  virtual void define_state_impl(const OutputFile &output) const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual void compute_vertical_velocity(const array::CellType1 &mask,
                                          const array::Array3D &u,

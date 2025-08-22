@@ -70,13 +70,13 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   }
 }
 
-void InitializationHelper::define_model_state_impl(const OutputFile &output) const {
+void InitializationHelper::define_state_impl(const OutputFile &output) const {
   m_sea_level.define(output);
 
   m_input_model->define_state(output);
 }
 
-void InitializationHelper::write_model_state_impl(const OutputFile &output) const {
+void InitializationHelper::write_state_impl(const OutputFile &output) const {
   m_sea_level.write(output);
 
   m_input_model->write_state(output);
