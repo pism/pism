@@ -99,7 +99,7 @@ void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
 }
 
 void RegionalYieldStress::define_model_state_impl(const OutputFile &output) const {
-  m_input->define_model_state(output);
+  m_input->define_state(output);
 
   // define tauc (this is likely to be a no-op because m_input should have defined it by
   // now)
@@ -107,7 +107,7 @@ void RegionalYieldStress::define_model_state_impl(const OutputFile &output) cons
 }
 
 void RegionalYieldStress::write_model_state_impl(const OutputFile &output) const {
-  m_input->write_model_state(output);
+  m_input->write_state(output);
   // Write basal yield stress that includes the modification containing high yield stress
   // in "no model" areas, overwriting the field written by m_input.
   m_basal_yield_stress.write(output);

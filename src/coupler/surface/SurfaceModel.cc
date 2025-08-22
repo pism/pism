@@ -317,21 +317,21 @@ void SurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
 
 void SurfaceModel::define_model_state_impl(const OutputFile &output) const {
   if (m_atmosphere) {
-    m_atmosphere->define_model_state(output);
+    m_atmosphere->define_state(output);
   }
 
   if (m_input_model) {
-    m_input_model->define_model_state(output);
+    m_input_model->define_state(output);
   }
 }
 
 void SurfaceModel::write_model_state_impl(const OutputFile &output) const {
   if (m_atmosphere) {
-    m_atmosphere->write_model_state(output);
+    m_atmosphere->write_state(output);
   }
 
   if (m_input_model) {
-    m_input_model->write_model_state(output);
+    m_input_model->write_state(output);
   }
 }
 

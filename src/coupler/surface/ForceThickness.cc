@@ -303,7 +303,7 @@ void ForceThickness::define_model_state_impl(const OutputFile &output) const {
   m_target_thickness.define(output);
 
   if (m_input_model != NULL) {
-    m_input_model->define_model_state(output);
+    m_input_model->define_state(output);
   }
 }
 
@@ -312,7 +312,7 @@ void ForceThickness::write_model_state_impl(const OutputFile &output) const {
   m_target_thickness.write(output);
 
   if (m_input_model != NULL) {
-    m_input_model->write_model_state(output);
+    m_input_model->write_state(output);
   }
 }
 

@@ -265,7 +265,7 @@ void IceModel::define_model_state(const OutputFile &file) const {
   }
 
   for (const auto& m : m_submodels) {
-    m.second->define_model_state(file);
+    m.second->define_state(file);
   }
 
   for (const auto& d : m_diagnostics) {
@@ -279,7 +279,7 @@ void IceModel::write_model_state(const OutputFile &file) const {
   }
 
   for (const auto& m : m_submodels) {
-    m.second->write_model_state(file);
+    m.second->write_state(file);
   }
 
   for (const auto& d : m_diagnostics) {

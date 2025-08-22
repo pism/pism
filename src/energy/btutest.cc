@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
     io::define_time_dimension(file, time->metadata());
     file.append_time(time->current());
 
-    btu->write_model_state(file);
+    btu->write_state(file);
 
     bedtoptemp.write(file);
     heat_flux_at_ice_base.write(file);

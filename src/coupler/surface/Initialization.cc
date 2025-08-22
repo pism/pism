@@ -173,14 +173,14 @@ void InitializationHelper::define_model_state_impl(const OutputFile &output) con
   for (auto *v : m_variables) {
     v->define(output);
   }
-  m_input_model->define_model_state(output);
+  m_input_model->define_state(output);
 }
 
 void InitializationHelper::write_model_state_impl(const OutputFile &output) const {
   for (auto *v : m_variables) {
     v->write(output);
   }
-  m_input_model->write_model_state(output);
+  m_input_model->write_state(output);
 }
 
 

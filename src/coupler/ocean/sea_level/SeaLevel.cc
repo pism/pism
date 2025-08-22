@@ -85,13 +85,13 @@ MaxTimestep SeaLevel::max_timestep_impl(double t) const {
 
 void SeaLevel::define_model_state_impl(const OutputFile &output) const {
   if (m_input_model) {
-    m_input_model->define_model_state(output);
+    m_input_model->define_state(output);
   }
 }
 
 void SeaLevel::write_model_state_impl(const OutputFile &output) const {
   if (m_input_model) {
-    m_input_model->write_model_state(output);
+    m_input_model->write_state(output);
   }
 }
 

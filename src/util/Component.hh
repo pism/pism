@@ -129,8 +129,8 @@ public:
 
   const Profiling &profiling() const;
 
-  void define_model_state(const OutputFile &output) const;
-  void write_model_state(const OutputFile &output) const;
+  void define_state(const OutputFile &output) const;
+  void write_state(const OutputFile &output) const;
 
   //! Reports the maximum time-step the model can take at time t.
   MaxTimestep max_timestep(double t) const;

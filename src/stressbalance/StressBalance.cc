@@ -661,13 +661,13 @@ const SSB_Modifier* StressBalance::modifier() const {
 
 
 void StressBalance::define_model_state_impl(const OutputFile &output) const {
-  m_shallow_stress_balance->define_model_state(output);
-  m_modifier->define_model_state(output);
+  m_shallow_stress_balance->define_state(output);
+  m_modifier->define_state(output);
 }
 
 void StressBalance::write_model_state_impl(const OutputFile &output) const {
-  m_shallow_stress_balance->write_model_state(output);
-  m_modifier->write_model_state(output);
+  m_shallow_stress_balance->write_state(output);
+  m_modifier->write_state(output);
 }
 
 //! \brief Compute eigenvalues of the horizontal, vertically-integrated strain rate tensor.

@@ -93,7 +93,7 @@ void InitializationHelper::define_model_state_impl(const OutputFile &output) con
   m_shelf_base_mass_flux->define(output);
   m_shelf_base_temperature->define(output);
 
-  m_input_model->define_model_state(output);
+  m_input_model->define_state(output);
 }
 
 void InitializationHelper::write_model_state_impl(const OutputFile &output) const {
@@ -101,7 +101,7 @@ void InitializationHelper::write_model_state_impl(const OutputFile &output) cons
   m_shelf_base_mass_flux->write(output);
   m_shelf_base_temperature->write(output);
 
-  m_input_model->write_model_state(output);
+  m_input_model->write_state(output);
 }
 
 const array::Scalar& InitializationHelper::shelf_base_temperature_impl() const {
