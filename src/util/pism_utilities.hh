@@ -77,6 +77,17 @@ std::string replace_character(const std::string &input, char from, char to);
 // set
 bool member(const std::string &string, const std::set<std::string> &set);
 
+template<typename T, typename S>
+std::set<T> set_union(std::initializer_list<S> sets) {
+  std::set<T> result{};
+  for (const auto &set : sets) {
+    for (const auto &element : set) {
+      result.insert(element);
+    }
+  }
+  return result;
+}
+
 /*! Helper template function for computing set unions.
  * Ensures that elements of a take precedence. For example, if
  *
