@@ -254,6 +254,7 @@ public:
 
   const SpatialVariableMetadata& metadata(unsigned int N = 0) const;
 
+  std::vector<SpatialVariableMetadata> all_metadata() const;
   int state_counter() const;
   void inc_state_counter();
 

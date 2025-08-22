@@ -481,6 +481,10 @@ const SpatialVariableMetadata &Array::metadata(unsigned int N) const {
   return m_impl->metadata[N];
 }
 
+std::vector<SpatialVariableMetadata> Array::all_metadata() const {
+  return m_impl->metadata;
+}
+
 //! Writes an Array to a NetCDF file.
 void Array::write_impl(const OutputFile &file) const {
   auto log  = grid()->ctx()->log();
