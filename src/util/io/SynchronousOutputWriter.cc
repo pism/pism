@@ -189,12 +189,12 @@ void SynchronousOutputWriter::write_text_impl(const std::string &file_name,
 }
 
 void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &file_name,
-                                                          const SpatialVariableMetadata &metadata,
+                                                          const std::string &variable_name,
                                                           const double *data) {
 
   const auto &output_file = file(file_name);
 
-  const auto &variable_name = metadata.get_name();
+  const auto &metadata = spatial_variable_info(variable_name);
   const auto &grid = grid_info(variable_name);
   unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
   

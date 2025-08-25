@@ -260,7 +260,7 @@ public:
    * this `OutputWriter` instance. Uses domain decomposition information provided to
    * `define_spatial_variable()`.
    */
-  void write_spatial_variable(const std::string &file_name, const SpatialVariableMetadata &metadata,
+  void write_spatial_variable(const std::string &file_name, const std::string &variable_name,
                               const double *input);
 
   /*!
@@ -394,7 +394,7 @@ protected:
    * Implementation of write_spatial_variable()
    */
   virtual void write_spatial_variable_impl(const std::string &file_name,
-                                           const SpatialVariableMetadata &metadata,
+                                           const std::string &variable_name,
                                            const double *data) = 0;
 
   /*!
@@ -458,7 +458,7 @@ public:
   void write_array(const VariableMetadata &metadata, const std::vector<unsigned int> &start,
                    const std::vector<unsigned int> &count, const std::vector<double> &input) const;
 
-  void write_spatial_variable(const SpatialVariableMetadata &metadata, const double *input) const;
+  void write_spatial_variable(const std::string &variable_name, const double *input) const;
 
   void write_timeseries_variable(const VariableMetadata &metadata,
                                  const std::vector<unsigned int> &start,

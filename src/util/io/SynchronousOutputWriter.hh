@@ -80,7 +80,7 @@ private:
                        const std::vector<unsigned int> &count, const std::string &input);
 
   void write_spatial_variable_impl(const std::string &file_name,
-                                   const SpatialVariableMetadata &metadata, const double *data);
+                                   const std::string &variable_name, const double *data);
 
   void append_impl(const std::string &file_name);
   void sync_impl(const std::string &file_name);

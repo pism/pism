@@ -315,9 +315,9 @@ void OutputWriter::write_array(const std::string &file_name, const VariableMetad
 }
 
 void OutputWriter::write_spatial_variable(const std::string &file_name,
-                                          const SpatialVariableMetadata &metadata,
+                                          const std::string &variable_name,
                                           const double *input) {
-  const auto &variable_name = metadata.get_name();
+  const auto &metadata = spatial_variable_info(variable_name);
   const auto &grid          = grid_info(variable_name);
 
   // check if we need to write this variable
@@ -377,9 +377,9 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
     units::Converter(metadata.unit_system(), units, output_units)
         .convert_doubles(tmp.data(), tmp.size());
 
-    write_spatial_variable_impl(file_name, metadata, tmp.data());
+    write_spatial_variable_impl(file_name, variable_name, tmp.data());
   } else {
-    write_spatial_variable_impl(file_name, metadata, input);
+    write_spatial_variable_impl(file_name, variable_name, input);
   }
   already_written(file_name, variable_name, time_dependent) = true;
 }

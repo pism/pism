@@ -79,9 +79,9 @@ void OutputFile::write_array(const VariableMetadata &metadata,
   m_writer->write_array(m_file_name, metadata, start, count, input);
 }
 
-void OutputFile::write_spatial_variable(const SpatialVariableMetadata &metadata,
+void OutputFile::write_spatial_variable(const std::string &variable_name,
                                         const double *input) const {
-  m_writer->write_spatial_variable(m_file_name, metadata, input);
+  m_writer->write_spatial_variable(m_file_name, variable_name, input);
 }
 
 void OutputFile::write_timeseries_variable(const VariableMetadata &metadata,

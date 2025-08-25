@@ -501,10 +501,10 @@ void Array::write_impl(const OutputFile &file) const {
 
       petsc::VecArray tmp_array(tmp);
 
-      file.write_spatial_variable(metadata(0), tmp_array.get());
+      file.write_spatial_variable(metadata(0).get_name(), tmp_array.get());
     } else {
       petsc::VecArray v_array(vec());
-      file.write_spatial_variable(metadata(0), v_array.get());
+      file.write_spatial_variable(metadata(0).get_name(), v_array.get());
     }
     return;
   }
@@ -522,7 +522,7 @@ void Array::write_impl(const OutputFile &file) const {
 
     petsc::VecArray tmp_array(tmp);
     log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(j).get_name().c_str());
-    file.write_spatial_variable(metadata(j), tmp_array.get());
+    file.write_spatial_variable(metadata(j).get_name(), tmp_array.get());
   }
 }
 
