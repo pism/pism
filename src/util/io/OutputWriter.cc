@@ -112,6 +112,7 @@ struct OutputWriter::Impl {
   std::map<std::tuple<std::string, std::string>, bool> written_time_independent;
   std::map<std::tuple<std::string, std::string>, bool> written_time_dependent;
   std::map<std::string, grid::DistributedGridInfo> grids;
+  std::map<std::string, SpatialVariableMetadata> variables;
   std::string experiment_id_name;
   std::string experiment_id;
   int experiment_id_length;
@@ -154,6 +155,17 @@ const grid::DistributedGridInfo &OutputWriter::grid_info(const std::string &vari
   return m_impl->grids[variable_name];
 }
 
+const SpatialVariableMetadata&
+OutputWriter::spatial_variable_info(const std::string &variable_name) const {
+  auto i = m_impl->variables.find(variable_name);
+  if (i != m_impl->variables.end()) {
+    return i->second;
+  }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "variable '%s' was not added using add_spatial_variable()",
+                                variable_name.c_str());
+}
+
 void OutputWriter::define_dimension(const std::string &file_name, const std::string &dimension_name,
                                     unsigned int length) {
   define_dimension_impl(file_name, dimension_name, length);
@@ -164,21 +176,29 @@ void OutputWriter::define_variable(const std::string &file_name, const VariableM
   define_variable_impl(file_name, format_attributes(metadata), dims);
 }
 
-void OutputWriter::define_spatial_variable(const std::string &file_name,
-                                           const SpatialVariableMetadata &metadata,
-                                           const grid::DistributedGridInfo &grid) {
+void OutputWriter::add_spatial_variable(const SpatialVariableMetadata &metadata,
+                                        const grid::DistributedGridInfo &grid) {
+  const auto &name = metadata.get_name();
 
-  // Make a copy of `metadata` so we can modify it:
-  auto var               = metadata;
-  const auto &name       = var.get_name();
-  const auto &extra_attributes = m_impl->extra_attributes[file_name];
+  if (m_impl->variables.find(name) == m_impl->variables.end()) {
+    m_impl->variables.insert({ name, metadata });
+  }
 
   if (m_impl->grids.find(name) == m_impl->grids.end()) {
     m_impl->grids[name] = grid;
   }
+}
+
+void OutputWriter::define_spatial_variable(const std::string &file_name,
+                                           const std::string &variable_name) {
+
+  // Make a copy of `metadata` so we can modify it:
+  auto metadata                = spatial_variable_info(variable_name);
+  const auto &name             = metadata.get_name();
+  const auto &extra_attributes = m_impl->extra_attributes[file_name];
 
   if (m_impl->use_internal_units) {
-    var.output_units(var["units"]);
+    metadata.output_units(metadata["units"]);
   }
 
   // add extra attributes such as "grid_mapping" and "coordinates". Variables lat, lon,
@@ -193,7 +213,7 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
       for (const auto &attr : extra_attributes) {
         const auto &attr_name  = attr.first;
         const auto &attr_value = attr.second;
-        var[attr_name]         = attr_value;
+        metadata[attr_name]    = attr_value;
       }
     }
   }
@@ -206,14 +226,14 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
     dims = { m_impl->experiment_id_name };
   }
 
-  if (not var.get_time_independent()) {
+  if (not metadata.get_time_independent()) {
     dims.push_back(m_impl->time_name);
   }
 
   // define dimensions and coordinate variables; assemble the list of dimension names:
   //
   // Note the order: y,x,z
-  for (const auto &dimension : { var.y(), var.x(), var.z() }) {
+  for (const auto &dimension : { metadata.y(), metadata.x(), metadata.z() }) {
 
     auto dimension_name = dimension.get_name();
 
@@ -230,7 +250,7 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
   assert(dims.size() > 1);
 
   // define the variable itself:
-  define_variable(file_name, var, dims);
+  define_variable(file_name, metadata, dims);
 }
 
 void OutputWriter::define_timeseries_variable(const std::string &file_name,

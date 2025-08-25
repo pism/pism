@@ -16,9 +16,10 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <string>
 
 #include "pism/util/io/OutputWriter.hh"
-#include <string>
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 
@@ -42,7 +43,8 @@ void OutputFile::define_variable(const VariableMetadata &metadata,
 
 void OutputFile::define_spatial_variable(const SpatialVariableMetadata &metadata,
                                          const grid::DistributedGridInfo &grid) const {
-  m_writer->define_spatial_variable(m_file_name, metadata, grid);
+  m_writer->add_spatial_variable(metadata, grid);
+  m_writer->define_spatial_variable(m_file_name, metadata.get_name());
 }
 
 void OutputFile::define_timeseries_variable(const VariableMetadata &metadata) const {

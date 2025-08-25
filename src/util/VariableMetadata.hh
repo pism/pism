@@ -237,7 +237,7 @@ private:
 
 // Comparison operator for VariableMetadata (we need it to store VariableMetadata in
 // sorted containers)
-bool operator<(const VariableMetadata &a, const VariableMetadata &b) {
+inline bool operator<(const VariableMetadata &a, const VariableMetadata &b) {
   return a.get_name() < b.get_name();
 }
 

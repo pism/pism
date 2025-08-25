@@ -147,6 +147,17 @@ public:
                        const std::vector<std::string> &dims);
 
   /*!
+   * Add a spatial variable to the list of variables that can be written to output files.
+   *
+   * This has to be done before a spatial variable is *defined* in an output file.
+   *
+   * @param[in] metadata variable metadata (name, attributes, etc)
+   * @param[in] grid domain decomposition information
+   */
+  void add_spatial_variable(const SpatialVariableMetadata &metadata,
+                            const grid::DistributedGridInfo &grid);
+
+  /*!
    * Define a 2D or 3D (possibly time-dependent) variable and set its attributes.
    *
    * No-op if the variable already exists.
@@ -154,12 +165,10 @@ public:
    * Stores domain decomposition `grid` and makes it accessible using grid_info().
    *
    * @param[in] file_name name of the output file
-   * @param[in] metadata variable metadata (name, attributes, etc)
-   * @param[in] grid domain decomposition information
+   * @param[in] variable_name variable name
    */
   void define_spatial_variable(const std::string &file_name,
-                               const SpatialVariableMetadata &metadata,
-                               const grid::DistributedGridInfo &grid);
+                               const std::string &variable_name);
 
   /*!
    * Define a scalar time-dependent variable and set its attributes.
@@ -307,6 +316,11 @@ protected:
    * Return the domain decomposition information for the variable `variable_name`.
    */
   const grid::DistributedGridInfo &grid_info(const std::string &variable_name) const;
+
+  /*!
+   * Return the metadata for the spatial variable `variable_name`.
+   */
+  const SpatialVariableMetadata &spatial_variable_info(const std::string &variable_name) const;
 
   /*!
    * Return `true` if variable `variable_name` was already written to the file
