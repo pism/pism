@@ -208,6 +208,9 @@ public:
    * The array `input` is stored *redundantly* on all MPI ranks.
    *
    * FIXME: writing to the time variable will change the length of the time dimension.
+   *
+   * This version is used in Python scripts that create input files for testing. It should
+   * not be used in PISM itself.
    */
   void write_array(const std::string &file_name, const std::string &variable_name,
                    const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
