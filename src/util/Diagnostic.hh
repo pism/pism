@@ -316,7 +316,6 @@ protected:
 
   VariableMetadata m_variable;
   VariableMetadata m_time_dimension;
-  VariableMetadata m_time_bounds;
 
   // buffer for diagnostic time series
   std::vector<double> m_time;

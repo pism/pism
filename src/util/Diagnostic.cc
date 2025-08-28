@@ -144,8 +144,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
     m_config(grid->ctx()->config()),
     m_sys(grid->ctx()->unit_system()),
     m_variable(name, m_sys),
-    m_time_dimension(grid->ctx()->time()->variable_name(), m_sys),
-    m_time_bounds(m_time_dimension.get_name() + "_bounds", m_sys) {
+    m_time_dimension(grid->ctx()->time()->variable_name(), m_sys) {
 
   m_current_time = 0;
   m_start        = 0;
@@ -351,7 +350,8 @@ void TSDiagnostic::flush() {
     // write requested times
     file.write_array(m_time_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);
     // write time bounds
-    file.write_array(m_time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
+    auto bounds = m_time_dimension.get_name() + "_bounds";
+    file.write_array({ bounds, m_sys }, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
                      m_bounds);
   }
 
