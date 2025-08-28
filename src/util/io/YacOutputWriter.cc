@@ -215,7 +215,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
       current_snapshot_file = file_name;
   }
 
-  if(file_name.find("snapshot") != std::string::npos and !yac_init_finished)
+  if (file_name.find("snapshot") != std::string::npos and !yac_init_finished) {
     if(dims.size() > 1)
       define_yac_field(metadata, dims);
     else {
@@ -233,6 +233,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
           variable_tags[metadata.get_name()] = variable_tags.size();
       }
     }
+  }
 
   const auto &variable_name = metadata.get_name();
 
@@ -385,11 +386,12 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
         send_type = MPI_INT;
 
     if (sent_fields_count == field_reqs.size()) {
-        MPI_Status statuses[field_reqs.size()];
+        MPI_Status* statuses = new MPI_Status[field_reqs.size()];
         int wait_return = MPI_Waitall(field_reqs.size(), field_reqs.data(), statuses);
         if(wait_return != MPI_SUCCESS)
             std::cout << "SOMETHING WENT WRONG" << std::endl;
         sent_fields_count = 0;
+	delete[] statuses;
     }
 
     MPI_Isend((void *) (data + start[0]), count[0], send_type, 0, variable_tags[variable_name], intercomm, &send_req_handle);
