@@ -99,7 +99,7 @@ void define_time_dimension(const OutputFile &output_file, const VariableMetadata
   // shortcut
   const auto &time_name = time.get_name();
 
-  VariableMetadata time_bounds("time_bounds", time.unit_system());
+  VariableMetadata time_bounds(time_name + "_bounds", time.unit_system());
 
   time_bounds.units(time["units"]);
   if (with_bounds) {
