@@ -112,6 +112,8 @@ private:
   using ConstAttribute::ConstAttribute;
 };
 
+class DimensionMetadata;
+
 class VariableMetadata {
 public:
   VariableMetadata(const std::string &name, std::shared_ptr<units::System> system,
@@ -172,6 +174,8 @@ public:
 
   unsigned int n_spatial_dimensions() const;
 
+  std::vector<DimensionMetadata> dimensions() const;
+
   bool has_attribute(const std::string &name) const;
   bool has_attributes() const;
 
@@ -184,6 +188,8 @@ public:
 
 protected:
   unsigned int m_n_spatial_dims;
+
+  virtual std::vector<DimensionMetadata> dimensions_impl() const;
 
 private:
   //! @brief The unit system to use.
@@ -206,6 +212,8 @@ public:
                     unsigned int length);
   unsigned int length() const;
 private:
+  std::vector<DimensionMetadata> dimensions_impl() const;
+
   unsigned int m_length;
 };
 
@@ -231,6 +239,7 @@ public:
   const DimensionMetadata& z() const;
 
 private:
+  std::vector<DimensionMetadata> dimensions_impl() const;
   DimensionMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
 };

@@ -55,6 +55,14 @@ unsigned int VariableMetadata::n_spatial_dimensions() const {
   return m_n_spatial_dims;
 }
 
+std::vector<DimensionMetadata> VariableMetadata::dimensions() const {
+  return dimensions_impl();
+}
+
+std::vector<DimensionMetadata> VariableMetadata::dimensions_impl() const {
+  return {};
+}
+
 /** A "time independent" variable will be saved to a NetCDF
     variable which does not depend on the "time" dimension.
  */
@@ -132,6 +140,10 @@ unsigned int DimensionMetadata::length() const {
   return m_length;
 }
 
+std::vector<DimensionMetadata> DimensionMetadata::dimensions_impl() const {
+  return { *this };
+}
+
 SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,
                                                  const std::string &name, unsigned int Mx,
                                                  double dx, unsigned int My, double dy,
@@ -193,6 +205,19 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
 
 const std::vector<double> &SpatialVariableMetadata::levels() const {
   return m_zlevels;
+}
+
+std::vector<DimensionMetadata> SpatialVariableMetadata::dimensions_impl() const {
+  std::vector<DimensionMetadata> dims;
+  for (const auto &dimension : { y(), x(), z() }) { // note the order
+    if (dimension.get_name().empty()) {
+      // z().dimension_name() is empty if var is a 2D variable
+      continue;
+    }
+
+    dims.push_back(dimension);
+  }
+  return dims;
 }
 
 //! Report the range of a \b global Vec `v`.

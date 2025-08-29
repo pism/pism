@@ -231,16 +231,9 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
   }
 
   // define dimensions and coordinate variables; assemble the list of dimension names:
-  //
-  // Note the order: y,x,z
-  for (const auto &dimension : { metadata.y(), metadata.x(), metadata.z() }) {
+  for (const auto &dimension : metadata.dimensions()) {
 
     auto dimension_name = dimension.get_name();
-
-    if (dimension_name.empty()) {
-      // var.z().dimension_name() is empty if var is a 2D variable
-      continue;
-    }
 
     dims.push_back(dimension_name);
     define_dimension(file_name, dimension_name, dimension.length());
