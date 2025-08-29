@@ -212,10 +212,7 @@ void NetCDFConfig::define_impl(const OutputFile &file) const {
     dims.insert(dims.cbegin(), exp_id_name);
   }
 
-  auto config = m_data;
-  config.set_output_type(io::PISM_CHAR);
-
-  file.define_variable(config, dims);
+  file.define_variable(m_data.get_name(), dims, io::PISM_CHAR, m_data.attributes());
 }
 
 //! Write a config variable to a file (with all its attributes).

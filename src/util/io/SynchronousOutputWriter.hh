@@ -51,8 +51,9 @@ private:
   void define_dimension_impl(const std::string &file_name, const std::string &name,
                              unsigned int length);
 
-  void define_variable_impl(const std::string &file_name, const VariableMetadata &metadata,
-                            const std::vector<std::string> &dims);
+  void define_variable_impl(const std::string &file_name, const std::string &variable_name,
+                            const std::vector<std::string> &dims, io::Type type,
+                            const VariableAttributes &attributes);
 
   void set_global_attributes_impl(const std::string &file_name,
                                   const std::map<std::string, std::string> &strings,

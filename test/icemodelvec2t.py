@@ -67,7 +67,8 @@ class ForcingInput(unittest.TestCase):
 
             if use_bounds:
                 output.define_dimension("nv", 2)
-                output.define_variable(bounds, ["time", "nv"])
+                output.define_variable(bounds.get_name(), ["time", "nv"], PISM.PISM_DOUBLE,
+                                       bounds.attributes())
 
             if forward:
                 order = range(N)

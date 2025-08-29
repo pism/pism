@@ -38,47 +38,57 @@ namespace pism {
 /*!
  * Pre-process variable attributes for writing.
  */
-static VariableMetadata format_attributes(const VariableMetadata &metadata) {
+static VariableAttributes format_attributes(const VariableAttributes &metadata) {
 
   // make a copy so we can edit metadata
   auto variable = metadata;
 
-  std::string units = variable["units"], output_units = variable["output_units"];
+  auto get = [&variable](const std::string &name) {
+    auto j = variable.strings.find(name);
+    if (j != variable.strings.end()) {
+      return j->second;
+    }
+
+    return std::string{};
+  };
+
+  std::string units        = get("units");
+  std::string output_units = get("output_units");
 
   // output units should never be written to a file
-  variable["output_units"] = "";
+  variable.strings["output_units"] = "";
 
   bool use_output_units =
       (not units.empty() and not output_units.empty() and units != output_units);
 
   if (use_output_units) {
     // Replace "units" with "output_units"
-    if (variable.has_attribute("units")) {
-      variable["units"] = output_units;
+    if (variable.is_set("units")) {
+      variable.strings["units"] = output_units;
     }
 
-    units::Converter c(variable.unit_system(), units, output_units);
+    units::Converter c(variable.unit_system, units, output_units);
 
     // We need to convert units of valid_min, valid_max and valid_range:
     {
-      if (variable.has_attribute("valid_range")) {
-        auto bounds = variable.get_numbers("valid_range");
+      if (variable.is_set("valid_range")) {
+        auto bounds = variable.numbers["valid_range"];
 
-        variable["valid_range"] = { c(bounds[0]), c(bounds[1]) };
+        variable.numbers["valid_range"] = { c(bounds[0]), c(bounds[1]) };
       } else {
-        if (variable.has_attribute("valid_min")) {
-          auto min              = variable.get_number("valid_min");
-          variable["valid_min"] = { c(min) };
+        if (variable.is_set("valid_min")) {
+          auto min                      = variable.numbers["valid_min"][0];
+          variable.numbers["valid_min"] = { c(min) };
         }
-        if (variable.has_attribute("valid_max")) {
-          auto max              = variable.get_number("valid_max");
-          variable["valid_max"] = { c(max) };
+        if (variable.is_set("valid_max")) {
+          auto max                      = variable.numbers["valid_max"][0];
+          variable.numbers["valid_max"] = { c(max) };
         }
       }
 
-      if (variable.has_attribute("_FillValue")) {
-        auto fill              = variable.get_number("_FillValue");
-        variable["_FillValue"] = { c(fill) };
+      if (variable.is_set("_FillValue")) {
+        auto fill                      = variable.numbers["_FillValue"][0];
+        variable.numbers["_FillValue"] = { c(fill) };
       }
     }
   }
@@ -171,9 +181,10 @@ void OutputWriter::define_dimension(const std::string &file_name, const std::str
   define_dimension_impl(file_name, dimension_name, length);
 }
 
-void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &metadata,
-                                   const std::vector<std::string> &dims) {
-  define_variable_impl(file_name, format_attributes(metadata), dims);
+void OutputWriter::define_variable(const std::string &file_name, const std::string &variable_name,
+                                   const std::vector<std::string> &dims, io::Type type,
+                                   const VariableAttributes &attributes) {
+  define_variable_impl(file_name, variable_name, dims, type, format_attributes(attributes));
 }
 
 void OutputWriter::add_spatial_variable(const SpatialVariableMetadata &metadata,
@@ -237,13 +248,15 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
 
     dims.push_back(dimension_name);
     define_dimension(file_name, dimension_name, dimension.length());
-    define_variable(file_name, dimension, { dimension_name });
+    define_variable(file_name, dimension.get_name(), { dimension_name },
+                    dimension.get_output_type(), dimension.attributes());
   }
 
   assert(dims.size() > 1);
 
   // define the variable itself:
-  define_variable(file_name, metadata, dims);
+  define_variable(file_name, metadata.get_name(), dims, metadata.get_output_type(),
+                  metadata.attributes());
 }
 
 void OutputWriter::define_timeseries_variable(const std::string &file_name,
@@ -259,7 +272,8 @@ void OutputWriter::define_timeseries_variable(const std::string &file_name,
 
   dims.push_back(m_impl->time_name);
 
-  define_variable(file_name, metadata, dims);
+  define_variable(file_name, metadata.get_name(), dims, metadata.get_output_type(),
+                  metadata.attributes());
 }
 
 
@@ -422,11 +436,13 @@ void OutputWriter::define_experiment_id(const std::string &file_name,
   // NOTE: this long name is significant: we use it to recognize the experiment ID
   // dimension in File::dimension_type(). This is needed to compute start and count arrays
   // correctly when re-starting from a file containing this dimension.
-  exp_id.set_output_type(io::PISM_CHAR).long_name("experiment ID");
+  exp_id.long_name("experiment ID");
 
   define_dimension(file_name, dim_name, 1);
   define_dimension(file_name, "nc", m_impl->experiment_id_length);
-  define_variable(file_name, exp_id, { dim_name, "nc" });
+
+  define_variable(file_name, exp_id.get_name(), { dim_name, "nc" }, io::PISM_CHAR,
+                  exp_id.attributes());
 }
 
 void OutputWriter::write_experiment_id(const std::string &file_name) {

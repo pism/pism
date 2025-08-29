@@ -32,6 +32,7 @@ namespace pism {
 class Config;
 class SpatialVariableMetadata;
 class VariableMetadata;
+class VariableAttributes;
 
 namespace grid {
 class DistributedGridInfo;
@@ -136,15 +137,15 @@ public:
   /*!
    * Define a variable given a list of dimension names and set its attributes.
    *
-   * Use this method to define coordinate variables (`x`, `y`, `time`, etc). For scalar
-   * time-dependent model outputs, use `define_timeseries_variable()`.
+   * Use this method to define coordinate variables (`x`, `y`, `time`, etc).
    *
    * No-op if the variable already exists.
    *
    * The name of the variable is obtained using `metadata.get_name()` and its type using `metadata.get_output_type()`.
    */
-  void define_variable(const std::string &file_name, const VariableMetadata &metadata,
-                       const std::vector<std::string> &dims);
+  void define_variable(const std::string &file_name, const std::string &variable_name,
+                       const std::vector<std::string> &dims,
+                       io::Type type, const VariableAttributes &attributes);
 
   /*!
    * Add a spatial variable to the list of variables that can be written to output files.
@@ -352,8 +353,9 @@ protected:
   /*!
    * Implementation of define_variable()
    */
-  virtual void define_variable_impl(const std::string &file_name, const VariableMetadata &metadata,
-                                    const std::vector<std::string> &dims) = 0;
+  virtual void define_variable_impl(const std::string &file_name, const std::string &variable_name,
+                                    const std::vector<std::string> &dims, io::Type type,
+                                    const VariableAttributes &attributes) = 0;
 
   /*!
    * Implementation of append_time()
@@ -438,7 +440,9 @@ public:
 
   void define_dimension(const std::string &dimension_name, unsigned int length) const;
 
-  void define_variable(const VariableMetadata &metadata, const std::vector<std::string> &dims) const;
+  void define_variable(const std::string &variable_name,
+                       const std::vector<std::string> &dims, io::Type type,
+                       const VariableAttributes &attributes) const;
 
   void define_spatial_variable(const SpatialVariableMetadata &metadata,
                                const grid::DistributedGridInfo &grid) const;

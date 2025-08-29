@@ -36,9 +36,10 @@ void OutputFile::define_dimension(const std::string &dimension_name, unsigned in
   m_writer->define_dimension(m_file_name, dimension_name, length);
 }
 
-void OutputFile::define_variable(const VariableMetadata &metadata,
-                                 const std::vector<std::string> &dims) const {
-  m_writer->define_variable(m_file_name, metadata, dims);
+void OutputFile::define_variable(const std::string &variable_name,
+                                 const std::vector<std::string> &dims, io::Type type,
+                                 const VariableAttributes &attributes) const {
+  m_writer->define_variable(m_file_name, variable_name, dims, type, attributes);
 }
 
 void OutputFile::define_spatial_variable(const SpatialVariableMetadata &metadata,

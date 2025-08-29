@@ -19,6 +19,7 @@
 #include <gsl/gsl_interp.h>     // gsl_interp_bsearch()
 
 #include <algorithm>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -69,29 +70,70 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
   return MaxTimestep(dt, description);
 }
 
-//! Define metadata variables and attributes in an output file
-void IceModel::define_metadata(const OutputFile &file, MappingTreatment mapping_flag) const {
+std::set<VariableMetadata> IceModel::metadata(MappingTreatment mapping_flag) const {
+  std::set<VariableMetadata> result{};
 
+  // mapping
   if (mapping_flag == WRITE_MAPPING) {
     auto info = m_grid->get_mapping_info();
 
     auto mapping = info.cf_mapping;
+    mapping.set_output_type(io::PISM_INT);
+
     if (not info.proj_string.empty()) {
       // Write the PROJ string to mapping:proj_params (for CDO).
       mapping["proj_params"] = info.proj_string;
     }
 
     if (mapping.has_attributes()) {
-      file.define_variable(mapping, {});
+      result.insert(mapping);
     }
   }
 
-  m_config->define(file);
-
+  // config
   {
-    file.append_history(m_output_history);
-    file.set_global_attributes(m_output_global_attributes.all_strings(),
-                               m_output_global_attributes.all_doubles());
+    VariableMetadata config("pism_config", m_sys);
+    config.set_output_type(io::PISM_CHAR);
+    for (const auto &p : m_config->all_doubles()) {
+      config[p.first] = p.second;
+    }
+    for (const auto &p : m_config->all_strings()) {
+      config[p.first] = p.second;
+    }
+    for (const auto &p : m_config->all_flags()) {
+      config[p.first] = p.second ? "true" : "false";
+    }
+    result.insert(config);
+  }
+
+  // global attributes
+  {
+    auto global = m_output_global_attributes;
+    global["history"] = m_output_history;
+    result.insert(global);
+  }
+
+  return result;
+}
+
+//! Define metadata variables and attributes in an output file
+void IceModel::define_metadata(const OutputFile &file, MappingTreatment mapping_flag) const {
+
+  for (const auto &v : metadata(mapping_flag)) {
+    if (v.get_name() == "PISM_GLOBAL") {
+      file.append_history(v["history"]);
+
+      // clear the history attribute
+      auto tmp = v;
+      tmp["history"] = "";
+      file.set_global_attributes(tmp.all_strings(), tmp.all_doubles());
+    } else {
+      std::vector<std::string> dims{};
+      for (const auto &d : v.dimensions()) {
+        dims.emplace_back(d.get_name());
+      }
+      file.define_variable(v.get_name(), dims, v.get_output_type(), v.attributes());
+    }
   }
 }
 
@@ -133,26 +175,30 @@ void IceModel::save_results() {
   profiling.end("io.model_state");
 }
 
-void IceModel::define_run_stats(const OutputFile &file) const {
+static std::set<VariableMetadata> run_stats(std::shared_ptr<units::System> sys) {
 
-  VariableMetadata wall_clock("wall_clock_time", m_sys);
+  VariableMetadata wall_clock("wall_clock_time", sys);
   wall_clock.long_name("wall-clock time since the beginning of the run")
       .units("hours")
       .set_output_type(io::PISM_FLOAT);
 
-  VariableMetadata myph("model_years_per_processor_hour", m_sys);
+  VariableMetadata myph("model_years_per_processor_hour", sys);
   myph.long_name("average number of model years per processor hour, since the beginning of the run")
       .units("years / hour")
       .set_output_type(io::PISM_FLOAT);
 
-  VariableMetadata step_counter("step_counter", m_sys);
+  VariableMetadata step_counter("step_counter", sys);
   step_counter.long_name("number of time steps since the beginning of the run")
       .units("")
       .set_output_type(io::PISM_INT);
 
-  file.define_timeseries_variable(wall_clock);
-  file.define_timeseries_variable(myph);
-  file.define_timeseries_variable(step_counter);
+  return { wall_clock, myph, step_counter };
+}
+
+void IceModel::define_run_stats(const OutputFile &file) const {
+  for (const auto &v : run_stats(m_sys)) {
+    file.define_timeseries_variable(v);
+  }
 }
 
 void IceModel::write_run_stats(const OutputFile &file) const {

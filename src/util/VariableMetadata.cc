@@ -35,11 +35,11 @@ namespace pism {
 VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr system,
                                    unsigned int ndims)
     : m_n_spatial_dims(ndims),
-      m_unit_system(std::move(system)),
       m_short_name(name),
       m_time_independent(false),
       m_output_type(io::PISM_DOUBLE) {
 
+  m_attributes.unit_system = std::move(system);
   clear();
 
   // long_name is unset
@@ -87,7 +87,7 @@ io::Type VariableMetadata::get_output_type() const {
 }
 
 units::System::Ptr VariableMetadata::unit_system() const {
-  return m_unit_system;
+  return m_attributes.unit_system;
 }
 
 //! @brief Check if the range `[min, max]` is a subset of `[valid_min, valid_max]`.
@@ -142,6 +142,14 @@ unsigned int DimensionMetadata::length() const {
 
 std::vector<DimensionMetadata> DimensionMetadata::dimensions_impl() const {
   return { *this };
+}
+
+std::vector<DimensionMetadata> TimeseriesMetadata::dimensions_impl() const {
+  return { { "time", unit_system(), io::PISM_UNLIMITED } };
+}
+
+std::vector<DimensionMetadata> TimeBoundsMetadata::dimensions_impl() const {
+  return { { "time", unit_system(), io::PISM_UNLIMITED }, { "nv", unit_system(), 2 } };
 }
 
 SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,
@@ -224,7 +232,7 @@ std::vector<DimensionMetadata> SpatialVariableMetadata::dimensions_impl() const 
 void VariableMetadata::report_range(const Logger &log, double min, double max) const {
 
   // units::Converter constructor will make sure that units are compatible.
-  units::Converter c(m_unit_system, get_string("units"), get_string("output_units"));
+  units::Converter c(unit_system(), get_string("units"), get_string("output_units"));
   min = c(min);
   max = c(max);
 
@@ -270,12 +278,9 @@ const DimensionMetadata &SpatialVariableMetadata::z() const {
   return m_z;
 }
 
-//! Checks if an attribute is present. Ignores empty strings, except
-//! for the "units" attribute.
-bool VariableMetadata::has_attribute(const std::string &name) const {
-
-  auto j = m_strings.find(name);
-  if (j != m_strings.end()) {
+bool VariableAttributes::is_set(const std::string &name) const {
+  auto j = strings.find(name);
+  if (j != strings.end()) {
     if (name != "units" and (j->second).empty()) {
       return false;
     }
@@ -283,7 +288,14 @@ bool VariableMetadata::has_attribute(const std::string &name) const {
     return true;
   }
 
-  return (m_doubles.find(name) != m_doubles.end());
+  return (numbers.find(name) != numbers.end());
+}
+
+
+//! Checks if an attribute is present. Ignores empty strings, except
+//! for the "units" attribute.
+bool VariableMetadata::has_attribute(const std::string &name) const {
+  return m_attributes.is_set(name);
 }
 
 bool VariableMetadata::has_attributes() const {
@@ -303,14 +315,14 @@ VariableMetadata &VariableMetadata::set_number(const std::string &name, double v
 
 //! Set a scalar attribute to a single (scalar) value.
 VariableMetadata &VariableMetadata::set_numbers(const std::string &name, const std::vector<double> &values) {
-  m_doubles[name] = values;
+  m_attributes.numbers[name] = values;
 
   return *this;
 }
 
 VariableMetadata &VariableMetadata::clear() {
-  m_doubles.clear();
-  m_strings.clear();
+  m_attributes.numbers.clear();
+  m_attributes.strings.clear();
 
   return *this;
 }
@@ -321,8 +333,8 @@ std::string VariableMetadata::get_name() const {
 
 //! Get a single-valued scalar attribute.
 double VariableMetadata::get_number(const std::string &name) const {
-  auto j = m_doubles.find(name);
-  if (j != m_doubles.end()) {
+  auto j = m_attributes.numbers.find(name);
+  if (j != m_attributes.numbers.end()) {
     return (j->second)[0];
   }
 
@@ -333,8 +345,8 @@ double VariableMetadata::get_number(const std::string &name) const {
 
 //! Get an array-of-doubles attribute.
 std::vector<double> VariableMetadata::get_numbers(const std::string &name) const {
-  auto j = m_doubles.find(name);
-  if (j != m_doubles.end()) {
+  auto j = m_attributes.numbers.find(name);
+  if (j != m_attributes.numbers.end()) {
     return j->second;
   }
 
@@ -342,11 +354,15 @@ std::vector<double> VariableMetadata::get_numbers(const std::string &name) const
 }
 
 const std::map<std::string, std::string> &VariableMetadata::all_strings() const {
-  return m_strings;
+  return m_attributes.strings;
 }
 
 const std::map<std::string, std::vector<double> > &VariableMetadata::all_doubles() const {
-  return m_doubles;
+  return m_attributes.numbers;
+}
+
+const VariableAttributes &VariableMetadata::attributes() const {
+  return m_attributes;
 }
 
 /*!
@@ -355,8 +371,8 @@ const std::map<std::string, std::vector<double> > &VariableMetadata::all_doubles
  * For example: "Pa s^(1/3)" (ice hardness units with Glen exponent n=3).
  */
 VariableMetadata &VariableMetadata::set_units_without_validation(const std::string &value) {
-  m_strings["units"]        = value;
-  m_strings["output_units"] = value;
+  m_attributes.strings["units"]        = value;
+  m_attributes.strings["output_units"] = value;
 
   return *this;
 }
@@ -366,16 +382,16 @@ VariableMetadata &VariableMetadata::set_string(const std::string &name, const st
 
   if (name == "units") {
     // create a dummy object to validate the units string
-    units::Unit tmp(m_unit_system, value);
+    units::Unit tmp(unit_system(), value);
 
-    m_strings[name]           = value;
-    m_strings["output_units"] = value;
+    m_attributes.strings[name]           = value;
+    m_attributes.strings["output_units"] = value;
   } else if (name == "output_units") {
-    m_strings[name] = value;
+    m_attributes.strings[name] = value;
 
     if (not value.empty()) {
-      units::Unit internal(m_unit_system, get_string("units"));
-      units::Unit output(m_unit_system, value);
+      units::Unit internal(unit_system(), get_string("units"));
+      units::Unit output(unit_system(), value);
 
       if (not units::are_convertible(internal, output)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -386,7 +402,7 @@ VariableMetadata &VariableMetadata::set_string(const std::string &name, const st
   } else if (name == "short_name") {
     set_name(name);
   } else {
-    m_strings[name] = value;
+    m_attributes.strings[name] = value;
   }
 
   return *this;
@@ -401,8 +417,8 @@ std::string VariableMetadata::get_string(const std::string &name) const {
      return get_name();
   }
 
-  auto j = m_strings.find(name);
-  if (j != m_strings.end()) {
+  auto j = m_attributes.strings.find(name);
+  if (j != m_attributes.strings.end()) {
     return j->second;
   }
 

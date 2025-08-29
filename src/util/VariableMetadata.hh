@@ -114,6 +114,20 @@ private:
 
 class DimensionMetadata;
 
+class VariableAttributes {
+public:
+  //! string and boolean attributes
+  std::map<std::string, std::string> strings;
+
+  //! scalar and array attributes
+  std::map<std::string, std::vector<double> > numbers;
+
+  //! @brief The unit system to use.
+  std::shared_ptr<units::System> unit_system;
+
+  bool is_set(const std::string &name) const;
+};
+
 class VariableMetadata {
 public:
   VariableMetadata(const std::string &name, std::shared_ptr<units::System> system,
@@ -181,6 +195,7 @@ public:
 
   const std::map<std::string, std::string> &all_strings() const;
   const std::map<std::string, std::vector<double> > &all_doubles() const;
+  const VariableAttributes &attributes() const;
 
   void report_to_stdout(const Logger &log, int verbosity_threshold) const;
   void check_range(const std::string &filename, double min, double max) const;
@@ -192,14 +207,8 @@ protected:
   virtual std::vector<DimensionMetadata> dimensions_impl() const;
 
 private:
-  //! @brief The unit system to use.
-  std::shared_ptr<units::System> m_unit_system;
+  VariableAttributes m_attributes;
 
-  //! string and boolean attributes
-  std::map<std::string, std::string> m_strings;
-
-  //! scalar and array attributes
-  std::map<std::string, std::vector<double> > m_doubles;
   std::string m_short_name;
   bool m_time_independent;
 
@@ -215,6 +224,16 @@ private:
   std::vector<DimensionMetadata> dimensions_impl() const;
 
   unsigned int m_length;
+};
+
+class TimeseriesMetadata : public VariableMetadata {
+private:
+  std::vector<DimensionMetadata> dimensions_impl() const;
+};
+
+class TimeBoundsMetadata : public VariableMetadata {
+private:
+  std::vector<DimensionMetadata> dimensions_impl() const;
 };
 
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).

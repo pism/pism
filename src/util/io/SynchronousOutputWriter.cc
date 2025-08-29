@@ -46,21 +46,19 @@ SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &co
 }
 
 void SynchronousOutputWriter::define_variable_impl(const std::string &file_name,
-                                                   const VariableMetadata &metadata,
-                                                   const std::vector<std::string> &dims) {
+                                                   const std::string &variable_name,
+                                                   const std::vector<std::string> &dims,
+                                                   io::Type type,
+                                                   const VariableAttributes &attributes) {
   const auto &output_file = file(file_name);
 
-  if (output_file.variable_exists(metadata.get_name())) {
+  if (output_file.variable_exists(variable_name)) {
     return;
   }
 
-  const auto &variable_name = metadata.get_name();
-
-  auto type = metadata.get_output_type();
-
   output_file.define_variable(variable_name, type, dims);
 
-  write_attributes(file_name, variable_name, metadata.all_strings(), metadata.all_doubles(), type);
+  write_attributes(file_name, variable_name, attributes.strings, attributes.numbers, type);
 }
 
 void SynchronousOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {

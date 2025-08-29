@@ -412,16 +412,19 @@ class OneStation(TestCase):
 
         output.define_dimension("nv", 2)
 
-        time_bounds = PISM.VariableMetadata("time_bounds", unit_system)
-        output.define_variable(time_bounds, [time.get_name(), "nv"])
+        bounds = PISM.VariableMetadata("time_bounds", unit_system)
+        output.define_variable(bounds.get_name(), [time.get_name(), "nv"], PISM.PISM_DOUBLE,
+                               bounds.attributes())
 
         precip = PISM.VariableMetadata("precipitation", unit_system)
         precip.units("kg m^-2 s^-1")
-        output.define_variable(precip, [time.get_name()])
+        output.define_variable(precip.get_name(), [time.get_name()], PISM.PISM_DOUBLE,
+                               precip.attributes())
 
         air_temp = PISM.VariableMetadata("air_temp", unit_system)
         air_temp.units("kelvin")
-        output.define_variable(air_temp, [time.get_name()])
+        output.define_variable(air_temp.get_name(), [time.get_name()], PISM.PISM_DOUBLE,
+                               air_temp.attributes())
 
         output.write_array("precipitation", [0], [1], [self.P])
         output.write_array("air_temp", [0], [1], [self.T])

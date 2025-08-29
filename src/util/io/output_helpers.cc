@@ -95,7 +95,7 @@ void define_time_dimension(const OutputFile &output_file, const VariableMetadata
                            bool with_bounds, int length) {
 
   // make a copy of "metadata" so we can modify it
-  auto time             = metadata;
+  auto time = metadata;
   // shortcut
   const auto &time_name = time.get_name();
 
@@ -107,11 +107,13 @@ void define_time_dimension(const OutputFile &output_file, const VariableMetadata
   }
 
   output_file.define_dimension(time_name, length);
-  output_file.define_variable(time, { time_name });
+  output_file.define_variable(time_name, { time_name }, time.get_output_type(),
+                              time.attributes());
 
   if (with_bounds) {
     output_file.define_dimension("nv", 2);
-    output_file.define_variable(time_bounds, { time_name, "nv" });
+    output_file.define_variable(time_bounds.get_name(), { time_name, "nv" },
+                                time_bounds.get_output_type(), time_bounds.attributes());
   }
 }
 

@@ -221,6 +221,7 @@ protected:
   virtual void write_run_stats(const OutputFile &file) const;
 
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
+  virtual std::set<VariableMetadata> metadata(MappingTreatment mapping_flag) const;
   virtual void define_metadata(const OutputFile &file, MappingTreatment mapping_flag) const;
   virtual void write_metadata(const OutputFile &file) const;
 
