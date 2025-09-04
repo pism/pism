@@ -91,20 +91,7 @@ std::set<VariableMetadata> IceModel::metadata(MappingTreatment mapping_flag) con
   }
 
   // config
-  {
-    OtherMetadata config("pism_config", { { "cfg", Config::max_length } }, m_sys);
-    config.set_output_type(io::PISM_CHAR);
-    for (const auto &p : m_config->all_doubles()) {
-      config[p.first] = p.second;
-    }
-    for (const auto &p : m_config->all_strings()) {
-      config[p.first] = p.second;
-    }
-    for (const auto &p : m_config->all_flags()) {
-      config[p.first] = p.second ? "true" : "false";
-    }
-    result.insert(config);
-  }
+  result.insert(config_metadata(*m_config));
 
   // global attributes
   {

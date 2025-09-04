@@ -29,6 +29,7 @@
 
 #include <mpi.h>                // MPI_Comm
 
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/Units.hh"
 
 namespace pism {
@@ -194,6 +195,8 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
 //! Report unused configuration parameters to `stdout`.
 void print_unused_parameters(const Logger &log, int verbosity_threshhold,
                              const Config &config);
+
+VariableMetadata config_metadata(const Config &config);
 
 void write_config(const Config &config, const std::string &variable_name, const OutputFile &file);
 

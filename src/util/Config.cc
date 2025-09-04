@@ -938,4 +938,24 @@ void write_config(const Config &config, const std::string &variable_name, const 
   file.write_text(variable_name, start, count, data);
 }
 
+VariableMetadata config_metadata(const Config &config) {
+  OtherMetadata result("pism_config", { { "cfg", Config::max_length } }, config.unit_system());
+  result.set_output_type(io::PISM_CHAR);
+
+  for (const auto &p : config.all_doubles()) {
+    result[p.first] = p.second;
+  }
+
+  for (const auto &p : config.all_strings()) {
+    result[p.first] = p.second;
+  }
+
+  for (const auto &p : config.all_flags()) {
+    result[p.first] = p.second ? "true" : "false";
+  }
+
+  return result;
+}
+
+
 } // end of namespace pism
