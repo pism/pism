@@ -92,7 +92,7 @@ std::set<VariableMetadata> IceModel::metadata(MappingTreatment mapping_flag) con
 
   // config
   {
-    VariableMetadata config("pism_config", m_sys);
+    OtherMetadata config("pism_config", { { "cfg", Config::max_length } }, m_sys);
     config.set_output_type(io::PISM_CHAR);
     for (const auto &p : m_config->all_doubles()) {
       config[p.first] = p.second;
@@ -138,7 +138,7 @@ void IceModel::define_metadata(const OutputFile &file, MappingTreatment mapping_
 }
 
 void IceModel::write_metadata(const OutputFile &file) const {
-  m_config->write(file);
+  write_config(*m_config, "pism_config", file);
 }
 
 //! Save model state in NetCDF format.

@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <utility>
 
 #include "Grid.hh"
 #include "pism/util/VariableMetadata.hh"
@@ -130,13 +131,14 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
     }
   }
 }
+
 DimensionMetadata::DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
-                                     unsigned int length)
+                                     int length)
     : VariableMetadata(name, system), m_length(length) {
   // empty
 }
 
-unsigned int DimensionMetadata::length() const {
+int DimensionMetadata::length() const {
   return m_length;
 }
 
@@ -144,12 +146,25 @@ std::vector<DimensionMetadata> DimensionMetadata::dimensions_impl() const {
   return { *this };
 }
 
-std::vector<DimensionMetadata> TimeseriesMetadata::dimensions_impl() const {
-  return { { "time", unit_system(), io::PISM_UNLIMITED } };
+OtherMetadata::OtherMetadata(const std::string &name,
+                             const std::vector<DimensionMetadata> &dimensions,
+                             std::shared_ptr<units::System> system)
+    : VariableMetadata(name, system), m_dimensions(dimensions) {
+  // empty
 }
 
-std::vector<DimensionMetadata> TimeBoundsMetadata::dimensions_impl() const {
-  return { { "time", unit_system(), io::PISM_UNLIMITED }, { "nv", unit_system(), 2 } };
+OtherMetadata::OtherMetadata(const std::string &name,
+                             const std::vector<std::tuple<std::string, int> > &dimensions,
+                             std::shared_ptr<units::System> system)
+    : VariableMetadata(name, system) {
+  for (const auto &pair : dimensions) {
+    m_dimensions.push_back({std::get<0>(pair), unit_system(), std::get<1>(pair)});
+  }
+}
+
+
+std::vector<DimensionMetadata> OtherMetadata::dimensions_impl() const {
+  return m_dimensions;
 }
 
 SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,

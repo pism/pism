@@ -218,21 +218,24 @@ private:
 class DimensionMetadata : public VariableMetadata {
 public:
   DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
-                    unsigned int length);
-  unsigned int length() const;
+                    int length);
+  int length() const;
 private:
   std::vector<DimensionMetadata> dimensions_impl() const;
 
-  unsigned int m_length;
+  int m_length;
 };
 
-class TimeseriesMetadata : public VariableMetadata {
+class OtherMetadata : public VariableMetadata {
+public:
+  OtherMetadata(const std::string &name,
+                const std::vector<DimensionMetadata> &dimensions,
+                std::shared_ptr<units::System> system);
+  OtherMetadata(const std::string &name,
+                const std::vector<std::tuple<std::string, int>> &dimensions,
+                std::shared_ptr<units::System> system);
 private:
-  std::vector<DimensionMetadata> dimensions_impl() const;
-};
-
-class TimeBoundsMetadata : public VariableMetadata {
-private:
+  std::vector<DimensionMetadata> m_dimensions;
   std::vector<DimensionMetadata> dimensions_impl() const;
 };
 

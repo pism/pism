@@ -195,8 +195,6 @@ void NetCDFConfig::read_impl(const File &file) {
   m_config_filename = file.name();
 }
 
-static const int max_length = 32768;
-
 //! Write a config variable to a file (with all its attributes).
 void NetCDFConfig::define_impl(const OutputFile &file) const {
 
@@ -213,29 +211,6 @@ void NetCDFConfig::define_impl(const OutputFile &file) const {
   }
 
   file.define_variable(m_data.get_name(), dims, io::PISM_CHAR, m_data.attributes());
-}
-
-//! Write a config variable to a file (with all its attributes).
-void NetCDFConfig::write_impl(const OutputFile &file) const {
-  define(file);
-
-  std::string data = json();
-
-  if (data.size() + 1 > max_length) {
-    throw RuntimeError::formatted(
-        PISM_ERROR_LOCATION,
-        "unable to save configuration parameters to a file: JSON string length exceeds %d",
-        max_length);
-  }
-
-  std::vector<unsigned int> start = { 0 };
-  std::vector<unsigned int> count = { (unsigned int)data.size() + 1 };
-
-  if (not get_string("output.experiment_id").empty()) {
-    start.insert(start.cbegin(), 0);
-    count.insert(count.cbegin(), 1);
-  }
-  file.write_text(m_data.get_name(), start, count, data);
 }
 
 } // end of namespace pism

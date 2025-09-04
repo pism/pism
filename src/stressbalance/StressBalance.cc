@@ -74,7 +74,7 @@ void Inputs::dump(const char *filename) const {
 
   OutputFile output(writer, filename);
 
-  config->write(output);
+  write_config(*config, "pism_config", output);
 
   auto time = ctx->time();
   io::define_time_dimension(output, time->metadata());
