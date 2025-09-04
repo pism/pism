@@ -95,7 +95,7 @@ void IceModel::init_timeseries() {
         }
       }
     } else {
-      define_metadata(*m_ts_file, SKIP_MAPPING);
+      define_metadata(*m_ts_file, SKIP_MAPPING, SKIP_RUN_STATS);
     }
 
     // initialize scalar diagnostics

@@ -132,6 +132,9 @@ class VariableMetadata {
 public:
   VariableMetadata(const std::string &name, std::shared_ptr<units::System> system,
                    unsigned int ndims = 0);
+  VariableMetadata(const std::string &name,
+                   const std::vector<std::tuple<std::string, int> > &dimensions,
+                   std::shared_ptr<units::System> system);
   virtual ~VariableMetadata() = default;
 
   Attribute operator[](const std::string &name) {
@@ -174,8 +177,8 @@ public:
   VariableMetadata &set_string(const std::string &name, const std::string &value);
   VariableMetadata &set_units_without_validation(const std::string &value);
 
-  bool get_time_independent() const;
-  VariableMetadata &set_time_independent(bool flag);
+  bool get_time_dependent() const;
+  VariableMetadata &set_time_dependent(bool flag);
 
   io::Type get_output_type() const;
   VariableMetadata &set_output_type(io::Type type);
@@ -189,6 +192,7 @@ public:
   unsigned int n_spatial_dimensions() const;
 
   std::vector<DimensionMetadata> dimensions() const;
+  std::vector<std::string> dimension_names() const;
 
   bool has_attribute(const std::string &name) const;
   bool has_attributes() const;
@@ -209,34 +213,26 @@ protected:
 private:
   VariableAttributes m_attributes;
 
-  std::string m_short_name;
-  bool m_time_independent;
+  std::string m_name;
+
+  bool m_time_dependent;
 
   io::Type m_output_type;
+
+  std::vector<DimensionMetadata> m_dimensions;
 };
 
 class DimensionMetadata : public VariableMetadata {
 public:
   DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
-                    int length);
+                    int length, bool coordinate_variable = false);
   int length() const;
+  bool coordinate_variable() const;
 private:
   std::vector<DimensionMetadata> dimensions_impl() const;
 
   int m_length;
-};
-
-class OtherMetadata : public VariableMetadata {
-public:
-  OtherMetadata(const std::string &name,
-                const std::vector<DimensionMetadata> &dimensions,
-                std::shared_ptr<units::System> system);
-  OtherMetadata(const std::string &name,
-                const std::vector<std::tuple<std::string, int>> &dimensions,
-                std::shared_ptr<units::System> system);
-private:
-  std::vector<DimensionMetadata> m_dimensions;
-  std::vector<DimensionMetadata> dimensions_impl() const;
+  bool m_coordinate_variable;
 };
 
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).

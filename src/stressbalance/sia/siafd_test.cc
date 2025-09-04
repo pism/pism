@@ -383,7 +383,8 @@ int main(int argc, char *argv[]) {
     OutputFile file(writer, output_file);
 
     auto time = ctx->time();
-    io::define_time_dimension(file, time->metadata());
+    bool with_bounds = false;
+    io::define_time(file, time->metadata(), with_bounds);
     file.append_time(time->current());
 
     geometry.ice_surface_elevation.write(file);

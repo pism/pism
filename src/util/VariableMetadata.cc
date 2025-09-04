@@ -36,8 +36,8 @@ namespace pism {
 VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr system,
                                    unsigned int ndims)
     : m_n_spatial_dims(ndims),
-      m_short_name(name),
-      m_time_independent(false),
+      m_name(name),
+      m_time_dependent(false),
       m_output_type(io::PISM_DOUBLE) {
 
   m_attributes.unit_system = std::move(system);
@@ -50,6 +50,17 @@ VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr s
   // valid_min and valid_max are unset
 }
 
+VariableMetadata::VariableMetadata(const std::string &name,
+                                   const std::vector<std::tuple<std::string, int> > &dimensions,
+                                   std::shared_ptr<units::System> system)
+  : VariableMetadata(name, system, 0) {
+
+  for (const auto &dim : dimensions) {
+    m_dimensions.emplace_back(DimensionMetadata{std::get<0>(dim), system, std::get<1>(dim), false});
+  }
+}
+
+
 /** Get the number of spatial dimensions.
  */
 unsigned int VariableMetadata::n_spatial_dimensions() const {
@@ -60,15 +71,23 @@ std::vector<DimensionMetadata> VariableMetadata::dimensions() const {
   return dimensions_impl();
 }
 
+std::vector<std::string> VariableMetadata::dimension_names() const {
+  std::vector<std::string> result;
+  for (const auto &dim : dimensions()) {
+    result.emplace_back(dim.get_name());
+  }
+  return result;
+}
+
 std::vector<DimensionMetadata> VariableMetadata::dimensions_impl() const {
-  return {};
+  return m_dimensions;
 }
 
 /** A "time independent" variable will be saved to a NetCDF
     variable which does not depend on the "time" dimension.
  */
-VariableMetadata &VariableMetadata::set_time_independent(bool flag) {
-  m_time_independent = flag;
+VariableMetadata &VariableMetadata::set_time_dependent(bool flag) {
+  m_time_dependent = flag;
 
   return *this;
 }
@@ -79,8 +98,8 @@ VariableMetadata &VariableMetadata::set_output_type(io::Type type) {
   return *this;
 }
 
-bool VariableMetadata::get_time_independent() const {
-  return m_time_independent;
+bool VariableMetadata::get_time_dependent() const {
+  return m_time_dependent;
 }
 
 io::Type VariableMetadata::get_output_type() const {
@@ -133,8 +152,8 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
 }
 
 DimensionMetadata::DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
-                                     int length)
-    : VariableMetadata(name, system), m_length(length) {
+                                     int length, bool coordinate_variable)
+  : VariableMetadata(name, system), m_length(length), m_coordinate_variable(coordinate_variable) {
   // empty
 }
 
@@ -142,29 +161,12 @@ int DimensionMetadata::length() const {
   return m_length;
 }
 
+bool DimensionMetadata::coordinate_variable() const {
+  return m_coordinate_variable;
+}
+
 std::vector<DimensionMetadata> DimensionMetadata::dimensions_impl() const {
   return { *this };
-}
-
-OtherMetadata::OtherMetadata(const std::string &name,
-                             const std::vector<DimensionMetadata> &dimensions,
-                             std::shared_ptr<units::System> system)
-    : VariableMetadata(name, system), m_dimensions(dimensions) {
-  // empty
-}
-
-OtherMetadata::OtherMetadata(const std::string &name,
-                             const std::vector<std::tuple<std::string, int> > &dimensions,
-                             std::shared_ptr<units::System> system)
-    : VariableMetadata(name, system) {
-  for (const auto &pair : dimensions) {
-    m_dimensions.push_back({std::get<0>(pair), unit_system(), std::get<1>(pair)});
-  }
-}
-
-
-std::vector<DimensionMetadata> OtherMetadata::dimensions_impl() const {
-  return m_dimensions;
 }
 
 SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,
@@ -176,6 +178,9 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
       m_y("y", system, My),
       m_z("z", system, std::max(levels.size(), (size_t)1)),
       m_zlevels(levels) {
+
+  // spatial variables are time-dependent by default
+  set_time_dependent(true);
 
   m_x["axis"]           = "X";
   m_x["long_name"]      = "X-coordinate in Cartesian system";
@@ -204,7 +209,7 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
       double dz_max = levels[1] - levels[0];
       double dz_min = levels.back() - levels.front();
 
-      for (unsigned int k = 0; k < nlevels - 1; ++k) {
+      for (int k = 0; k < nlevels - 1; ++k) {
         double dz = levels[k + 1] - levels[k];
         dz_max    = std::max(dz_max, dz);
         dz_min    = std::min(dz_min, dz);
@@ -318,7 +323,7 @@ bool VariableMetadata::has_attributes() const {
 }
 
 VariableMetadata &VariableMetadata::set_name(const std::string &name) {
-  m_short_name = name;
+  m_name = name;
 
   return *this;
 }
@@ -343,7 +348,7 @@ VariableMetadata &VariableMetadata::clear() {
 }
 
 std::string VariableMetadata::get_name() const {
-  return m_short_name;
+  return m_name;
 }
 
 //! Get a single-valued scalar attribute.

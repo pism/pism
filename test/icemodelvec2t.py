@@ -105,7 +105,7 @@ class ForcingInput(unittest.TestCase):
 
         # file without a time dimension
         v.set(float(self.f[-1]))
-        v.metadata().set_time_independent(True)
+        v.metadata().set_time_dependent(False)
         v.dump(self.no_time)
 
         self.times_linear = [1, 2, 3]

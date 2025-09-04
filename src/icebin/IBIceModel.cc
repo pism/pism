@@ -321,7 +321,13 @@ void IBIceModel::prepare_outputs(double time_s) {
 void IBIceModel::dumpToFile(const std::string &filename) const {
   OutputFile file(m_output_writer, filename);
 
-  define_metadata(file, WRITE_MAPPING);
+  // define the time dimension if necessary (no-op if it is already defined)
+  {
+    bool with_bounds = false;
+    io::define_time(file, m_time->metadata(), with_bounds);
+    define_metadata(file, WRITE_MAPPING, WRITE_RUN_STATS);
+  }
+
   define_variables(file, INCLUDE_MODEL_STATE, {});
 
   write_metadata(file);

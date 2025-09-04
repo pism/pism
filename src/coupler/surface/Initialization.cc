@@ -43,13 +43,13 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
         .long_name(
             "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)")
         .units("kg m^-2 s^-1")
-        .set_time_independent(false);
+        .set_time_dependent(true);
 
     m_temperature.metadata(0)
         .long_name(
             "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)")
         .units("kelvin")
-        .set_time_independent(false);
+        .set_time_dependent(true);
 
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
     m_liquid_water_fraction->metadata().set_name("effective_ice_surface_liquid_water_fraction");
@@ -57,7 +57,7 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
         .long_name(
             "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)")
         .units("1")
-        .set_time_independent(false);
+        .set_time_dependent(true);
 
     m_layer_mass = allocate_layer_mass(grid);
     m_layer_mass->metadata().set_name("effective_surface_layer_mass");
@@ -65,7 +65,7 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
         .long_name(
             "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)")
         .units("kg")
-        .set_time_independent(false);
+        .set_time_dependent(true);
 
     m_layer_thickness = allocate_layer_thickness(grid);
     m_layer_thickness->metadata().set_name("effective_surface_layer_thickness");
@@ -73,7 +73,7 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
         .long_name(
             "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)")
         .units("meters")
-        .set_time_independent(false);
+        .set_time_dependent(true);
   }
 
   m_accumulation = allocate_accumulation(grid);

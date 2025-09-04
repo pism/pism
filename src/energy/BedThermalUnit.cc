@@ -110,7 +110,7 @@ BedThermalUnit::BedThermalUnit(std::shared_ptr<const Grid> g)
     m_bottom_surface_flux.metadata(0)
         .long_name("upward geothermal flux at the bottom bedrock surface")
         .units("W m^-2") // note: don't convert to "mW m^-2" when saving
-        .set_time_independent(true);
+        .set_time_dependent(false);
 
     m_bottom_surface_flux.metadata()["comment"] = "positive values correspond to an upward flux";
   }

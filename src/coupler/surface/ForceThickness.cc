@@ -49,7 +49,7 @@ ForceThickness::ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<Su
   m_ftt_mask.metadata(0)
       .long_name("mask specifying where to apply the force-to-thickness mechanism")
       .set_output_type(io::PISM_INT)
-      .set_time_independent(true);
+      .set_time_dependent(false);
 
   m_ftt_mask.set(1.0); // default: applied in whole domain
 

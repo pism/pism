@@ -25,6 +25,7 @@
 #include <vector>
 #include <cassert>
 
+#include "io_helpers.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/GridInfo.hh"
@@ -237,7 +238,7 @@ void OutputWriter::define_spatial_variable(const std::string &file_name,
     dims = { m_impl->experiment_id_name };
   }
 
-  if (not metadata.get_time_independent()) {
+  if (metadata.get_time_dependent()) {
     dims.push_back(m_impl->time_name);
   }
 
@@ -328,7 +329,7 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   const auto &grid          = grid_info(variable_name);
 
   // check if we need to write this variable
-  bool time_dependent = not metadata.get_time_independent();
+  bool time_dependent = metadata.get_time_dependent();
 
   // Avoid writing time-independent variables more than once (saves time when writing to
   // extra_files) and also avoid writing time-dependent variables more than once per time
@@ -432,16 +433,18 @@ void OutputWriter::define_experiment_id(const std::string &file_name,
                                         std::shared_ptr<units::System> unit_system) {
   auto &dim_name = m_impl->experiment_id_name;
 
-  VariableMetadata exp_id(dim_name, unit_system);
+  VariableMetadata exp_id(dim_name, { { dim_name, 1 }, { "nc", m_impl->experiment_id_length } },
+                          unit_system);
   // NOTE: this long name is significant: we use it to recognize the experiment ID
   // dimension in File::dimension_type(). This is needed to compute start and count arrays
   // correctly when re-starting from a file containing this dimension.
   exp_id.long_name("experiment ID");
 
-  define_dimension(file_name, dim_name, 1);
-  define_dimension(file_name, "nc", m_impl->experiment_id_length);
+  for (const auto &dim : exp_id.dimensions()) {
+    define_dimension(file_name, dim.get_name(), dim.length());
+  }
 
-  define_variable(file_name, exp_id.get_name(), { dim_name, "nc" }, io::PISM_CHAR,
+  define_variable(file_name, exp_id.get_name(), exp_id.dimension_names(), io::PISM_CHAR,
                   exp_id.attributes());
 }
 

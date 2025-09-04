@@ -76,8 +76,12 @@ bool IceModel::write_checkpoint() {
     file.close();
 
     // define time dimension *without* time bounds
-    io::define_time_dimension(file, m_time->metadata());
-    define_metadata(file, WRITE_MAPPING);
+    {
+      bool with_bounds = false;
+      io::define_time(file, m_time->metadata(), with_bounds);
+    }
+
+    define_metadata(file, WRITE_MAPPING, WRITE_RUN_STATS);
     define_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars);
 
     write_metadata(file);

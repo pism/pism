@@ -142,8 +142,12 @@ void IceModel::write_snapshot() {
 
     m_snapshot_file = std::make_shared<OutputFile>(m_output_writer, filename);
 
-    define_metadata(*m_snapshot_file, WRITE_MAPPING);
-    define_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars);
+    {
+      bool with_bounds = false;
+      io::define_time(*m_snapshot_file, m_time->metadata(), with_bounds);
+      define_metadata(*m_snapshot_file, WRITE_MAPPING, WRITE_RUN_STATS);
+      define_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars);
+    }
   }
 
   {

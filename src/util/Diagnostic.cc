@@ -144,7 +144,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
     m_config(grid->ctx()->config()),
     m_sys(grid->ctx()->unit_system()),
     m_variable(name, m_sys),
-    m_time_dimension(grid->ctx()->time()->variable_name(), m_sys) {
+    m_time_dimension(grid->ctx()->time()->metadata()) {
 
   m_current_time = 0;
   m_start        = 0;
@@ -152,11 +152,6 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   m_buffer_size = static_cast<size_t>(m_config->get_number("output.timeseries.buffer_size"));
 
   m_variable["ancillary_variables"] = name + "_aux";
-
-  const auto &time = m_grid->ctx()->time();
-  m_time_dimension.long_name("time").units(time->units());
-  m_time_dimension["calendar"] = time->calendar();
-  m_time_dimension["axis"] = "T";
 }
 
 TSDiagnostic::~TSDiagnostic() {
@@ -345,7 +340,7 @@ void TSDiagnostic::flush() {
 
   if (len == m_start) {
     bool with_bounds = true;
-    io::define_time_dimension(file, m_time_dimension, with_bounds);
+    io::define_time(file, m_time_dimension, with_bounds);
 
     // write requested times
     file.write_array(m_time_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);

@@ -27,7 +27,8 @@ VecBundleWriter::VecBundleWriter(std::shared_ptr<pism::Grid> _grid, std::string 
 void VecBundleWriter::init() {
   pism::OutputFile file(output_writer, fname);
 
-  io::define_time_dimension(file, m_grid->ctx()->time()->metadata());
+  bool with_bounds = false;
+  io::define_time(file, m_grid->ctx()->time()->metadata(), with_bounds);
   
   for (const auto *vec : vecs) {
     vec->define(file);

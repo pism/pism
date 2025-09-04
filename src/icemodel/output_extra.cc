@@ -187,8 +187,8 @@ void IceModel::init_extras() {
     } else {
       // prepare the file
       bool with_bounds = true;
-      io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
-      define_metadata(*m_extra_file, WRITE_MAPPING);
+      io::define_time(*m_extra_file, m_time->metadata(), with_bounds);
+      define_metadata(*m_extra_file, WRITE_MAPPING, WRITE_RUN_STATS);
       define_variables(*m_extra_file, output_kind, m_extra_vars);
     }
   }
@@ -329,8 +329,8 @@ void IceModel::write_extras() {
       } else {
         // Prepare the file:
         bool with_bounds = true;
-        io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
-        define_metadata(*m_extra_file, WRITE_MAPPING);
+        io::define_time(*m_extra_file, m_time->metadata(), with_bounds);
+        define_metadata(*m_extra_file, WRITE_MAPPING, WRITE_RUN_STATS);
         define_variables(*m_extra_file, output_kind, m_extra_vars);
       }
     }

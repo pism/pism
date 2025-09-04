@@ -965,7 +965,7 @@ Rank::Rank(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]
       .long_name("processor rank")
       .units("1")
-      .set_time_independent(true)
+      .set_time_dependent(false)
       .set_output_type(io::PISM_INT);
 }
 
@@ -2540,7 +2540,7 @@ LatLonBounds::LatLonBounds(const IceModel *m, const std::string &var_name,
   m_vars = { { m_sys, m_var_name + "_bnds", *m_grid, { 0.0, 1.0, 2.0, 3.0 } } };
   m_vars[0].z().clear().set_name("nv4");
 
-  m_vars[0].set_time_independent(true);
+  m_vars[0].set_time_dependent(false);
   if (m_var_name == "lon") {
     m_vars[0].long_name("longitude bounds").units("degree_east");
     m_vars[0]["valid_range"] = { -180, 180 };

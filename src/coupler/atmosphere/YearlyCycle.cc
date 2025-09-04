@@ -57,7 +57,7 @@ YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
       .units("kg m^-2 second^-1")
       .output_units("kg m^-2 year^-1")
       .standard_name("precipitation_flux")
-      .set_time_independent(true);
+      .set_time_dependent(false);
 }
 
 //! Reads in the precipitation data from the input file.

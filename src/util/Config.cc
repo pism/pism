@@ -21,6 +21,7 @@
 #include <cmath>                // std::round()
 #include <cstdlib>              // realpath()
 
+#include "VariableMetadata.hh"
 #include "pism/pism_config.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Config.hh"
@@ -921,7 +922,7 @@ void write_config(const Config &config, const std::string &variable_name, const 
 
   std::string data = config.json();
 
-  if (data.size() + 1 > Config::max_length) {
+  if ((int)data.size() + 1 > Config::max_length) {
     throw RuntimeError::formatted(
         PISM_ERROR_LOCATION,
         "unable to save configuration parameters to a file: JSON string length exceeds %d",
@@ -939,7 +940,7 @@ void write_config(const Config &config, const std::string &variable_name, const 
 }
 
 VariableMetadata config_metadata(const Config &config) {
-  OtherMetadata result("pism_config", { { "cfg", Config::max_length } }, config.unit_system());
+  VariableMetadata result("pism_config", { { "cfg", Config::max_length } }, config.unit_system());
   result.set_output_type(io::PISM_CHAR);
 
   for (const auto &p : config.all_doubles()) {

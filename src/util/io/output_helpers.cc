@@ -16,10 +16,12 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include "IO_Flags.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/OutputWriter.hh"
+#include <memory>
 
 namespace pism {
 namespace io {
@@ -91,30 +93,55 @@ void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_
   }
 }
 
-void define_time_dimension(const OutputFile &output_file, const VariableMetadata &metadata,
-                           bool with_bounds, int length) {
+void define_time(const OutputFile &output_file, const VariableMetadata &metadata,
+                 bool with_bounds) {
+
+
+  auto time_name = metadata.get_name();
+  auto bounds_name = time_name + "_bounds";
 
   // make a copy of "metadata" so we can modify it
   auto time = metadata;
-  // shortcut
-  const auto &time_name = time.get_name();
-
-  VariableMetadata time_bounds(time_name + "_bounds", time.unit_system());
-
-  time_bounds.units(time["units"]);
   if (with_bounds) {
-    time["bounds"] = time_bounds.get_name();
+    time["bounds"] = bounds_name;
   }
 
-  output_file.define_dimension(time_name, length);
-  output_file.define_variable(time_name, { time_name }, time.get_output_type(),
-                              time.attributes());
-
+  io::define_variable(time, time_name, "", output_file);
+  
   if (with_bounds) {
-    output_file.define_dimension("nv", 2);
-    output_file.define_variable(time_bounds.get_name(), { time_name, "nv" },
-                                time_bounds.get_output_type(), time_bounds.attributes());
+
+    VariableMetadata bounds(bounds_name, { { "nv", 2 } }, metadata.unit_system());
+
+    bounds.units(metadata["units"]).set_time_dependent(true);
+
+    io::define_variable(bounds, time_name, "", output_file);
   }
+}
+
+void define_variable(const VariableMetadata &variable,
+                     const std::string &time_name,
+                     const std::string &exp_id_name,
+                     const OutputFile &file) {
+  for (const auto &dim : variable.dimensions()) {
+    file.define_dimension(dim.get_name(), dim.length());
+    if (dim.coordinate_variable()) {
+      file.define_variable(dim.get_name(), dim.dimension_names(), dim.get_output_type(),
+                           dim.attributes());
+    }
+  }
+
+  auto dims = variable.dimension_names();
+
+  if (variable.get_time_dependent()) {
+    dims.insert(dims.begin(), time_name);
+  }
+
+  if (not exp_id_name.empty()) {
+    dims.insert(dims.begin(), exp_id_name);
+  }
+  
+  file.define_variable(variable.get_name(), dims, variable.get_output_type(),
+                       variable.attributes());
 }
 
 } // namespace io

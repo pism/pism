@@ -36,7 +36,7 @@ void IPMeanSquareFunctional2V::normalize(double scale) {
   // The local value of the weights
   double value = 0;
 
-  if (m_weights) {
+  if (m_weights != nullptr) {
     array::AccessScope list{m_weights};
 
     for (auto p : m_grid->points()) {
@@ -62,7 +62,7 @@ void IPMeanSquareFunctional2V::valueAt(array::Vector &x, double *OUTPUT)  {
 
   array::AccessScope list{&x};
 
-  if (m_weights) {
+  if (m_weights != nullptr) {
     list.add(*m_weights);
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();

@@ -77,7 +77,8 @@ void Inputs::dump(const char *filename) const {
   write_config(*config, "pism_config", output);
 
   auto time = ctx->time();
-  io::define_time_dimension(output, time->metadata());
+  bool with_bounds = false;
+  io::define_time(output, time->metadata(), with_bounds);
   output.append_time(time->current());
 
   {
@@ -153,7 +154,7 @@ StressBalance::StressBalance(std::shared_ptr<const Grid> g,
       .long_name("vertical velocity of ice, relative to base of ice directly below")
       .units("m s^-1")
       .output_units("m year^-1")
-      .set_time_independent(false);
+      .set_time_dependent(true);
 
   m_strain_heating.metadata(0)
       .long_name("rate of strain heating in ice (dissipation heating)")

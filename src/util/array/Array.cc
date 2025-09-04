@@ -533,9 +533,10 @@ void Array::dump(const char filename[]) const {
 
   OutputFile file(writer, filename);
 
-  if (not metadata(0).get_time_independent()) {
+  if (metadata(0).get_time_dependent()) {
     auto time = ctx->time();
-    io::define_time_dimension(file, time->metadata());
+    bool with_bounds = false;
+    io::define_time(file, time->metadata(), with_bounds);
     file.append_time(time->current());
   }
 

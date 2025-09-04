@@ -223,7 +223,8 @@ int main(int argc, char *argv[]) {
     // Write results to an output file:
     OutputFile file(writer, outname);
 
-    io::define_time_dimension(file, time->metadata());
+    bool with_bounds = false;
+    io::define_time(file, time->metadata(), with_bounds);
     file.append_time(time->current());
 
     btu->write_state(file);

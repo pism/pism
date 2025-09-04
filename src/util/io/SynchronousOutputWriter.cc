@@ -199,7 +199,7 @@ void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &fil
   std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };
   std::vector<unsigned int> count = { grid.ym, grid.xm, n_levels };
 
-  if (not metadata.get_time_independent()) {
+  if (metadata.get_time_dependent()) {
     auto t_length = time_dimension_length(file_name);
     auto t_start  = t_length > 0 ? t_length - 1 : 0;
 

@@ -217,12 +217,15 @@ protected:
 
   virtual void define_state(const OutputFile &file) const;
   virtual void write_state(const OutputFile &file) const;
-  virtual void define_run_stats(const OutputFile &file) const;
   virtual void write_run_stats(const OutputFile &file) const;
 
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
-  virtual std::set<VariableMetadata> metadata(MappingTreatment mapping_flag) const;
-  virtual void define_metadata(const OutputFile &file, MappingTreatment mapping_flag) const;
+  enum RunStatsTreatment {WRITE_RUN_STATS, SKIP_RUN_STATS};
+  virtual std::set<VariableMetadata> metadata(MappingTreatment mapping_flag,
+                                              RunStatsTreatment run_stats) const;
+
+  virtual void define_metadata(const OutputFile &file, MappingTreatment mapping_flag,
+                               RunStatsTreatment run_stats) const;
   virtual void write_metadata(const OutputFile &file) const;
 
   virtual void define_diagnostics(const OutputFile &file,
@@ -411,6 +414,8 @@ protected:
   };
 
   ThicknessChanges m_thickness_change;
+
+  std::shared_ptr<VariableMetadata> m_exp_id;
 
   /*!
    * The set of variables that the "state" of IceModel consists of.

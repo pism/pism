@@ -98,6 +98,18 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_output_global_attributes["institution"] = m_config->get_string("run_info.institution");
   m_output_global_attributes["command"] = args_string();
 
+  if (not m_config->get_string("output.experiment_id").empty()) {
+    auto exp_id = m_config->get_string("output.experiment_id_dimension");
+    int max_length = (int)m_config->get_number("output.experiment_id_max_length");
+    m_exp_id.reset(new VariableMetadata(exp_id, { { exp_id, 1 }, { "nc", max_length } }, m_sys));
+
+    // NOTE (also FIXME because this is not great): this long name is significant: we use it
+    // to recognize the experiment ID dimension in File::dimension_type(). This is needed to
+    // compute start and count arrays correctly when re-starting from a file containing this
+    // dimension.
+    m_exp_id->set_output_type(io::PISM_CHAR).long_name("experiment ID");
+  }
+
   m_fracture = nullptr;
 
   reset_counters();
@@ -226,7 +238,7 @@ void IceModel::allocate_storage() {
     m_velocity_bc_mask.metadata(0)
         .long_name("Mask prescribing Dirichlet boundary locations for the sliding velocity")
         .set_output_type(io::PISM_INT)
-        .set_time_independent(true);
+        .set_time_dependent(false);
     m_velocity_bc_mask.metadata()["flag_values"]   = { 0, 1 };
     m_velocity_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
 
@@ -252,7 +264,7 @@ void IceModel::allocate_storage() {
   {
     m_ice_thickness_bc_mask.metadata(0)
         .long_name("Mask specifying locations where ice thickness is held constant")
-        .set_time_independent(true)
+        .set_time_dependent(false)
         .set_output_type(io::PISM_INT);
     m_ice_thickness_bc_mask.metadata()["flag_values"] = {0, 1};
     m_ice_thickness_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";

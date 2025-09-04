@@ -55,7 +55,7 @@ void IceRegionalModel::allocate_storage() {
   // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
   m_no_model_mask.metadata(0)
       .long_name("mask: zeros (modeling domain) and ones (no-model buffer near grid edges)")
-      .set_time_independent(true)
+      .set_time_dependent(false)
       .set_output_type(io::PISM_INT); // no units and no standard name
   m_no_model_mask.metadata()["flag_values"]   = { 0, 1 };
   m_no_model_mask.metadata()["flag_meanings"] = "normal special_treatment";

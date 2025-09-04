@@ -52,7 +52,7 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
       .long_name("latitude")
       .units("degree_north")
       .standard_name("latitude")
-      .set_time_independent(true);
+      .set_time_dependent(false);
   latitude.metadata()["grid_mapping"] = "";
   latitude.metadata()["valid_range"]  = { -90.0, 90.0 };
 
@@ -60,7 +60,7 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
       .long_name("longitude")
       .units("degree_east")
       .standard_name("longitude")
-      .set_time_independent(true);
+      .set_time_dependent(false);
   longitude.metadata()["grid_mapping"] = "";
   longitude.metadata()["valid_range"]  = { -180.0, 180.0 };
 
@@ -206,18 +206,32 @@ void Geometry::dump(const char *filename) const {
 
   auto time = grid->ctx()->time();
 
-  io::define_time_dimension(file, time->metadata());
-  file.append_time(time->current());
+  const array::Array *variables[] = { &latitude,
+                                      &longitude,
+                                      &bed_elevation,
+                                      &sea_level_elevation,
+                                      &ice_thickness,
+                                      &ice_area_specific_volume,
+                                      &cell_type,
+                                      &cell_grounded_fraction,
+                                      &ice_surface_elevation };
 
-  latitude.write(file);
-  longitude.write(file);
-  bed_elevation.write(file);
-  sea_level_elevation.write(file);
-  ice_thickness.write(file);
-  ice_area_specific_volume.write(file);
-  cell_type.write(file);
-  cell_grounded_fraction.write(file);
-  ice_surface_elevation.write(file);
+  {
+    bool with_bounds = false;
+    io::define_time(file, time->metadata(), with_bounds);
+
+    for (const auto *v : variables) {
+      v->define(file);
+    }
+  }
+
+  {
+    file.append_time(time->current());
+
+    for (const auto *v : variables) {
+      v->write(file);
+    }
+  }
 }
 
 /*! Compute the elevation of the bottom surface of the ice.

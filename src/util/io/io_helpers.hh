@@ -94,8 +94,13 @@ VariableMetadata read_attributes(const File &file, const std::string &variable_n
 /*!
  * Define the time dimension
  */
-void define_time_dimension(const OutputFile &output_file, const VariableMetadata &metadata,
-                           bool with_bounds = false, int length = 0);
+void define_time(const OutputFile &output_file, const VariableMetadata &metadata,
+                           bool with_bounds);
+
+void define_variable(const VariableMetadata &variable,
+                     const std::string &time_name,
+                     const std::string &exp_id_name,
+                     const OutputFile &file);
 
 void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
 

@@ -25,6 +25,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_signal.h"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -65,7 +66,13 @@ int IceModel::process_signals() {
 
     OutputFile file(m_output_writer, file_name);
 
-    define_metadata(file, WRITE_MAPPING);
+    // define the time dimension if necessary (no-op if it is already defined)
+    {
+      bool with_bounds = false;
+      io::define_time(file, m_time->metadata(), with_bounds);
+      define_metadata(file, WRITE_MAPPING, WRITE_RUN_STATS);
+    }
+
     define_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
 
     write_metadata(file);

@@ -475,7 +475,8 @@ std::string Time::variable_name() const {
 }
 
 VariableMetadata Time::metadata() const {
-  VariableMetadata result(variable_name(), units().system());
+  VariableMetadata result(variable_name(), { { variable_name(), io::PISM_UNLIMITED } },
+                          units().system());
   result.long_name("time").units(units());
   result["axis"]     = "T";
   result["calendar"] = calendar();
