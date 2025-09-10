@@ -21,6 +21,7 @@
 
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 #include "pism/util/array/Scalar.hh"
@@ -64,22 +65,55 @@ static inline double flux_out(const stencils::Star<double> &u, double dx, double
 /*!
  * Smolarkiewicz-Zalesak flux limiter (equation 10 in [Smolarkiewicz1989])
  *
- * @param[in] F total flux across a boundary between two cells over the course of a time step
+ * @param[in] F total flux across a boundary between two cells ("c" and "n") over the course of a time step
  * @param[in] F_out_c total flux leaving the "current" cell over the course of a time step
  * @param[in] F_out_n total flux leaving the "neighbor" cell over the course of a time step
  * @param[in] x_c value at the "current" cell (non-negative)
  * @param[in] x_n value at the "neighbor" cell (non-negative)
  *
  * Returns the limited total flux over the course of a time step
+ *
+ * Notes:
+ *
+ * Equation 10 contains the fraction pp(F) / F_out_c, so we need to avoid division by
+ * zero.
+ *
+ * Note that F_out_c >= 0 by construction.
+ *
+ * Also, if pp(F) > 0 then F_out_c > 0 because F_out_c contains a term `pp(F) * dt / delta`
+ * where delta is grid spacing (dx or dy).
+ *
+ * This implies that if F_out_c == 0 then pp(F) == 0 (equivalently, F <= 0).
+ *
+ * But if pp(F) == 0 then F is a flux *into* the cell "c" and it cannot make the value x_c
+ * negative, so we don't need to limit it using the value of x_c. This implies that the
+ * term `pp(F) / F_out_c * x_c` should be replaced by 0.
+ *
+ * Equation 10 also contains the fraction -np(F) / F_out_n, so we need to avoid division
+ * by zero here as well.
+ *
+ * Note that F_out_n >= 0 by construction.
+ *
+ * Also, if np(F) > 0 then F_out_n > 0 because F_out_n contains a term np(F) * dt / delta`
+ * where delta is grid spacing (dx or dy).
+ *
+ * This implies that if F_out_n == 0 then np(F) == 0 (equivalently, F >= 0).
+ *
+ * But if np(F) == 0 then F is a flux *into* the cell "n" and it cannot make the value x_n
+ * negative, so we don't need to limit it using the value of x_n. This implies that the
+ * term `-np(F) / F_out_n * x_n` should be replaced by 0.
+ *
  */
 double flux_limiter(double F, double F_out_c, double F_out_n, double x_c, double x_n) {
   using details::np;
   using details::pp;
 
-  double F_limited = std::max(std::min(F, (pp(F) / F_out_c) * x_c), (-np(F) / F_out_n) * x_n);
+  double F_c = F_out_c != 0.0 ? pp(F) / F_out_c * x_c : 0.0;
+  double F_n = F_out_n != 0.0 ? -np(F) / F_out_n * x_n : 0.0;
 
-  assert(x_c - F_limited >= 0);
-  assert(x_n + F_limited >= 0);
+  double F_limited = std::max(std::min(F, F_c), F_n);
+
+  assert(std::isfinite(F_limited));
 
   return F_limited;
 }
@@ -147,7 +181,12 @@ std::array<double, 2> flux_limiter(const stencils::Star<double> &Q_c,
 
   // limit total amounts (see equation (10) in [Smolarkiewicz1989])
   double F_e_limited = flux_limiter(F_e, F_out, F_out_e, X_c, X_e);
+  assert(x_c - F_e_limited >= 0);
+  assert(x_e + F_e_limited >= 0);
+
   double F_n_limited = flux_limiter(F_n, F_out, F_out_n, X_c, X_n);
+  assert(x_c - F_n_limited >= 0);
+  assert(x_n + F_n_limited >= 0);
 
   // convert back to fluxes and return:
   return { F_e_limited * dx / dt, F_n_limited * dy / dt };
