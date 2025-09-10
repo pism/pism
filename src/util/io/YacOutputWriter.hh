@@ -70,6 +70,7 @@ private:
   std::map<std::string, int> dim_sizes;
   std::map<std::string, unsigned int> variable_tags;
   std::map<std::string, bool> written_vars;
+  std::vector<std::string> text_field_buffers;
   nlohmann::json non_spatial_variables_metadata, global_attributes;
 
   std::vector<MPI_Request> field_reqs;
@@ -108,6 +109,11 @@ private:
                         const std::vector<unsigned int> &start,
                         const std::vector<unsigned int> &count, const double *data);
 
+  void write_text_impl(const std::string &file_name, const std::string &variable_name,
+                       const std::vector<unsigned int> &start,
+                       const std::vector<unsigned int> &count,
+                       const std::string &input);
+
   void write_spatial_variable_impl(const std::string &file_name,
                                    const SpatialVariableMetadata &metadata, const double *data);
 
@@ -117,7 +123,7 @@ private:
   void initialize_yac();
   void define_yac_field(const VariableMetadata &metadata,
                         const std::vector<std::string> &dims);
-  void initialize_grid(const grid::DistributedGridInfo &distributed_grid);
+  void initialize_grid();
   void finalize_yac_initialization();
 
   // Utility: Given grid size and patch bounds, return global indices of patch vertices

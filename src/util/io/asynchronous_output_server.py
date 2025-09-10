@@ -113,7 +113,7 @@ for field_name in pism_field_names:
 time_independent_var_values = {}
 snapshot_counter = 0
 fields_nc_var = {}
-file_type_split = False
+file_type_split = True
 no_files_initialized = True
 received_non_grid_time_independent = False
 
@@ -144,7 +144,7 @@ while True:
                                                                     attributes["dimensions"],
                                                                     fill_value=fill_value)
 
-            special = ['_FillValue', 'dimensions', 'output_units', 'tag', 'dtype']
+            special = ['_FillValue', 'dimensions', 'tag', 'dtype']
             for attr in attributes:
                 if attr not in special and attributes[attr] != "":
                     fields_nc_var[field_name].setncattr(attr, attributes[attr])
@@ -155,6 +155,7 @@ while True:
 # ###### DATA RECEIVAL - LOOP ########
 #
     comm_reqs = []
+    text_req_indices = {}
     values_vars = {}
     for variable in non_field_variables["non_field_variables"]:
         var_dims = fields_metadata[variable]["dimensions"]
@@ -168,8 +169,11 @@ while True:
                 tag = int(fields_metadata[variable]["tag"])
                 if(fields_metadata[variable]["dtype"] == "f8"):
                     comm_reqs.append(intercomm.Irecv([values_vars[variable], MPI.DOUBLE], source = remote_leader, tag = tag))
-                else:
+                elif(fields_metadata[variable]["dtype"] == "i4"):
                     comm_reqs.append(intercomm.Irecv([values_vars[variable], MPI.INT], source = remote_leader, tag = tag))
+                else:
+                    text_req_indices[variable] = len(comm_reqs)
+                    comm_reqs.append(intercomm.Irecv([values_vars[variable], MPI.CHAR], source = remote_leader, tag = tag))
 #
     received_non_grid_time_independent = True
 
@@ -212,13 +216,17 @@ while True:
 
             fields_nc_var[field_name][time_index, :, :, :] = tmp
 
-    MPI.Request.Waitall(comm_reqs)
+    request_statuses = []
+    MPI.Request.Waitall(comm_reqs, request_statuses)
     for variable in values_vars:
-        if "time" not in fields_metadata[field_name]["dimensions"]:
-            fields_nc_var[variable][:] = values_vars[variable]
+        if "time" not in fields_metadata[variable]["dimensions"]:
+            if fields_metadata[variable]["dtype"] == "S1":
+                char_count = request_statuses[text_req_indices[variable]].Get_count(MPI.CHAR)
+                fields_nc_var[variable][:char_count] = values_vars[variable][:char_count]
+            else:
+                fields_nc_var[variable][:] = values_vars[variable]
         else:
             fields_nc_var[variable][time_index] = values_vars[variable]
-
 
     snapshot_counter = snapshot_counter + 1
 
