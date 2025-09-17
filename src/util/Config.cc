@@ -83,10 +83,6 @@ void Config::read(const File &file) {
   m_impl->filename = file.name();
 }
 
-void Config::define(const OutputFile &file) const {
-  this->define_impl(file);
-}
-
 //! \brief Returns the name of the file used to initialize the database.
 std::string Config::filename() const {
   return m_impl->filename;

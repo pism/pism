@@ -195,22 +195,4 @@ void NetCDFConfig::read_impl(const File &file) {
   m_config_filename = file.name();
 }
 
-//! Write a config variable to a file (with all its attributes).
-void NetCDFConfig::define_impl(const OutputFile &file) const {
-
-  file.define_dimension("cfg", max_length);
-
-  std::vector<std::string> dims = { "cfg" };
-
-  if (not get_string("output.experiment_id").empty()) {
-    auto exp_id_name = get_string("output.experiment_id_dimension");
-
-    file.define_dimension(exp_id_name, 1);
-
-    dims.insert(dims.cbegin(), exp_id_name);
-  }
-
-  file.define_variable(m_data.get_name(), dims, io::PISM_CHAR, m_data.attributes());
-}
-
 } // end of namespace pism

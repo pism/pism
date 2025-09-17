@@ -86,8 +86,6 @@ public:
 
   void read(const File &file);
 
-  void define(const OutputFile &file) const;
-
   bool is_set(const std::string &name) const;
 
   //! Return true if the numeric parameter `name` is set to a value within its valid
@@ -139,7 +137,6 @@ public:
   // Implementations
 protected:
   virtual void read_impl(const File &nc) = 0;
-  virtual void define_impl(const OutputFile &nc) const = 0;
 
   virtual bool is_set_impl(const std::string &name) const = 0;
 
