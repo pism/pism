@@ -142,9 +142,8 @@ void IceModel::write_snapshot() {
 
     m_snapshot_file = std::make_shared<OutputFile>(m_output_writer, filename);
 
-    io::define_time_dimension(*m_snapshot_file, m_time->metadata());
     define_metadata(*m_snapshot_file, WRITE_MAPPING);
-    define_run_stats(*m_snapshot_file);
+    define_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars);
   }
 
   {
@@ -153,7 +152,6 @@ void IceModel::write_snapshot() {
 
     write_metadata(*m_snapshot_file);
     write_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
-    write_run_stats(*m_snapshot_file);
   }
 
   if (m_split_snapshots) {

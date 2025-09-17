@@ -151,6 +151,8 @@ void IceModel::init_extras() {
                        "both output.extra.split and output.extra.append are set.");
   }
 
+  auto output_kind = m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS;
+
   m_extra_file = nullptr;
   if (not split) {
     m_extra_file = std::make_shared<OutputFile>(m_output_writer, m_extra_filename);
@@ -187,7 +189,7 @@ void IceModel::init_extras() {
       bool with_bounds = true;
       io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
       define_metadata(*m_extra_file, WRITE_MAPPING);
-      define_run_stats(*m_extra_file);
+      define_variables(*m_extra_file, output_kind, m_extra_vars);
     }
   }
 
@@ -309,6 +311,8 @@ void IceModel::write_extras() {
 
     VariableMetadata time_bounds("time_bounds", m_sys);
 
+    auto output_kind = m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS;
+
     if (m_extra_file == nullptr) {
 
       std::string filename = m_extra_filename;
@@ -327,7 +331,7 @@ void IceModel::write_extras() {
         bool with_bounds = true;
         io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
         define_metadata(*m_extra_file, WRITE_MAPPING);
-        define_run_stats(*m_extra_file);
+        define_variables(*m_extra_file, output_kind, m_extra_vars);
       }
     }
 
@@ -337,8 +341,7 @@ void IceModel::write_extras() {
     write_metadata(*m_extra_file);
     // use the mid-point of the current reporting interval
     double time = 0.5 * (m_last_extra + current_time);
-    write_variables(*m_extra_file, m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
-                    m_extra_vars, time);
+    write_variables(*m_extra_file, output_kind, m_extra_vars, time);
 
     // Get the length of the time dimension *after* it is appended to.
     auto time_length = m_extra_file->time_dimension_length();

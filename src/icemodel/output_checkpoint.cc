@@ -75,13 +75,12 @@ bool IceModel::write_checkpoint() {
     // time we write a checkpoint, moving the old file aside if it exists.
     file.close();
 
+    // define time dimension *without* time bounds
     io::define_time_dimension(file, m_time->metadata());
     define_metadata(file, WRITE_MAPPING);
-    define_run_stats(file);
+    define_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars);
 
     write_metadata(file);
-    write_run_stats(file);
-
     write_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
   }
   profiling.end("io.checkpoint");

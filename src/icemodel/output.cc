@@ -187,7 +187,7 @@ void IceModel::define_variables(const OutputFile &file, OutputKind kind,
 
   // define the time dimension if necessary (no-op if it is already defined)
   {
-    bool with_bounds = true;
+    bool with_bounds = false;
     io::define_time_dimension(file, m_time->metadata(), with_bounds);
   }
 
