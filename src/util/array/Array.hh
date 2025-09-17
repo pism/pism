@@ -22,6 +22,7 @@
 #include <initializer_list>
 #include <memory>               // shared_ptr, dynamic_pointer_cast
 #include <cstdint>              // uint64_t
+#include <set>
 
 #include "pism/util/error_handling.hh" // RuntimeError
 
@@ -323,6 +324,8 @@ static typename std::shared_ptr<T> cast(std::shared_ptr<Array> input) {
 
   return result;
 }
+
+std::set<SpatialVariableMetadata> metadata(std::initializer_list<const Array *> vecs);
 
 } // end of namespace array
 

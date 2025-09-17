@@ -444,8 +444,7 @@ public:
                        const std::vector<std::string> &dims, io::Type type,
                        const VariableAttributes &attributes) const;
 
-  void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                               const grid::DistributedGridInfo &grid) const;
+  void define_spatial_variable(const SpatialVariableMetadata &metadata) const;
 
   void define_timeseries_variable(const VariableMetadata &metadata) const;
 

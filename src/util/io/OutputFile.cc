@@ -42,9 +42,11 @@ void OutputFile::define_variable(const std::string &variable_name,
   m_writer->define_variable(m_file_name, variable_name, dims, type, attributes);
 }
 
-void OutputFile::define_spatial_variable(const SpatialVariableMetadata &metadata,
-                                         const grid::DistributedGridInfo &grid) const {
-  m_writer->add_spatial_variable(metadata, grid);
+void OutputFile::define_spatial_variable(const SpatialVariableMetadata &metadata) const {
+  const auto *grid_info = metadata.grid_info();
+  if (grid_info != nullptr) {
+    m_writer->add_spatial_variable(metadata, *grid_info);
+  }
   m_writer->define_spatial_variable(m_file_name, metadata.get_name());
 }
 

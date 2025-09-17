@@ -271,7 +271,7 @@ void IceModel::define_diagnostics(const OutputFile &file, const std::set<std::st
           var["bounds"] = "lon_bnds";
         }
 
-        file.define_spatial_variable(var, D.grid_info());
+        file.define_spatial_variable(var);
       }
     }
   }

@@ -465,7 +465,7 @@ void Array::read_impl(const File &file, const unsigned int time) {
 //! \brief Define variables corresponding to an Array in a file opened using `file`.
 void Array::define(const OutputFile &file) const {
   for (unsigned int j = 0; j < ndof(); ++j) {
-    file.define_spatial_variable(metadata(j), grid()->info());
+    file.define_spatial_variable(metadata(j));
   }
 }
 
@@ -1215,6 +1215,16 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
   }
 }
 
+std::set<SpatialVariableMetadata> metadata(std::initializer_list<const Array *> vecs) {
+  std::set<SpatialVariableMetadata> result;
+  for (const auto *vec : vecs) {
+    for (const auto &var : vec->all_metadata()) {
+      result.insert(var);
+    }
+  }
+  return result;
+}
+
 } // end of namespace array
 
 void convert_vec(petsc::Vec &v, units::System::Ptr system,
@@ -1229,5 +1239,6 @@ void convert_vec(petsc::Vec &v, units::System::Ptr system,
   petsc::VecArray data(v);
   c.convert_doubles(data.get(), data_size);
 }
+
 
 } // end of namespace pism

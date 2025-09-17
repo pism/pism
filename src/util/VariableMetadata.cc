@@ -83,6 +83,14 @@ std::vector<DimensionMetadata> VariableMetadata::dimensions_impl() const {
   return m_dimensions;
 }
 
+const grid::DistributedGridInfo *VariableMetadata::grid_info() const {
+  return grid_info_impl();
+}
+
+const grid::DistributedGridInfo *VariableMetadata::grid_info_impl() const {
+  return nullptr;
+}
+
 /** A "time independent" variable will be saved to a NetCDF
     variable which does not depend on the "time" dimension.
  */
@@ -170,14 +178,14 @@ std::vector<DimensionMetadata> DimensionMetadata::dimensions_impl() const {
 }
 
 SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,
-                                                 const std::string &name, unsigned int Mx,
-                                                 double dx, unsigned int My, double dy,
+                                                 const std::string &name, const Grid &grid,
                                                  const std::vector<double> &levels)
     : VariableMetadata(name, system),
-      m_x("x", system, Mx),
-      m_y("y", system, My),
-      m_z("z", system, std::max(levels.size(), (size_t)1)),
-      m_zlevels(levels) {
+      m_x("x", system, (int)grid.Mx()),
+      m_y("y", system, (int)grid.My()),
+      m_z("z", system, std::max((int)levels.size(), 1)),
+      m_zlevels(levels),
+      m_grid_info(grid.info()) {
 
   // spatial variables are time-dependent by default
   set_time_dependent(true);
@@ -186,13 +194,13 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
   m_x["long_name"]      = "X-coordinate in Cartesian system";
   m_x["standard_name"]  = "projection_x_coordinate";
   m_x["units"]          = "m";
-  m_x["spacing_meters"] = { dx };
+  m_x["spacing_meters"] = { grid.dx() };
 
   m_y["axis"]           = "Y";
   m_y["long_name"]      = "Y-coordinate in Cartesian system";
   m_y["standard_name"]  = "projection_y_coordinate";
   m_y["units"]          = "m";
-  m_y["spacing_meters"] = { dy };
+  m_y["spacing_meters"] = { grid.dy() };
 
   if (m_zlevels.size() > 1) {
     m_z.set_name("z"); // default; can be overridden easily
@@ -224,15 +232,12 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
   }
 }
 
-SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,
-                                                 const std::string &name, const Grid &grid,
-                                                 const std::vector<double> &levels)
-    : SpatialVariableMetadata(system, name, grid.Mx(), grid.dx(), grid.My(), grid.dy(), levels) {
-  // empty
-}
-
 const std::vector<double> &SpatialVariableMetadata::levels() const {
   return m_zlevels;
+}
+
+const grid::DistributedGridInfo *SpatialVariableMetadata::grid_info_impl() const {
+  return &m_grid_info;
 }
 
 std::vector<DimensionMetadata> SpatialVariableMetadata::dimensions_impl() const {

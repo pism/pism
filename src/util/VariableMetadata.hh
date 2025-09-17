@@ -24,6 +24,8 @@
 #include <string>
 #include <memory>
 
+#include "pism/util/GridInfo.hh"
+
 namespace pism {
 namespace units {
 class System;
@@ -191,6 +193,11 @@ public:
 
   unsigned int n_spatial_dimensions() const;
 
+  /*!
+   * Spatial variables return distributed grid info. All other variables return nullptr.
+   */
+  const grid::DistributedGridInfo *grid_info() const;
+
   std::vector<DimensionMetadata> dimensions() const;
   std::vector<std::string> dimension_names() const;
 
@@ -209,6 +216,7 @@ protected:
   unsigned int m_n_spatial_dims;
 
   virtual std::vector<DimensionMetadata> dimensions_impl() const;
+  virtual const grid::DistributedGridInfo *grid_info_impl() const;
 
 private:
   VariableAttributes m_attributes;
@@ -241,9 +249,6 @@ public:
   SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
                           const Grid &grid,
                           const std::vector<double> &levels = { 0.0 });
-  SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
-                          unsigned int Mx, double dx, unsigned int My, double dy,
-                          const std::vector<double> &levels = { 0.0 });
   virtual ~SpatialVariableMetadata() = default;
 
   const std::vector<double>& levels() const;
@@ -257,9 +262,13 @@ public:
   const DimensionMetadata& z() const;
 
 private:
+  const grid::DistributedGridInfo *grid_info_impl() const;
+
   std::vector<DimensionMetadata> dimensions_impl() const;
+
   DimensionMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
+  grid::DistributedGridInfo m_grid_info;
 };
 
 // Comparison operator for VariableMetadata (we need it to store VariableMetadata in
