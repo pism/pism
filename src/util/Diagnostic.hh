@@ -218,7 +218,7 @@ protected:
   void define_state_impl(const OutputFile &output) const {
     auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
     m_accumulator.define(output);
-    output.define_timeseries_variable(m_time_since_reset);
+    output.define_variable(m_time_since_reset);
   }
 
   void write_state_impl(const OutputFile &output) const {

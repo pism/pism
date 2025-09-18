@@ -165,7 +165,7 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
                                 double delta_t,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
-  const bool do_energy = member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
+  const bool do_energy = set_member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
   const int log10scalevol  = static_cast<int>(m_config->get_number("output.runtime.volume_scale_factor_log10")),
             log10scalearea = static_cast<int>(m_config->get_number("output.runtime.area_scale_factor_log10"));
   const std::string time_units = m_config->get_string("output.runtime.time_unit_name");

@@ -152,6 +152,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   m_buffer_size = static_cast<size_t>(m_config->get_number("output.timeseries.buffer_size"));
 
   m_variable["ancillary_variables"] = name + "_aux";
+  m_variable.set_time_dependent(true);
 }
 
 TSDiagnostic::~TSDiagnostic() {
@@ -350,7 +351,7 @@ void TSDiagnostic::flush() {
                      m_bounds);
   }
 
-  file.define_timeseries_variable(m_variable);
+  file.define_variable(m_variable);
   // write values of a diagnostic
   file.write_timeseries_variable(m_variable, { m_start }, { (unsigned int)m_values.size() }, m_values);
 

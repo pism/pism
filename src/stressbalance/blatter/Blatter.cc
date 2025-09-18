@@ -300,12 +300,15 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
        {"units", "1"},
        {"positive", "up"}};
 
-    m_u_sigma->metadata(0).z().set_name("z_sigma").clear();
-    m_v_sigma->metadata(0).z().set_name("z_sigma").clear();
+    auto &z_u = m_u_sigma->metadata(0).dimension("z");
+    auto &z_v = m_v_sigma->metadata(0).dimension("z");
+
+    z_u.set_name("z_sigma").clear();
+    z_v.set_name("z_sigma").clear();
 
     for (const auto &z_attr : z_attrs) {
-      m_u_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);
-      m_v_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);
+      z_u.set_string(z_attr.first, z_attr.second);
+      z_v.set_string(z_attr.first, z_attr.second);
     }
 
   }

@@ -492,7 +492,7 @@ void IceModel::allocate_iceberg_remover() {
     auto model      = m_config->get_string("stress_balance.model");
     auto ssa_method = m_config->get_string("stress_balance.ssa.method");
 
-    if ((member(model, { "ssa", "ssa+sia" }) and ssa_method == "fem") or model == "blatter") {
+    if ((set_member(model, { "ssa", "ssa+sia" }) and ssa_method == "fem") or model == "blatter") {
       m_iceberg_remover = std::make_shared<calving::IcebergRemoverFEM>(m_grid);
     } else {
       m_iceberg_remover = std::make_shared<calving::IcebergRemover>(m_grid);
@@ -619,7 +619,7 @@ void IceModel::allocate_basal_yield_stress() {
   std::string model = m_config->get_string("stress_balance.model");
 
   // only these two use the yield stress (so far):
-  if (member(model, { "ssa", "ssa+sia", "blatter" })) {
+  if (set_member(model, { "ssa", "ssa+sia", "blatter" })) {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
@@ -878,7 +878,7 @@ void IceModel::init_calving() {
   std::set<std::string> methods = set_split(m_config->get_string("calving.methods"), ',');
   bool allocate_front_retreat   = false;
 
-  if (member("thickness_calving", methods)) {
+  if (set_member("thickness_calving", methods)) {
 
     if (not m_thickness_threshold_calving) {
       m_thickness_threshold_calving = std::make_shared<calving::CalvingAtThickness>(m_grid);
@@ -891,7 +891,7 @@ void IceModel::init_calving() {
   }
 
 
-  if (member("eigen_calving", methods)) {
+  if (set_member("eigen_calving", methods)) {
     allocate_front_retreat = true;
 
     if (not m_eigen_calving) {
@@ -904,7 +904,7 @@ void IceModel::init_calving() {
     m_submodels["eigen calving"] = m_eigen_calving.get();
   }
 
-  if (member("vonmises_calving", methods)) {
+  if (set_member("vonmises_calving", methods)) {
     allocate_front_retreat = true;
 
     if (not m_vonmises_calving) {
@@ -918,7 +918,7 @@ void IceModel::init_calving() {
     m_submodels["von Mises calving"] = m_vonmises_calving.get();
   }
 
-  if (member("hayhurst_calving", methods)) {
+  if (set_member("hayhurst_calving", methods)) {
     allocate_front_retreat = true;
 
     if (not m_hayhurst_calving) {
@@ -931,7 +931,7 @@ void IceModel::init_calving() {
     m_submodels["Hayhurst calving"] = m_hayhurst_calving.get();
   }
 
-  if (member("float_kill", methods)) {
+  if (set_member("float_kill", methods)) {
     if (not m_float_kill_calving) {
       m_float_kill_calving = std::make_shared<calving::FloatKill>(m_grid);
     }

@@ -141,11 +141,20 @@ public:
    *
    * No-op if the variable already exists.
    *
-   * The name of the variable is obtained using `metadata.get_name()` and its type using `metadata.get_output_type()`.
    */
   void define_variable(const std::string &file_name, const std::string &variable_name,
                        const std::vector<std::string> &dims,
                        io::Type type, const VariableAttributes &attributes);
+
+  /*!
+   * FIXME
+   */
+  void define_variable(const std::string &file_name, const VariableMetadata &variable);
+
+  /*!
+   * FIXME
+   */
+  void define_variable(const std::string &file_name, const SpatialVariableMetadata &variable);
 
   /*!
    * Add a spatial variable to the list of variables that can be written to output files.
@@ -157,34 +166,6 @@ public:
    */
   void add_spatial_variable(const SpatialVariableMetadata &metadata,
                             const grid::DistributedGridInfo &grid);
-
-  /*!
-   * Define a 2D or 3D (possibly time-dependent) variable and set its attributes.
-   *
-   * No-op if the variable already exists.
-   *
-   * Stores domain decomposition `grid` and makes it accessible using grid_info().
-   *
-   * @param[in] file_name name of the output file
-   * @param[in] variable_name variable name
-   */
-  void define_spatial_variable(const std::string &file_name,
-                               const std::string &variable_name);
-
-  /*!
-   * Define a scalar time-dependent variable and set its attributes.
-   *
-   * This method should be used to define variables containing scalar time-dependent model
-   * outputs. Use `define_variable()` to define coordinate variables (`x`, `y`, `time`,
-   * etc).
-   *
-   * No-op if the variable already exists.
-   *
-   * @param[in] file_name name of the output file
-   * @param[in] metadata variable metadata (name, attributes, etc)
-   */
-  void define_timeseries_variable(const std::string &file_name,
-                                  const VariableMetadata &metadata);
 
   /*!
    * Set global attributes for a given output file.
@@ -259,7 +240,7 @@ public:
    *
    * The array `input` is distributed across MPI ranks in the communicator used to create
    * this `OutputWriter` instance. Uses domain decomposition information provided to
-   * `define_spatial_variable()`.
+   * `define_variable()`.
    */
   void write_spatial_variable(const std::string &file_name, const std::string &variable_name,
                               const double *input);
@@ -319,7 +300,7 @@ protected:
   const grid::DistributedGridInfo &grid_info(const std::string &variable_name) const;
 
   /*!
-   * Return the metadata for the spatial variable `variable_name`.
+   * Return the metadata for the variable `variable_name`.
    */
   const SpatialVariableMetadata &spatial_variable_info(const std::string &variable_name) const;
 
@@ -444,9 +425,9 @@ public:
                        const std::vector<std::string> &dims, io::Type type,
                        const VariableAttributes &attributes) const;
 
-  void define_spatial_variable(const SpatialVariableMetadata &metadata) const;
+  void define_variable(const VariableMetadata &variable) const;
 
-  void define_timeseries_variable(const VariableMetadata &metadata) const;
+  void define_variable(const SpatialVariableMetadata &variable) const;
 
   void set_global_attributes(const std::map<std::string, std::string> &strings,
                              const std::map<std::string, std::vector<double> > &numbers) const;

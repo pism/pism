@@ -629,8 +629,12 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
   {
     // Set of spatial dimensions for this field:
     std::set<int> axes{ X_AXIS, Y_AXIS };
-    if (axis_type_from_string(variable.z()["axis"]) == Z_AXIS) {
-      axes.insert(Z_AXIS);
+
+    for (const auto &dim : variable.dimensions()) {
+      if (axis_type_from_string(dim["axis"]) == Z_AXIS) {
+        axes.insert(Z_AXIS);
+        break;
+      }
     }
 
     int input_spatial_dim_count = 0; // number of spatial dimensions (input file)

@@ -92,7 +92,7 @@ void Config::import_from(const Config &other) {
   auto parameters = this->keys();
 
   for (const auto &p : other.all_doubles()) {
-    if (member(p.first, parameters)) {
+    if (set_member(p.first, parameters)) {
       this->set_numbers(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -102,7 +102,7 @@ void Config::import_from(const Config &other) {
   }
 
   for (const auto &p : other.all_strings()) {
-    if (member(p.first, parameters)) {
+    if (set_member(p.first, parameters)) {
       this->set_string(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -112,7 +112,7 @@ void Config::import_from(const Config &other) {
   }
 
   for (const auto &p : other.all_flags()) {
-    if (member(p.first, parameters)) {
+    if (set_member(p.first, parameters)) {
       this->set_flag(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -536,11 +536,11 @@ void set_flag_from_option(Config &config, const std::string &option,
   options::String opt("-" + option, doc, value ? "true" : "false", options::ALLOW_EMPTY);
 
   if (opt.is_set()) {
-    if (member(opt.value(), { "", "on", "yes", "true", "True" })) {
+    if (set_member(opt.value(), { "", "on", "yes", "true", "True" })) {
 
       value = true;
 
-    } else if (member(opt.value(), { "off", "no", "false", "False" })) {
+    } else if (set_member(opt.value(), { "off", "no", "false", "False" })) {
 
       value = false;
 

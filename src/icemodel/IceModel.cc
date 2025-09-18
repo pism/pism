@@ -748,7 +748,7 @@ IceModelTerminationReason IceModel::run() {
   const Profiling &profiling = m_ctx->profiling();
 
   bool do_mass_conserve = m_config->get_flag("geometry.update.enabled");
-  bool do_energy = member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
+  bool do_energy = set_member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
   bool do_skip = m_config->get_flag("time_stepping.skip.enabled");
 
   // de-allocate diagnostics that are not needed

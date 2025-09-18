@@ -68,7 +68,7 @@ BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
 
     m_temp = std::make_shared<array::Array3D>(m_grid, "litho_temp", array::WITHOUT_GHOSTS, z);
     {
-      auto &z_dim = m_temp->metadata(0).z();
+      auto &z_dim = m_temp->metadata(0).dimension("z");
 
       z_dim.set_name("zb").long_name("Z-coordinate in bedrock").units("m");
       z_dim["axis"]     = "Z";

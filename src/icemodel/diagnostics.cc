@@ -1085,7 +1085,7 @@ TemperaturePA::TemperaturePA(const IceModel *m)
 }
 
 std::shared_ptr<array::Array> TemperaturePA::compute_impl() const {
-  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
+  bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Array3D>(m_grid, "temp_pa", array::WITHOUT_GHOSTS, m_grid->z());
@@ -1149,7 +1149,7 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
 
 std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
 
-  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
+  bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Scalar>(m_grid, "temp_pa_base");
@@ -1416,7 +1416,7 @@ std::shared_ptr<array::Array> LiquidFraction::compute_impl() const {
       new array::Array3D(m_grid, "liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
+  bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
 
   if (cold_mode) {
     result->set(0.0);
@@ -2538,7 +2538,7 @@ LatLonBounds::LatLonBounds(const IceModel *m, const std::string &var_name,
 
   // set metadata:
   m_vars = { { m_sys, m_var_name + "_bnds", *m_grid, { 0.0, 1.0, 2.0, 3.0 } } };
-  m_vars[0].z().clear().set_name("nv4");
+  m_vars[0].dimension("z").clear().set_name("nv4");
 
   m_vars[0].set_time_dependent(false);
   if (m_var_name == "lon") {
@@ -3571,14 +3571,14 @@ void IceModel::list_diagnostics(const std::string &list_type) const {
     return;
   }
 
-  if (member(list_type, {"all", "spatial"})) {
+  if (set_member(list_type, {"all", "spatial"})) {
     m_log->message(1, "\n");
     m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
 
     print_diagnostics(*m_log, diag_metadata(m_diagnostics));
   }
 
-  if (member(list_type, {"all", "scalar"})) {
+  if (set_member(list_type, {"all", "scalar"})) {
     // scalar time-series
     m_log->message(1, "======== Available time-series ========\n");
 

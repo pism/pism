@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -58,6 +58,8 @@ double wall_clock_hours(MPI_Comm com, double start_time);
 // array
 bool is_increasing(const std::vector<double> &a);
 
+bool vector_member(const std::string &string, const std::vector<std::string> &vector);
+
 // string
 bool ends_with(const std::string &str, const std::string &suffix);
 
@@ -75,7 +77,7 @@ std::string set_join(const std::set<std::string> &input, const std::string& sepa
 std::string replace_character(const std::string &input, char from, char to);
 
 // set
-bool member(const std::string &string, const std::set<std::string> &set);
+bool set_member(const std::string &string, const std::set<std::string> &set);
 
 template<typename T, typename S>
 std::set<T> set_union(std::initializer_list<S> sets) {

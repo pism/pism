@@ -170,7 +170,7 @@ void Component::regrid(const std::string &module_name, array::Array &variable,
 
   SpatialVariableMetadata &m = variable.metadata();
 
-  if (((not regrid_vars.empty()) and member(m["short_name"], regrid_vars)) or
+  if (((not regrid_vars.empty()) and set_member(m["short_name"], regrid_vars)) or
       (regrid_vars.empty() and flag == REGRID_WITHOUT_REGRID_VARS)) {
 
     m_log->message(2,

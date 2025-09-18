@@ -42,16 +42,18 @@ void OutputFile::define_variable(const std::string &variable_name,
   m_writer->define_variable(m_file_name, variable_name, dims, type, attributes);
 }
 
-void OutputFile::define_spatial_variable(const SpatialVariableMetadata &metadata) const {
-  const auto *grid_info = metadata.grid_info();
-  if (grid_info != nullptr) {
-    m_writer->add_spatial_variable(metadata, *grid_info);
-  }
-  m_writer->define_spatial_variable(m_file_name, metadata.get_name());
+
+void OutputFile::define_variable(const VariableMetadata &variable) const {
+  m_writer->define_variable(m_file_name, variable);
 }
 
-void OutputFile::define_timeseries_variable(const VariableMetadata &metadata) const {
-  m_writer->define_timeseries_variable(m_file_name, metadata);
+void OutputFile::define_variable(const SpatialVariableMetadata &variable) const {
+  const auto *grid_info = variable.grid_info();
+  if (grid_info != nullptr) {
+    m_writer->add_spatial_variable(variable, *grid_info);
+  }
+
+  m_writer->define_variable(m_file_name, variable);
 }
 
 void OutputFile::set_global_attributes(

@@ -211,7 +211,7 @@ void EnergyModel::regrid_enthalpy() {
 
   std::string enthalpy_name = m_ice_enthalpy.metadata().get_name();
 
-  if (regrid_vars.empty() or member(enthalpy_name, regrid_vars)) {
+  if (regrid_vars.empty() or set_member(enthalpy_name, regrid_vars)) {
     File regrid_file(m_grid->com, regrid_filename, io::PISM_GUESS, io::PISM_READONLY);
     init_enthalpy(regrid_file, true, 0);
   }

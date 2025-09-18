@@ -94,11 +94,12 @@ static std::shared_ptr<array::Array3D> allocate_layer_thickness(std::shared_ptr<
   auto z_description =
       pism::printf("times for isochrones in '%s'; earliest deposition times for layers in '%s'",
                    isochrone_depth_variable_name, layer_thickness_variable_name);
-  auto &z = result->metadata(0).z();
+  auto &z = result->metadata(0).dimension("z");
   z.clear()
     .set_name(deposition_time_variable_name)
     .long_name(z_description)
     .units(time->units());
+
   z["calendar"] = time->calendar();
 
   return result;
@@ -320,7 +321,7 @@ static bool regridp(const Config &config) {
 
   auto regrid_vars = set_split(config.get_string("input.regrid.vars"), ',');
 
-  return member(details::layer_thickness_variable_name, regrid_vars);
+  return set_member(details::layer_thickness_variable_name, regrid_vars);
 }
 
 /*!
@@ -819,7 +820,7 @@ public:
                                     deposition_time_variable_name);
 
     m_vars[0].long_name(description).units("m");
-    auto &z = m_vars[0].z();
+    auto &z = m_vars[0].dimension("z");
     z.clear()
         .set_name(deposition_time_variable_name)
         .long_name(

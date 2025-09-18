@@ -178,7 +178,7 @@ void Pico::define_state_impl(const OutputFile &output) const {
   auto vars = array::metadata({&m_geometry.basin_mask(), &m_Soc_box0, &m_Toc_box0, &m_overturning});
 
   for (const auto &var : vars) {
-    output.define_spatial_variable(var);
+    output.define_variable(var);
   }
 
   OceanModel::define_state_impl(output);

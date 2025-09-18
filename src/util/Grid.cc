@@ -915,19 +915,19 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
           // Try to detect rotated pole grids
           {
             if (mapping.get_string("grid_mapping_name") == "rotated_latitude_longitude" or
-                member(std_name, { "grid_latitude", "grid_longitude" }) or
-                member(dimension_name, { "rlat", "rlon" })) {
+                set_member(std_name, { "grid_latitude", "grid_longitude" }) or
+                set_member(dimension_name, { "rlat", "rlon" })) {
               units              = "degrees";
               longitude_latitude = true;
             }
           }
           // Try to detect longitude-latitude grids
           {
-            if (std_name == "longitude" or member(dimension_name, {"lon", "longitude"})) {
+            if (std_name == "longitude" or set_member(dimension_name, {"lon", "longitude"})) {
               units              = "degree_east";
               longitude_latitude = true;
             }
-            if (std_name == "latitude" or member(dimension_name, {"lat", "latitude"})) {
+            if (std_name == "latitude" or set_member(dimension_name, {"lat", "latitude"})) {
               units              = "degree_north";
               longitude_latitude = true;
             }

@@ -83,6 +83,20 @@ std::vector<DimensionMetadata> VariableMetadata::dimensions_impl() const {
   return m_dimensions;
 }
 
+const DimensionMetadata& VariableMetadata::dimension(const std::string &name) const {
+  return const_cast<VariableMetadata*>(this)->dimension(name);
+}
+
+DimensionMetadata& VariableMetadata::dimension(const std::string &name) {
+  for (auto &dim : m_dimensions) {
+    if (dim.get_name() == name) {
+      return dim;
+    }
+  }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' does not have the '%s' dimension",
+                                get_name().c_str(), name.c_str());
+}
+
 const grid::DistributedGridInfo *VariableMetadata::grid_info() const {
   return grid_info_impl();
 }
@@ -181,38 +195,40 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
                                                  const std::string &name, const Grid &grid,
                                                  const std::vector<double> &levels)
     : VariableMetadata(name, system),
-      m_x("x", system, (int)grid.Mx()),
-      m_y("y", system, (int)grid.My()),
-      m_z("z", system, std::max((int)levels.size(), 1)),
       m_zlevels(levels),
       m_grid_info(grid.info()) {
 
   // spatial variables are time-dependent by default
   set_time_dependent(true);
 
-  m_x["axis"]           = "X";
-  m_x["long_name"]      = "X-coordinate in Cartesian system";
-  m_x["standard_name"]  = "projection_x_coordinate";
-  m_x["units"]          = "m";
-  m_x["spacing_meters"] = { grid.dx() };
+  m_dimensions = {{"y", unit_system(), (int)grid.My(), true},
+                  {"x", unit_system(), (int)grid.Mx(), true}};
 
-  m_y["axis"]           = "Y";
-  m_y["long_name"]      = "Y-coordinate in Cartesian system";
-  m_y["standard_name"]  = "projection_y_coordinate";
-  m_y["units"]          = "m";
-  m_y["spacing_meters"] = { grid.dy() };
+  auto &x = dimension("x");
+  x["axis"]           = "X";
+  x["long_name"]      = "X-coordinate in Cartesian system";
+  x["standard_name"]  = "projection_x_coordinate";
+  x["units"]          = "m";
+  x["spacing_meters"] = { grid.dx() };
 
-  if (m_zlevels.size() > 1) {
-    m_z.set_name("z"); // default; can be overridden easily
-    m_z["axis"]      = "Z";
-    m_z["long_name"] = "Z-coordinate in Cartesian system";
-    m_z["units"]     = "m";
-    m_z["positive"]  = "up";
+  auto &y = dimension("y");
+  y["axis"]           = "Y";
+  y["long_name"]      = "Y-coordinate in Cartesian system";
+  y["standard_name"]  = "projection_y_coordinate";
+  y["units"]          = "m";
+  y["spacing_meters"] = { grid.dy() };
 
-    m_n_spatial_dims = 3;
+  if (levels.size() > 1) {
+    m_dimensions.push_back({"z", unit_system(), (int)levels.size(), true});
+
+    auto &z = dimension("z");
+    z["axis"]      = "Z";
+    z["long_name"] = "Z-coordinate in Cartesian system";
+    z["units"]     = "m";
+    z["positive"]  = "up";
 
     {
-      auto nlevels = m_z.length();
+      auto nlevels = z.length();
 
       double dz_max = levels[1] - levels[0];
       double dz_min = levels.back() - levels.front();
@@ -223,13 +239,12 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
         dz_min    = std::min(dz_min, dz);
       }
 
-      m_z["spacing_min_meters"] = { dz_min };
-      m_z["spacing_max_meters"] = { dz_max };
+      z["spacing_min_meters"] = { dz_min };
+      z["spacing_max_meters"] = { dz_max };
     }
-  } else {
-    z().set_name("").clear();
-    m_n_spatial_dims = 2;
   }
+
+  m_n_spatial_dims = m_dimensions.size();
 }
 
 const std::vector<double> &SpatialVariableMetadata::levels() const {
@@ -238,19 +253,6 @@ const std::vector<double> &SpatialVariableMetadata::levels() const {
 
 const grid::DistributedGridInfo *SpatialVariableMetadata::grid_info_impl() const {
   return &m_grid_info;
-}
-
-std::vector<DimensionMetadata> SpatialVariableMetadata::dimensions_impl() const {
-  std::vector<DimensionMetadata> dims;
-  for (const auto &dimension : { y(), x(), z() }) { // note the order
-    if (dimension.get_name().empty()) {
-      // z().dimension_name() is empty if var is a 2D variable
-      continue;
-    }
-
-    dims.push_back(dimension);
-  }
-  return dims;
 }
 
 //! Report the range of a \b global Vec `v`.
@@ -277,30 +279,6 @@ void VariableMetadata::report_range(const Logger &log, double min, double max) c
               "  %s / %s\n"
               "  %s \\ %s\n",
               name.c_str(), info.c_str(), spacer.c_str(), range.c_str());
-}
-
-DimensionMetadata &SpatialVariableMetadata::x() {
-  return m_x;
-}
-
-DimensionMetadata &SpatialVariableMetadata::y() {
-  return m_y;
-}
-
-DimensionMetadata &SpatialVariableMetadata::z() {
-  return m_z;
-}
-
-const DimensionMetadata &SpatialVariableMetadata::x() const {
-  return m_x;
-}
-
-const DimensionMetadata &SpatialVariableMetadata::y() const {
-  return m_y;
-}
-
-const DimensionMetadata &SpatialVariableMetadata::z() const {
-  return m_z;
 }
 
 bool VariableAttributes::is_set(const std::string &name) const {

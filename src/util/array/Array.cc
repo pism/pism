@@ -465,7 +465,7 @@ void Array::read_impl(const File &file, const unsigned int time) {
 //! \brief Define variables corresponding to an Array in a file opened using `file`.
 void Array::define(const OutputFile &file) const {
   for (unsigned int j = 0; j < ndof(); ++j) {
-    file.define_spatial_variable(metadata(j));
+    file.define_variable(metadata(j));
   }
 }
 

@@ -80,8 +80,8 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
       .units("meters");
 
   // coordinate variables of the extended grid should have different names
-  m_viscous_displacement->metadata().x().set_name("x_lc");
-  m_viscous_displacement->metadata().y().set_name("y_lc");
+  m_viscous_displacement->metadata().dimension("x").set_name("x_lc");
+  m_viscous_displacement->metadata().dimension("y").set_name("y_lc");
 
   // do not point to auxiliary coordinates "lon" and "lat".
   m_viscous_displacement->metadata()["coordinates"] = "";

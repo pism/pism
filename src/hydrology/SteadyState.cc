@@ -196,7 +196,7 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
 void SteadyState::define_state_impl(const OutputFile& output) const {
   NullTransport::define_state_impl(output);
 
-  output.define_timeseries_variable(m_time_dimension);
+  output.define_variable(m_time_dimension);
 
   m_Q.define(output);
 }

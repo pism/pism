@@ -47,7 +47,7 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid, const std::string &model_name)
   m_t_eps           = m_config->get_number("time_stepping.resolution", "seconds");
 
   m_time_dimension.long_name("time of the last update of the bed deformation model")
-      .units(time().units());
+      .units(time().units()).set_time_dependent(true);
   m_time_dimension["calendar"] = time().calendar();
 
   m_topg.metadata(0)
@@ -88,7 +88,7 @@ void BedDef::define_state_impl(const OutputFile &output) const {
   m_topg.define(output);
   m_load_accumulator.define(output);
 
-  output.define_timeseries_variable(m_time_dimension);
+  output.define_variable(m_time_dimension);
 }
 
 void BedDef::write_state_impl(const OutputFile &output) const {

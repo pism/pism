@@ -118,29 +118,27 @@ void define_time(const OutputFile &output_file, const VariableMetadata &metadata
   }
 }
 
-void define_variable(const VariableMetadata &variable,
-                     const std::string &time_name,
-                     const std::string &exp_id_name,
-                     const OutputFile &file) {
-  for (const auto &dim : variable.dimensions()) {
-    file.define_dimension(dim.get_name(), dim.length());
-    if (dim.coordinate_variable()) {
-      file.define_variable(dim.get_name(), dim.dimension_names(), dim.get_output_type(),
-                           dim.attributes());
+void define_variable(const VariableMetadata &variable, const std::string &time_name,
+                     const std::string &exp_id_name, const OutputFile &file) {
+  for (const auto &dimension : variable.dimensions()) {
+    file.define_dimension(dimension.get_name(), dimension.length());
+    if (dimension.coordinate_variable()) {
+      file.define_variable(dimension.get_name(), dimension.dimension_names(),
+                           dimension.get_output_type(), dimension.attributes());
     }
   }
 
-  auto dims = variable.dimension_names();
+  auto dimensions = variable.dimension_names();
 
   if (variable.get_time_dependent()) {
-    dims.insert(dims.begin(), time_name);
+    dimensions.insert(dimensions.begin(), time_name);
   }
 
   if (not exp_id_name.empty()) {
-    dims.insert(dims.begin(), exp_id_name);
+    dimensions.insert(dimensions.begin(), exp_id_name);
   }
-  
-  file.define_variable(variable.get_name(), dims, variable.get_output_type(),
+
+  file.define_variable(variable.get_name(), dimensions, variable.get_output_type(),
                        variable.attributes());
 }
 

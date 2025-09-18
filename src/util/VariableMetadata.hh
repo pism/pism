@@ -201,6 +201,9 @@ public:
   std::vector<DimensionMetadata> dimensions() const;
   std::vector<std::string> dimension_names() const;
 
+  DimensionMetadata& dimension(const std::string &name);
+  const DimensionMetadata& dimension(const std::string &name) const;
+
   bool has_attribute(const std::string &name) const;
   bool has_attributes() const;
 
@@ -215,6 +218,8 @@ public:
 protected:
   unsigned int m_n_spatial_dims;
 
+  std::vector<DimensionMetadata> m_dimensions;
+
   virtual std::vector<DimensionMetadata> dimensions_impl() const;
   virtual const grid::DistributedGridInfo *grid_info_impl() const;
 
@@ -226,8 +231,6 @@ private:
   bool m_time_dependent;
 
   io::Type m_output_type;
-
-  std::vector<DimensionMetadata> m_dimensions;
 };
 
 class DimensionMetadata : public VariableMetadata {
@@ -253,20 +256,9 @@ public:
 
   const std::vector<double>& levels() const;
 
-  DimensionMetadata& x();
-  DimensionMetadata& y();
-  DimensionMetadata& z();
-
-  const DimensionMetadata& x() const;
-  const DimensionMetadata& y() const;
-  const DimensionMetadata& z() const;
-
 private:
   const grid::DistributedGridInfo *grid_info_impl() const;
 
-  std::vector<DimensionMetadata> dimensions_impl() const;
-
-  DimensionMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
   grid::DistributedGridInfo m_grid_info;
 };

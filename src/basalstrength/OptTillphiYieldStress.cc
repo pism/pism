@@ -45,7 +45,8 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
     m_time(m_config->get_string("time.dimension_name") + "_tillphi_opt", m_sys)
 {
   m_time.long_name("time of the last update of the till friction angle")
-      .units(time().units());
+      .units(time().units())
+      .set_time_dependent(true);
   m_time["calendar"] = time().calendar();
 
   // In this model tillphi is NOT time-independent.
@@ -284,7 +285,7 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
 
 void OptTillphiYieldStress::define_state_impl(const OutputFile &output) const {
   MohrCoulombYieldStress::define_state_impl(output);
-  output.define_timeseries_variable(m_time);
+  output.define_variable(m_time);
 }
 
 void OptTillphiYieldStress::write_state_impl(const OutputFile &output) const {

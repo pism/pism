@@ -35,8 +35,8 @@ namespace pism {
 inline bool pism_is_valid_calendar_name(const std::string &name) {
   // Calendar names from the CF Conventions document (except the
   // 366_day (all_leap)):
-  return member(name, {"standard", "gregorian", "proleptic_gregorian",
-                       "noleap", "365_day", "julian", "360_day"});
+  return set_member(name, {"standard", "gregorian", "proleptic_gregorian",
+                           "noleap", "365_day", "julian", "360_day"});
 }
 
 //! \brief Time management class.

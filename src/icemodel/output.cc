@@ -223,18 +223,6 @@ void IceModel::define_variables(const OutputFile &file, OutputKind kind,
 
   auto time_name = m_time->variable_name();
 
-  // "lon" and "lat" are a part of the "model state", so we need to add "coordinates" when
-  // saving the model state even if "lon" and "lat" were not requested explicitly:
-  if ((member("lat", variables) and member("lon", variables)) or
-      kind == INCLUDE_MODEL_STATE) {
-    file.add_extra_attributes({ { "coordinates", "lat lon" } });
-  }
-
-  const auto &mapping = m_grid->get_mapping_info();
-  if (not mapping.proj_string.empty() or mapping.cf_mapping.has_attributes()) {
-    file.add_extra_attributes({ { "grid_mapping", mapping.cf_mapping.get_name() } });
-  }
-
   if (kind == INCLUDE_MODEL_STATE) {
     define_state(file);
   }
@@ -255,26 +243,77 @@ void IceModel::write_variables(const OutputFile &file, OutputKind kind,
   write_run_stats(file);
 }
 
-void IceModel::define_diagnostics(const OutputFile &file, const std::set<std::string> &variables) const {
-  for (const auto& variable : variables) {
-    auto diag = m_diagnostics.find(variable);
+void define_variables(std::set<SpatialVariableMetadata> &variables, const OutputFile &file,
+                      bool use_internal_units, const std::string &mapping_variable_name) {
+  std::set<std::string> variable_names;
+  for (const auto &v : variables) {
+    variable_names.insert(v.get_name());
+  }
+
+  for (auto var : variables) {
+
+    if (use_internal_units) {
+      var.output_units(var["units"]);
+    }
+
+    auto var_name = var.get_name();
+
+    if (var_name == "lat" and set_member("lat_bnds", variable_names)) {
+      var["bounds"] = "lat_bnds";
+    }
+    if (var_name == "lon" and set_member("lon_bnds", variable_names)) {
+      var["bounds"] = "lon_bnds";
+    }
+
+    // add extra attributes such as "grid_mapping" and "coordinates". Variables lat, lon,
+    // lat_bnds, and lon_bnds should not have these attributes to support CDO (see issue
+    // #384).
+    //
+    // We check names of x and y dimensions to avoid setting extra attributes for variables
+    // that use a different grid (e.g. viscous_bed_displacement written by the Lingle-Clark
+    // bed deformation model).
+    auto dim_names                = var.dimension_names();
+    std::set<std::string> lat_lon = { "lat_bnds", "lon_bnds", "lat", "lon" };
+    if (vector_member("x", dim_names) and vector_member("y", dim_names)) {
+      if (not set_member(var_name, lat_lon) and set_member("lat", variable_names) and
+          set_member("lon", variable_names)) {
+        var["coordinates"] = "lat lon";
+      }
+
+      if (not mapping_variable_name.empty()) {
+        var["grid_mapping"] = mapping_variable_name;
+      }
+    }
+
+    file.define_variable(var);
+  }
+}
+
+void IceModel::define_diagnostics(const OutputFile &file,
+                                  const std::set<std::string> &variable_names) const {
+  std::set<SpatialVariableMetadata> variables;
+
+  std::string mapping_variable_name{};
+  {
+    const auto &mapping = m_grid->get_mapping_info();
+    if (not mapping.proj_string.empty() or mapping.cf_mapping.has_attributes()) {
+      mapping_variable_name = mapping.cf_mapping.get_name();
+    }
+  }
+
+  for (const auto &var : variable_names) {
+    auto diag = m_diagnostics.find(var);
 
     if (diag != m_diagnostics.end()) {
-      auto &D = *diag->second;
-      for (unsigned int n = 0; n < D.n_variables(); ++n) {
-        auto var = D.metadata(n);
-
-        if (var.get_name() == "lat" and member("lat_bnds", variables)) {
-          var["bounds"] = "lat_bnds";
-        }
-        if (var.get_name() == "lon" and member("lon_bnds", variables)) {
-          var["bounds"] = "lon_bnds";
-        }
-
-        file.define_spatial_variable(var);
+      const auto &D = diag->second;
+      for (unsigned int k = 0; k < D->n_variables(); ++k) {
+        variables.insert(D->metadata(k));
       }
     }
   }
+
+  pism::define_variables(variables, file, m_config->get_flag("output.use_MKS"),
+                         mapping_variable_name);
 }
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
@@ -290,9 +329,23 @@ void IceModel::write_diagnostics(const OutputFile &file, const std::set<std::str
 }
 
 void IceModel::define_state(const OutputFile &file) const {
-  for (auto *v : m_model_state) {
-    v->define(file);
+  std::string mapping_variable_name{};
+  {
+    const auto &mapping = m_grid->get_mapping_info();
+    if (not mapping.proj_string.empty() or mapping.cf_mapping.has_attributes()) {
+      mapping_variable_name = mapping.cf_mapping.get_name();
+    }
   }
+
+  std::set<SpatialVariableMetadata> state_variables{};
+  for (auto *v : m_model_state) {
+    for (unsigned int k = 0; k < v->ndof(); ++k) {
+      state_variables.insert(v->metadata(k));
+    }
+  }
+
+  pism::define_variables(state_variables, file, m_config->get_flag("output.use_MKS"),
+                         mapping_variable_name);
 
   for (const auto& m : m_submodels) {
     m.second->define_state(file);
