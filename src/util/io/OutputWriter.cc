@@ -188,6 +188,7 @@ void OutputWriter::define_variable(const std::string &file_name, const std::stri
 
 void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &variable) {
 
+  // define dimensions and corresponding coordinate variables
   for (const auto &dimension : variable.dimensions()) {
     define_dimension(file_name, dimension.get_name(), dimension.length());
     if (dimension.coordinate_variable()) {
@@ -196,16 +197,20 @@ void OutputWriter::define_variable(const std::string &file_name, const VariableM
     }
   }
 
+  // build the list of dimension names, adding the name of the time dimension (for
+  // time-dependent variables) and the experiment ID dimension (if requested)
   auto dimensions = variable.dimension_names();
+  {
+    if (variable.get_time_dependent()) {
+      dimensions.insert(dimensions.begin(), m_impl->time_name);
+    }
 
-  if (variable.get_time_dependent()) {
-    dimensions.insert(dimensions.begin(), m_impl->time_name);
+    if (not m_impl->experiment_id.empty()) {
+      dimensions.insert(dimensions.begin(), m_impl->experiment_id_name);
+    }
   }
 
-  if (not m_impl->experiment_id.empty()) {
-    dimensions.insert(dimensions.begin(), m_impl->experiment_id_name);
-  }
-
+  // define the variable
   define_variable(file_name, variable.get_name(), dimensions, variable.get_output_type(),
                   variable.attributes());
 }
@@ -295,7 +300,6 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   }
 
   // write dimensions:
-
   for (const auto &dim : metadata.dimensions()) {
     auto axis_type = axis_type_from_string(dim["axis"]);
 
