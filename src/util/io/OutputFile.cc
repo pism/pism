@@ -47,15 +47,6 @@ void OutputFile::define_variable(const VariableMetadata &variable) const {
   m_writer->define_variable(m_file_name, variable);
 }
 
-void OutputFile::define_variable(const SpatialVariableMetadata &variable) const {
-  const auto *grid_info = variable.grid_info();
-  if (grid_info != nullptr) {
-    m_writer->add_spatial_variable(variable, *grid_info);
-  }
-
-  m_writer->define_variable(m_file_name, variable);
-}
-
 void OutputFile::set_global_attributes(
     const std::map<std::string, std::string> &strings,
     const std::map<std::string, std::vector<double> > &numbers) const {

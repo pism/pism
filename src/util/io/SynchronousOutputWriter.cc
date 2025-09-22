@@ -24,6 +24,7 @@
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/GridInfo.hh"
+#include <cstddef>
 
 namespace pism {
 
@@ -192,10 +193,14 @@ void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &fil
 
   const auto &output_file = file(file_name);
 
-  const auto &metadata = spatial_variable_info(variable_name);
+  const auto &metadata = variable_info(variable_name);
   const auto &grid = grid_info(variable_name);
-  unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
-  
+
+  unsigned int n_levels{1};
+  if (metadata.levels() != nullptr) {
+    n_levels = std::max(metadata.levels()->size(), (std::size_t)1);
+  }
+
   std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };
   std::vector<unsigned int> count = { grid.ym, grid.xm, n_levels };
 

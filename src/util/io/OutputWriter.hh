@@ -152,20 +152,14 @@ public:
   void define_variable(const std::string &file_name, const VariableMetadata &variable);
 
   /*!
-   * FIXME
-   */
-  void define_variable(const std::string &file_name, const SpatialVariableMetadata &variable);
-
-  /*!
-   * Add a spatial variable to the list of variables that can be written to output files.
+   * Add a variable to the list of variables that can be written to output files.
    *
    * This has to be done before a spatial variable is *defined* in an output file.
    *
    * @param[in] metadata variable metadata (name, attributes, etc)
    * @param[in] grid domain decomposition information
    */
-  void add_spatial_variable(const SpatialVariableMetadata &metadata,
-                            const grid::DistributedGridInfo &grid);
+  void add_variable(const VariableMetadata &metadata, const grid::DistributedGridInfo &grid);
 
   /*!
    * Set global attributes for a given output file.
@@ -302,7 +296,7 @@ protected:
   /*!
    * Return the metadata for the variable `variable_name`.
    */
-  const SpatialVariableMetadata &spatial_variable_info(const std::string &variable_name) const;
+  const VariableMetadata &variable_info(const std::string &variable_name) const;
 
   /*!
    * Return `true` if variable `variable_name` was already written to the file
@@ -426,8 +420,6 @@ public:
                        const VariableAttributes &attributes) const;
 
   void define_variable(const VariableMetadata &variable) const;
-
-  void define_variable(const SpatialVariableMetadata &variable) const;
 
   void set_global_attributes(const std::map<std::string, std::string> &strings,
                              const std::map<std::string, std::vector<double> > &numbers) const;

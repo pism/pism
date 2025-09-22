@@ -105,6 +105,14 @@ const grid::DistributedGridInfo *VariableMetadata::grid_info_impl() const {
   return nullptr;
 }
 
+const std::vector<double> *VariableMetadata::levels() const {
+  return levels_impl();
+}
+
+const std::vector<double> *VariableMetadata::levels_impl() const {
+  return nullptr;
+}
+
 /** A "time independent" variable will be saved to a NetCDF
     variable which does not depend on the "time" dimension.
  */
@@ -247,8 +255,8 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
   m_n_spatial_dims = m_dimensions.size();
 }
 
-const std::vector<double> &SpatialVariableMetadata::levels() const {
-  return m_zlevels;
+const std::vector<double> *SpatialVariableMetadata::levels_impl() const {
+  return &m_zlevels;
 }
 
 const grid::DistributedGridInfo *SpatialVariableMetadata::grid_info_impl() const {

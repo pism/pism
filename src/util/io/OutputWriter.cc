@@ -122,7 +122,7 @@ struct OutputWriter::Impl {
   std::map<std::tuple<std::string, std::string>, bool> written_time_independent;
   std::map<std::tuple<std::string, std::string>, bool> written_time_dependent;
   std::map<std::string, grid::DistributedGridInfo> grids;
-  std::map<std::string, SpatialVariableMetadata> variables;
+  std::map<std::string, VariableMetadata> variables;
   std::string experiment_id_name;
   std::string experiment_id;
 };
@@ -164,14 +164,13 @@ const grid::DistributedGridInfo &OutputWriter::grid_info(const std::string &vari
   return m_impl->grids[variable_name];
 }
 
-const SpatialVariableMetadata&
-OutputWriter::spatial_variable_info(const std::string &variable_name) const {
+const VariableMetadata &OutputWriter::variable_info(const std::string &variable_name) const {
   auto i = m_impl->variables.find(variable_name);
   if (i != m_impl->variables.end()) {
     return i->second;
   }
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "variable '%s' was not added using add_spatial_variable()",
+                                "variable '%s' was not added using add_variable()",
                                 variable_name.c_str());
 }
 
@@ -187,6 +186,11 @@ void OutputWriter::define_variable(const std::string &file_name, const std::stri
 }
 
 void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &variable) {
+
+  const auto *grid_info = variable.grid_info();
+  if (grid_info != nullptr) {
+    add_variable(variable, *grid_info);
+  }
 
   // define dimensions and corresponding coordinate variables
   for (const auto &dimension : variable.dimensions()) {
@@ -215,19 +219,8 @@ void OutputWriter::define_variable(const std::string &file_name, const VariableM
                   variable.attributes());
 }
 
-void OutputWriter::define_variable(const std::string &file_name,
-                                   const SpatialVariableMetadata &variable) {
-
-  const auto *grid_info = variable.grid_info();
-  if (grid_info != nullptr) {
-    add_spatial_variable(variable, *grid_info);
-  }
-
-  define_variable(file_name, (VariableMetadata&)variable);
-}
-
-void OutputWriter::add_spatial_variable(const SpatialVariableMetadata &metadata,
-                                        const grid::DistributedGridInfo &grid) {
+void OutputWriter::add_variable(const VariableMetadata &metadata,
+                                const grid::DistributedGridInfo &grid) {
   const auto &name = metadata.get_name();
 
   if (m_impl->variables.find(name) == m_impl->variables.end()) {
@@ -286,7 +279,7 @@ void OutputWriter::write_array(const std::string &file_name, const VariableMetad
 void OutputWriter::write_spatial_variable(const std::string &file_name,
                                           const std::string &variable_name,
                                           const double *input) {
-  const auto &metadata = spatial_variable_info(variable_name);
+  const auto &metadata = variable_info(variable_name);
   const auto &grid     = grid_info(variable_name);
 
   // check if we need to write this variable
@@ -303,7 +296,7 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   for (const auto &dim : metadata.dimensions()) {
     auto axis_type = axis_type_from_string(dim["axis"]);
 
-    const std::vector<double> *coordinates;
+    const std::vector<double> *coordinates = nullptr;
     switch (axis_type) {
     case X_AXIS:
       coordinates = &grid.x;
@@ -312,7 +305,11 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
       coordinates = &grid.y;
       break;
     default:
-      coordinates = &metadata.levels();
+      coordinates = metadata.levels();
+    }
+
+    if (coordinates == nullptr) {
+      continue;
     }
 
     auto dimension_name = dim.get_name();
@@ -329,7 +326,10 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   }
 
   // make sure we have at least one level
-  unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
+  size_t n_levels{1};
+  if (metadata.levels() != nullptr) {
+    n_levels = std::max(metadata.levels()->size(), (std::size_t)1);
+  }
 
   std::string units = metadata["units"];
   std::string output_units = m_impl->use_internal_units ? units : metadata["output_units"];

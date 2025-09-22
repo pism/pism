@@ -198,6 +198,8 @@ public:
    */
   const grid::DistributedGridInfo *grid_info() const;
 
+  const std::vector<double>* levels() const;
+
   std::vector<DimensionMetadata> dimensions() const;
   std::vector<std::string> dimension_names() const;
 
@@ -222,6 +224,7 @@ protected:
 
   virtual std::vector<DimensionMetadata> dimensions_impl() const;
   virtual const grid::DistributedGridInfo *grid_info_impl() const;
+  virtual const std::vector<double>* levels_impl() const;
 
 private:
   VariableAttributes m_attributes;
@@ -254,9 +257,9 @@ public:
                           const std::vector<double> &levels = { 0.0 });
   virtual ~SpatialVariableMetadata() = default;
 
-  const std::vector<double>& levels() const;
-
 private:
+  const std::vector<double>* levels_impl() const;
+
   const grid::DistributedGridInfo *grid_info_impl() const;
 
   std::vector<double> m_zlevels;
