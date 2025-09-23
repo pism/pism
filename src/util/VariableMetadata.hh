@@ -198,7 +198,7 @@ public:
    */
   const grid::DistributedGridInfo *grid_info() const;
 
-  const std::vector<double>* levels() const;
+  const std::vector<double>& levels() const;
 
   std::vector<DimensionMetadata> dimensions() const;
   std::vector<std::string> dimension_names() const;
@@ -222,9 +222,12 @@ protected:
 
   std::vector<DimensionMetadata> m_dimensions;
 
+  std::shared_ptr<grid::DistributedGridInfo> m_grid_info;
+
+  //! vertical grid levels (or similar)
+  std::vector<double> m_levels;
+
   virtual std::vector<DimensionMetadata> dimensions_impl() const;
-  virtual const grid::DistributedGridInfo *grid_info_impl() const;
-  virtual const std::vector<double>* levels_impl() const;
 
 private:
   VariableAttributes m_attributes;
@@ -232,7 +235,7 @@ private:
   std::string m_name;
 
   bool m_time_dependent;
-
+  
   io::Type m_output_type;
 };
 
@@ -256,14 +259,6 @@ public:
                           const Grid &grid,
                           const std::vector<double> &levels = { 0.0 });
   virtual ~SpatialVariableMetadata() = default;
-
-private:
-  const std::vector<double>* levels_impl() const;
-
-  const grid::DistributedGridInfo *grid_info_impl() const;
-
-  std::vector<double> m_zlevels;
-  grid::DistributedGridInfo m_grid_info;
 };
 
 // Comparison operator for VariableMetadata (we need it to store VariableMetadata in

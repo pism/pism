@@ -92,8 +92,9 @@ protected:
   double m_update_interval;
   //! Temporal resolution to use when checking whether it's time to update
   double m_t_eps;
-  //! The variable used to store the last update time.
-  VariableMetadata m_time_dimension;
+
+  //! Name of the variable used to store the last update time.
+  std::string m_time_name;
 
 
   std::string m_model_name;

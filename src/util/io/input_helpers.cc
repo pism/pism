@@ -667,10 +667,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
   }
 
   // make sure we have at least one level
-  size_t nlevels{1};
-  if (variable.levels() != nullptr) {
-    nlevels = std::max(variable.levels()->size(), (size_t)1);
-  }
+  size_t nlevels = std::max(variable.levels().size(), (size_t)1);
 
   read_distributed_array(file, var.name, variable.unit_system(),
                          {(int)time, grid.xs(), grid.ys(), 0},

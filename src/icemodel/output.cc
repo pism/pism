@@ -131,11 +131,6 @@ std::set<VariableMetadata> IceModel::metadata(MappingTreatment mapping_flag,
 //! Define metadata variables and attributes in an output file
 void IceModel::define_metadata(const OutputFile &file, MappingTreatment mapping_flag,
                                RunStatsTreatment run_stats) const {
-  std::string exp_id_name{};
-  if (m_exp_id != nullptr) {
-    io::define_variable(*m_exp_id, "", "", file);
-    exp_id_name = m_exp_id->get_name();
-  }
 
   for (const auto &v : metadata(mapping_flag, run_stats)) {
     if (v.get_name() == "PISM_GLOBAL") {
@@ -146,7 +141,7 @@ void IceModel::define_metadata(const OutputFile &file, MappingTreatment mapping_
       tmp["history"] = "";
       file.set_global_attributes(tmp.all_strings(), tmp.all_doubles());
     } else {
-      io::define_variable(v, m_time->variable_name(), exp_id_name, file);
+      file.define_variable(v);
     }
   }
 }

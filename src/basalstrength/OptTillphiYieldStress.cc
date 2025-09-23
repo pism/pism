@@ -42,12 +42,8 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
     m_mask(m_grid, "diff_mask"),
     m_usurf_difference(m_grid, "usurf_difference"),
     m_usurf_target(m_grid, "usurf"),
-    m_time(m_config->get_string("time.dimension_name") + "_tillphi_opt", m_sys)
+    m_time_name(m_config->get_string("time.dimension_name") + "_tillphi_opt")
 {
-  m_time.long_name("time of the last update of the till friction angle")
-      .units(time().units())
-      .set_time_dependent(true);
-  m_time["calendar"] = time().calendar();
 
   // In this model tillphi is NOT time-independent.
   m_till_phi.metadata().set_time_dependent(true);
@@ -121,12 +117,12 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
  * Initialize the last time tillphi was updated.
  */
 void OptTillphiYieldStress::init_t_last(const File &input_file) {
-  auto time_name = m_time.get_name();
-  if (input_file.variable_exists(time_name)) {
-    auto t_length = input_file.nrecords(time_name, "", m_sys);
+
+  if (input_file.variable_exists(m_time_name)) {
+    auto t_length = input_file.nrecords(m_time_name, "", m_sys);
     auto t_last = t_length > 0 ? t_length - 1 : 0;
 
-    auto t = io::read_timeseries_variable(input_file, time_name, m_time["units"], m_sys, t_last, 1);
+    auto t = io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
   } else {
     m_t_last = time().current();
   }
@@ -285,13 +281,20 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
 
 void OptTillphiYieldStress::define_state_impl(const OutputFile &output) const {
   MohrCoulombYieldStress::define_state_impl(output);
-  output.define_variable(m_time);
+
+  VariableMetadata T(m_time_name, m_sys);
+  T.long_name("time of the last update of the till friction angle")
+      .units(time().units())
+      .set_time_dependent(true);
+  T["calendar"] = time().calendar();
+
+  output.define_variable(T);
 }
 
 void OptTillphiYieldStress::write_state_impl(const OutputFile &output) const {
   MohrCoulombYieldStress::write_state_impl(output);
 
-  output.write_timeseries_variable(m_time, { 0 }, { 1 }, { m_t_last });
+  output.write_timeseries_variable(m_time_name, { 0 }, { 1 }, { m_t_last });
 }
 
 DiagnosticList OptTillphiYieldStress::diagnostics_impl() const {

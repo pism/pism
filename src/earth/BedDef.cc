@@ -40,15 +40,11 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid, const std::string &model_name)
     m_load_accumulator(grid, "bed_def_load_accumulator"),
     m_uplift(m_grid, "dbdt"),
     m_t_last(time().current()),
-    m_time_dimension(time().variable_name() + "_bed_deformation", m_sys),
+    m_time_name(time().variable_name() + "_bed_deformation"),
     m_model_name(model_name)
 {
   m_update_interval = m_config->get_number("bed_deformation.update_interval", "seconds");
   m_t_eps           = m_config->get_number("time_stepping.resolution", "seconds");
-
-  m_time_dimension.long_name("time of the last update of the bed deformation model")
-      .units(time().units()).set_time_dependent(true);
-  m_time_dimension["calendar"] = time().calendar();
 
   m_topg.metadata(0)
       .long_name("bedrock surface elevation")
@@ -88,7 +84,12 @@ void BedDef::define_state_impl(const OutputFile &output) const {
   m_topg.define(output);
   m_load_accumulator.define(output);
 
-  output.define_variable(m_time_dimension);
+  VariableMetadata T(m_time_name, m_sys);
+  T.long_name("time of the last update of the bed deformation model")
+      .units(time().units()).set_time_dependent(true);
+  T["calendar"] = time().calendar();
+  
+  output.define_variable(T);
 }
 
 void BedDef::write_state_impl(const OutputFile &output) const {
@@ -99,7 +100,7 @@ void BedDef::write_state_impl(const OutputFile &output) const {
   auto t_length = output.time_dimension_length();
   auto t_start = t_length > 0 ? t_length - 1 : 0;
 
-  output.write_timeseries_variable(m_time_dimension, { t_start }, { 1 }, { m_t_last });
+  output.write_timeseries_variable(m_time_name, { t_start }, { 1 }, { m_t_last });
 }
 
 DiagnosticList BedDef::diagnostics_impl() const {
@@ -121,12 +122,12 @@ void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
     File input_file(m_grid->com, opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    if (input_file.variable_exists(m_time_dimension.get_name())) {
-      auto t_length = input_file.nrecords(m_time_dimension.get_name(), "", m_sys);
+    if (input_file.variable_exists(m_time_name)) {
+      auto t_length = input_file.nrecords(m_time_name, "", m_sys);
       auto t_last   = t_length > 0 ? t_length - 1 : 0;
 
-      auto t   = io::read_timeseries_variable(input_file, m_time_dimension.get_name(),
-                                              m_time_dimension["units"], m_sys, t_last, 1);
+      auto t =
+          io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
       m_t_last = t[0];
     }
   }

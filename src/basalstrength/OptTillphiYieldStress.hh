@@ -71,8 +71,9 @@ private:
   // the upper bound of tillphi:
   double m_phi_max;
 
-  //! Metadata for the variable used to store the last update time.
-  VariableMetadata m_time;
+  //! Name of the variable used to store the last update time.
+  std::string m_time_name;
+
   //! time of the last till friction angle update
   double m_t_last;
   //! Update interval in seconds

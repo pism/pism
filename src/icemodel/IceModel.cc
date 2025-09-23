@@ -98,18 +98,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_output_global_attributes["institution"] = m_config->get_string("run_info.institution");
   m_output_global_attributes["command"] = args_string();
 
-  if (not m_config->get_string("output.experiment_id").empty()) {
-    auto exp_id = m_config->get_string("output.experiment_id_dimension");
-    int max_length = (int)m_config->get_number("output.experiment_id_max_length");
-    m_exp_id.reset(new VariableMetadata(exp_id, { { exp_id, 1 }, { "nc", max_length } }, m_sys));
-
-    // NOTE (also FIXME because this is not great): this long name is significant: we use it
-    // to recognize the experiment ID dimension in File::dimension_type(). This is needed to
-    // compute start and count arrays correctly when re-starting from a file containing this
-    // dimension.
-    m_exp_id->set_output_type(io::PISM_CHAR).long_name("experiment ID");
-  }
-
   m_fracture = nullptr;
 
   reset_counters();

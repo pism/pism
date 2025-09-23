@@ -223,8 +223,10 @@ public:
 
   /*!
    * Write a scalar time-dependent variable.
+   *
+   * `input` is stored redundantly by each MPI process.
    */
-  void write_timeseries_variable(const std::string &file_name, const VariableMetadata &metadata,
+  void write_timeseries_variable(const std::string &file_name, const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const std::vector<double> &input);
@@ -287,6 +289,19 @@ protected:
    * Return the name of the time dimension and the corresponding coordinate variable.
    */
   const std::string &time_name() const;
+
+  /*!
+   * FIXME
+   *
+   * Returns the list of dimension names for `variable` that can be used to define it.
+   */
+  std::vector<std::string> define_dimensions(const std::string &file_name,
+                                             const VariableMetadata &variable);
+
+  /*!
+   * FIXME
+   */
+  void write_dimensions(const std::string &file_name, const VariableMetadata &variable);
 
   /*!
    * Implementation of set_global_attributes()
@@ -368,8 +383,6 @@ protected:
 
   const std::string &experiment_id() const;
 private:
-  void define_experiment_id(const std::string &file_name,
-                            std::shared_ptr<units::System> unit_system);
   void write_experiment_id(const std::string &file_name);
 
   struct Impl;
@@ -411,7 +424,7 @@ public:
 
   void write_spatial_variable(const std::string &variable_name, const double *input) const;
 
-  void write_timeseries_variable(const VariableMetadata &metadata,
+  void write_timeseries_variable(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const std::vector<double> &input) const;

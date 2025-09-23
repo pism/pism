@@ -106,40 +106,15 @@ void define_time(const OutputFile &output_file, const VariableMetadata &metadata
     time["bounds"] = bounds_name;
   }
 
-  io::define_variable(time, time_name, "", output_file);
-  
-  if (with_bounds) {
+  output_file.define_variable(time);
 
+  if (with_bounds) {
     VariableMetadata bounds(bounds_name, { { "nv", 2 } }, metadata.unit_system());
 
     bounds.units(metadata["units"]).set_time_dependent(true);
 
-    io::define_variable(bounds, time_name, "", output_file);
+    output_file.define_variable(bounds);
   }
-}
-
-void define_variable(const VariableMetadata &variable, const std::string &time_name,
-                     const std::string &exp_id_name, const OutputFile &file) {
-  for (const auto &dimension : variable.dimensions()) {
-    file.define_dimension(dimension.get_name(), dimension.length());
-    if (dimension.coordinate_variable()) {
-      file.define_variable(dimension.get_name(), dimension.dimension_names(),
-                           dimension.get_output_type(), dimension.attributes());
-    }
-  }
-
-  auto dimensions = variable.dimension_names();
-
-  if (variable.get_time_dependent()) {
-    dimensions.insert(dimensions.begin(), time_name);
-  }
-
-  if (not exp_id_name.empty()) {
-    dimensions.insert(dimensions.begin(), exp_id_name);
-  }
-
-  file.define_variable(variable.get_name(), dimensions, variable.get_output_type(),
-                       variable.attributes());
 }
 
 } // namespace io

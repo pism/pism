@@ -60,11 +60,7 @@ void SteadyState::initialization_message() const {
 
 SteadyState::SteadyState(std::shared_ptr<const Grid> grid)
     : NullTransport(grid),
-      m_time_dimension(m_config->get_string("time.dimension_name") + "_hydrology_steady", m_sys) {
-
-  m_time_dimension.long_name("time of the last update of the steady state subglacial water flux")
-      .units(time().units());
-  m_time_dimension["calendar"] = time().calendar();
+      m_time_name(m_config->get_string("time.dimension_name") + "_hydrology_steady") {
 
   m_t_last = time().current();
   m_update_interval = m_config->get_number("hydrology.steady.flux_update_interval", "seconds");
@@ -196,7 +192,12 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
 void SteadyState::define_state_impl(const OutputFile& output) const {
   NullTransport::define_state_impl(output);
 
-  output.define_variable(m_time_dimension);
+  VariableMetadata T(m_time_name, m_sys);
+  T.long_name("time of the last update of the steady state subglacial water flux")
+      .units(time().units());
+  T["calendar"] = time().calendar();
+
+  output.define_variable(T);
 
   m_Q.define(output);
 }
@@ -207,7 +208,7 @@ void SteadyState::write_state_impl(const OutputFile& output) const {
   auto t_length = output.time_dimension_length();
   auto t_start = t_length > 0 ? t_length - 1 : 0;
 
-  output.write_timeseries_variable(m_time_dimension, { t_start }, { 1 }, { m_t_last });
+  output.write_timeseries_variable(m_time_name, { t_start }, { 1 }, { m_t_last });
 
   m_Q.write(output);
 }
@@ -219,12 +220,12 @@ void SteadyState::restart_impl(const File &input_file, int record) {
 
   // Read m_t_last
   {
-    if (input_file.variable_exists(m_time_dimension.get_name())) {
-      auto t_length = input_file.nrecords(m_time_dimension.get_name(), "", m_sys);
+    if (input_file.variable_exists(m_time_name)) {
+      auto t_length = input_file.nrecords(m_time_name, "", m_sys);
       auto t_last   = t_length > 0 ? t_length - 1 : 0;
 
-      auto t   = io::read_timeseries_variable(input_file, m_time_dimension.get_name(),
-                                              m_time_dimension["units"], m_sys, t_last, 1);
+      auto t   = io::read_timeseries_variable(input_file, m_time_name,
+                                              time().units(), m_sys, t_last, 1);
       m_t_last = t[0];
 
     } else {
@@ -245,12 +246,12 @@ void SteadyState::bootstrap_impl(const File &input_file,
 
   // Read m_t_last
   {
-    if (input_file.variable_exists(m_time_dimension.get_name())) {
-      auto t_length = input_file.nrecords(m_time_dimension.get_name(), "", m_sys);
+    if (input_file.variable_exists(m_time_name)) {
+      auto t_length = input_file.nrecords(m_time_name, "", m_sys);
       auto t_last   = t_length > 0 ? t_length - 1 : 0;
 
-      auto t   = io::read_timeseries_variable(input_file, m_time_dimension.get_name(),
-                                              m_time_dimension["units"], m_sys, t_last, 1);
+      auto t   = io::read_timeseries_variable(input_file, m_time_name,
+                                              time().units(), m_sys, t_last, 1);
       m_t_last = t[0];
     } else {
       m_t_last = time().current();

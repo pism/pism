@@ -202,10 +202,7 @@ void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &fil
 
   const auto &grid = *metadata.grid_info();
 
-  unsigned int n_levels{1};
-  if (metadata.levels() != nullptr) {
-    n_levels = std::max(metadata.levels()->size(), (std::size_t)1);
-  }
+  unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
 
   std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };
   std::vector<unsigned int> count = { grid.ym, grid.xm, n_levels };

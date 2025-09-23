@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "Grid.hh"
+#include "GridInfo.hh"
 #include "pism/util/VariableMetadata.hh"
 
 #include "pism/util/Logger.hh"
@@ -98,19 +99,14 @@ DimensionMetadata& VariableMetadata::dimension(const std::string &name) {
 }
 
 const grid::DistributedGridInfo *VariableMetadata::grid_info() const {
-  return grid_info_impl();
-}
-
-const grid::DistributedGridInfo *VariableMetadata::grid_info_impl() const {
+  if (m_grid_info != nullptr) {
+    return m_grid_info.get();
+  }
   return nullptr;
 }
 
-const std::vector<double> *VariableMetadata::levels() const {
-  return levels_impl();
-}
-
-const std::vector<double> *VariableMetadata::levels_impl() const {
-  return nullptr;
+const std::vector<double> &VariableMetadata::levels() const {
+  return m_levels;
 }
 
 /** A "time independent" variable will be saved to a NetCDF
@@ -202,15 +198,16 @@ std::vector<DimensionMetadata> DimensionMetadata::dimensions_impl() const {
 SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,
                                                  const std::string &name, const Grid &grid,
                                                  const std::vector<double> &levels)
-    : VariableMetadata(name, system),
-      m_zlevels(levels),
-      m_grid_info(grid.info()) {
+    : VariableMetadata(name, system) {
 
+  m_levels = levels;
+  m_grid_info.reset(new grid::DistributedGridInfo(grid.info()));
+  
   // spatial variables are time-dependent by default
   set_time_dependent(true);
 
-  m_dimensions = {{"y", unit_system(), (int)grid.My(), true},
-                  {"x", unit_system(), (int)grid.Mx(), true}};
+  m_dimensions = {{"y", system, (int)grid.My(), true},
+                  {"x", system, (int)grid.Mx(), true}};
 
   auto &x = dimension("x");
   x["axis"]           = "X";
@@ -227,7 +224,7 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
   y["spacing_meters"] = { grid.dy() };
 
   if (levels.size() > 1) {
-    m_dimensions.push_back({"z", unit_system(), (int)levels.size(), true});
+    m_dimensions.push_back({"z", system, (int)levels.size(), true});
 
     auto &z = dimension("z");
     z["axis"]      = "Z";
@@ -253,14 +250,6 @@ SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> 
   }
 
   m_n_spatial_dims = m_dimensions.size();
-}
-
-const std::vector<double> *SpatialVariableMetadata::levels_impl() const {
-  return &m_zlevels;
-}
-
-const grid::DistributedGridInfo *SpatialVariableMetadata::grid_info_impl() const {
-  return &m_grid_info;
 }
 
 //! Report the range of a \b global Vec `v`.

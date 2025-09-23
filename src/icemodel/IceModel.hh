@@ -229,9 +229,9 @@ protected:
   virtual void write_metadata(const OutputFile &file) const;
 
   virtual void define_diagnostics(const OutputFile &file,
-                                  const std::set<std::string> &variables) const;
+                                  const std::set<std::string> &variable_names) const;
   virtual void write_diagnostics(const OutputFile &file,
-                                 const std::set<std::string> &variables) const;
+                                 const std::set<std::string> &variable_names) const;
 
   std::string save_state_on_error(const std::string &suffix,
                                   const std::set<std::string> &additional_variables);
@@ -414,8 +414,6 @@ protected:
   };
 
   ThicknessChanges m_thickness_change;
-
-  std::shared_ptr<VariableMetadata> m_exp_id;
 
   /*!
    * The set of variables that the "state" of IceModel consists of.
