@@ -100,7 +100,6 @@ struct OutputWriter::Impl {
   Impl(MPI_Comm comm_, const Config &config)
       : comm(comm_) {
     time_name            = config.get_string("time.dimension_name");
-    use_internal_units   = config.get_flag("output.use_MKS");
     experiment_id        = config.get_string("output.experiment_id");
     experiment_id_name   = config.get_string("output.experiment_id_dimension");
 
@@ -117,7 +116,7 @@ struct OutputWriter::Impl {
 
   std::string time_name;
   MPI_Comm comm;
-  bool use_internal_units;
+
   std::map<std::tuple<std::string, std::string>, bool> written_time_independent;
   std::map<std::tuple<std::string, std::string>, bool> written_time_dependent;
   std::map<std::string, grid::DistributedGridInfo> grids;
@@ -324,7 +323,7 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
   }
 
   std::string units = metadata["units"];
-  std::string output_units = m_impl->use_internal_units ? units : metadata["output_units"];
+  std::string output_units = metadata["output_units"];
 
   if (units != output_units) {
     auto data_size = grid.xm * grid.ym * n_levels;
