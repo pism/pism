@@ -119,7 +119,6 @@ struct OutputWriter::Impl {
 
   std::map<std::tuple<std::string, std::string>, bool> written_time_independent;
   std::map<std::tuple<std::string, std::string>, bool> written_time_dependent;
-  std::map<std::string, grid::DistributedGridInfo> grids;
   std::map<std::string, VariableMetadata> variables;
   std::string experiment_id_name;
   std::string experiment_id;
@@ -151,10 +150,6 @@ const std::string &OutputWriter::time_name() const {
   return m_impl->time_name;
 }
 
-const grid::DistributedGridInfo &OutputWriter::grid_info(const std::string &variable_name) const {
-  return m_impl->grids[variable_name];
-}
-
 const VariableMetadata &OutputWriter::variable_info(const std::string &variable_name) const {
   auto i = m_impl->variables.find(variable_name);
   if (i != m_impl->variables.end()) {
@@ -178,10 +173,7 @@ void OutputWriter::define_variable(const std::string &file_name, const std::stri
 
 void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &variable) {
 
-  const auto *grid_info = variable.grid_info();
-  if (grid_info != nullptr) {
-    add_variable(variable, *grid_info);
-  }
+  add_variable(variable);
 
   // define dimensions and corresponding coordinate variables
   for (const auto &dimension : variable.dimensions()) {
@@ -210,16 +202,11 @@ void OutputWriter::define_variable(const std::string &file_name, const VariableM
                   variable.attributes());
 }
 
-void OutputWriter::add_variable(const VariableMetadata &metadata,
-                                const grid::DistributedGridInfo &grid) {
+void OutputWriter::add_variable(const VariableMetadata &metadata) {
   const auto &name = metadata.get_name();
 
   if (m_impl->variables.find(name) == m_impl->variables.end()) {
     m_impl->variables.insert({ name, metadata });
-  }
-
-  if (m_impl->grids.find(name) == m_impl->grids.end()) {
-    m_impl->grids[name] = grid;
   }
 }
 
@@ -271,7 +258,13 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
                                           const std::string &variable_name,
                                           const double *input) {
   const auto &metadata = variable_info(variable_name);
-  const auto &grid     = grid_info(variable_name);
+
+  if (metadata.grid_info() == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' has no grid info",
+                                  variable_name.c_str());
+  }
+
+  const auto &grid = *metadata.grid_info();
 
   // check if we need to write this variable
   bool time_dependent = metadata.get_time_dependent();

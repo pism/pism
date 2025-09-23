@@ -139,10 +139,9 @@ public:
    *
    * This has to be done before a spatial variable is *defined* in an output file.
    *
-   * @param[in] metadata variable metadata (name, attributes, etc)
-   * @param[in] grid domain decomposition information
+   * @param[in] metadata variable metadata (name, attributes, grid info, etc)
    */
-  void add_variable(const VariableMetadata &metadata, const grid::DistributedGridInfo &grid);
+  void add_variable(const VariableMetadata &metadata);
 
   /*!
    * Set global attributes for a given output file.
@@ -270,11 +269,6 @@ protected:
    * Return the MPI communicator
    */
   MPI_Comm comm() const;
-
-  /*!
-   * Return the domain decomposition information for the variable `variable_name`.
-   */
-  const grid::DistributedGridInfo &grid_info(const std::string &variable_name) const;
 
   /*!
    * Return the metadata for the variable `variable_name`.

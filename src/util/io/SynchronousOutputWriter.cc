@@ -194,7 +194,13 @@ void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &fil
   const auto &output_file = file(file_name);
 
   const auto &metadata = variable_info(variable_name);
-  const auto &grid = grid_info(variable_name);
+
+  if (metadata.grid_info() == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' has no grid info",
+                                  variable_name.c_str());
+  }
+
+  const auto &grid = *metadata.grid_info();
 
   unsigned int n_levels{1};
   if (metadata.levels() != nullptr) {
