@@ -108,23 +108,6 @@ public:
   virtual ~OutputWriter();
 
   /*!
-   * Add attributes to all 2D and 3D variables using "x" and "y" dimensions except for
-   * "lat", "lon", "lat_bnds" and "lon_bnds".
-   *
-   * These attributes (usually 'coordinates = "lat lon"' and "grid_mapping") are used to
-   * provide grid information.
-   *
-   * A variable should have the "coordinates" attribute only if the file contains
-   * variables "lat" and "lon". Similarly, a variable should have the "grid_mapping"
-   * attribute only if the file contains a grid mapping variable. The code writing a
-   * variable has no way to determine the contents of an output file, so this method
-   * allows IceModel to use the information *it* has to adjust metadata of 2D and 3D
-   * variables written to output files.
-   */
-  void add_extra_attributes(const std::string &file_name,
-                            const std::map<std::string, std::string> &attributes);
-
-  /*!
    * Define a dimension.
    * 
    * No-op if the dimension already exists.
@@ -410,8 +393,6 @@ private:
 class OutputFile {
 public:
   OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name);
-
-  void add_extra_attributes(const std::map<std::string, std::string> &attributes) const;
 
   void define_dimension(const std::string &dimension_name, unsigned int length) const;
 

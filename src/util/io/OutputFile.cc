@@ -28,10 +28,6 @@ OutputFile::OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &
   // empty
 }
 
-void OutputFile::add_extra_attributes(const std::map<std::string, std::string> &attributes) const {
-  m_writer->add_extra_attributes(m_file_name, attributes);
-}
-
 void OutputFile::define_dimension(const std::string &dimension_name, unsigned int length) const {
   m_writer->define_dimension(m_file_name, dimension_name, length);
 }

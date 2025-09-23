@@ -117,7 +117,6 @@ struct OutputWriter::Impl {
 
   std::string time_name;
   MPI_Comm comm;
-  std::map<std::string, std::map<std::string, std::string> > extra_attributes;
   bool use_internal_units;
   std::map<std::tuple<std::string, std::string>, bool> written_time_independent;
   std::map<std::tuple<std::string, std::string>, bool> written_time_dependent;
@@ -139,13 +138,6 @@ bool &OutputWriter::already_written(const std::string &file_name,
 
 OutputWriter::OutputWriter(MPI_Comm comm, const Config &config)
     : m_impl(new Impl(comm, config)) {
-}
-
-void OutputWriter::add_extra_attributes(const std::string &file_name,
-                                        const std::map<std::string, std::string> &attributes) {
-  for (const auto &attr : attributes) {
-    m_impl->extra_attributes[file_name][attr.first] = attr.second;
-  }
 }
 
 OutputWriter::~OutputWriter() {
