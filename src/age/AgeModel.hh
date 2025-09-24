@@ -53,6 +53,9 @@ public:
   const array::Array3D & age() const;
 protected:
   MaxTimestep max_timestep_impl(double t) const;
+
+  std::set<VariableMetadata> state_impl() const;
+
   void define_state_impl(const OutputFile &output) const;
   void write_state_impl(const OutputFile &output) const;
 

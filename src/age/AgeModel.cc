@@ -213,8 +213,14 @@ void AgeModel::init(const InputOptions &opts) {
   regrid("Age Model", m_ice_age, REGRID_WITHOUT_REGRID_VARS);
 }
 
+std::set<VariableMetadata> AgeModel::state_impl() const {
+  return { m_ice_age.metadata() };
+}
+
 void AgeModel::define_state_impl(const OutputFile &output) const {
-  m_ice_age.define(output);
+  for (const auto &v : state()) {
+    output.define_variable(v);
+  }
 }
 
 void AgeModel::write_state_impl(const OutputFile &output) const {
