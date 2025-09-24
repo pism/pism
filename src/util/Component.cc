@@ -138,6 +138,14 @@ void Component::define_state_impl(const OutputFile &output) const {
   (void) output;
 }
 
+std::set<VariableMetadata> Component::state() const {
+  return state_impl();
+}
+
+std::set<VariableMetadata> Component::state_impl() const {
+  return {};
+}
+
 /*! @brief The default (empty implementation). */
 void Component::write_state_impl(const OutputFile &output) const {
   (void) output;

@@ -21,6 +21,7 @@
 
 #include <string>
 
+#include "VariableMetadata.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Diagnostic.hh"
 
@@ -132,6 +133,8 @@ public:
   void define_state(const OutputFile &output) const;
   void write_state(const OutputFile &output) const;
 
+  std::set<VariableMetadata> state() const;
+
   //! Reports the maximum time-step the model can take at time t.
   MaxTimestep max_timestep(double t) const;
 
@@ -140,6 +143,8 @@ protected:
 
   virtual void define_state_impl(const OutputFile &output) const;
   virtual void write_state_impl(const OutputFile &output) const;
+
+  virtual std::set<VariableMetadata> state_impl() const;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
