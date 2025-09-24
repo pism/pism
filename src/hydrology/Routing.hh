@@ -102,7 +102,7 @@ protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
   virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
-  virtual void define_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
   double max_timestep_W_diff(double KW_max) const;

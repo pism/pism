@@ -18,6 +18,7 @@
 
 #include <cassert>
 
+#include "Hydrology.hh"
 #include "pism/hydrology/Routing.hh"
 #include "pism/util/array/CellType.hh"
 
@@ -352,9 +353,8 @@ void Routing::init_impl(const array::Scalar &W_till,
   m_W.copy_from(W);
 }
 
-void Routing::define_state_impl(const OutputFile &output) const {
-  Hydrology::define_state_impl(output);
-  m_W.define(output);
+std::set<VariableMetadata> Routing::state_impl() const {
+  return pism::combine(Hydrology::state_impl(), array::metadata({ &m_W }));
 }
 
 void Routing::write_state_impl(const OutputFile &output) const {

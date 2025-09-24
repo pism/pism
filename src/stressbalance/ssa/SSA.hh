@@ -107,7 +107,7 @@ public:
 
   virtual std::string stdout_report() const;
 protected:
-  virtual void define_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
   virtual void init_impl();

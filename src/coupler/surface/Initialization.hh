@@ -54,7 +54,7 @@ protected:
   const array::Scalar& melt_impl() const;
   const array::Scalar& runoff_impl() const;
 
-  void define_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
 private:

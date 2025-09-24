@@ -151,17 +151,15 @@ void FrontalMelt::update_impl(const FrontalMeltInputs &inputs, double t, double 
 MaxTimestep FrontalMelt::max_timestep_impl(double t) const {
   if (m_input_model) {
     return m_input_model->max_timestep(t);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-void FrontalMelt::define_state_impl(const OutputFile &output) const {
+std::set<VariableMetadata> FrontalMelt::state_impl() const {
   if (m_input_model) {
-    return m_input_model->define_state(output);
-  } else {
-    // no state to define
+    return m_input_model->state();
   }
+  return {};
 }
 
 void FrontalMelt::write_state_impl(const OutputFile &output) const {

@@ -315,14 +315,18 @@ void SurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-void SurfaceModel::define_state_impl(const OutputFile &output) const {
+std::set<VariableMetadata> SurfaceModel::state_impl() const {
+  std::set<VariableMetadata> result;
+
   if (m_atmosphere) {
-    m_atmosphere->define_state(output);
+    result = pism::combine(result, m_atmosphere->state());
   }
 
   if (m_input_model) {
-    m_input_model->define_state(output);
+    result = pism::combine(result, m_input_model->state());
   }
+
+  return result;
 }
 
 void SurfaceModel::write_state_impl(const OutputFile &output) const {

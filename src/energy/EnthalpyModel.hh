@@ -49,7 +49,7 @@ protected:
   using EnergyModel::update_impl;
   virtual void update_impl(double t, double dt, const Inputs &inputs);
 
-  virtual void define_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 };
 

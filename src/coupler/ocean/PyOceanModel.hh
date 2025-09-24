@@ -60,9 +60,9 @@ public:
   virtual void update(const Inputs &inputs, double t, double dt);
 
   /*!
-   * Define model state variables and set their attributes
+   * Return information about model state variables and their attributes
    */
-  virtual void define_state(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state() const;
 
   /*!
    * Write model state variables and set their attributes
@@ -86,7 +86,7 @@ private:
   void update_impl(const Inputs &inputs, double my_t, double my_dt);
   void init_impl(const Geometry &geometry);
 
-  void define_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
   std::shared_ptr<PyOceanModel> m_impl;

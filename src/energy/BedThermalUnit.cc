@@ -182,8 +182,8 @@ unsigned int BedThermalUnit::Mz() const {
   return this->Mz_impl();
 }
 
-void BedThermalUnit::define_state_impl(const OutputFile &output) const {
-  m_bottom_surface_flux.define(output);
+std::set<VariableMetadata> BedThermalUnit::state_impl() const {
+  return array::metadata({ &m_bottom_surface_flux });
 }
 
 void BedThermalUnit::write_state_impl(const OutputFile &output) const {

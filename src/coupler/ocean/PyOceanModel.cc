@@ -50,9 +50,8 @@ void PyOceanModel::update(const Inputs &inputs, double t, double dt) {
   throw RuntimeError(PISM_ERROR_LOCATION, "PyOceanModel.update(geometry, t, dt) is not implemented");
 }
 
-void PyOceanModel::define_state(const OutputFile &output) const {
-  (void) output;
-  // empty
+std::set<VariableMetadata> PyOceanModel::state() const {
+  return {};
 }
 
 void PyOceanModel::write_state(const OutputFile &output) const {
@@ -81,9 +80,8 @@ void PyOceanModelAdapter::init_impl(const Geometry &geometry) {
   m_impl->init(geometry);
 }
 
-
-void PyOceanModelAdapter::define_state_impl(const OutputFile &output) const {
-  m_impl->define_state(output);
+std::set<VariableMetadata> PyOceanModelAdapter::state_impl() const {
+  return m_impl->state();
 }
 
 void PyOceanModelAdapter::write_state_impl(const OutputFile &output) const {

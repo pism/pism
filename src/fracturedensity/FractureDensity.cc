@@ -119,9 +119,8 @@ void FractureDensity::initialize() {
   m_age.set(0.0);
 }
 
-void FractureDensity::define_state_impl(const OutputFile &output) const {
-  m_density.define(output);
-  m_age.define(output);
+std::set<VariableMetadata> FractureDensity::state_impl() const {
+  return array::metadata({ &m_density, &m_age });
 }
 
 void FractureDensity::write_state_impl(const OutputFile &output) const {

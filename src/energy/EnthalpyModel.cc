@@ -347,9 +347,8 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->cell_area();
 }
 
-void EnthalpyModel::define_state_impl(const OutputFile &output) const {
-  m_ice_enthalpy.define(output);
-  m_basal_melt_rate.define(output);
+std::set<VariableMetadata> EnthalpyModel::state_impl() const {
+  return array::metadata({ &m_ice_enthalpy, &m_basal_melt_rate });
 }
 
 void EnthalpyModel::write_state_impl(const OutputFile &output) const {

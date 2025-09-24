@@ -660,10 +660,11 @@ const SSB_Modifier* StressBalance::modifier() const {
   return m_modifier.get();
 }
 
+std::set<VariableMetadata> StressBalance::state_impl() const {
+  auto shallow = m_shallow_stress_balance->state();
+  auto modifier = m_modifier->state();
 
-void StressBalance::define_state_impl(const OutputFile &output) const {
-  m_shallow_stress_balance->define_state(output);
-  m_modifier->define_state(output);
+  return pism::combine(shallow, modifier);
 }
 
 void StressBalance::write_state_impl(const OutputFile &output) const {

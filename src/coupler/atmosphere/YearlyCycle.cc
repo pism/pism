@@ -83,8 +83,8 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
   }
 }
 
-void YearlyCycle::define_state_impl(const OutputFile &output) const {
-  m_precipitation.define(output);
+std::set<VariableMetadata> YearlyCycle::state_impl() const {
+  return array::metadata({ &m_precipitation });
 }
 
 void YearlyCycle::write_state_impl(const OutputFile &output) const {

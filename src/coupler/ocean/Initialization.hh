@@ -42,7 +42,7 @@ public:
   InitializationHelper(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
 
 private:
-  void define_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
   void update_impl(const Inputs &inputs, double t, double dt);

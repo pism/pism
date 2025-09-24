@@ -48,7 +48,7 @@ public:
 
   std::shared_ptr<array::Scalar> elastic_load_response_matrix() const;
 protected:
-  virtual void define_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
   DiagnosticList diagnostics_impl() const;

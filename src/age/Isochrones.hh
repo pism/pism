@@ -60,7 +60,7 @@ private:
   MaxTimestep max_timestep_cfl() const;
   MaxTimestep max_timestep_deposition_times(double t) const;
 
-  void define_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
   double top_layer_deposition_time() const;

@@ -55,8 +55,6 @@ protected:
   MaxTimestep max_timestep_impl(double t) const;
 
   std::set<VariableMetadata> state_impl() const;
-
-  void define_state_impl(const OutputFile &output) const;
   void write_state_impl(const OutputFile &output) const;
 
   array::Array3D m_ice_age;

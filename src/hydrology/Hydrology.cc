@@ -465,8 +465,8 @@ DiagnosticList Hydrology::diagnostics_impl() const {
   return result;
 }
 
-void Hydrology::define_state_impl(const OutputFile &output) const {
-  m_Wtill.define(output);
+std::set<VariableMetadata> Hydrology::state_impl() const {
+  return array::metadata({ &m_Wtill });
 }
 
 void Hydrology::write_state_impl(const OutputFile &output) const {

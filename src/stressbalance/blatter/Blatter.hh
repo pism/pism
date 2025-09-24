@@ -115,7 +115,7 @@ protected:
 
   void init_impl();
 
-  void define_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
 
   void write_state_impl(const OutputFile &output) const;
 

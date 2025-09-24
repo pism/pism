@@ -224,9 +224,8 @@ void MohrCoulombYieldStress::set_till_friction_angle(const array::Scalar &input)
   m_till_phi.copy_from(input);
 }
 
-void MohrCoulombYieldStress::define_state_impl(const OutputFile &output) const {
-  m_basal_yield_stress.define(output);
-  m_till_phi.define(output);
+std::set<VariableMetadata> MohrCoulombYieldStress::state_impl() const {
+  return array::metadata({ &m_basal_yield_stress, &m_till_phi });
 }
 
 void MohrCoulombYieldStress::write_state_impl(const OutputFile &output) const {

@@ -214,13 +214,7 @@ void AgeModel::init(const InputOptions &opts) {
 }
 
 std::set<VariableMetadata> AgeModel::state_impl() const {
-  return { m_ice_age.metadata() };
-}
-
-void AgeModel::define_state_impl(const OutputFile &output) const {
-  for (const auto &v : state()) {
-    output.define_variable(v);
-  }
+  return array::metadata({ &m_ice_age });
 }
 
 void AgeModel::write_state_impl(const OutputFile &output) const {

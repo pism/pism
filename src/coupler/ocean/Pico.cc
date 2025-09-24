@@ -173,15 +173,11 @@ void Pico::init_impl(const Geometry &geometry) {
                                         *m_water_column_pressure);
 }
 
-void Pico::define_state_impl(const OutputFile &output) const {
+std::set<VariableMetadata> Pico::state_impl() const {
+  auto variables =
+      array::metadata({ &m_geometry.basin_mask(), &m_Soc_box0, &m_Toc_box0, &m_overturning });
 
-  auto vars = array::metadata({&m_geometry.basin_mask(), &m_Soc_box0, &m_Toc_box0, &m_overturning});
-
-  for (const auto &var : vars) {
-    output.define_variable(var);
-  }
-
-  OceanModel::define_state_impl(output);
+  return pism::combine(variables, OceanModel::state_impl());
 }
 
 void Pico::write_state_impl(const OutputFile &output) const {

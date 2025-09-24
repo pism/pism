@@ -125,7 +125,7 @@ protected:
 
   virtual void update_impl(double t, double dt, const Inputs &inputs) = 0;
 
-  virtual void define_state_impl(const OutputFile &output) const = 0;
+  virtual std::set<VariableMetadata> state_impl() const = 0;
   virtual void write_state_impl(const OutputFile &output) const = 0;
 
   virtual DiagnosticList diagnostics_impl() const;

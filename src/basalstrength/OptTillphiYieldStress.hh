@@ -46,7 +46,7 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  void define_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
   array::Scalar1 m_mask;

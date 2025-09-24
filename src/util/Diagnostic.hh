@@ -82,6 +82,8 @@ public:
 
   VariableMetadata &metadata(unsigned int N = 0);
 
+  std::set<VariableMetadata> state() const;
+
   void init(const File &input, unsigned int time);
   void define_state(const OutputFile &output) const;
   void write_state(const OutputFile &output) const;
@@ -89,7 +91,7 @@ public:
 protected:
   virtual void init_impl(const File &input, unsigned int time);
 
-  virtual void define_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
   virtual void update_impl(double dt);
@@ -215,10 +217,8 @@ protected:
     }
   }
 
-  void define_state_impl(const OutputFile &output) const {
-    auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
-    m_accumulator.define(output);
-    output.define_variable(m_time_since_reset);
+  std::set<VariableMetadata> state_impl() const {
+    return { m_accumulator.metadata(0), m_time_since_reset };
   }
 
   void write_state_impl(const OutputFile &output) const {

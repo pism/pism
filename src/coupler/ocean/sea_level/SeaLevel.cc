@@ -83,10 +83,11 @@ MaxTimestep SeaLevel::max_timestep_impl(double t) const {
   return MaxTimestep("sea level forcing");
 }
 
-void SeaLevel::define_state_impl(const OutputFile &output) const {
+std::set<VariableMetadata> SeaLevel::state_impl() const {
   if (m_input_model) {
-    m_input_model->define_state(output);
+    return m_input_model->state();
   }
+  return {};
 }
 
 void SeaLevel::write_state_impl(const OutputFile &output) const {

@@ -53,7 +53,7 @@ protected:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  void define_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
   std::shared_ptr<EmptyingProblem> m_emptying_problem;

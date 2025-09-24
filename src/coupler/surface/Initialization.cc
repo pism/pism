@@ -169,11 +169,12 @@ const array::Scalar &InitializationHelper::runoff_impl() const {
   return *m_runoff;
 }
 
-void InitializationHelper::define_state_impl(const OutputFile &output) const {
-  for (auto *v : m_variables) {
-    v->define(output);
-  }
-  m_input_model->define_state(output);
+std::set<VariableMetadata> InitializationHelper::state_impl() const {
+  auto variables = array::metadata({ &m_mass_flux, &m_temperature, m_liquid_water_fraction.get(),
+                                     m_layer_mass.get(), m_layer_thickness.get(),
+                                     m_accumulation.get(), m_melt.get(), m_runoff.get() });
+  
+  return pism::combine(variables, m_input_model->state());
 }
 
 void InitializationHelper::write_state_impl(const OutputFile &output) const {

@@ -26,6 +26,8 @@
 
 namespace pism {
 
+class VariableMetadata;
+
 namespace ocean {
 
 class PicoPhysics;
@@ -45,7 +47,7 @@ protected:
   void update_impl(const Inputs &inputs, double t, double dt);
   MaxTimestep max_timestep_impl(double t) const;
 
-  void define_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;

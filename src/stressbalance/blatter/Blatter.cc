@@ -694,9 +694,8 @@ void Blatter::init_impl() {
   }
 }
 
-void Blatter::define_state_impl(const OutputFile &output) const {
-  m_u_sigma->define(output);
-  m_v_sigma->define(output);
+std::set<VariableMetadata> Blatter::state_impl() const {
+  return array::metadata({ m_u_sigma.get(), m_v_sigma.get() });
 }
 
 void Blatter::write_state_impl(const OutputFile &output) const {

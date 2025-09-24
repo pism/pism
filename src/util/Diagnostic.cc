@@ -82,12 +82,22 @@ unsigned int Diagnostic::n_variables() const {
   return m_vars.size();
 }
 
+std::set<VariableMetadata> Diagnostic::state() const {
+  return state_impl();
+}
+
+std::set<VariableMetadata> Diagnostic::state_impl() const {
+  return {};
+}
+
 void Diagnostic::init(const File &input, unsigned int time) {
   this->init_impl(input, time);
 }
 
 void Diagnostic::define_state(const OutputFile &output) const {
-  this->define_state_impl(output);
+  for (const auto &variable : state()) {
+    output.define_variable(variable);
+  }
 }
 
 void Diagnostic::write_state(const OutputFile &output) const {
@@ -97,11 +107,6 @@ void Diagnostic::write_state(const OutputFile &output) const {
 void Diagnostic::init_impl(const File &input, unsigned int time) {
   (void) input;
   (void) time;
-  // empty
-}
-
-void Diagnostic::define_state_impl(const OutputFile &output) const {
-  (void) output;
   // empty
 }
 

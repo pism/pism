@@ -21,6 +21,7 @@
 
 #include <gsl/gsl_interp.h>     // gsl_interp_bsearch
 
+#include "NullTransport.hh"
 #include "pism/hydrology/EmptyingProblem.hh"
 
 #include "pism/util/Time.hh"    // time().current()
@@ -189,17 +190,17 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
   return MaxTimestep(dt, "hydrology 'steady'");
 }
 
-void SteadyState::define_state_impl(const OutputFile& output) const {
-  NullTransport::define_state_impl(output);
+std::set<VariableMetadata> SteadyState::state_impl() const {
+  auto variables = NullTransport::state_impl();
 
   VariableMetadata T(m_time_name, m_sys);
   T.long_name("time of the last update of the steady state subglacial water flux")
       .units(time().units());
   T["calendar"] = time().calendar();
 
-  output.define_variable(T);
+  variables.insert(T);
 
-  m_Q.define(output);
+  return pism::combine(variables, array::metadata({ &m_Q }));
 }
 
 void SteadyState::write_state_impl(const OutputFile& output) const {

@@ -98,12 +98,10 @@ void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
   set_no_model_yield_stress(m_high_tauc, *inputs.no_model_mask, m_basal_yield_stress);
 }
 
-void RegionalYieldStress::define_state_impl(const OutputFile &output) const {
-  m_input->define_state(output);
+std::set<VariableMetadata> RegionalYieldStress::state_impl() const {
+  auto variables = array::metadata({&m_basal_yield_stress});
 
-  // define tauc (this is likely to be a no-op because m_input should have defined it by
-  // now)
-  m_basal_yield_stress.define(output);
+  return pism::combine(variables, m_input->state());
 }
 
 void RegionalYieldStress::write_state_impl(const OutputFile &output) const {

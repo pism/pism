@@ -484,10 +484,10 @@ const array::Scalar& TemperatureIndex::air_temp_sd() const {
   return *m_air_temp_sd;
 }
 
-void TemperatureIndex::define_state_impl(const OutputFile &output) const {
-  SurfaceModel::define_state_impl(output);
-  m_firn_depth.define(output);
-  m_snow_depth.define(output);
+std::set<VariableMetadata> TemperatureIndex::state_impl() const {
+  auto variables = array::metadata({ &m_firn_depth, &m_snow_depth });
+
+  return pism::combine(variables, SurfaceModel::state_impl());
 }
 
 void TemperatureIndex::write_state_impl(const OutputFile &output) const {

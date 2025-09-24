@@ -79,17 +79,18 @@ const array::Scalar &BedDef::uplift() const {
   return m_uplift;
 }
 
-void BedDef::define_state_impl(const OutputFile &output) const {
-  m_uplift.define(output);
-  m_topg.define(output);
-  m_load_accumulator.define(output);
+std::set<VariableMetadata> BedDef::state_impl() const {
+  auto variables = array::metadata({ &m_uplift, &m_topg, &m_load_accumulator });
 
   VariableMetadata T(m_time_name, m_sys);
   T.long_name("time of the last update of the bed deformation model")
-      .units(time().units()).set_time_dependent(true);
+      .units(time().units())
+      .set_time_dependent(true);
   T["calendar"] = time().calendar();
-  
-  output.define_variable(T);
+
+  variables.insert(T);
+
+  return variables;
 }
 
 void BedDef::write_state_impl(const OutputFile &output) const {

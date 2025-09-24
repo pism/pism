@@ -63,7 +63,7 @@ protected:
 
   std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
-  void define_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
   void check_P_bounds(array::Scalar &P,

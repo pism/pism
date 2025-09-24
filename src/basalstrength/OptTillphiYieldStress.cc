@@ -279,8 +279,8 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
   } // end of the loop over grid points
 }
 
-void OptTillphiYieldStress::define_state_impl(const OutputFile &output) const {
-  MohrCoulombYieldStress::define_state_impl(output);
+std::set<VariableMetadata> OptTillphiYieldStress::state_impl() const {
+  auto result = MohrCoulombYieldStress::state();
 
   VariableMetadata T(m_time_name, m_sys);
   T.long_name("time of the last update of the till friction angle")
@@ -288,7 +288,9 @@ void OptTillphiYieldStress::define_state_impl(const OutputFile &output) const {
       .set_time_dependent(true);
   T["calendar"] = time().calendar();
 
-  output.define_variable(T);
+  result.insert(T);
+  
+  return result;
 }
 
 void OptTillphiYieldStress::write_state_impl(const OutputFile &output) const {

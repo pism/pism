@@ -50,7 +50,7 @@ protected:
   using EnergyModel::update_impl;
   void update_impl(double t, double dt, const Inputs &inputs);
 
-  void define_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
   void column_drainage(const double rho, const double c, const double L,

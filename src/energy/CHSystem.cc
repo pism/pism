@@ -233,8 +233,8 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   loop.check();
 }
 
-void CHSystem::define_state_impl(const OutputFile &output) const {
-  m_ice_enthalpy.define(output);
+std::set<VariableMetadata> CHSystem::state_impl() const {
+  return array::metadata({ &m_ice_enthalpy });
 }
 
 void CHSystem::write_state_impl(const OutputFile &output) const {
