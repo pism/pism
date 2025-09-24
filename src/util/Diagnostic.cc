@@ -111,7 +111,7 @@ void Diagnostic::write_state_impl(const OutputFile &output) const {
 }
 
 //! Get a metadata object corresponding to variable number N.
-SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
+VariableMetadata& Diagnostic::metadata(unsigned int N) {
   if (N >= m_vars.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "variable metadata index %d is out of bounds",

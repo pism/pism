@@ -137,6 +137,9 @@ public:
   VariableMetadata(const std::string &name,
                    const std::vector<std::tuple<std::string, int> > &dimensions,
                    std::shared_ptr<units::System> system);
+  VariableMetadata(std::shared_ptr<units::System> system, const std::string &name, const Grid &grid,
+                   const std::vector<double> &levels = { 0.0 });
+
   virtual ~VariableMetadata() = default;
 
   Attribute operator[](const std::string &name) {
@@ -250,15 +253,6 @@ private:
 
   int m_length;
   bool m_coordinate_variable;
-};
-
-//! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
-class SpatialVariableMetadata : public VariableMetadata {
-public:
-  SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
-                          const Grid &grid,
-                          const std::vector<double> &levels = { 0.0 });
-  virtual ~SpatialVariableMetadata() = default;
 };
 
 // Comparison operator for VariableMetadata (we need it to store VariableMetadata in

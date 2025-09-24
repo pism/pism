@@ -61,6 +61,62 @@ VariableMetadata::VariableMetadata(const std::string &name,
   }
 }
 
+VariableMetadata::VariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
+                                   const Grid &grid, const std::vector<double> &levels)
+    : VariableMetadata(name, system) {
+
+  m_levels = levels;
+  m_grid_info.reset(new grid::DistributedGridInfo(grid.info()));
+
+  // spatial variables are time-dependent by default
+  set_time_dependent(true);
+
+  m_dimensions = {{"y", system, (int)grid.My(), true},
+                  {"x", system, (int)grid.Mx(), true}};
+
+  auto &x = dimension("x");
+  x["axis"]           = "X";
+  x["long_name"]      = "X-coordinate in Cartesian system";
+  x["standard_name"]  = "projection_x_coordinate";
+  x["units"]          = "m";
+  x["spacing_meters"] = { grid.dx() };
+
+  auto &y = dimension("y");
+  y["axis"]           = "Y";
+  y["long_name"]      = "Y-coordinate in Cartesian system";
+  y["standard_name"]  = "projection_y_coordinate";
+  y["units"]          = "m";
+  y["spacing_meters"] = { grid.dy() };
+
+  if (levels.size() > 1) {
+    m_dimensions.push_back({"z", system, (int)levels.size(), true});
+
+    auto &z = dimension("z");
+    z["axis"]      = "Z";
+    z["long_name"] = "Z-coordinate in Cartesian system";
+    z["units"]     = "m";
+    z["positive"]  = "up";
+
+    {
+      auto nlevels = z.length();
+
+      double dz_max = levels[1] - levels[0];
+      double dz_min = levels.back() - levels.front();
+
+      for (int k = 0; k < nlevels - 1; ++k) {
+        double dz = levels[k + 1] - levels[k];
+        dz_max    = std::max(dz_max, dz);
+        dz_min    = std::min(dz_min, dz);
+      }
+
+      z["spacing_min_meters"] = { dz_min };
+      z["spacing_max_meters"] = { dz_max };
+    }
+  }
+
+  m_n_spatial_dims = m_dimensions.size();
+}
+
 
 /** Get the number of spatial dimensions.
  */
@@ -193,63 +249,6 @@ bool DimensionMetadata::coordinate_variable() const {
 
 std::vector<DimensionMetadata> DimensionMetadata::dimensions_impl() const {
   return { *this };
-}
-
-SpatialVariableMetadata::SpatialVariableMetadata(std::shared_ptr<units::System> system,
-                                                 const std::string &name, const Grid &grid,
-                                                 const std::vector<double> &levels)
-    : VariableMetadata(name, system) {
-
-  m_levels = levels;
-  m_grid_info.reset(new grid::DistributedGridInfo(grid.info()));
-  
-  // spatial variables are time-dependent by default
-  set_time_dependent(true);
-
-  m_dimensions = {{"y", system, (int)grid.My(), true},
-                  {"x", system, (int)grid.Mx(), true}};
-
-  auto &x = dimension("x");
-  x["axis"]           = "X";
-  x["long_name"]      = "X-coordinate in Cartesian system";
-  x["standard_name"]  = "projection_x_coordinate";
-  x["units"]          = "m";
-  x["spacing_meters"] = { grid.dx() };
-
-  auto &y = dimension("y");
-  y["axis"]           = "Y";
-  y["long_name"]      = "Y-coordinate in Cartesian system";
-  y["standard_name"]  = "projection_y_coordinate";
-  y["units"]          = "m";
-  y["spacing_meters"] = { grid.dy() };
-
-  if (levels.size() > 1) {
-    m_dimensions.push_back({"z", system, (int)levels.size(), true});
-
-    auto &z = dimension("z");
-    z["axis"]      = "Z";
-    z["long_name"] = "Z-coordinate in Cartesian system";
-    z["units"]     = "m";
-    z["positive"]  = "up";
-
-    {
-      auto nlevels = z.length();
-
-      double dz_max = levels[1] - levels[0];
-      double dz_min = levels.back() - levels.front();
-
-      for (int k = 0; k < nlevels - 1; ++k) {
-        double dz = levels[k + 1] - levels[k];
-        dz_max    = std::max(dz_max, dz);
-        dz_min    = std::min(dz_min, dz);
-      }
-
-      z["spacing_min_meters"] = { dz_min };
-      z["spacing_max_meters"] = { dz_max };
-    }
-  }
-
-  m_n_spatial_dims = m_dimensions.size();
 }
 
 //! Report the range of a \b global Vec `v`.

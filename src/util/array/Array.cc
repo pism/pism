@@ -469,19 +469,19 @@ void Array::define(const OutputFile &file) const {
   }
 }
 
-//! @brief Returns a reference to the SpatialVariableMetadata object
+//! @brief Returns a reference to the VariableMetadata object
 //! containing metadata for the compoment N.
-SpatialVariableMetadata &Array::metadata(unsigned int N) {
+VariableMetadata &Array::metadata(unsigned int N) {
   assert(N < m_impl->dof);
   return m_impl->metadata[N];
 }
 
-const SpatialVariableMetadata &Array::metadata(unsigned int N) const {
+const VariableMetadata &Array::metadata(unsigned int N) const {
   assert(N < m_impl->dof);
   return m_impl->metadata[N];
 }
 
-std::vector<SpatialVariableMetadata> Array::all_metadata() const {
+std::vector<VariableMetadata> Array::all_metadata() const {
   return m_impl->metadata;
 }
 
@@ -734,7 +734,7 @@ void Array::regrid(const std::string &filename, io::Default default_value) {
 }
 
 static void check_range(petsc::Vec &v,
-                        const SpatialVariableMetadata &metadata,
+                        const VariableMetadata &metadata,
                         const std::string &filename,
                         const Logger &log,
                         bool report_range) {
@@ -1215,8 +1215,8 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
   }
 }
 
-std::set<SpatialVariableMetadata> metadata(std::initializer_list<const Array *> vecs) {
-  std::set<SpatialVariableMetadata> result;
+std::set<VariableMetadata> metadata(std::initializer_list<const Array *> vecs) {
+  std::set<VariableMetadata> result;
   for (const auto *vec : vecs) {
     for (const auto &var : vec->all_metadata()) {
       result.insert(var);

@@ -163,7 +163,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
     const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     if (input_file.variable_exists("liqfrac")) {
-      SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
+      auto enthalpy_metadata = m_ice_enthalpy.metadata();
 
       liqfrac.set_name("liqfrac");
       liqfrac.metadata(0).set_name("liqfrac");

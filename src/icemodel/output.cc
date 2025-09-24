@@ -238,7 +238,7 @@ void IceModel::write_variables(const OutputFile &file, OutputKind kind,
   write_run_stats(file);
 }
 
-void define_variables(std::set<SpatialVariableMetadata> &variables, const OutputFile &file,
+void define_variables(std::set<VariableMetadata> &variables, const OutputFile &file,
                       bool use_internal_units, const std::string &mapping_variable_name) {
   std::set<std::string> variable_names;
   for (const auto &v : variables) {
@@ -286,7 +286,7 @@ void define_variables(std::set<SpatialVariableMetadata> &variables, const Output
 
 void IceModel::define_diagnostics(const OutputFile &file,
                                   const std::set<std::string> &variable_names) const {
-  std::set<SpatialVariableMetadata> variables;
+  std::set<VariableMetadata> variables;
 
   std::string mapping_variable_name{};
   {
@@ -332,7 +332,7 @@ void IceModel::define_state(const OutputFile &file) const {
     }
   }
 
-  std::set<SpatialVariableMetadata> state_variables{};
+  std::set<VariableMetadata> state_variables{};
   for (auto *v : m_model_state) {
     for (unsigned int k = 0; k < v->ndof(); ++k) {
       state_variables.insert(v->metadata(k));

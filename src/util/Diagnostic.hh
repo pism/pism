@@ -80,7 +80,7 @@ public:
 
   unsigned int n_variables() const;
 
-  SpatialVariableMetadata &metadata(unsigned int N = 0);
+  VariableMetadata &metadata(unsigned int N = 0);
 
   void init(const File &input, unsigned int time);
   void define_state(const OutputFile &output) const;
@@ -119,7 +119,7 @@ protected:
   //! Configuration flags and parameters
   std::shared_ptr<const Config> m_config;
   //! metadata corresponding to NetCDF variables
-  std::vector<SpatialVariableMetadata> m_vars;
+  std::vector<VariableMetadata> m_vars;
   //! fill value (used often enough to justify storing it)
   double m_fill_value;
 };

@@ -81,7 +81,7 @@ void CalvingAtThickness::init() {
   } else {
     double calving_threshold = m_config->get_number("calving.thickness_calving.threshold");
 
-    SpatialVariableMetadata attributes = m_calving_threshold->metadata();
+    auto attributes = m_calving_threshold->metadata();
     // replace with a constant array::Forcing
     m_calving_threshold = array::Forcing::Constant(m_grid,
                                                   "thickness_calving_threshold",

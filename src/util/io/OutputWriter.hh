@@ -30,7 +30,6 @@
 namespace pism {
 
 class Config;
-class SpatialVariableMetadata;
 class VariableMetadata;
 class VariableAttributes;
 

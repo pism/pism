@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 PISM Authors
+/* Copyright (C) 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@
 namespace pism {
 class Grid;
 class File;
-class SpatialVariableMetadata;
+class VariableMetadata;
 
 namespace array {
 class Scalar;
@@ -54,7 +54,7 @@ public:
   void regrid(const File &file, array::Scalar &output) const;
 
 private:
-  double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
+  double regrid_impl(const VariableMetadata &metadata, const pism::File &file,
                      int record_index, const Grid &target_grid, petsc::Vec &output) const;
 
   double interpolate(const array::Scalar &source, petsc::Vec &target) const;

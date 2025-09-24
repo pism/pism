@@ -41,7 +41,7 @@
 
 namespace pism {
 
-double InputInterpolation::regrid(const SpatialVariableMetadata &metadata, const pism::File &file,
+double InputInterpolation::regrid(const VariableMetadata &metadata, const pism::File &file,
                                   int record_index, const Grid &grid, petsc::Vec &output) const {
   if (record_index == -1) {
     auto nrecords =
@@ -83,7 +83,7 @@ InputInterpolation3D::InputInterpolation3D(const Grid &target_grid,
 }
 
 
-double InputInterpolation3D::regrid_impl(const SpatialVariableMetadata &metadata,
+double InputInterpolation3D::regrid_impl(const VariableMetadata &metadata,
                                          const pism::File &file,
                                          int record_index,
                                          const Grid &target_grid,

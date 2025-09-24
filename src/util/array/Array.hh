@@ -38,7 +38,7 @@ class Default;
 class Grid;
 class File;
 class OutputFile;
-class SpatialVariableMetadata;
+class VariableMetadata;
 
 namespace petsc {
 class DM;
@@ -251,11 +251,11 @@ public:
 
   void set(double c);
 
-  SpatialVariableMetadata& metadata(unsigned int N = 0);
+  VariableMetadata& metadata(unsigned int N = 0);
 
-  const SpatialVariableMetadata& metadata(unsigned int N = 0) const;
+  const VariableMetadata& metadata(unsigned int N = 0) const;
 
-  std::vector<SpatialVariableMetadata> all_metadata() const;
+  std::vector<VariableMetadata> all_metadata() const;
   int state_counter() const;
   void inc_state_counter();
 
@@ -325,7 +325,7 @@ static typename std::shared_ptr<T> cast(std::shared_ptr<Array> input) {
   return result;
 }
 
-std::set<SpatialVariableMetadata> metadata(std::initializer_list<const Array *> vecs);
+std::set<VariableMetadata> metadata(std::initializer_list<const Array *> vecs);
 
 } // end of namespace array
 

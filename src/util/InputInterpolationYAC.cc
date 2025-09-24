@@ -433,7 +433,7 @@ void InputInterpolationYAC::regrid(const pism::File &file, pism::array::Scalar &
 }
 
 
-double InputInterpolationYAC::regrid_impl(const SpatialVariableMetadata &metadata,
+double InputInterpolationYAC::regrid_impl(const VariableMetadata &metadata,
                                           const pism::File &file, int record_index,
                                           const Grid & /* target_grid (unused) */,
                                           petsc::Vec &output) const {

@@ -33,7 +33,6 @@ class System;
 }
 
 class VariableMetadata;
-class SpatialVariableMetadata;
 class Grid;
 class File;
 class Logger;
@@ -58,14 +57,14 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
                       const std::vector<double> &internal_z_levels,
                       bool allow_extrapolation);
 
-void regrid_spatial_variable(const SpatialVariableMetadata &variable,
+void regrid_spatial_variable(const VariableMetadata &variable,
                              const Grid& internal_grid,
                              const LocalInterpCtx &lic,
                              const File &file,
                              const Logger &log,
                              double *output);
 
-void read_spatial_variable(const SpatialVariableMetadata &variable,
+void read_spatial_variable(const VariableMetadata &variable,
                            const Grid& grid, const File &file,
                            unsigned int time, double *output);
 
