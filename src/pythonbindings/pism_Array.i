@@ -137,6 +137,7 @@ std::vector<double> interp(int i, int j) {
 %include "util/stencils.hh"
 %template(DoubleStar) pism::stencils::Star<double>;
 
+%ignore pism::array::metadata;
 %include "util/array/Array.hh"
 
 %include "util/array/Array2D.hh"
