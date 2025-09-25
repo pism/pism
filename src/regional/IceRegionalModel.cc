@@ -73,9 +73,8 @@ void IceRegionalModel::allocate_storage() {
       .long_name("saved ice thickness for use to keep driving stress constant in no_model strip")
       .units("m"); //  no standard name
 
-  m_model_state.insert(&m_thk_stored);
-  m_model_state.insert(&m_usurf_stored);
-  m_model_state.insert(&m_no_model_mask);
+  m_model_state =
+      pism::combine(m_model_state, { &m_thk_stored, &m_usurf_stored, &m_no_model_mask });
 }
 
 void IceRegionalModel::model_state_setup() {

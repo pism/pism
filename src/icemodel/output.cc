@@ -313,8 +313,9 @@ void IceModel::define_diagnostics(const OutputFile &file,
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated Arrays.
-void IceModel::write_diagnostics(const OutputFile &file, const std::set<std::string> &variables) const {
-  for (const auto& variable : variables) {
+void IceModel::write_diagnostics(const OutputFile &file,
+                                 const std::set<std::string> &variable_names) const {
+  for (const auto &variable : variable_names) {
     auto diag = m_diagnostics.find(variable);
 
     if (diag != m_diagnostics.end()) {
@@ -324,6 +325,7 @@ void IceModel::write_diagnostics(const OutputFile &file, const std::set<std::str
 }
 
 void IceModel::define_state(const OutputFile &file) const {
+  // Get the name of the mapping variable (empty if the mapping info is not available):
   std::string mapping_variable_name{};
   {
     const auto &mapping = m_grid->get_mapping_info();
@@ -332,23 +334,29 @@ void IceModel::define_state(const OutputFile &file) const {
     }
   }
 
+  // Build the list of state variables
   std::set<VariableMetadata> state_variables{};
-  for (auto *v : m_model_state) {
-    for (unsigned int k = 0; k < v->ndof(); ++k) {
-      state_variables.insert(v->metadata(k));
+  {
+    // IceModel's state variables:
+    for (auto *v : m_model_state) {
+      for (unsigned int k = 0; k < v->ndof(); ++k) {
+        state_variables.insert(v->metadata(k));
+      }
+    }
+
+    // state variables from sub-models:
+    for (const auto &m : m_submodels) {
+      state_variables = pism::combine(state_variables, m.second->state());
+    }
+
+    // state variables from diagnostics:
+    for (const auto &d : m_diagnostics) {
+      state_variables = pism::combine(state_variables, d.second->state());
     }
   }
 
   pism::define_variables(state_variables, file, m_config->get_flag("output.use_MKS"),
                          mapping_variable_name);
-
-  for (const auto& m : m_submodels) {
-    m.second->define_state(file);
-  }
-
-  for (const auto& d : m_diagnostics) {
-    d.second->define_state(file);
-  }
 }
 
 void IceModel::write_state(const OutputFile &file) const {

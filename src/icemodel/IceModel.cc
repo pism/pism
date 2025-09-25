@@ -261,15 +261,13 @@ void IceModel::allocate_storage() {
   }
 
   // Add some variables to the list of "model state" fields.
-  m_model_state.insert(&m_velocity_bc_mask);
-  m_model_state.insert(&m_velocity_bc_values);
-
-  m_model_state.insert(&m_ice_thickness_bc_mask);
-
-  m_model_state.insert(&m_geometry.latitude);
-  m_model_state.insert(&m_geometry.longitude);
-  m_model_state.insert(&m_geometry.ice_thickness);
-  m_model_state.insert(&m_geometry.ice_area_specific_volume);
+  m_model_state = { &m_velocity_bc_mask,
+                    &m_velocity_bc_values,
+                    &m_ice_thickness_bc_mask,
+                    &m_geometry.latitude,
+                    &m_geometry.longitude,
+                    &m_geometry.ice_thickness,
+                    &m_geometry.ice_area_specific_volume };
 }
 
 //! Update the surface elevation and the flow-type mask when the geometry has changed.
