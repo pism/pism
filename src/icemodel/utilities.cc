@@ -66,14 +66,8 @@ int IceModel::process_signals() {
 
     OutputFile file(m_output_writer, file_name);
 
-    // define the time dimension if necessary (no-op if it is already defined)
-    {
-      bool with_bounds = false;
-      io::define_time(file, m_time->metadata(), with_bounds);
-      define_metadata(file, WRITE_MAPPING, WRITE_RUN_STATS);
-    }
-
-    define_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+    prepare_output_file(file,
+                        pism::combine(state_variables(), diagnostic_variables(m_output_vars)));
 
     write_metadata(file);
     write_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());

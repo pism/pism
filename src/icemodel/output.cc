@@ -175,14 +175,9 @@ void IceModel::save_results() {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
     OutputFile file(m_output_writer, filename);
 
-    // define the time dimension if necessary (no-op if it is already defined)
-    {
-      bool with_bounds = false;
-      io::define_time(file, m_time->metadata(), with_bounds);
-      define_metadata(file, WRITE_MAPPING, WRITE_RUN_STATS);
-    }
-
-    define_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+    bool with_time_bounds = false;
+    prepare_output_file(file, pism::combine(state_variables(), diagnostic_variables(m_output_vars)),
+                        with_time_bounds);
 
     write_metadata(file);
     write_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
@@ -213,18 +208,6 @@ void IceModel::write_run_stats(const OutputFile &file) const {
   file.write_array({ "step_counter", m_sys }, start, count, { (double)m_step_counter });
 }
 
-void IceModel::define_variables(const OutputFile &file, OutputKind kind,
-                                const std::set<std::string> &variables) const {
-
-  auto time_name = m_time->variable_name();
-
-  if (kind == INCLUDE_MODEL_STATE) {
-    define_state(file);
-  }
-
-  define_diagnostics(file, variables);
-}
-
 void IceModel::write_variables(const OutputFile &file, OutputKind kind,
                                const std::set<std::string> &variables, double time_seconds) const {
   // append to the time dimension
@@ -238,8 +221,18 @@ void IceModel::write_variables(const OutputFile &file, OutputKind kind,
   write_run_stats(file);
 }
 
-void define_variables(std::set<VariableMetadata> &variables, const OutputFile &file,
-                      bool use_internal_units, const std::string &mapping_variable_name) {
+void IceModel::define_variables(const OutputFile &file,
+                                const std::set<VariableMetadata> &variables) const {
+  std::string mapping_variable_name{};
+  {
+    const auto &mapping = m_grid->get_mapping_info();
+    if (not mapping.proj_string.empty() or mapping.cf_mapping.has_attributes()) {
+      mapping_variable_name = mapping.cf_mapping.get_name();
+    }
+  }
+
+  bool use_internal_units = m_config->get_flag("output.use_MKS");
+
   std::set<std::string> variable_names;
   for (const auto &v : variables) {
     variable_names.insert(v.get_name());
@@ -284,33 +277,6 @@ void define_variables(std::set<VariableMetadata> &variables, const OutputFile &f
   }
 }
 
-void IceModel::define_diagnostics(const OutputFile &file,
-                                  const std::set<std::string> &variable_names) const {
-  std::set<VariableMetadata> variables;
-
-  std::string mapping_variable_name{};
-  {
-    const auto &mapping = m_grid->get_mapping_info();
-    if (not mapping.proj_string.empty() or mapping.cf_mapping.has_attributes()) {
-      mapping_variable_name = mapping.cf_mapping.get_name();
-    }
-  }
-
-  for (const auto &var : variable_names) {
-    auto diag = m_diagnostics.find(var);
-
-    if (diag != m_diagnostics.end()) {
-      const auto &D = diag->second;
-      for (unsigned int k = 0; k < D->n_variables(); ++k) {
-        variables.insert(D->metadata(k));
-      }
-    }
-  }
-
-  pism::define_variables(variables, file, m_config->get_flag("output.use_MKS"),
-                         mapping_variable_name);
-}
-
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated Arrays.
 void IceModel::write_diagnostics(const OutputFile &file,
@@ -324,39 +290,55 @@ void IceModel::write_diagnostics(const OutputFile &file,
   }
 }
 
-void IceModel::define_state(const OutputFile &file) const {
-  // Get the name of the mapping variable (empty if the mapping info is not available):
-  std::string mapping_variable_name{};
-  {
-    const auto &mapping = m_grid->get_mapping_info();
-    if (not mapping.proj_string.empty() or mapping.cf_mapping.has_attributes()) {
-      mapping_variable_name = mapping.cf_mapping.get_name();
-    }
-  }
-
-  // Build the list of state variables
-  std::set<VariableMetadata> state_variables{};
+std::set<VariableMetadata> IceModel::state_variables() const {
+  std::set<VariableMetadata> result{};
   {
     // IceModel's state variables:
     for (auto *v : m_model_state) {
       for (unsigned int k = 0; k < v->ndof(); ++k) {
-        state_variables.insert(v->metadata(k));
+        result.insert(v->metadata(k));
       }
     }
 
     // state variables from sub-models:
     for (const auto &m : m_submodels) {
-      state_variables = pism::combine(state_variables, m.second->state());
+      result = pism::combine(result, m.second->state());
     }
 
     // state variables from diagnostics:
     for (const auto &d : m_diagnostics) {
-      state_variables = pism::combine(state_variables, d.second->state());
+      result = pism::combine(result, d.second->state());
     }
   }
 
-  pism::define_variables(state_variables, file, m_config->get_flag("output.use_MKS"),
-                         mapping_variable_name);
+  return result;
+}
+
+std::set<VariableMetadata>
+IceModel::diagnostic_variables(const std::set<std::string> &variable_names) const {
+  std::set<VariableMetadata> result{};
+  {
+    for (const auto &var : variable_names) {
+      auto diag = m_diagnostics.find(var);
+
+      if (diag != m_diagnostics.end()) {
+        const auto &D = diag->second;
+        for (unsigned int k = 0; k < D->n_variables(); ++k) {
+          result.insert(D->metadata(k));
+        }
+      }
+    }
+  }
+  return result;
+}
+
+void IceModel::prepare_output_file(const OutputFile &file,
+                                   const std::set<VariableMetadata> &variables,
+                                   bool with_time_bounds) const {
+  io::define_time(file, m_time->metadata(), with_time_bounds);
+  define_metadata(file, WRITE_MAPPING, WRITE_RUN_STATS);
+
+  define_variables(file, variables);
 }
 
 void IceModel::write_state(const OutputFile &file) const {
@@ -384,24 +366,19 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
 
   filename = filename_add_suffix(filename, suffix, "");
 
-  auto variables = output_variables("small");
+  auto variable_names = output_variables("small");
   for (const auto &v : additional_variables) {
-    variables.insert(v);
+    variable_names.insert(v);
   }
 
   OutputFile file(m_output_writer, filename);
 
-  // define the time dimension if necessary (no-op if it is already defined)
-  {
-    bool with_bounds = false;
-    io::define_time(file, m_time->metadata(), with_bounds);
-    define_metadata(file, WRITE_MAPPING, WRITE_RUN_STATS);
-  }
-
-  define_variables(file, INCLUDE_MODEL_STATE, variables);
+  bool with_time_bounds = false;
+  prepare_output_file(file, pism::combine(state_variables(), diagnostic_variables(variable_names)),
+                      with_time_bounds);
 
   write_metadata(file);
-  write_variables(file, INCLUDE_MODEL_STATE, variables, m_time->current());
+  write_variables(file, INCLUDE_MODEL_STATE, variable_names, m_time->current());
 
   file.close();
 

@@ -328,7 +328,7 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
     define_metadata(file, WRITE_MAPPING, WRITE_RUN_STATS);
   }
 
-  define_variables(file, INCLUDE_MODEL_STATE, {});
+  define_variables(file, state_variables());
 
   write_metadata(file);
   // assume that "dumpToFile" is expected to save the model state *only*.

@@ -208,14 +208,17 @@ protected:
   virtual void restart_2d(const File &input_file, unsigned int record);
   virtual void initialize_2d();
 
-  enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
-  virtual void define_variables(const OutputFile &file, OutputKind kind,
-                                const std::set<std::string> &variables) const;
+  void define_variables(const OutputFile &file, const std::set<VariableMetadata> &variables) const;
+
+  enum OutputKind { INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS };
 
   virtual void write_variables(const OutputFile &file, OutputKind kind,
                                const std::set<std::string> &variables, double time) const;
 
-  virtual void define_state(const OutputFile &file) const;
+  virtual std::set<VariableMetadata>
+  diagnostic_variables(const std::set<std::string> &variable_names) const;
+  virtual std::set<VariableMetadata> state_variables() const;
+
   virtual void write_state(const OutputFile &file) const;
   virtual void write_run_stats(const OutputFile &file) const;
 
@@ -228,8 +231,6 @@ protected:
                                RunStatsTreatment run_stats) const;
   virtual void write_metadata(const OutputFile &file) const;
 
-  virtual void define_diagnostics(const OutputFile &file,
-                                  const std::set<std::string> &variable_names) const;
   virtual void write_diagnostics(const OutputFile &file,
                                  const std::set<std::string> &variable_names) const;
 
@@ -250,7 +251,7 @@ protected:
   std::shared_ptr<Time> m_time;
 
   std::shared_ptr<OutputWriter> m_output_writer;
-  
+
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
   std::string m_output_history;
@@ -424,6 +425,13 @@ protected:
   //! Requested scalar diagnostics.
   std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
 
+  /*!
+   * Define metadata and variables in an output file.
+   */
+  void prepare_output_file(const OutputFile &file,
+                           const std::set<VariableMetadata> &variables,
+                           bool with_time_bounds = false) const;
+  
   // Set of variables to put in the output file:
   std::set<std::string> m_output_vars;
 

@@ -117,7 +117,6 @@ void IceModel::init_extras() {
 
   m_extra_filename   = m_config->get_string("output.extra.file");
   std::string times  = m_config->get_string("output.extra.times");
-  std::string vars   = m_config->get_string("output.extra.vars");
   bool        split  = m_config->get_flag("output.extra.split");
   bool        append = m_config->get_flag("output.extra.append");
 
@@ -151,7 +150,23 @@ void IceModel::init_extras() {
                        "both output.extra.split and output.extra.append are set.");
   }
 
-  auto output_kind = m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS;
+  std::set<VariableMetadata> variables;
+  {
+    std::string vars = m_config->get_string("output.extra.vars");
+    if (not vars.empty()) {
+      m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
+      m_log->message(2, "variables requested: %s\n", vars.c_str());
+    } else {
+      m_log->message(2,
+                     "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
+    }
+
+    if (m_extra_vars.empty()) {
+      variables = state_variables();
+    } else {
+      variables = diagnostic_variables(m_extra_vars);
+    }
+  }
 
   m_extra_file = nullptr;
   if (not split) {
@@ -186,10 +201,8 @@ void IceModel::init_extras() {
       }
     } else {
       // prepare the file
-      bool with_bounds = true;
-      io::define_time(*m_extra_file, m_time->metadata(), with_bounds);
-      define_metadata(*m_extra_file, WRITE_MAPPING, WRITE_RUN_STATS);
-      define_variables(*m_extra_file, output_kind, m_extra_vars);
+      bool with_time_bounds = true;
+      prepare_output_file(*m_extra_file, variables, with_time_bounds);
     }
   }
 
@@ -227,13 +240,6 @@ void IceModel::init_extras() {
     }
   }
 
-  if (not vars.empty()) {
-    m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
-    m_log->message(2, "variables requested: %s\n", vars.c_str());
-  } else {
-    m_log->message(2,
-                   "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
-  }
 }
 
 //! Write spatially-variable diagnostic quantities.
@@ -313,6 +319,15 @@ void IceModel::write_extras() {
 
     auto output_kind = m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS;
 
+    std::set<VariableMetadata> variables;
+    {
+      if (m_extra_vars.empty()) {
+        variables = state_variables();
+      } else {
+        variables = diagnostic_variables(m_extra_vars);
+      }
+    }
+
     if (m_extra_file == nullptr) {
 
       std::string filename = m_extra_filename;
@@ -327,11 +342,8 @@ void IceModel::write_extras() {
       if (m_config->get_flag("output.extra.append")) {
         m_extra_file->append();
       } else {
-        // Prepare the file:
         bool with_bounds = true;
-        io::define_time(*m_extra_file, m_time->metadata(), with_bounds);
-        define_metadata(*m_extra_file, WRITE_MAPPING, WRITE_RUN_STATS);
-        define_variables(*m_extra_file, output_kind, m_extra_vars);
+        prepare_output_file(*m_extra_file, variables, with_bounds);
       }
     }
 
