@@ -130,7 +130,6 @@ public:
 
   const Profiling &profiling() const;
 
-  void define_state(const OutputFile &output) const;
   void write_state(const OutputFile &output) const;
 
   std::set<VariableMetadata> state() const;

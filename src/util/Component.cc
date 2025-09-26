@@ -116,22 +116,8 @@ const Profiling &Component::profiling() const {
   return m_grid->ctx()->profiling();
 }
 
-/*! @brief Define model state variables in an output file. */
-/*!
- * This is needed to allow defining all the variables in an output file before any data is written
- * (an optimization needed to get decent performance writing NetCDF-3).
- */
-void Component::define_state(const OutputFile &output) const {
-  for (const auto &variable : state()) {
-    output.define_variable(variable);
-  }
-}
-
 /*! @brief Write model state variables to an output file. */
 void Component::write_state(const OutputFile &output) const {
-  // define variables, if needed (this is a no-op if they are already defined)
-  this->define_state(output);
-
   this->write_state_impl(output);
 }
 
