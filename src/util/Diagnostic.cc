@@ -350,7 +350,6 @@ void TSDiagnostic::flush() {
                      m_bounds);
   }
 
-  file.define_variable(m_variable);
   // write values of a diagnostic
   file.write_timeseries_variable(m_variable.get_name(), { m_start },
                                  { (unsigned int)m_values.size() }, m_values);
