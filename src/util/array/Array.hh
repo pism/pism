@@ -231,8 +231,6 @@ public:
   void set_name(const std::string &name);
   const std::string& get_name() const;
 
-  void define(const OutputFile &file) const;
-
   void read(const std::string &filename, unsigned int time);
   void read(const File &file, unsigned int time);
 

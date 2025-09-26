@@ -462,13 +462,6 @@ void Array::read_impl(const File &file, const unsigned int time) {
   }
 }
 
-//! \brief Define variables corresponding to an Array in a file opened using `file`.
-void Array::define(const OutputFile &file) const {
-  for (unsigned int j = 0; j < ndof(); ++j) {
-    file.define_variable(metadata(j));
-  }
-}
-
 //! @brief Returns a reference to the VariableMetadata object
 //! containing metadata for the compoment N.
 VariableMetadata &Array::metadata(unsigned int N) {
