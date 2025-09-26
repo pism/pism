@@ -150,7 +150,7 @@ void IceModel::write_snapshot() {
     m_log->message(2, "saving snapshot to %s at %s, for time-step goal %s\n", filename.c_str(),
                    m_time->date(m_time->current()).c_str(), m_time->date(saving_after).c_str());
 
-    write_metadata(*m_snapshot_file);
+    write_config(*m_config, "pism_config", *m_snapshot_file);
     write_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
   }
 

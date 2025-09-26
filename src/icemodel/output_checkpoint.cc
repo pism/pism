@@ -80,7 +80,7 @@ bool IceModel::write_checkpoint() {
     prepare_output_file(file, pism::combine(state_variables(), diagnostic_variables(m_checkpoint_vars)),
                         with_time_bounds);
 
-    write_metadata(file);
+    write_config(*m_config, "pism_config", file);
     write_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
   }
   profiling.end("io.checkpoint");

@@ -322,15 +322,9 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
   OutputFile file(m_output_writer, filename);
 
   // define the time dimension if necessary (no-op if it is already defined)
-  {
-    bool with_bounds = false;
-    io::define_time(file, m_time->metadata(), with_bounds);
-    define_metadata(file, WRITE_MAPPING, WRITE_RUN_STATS);
-  }
+  prepare_output_file(file, state_variables());
 
-  define_variables(file, state_variables());
-
-  write_metadata(file);
+  write_config(*m_config, "pism_config", file);
   // assume that "dumpToFile" is expected to save the model state *only*.
   write_variables(file, INCLUDE_MODEL_STATE, {}, m_time->current());
 }

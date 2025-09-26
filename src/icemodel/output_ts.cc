@@ -95,7 +95,7 @@ void IceModel::init_timeseries() {
         }
       }
     } else {
-      define_metadata(*m_ts_file, SKIP_MAPPING, SKIP_RUN_STATS);
+      define_variables(*m_ts_file, metadata(SKIP_MAPPING, SKIP_RUN_STATS));
     }
 
     // initialize scalar diagnostics
@@ -126,7 +126,7 @@ void IceModel::flush_timeseries() {
     return;
   }
 
-  write_metadata(*m_ts_file);
+  write_config(*m_config, "pism_config", *m_ts_file);
 
   // flush all the time-series buffers:
   for (const auto &d : m_ts_diagnostics) {

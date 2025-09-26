@@ -69,7 +69,7 @@ int IceModel::process_signals() {
     prepare_output_file(file,
                         pism::combine(state_variables(), diagnostic_variables(m_output_vars)));
 
-    write_metadata(file);
+    write_config(*m_config, "pism_config", file);
     write_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
 
     // flush all the time-series buffers:

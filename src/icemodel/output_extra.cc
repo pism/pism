@@ -350,7 +350,8 @@ void IceModel::write_extras() {
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
-    write_metadata(*m_extra_file);
+    write_config(*m_config, "pism_config", *m_extra_file);
+
     // use the mid-point of the current reporting interval
     double time = 0.5 * (m_last_extra + current_time);
     write_variables(*m_extra_file, output_kind, m_extra_vars, time);

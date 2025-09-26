@@ -226,10 +226,7 @@ protected:
   enum RunStatsTreatment {WRITE_RUN_STATS, SKIP_RUN_STATS};
   virtual std::set<VariableMetadata> metadata(MappingTreatment mapping_flag,
                                               RunStatsTreatment run_stats) const;
-
-  virtual void define_metadata(const OutputFile &file, MappingTreatment mapping_flag,
-                               RunStatsTreatment run_stats) const;
-  virtual void write_metadata(const OutputFile &file) const;
+  std::set<VariableMetadata> run_stats_metadata() const;
 
   virtual void write_diagnostics(const OutputFile &file,
                                  const std::set<std::string> &variable_names) const;
