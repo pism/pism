@@ -94,12 +94,6 @@ void Diagnostic::init(const File &input, unsigned int time) {
   this->init_impl(input, time);
 }
 
-void Diagnostic::define_state(const OutputFile &output) const {
-  for (const auto &variable : state()) {
-    output.define_variable(variable);
-  }
-}
-
 void Diagnostic::write_state(const OutputFile &output) const {
   this->write_state_impl(output);
 }

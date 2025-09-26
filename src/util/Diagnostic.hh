@@ -85,7 +85,7 @@ public:
   std::set<VariableMetadata> state() const;
 
   void init(const File &input, unsigned int time);
-  void define_state(const OutputFile &output) const;
+
   void write_state(const OutputFile &output) const;
 
 protected:
