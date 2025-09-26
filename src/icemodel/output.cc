@@ -219,7 +219,7 @@ void IceModel::define_variables(const OutputFile &file,
     }
 
     file.define_variable(var);
-  }
+  } // end of the loop over variables
 }
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
