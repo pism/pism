@@ -42,7 +42,7 @@ class Vec;
  * Interpolation from a Cartesian projected grid in an `input_file`.
  *
  * An `input_file` has to contain projection information (any of the options supported by
- * MappingInfo::FromFile()).
+ * mapping_info_from_file()).
  */
 class InputInterpolationYAC : public InputInterpolation {
 public:

@@ -3360,7 +3360,7 @@ void IceModel::init_diagnostics() {
   };
 
 #if (Pism_USE_PROJ==1)
-  std::string proj = m_grid->get_mapping_info().proj_string;
+  std::string proj = m_grid->get_mapping_info()["proj_params"];
   if (not proj.empty()) {
     m_diagnostics["lat_bnds"] = f(new LatLonBounds(this, "lat", proj));
     m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj));

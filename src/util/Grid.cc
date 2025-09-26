@@ -30,6 +30,7 @@
 #include <vector>
 #include <utility>              // std::swap
 
+#include "VariableMetadata.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/InputInterpolation.hh"
@@ -59,7 +60,7 @@ struct Grid::Impl : public grid::DistributedGridInfo {
 
   std::shared_ptr<const Context> ctx;
 
-  MappingInfo mapping_info;
+  VariableMetadata mapping_info;
 
   //! @brief array containing lenghts (in the x-direction) of processor sub-domains
   std::vector<PetscInt> procs_x;
@@ -898,7 +899,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
                                     variable.c_str());
     }
 
-    auto mapping = MappingInfo::FromFile(file, var.name, unit_system).cf_mapping;
+    auto mapping = mapping_info_from_file(file, var.name, unit_system);
 
     bool time_dimension_processed = false;
     for (const auto &dimension_name : file.dimensions(var.name)) {
@@ -1439,7 +1440,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     auto result = std::make_shared<Grid>(ctx, P);
 
-    auto mapping_info = MappingInfo::FromFile(grid_file, P.variable_name, unit_system);
+    auto mapping_info = mapping_info_from_file(grid_file, P.variable_name, unit_system);
     result->set_mapping_info(mapping_info);
 
     units::Converter km(unit_system, "m", "km");
@@ -1503,7 +1504,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       units::Converter km(unit_system, "m", "km");
 
       // get grid projection info
-      auto grid_mapping = MappingInfo::FromFile(input_file, variable_name, unit_system);
+      auto grid_mapping = mapping_info_from_file(input_file, variable_name, unit_system);
 
       result->set_mapping_info(grid_mapping);
 
@@ -1524,7 +1525,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       auto result = Grid::FromFile(ctx, input_file, candidates, r);
 
       // get grid projection info
-      auto grid_mapping = MappingInfo::FromFile(input_file, variable_name, unit_system);
+      auto grid_mapping = mapping_info_from_file(input_file, variable_name, unit_system);
 
       result->set_mapping_info(grid_mapping);
 
@@ -1546,13 +1547,13 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
   }
 }
 
-const MappingInfo &Grid::get_mapping_info() const {
+const VariableMetadata &Grid::get_mapping_info() const {
   return m_impl->mapping_info;
 }
 
-void Grid::set_mapping_info(const MappingInfo &info) {
+void Grid::set_mapping_info(const VariableMetadata &info) {
   m_impl->mapping_info = info;
-  // FIXME: re-compute lat/lon coordinates
+  m_impl->mapping_info.set_output_type(io::PISM_INT);
 }
 
 std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<double> &levels,

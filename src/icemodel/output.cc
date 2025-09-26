@@ -78,16 +78,8 @@ std::set<VariableMetadata> IceModel::metadata(MappingTreatment mapping_flag,
   if (mapping_flag == WRITE_MAPPING) {
     auto info = m_grid->get_mapping_info();
 
-    auto mapping = info.cf_mapping;
-    mapping.set_output_type(io::PISM_INT);
-
-    if (not info.proj_string.empty()) {
-      // Write the PROJ string to mapping:proj_params (for CDO).
-      mapping["proj_params"] = info.proj_string;
-    }
-
-    if (mapping.has_attributes()) {
-      result.insert(mapping);
+    if (info.has_attributes()) {
+      result.insert(info);
     }
   }
 
@@ -208,8 +200,8 @@ void IceModel::define_variables(const OutputFile &file,
   std::string mapping_variable_name{};
   {
     const auto &mapping = m_grid->get_mapping_info();
-    if (not mapping.proj_string.empty() or mapping.cf_mapping.has_attributes()) {
-      mapping_variable_name = mapping.cf_mapping.get_name();
+    if (mapping.has_attributes()) {
+      mapping_variable_name = mapping.get_name();
     }
   }
 
@@ -328,23 +320,18 @@ void IceModel::prepare_output_file(const OutputFile &file,
                                    bool with_time_bounds) const {
   io::define_time(file, m_time->metadata(), with_time_bounds);
 
+  std::set<VariableMetadata> misc_variables = pism::combine(
+      run_stats_metadata(), { m_output_global_attributes, config_metadata(*m_config) });
+
   {
-    auto info = m_grid->get_mapping_info();
-
-    auto mapping = info.cf_mapping;
-    mapping.set_output_type(io::PISM_INT);
-
-    if (not info.proj_string.empty()) {
-      // Write the PROJ string to mapping:proj_params (for CDO).
-      mapping["proj_params"] = info.proj_string;
-    }
+    auto mapping = m_grid->get_mapping_info();
 
     if (mapping.has_attributes()) {
-      result.insert(mapping);
+      misc_variables.insert(mapping);
     }
   }
-  define_variables(file, metadata(WRITE_MAPPING, WRITE_RUN_STATS));
-  define_variables(file, run_stats_metadata());
+
+  define_variables(file, misc_variables);
 
   define_variables(file, variables);
 }
