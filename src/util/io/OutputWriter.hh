@@ -402,10 +402,11 @@ public:
 
   void define_dimension(const std::string &dimension_name, unsigned int length) const;
 
+private:
   void define_variable(const std::string &variable_name,
                        const std::vector<std::string> &dims, io::Type type,
                        const VariableAttributes &attributes) const;
-
+public:
   void define_variable(const VariableMetadata &variable) const;
 
   void set_global_attributes(const std::map<std::string, std::string> &strings,
