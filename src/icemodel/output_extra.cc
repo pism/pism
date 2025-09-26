@@ -315,10 +315,6 @@ void IceModel::write_extras() {
 
     std::string time_name = m_time->variable_name();
 
-    VariableMetadata time_bounds("time_bounds", m_sys);
-
-    auto output_kind = m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS;
-
     std::set<VariableMetadata> variables;
     {
       if (m_extra_vars.empty()) {
@@ -350,19 +346,34 @@ void IceModel::write_extras() {
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
-    write_config(*m_config, "pism_config", *m_extra_file);
+    {
+      write_config(*m_config, "pism_config", *m_extra_file);
 
-    // use the mid-point of the current reporting interval
-    double time = 0.5 * (m_last_extra + current_time);
-    write_variables(*m_extra_file, output_kind, m_extra_vars, time);
+      // use the mid-point of the current reporting interval
+      double time = 0.5 * (m_last_extra + current_time);
+      m_extra_file->append_time(time);
 
-    // Get the length of the time dimension *after* it is appended to.
-    auto time_length = m_extra_file->time_dimension_length();
-    auto time_start = time_length > 0 ? (time_length - 1) : 0;
+      if (m_extra_vars.empty()) {
+        write_state(*m_extra_file);
+      } else {
+        write_diagnostics(*m_extra_file, m_extra_vars);
+      }
 
-    // write time bounds
-    m_extra_file->write_array(time_bounds, { time_start, 0 }, { 1, 2 },
-                              { m_last_extra, current_time });
+      // write time bounds
+      {
+        // Get the length of the time dimension *after* it is appended to.
+        auto time_length = m_extra_file->time_dimension_length();
+        auto time_start  = time_length > 0 ? (time_length - 1) : 0;
+
+        auto bounds_name = m_time->variable_name() + "_bounds";
+
+        m_extra_file->write_array({ bounds_name, m_sys }, { time_start, 0 }, { 1, 2 },
+                                  { m_last_extra, current_time });
+      }
+
+      write_run_stats(*m_extra_file);
+    }
+
     // make sure all changes are written
     m_extra_file->sync();
   }

@@ -210,22 +210,15 @@ protected:
 
   void define_variables(const OutputFile &file, const std::set<VariableMetadata> &variables) const;
 
-  enum OutputKind { INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS };
-
-  virtual void write_variables(const OutputFile &file, OutputKind kind,
-                               const std::set<std::string> &variables, double time) const;
-
   virtual std::set<VariableMetadata>
   diagnostic_variables(const std::set<std::string> &variable_names) const;
+
   virtual std::set<VariableMetadata> state_variables() const;
 
   virtual void write_state(const OutputFile &file) const;
+
   virtual void write_run_stats(const OutputFile &file) const;
 
-  enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
-  enum RunStatsTreatment {WRITE_RUN_STATS, SKIP_RUN_STATS};
-  virtual std::set<VariableMetadata> metadata(MappingTreatment mapping_flag,
-                                              RunStatsTreatment run_stats) const;
   std::set<VariableMetadata> run_stats_metadata() const;
 
   virtual void write_diagnostics(const OutputFile &file,

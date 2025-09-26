@@ -77,11 +77,17 @@ bool IceModel::write_checkpoint() {
 
     // define time dimension *without* time bounds
     bool with_time_bounds = false;
-    prepare_output_file(file, pism::combine(state_variables(), diagnostic_variables(m_checkpoint_vars)),
+    prepare_output_file(file,
+                        pism::combine(state_variables(), diagnostic_variables(m_checkpoint_vars)),
                         with_time_bounds);
 
-    write_config(*m_config, "pism_config", file);
-    write_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
+    {
+      write_config(*m_config, "pism_config", file);
+      file.append_time(m_time->current());
+      write_state(file);
+      write_diagnostics(file, m_checkpoint_vars);
+      write_run_stats(file);
+    }
   }
   profiling.end("io.checkpoint");
   double checkpoint_end_time = get_time(m_grid->com);

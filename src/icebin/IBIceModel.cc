@@ -321,12 +321,15 @@ void IBIceModel::prepare_outputs(double time_s) {
 void IBIceModel::dumpToFile(const std::string &filename) const {
   OutputFile file(m_output_writer, filename);
 
-  // define the time dimension if necessary (no-op if it is already defined)
   prepare_output_file(file, state_variables());
 
-  write_config(*m_config, "pism_config", file);
-  // assume that "dumpToFile" is expected to save the model state *only*.
-  write_variables(file, INCLUDE_MODEL_STATE, {}, m_time->current());
+  {
+    write_config(*m_config, "pism_config", file);
+    // assume that "dumpToFile" is expected to save the model state *only*.
+    file.append_time(m_time->current());
+    write_state(file);
+    write_run_stats(file);
+  }
 }
 
 void IBIceModel::time_setup() {

@@ -70,36 +70,6 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
   return MaxTimestep(dt, description);
 }
 
-std::set<VariableMetadata> IceModel::metadata(MappingTreatment mapping_flag,
-                                              RunStatsTreatment run_stats) const {
-  std::set<VariableMetadata> result{};
-
-  // mapping
-  if (mapping_flag == WRITE_MAPPING) {
-    auto info = m_grid->get_mapping_info();
-
-    if (info.has_attributes()) {
-      result.insert(info);
-    }
-  }
-
-  // config
-  result.insert(config_metadata(*m_config));
-
-  // global attributes
-  {
-    auto global       = m_output_global_attributes;
-    global["history"] = m_output_history;
-    result.insert(global);
-  }
-
-  if (run_stats == WRITE_RUN_STATS) {
-    result = pism::combine(result, run_stats_metadata());
-  }
-
-  return result;
-}
-
 std::set<VariableMetadata> IceModel::run_stats_metadata() const {
   VariableMetadata wall_clock("wall_clock_time", m_sys);
   wall_clock.long_name("wall-clock time since the beginning of the run")
@@ -151,8 +121,13 @@ void IceModel::save_results() {
     prepare_output_file(file, pism::combine(state_variables(), diagnostic_variables(m_output_vars)),
                         with_time_bounds);
 
-    write_config(*m_config, "pism_config", file);
-    write_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
+    {
+      write_config(*m_config, "pism_config", file);
+      file.append_time(m_time->current());
+      write_state(file);
+      write_diagnostics(file, m_output_vars);
+      write_run_stats(file);
+    }
   }
   profiling.end("io.model_state");
 }
@@ -180,19 +155,6 @@ void IceModel::write_run_stats(const OutputFile &file) const {
   file.write_array({ "model_years_per_processor_hour", m_sys }, start, count,
                    { model_years / proc_hours });
   file.write_array({ "step_counter", m_sys }, start, count, { (double)m_step_counter });
-}
-
-void IceModel::write_variables(const OutputFile &file, OutputKind kind,
-                               const std::set<std::string> &variables, double time_seconds) const {
-  // append to the time dimension
-  file.append_time(time_seconds);
-
-  if (kind == INCLUDE_MODEL_STATE) {
-    write_state(file);
-  }
-  write_diagnostics(file, variables);
-
-  write_run_stats(file);
 }
 
 void IceModel::define_variables(const OutputFile &file,
@@ -372,8 +334,13 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
   prepare_output_file(file, pism::combine(state_variables(), diagnostic_variables(variable_names)),
                       with_time_bounds);
 
-  write_config(*m_config, "pism_config", file);
-  write_variables(file, INCLUDE_MODEL_STATE, variable_names, m_time->current());
+  {
+    write_config(*m_config, "pism_config", file);
+    file.append_time(m_time->current());
+    write_state(file);
+    write_diagnostics(file, variable_names);
+    write_run_stats(file);
+  }
 
   file.close();
 
