@@ -86,9 +86,10 @@ void YacOutputWriter::initialize_yac() {
 
 void YacOutputWriter::initialize_grid() {
   int local_patch_size = -1;
+  auto global_grid = m_geometry.latitude.grid();
   auto distributed_grid = m_geometry.latitude.grid()->info();
-  x_size = grid->Mx();
-  y_size = grid->My();
+  x_size = global_grid->Mx();
+  y_size = global_grid->My();
   local_x_size = distributed_grid.xm;
   local_y_size = distributed_grid.ym;
 
@@ -123,7 +124,7 @@ void YacOutputWriter::initialize_grid() {
   std::vector<double> longitudes(local_patch_size);
 
   int it = 0;
-  for (auto p = grid->points(); p; p.next(), it++) {
+  for (auto p = global_grid->points(); p; p.next(), it++) {
     const int i = p.i(), j = p.j();
     latitudes[it] = (m_geometry.latitude(i, j) * M_PI) / 180.0;
     longitudes[it] = (m_geometry.longitude(i, j) * M_PI) / 180.0;
@@ -142,7 +143,8 @@ void YacOutputWriter::initialize_grid() {
   yac_grid_initialized = true;
 }
 
-void YacOutputWriter::define_yac_field(const VariableMetadata &metadata,
+void YacOutputWriter::define_yac_field(const std::string file_name,
+                                       const VariableMetadata &metadata,
                                        const std::vector<std::string> &dims){
     int field_id, collection_size = 1;
     nlohmann::json field_metadata;
@@ -159,7 +161,7 @@ void YacOutputWriter::define_yac_field(const VariableMetadata &metadata,
         field_metadata[double_attribute.first] = double_attribute.second;
 
     if(dims.size() > 3)
-        collection_size = dim_sizes[dims[3]];
+        collection_size = dim_sizes[file_name][dims[3]];
 
     yac_cdef_field(metadata.get_name().c_str(), 1, &vertex_points_id, 1,
                    collection_size, "PT1M", YAC_TIME_UNIT_ISO_FORMAT, &field_id);
@@ -187,7 +189,7 @@ YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const Geom
 }
 
 YacOutputWriter::~YacOutputWriter() {
-    int continue_receiving = false;
+    int continue_receiving = 0;
     MPI_Bcast((void *) &continue_receiving, 1, MPI_INT, MPI_ROOT, intercomm);
 }
 
@@ -199,7 +201,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     initialize_yac();
 
   if(file_name.find("snapshot") != std::string::npos and not yac_grid_initialized and dims.size() > 1) {
-    initialize_grid(grid_info(metadata.get_name()));
+    initialize_grid();
   }
 
   const auto &output_file = file(file_name);
@@ -210,7 +212,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 
   if(file_name.find("snapshot") != std::string::npos and yac_grid_initialized and
      file_name != current_snapshot_file) {
-      int continue_receiving = true;
+      int continue_receiving = 1;
       MPI_Bcast((void *) &continue_receiving, 1, MPI_INT, MPI_ROOT, intercomm);
       current_snapshot_file = file_name;
   }
@@ -225,18 +227,21 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     if(metadata.get_name() == "time_bounds") return;
 
     if (horizontal_dims == 2) {
-      define_yac_field(metadata, dims);
+      define_yac_field(file_name, metadata, dims);
     } else {
       non_spatial_variables_metadata[metadata.get_name()]["dimensions"] = dims;
       non_spatial_variables_metadata[metadata.get_name()]["dtype"] = pism_type_to_python_nc_type(metadata.get_output_type());
 
-    for (auto string_attribute : metadata.all_strings())
+      for (auto string_attribute : metadata.all_strings())
         non_spatial_variables_metadata[metadata.get_name()][string_attribute.first] = string_attribute.second;
 
-    for (auto double_attribute : metadata.all_doubles())
+      for (auto double_attribute : metadata.all_doubles())
         non_spatial_variables_metadata[metadata.get_name()][double_attribute.first] = double_attribute.second;
+
+      if(dims.size() > 0) {
         non_spatial_variables_metadata[metadata.get_name()]["tag"] = variable_tags.size();
         variable_tags[metadata.get_name()] = variable_tags.size();
+      }
     }
   }
 
@@ -289,7 +294,7 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
     return;
   }
 
-  dim_sizes[name] = length;
+  dim_sizes[file_name][name] = length;
   output_file.define_dimension(name, length);
 }
 
@@ -363,14 +368,18 @@ double YacOutputWriter::last_time_value_impl(const std::string &file_name) {
 }
 
 void YacOutputWriter::finalize_yac_initialization() {
-    nlohmann::json serialized_dims, non_spatial_variables;
+    nlohmann::json serialized_dims, component_metadata;
 
-    for (auto dim : dim_sizes)
-        serialized_dims[dim.first] = dim.second;
+    for (auto file : m_files) {
+      for (auto dim : dim_sizes[file.first])
+          serialized_dims[dim.first] = dim.second;
 
-    non_spatial_variables["global"] = global_attributes;
-    non_spatial_variables["non_field_variables"] = non_spatial_variables_metadata;
-    yac_cdef_component_metadata("pism", non_spatial_variables.dump().c_str());
+      component_metadata[file.first]["global"] = global_attributes;
+      component_metadata[file.first]["non_field_variables"] = non_spatial_variables_metadata;
+      component_metadata[file.first]["dimensions"] = serialized_dims;
+    }
+
+    yac_cdef_component_metadata("pism", component_metadata.dump().c_str());
     yac_cdef_grid_metadata("pism_grid", serialized_dims.dump().c_str());
     yac_cenddef();
     yac_init_finished = true;
@@ -389,28 +398,20 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     finalize_yac_initialization();
 
   if(file_name.find("snapshot") != std::string::npos) {
+    if(variable_name == "time_bounds") return;
     if( non_spatial_variables_metadata[variable_name]["dtype"] == "f8")
         send_type = MPI_DOUBLE;
     else
         send_type = MPI_INT;
 
-    if (sent_fields_count == variable_tags.size()) {
-        MPI_Status* statuses = new MPI_Status[field_reqs.size()];
-        int wait_return = MPI_Waitall(field_reqs.size(), field_reqs.data(), statuses);
-        if(wait_return != MPI_SUCCESS)
-            std::cout << "SOMETHING WENT WRONG" << std::endl;
-        sent_fields_count = 0;
-	      delete[] statuses;
-    }
-
     MPI_Isend((void *) (data + start[0]), count[0], send_type, 0, variable_tags[variable_name], intercomm, &send_req_handle);
     field_reqs.push_back(send_req_handle);
+    sent_fields_count++;
 
   }
 
   output_file.write_variable(variable_name, start, count, data);
 }
-
 
 void YacOutputWriter::write_text_impl(const std::string &file_name,
                                       const std::string &variable_name,
@@ -421,19 +422,10 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
   MPI_Request send_req_handle;
 
   if(file_name.find("snapshot") != std::string::npos) {
-    if (sent_fields_count == variable_tags.size()) {
-        MPI_Status* statuses = new MPI_Status[field_reqs.size()];
-        int wait_return = MPI_Waitall(field_reqs.size(), field_reqs.data(), statuses);
-        if(wait_return != MPI_SUCCESS)
-            std::cout << "SOMETHING WENT WRONG" << std::endl;
-        text_field_buffers.clear();
-        sent_fields_count = 0;
-	      delete[] statuses;
-    }
-
     text_field_buffers.push_back(input);
     MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &send_req_handle);
     field_reqs.push_back(send_req_handle);
+    sent_fields_count++;
   }
 
   const auto &output_file = file(file_name);
@@ -459,7 +451,7 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     finalize_yac_initialization();
 
   if (file_name.find("snapshot") != std::string::npos and
-      (not metadata.get_time_independent() or not written_vars[variable_name])) {
+     (not metadata.get_time_independent() or not written_vars[variable_name])) {
     int collection_size = metadata.z().length();
 
     double ***send_field = new double **[collection_size];

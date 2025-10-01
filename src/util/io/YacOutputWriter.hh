@@ -32,11 +32,6 @@ namespace pism {
 
 class File;
 
-namespace grid {
-class DistributedGridInfo;
-}
-
-
 namespace io {
 enum Backend : int;
 }
@@ -67,7 +62,7 @@ private:
   const Geometry& m_geometry;
   std::map<std::string, unsigned int> file_time_lengths;
   std::map<std::string, int> field_ids;
-  std::map<std::string, int> dim_sizes;
+  std::map<std::string, std::map<std::string, int>> dim_sizes;
   std::map<std::string, unsigned int> variable_tags;
   std::map<std::string, bool> written_vars;
   std::vector<std::string> text_field_buffers;
@@ -121,7 +116,8 @@ private:
   void sync_impl(const std::string &file_name);
   void close_impl(const std::string &file_name);
   void initialize_yac();
-  void define_yac_field(const VariableMetadata &metadata,
+  void define_yac_field(const std::string file_name,
+                        const VariableMetadata &metadata,
                         const std::vector<std::string> &dims);
   void initialize_grid();
   void finalize_yac_initialization();
