@@ -474,12 +474,26 @@ std::string Time::variable_name() const {
   return m_variable_name;
 }
 
-VariableMetadata Time::metadata() const {
+VariableMetadata Time::metadata(bool with_bounds) const {
   VariableMetadata result(variable_name(), { { variable_name(), io::PISM_UNLIMITED } },
                           units().system());
   result.long_name("time").units(units());
   result["axis"]     = "T";
   result["calendar"] = calendar();
+
+  if (with_bounds) {
+    auto bounds_name = variable_name() + "_bounds";
+    result["bounds"] = bounds_name;
+  }
+  
+  return result;
+}
+
+VariableMetadata Time::bounds_metadata() const {
+  auto bounds_name = variable_name() + "_bounds";
+  VariableMetadata result(bounds_name, { { "nv", 2 } }, m_unit_system);
+
+  result.units(units()).set_time_dependent(true);
 
   return result;
 }

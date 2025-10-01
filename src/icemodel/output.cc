@@ -280,7 +280,10 @@ IceModel::diagnostic_variables(const std::set<std::string> &variable_names) cons
 void IceModel::prepare_output_file(const OutputFile &file,
                                    const std::set<VariableMetadata> &variables,
                                    bool with_time_bounds) const {
-  io::define_time(file, m_time->metadata(), with_time_bounds);
+  file.define_variable(m_time->metadata(with_time_bounds));
+  if (with_time_bounds) {
+    file.define_variable(m_time->bounds_metadata());
+  }
 
   std::set<VariableMetadata> misc_variables = pism::combine(
       run_stats_metadata(), { m_output_global_attributes, config_metadata(*m_config) });

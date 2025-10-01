@@ -528,12 +528,14 @@ void Array::dump(const char filename[]) const {
 
   if (metadata(0).get_time_dependent()) {
     auto time = ctx->time();
-    bool with_bounds = false;
-    io::define_time(file, time->metadata(), with_bounds);
+    file.define_variable(time->metadata());
     file.append_time(time->current());
   }
 
-  define(file);
+  for (unsigned int k = 0; k < ndof(); ++k) {
+    file.define_variable(metadata(k));
+  }
+
   write(file);
 }
 
@@ -823,7 +825,6 @@ void Array::read(const File &file, const unsigned int time) {
 }
 
 void Array::write(const OutputFile &file) const {
-  define(file);
 
   MPI_Comm com = m_impl->grid->com;
   double start_time = get_time(com);

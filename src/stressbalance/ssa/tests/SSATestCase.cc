@@ -292,8 +292,7 @@ void SSATestCase::write(const std::string &filename) {
   OutputFile file(writer, filename);
 
   // Write results to an output file:
-  bool with_bounds = false;
-  io::define_time(file, m_ctx->time()->metadata(), with_bounds);
+  file.define_variable(m_ctx->time()->metadata());
   file.append_time(0.0);
 
   m_geometry.ice_surface_elevation.write(file);

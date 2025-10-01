@@ -113,6 +113,7 @@
 %template(StringMap) std::map<std::string, std::string>;
 %template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
 %template(SizeDoubleMap) std::map<size_t, double>;
+%template(VariableSet) std::set<pism::VariableMetadata>;
 
 // Why did I include this?
 %include "cstring.i"

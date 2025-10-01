@@ -93,29 +93,5 @@ void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_
   }
 }
 
-void define_time(const OutputFile &output_file, const VariableMetadata &metadata,
-                 bool with_bounds) {
-
-
-  auto time_name = metadata.get_name();
-  auto bounds_name = time_name + "_bounds";
-
-  // make a copy of "metadata" so we can modify it
-  auto time = metadata;
-  if (with_bounds) {
-    time["bounds"] = bounds_name;
-  }
-
-  output_file.define_variable(time);
-
-  if (with_bounds) {
-    VariableMetadata bounds(bounds_name, { { "nv", 2 } }, metadata.unit_system());
-
-    bounds.units(metadata["units"]).set_time_dependent(true);
-
-    output_file.define_variable(bounds);
-  }
-}
-
 } // namespace io
 } // namespace pism

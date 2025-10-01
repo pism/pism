@@ -41,6 +41,10 @@ using namespace pism;
       OutputFile file(writer, filename);
       file.append();
 
+      for (int k = 0; k < $self->ndof(); ++k) {
+        file.define_variable($self->metadata(k));
+      }
+
       $self->write(file);
     }
 

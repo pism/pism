@@ -95,7 +95,8 @@ void IceModel::init_timeseries() {
         }
       }
     } else {
-      define_variables(*m_ts_file, { config_metadata(*m_config), m_output_global_attributes });
+      define_variables(*m_ts_file, { config_metadata(*m_config), m_output_global_attributes,
+                                     m_time->metadata(true), m_time->bounds_metadata() });
     }
 
     // initialize scalar diagnostics

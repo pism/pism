@@ -246,6 +246,5 @@ if __name__ == '__main__':
     F.close()
 
     vecs.write(output_file_name)
-
     # Save time & command line
     PISM.util.writeProvenance(output_file_name)

@@ -77,8 +77,7 @@ void Inputs::dump(const char *filename) const {
   write_config(*config, "pism_config", output);
 
   auto time = ctx->time();
-  bool with_bounds = false;
-  io::define_time(output, time->metadata(), with_bounds);
+  output.define_variable(time->metadata());
   output.append_time(time->current());
 
   {
@@ -96,48 +95,22 @@ void Inputs::dump(const char *filename) const {
     geometry->ice_surface_elevation.write(output);
   }
 
-  if (basal_melt_rate) {
-    basal_melt_rate->write(output);
-  }
+  const array::Array *optional[] = { basal_melt_rate,
+                                     water_column_pressure,
+                                     fracture_density,
+                                     basal_yield_stress,
+                                     enthalpy,
+                                     age,
+                                     bc_mask,
+                                     bc_values,
+                                     no_model_mask,
+                                     no_model_ice_thickness,
+                                     no_model_surface_elevation };
 
-  if (water_column_pressure) {
-    water_column_pressure->write(output);
-  }
-
-  if (fracture_density) {
-    fracture_density->write(output);
-  }
-
-  if (basal_yield_stress) {
-    basal_yield_stress->write(output);
-  }
-
-  if (enthalpy) {
-    enthalpy->write(output);
-  }
-
-  if (age) {
-    age->write(output);
-  }
-
-  if (bc_mask) {
-    bc_mask->write(output);
-  }
-
-  if (bc_values) {
-    bc_values->write(output);
-  }
-
-  if (no_model_mask) {
-    no_model_mask->write(output);
-  }
-
-  if (no_model_ice_thickness) {
-    no_model_ice_thickness->write(output);
-  }
-
-  if (no_model_surface_elevation) {
-    no_model_surface_elevation->write(output);
+  for (const auto *vec : optional) {
+    if (vec != nullptr) {
+      vec->write(output);
+    }
   }
 }
 

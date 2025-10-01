@@ -80,6 +80,9 @@ def run(dt, restart=False):
         filename = "lingle_clark_model_state.nc"
         try:
             f = PISM.util.prepare_output(filename)
+            for v in model.state():
+                f.define_variable(v)
+
             model.write_state(f)
             f.close()
 

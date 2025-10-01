@@ -223,12 +223,17 @@ int main(int argc, char *argv[]) {
     // Write results to an output file:
     OutputFile file(writer, outname);
 
-    bool with_bounds = false;
-    io::define_time(file, time->metadata(), with_bounds);
+    file.define_variable(time->metadata());
     file.append_time(time->current());
 
-    btu->write_state(file);
+    auto variables =
+        pism::combine(btu->state(), array::metadata({ &bedtoptemp, &heat_flux_at_ice_base }));
 
+    for (const auto &v : variables) {
+      file.define_variable(v);
+    }
+
+    btu->write_state(file);
     bedtoptemp.write(file);
     heat_flux_at_ice_base.write(file);
 

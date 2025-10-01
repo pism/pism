@@ -187,7 +187,7 @@ std::string SSA::stdout_report() const {
 }
 
 std::set<VariableMetadata> SSA::state_impl() const {
-  return array::metadata({ &m_velocity_global });
+  return array::metadata({ &m_velocity });
 }
 
 void SSA::write_state_impl(const OutputFile &output) const {

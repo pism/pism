@@ -217,11 +217,12 @@ void Geometry::dump(const char *filename) const {
                                       &ice_surface_elevation };
 
   {
-    bool with_bounds = false;
-    io::define_time(file, time->metadata(), with_bounds);
+    file.define_variable(time->metadata());
 
     for (const auto *v : variables) {
-      v->define(file);
+      for (const auto &var : v->all_metadata()) {
+        file.define_variable(var);
+      }
     }
   }
 

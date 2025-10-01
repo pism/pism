@@ -90,12 +90,6 @@ VariableMetadata read_attributes(const File &file, const std::string &variable_n
 
 // writing utilities
 
-/*!
- * Define the time dimension
- */
-void define_time(const OutputFile &output_file, const VariableMetadata &metadata,
-                 bool with_bounds);
-
 void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
 
 void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_to_use = 0);

@@ -27,11 +27,12 @@ VecBundleWriter::VecBundleWriter(std::shared_ptr<pism::Grid> _grid, std::string 
 void VecBundleWriter::init() {
   pism::OutputFile file(output_writer, fname);
 
-  bool with_bounds = false;
-  io::define_time(file, m_grid->ctx()->time()->metadata(), with_bounds);
+  file.define_variable(m_grid->ctx()->time()->metadata());
   
   for (const auto *vec : vecs) {
-    vec->define(file);
+    for (const auto &var : vec->all_metadata()) {
+      file.define_variable(var);
+    }
   }
 }
 

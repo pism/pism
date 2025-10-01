@@ -28,6 +28,10 @@ OutputFile::OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &
   // empty
 }
 
+MPI_Comm OutputFile::comm() const {
+  return m_writer->comm();
+}
+
 void OutputFile::define_dimension(const std::string &dimension_name, unsigned int length) const {
   m_writer->define_dimension(m_file_name, dimension_name, length);
 }

@@ -90,8 +90,11 @@ public:
   //! Name of the NetCDF variable to use
   std::string variable_name() const;
 
-  //! Metadata of the NetCDF variable for writing to an output file.
-  VariableMetadata metadata() const;
+  //! Metadata of the NetCDF variable for writing to an output file
+  VariableMetadata metadata(bool with_bounds = false) const;
+
+  //! Metadata of the NetCDF variable containing time bounds
+  VariableMetadata bounds_metadata() const;
   
   /*!
    * Internal time units.

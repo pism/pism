@@ -265,12 +265,12 @@ public:
    */
   double last_time_value(const std::string &file_name);
   
-protected:
   /*!
    * Return the MPI communicator
    */
   MPI_Comm comm() const;
 
+protected:
   /*!
    * Return the metadata for the variable `variable_name`.
    */
@@ -407,6 +407,8 @@ private:
                        const std::vector<std::string> &dims, io::Type type,
                        const VariableAttributes &attributes) const;
 public:
+  MPI_Comm comm() const;
+
   void define_variable(const VariableMetadata &variable) const;
 
   void set_global_attributes(const std::map<std::string, std::string> &strings,

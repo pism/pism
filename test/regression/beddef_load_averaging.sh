@@ -73,8 +73,9 @@ def input_data(thickness, filename):
 
     try:
         f = PISM.util.prepare_output(filename)
-        thk.write(f)
-        bed.write(f)
+        for v in [thk, bed]:
+            f.define_variable(v.metadata())
+            v.write(f)
     finally:
         f.close()
 

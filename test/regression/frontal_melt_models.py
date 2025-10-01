@@ -64,17 +64,19 @@ def create_grid():
     return PISM.Grid(ctx.ctx, params)
 
 def create_given_input_file(filename, grid, temperature, mass_flux):
-    PISM.util.prepare_output(filename)
+    output = PISM.util.prepare_output(filename)
 
     T = PISM.Scalar(grid, "shelfbtemp")
     T.set_attrs("climate", "shelf base temperature", "kelvin", "kelvin", "", 0)
     T.set(temperature)
-    T.write(filename)
+    output.define_variable(T.metadata())
+    T.write(output)
 
     M = PISM.Scalar(grid, "shelfbmassflux")
     M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "kg m-2 s-1", "", 0)
     M.set(mass_flux)
-    M.write(filename)
+    output.define_variable(M.metadata())
+    M.write(output)
 
 def check(vec, value):
     "Check if values of vec are almost equal to value."
@@ -174,14 +176,15 @@ class DischargeRoutingTest(TestCase):
 
 class GivenTest(TestCase):
     def create_input(self, filename, melt_rate):
-        PISM.util.prepare_output(filename)
+        output = PISM.util.prepare_output(filename)
 
         Fmr = PISM.Scalar(self.grid, "frontal_melt_rate")
         Fmr.metadata(0).long_name("frontal melt rate").units("m / s")
 
         Fmr.set(melt_rate)
 
-        Fmr.write(filename)
+        output.define_variable(Fmr.metadata())
+        Fmr.write(output)
 
     def setUp(self):
 

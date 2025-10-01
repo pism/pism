@@ -19,6 +19,7 @@
 #include <cmath>
 #include <memory>
 
+#include "VariableMetadata.hh"
 #include "io/IO_Flags.hh"
 #include "io/OutputWriter.hh"
 #include "pism/util/Diagnostic.hh"
@@ -142,8 +143,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   : m_grid(grid),
     m_config(grid->ctx()->config()),
     m_sys(grid->ctx()->unit_system()),
-    m_variable(name, m_sys),
-    m_time_dimension(grid->ctx()->time()->metadata()) {
+    m_variable(name, m_sys) {
 
   m_current_time = 0;
   m_start        = 0;
@@ -339,14 +339,13 @@ void TSDiagnostic::flush() {
   }
 
   if (len == m_start) {
-    bool with_bounds = true;
-    io::define_time(file, m_time_dimension, with_bounds);
+    auto time = m_grid->ctx()->time()->metadata(true);
+    auto time_bounds = m_grid->ctx()->time()->bounds_metadata();
 
     // write requested times
-    file.write_array(m_time_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);
+    file.write_array(time, { m_start }, { (unsigned int)m_time.size() }, m_time);
     // write time bounds
-    auto bounds = m_time_dimension.get_name() + "_bounds";
-    file.write_array({ bounds, m_sys }, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
+    file.write_array(time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
                      m_bounds);
   }
 
@@ -373,6 +372,8 @@ void TSDiagnostic::init(std::shared_ptr<OutputFile> output_file,
 
   // Get the number of records in the file (for appending):
   m_start = output_file->time_dimension_length();
+
+  output_file->define_variable(m_variable);
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {
