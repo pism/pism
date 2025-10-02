@@ -32,6 +32,7 @@
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
+#include <vector>
 
 namespace pism {
 namespace stressbalance {
@@ -295,26 +296,44 @@ void SSATestCase::write(const std::string &filename) {
   file.define_variable(m_ctx->time()->metadata());
   file.append_time(0.0);
 
-  m_geometry.ice_surface_elevation.write(file);
-  m_geometry.ice_thickness.write(file);
-  m_bc_mask.write(file);
-  m_tauc.write(file);
-  m_geometry.bed_elevation.write(file);
-  m_ice_enthalpy.write(file);
-  m_bc_values.write(file);
+  const array::Array *variables[] = {
+    &m_geometry.ice_surface_elevation, &m_geometry.ice_thickness, &m_bc_mask,   &m_tauc,
+    &m_geometry.bed_elevation,         &m_ice_enthalpy,           &m_bc_values, &m_ssa->velocity()
+  };
 
-  m_ssa->velocity().write(file);
+  // define
+  for (const auto *v : variables) {
+    for (const auto &m : v->all_metadata()) {
+      file.define_variable(m);
+    }
+  }
 
-  // write all diagnostics:
+  // write
+  for (const auto *v : variables) {
+    v->write(file);
+  }
+
+  // write all easily available diagnostics:
   {
-    auto diagnostics = m_ssa->diagnostics();
-
-    for (auto &p : diagnostics) {
+    std::vector<std::shared_ptr<array::Array>> vecs;
+    for (auto &pair : m_ssa->diagnostics()) {
       try {
-        p.second->compute()->write(file);
+        vecs.push_back(pair.second->compute());
       } catch (RuntimeError &e) {
-        // ignore errors
+        // ignore errors: some diagnostics may need variables not present in this context
       }
+    }
+
+    // define
+    for (auto &v : vecs) {
+      for (auto &m : v->all_metadata()) {
+        file.define_variable(m);
+      }
+    }
+
+    // write
+    for (auto &v : vecs) {
+      v->write(file);
     }
   }
 
@@ -333,6 +352,12 @@ void SSATestCase::write(const std::string &filename) {
     exactSolution(i, j, m_grid->x(i), m_grid->y(j),
                   &(tmp(i,j).u), &(tmp(i,j).v));
   }
+
+  // define
+  for (auto &m : tmp.all_metadata()) {
+    file.define_variable(m);
+  }
+  // write
   tmp.write(file);
 
   tmp.metadata(0)
@@ -345,11 +370,21 @@ void SSATestCase::write(const std::string &filename) {
     .units("m s^-1");
 
   tmp.add(-1.0, m_ssa->velocity());
+  // define
+  for (auto &m : tmp.all_metadata()) {
+    file.define_variable(m);
+  }
   tmp.write(file);
 
   array::Scalar error_mag(m_grid, "error_mag");
   error_mag.metadata(0).long_name("magnitude of the error").units("m s^-1");
   array::compute_magnitude(tmp, error_mag);
+
+  // define
+  for (auto &m : error_mag.all_metadata()) {
+    file.define_variable(m);
+  }
+  // write
   error_mag.write(file);
 
   file.close();
