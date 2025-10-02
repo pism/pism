@@ -60,13 +60,15 @@ private:
   int local_y_size;
   std::string current_snapshot_file = "";
   const Geometry& m_geometry;
+  std::map<std::string, bool> server_file_created;
   std::map<std::string, unsigned int> file_time_lengths;
   std::map<std::string, int> field_ids;
   std::map<std::string, std::map<std::string, int>> dim_sizes;
   std::map<std::string, unsigned int> variable_tags;
   std::map<std::string, bool> written_vars;
   std::vector<std::string> text_field_buffers;
-  nlohmann::json non_spatial_variables_metadata, global_attributes;
+  nlohmann::json non_spatial_variables_metadata;
+  std::map<std::string, nlohmann::json> global_attributes;
 
   std::vector<MPI_Request> field_reqs;
   unsigned int sent_fields_count = 0;
@@ -121,6 +123,11 @@ private:
                         const std::vector<std::string> &dims);
   void initialize_grid();
   void finalize_yac_initialization();
+  void create_server_file(const std::string &file_name);
+
+  void server_set_file_dimension(const std::string &file_name, 
+                                 const std::string &name, 
+                                 unsigned int length);
 
   // Utility: Given grid size and patch bounds, return global indices of patch vertices
   static std::vector<int> compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size);
