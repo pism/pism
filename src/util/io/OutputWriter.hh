@@ -398,16 +398,7 @@ private:
  */
 class OutputFile {
 public:
-  OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name);
-
-  void define_dimension(const std::string &dimension_name, unsigned int length) const;
-
-private:
-  void define_variable(const std::string &variable_name,
-                       const std::vector<std::string> &dims, io::Type type,
-                       const VariableAttributes &attributes) const;
-public:
-  MPI_Comm comm() const;
+  OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &name);
 
   void define_variable(const VariableMetadata &variable) const;
 
@@ -444,7 +435,8 @@ public:
 
   double last_time_value() const;
 
-  std::string name() const;
+  const std::string &name() const;
+
 private:
   std::string m_file_name;
   std::shared_ptr<OutputWriter> m_writer;

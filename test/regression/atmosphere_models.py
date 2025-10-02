@@ -426,8 +426,6 @@ class OneStation(TestCase):
 
         output = PISM.util.prepare_output(self.filename, append_time=True, time=time)
 
-        output.define_dimension("nv", 2)
-
         bounds = self.grid.ctx().time().bounds_metadata()
         output.define_variable(bounds)
 

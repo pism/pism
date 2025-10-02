@@ -23,25 +23,10 @@
 
 namespace pism {
 
-OutputFile::OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name)
-    : m_file_name(file_name), m_writer(writer) {
+OutputFile::OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &name)
+    : m_file_name(name), m_writer(writer) {
   // empty
 }
-
-MPI_Comm OutputFile::comm() const {
-  return m_writer->comm();
-}
-
-void OutputFile::define_dimension(const std::string &dimension_name, unsigned int length) const {
-  m_writer->define_dimension(m_file_name, dimension_name, length);
-}
-
-void OutputFile::define_variable(const std::string &variable_name,
-                                 const std::vector<std::string> &dims, io::Type type,
-                                 const VariableAttributes &attributes) const {
-  m_writer->define_variable(m_file_name, variable_name, dims, type, attributes);
-}
-
 
 void OutputFile::define_variable(const VariableMetadata &variable) const {
   m_writer->define_variable(m_file_name, variable);
@@ -113,7 +98,7 @@ double OutputFile::last_time_value() const {
   return m_writer->last_time_value(m_file_name);
 }
 
-std::string OutputFile::name() const {
+const std::string &OutputFile::name() const {
   return m_file_name;
 }
 
