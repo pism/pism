@@ -61,7 +61,7 @@ Inputs::Inputs() {
  * Save stress balance inputs to a file (for debugging).
  */
 void Inputs::dump(const char *filename) const {
-  if (not geometry) {
+  if (geometry == nullptr) {
     return;
   }
 
