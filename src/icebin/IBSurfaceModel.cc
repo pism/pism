@@ -108,7 +108,7 @@ std::set<VariableMetadata> IBSurfaceModel::state_impl() const {
 }
 
 void IBSurfaceModel::write_state_impl(const OutputFile &output) const {
-  for (const auto *v : {&massxfer, &enthxfer, &deltah, &ice_top_bc_temp, &ice_top_bc_wc}) {
+  for (const auto *v : { &massxfer, &enthxfer, &deltah, &ice_top_bc_temp, &ice_top_bc_wc }) {
     v->write(output);
   }
 }

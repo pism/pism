@@ -80,19 +80,25 @@ void Inputs::dump(const char *filename) const {
   output.define_variable(time->metadata());
   output.append_time(time->current());
 
-  {
-    geometry->latitude.write(output);
-    geometry->longitude.write(output);
+  const array::Array *geom[] = { &geometry->latitude,
+                                 &geometry->longitude,
+                                 &geometry->bed_elevation,
+                                 &geometry->sea_level_elevation,
+                                 &geometry->ice_thickness,
+                                 &geometry->ice_area_specific_volume,
+                                 &geometry->cell_type,
+                                 &geometry->cell_grounded_fraction,
+                                 &geometry->ice_surface_elevation };
 
-    geometry->bed_elevation.write(output);
-    geometry->sea_level_elevation.write(output);
-
-    geometry->ice_thickness.write(output);
-    geometry->ice_area_specific_volume.write(output);
-
-    geometry->cell_type.write(output);
-    geometry->cell_grounded_fraction.write(output);
-    geometry->ice_surface_elevation.write(output);
+  // define
+  for (const auto * vec : geom) {
+    for (const auto &var : vec->all_metadata()) {
+      output.define_variable(var);
+    }
+  }
+  // write
+  for (const auto * vec : geom) {
+    vec->write(output);
   }
 
   const array::Array *optional[] = { basal_melt_rate,
@@ -106,11 +112,15 @@ void Inputs::dump(const char *filename) const {
                                      no_model_mask,
                                      no_model_ice_thickness,
                                      no_model_surface_elevation };
-
-  for (const auto *vec : optional) {
-    if (vec != nullptr) {
-      vec->write(output);
+  // define
+  for (const auto * vec : optional) {
+    for (const auto &var : vec->all_metadata()) {
+      output.define_variable(var);
     }
+  }
+  // write
+  for (const auto * vec : optional) {
+    vec->write(output);
   }
 }
 
