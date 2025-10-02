@@ -148,7 +148,7 @@ public:
   //! Name of the variable used to initialize the instance (empty if not used)
   std::string variable_name;
 private:
-  Parameters() = default;
+  Parameters();
 };
 } // namespace grid
 

@@ -30,21 +30,22 @@
 #include <vector>
 #include <utility>              // std::swap
 
-#include "VariableMetadata.hh"
-#include "pism/util/Interpolation1D.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/InputInterpolation.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/GridInfo.hh"
+#include "pism/util/InputInterpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/petscwrappers/DM.hh"
-#include "pism/util/projection.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/projection.hh"
 
 namespace pism {
 
@@ -1131,7 +1132,19 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
   return result;
 }
 
-Parameters::Parameters(const Config &config) {
+Parameters::Parameters() {
+  Lx = 0;
+  Ly = 0;
+  x0 = 0;
+  y0 = 0;
+  Mx = 0;
+  My = 0;
+  registration = CELL_CENTER;
+  periodicity = NOT_PERIODIC;
+}
+
+Parameters::Parameters(const Config &config)
+  : Parameters() {
 
   periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
   registration = string_to_registration(config.get_string("grid.registration"));
@@ -1144,7 +1157,8 @@ Parameters::Parameters(const Config &config) {
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx_, double Ly_) {
+Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx_, double Ly_)
+  : Parameters() {
 
   periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
   registration = string_to_registration(config.get_string("grid.registration"));
@@ -1238,7 +1252,8 @@ void Parameters::ownership_ranges_from_options(const Config &config, unsigned in
 }
 
 Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &file,
-                       const std::string &variable, Registration r) {
+                       const std::string &variable, Registration r)
+  : Parameters() {
   InputGridInfo input_grid(file, variable, unit_system, r);
 
   Lx            = input_grid.Lx;
