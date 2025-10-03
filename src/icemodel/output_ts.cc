@@ -95,16 +95,15 @@ void IceModel::init_timeseries() {
         }
       }
     } else {
-      std::set<VariableMetadata> metadata = { config_metadata(*m_config),
-                                              m_output_global_attributes, m_time->metadata(true),
-                                              m_time->bounds_metadata() };
-
-      std::set<VariableMetadata> ts_variables;
+      std::set<VariableMetadata> variables = { config_metadata(*m_config),
+                                               m_output_global_attributes };
       for (const auto &d : m_ts_diagnostics) {
-        ts_variables.insert(d.second->metadata());
+        variables.insert(d.second->metadata());
       }
 
-      define_variables(*m_ts_file, pism::combine(metadata, ts_variables));
+      bool with_time_bounds = true;
+      define_time(*m_ts_file, with_time_bounds);
+      define_variables(*m_ts_file, variables);
     }
 
     // initialize scalar diagnostics

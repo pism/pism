@@ -208,6 +208,7 @@ protected:
   virtual void restart_2d(const File &input_file, unsigned int record);
   virtual void initialize_2d();
 
+  void define_time(const OutputFile &file, bool with_bounds = false) const;
   void define_variables(const OutputFile &file, const std::set<VariableMetadata> &variables) const;
 
   virtual std::set<VariableMetadata>
@@ -219,9 +220,7 @@ protected:
 
   virtual void write_run_stats(const OutputFile &file) const;
 
-  std::set<VariableMetadata> common_metadata(bool with_time_bounds = false) const;
-
-  std::set<VariableMetadata> run_stats_metadata() const;
+  std::set<VariableMetadata> common_metadata() const;
 
   virtual void write_diagnostics(const OutputFile &file,
                                  const std::set<std::string> &variable_names) const;

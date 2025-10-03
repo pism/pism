@@ -22,8 +22,6 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/io/IO_Flags.hh"
-#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -166,8 +164,7 @@ void IceModel::init_extras() {
     } else {
       variables = diagnostic_variables(m_extra_vars);
     }
-    bool with_time_bounds = true;
-    variables = pism::combine(variables, common_metadata(with_time_bounds));
+    variables = pism::combine(variables, common_metadata());
   }
 
   m_extra_file = nullptr;
@@ -202,7 +199,9 @@ void IceModel::init_extras() {
         m_next_extra  = 0;
       }
     } else {
-      // prepare the file
+      // prepare the output file
+      bool with_time_bounds = true;
+      define_time(*m_extra_file, with_time_bounds);
       define_variables(*m_extra_file, variables);
     }
   }
@@ -323,8 +322,7 @@ void IceModel::write_extras() {
       } else {
         variables = diagnostic_variables(m_extra_vars);
       }
-      bool with_time_bounds = true;
-      variables = pism::combine(variables, common_metadata(with_time_bounds));
+      variables = pism::combine(variables, common_metadata());
     }
 
     if (m_extra_file == nullptr) {
@@ -341,6 +339,9 @@ void IceModel::write_extras() {
       if (m_config->get_flag("output.extra.append")) {
         m_extra_file->append();
       } else {
+        // prepare the output file
+        bool with_time_bounds = true;
+        define_time(*m_extra_file, with_time_bounds);
         define_variables(*m_extra_file, variables);
       }
     }

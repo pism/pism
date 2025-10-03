@@ -70,7 +70,15 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
   return MaxTimestep(dt, description);
 }
 
-std::set<VariableMetadata> IceModel::run_stats_metadata() const {
+void IceModel::define_time(const OutputFile &file, bool with_bounds) const {
+  file.define_variable(m_time->metadata(with_bounds));
+
+  if (with_bounds) {
+    file.define_variable(m_time->bounds_metadata());
+  }
+}
+
+std::set<VariableMetadata> IceModel::common_metadata() const {
   VariableMetadata wall_clock("wall_clock_time", m_sys);
   wall_clock.long_name("wall-clock time since the beginning of the run")
       .units("hours")
@@ -89,17 +97,8 @@ std::set<VariableMetadata> IceModel::run_stats_metadata() const {
       .set_time_dependent(true)
       .set_output_type(io::PISM_INT);
 
-  return { wall_clock, myph, step_counter };
-}
-
-std::set<VariableMetadata> IceModel::common_metadata(bool with_time_bounds) const {
-  std::set<VariableMetadata> result = pism::combine(
-      run_stats_metadata(), { m_output_global_attributes, config_metadata(*m_config) });
-
-  result.insert(m_time->metadata(with_time_bounds));
-  if (with_time_bounds) {
-    result.insert(m_time->bounds_metadata());
-  }
+  std::set<VariableMetadata> result = { wall_clock, myph, step_counter, m_output_global_attributes,
+                                        config_metadata(*m_config) };
 
   {
     auto mapping = m_grid->get_mapping_info();
@@ -141,6 +140,7 @@ void IceModel::save_results() {
       auto variables = pism::combine(common_metadata(), state_variables());
       variables      = pism::combine(variables, diagnostic_variables(m_output_vars));
 
+      define_time(file);
       define_variables(file, variables);
     }
 
@@ -278,6 +278,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
     auto variables = pism::combine(common_metadata(), state_variables());
     variables = pism::combine(variables, diagnostic_variables(variable_names));
 
+    define_time(file);
     define_variables(file, variables);
   }
 

@@ -70,6 +70,7 @@ int IceModel::process_signals() {
       auto variables = pism::combine(common_metadata(), state_variables());
       variables = pism::combine(variables, diagnostic_variables(m_output_vars));
 
+      define_time(file);
       define_variables(file, variables);
     }
 

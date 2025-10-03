@@ -321,6 +321,7 @@ void IBIceModel::prepare_outputs(double time_s) {
 void IBIceModel::dumpToFile(const std::string &filename) const {
   OutputFile file(m_output_writer, filename);
 
+  define_time(file);
   define_variables(file, combine(common_metadata(), state_variables()));
 
   {

@@ -145,6 +145,8 @@ void IceModel::write_snapshot() {
     {
       auto variables = pism::combine(common_metadata(), state_variables());
       variables      = pism::combine(variables, diagnostic_variables(m_snapshot_vars));
+
+      define_time(*m_snapshot_file);
       define_variables(*m_snapshot_file, variables);
     }
   }
