@@ -769,8 +769,11 @@ void IceModel::misc_setup() {
   {
     std::string proj_string = m_grid->get_mapping_info()["proj_params"];
     if (not proj_string.empty()) {
-      m_output_vars.insert("lon_bnds");
-      m_output_vars.insert("lat_bnds");
+      for (std::string v : {"lon", "lat"}) {
+        if (set_member(v, m_output_vars)) {
+          m_output_vars.insert(v + "_bnds");
+        }
+      }
     }
   }
 #endif
