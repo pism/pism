@@ -302,8 +302,6 @@ protected:
 
   /*!
    * Set internal (MKS) and "output" units.
-   *
-   * output_units is ignored if output.use_MKS is set.
    */
   void set_units(const std::string &units, const std::string &output_units);
 

@@ -161,10 +161,7 @@ TSDiagnostic::~TSDiagnostic() {
 void TSDiagnostic::set_units(const std::string &units,
                              const std::string &output_units) {
   m_variable.units(units);
-
-  if (not m_config->get_flag("output.use_MKS")) {
-    m_variable.output_units(output_units);
-  }
+  m_variable.output_units(output_units);
 }
 
 TSSnapshotDiagnostic::TSSnapshotDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
@@ -372,8 +369,6 @@ void TSDiagnostic::init(std::shared_ptr<OutputFile> output_file,
 
   // Get the number of records in the file (for appending):
   m_start = output_file->time_dimension_length();
-
-  output_file->define_variable(m_variable);
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {
