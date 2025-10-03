@@ -46,47 +46,39 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
   // process shortcuts
   if (result.find("amount_fluxes") != result.end()) {
     result.erase("amount_fluxes");
-    result.insert("tendency_of_ice_amount");
-    result.insert("tendency_of_ice_amount_due_to_basal_mass_flux");
-    result.insert("tendency_of_ice_amount_due_to_conservation_error");
-    result.insert("tendency_of_ice_amount_due_to_discharge");
-    result.insert("tendency_of_ice_amount_due_to_flow");
-    result.insert("tendency_of_ice_amount_due_to_surface_mass_flux");
+    result.insert({ "tendency_of_ice_amount", "tendency_of_ice_amount_due_to_basal_mass_flux",
+                    "tendency_of_ice_amount_due_to_conservation_error",
+                    "tendency_of_ice_amount_due_to_discharge", "tendency_of_ice_amount_due_to_flow",
+                    "tendency_of_ice_amount_due_to_surface_mass_flux" });
   }
 
   if (result.find("mass_fluxes") != result.end()) {
     result.erase("mass_fluxes");
-    result.insert("tendency_of_ice_mass");
-    result.insert("tendency_of_ice_mass_due_to_basal_mass_flux");
-    result.insert("tendency_of_ice_mass_due_to_conservation_error");
-    result.insert("tendency_of_ice_mass_due_to_discharge");
-    result.insert("tendency_of_ice_mass_due_to_flow");
-    result.insert("tendency_of_ice_mass_due_to_surface_mass_flux");
+    result.insert({ "tendency_of_ice_mass", "tendency_of_ice_mass_due_to_basal_mass_flux",
+                    "tendency_of_ice_mass_due_to_conservation_error",
+                    "tendency_of_ice_mass_due_to_discharge", "tendency_of_ice_mass_due_to_flow",
+                    "tendency_of_ice_mass_due_to_surface_mass_flux" });
   }
 
   if (result.find("pdd_fluxes") != result.end()) {
     result.erase("pdd_fluxes");
-    result.insert("surface_accumulation_flux");
-    result.insert("surface_runoff_flux");
-    result.insert("surface_melt_flux");
+    result.insert({ "surface_accumulation_flux", "surface_runoff_flux", "surface_melt_flux" });
   }
 
   if (result.find("pdd_rates") != result.end()) {
     result.erase("pdd_rates");
-    result.insert("surface_accumulation_rate");
-    result.insert("surface_runoff_rate");
-    result.insert("surface_melt_rate");
+    result.insert({ "surface_accumulation_rate", "surface_runoff_rate", "surface_melt_rate" });
   }
 
   if (result.find("hydrology_fluxes") != result.end()) {
     result.erase("hydrology_fluxes");
-    result.insert("tendency_of_subglacial_water_mass");
-    result.insert("tendency_of_subglacial_water_mass_due_to_input");
-    result.insert("tendency_of_subglacial_water_mass_due_to_flow");
-    result.insert("tendency_of_subglacial_water_mass_due_to_conservation_error");
-    result.insert("tendency_of_subglacial_water_mass_at_grounded_margins");
-    result.insert("tendency_of_subglacial_water_mass_at_grounding_line");
-    result.insert("tendency_of_subglacial_water_mass_at_domain_boundary");
+    result.insert({ "tendency_of_subglacial_water_mass",
+                    "tendency_of_subglacial_water_mass_due_to_input",
+                    "tendency_of_subglacial_water_mass_due_to_flow",
+                    "tendency_of_subglacial_water_mass_due_to_conservation_error",
+                    "tendency_of_subglacial_water_mass_at_grounded_margins",
+                    "tendency_of_subglacial_water_mass_at_grounding_line",
+                    "tendency_of_subglacial_water_mass_at_domain_boundary" });
   }
 
   if (result.find("ismip6") != result.end()) {
