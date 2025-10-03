@@ -20,7 +20,7 @@
 #ifndef PISM_IO_HELPERS_H
 #define PISM_IO_HELPERS_H
 
-#include "OutputWriter.hh"
+#include <set>
 #include <memory>
 #include <string>
 #include <vector>
@@ -87,6 +87,11 @@ void read_time_info(std::shared_ptr<units::System> unit_system, const File &file
 
 VariableMetadata read_attributes(const File &file, const std::string &variable_name,
                                  std::shared_ptr<units::System> unit_system);
+
+void define_variables(const OutputFile &file,
+                      const std::set<VariableMetadata> &variables,
+                      const VariableMetadata &mapping,
+                      bool use_internal_units);
 
 // writing utilities
 

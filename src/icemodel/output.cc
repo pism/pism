@@ -182,67 +182,9 @@ void IceModel::write_run_stats(const OutputFile &file) const {
 
 void IceModel::define_variables(const OutputFile &file,
                                 const std::set<VariableMetadata> &variables) const {
-  std::string mapping_variable_name{};
-  {
-    const auto &mapping = m_grid->get_mapping_info();
-    if (mapping.has_attributes()) {
-      mapping_variable_name = mapping.get_name();
-    }
-  }
-
-  bool use_internal_units = m_config->get_flag("output.use_MKS");
-
-  std::set<std::string> variable_names;
-  for (const auto &v : variables) {
-    variable_names.insert(v.get_name());
-  }
-
-  for (auto var : variables) {
-    if (var.get_name() == "PISM_GLOBAL") {
-      file.append_history(var["history"]);
-
-      // clear the history attribute
-      auto tmp = var;
-      tmp["history"] = "";
-      file.set_global_attributes(tmp.all_strings(), tmp.all_doubles());
-
-      continue;
-    }
-
-    if (use_internal_units) {
-      var.output_units(var["units"]);
-    }
-
-    auto var_name = var.get_name();
-
-    if (var_name == "lat" and set_member("lat_bnds", variable_names)) {
-      var["bounds"] = "lat_bnds";
-    }
-    if (var_name == "lon" and set_member("lon_bnds", variable_names)) {
-      var["bounds"] = "lon_bnds";
-    }
-
-    // add extra attributes such as "grid_mapping" and "coordinates". Variables lat, lon,
-    // lat_bnds, and lon_bnds should not have these attributes to support CDO (see issue
-    // #384).
-    //
-    // We check names of x and y dimensions to avoid setting extra attributes for variables
-    // that use a different grid (e.g. viscous_bed_displacement written by the Lingle-Clark
-    // bed deformation model).
-    bool have_lat_lon = set_member("lat", variable_names) and set_member("lon", variable_names);
-    auto dim_names    = var.dimension_names();
-    if (vector_member("x", dim_names) and vector_member("y", dim_names)) {
-      if (have_lat_lon and not set_member(var_name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
-        var["coordinates"] = "lat lon";
-      }
-
-      if (not mapping_variable_name.empty()) {
-        var["grid_mapping"] = mapping_variable_name;
-      }
-    }
-
-    file.define_variable(var);
-  } // end of the loop over variables
+  io::define_variables(file, variables,
+                       m_grid->get_mapping_info(),
+                       m_config->get_flag("output.use_MKS"));
 }
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
