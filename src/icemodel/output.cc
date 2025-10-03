@@ -92,6 +92,26 @@ std::set<VariableMetadata> IceModel::run_stats_metadata() const {
   return { wall_clock, myph, step_counter };
 }
 
+std::set<VariableMetadata> IceModel::common_metadata(bool with_time_bounds) const {
+  std::set<VariableMetadata> result = pism::combine(
+      run_stats_metadata(), { m_output_global_attributes, config_metadata(*m_config) });
+
+  result.insert(m_time->metadata(with_time_bounds));
+  if (with_time_bounds) {
+    result.insert(m_time->bounds_metadata());
+  }
+
+  {
+    auto mapping = m_grid->get_mapping_info();
+
+    if (mapping.has_attributes()) {
+      result.insert(mapping);
+    }
+  }
+
+  return result;
+}
+
 //! Save model state in NetCDF format.
 /*!
 Calls write_variables() to do the actual work.
@@ -117,9 +137,12 @@ void IceModel::save_results() {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
     OutputFile file(m_output_writer, filename);
 
-    bool with_time_bounds = false;
-    prepare_output_file(file, pism::combine(state_variables(), diagnostic_variables(m_output_vars)),
-                        with_time_bounds);
+    {
+      auto variables = pism::combine(common_metadata(), state_variables());
+      variables      = pism::combine(variables, diagnostic_variables(m_output_vars));
+
+      define_variables(file, variables);
+    }
 
     {
       write_config(*m_config, "pism_config", file);
@@ -277,30 +300,6 @@ IceModel::diagnostic_variables(const std::set<std::string> &variable_names) cons
   return result;
 }
 
-void IceModel::prepare_output_file(const OutputFile &file,
-                                   const std::set<VariableMetadata> &variables,
-                                   bool with_time_bounds) const {
-  file.define_variable(m_time->metadata(with_time_bounds));
-  if (with_time_bounds) {
-    file.define_variable(m_time->bounds_metadata());
-  }
-
-  std::set<VariableMetadata> misc_variables = pism::combine(
-      run_stats_metadata(), { m_output_global_attributes, config_metadata(*m_config) });
-
-  {
-    auto mapping = m_grid->get_mapping_info();
-
-    if (mapping.has_attributes()) {
-      misc_variables.insert(mapping);
-    }
-  }
-
-  define_variables(file, misc_variables);
-
-  define_variables(file, variables);
-}
-
 void IceModel::write_state(const OutputFile &file) const {
   for (auto *v : m_model_state) {
     v->write(file);
@@ -333,9 +332,12 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
 
   OutputFile file(m_output_writer, filename);
 
-  bool with_time_bounds = false;
-  prepare_output_file(file, pism::combine(state_variables(), diagnostic_variables(variable_names)),
-                      with_time_bounds);
+  {
+    auto variables = pism::combine(common_metadata(), state_variables());
+    variables = pism::combine(variables, diagnostic_variables(variable_names));
+
+    define_variables(file, variables);
+  }
 
   {
     write_config(*m_config, "pism_config", file);

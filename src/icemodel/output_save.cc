@@ -142,8 +142,11 @@ void IceModel::write_snapshot() {
 
     m_snapshot_file = std::make_shared<OutputFile>(m_output_writer, filename);
 
-    prepare_output_file(*m_snapshot_file,
-                        pism::combine(state_variables(), diagnostic_variables(m_snapshot_vars)));
+    {
+      auto variables = pism::combine(common_metadata(), state_variables());
+      variables      = pism::combine(variables, diagnostic_variables(m_snapshot_vars));
+      define_variables(*m_snapshot_file, variables);
+    }
   }
 
   {

@@ -76,10 +76,10 @@ bool IceModel::write_checkpoint() {
     file.close();
 
     // define time dimension *without* time bounds
-    bool with_time_bounds = false;
-    prepare_output_file(file,
-                        pism::combine(state_variables(), diagnostic_variables(m_checkpoint_vars)),
-                        with_time_bounds);
+    {
+      auto variables = pism::combine(common_metadata(), state_variables());
+      variables = pism::combine(variables, diagnostic_variables(m_checkpoint_vars));
+    }
 
     {
       write_config(*m_config, "pism_config", file);

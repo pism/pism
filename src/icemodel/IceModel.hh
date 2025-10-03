@@ -219,6 +219,8 @@ protected:
 
   virtual void write_run_stats(const OutputFile &file) const;
 
+  std::set<VariableMetadata> common_metadata(bool with_time_bounds = false) const;
+
   std::set<VariableMetadata> run_stats_metadata() const;
 
   virtual void write_diagnostics(const OutputFile &file,
@@ -414,13 +416,6 @@ protected:
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
   //! Requested scalar diagnostics.
   std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
-
-  /*!
-   * Define metadata and variables in an output file.
-   */
-  void prepare_output_file(const OutputFile &file,
-                           const std::set<VariableMetadata> &variables,
-                           bool with_time_bounds = false) const;
   
   // Set of variables to put in the output file:
   std::set<std::string> m_output_vars;

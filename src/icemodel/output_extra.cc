@@ -166,6 +166,8 @@ void IceModel::init_extras() {
     } else {
       variables = diagnostic_variables(m_extra_vars);
     }
+    bool with_time_bounds = true;
+    variables = pism::combine(variables, common_metadata(with_time_bounds));
   }
 
   m_extra_file = nullptr;
@@ -201,8 +203,7 @@ void IceModel::init_extras() {
       }
     } else {
       // prepare the file
-      bool with_time_bounds = true;
-      prepare_output_file(*m_extra_file, variables, with_time_bounds);
+      define_variables(*m_extra_file, variables);
     }
   }
 
@@ -322,6 +323,8 @@ void IceModel::write_extras() {
       } else {
         variables = diagnostic_variables(m_extra_vars);
       }
+      bool with_time_bounds = true;
+      variables = pism::combine(variables, common_metadata(with_time_bounds));
     }
 
     if (m_extra_file == nullptr) {
@@ -338,8 +341,7 @@ void IceModel::write_extras() {
       if (m_config->get_flag("output.extra.append")) {
         m_extra_file->append();
       } else {
-        bool with_bounds = true;
-        prepare_output_file(*m_extra_file, variables, with_bounds);
+        define_variables(*m_extra_file, variables);
       }
     }
 
