@@ -60,7 +60,6 @@ private:
   int local_y_size;
   std::string current_snapshot_file = "";
   const Geometry& m_geometry;
-  std::map<std::string, bool> server_file_created;
   std::map<std::string, unsigned int> file_time_lengths;
   std::map<std::string, int> field_ids;
   std::map<std::string, std::map<std::string, int>> dim_sizes;
@@ -123,11 +122,14 @@ private:
                         const std::vector<std::string> &dims);
   void initialize_grid();
   void finalize_yac_initialization();
-  void create_server_file(const std::string &file_name);
+  void server_create_file(const std::string &file_name);
+  void server_set_file_attributes(const std::string &file_name);
 
   void server_set_file_dimension(const std::string &file_name, 
                                  const std::string &name, 
                                  unsigned int length);
+  void server_define_non_spatial_variable(const std::string &file_name, 
+                                          const std::string &variable_metadata);
 
   // Utility: Given grid size and patch bounds, return global indices of patch vertices
   static std::vector<int> compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size);

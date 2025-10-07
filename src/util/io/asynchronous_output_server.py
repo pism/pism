@@ -11,6 +11,10 @@ class ServerActions(Enum):
     CREATE_FILE = 1
     SET_FILE_DIMENSION = 2
     INIT_YAC_GRID = 3
+    SET_FILE_ATTRIBUTES = 4
+    DEFINE_NON_SPATIAL_VARIABLE = 5
+    SEND_NON_SPATIAL_VARIABLE = 6
+    FINISH_YAC_INITIALIZATION = 7
 
 start_datetime   = "1850-01-01T00:00:00"
 end_datetime     = "1850-01-01T00:06:00"
@@ -23,60 +27,119 @@ time_reduction   = 0
 fields           = {}
 
 class OutputFile:
-    #def __init__(self, file_name, file_metadata, fields_metadata):
     def __init__(self, file_name):
         self.name = file_name
         self.nc_dataset = Dataset(file_name[:-3] + "_server.nc", 'w')
         self.nc_variables = {}
-
-
-
-        #for field_name in fields_metadata:
-        #    attributes = fields_metadata[field_name]
-
-        #    fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
-
-        #    self.nc_variables[field_name] = self.nc_dataset.createVariable(field_name,
-        #                                                            attributes["dtype"],
-        #                                                            attributes["dimensions"],
-        #                                                            fill_value=fill_value)
-
-        #    special = ['_FillValue', 'dimensions', 'tag', 'dtype']
-        #    for attr in attributes:
-        #        if attr not in special and attributes[attr] != "":
-        #            self.nc_variables[field_name].setncattr(attr, attributes[attr])
+        self.variables_metadata = {}
+        self.dimensions = {} 
+        self.comm_reqs = []
+        self.text_req_indices = {}
+        self.variables_data = {}
+        self.time_index = 0 
 
     def set_attributes(self, file_attributes):
         for attr in file_attributes:
             setattr(self.nc_dataset, attr, file_attributes[attr])
             
-    def set_dimensions(self, dimensions):
-        for dimension in dimensions:
-            self.nc_dataset.createDimension(dimension,
-                                            dimensions[dimension] if dimensions[dimension] > 0
-                                            else None)
+    def set_dimension(self, dimension):
+        self.dimensions[dimension["dimension_name"]] = dimension["dimension_length"]
+        self.nc_dataset.createDimension(dimension["dimension_name"],
+                                        dimension["dimension_length"] if dimension["dimension_length"] > 0
+                                        else None)
+                                    
+    def define_variable(self, variable_metadata):
+        attributes = variable_metadata 
+        field_name = variable_metadata["variable_name"]
+        self.variables_metadata[field_name] = variable_metadata
+    
+        fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
+    
+        self.nc_variables[field_name] = self.nc_dataset.createVariable(field_name,
+                                                                   attributes["dtype"],
+                                                                   attributes["dimensions"],
+                                                                   fill_value=fill_value)
+    
+        special = ['_FillValue', 'dimensions', 'tag', 'dtype']
+        for attr in attributes:
+            if attr not in special and attributes[attr] != "":
+                self.nc_variables[field_name].setncattr(attr, attributes[attr])
 
-    def close():
-        nc_dataset.close()
+    def get_variable_metadata(self, variable_name):
+        return self.variables_metadata[variable_name]
 
-def receive_non_spatial_field(intercomm, variable, fields_metadata, dimensions, text_req_indices, comm_reqs, data): 
-    var_dims = fields_metadata[variable]["dimensions"]
-    if len(var_dims) > 0:
-        size = dimensions[var_dims[0]]
-        if len(var_dims) == 1 and var_dims[0] == "time" and size == 0:
-            size = 1
+    def receive_non_spatial_field(self, intercomm, variable_name): 
+        var_dims = self.variables_metadata[variable_name]["dimensions"]
+        var_metadata = self.variables_metadata[variable_name]
+        if len(var_dims) > 0:
+            size = self.dimensions[var_dims[0]]
+            if len(var_dims) == 1 and var_dims[0] == "time" and size == 0:
+                size = 1
 
-        # This check may not be needed
         if var_dims[0] == "time" or len(var_dims) == 1:
-            data[variable] = np.empty(size, dtype = fields_metadata[variable]["dtype"])
-            tag = int(fields_metadata[variable]["tag"])
-            if(fields_metadata[variable]["dtype"] == "f8"):
-                comm_reqs.append(intercomm.Irecv([data[variable], MPI.DOUBLE], source = remote_leader, tag = tag))
-            elif(fields_metadata[variable]["dtype"] == "i4"):
-                comm_reqs.append(intercomm.Irecv([data[variable], MPI.INT], source = remote_leader, tag = tag))
+            self.variables_data[variable_name] = np.empty(size, dtype = var_metadata["dtype"])
+            tag = int(var_metadata["tag"])
+            if(var_metadata["dtype"] == "f8"):
+                intercomm.Recv([self.variables_data[variable_name], MPI.DOUBLE], source = remote_leader, tag = tag)
+            elif(var_metadata["dtype"] == "i4"):
+                intercomm.Recv([self.variables_data[variable_name], MPI.INT], source = remote_leader, tag = tag)
             else:
-                text_req_indices[variable] = len(comm_reqs)
-                comm_reqs.append(intercomm.Irecv([data[variable], MPI.CHAR], source = remote_leader, tag = tag))
+                intercomm.Recv([self.variables_data[variable_name], MPI.CHAR], source = remote_leader, tag = tag)
+
+        if "time" not in var_dims:
+            print("VAR INFO", var_metadata["dtype"]) 
+            if var_metadata["dtype"] == "S1":
+                #char_count = request_statuses[text_req_indices[variable_name]].Get_count(MPI.CHAR)
+                #fields_nc_var[variable_name][:char_count] = values_vars[variable_name][:char_count]
+                print("TEXT VAR")
+            else:
+                self.nc_variables[variable_name][:] = self.variables_data[variable_name]
+        else:
+            self.nc_variables[variable_name][self.time_index] = self.variables_data[variable_name]
+
+    def close(self):
+        self.nc_dataset.close()
+
+#def receive_non_spatial_field(intercomm, variable, fields_metadata, dimensions, text_req_indices, comm_reqs, data): 
+#    var_dims = fields_metadata[variable]["dimensions"]
+#    if len(var_dims) > 0:
+#        size = dimensions[var_dims[0]]
+#        if len(var_dims) == 1 and var_dims[0] == "time" and size == 0:
+#            size = 1
+
+#        # This check may not be needed
+#        if var_dims[0] == "time" or len(var_dims) == 1:
+#            data[variable] = np.empty(size, dtype = fields_metadata[variable]["dtype"])
+#            tag = int(fields_metadata[variable]["tag"])
+#            if(fields_metadata[variable]["dtype"] == "f8"):
+#                comm_reqs.append(intercomm.Irecv([data[variable], MPI.DOUBLE], source = remote_leader, tag = tag))
+#            elif(fields_metadata[variable]["dtype"] == "i4"):
+#                comm_reqs.append(intercomm.Irecv([data[variable], MPI.INT], source = remote_leader, tag = tag))
+#            else:
+#                text_req_indices[variable] = len(comm_reqs)
+#                comm_reqs.append(intercomm.Irecv([data[variable], MPI.CHAR], source = remote_leader, tag = tag))
+
+#def receive_non_spatial_field(intercomm, file, variable, text_req_indices, comm_reqs, data): 
+#    fields_metadata = file.get_variable_metadata(variable)
+
+#    var_dims = fields_metadata["dimensions"]
+
+#    print("VAR DIMS", var_dims) 
+
+    #if len(var_dims) > 0:
+    #    size = dimensions[var_dims[0]]
+    #    if len(var_dims) == 1 and var_dims[0] == "time" and size == 0:
+    #        size = 1
+
+    #data[variable] = np.empty(size, dtype = fields_metadata[variable]["dtype"])
+    #tag = int(fields_metadata[variable]["tag"])
+    #if(fields_metadata[variable]["dtype"] == "f8"):
+    #    comm_reqs.append(intercomm.Irecv([data[variable], MPI.DOUBLE], source = remote_leader, tag = tag))
+    #elif(fields_metadata[variable]["dtype"] == "i4"):
+    #    comm_reqs.append(intercomm.Irecv([data[variable], MPI.INT], source = remote_leader, tag = tag))
+    #else:
+    #    text_req_indices[variable] = len(comm_reqs)
+    #    comm_reqs.append(intercomm.Irecv([data[variable], MPI.CHAR], source = remote_leader, tag = tag))
 
 def receive_spatial_field(field_name, fields_metadata, fields, time_independent_var_values, fields_nc_var, time_index, global_vertex_indices, y_size, x_size): 
     var_dims = fields_metadata[field_name]["dimensions"]
@@ -115,7 +178,6 @@ def receive_spatial_field(field_name, fields_metadata, fields, time_independent_
 
 np.set_printoptions(threshold=np.inf)
 
-
 yac = YAC()
 
 component = yac.def_comp(target_comp_name)
@@ -141,8 +203,6 @@ intercomm = local_comm.Create_intercomm(
     remote_leader,
     tag=0
 )
-
-print("SERVER PRE YAC")
 
 server_action = np.empty(1, dtype='i')
 
@@ -178,7 +238,7 @@ def initialize_yac_grid():
     
     interpolation_stack = InterpolationStack()
     interpolation_stack.add_nnn(NNNReductionType.AVG, 1, 1., 0.)
-    
+
     yac.sync_def()
     
     pism_field_names = yac.get_field_names("pism", "pism_grid")
@@ -199,11 +259,6 @@ def initialize_yac_grid():
     
     yac.enddef()
 
-
-#for field_name in pism_field_names:
-#    json_string                 = yac.get_field_metadata(src_comp_name, src_grid_name, field_name)
-#    fields_metadata[field_name] = json.loads(json_string)
-
 #
 # ###### NC FILE CREATION LOOP ########
 #
@@ -218,8 +273,6 @@ files = {}
 
 while True:
     intercomm.Bcast(server_action, root = remote_leader)
-
-    print("SERVER ACTION:", server_action[0])
     
     if server_action[0] == ServerActions.FINISH.value:
         break
@@ -234,6 +287,9 @@ while True:
 
         files[file_name] = OutputFile(file_name)
 
+    elif server_action[0] == ServerActions.SET_FILE_ATTRIBUTES.value:
+        array_length = np.empty(1, dtype='i')
+        
         intercomm.Bcast(array_length, root = remote_leader)
         file_attributes_array = np.empty(array_length[0], dtype='S1')
         intercomm.Bcast(file_attributes_array, root = remote_leader)
@@ -247,20 +303,43 @@ while True:
         intercomm.Bcast(array_length, root = remote_leader)
         file_dimensions_array = np.empty(array_length[0], dtype='S1')
         intercomm.Bcast(file_dimensions_array, root = remote_leader)
-        file_dimensions = json.loads(file_dimensions_array.tobytes().decode("utf-8"))
+        file_dimension = json.loads(file_dimensions_array.tobytes().decode("utf-8"))
 
-        print("RECEIVED DIM:", file_dimensions)
+        files[file_dimension["file_name"]].set_dimension(file_dimension)
 
     elif server_action[0] == ServerActions.INIT_YAC_GRID.value:
         initialize_yac_grid() 
+
+    elif server_action[0] == ServerActions.DEFINE_NON_SPATIAL_VARIABLE.value:
+        array_length = np.empty(1, dtype='i')
         
-        fields_metadata     = {}
-        non_field_variables = json.loads(yac.get_component_metadata(src_comp_name))
-        dimensions          = non_field_variables["snapshots_0001-01-01_00.000h.nc"]["dimensions"]
+        intercomm.Bcast(array_length, root = remote_leader)
+        variable_metadata_array = np.empty(array_length[0], dtype='S1')
+        intercomm.Bcast(variable_metadata_array, root = remote_leader)
+        variable_metadata = json.loads(variable_metadata_array.tobytes().decode("utf-8"))
+
+        files[variable_metadata["file_name"]].define_variable(variable_metadata)
+
+    elif server_action[0] == ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
+        array_length = np.empty(1, dtype='i')
         
-        for file in non_field_variables.keys():
-            for variable in non_field_variables[file]["non_field_variables"]:
-                fields_metadata[variable] = non_field_variables[file]["non_field_variables"][variable]
+        intercomm.Bcast(array_length, root = remote_leader)
+        variable_info_array = np.empty(array_length[0], dtype='S1')
+        intercomm.Bcast(variable_info_array, root = remote_leader)
+        variable_info = json.loads(variable_info_array.tobytes().decode("utf-8"))
+
+        files[variable_info["file_name"]].receive_non_spatial_field(intercomm, variable_info["variable_name"])
+
+        #file_attributes = json.loads(file_attributes_array.tobytes().decode("utf-8"))
+        #array_length = np.empty(1, dtype='i')
+        
+        #fields_metadata     = {}
+        #non_field_variables = json.loads(yac.get_component_metadata(src_comp_name))
+        #dimensions          = non_field_variables["snapshots_0001-01-01_00.000h.nc"]["dimensions"]
+        
+        #for file in non_field_variables.keys():
+        #    for variable in non_field_variables[file]["non_field_variables"]:
+        #        fields_metadata[variable] = non_field_variables[file]["non_field_variables"][variable]
 
 
     #elif server_action[0] == ServerActions.INIT_YAC_GRID.value:
