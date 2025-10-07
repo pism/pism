@@ -781,11 +781,10 @@ void IceModel::misc_setup() {
   init_calving();
   init_frontal_melt();
   init_front_retreat();
-  init_diagnostics();
-  init_snapshots();
-  init_checkpoints();
-  init_timeseries();
-  init_extras();
+
+  // initialize outputs
+  init_outputs();
+
 
   // a report on whether PISM-PIK modifications of IceModel are in use
   {
@@ -800,23 +799,6 @@ void IceModel::misc_setup() {
     if (not pik_methods.empty()) {
       m_log->message(2, "* PISM-PIK mass/geometry methods are in use: %s\n",
                      join(pik_methods, ", ").c_str());
-    }
-  }
-
-  // initialize diagnostics
-  {
-    // reset: this gives diagnostics a chance to capture the current state of the model at the
-    // beginning of the run
-    for (const auto &d : m_diagnostics) {
-      d.second->reset();
-    }
-
-    // read in the state (accumulators) if we are re-starting a run
-    if (opts.type == INIT_RESTART) {
-      File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
-      for (const auto &d : m_diagnostics) {
-        d.second->init(file, opts.record);
-      }
     }
   }
 

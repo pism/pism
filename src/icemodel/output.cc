@@ -187,19 +187,6 @@ void IceModel::define_variables(const OutputFile &file,
                        m_config->get_flag("output.use_MKS"));
 }
 
-//! \brief Writes variables listed in vars to filename, using nctype to write
-//! fields stored in dedicated Arrays.
-void IceModel::write_diagnostics(const OutputFile &file,
-                                 const std::set<std::string> &variable_names) const {
-  for (const auto &variable : variable_names) {
-    auto diag = m_diagnostics.find(variable);
-
-    if (diag != m_diagnostics.end()) {
-      diag->second->compute()->write(file);
-    }
-  }
-}
-
 std::set<VariableMetadata> IceModel::state_variables() const {
   std::set<VariableMetadata> result{};
   {
@@ -221,24 +208,6 @@ std::set<VariableMetadata> IceModel::state_variables() const {
     }
   }
 
-  return result;
-}
-
-std::set<VariableMetadata>
-IceModel::diagnostic_variables(const std::set<std::string> &variable_names) const {
-  std::set<VariableMetadata> result{};
-  {
-    for (const auto &var : variable_names) {
-      auto diag = m_diagnostics.find(var);
-
-      if (diag != m_diagnostics.end()) {
-        const auto &D = diag->second;
-        for (unsigned int k = 0; k < D->n_variables(); ++k) {
-          result.insert(D->metadata(k));
-        }
-      }
-    }
-  }
   return result;
 }
 

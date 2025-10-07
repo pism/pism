@@ -181,13 +181,14 @@ protected:
   virtual void time_setup();
   virtual void model_state_setup();
   virtual void misc_setup();
-  virtual void init_diagnostics();
   virtual void init_calving();
   virtual void init_frontal_melt();
   virtual void init_front_retreat();
   virtual void prune_diagnostics();
   virtual void update_diagnostics(double dt);
-  virtual void reset_diagnostics();
+
+  void init_outputs();
+  virtual void init_diagnostics();
 
   virtual void step(bool do_mass_continuity, bool do_skip);
   virtual void pre_step_hook();
@@ -445,6 +446,10 @@ protected:
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
+
+  //! set of variables that will be written to extra files
+  std::set<VariableMetadata> m_extra_file_contents;
+
   std::shared_ptr<OutputFile> m_extra_file;
   void init_extras();
   void write_extras();

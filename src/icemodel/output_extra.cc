@@ -140,23 +140,24 @@ void IceModel::init_extras() {
                        "both output.extra.split and output.extra.append are set.");
   }
 
-  std::set<VariableMetadata> variables;
+  // initialize m_extra_vars and m_extra_file_contents
   {
-    std::string vars = m_config->get_string("output.extra.vars");
+    auto vars = m_config->get_string("output.extra.vars");
     if (not vars.empty()) {
       m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
       m_log->message(2, "variables requested: %s\n", vars.c_str());
     } else {
       m_log->message(2,
                      "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
+      m_extra_vars = {};
     }
 
     if (m_extra_vars.empty()) {
-      variables = state_variables();
+      m_extra_file_contents = state_variables();
     } else {
-      variables = diagnostic_variables(m_extra_vars);
+      m_extra_file_contents = diagnostic_variables(m_extra_vars);
     }
-    variables = pism::combine(variables, common_metadata());
+    m_extra_file_contents = pism::combine(m_extra_file_contents, common_metadata());
   }
 
   m_extra_file = nullptr;
@@ -194,7 +195,7 @@ void IceModel::init_extras() {
       // prepare the output file
       bool with_time_bounds = true;
       define_time(*m_extra_file, with_time_bounds);
-      define_variables(*m_extra_file, variables);
+      define_variables(*m_extra_file, m_extra_file_contents);
     }
   }
 
@@ -304,19 +305,6 @@ void IceModel::write_extras() {
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
   {
-
-    std::string time_name = m_time->variable_name();
-
-    std::set<VariableMetadata> variables;
-    {
-      if (m_extra_vars.empty()) {
-        variables = state_variables();
-      } else {
-        variables = diagnostic_variables(m_extra_vars);
-      }
-      variables = pism::combine(variables, common_metadata());
-    }
-
     if (m_extra_file == nullptr) {
 
       std::string filename = m_extra_filename;
@@ -334,7 +322,7 @@ void IceModel::write_extras() {
         // prepare the output file
         bool with_time_bounds = true;
         define_time(*m_extra_file, with_time_bounds);
-        define_variables(*m_extra_file, variables);
+        define_variables(*m_extra_file, m_extra_file_contents);
       }
     }
 
@@ -385,7 +373,9 @@ void IceModel::write_extras() {
   m_last_extra = current_time;
 
   // reset accumulators in diagnostics that compute time averaged quantities
-  reset_diagnostics();
+  for (auto &d : m_diagnostics) {
+    d.second->reset();
+  }
 }
 
 } // end of namespace pism

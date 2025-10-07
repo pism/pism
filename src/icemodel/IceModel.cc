@@ -737,9 +737,6 @@ IceModelTerminationReason IceModel::run() {
   bool do_energy = set_member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
   bool do_skip = m_config->get_flag("time_stepping.skip.enabled");
 
-  // de-allocate diagnostics that are not needed
-  prune_diagnostics();
-
   // Enforce consistency *and* remove icebergs. During time-stepping we remove icebergs at
   // the end of the time step, so we need to ensure that ice geometry is "OK" before the
   // first step.
@@ -908,126 +905,6 @@ const array::Scalar& IceModel::frontal_melt() const {
  */
 const array::Scalar& IceModel::forced_retreat() const {
   return m_thickness_change.forced_retreat;
-}
-
-void warn_about_missing(const Logger &log,
-                        const std::set<std::string> &vars,
-                        const std::string &type,
-                        const std::set<std::string> &available,
-                        bool stop) {
-  std::vector<std::string> missing;
-  for (const auto &v : vars) {
-    if (available.find(v) == available.end()) {
-      missing.push_back(v);
-    }
-  }
-
-  if (not missing.empty()) {
-    size_t N = missing.size();
-    const char *ending = N > 1 ? "s" : "";
-    const char *verb   = N > 1 ? "are" : "is";
-    if (stop) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "%s variable%s %s %s not available!\n"
-                                    "Available variables:\n- %s",
-                                    type.c_str(),
-                                    ending,
-                                    join(missing, ",").c_str(),
-                                    verb,
-                                    set_join(available, ",\n- ").c_str());
-    }
-
-    log.message(2,
-                "\nWARNING: %s variable%s %s %s not available!\n\n",
-                type.c_str(),
-                ending,
-                join(missing, ",").c_str(),
-                verb);
-  }
-}
-
-/*!
- * De-allocate diagnostics that were not requested.
- *
- * Checks viewers, -extra_vars, -checkpoint, -save_vars, and regular output.
- *
- * FIXME: I need to make sure that these reporting mechanisms are active. It is possible that
- * variables are on a list, but that list is not actually used.
- */
-void IceModel::prune_diagnostics() {
-
-  // get the list of available diagnostics
-  std::set<std::string> available;
-  for (const auto &d : m_diagnostics) {
-    available.insert(d.first);
-  }
-
-  auto extra_stop = m_config->get_flag("output.extra.stop_missing");
-  warn_about_missing(*m_log, m_extra_vars,      "diagnostic", available, extra_stop);
-
-  // get the list of requested diagnostics
-  auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
-  requested = combine(requested, m_output_vars);
-  requested = combine(requested, m_snapshot_vars);
-  requested = combine(requested, m_extra_vars);
-  requested = combine(requested, m_checkpoint_vars);
-
-  // de-allocate diagnostics that were not requested
-  for (const auto &v : available) {
-    if (requested.find(v) == requested.end()) {
-      m_diagnostics.erase(v);
-    }
-  }
-
-  // scalar time series
-  std::vector<std::string> missing;
-  if (m_ts_file != nullptr and m_ts_vars.empty()) {
-    // use all diagnostics
-  } else {
-    TSDiagnosticList diagnostics;
-    for (const auto &v : m_ts_vars) {
-      if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
-        diagnostics[v] = m_ts_diagnostics[v];
-      } else {
-        missing.push_back(v);
-      }
-    }
-    // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
-    m_ts_diagnostics = diagnostics;
-  }
-
-  if (not missing.empty()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "requested scalar diagnostics %s are not available",
-                                  join(missing, ",").c_str());
-  }
-}
-
-/*!
- * Update diagnostics.
- *
- * This usually involves accumulating data needed to computed time-averaged quantities.
- *
- * Call this after prune_diagnostics() to avoid unnecessary work.
- */
-void IceModel::update_diagnostics(double dt) {
-  for (const auto &d : m_diagnostics) {
-    d.second->update(dt);
-  }
-
-  const double time = m_time->current();
-  for (const auto &d : m_ts_diagnostics) {
-    d.second->update(time - dt, time);
-  }
-}
-
-/*!
- * Reset accumulators in diagnostics that compute time-averaged quantities.
- */
-void IceModel::reset_diagnostics() {
-  for (auto &d : m_diagnostics) {
-    d.second->reset();
-  }
 }
 
 IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &grid)
