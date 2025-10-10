@@ -3,7 +3,6 @@ from yac import *
 import numpy as np
 import json
 from mpi4py import MPI
-import time
 from enum import Enum
 
 class ServerActions(Enum):
@@ -15,6 +14,9 @@ class ServerActions(Enum):
     DEFINE_NON_SPATIAL_VARIABLE = 5
     SEND_NON_SPATIAL_VARIABLE = 6
     FINISH_YAC_INITIALIZATION = 7
+    DEFINE_SPATIAL_VARIABLE = 8
+    SEND_SPATIAL_VARIABLE = 9
+    UPDATE_TIME_LENGTH = 10
 
 start_datetime   = "1850-01-01T00:00:00"
 end_datetime     = "1850-01-01T00:06:00"
@@ -41,6 +43,9 @@ class OutputFile:
     def set_attributes(self, file_attributes):
         for attr in file_attributes:
             setattr(self.nc_dataset, attr, file_attributes[attr])
+
+    def update_time_length(self, time_dimension_length):
+        self.time_index = time_dimension_length
             
     def set_dimension(self, dimension):
         self.dimensions[dimension["dimension_name"]] = dimension["dimension_length"]
@@ -60,10 +65,53 @@ class OutputFile:
                                                                    attributes["dimensions"],
                                                                    fill_value=fill_value)
     
-        special = ['_FillValue', 'dimensions', 'tag', 'dtype']
+        special = ['_FillValue', 'dimensions', 'tag', 'dtype', 'collection_size', 'file_name', 'timestep', 'variable_name']
         for attr in attributes:
             if attr not in special and attributes[attr] != "":
                 self.nc_variables[field_name].setncattr(attr, attributes[attr])
+
+    def define_yac_field(self, variable_metadata, grid, interpolation_stack, x_size, y_size):
+        field_name = variable_metadata["variable_name"]
+        timestep = variable_metadata["timestep"] 
+        collection_size = variable_metadata["collection_size"] 
+    
+        fields[field_name] = Field.create(
+            field_name, component, grid.corner_points, collection_size, timestep, TimeUnit.ISO_FORMAT
+        )
+    
+        yac.def_couple(
+        src_comp_name, src_grid_name, field_name,
+        target_comp_name, target_grid_name, field_name,
+        timestep, time_unit, time_reduction,
+        interpolation_stack)
+
+    def receive_spatial_field(self, field_name, global_vertex_indices):
+        var_dims = self.variables_metadata[field_name]["dimensions"]
+        collection_size = fields[field_name].collection_size
+    
+        values = []
+        data = fields[field_name].get()[0]
+
+        for level in range(collection_size):
+            data[level] = data[level, np.argsort(global_vertex_indices)]
+
+        values = np.ndarray(shape=(collection_size, y_size, x_size),
+                            buffer=data, dtype="f8")
+
+        if len(self.nc_variables[field_name].shape) == 2:
+            self.nc_variables[field_name][:, :] = values[0]
+        elif len(self.nc_variables[field_name].shape) == 3:
+            self.nc_variables[field_name][self.time_index, :, :] = values[0]
+        else:
+            assert collection_size > 1
+    
+            tmp = np.ndarray(shape=(y_size, x_size, collection_size),
+                                dtype=values.dtype)
+    
+            for c in range(collection_size):
+                tmp[:, :, c] = values[c]
+    
+            self.nc_variables[field_name][self.time_index, :, :, :] = tmp
 
     def get_variable_metadata(self, variable_name):
         return self.variables_metadata[variable_name]
@@ -71,6 +119,7 @@ class OutputFile:
     def receive_non_spatial_field(self, intercomm, variable_name): 
         var_dims = self.variables_metadata[variable_name]["dimensions"]
         var_metadata = self.variables_metadata[variable_name]
+        status = MPI.Status() 
         if len(var_dims) > 0:
             size = self.dimensions[var_dims[0]]
             if len(var_dims) == 1 and var_dims[0] == "time" and size == 0:
@@ -84,14 +133,12 @@ class OutputFile:
             elif(var_metadata["dtype"] == "i4"):
                 intercomm.Recv([self.variables_data[variable_name], MPI.INT], source = remote_leader, tag = tag)
             else:
-                intercomm.Recv([self.variables_data[variable_name], MPI.CHAR], source = remote_leader, tag = tag)
+                intercomm.Recv([self.variables_data[variable_name], MPI.CHAR], source = remote_leader, tag = tag, status = status)
 
         if "time" not in var_dims:
-            print("VAR INFO", var_metadata["dtype"]) 
             if var_metadata["dtype"] == "S1":
-                #char_count = request_statuses[text_req_indices[variable_name]].Get_count(MPI.CHAR)
-                #fields_nc_var[variable_name][:char_count] = values_vars[variable_name][:char_count]
-                print("TEXT VAR")
+                char_count = status.Get_count(MPI.CHAR)
+                self.nc_variables[variable_name][:char_count] = self.variables_data[variable_name][:char_count]
             else:
                 self.nc_variables[variable_name][:] = self.variables_data[variable_name]
         else:
@@ -143,7 +190,6 @@ class OutputFile:
 
 def receive_spatial_field(field_name, fields_metadata, fields, time_independent_var_values, fields_nc_var, time_index, global_vertex_indices, y_size, x_size): 
     var_dims = fields_metadata[field_name]["dimensions"]
-
     collection_size = fields[field_name].collection_size
 
     values = []
@@ -205,6 +251,11 @@ intercomm = local_comm.Create_intercomm(
 )
 
 server_action = np.empty(1, dtype='i')
+interpolation_stack = None
+grid = None
+global_vertex_indices = None
+x_size = 0
+y_size = 0
 
 def initialize_yac_grid():
     x_size = np.empty(1, dtype='i')
@@ -241,22 +292,25 @@ def initialize_yac_grid():
 
     yac.sync_def()
     
-    pism_field_names = yac.get_field_names("pism", "pism_grid")
+    #pism_field_names = yac.get_field_names("pism", "pism_grid")
     
-    for field_name in pism_field_names:
-        timestep                    = yac.get_field_timestep("pism", "pism_grid", field_name)
-        collection_size             = yac.get_field_collection_size("pism", "pism_grid", field_name)
+    #for field_name in pism_field_names:
+    #    timestep                    = yac.get_field_timestep("pism", "pism_grid", field_name)
+    #    collection_size             = yac.get_field_collection_size("pism", "pism_grid", field_name)
     
-        fields[field_name] = Field.create(
-            field_name, component, grid.corner_points, collection_size, timestep, TimeUnit.ISO_FORMAT
-        )
+    #    fields[field_name] = Field.create(
+    #        field_name, component, grid.corner_points, collection_size, timestep, TimeUnit.ISO_FORMAT
+    #    )
     
-        yac.def_couple(
-        src_comp_name, src_grid_name, field_name,
-        target_comp_name, target_grid_name, field_name,
-        timestep, time_unit, time_reduction,
-        interpolation_stack)
+    #    yac.def_couple(
+    #    src_comp_name, src_grid_name, field_name,
+    #    target_comp_name, target_grid_name, field_name,
+    #    timestep, time_unit, time_reduction,
+    #    interpolation_stack)
+
+    return grid, interpolation_stack, global_vertex_indices, x_size[0], y_size[0]
     
+def finish_yac_initialization():
     yac.enddef()
 
 #
@@ -308,7 +362,10 @@ while True:
         files[file_dimension["file_name"]].set_dimension(file_dimension)
 
     elif server_action[0] == ServerActions.INIT_YAC_GRID.value:
-        initialize_yac_grid() 
+        grid, interpolation_stack, global_vertex_indices, x_size, y_size = initialize_yac_grid() 
+
+    elif server_action[0] == ServerActions.FINISH_YAC_INITIALIZATION.value:
+        finish_yac_initialization() 
 
     elif server_action[0] == ServerActions.DEFINE_NON_SPATIAL_VARIABLE.value:
         array_length = np.empty(1, dtype='i')
@@ -320,6 +377,29 @@ while True:
 
         files[variable_metadata["file_name"]].define_variable(variable_metadata)
 
+    elif server_action[0] == ServerActions.DEFINE_SPATIAL_VARIABLE.value:
+        array_length = np.empty(1, dtype='i')
+        
+        intercomm.Bcast(array_length, root = remote_leader)
+        variable_metadata_array = np.empty(array_length[0], dtype='S1')
+        intercomm.Bcast(variable_metadata_array, root = remote_leader)
+        variable_metadata = json.loads(variable_metadata_array.tobytes().decode("utf-8"))
+
+        files[variable_metadata["file_name"]].define_variable(variable_metadata)
+
+        if variable_metadata["variable_name"] not in fields :
+            files[variable_metadata["file_name"]].define_yac_field(variable_metadata, grid, interpolation_stack, x_size, y_size)
+
+    elif server_action[0] == ServerActions.SEND_SPATIAL_VARIABLE.value:
+        array_length = np.empty(1, dtype='i')
+        
+        intercomm.Bcast(array_length, root = remote_leader)
+        variable_info_array = np.empty(array_length[0], dtype='S1')
+        intercomm.Bcast(variable_info_array, root = remote_leader)
+        variable_info = json.loads(variable_info_array.tobytes().decode("utf-8"))
+
+        files[variable_info["file_name"]].receive_spatial_field(variable_info["variable_name"], global_vertex_indices)
+
     elif server_action[0] == ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
         array_length = np.empty(1, dtype='i')
         
@@ -329,6 +409,16 @@ while True:
         variable_info = json.loads(variable_info_array.tobytes().decode("utf-8"))
 
         files[variable_info["file_name"]].receive_non_spatial_field(intercomm, variable_info["variable_name"])
+
+    elif server_action[0] == ServerActions.UPDATE_TIME_LENGTH.value:
+        array_length = np.empty(1, dtype='i')
+
+        intercomm.Bcast(array_length, root = remote_leader)
+        file_info = np.empty(array_length[0], dtype='S1')
+        intercomm.Bcast(file_info, root = remote_leader)
+        file_info = json.loads(file_info.tobytes().decode("utf-8"))
+        
+        files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"]);
 
         #file_attributes = json.loads(file_attributes_array.tobytes().decode("utf-8"))
         #array_length = np.empty(1, dtype='i')
