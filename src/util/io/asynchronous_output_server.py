@@ -255,7 +255,7 @@ while True:
         intercomm.Bcast(file_attributes_array, root = remote_leader)
         file_attributes = json.loads(file_attributes_array.tobytes().decode("utf-8"))
 
-        files[file_name].set_attributes(file_attributes)
+        files[file_attributes["file_name"]].set_attributes(file_attributes["attributes"])
 
     elif server_action[0] == ServerActions.SET_FILE_DIMENSION.value:
         array_length = np.empty(1, dtype='i')

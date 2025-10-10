@@ -237,7 +237,11 @@ void YacOutputWriter::server_set_file_attributes(const std::string &file_name) {
     int server_action = 4;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
-    std::string file_attributes = global_attributes[file_name].dump();
+    nlohmann::json file_attributes_json;
+    file_attributes_json["file_name"] = file_name;
+    file_attributes_json["attributes"] = global_attributes[file_name];
+
+    std::string file_attributes = file_attributes_json.dump();
     int file_attributes_length = file_attributes.length();
     MPI_Bcast((void *) &file_attributes_length, 1, MPI_INT, MPI_ROOT, intercomm);
     MPI_Bcast((void *) file_attributes.data(), file_attributes_length, MPI_CHAR, MPI_ROOT, intercomm);
