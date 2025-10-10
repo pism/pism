@@ -147,81 +147,6 @@ class OutputFile:
     def close(self):
         self.nc_dataset.close()
 
-#def receive_non_spatial_field(intercomm, variable, fields_metadata, dimensions, text_req_indices, comm_reqs, data): 
-#    var_dims = fields_metadata[variable]["dimensions"]
-#    if len(var_dims) > 0:
-#        size = dimensions[var_dims[0]]
-#        if len(var_dims) == 1 and var_dims[0] == "time" and size == 0:
-#            size = 1
-
-#        # This check may not be needed
-#        if var_dims[0] == "time" or len(var_dims) == 1:
-#            data[variable] = np.empty(size, dtype = fields_metadata[variable]["dtype"])
-#            tag = int(fields_metadata[variable]["tag"])
-#            if(fields_metadata[variable]["dtype"] == "f8"):
-#                comm_reqs.append(intercomm.Irecv([data[variable], MPI.DOUBLE], source = remote_leader, tag = tag))
-#            elif(fields_metadata[variable]["dtype"] == "i4"):
-#                comm_reqs.append(intercomm.Irecv([data[variable], MPI.INT], source = remote_leader, tag = tag))
-#            else:
-#                text_req_indices[variable] = len(comm_reqs)
-#                comm_reqs.append(intercomm.Irecv([data[variable], MPI.CHAR], source = remote_leader, tag = tag))
-
-#def receive_non_spatial_field(intercomm, file, variable, text_req_indices, comm_reqs, data): 
-#    fields_metadata = file.get_variable_metadata(variable)
-
-#    var_dims = fields_metadata["dimensions"]
-
-#    print("VAR DIMS", var_dims) 
-
-    #if len(var_dims) > 0:
-    #    size = dimensions[var_dims[0]]
-    #    if len(var_dims) == 1 and var_dims[0] == "time" and size == 0:
-    #        size = 1
-
-    #data[variable] = np.empty(size, dtype = fields_metadata[variable]["dtype"])
-    #tag = int(fields_metadata[variable]["tag"])
-    #if(fields_metadata[variable]["dtype"] == "f8"):
-    #    comm_reqs.append(intercomm.Irecv([data[variable], MPI.DOUBLE], source = remote_leader, tag = tag))
-    #elif(fields_metadata[variable]["dtype"] == "i4"):
-    #    comm_reqs.append(intercomm.Irecv([data[variable], MPI.INT], source = remote_leader, tag = tag))
-    #else:
-    #    text_req_indices[variable] = len(comm_reqs)
-    #    comm_reqs.append(intercomm.Irecv([data[variable], MPI.CHAR], source = remote_leader, tag = tag))
-
-def receive_spatial_field(field_name, fields_metadata, fields, time_independent_var_values, fields_nc_var, time_index, global_vertex_indices, y_size, x_size): 
-    var_dims = fields_metadata[field_name]["dimensions"]
-    collection_size = fields[field_name].collection_size
-
-    values = []
-    if field_name not in time_independent_var_values:
-        data = fields[field_name].get()[0]
-
-        for level in range(collection_size):
-            data[level] = data[level, np.argsort(global_vertex_indices)]
-
-        values = np.ndarray(shape=(collection_size, y_size[0], x_size[0]),
-                            buffer=data, dtype="f8")
-
-        if "time" not in var_dims:
-            time_independent_var_values[field_name] = values
-    else:
-        values = time_independent_var_values[field_name]
-
-    if len(fields_nc_var[field_name].shape) == 2:
-        fields_nc_var[field_name][:, :] = values[0]
-    elif len(fields_nc_var[field_name].shape) == 3:
-        fields_nc_var[field_name][time_index, :, :] = values[0]
-    else:
-        assert collection_size > 1
-
-        tmp = np.ndarray(shape=(y_size[0], x_size[0], collection_size),
-                            dtype=values.dtype)
-
-        for c in range(collection_size):
-            tmp[:, :, c] = values[c]
-
-        fields_nc_var[field_name][time_index, :, :, :] = tmp
-
 np.set_printoptions(threshold=np.inf)
 
 yac = YAC()
@@ -291,31 +216,12 @@ def initialize_yac_grid():
     interpolation_stack.add_nnn(NNNReductionType.AVG, 1, 1., 0.)
 
     yac.sync_def()
-    
-    #pism_field_names = yac.get_field_names("pism", "pism_grid")
-    
-    #for field_name in pism_field_names:
-    #    timestep                    = yac.get_field_timestep("pism", "pism_grid", field_name)
-    #    collection_size             = yac.get_field_collection_size("pism", "pism_grid", field_name)
-    
-    #    fields[field_name] = Field.create(
-    #        field_name, component, grid.corner_points, collection_size, timestep, TimeUnit.ISO_FORMAT
-    #    )
-    
-    #    yac.def_couple(
-    #    src_comp_name, src_grid_name, field_name,
-    #    target_comp_name, target_grid_name, field_name,
-    #    timestep, time_unit, time_reduction,
-    #    interpolation_stack)
 
     return grid, interpolation_stack, global_vertex_indices, x_size[0], y_size[0]
     
 def finish_yac_initialization():
     yac.enddef()
 
-#
-# ###### NC FILE CREATION LOOP ########
-#
 time_independent_var_values = {}
 snapshot_counter = 0
 fields_nc_var = {}
@@ -419,85 +325,3 @@ while True:
         file_info = json.loads(file_info.tobytes().decode("utf-8"))
         
         files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"]);
-
-        #file_attributes = json.loads(file_attributes_array.tobytes().decode("utf-8"))
-        #array_length = np.empty(1, dtype='i')
-        
-        #fields_metadata     = {}
-        #non_field_variables = json.loads(yac.get_component_metadata(src_comp_name))
-        #dimensions          = non_field_variables["snapshots_0001-01-01_00.000h.nc"]["dimensions"]
-        
-        #for file in non_field_variables.keys():
-        #    for variable in non_field_variables[file]["non_field_variables"]:
-        #        fields_metadata[variable] = non_field_variables[file]["non_field_variables"][variable]
-
-
-    #elif server_action[0] == ServerActions.INIT_YAC_GRID.value:
-    #    initialize_yac_grid()
-
-        #files[file_name].set_dimensions(file_dimensions)
-
-        #if file_type_split == True or no_files_initialized == True:
-        #    fields_nc_var = {}
-    
-        #    output_dataset = Dataset("snapshot_" + str(snapshot_counter) + ".nc", 'w')
-    
-        #    for dimension in dimensions:
-        #        output_dataset.createDimension(dimension,
-        #                                    dimensions[dimension] if dimensions[dimension] > 0
-        #                                    else None)
-    
-        #    for attr, val in non_field_variables.get("global", {}).items():
-        #        setattr(output_dataset, attr, val)
-    
-        #    for field_name in fields_metadata:
-        #        attributes = fields_metadata[field_name]
-    
-        #        fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
-    
-        #        fields_nc_var[field_name] = output_dataset.createVariable(field_name,
-        #                                                                attributes["dtype"],
-        #                                                                attributes["dimensions"],
-        #                                                                fill_value=fill_value)
-    
-        #        special = ['_FillValue', 'dimensions', 'tag', 'dtype']
-        #        for attr in attributes:
-        #            if attr not in special and attributes[attr] != "":
-        #                fields_nc_var[field_name].setncattr(attr, attributes[attr])
-
-        #    no_files_initialized = False
-
-#
-# ###### DATA RECEIVAL - LOOP ########
-#
-    #comm_reqs = []
-    ##text_req_indices = {}
-    #values_vars = {}
-    #for variable in non_field_variables["snapshots_0001-01-01_00.000h.nc"]["non_field_variables"]:
-    #    receive_non_spatial_field(intercomm, variable, fields_metadata, dimensions, text_req_indices, comm_reqs, values_vars)
-
-    #received_non_grid_time_independent = True
-
-    #time_index = 0
-    #if file_type_split != True:
-    #    time_index = snapshot_counter
-
-    #for field_name in pism_field_names:
-    #    receive_spatial_field(field_name, fields_metadata, fields, time_independent_var_values, fields_nc_var, time_index, global_vertex_indices, y_size, x_size)
-
-    #request_statuses = []
-    #MPI.Request.Waitall(comm_reqs, request_statuses)
-    #for variable in values_vars:
-    #    if "time" not in fields_metadata[variable]["dimensions"]:
-    #        if fields_metadata[variable]["dtype"] == "S1":
-    #            char_count = request_statuses[text_req_indices[variable]].Get_count(MPI.CHAR)
-    #            fields_nc_var[variable][:char_count] = values_vars[variable][:char_count]
-    #        else:
-    #            fields_nc_var[variable][:] = values_vars[variable]
-    #    else:
-    #        fields_nc_var[variable][time_index] = values_vars[variable]
-
-    #snapshot_counter = snapshot_counter + 1
-
-    #if file_type_split == True:
-    #    output_dataset.close()
