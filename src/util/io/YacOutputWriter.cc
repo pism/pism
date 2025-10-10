@@ -93,7 +93,7 @@ void YacOutputWriter::initialize_grid() {
   local_x_size = distributed_grid.xm;
   local_y_size = distributed_grid.ym;
   
-  int server_action = 3;
+  int server_action = INIT_YAC_GRID;
   MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
   if(local_rank == 0) {
@@ -210,7 +210,7 @@ YacOutputWriter::~YacOutputWriter() {
 void YacOutputWriter::server_set_file_dimension(const std::string &file_name, 
                                                 const std::string &name, 
                                                 unsigned int length) {
-      int server_action = 2;
+      int server_action = SET_FILE_DIMENSION;
       MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
       nlohmann::json file_dim;
@@ -225,7 +225,7 @@ void YacOutputWriter::server_set_file_dimension(const std::string &file_name,
 }
 
 void YacOutputWriter::server_create_file(const std::string &file_name) {
-    int server_action = 1;
+    int server_action = CREATE_FILE;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
     
     int file_name_length = file_name.length();
@@ -234,7 +234,7 @@ void YacOutputWriter::server_create_file(const std::string &file_name) {
 }
 
 void YacOutputWriter::server_set_file_attributes(const std::string &file_name) {
-    int server_action = 4;
+    int server_action = SET_FILE_ATTRIBUTES;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
     nlohmann::json file_attributes_json;
@@ -249,7 +249,7 @@ void YacOutputWriter::server_set_file_attributes(const std::string &file_name) {
 
 void YacOutputWriter::server_define_non_spatial_variable(const std::string &file_name, 
                                                          const std::string &variable_metadata) {
-    int server_action = 5;
+    int server_action = DEFINE_NON_SPATIAL_VARIABLE;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
     int variable_metadata_length = variable_metadata.length();
@@ -259,7 +259,7 @@ void YacOutputWriter::server_define_non_spatial_variable(const std::string &file
 
 void YacOutputWriter::server_define_spatial_variable(const std::string &file_name, 
                                                      const std::string &variable_metadata) {
-    int server_action = 8;
+    int server_action = DEFINE_SPATIAL_VARIABLE;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
     int variable_metadata_length = variable_metadata.length();
@@ -329,7 +329,7 @@ void YacOutputWriter::append_time_impl(const std::string &file_name, double time
   if (file_name.find("snapshot") != std::string::npos or
       file_name.find("timeseries") != std::string::npos) {
         
-    int server_action = 10;
+    int server_action = UPDATE_TIME_LENGTH;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
     nlohmann::json file_metadata;
@@ -473,7 +473,7 @@ void YacOutputWriter::finalize_yac_initialization() {
       component_metadata[file.first]["dimensions"] = serialized_dims;
     }
 
-    int server_action = 7;
+    int server_action = FINISH_YAC_INITIALIZATION;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
     yac_cdef_component_metadata("pism", component_metadata.dump().c_str());
@@ -501,7 +501,7 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     else
         send_type = MPI_INT;
 
-    int server_action = 6;
+    int server_action = SEND_NON_SPATIAL_VARIABLE;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
     nlohmann::json variable_info_json;
@@ -531,7 +531,7 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
   if(file_name.find("snapshot") != std::string::npos) {
     text_field_buffers.push_back(input);
 
-    int server_action = 6;
+    int server_action = SEND_NON_SPATIAL_VARIABLE;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
     nlohmann::json variable_info_json;
@@ -571,7 +571,7 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   if (file_name.find("snapshot") != std::string::npos) {
     int collection_size = metadata.z().length();
 
-    int server_action = 9;
+    int server_action = SEND_SPATIAL_VARIABLE;
     MPI_Bcast((void *) &server_action, 1, MPI_INT, MPI_ROOT, intercomm);
 
     nlohmann::json variable_info_json;

@@ -36,6 +36,20 @@ namespace io {
 enum Backend : int;
 }
 
+enum ServerActions {
+    FINISH,
+    CREATE_FILE,
+    SET_FILE_DIMENSION,
+    INIT_YAC_GRID,
+    SET_FILE_ATTRIBUTES,
+    DEFINE_NON_SPATIAL_VARIABLE,
+    SEND_NON_SPATIAL_VARIABLE,
+    FINISH_YAC_INITIALIZATION,
+    DEFINE_SPATIAL_VARIABLE,
+    SEND_SPATIAL_VARIABLE,
+    UPDATE_TIME_LENGTH
+};
+
 /*!
  * Synchronous implementation of OutputWriter.
  */
