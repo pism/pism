@@ -287,3 +287,6 @@ while True:
         case ServerActions.UPDATE_TIME_LENGTH.value:
             file_info = json.loads(receive_action_metadata_string())
             files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"]);
+
+for file in files.values():
+    file.close()
