@@ -147,6 +147,15 @@ class OutputFile:
     def close(self):
         self.nc_dataset.close()
 
+def receive_action_metadata_string():
+    metadata_array_length = np.empty(1, dtype='i')
+
+    intercomm.Bcast(metadata_array_length, root = remote_leader)
+    metadata_array = np.empty(metadata_array_length[0], dtype='S1')
+    intercomm.Bcast(metadata_array, root = remote_leader)
+
+    return metadata_array.tobytes().decode("utf-8")
+
 np.set_printoptions(threshold=np.inf)
 
 yac = YAC()
@@ -238,33 +247,15 @@ while True:
         break
     
     elif server_action[0] == ServerActions.CREATE_FILE.value:
-        array_length = np.empty(1, dtype='i')
-
-        intercomm.Bcast(array_length, root = remote_leader)
-        file_name_array = np.empty(array_length[0], dtype='S1')
-        intercomm.Bcast(file_name_array, root = remote_leader)
-        file_name = file_name_array.tobytes().decode("utf-8")
-
+        file_name = receive_action_metadata_string()
         files[file_name] = OutputFile(file_name)
 
     elif server_action[0] == ServerActions.SET_FILE_ATTRIBUTES.value:
-        array_length = np.empty(1, dtype='i')
-        
-        intercomm.Bcast(array_length, root = remote_leader)
-        file_attributes_array = np.empty(array_length[0], dtype='S1')
-        intercomm.Bcast(file_attributes_array, root = remote_leader)
-        file_attributes = json.loads(file_attributes_array.tobytes().decode("utf-8"))
-
+        file_attributes = json.loads(receive_action_metadata_string())
         files[file_attributes["file_name"]].set_attributes(file_attributes["attributes"])
 
     elif server_action[0] == ServerActions.SET_FILE_DIMENSION.value:
-        array_length = np.empty(1, dtype='i')
-        
-        intercomm.Bcast(array_length, root = remote_leader)
-        file_dimensions_array = np.empty(array_length[0], dtype='S1')
-        intercomm.Bcast(file_dimensions_array, root = remote_leader)
-        file_dimension = json.loads(file_dimensions_array.tobytes().decode("utf-8"))
-
+        file_dimension = json.loads(receive_action_metadata_string())
         files[file_dimension["file_name"]].set_dimension(file_dimension)
 
     elif server_action[0] == ServerActions.INIT_YAC_GRID.value:
@@ -274,54 +265,24 @@ while True:
         finish_yac_initialization() 
 
     elif server_action[0] == ServerActions.DEFINE_NON_SPATIAL_VARIABLE.value:
-        array_length = np.empty(1, dtype='i')
-        
-        intercomm.Bcast(array_length, root = remote_leader)
-        variable_metadata_array = np.empty(array_length[0], dtype='S1')
-        intercomm.Bcast(variable_metadata_array, root = remote_leader)
-        variable_metadata = json.loads(variable_metadata_array.tobytes().decode("utf-8"))
-
+        variable_metadata = json.loads(receive_action_metadata_string())
         files[variable_metadata["file_name"]].define_variable(variable_metadata)
 
     elif server_action[0] == ServerActions.DEFINE_SPATIAL_VARIABLE.value:
-        array_length = np.empty(1, dtype='i')
-        
-        intercomm.Bcast(array_length, root = remote_leader)
-        variable_metadata_array = np.empty(array_length[0], dtype='S1')
-        intercomm.Bcast(variable_metadata_array, root = remote_leader)
-        variable_metadata = json.loads(variable_metadata_array.tobytes().decode("utf-8"))
-
+        variable_metadata = json.loads(receive_action_metadata_string())
         files[variable_metadata["file_name"]].define_variable(variable_metadata)
 
         if variable_metadata["variable_name"] not in fields :
             files[variable_metadata["file_name"]].define_yac_field(variable_metadata, grid, interpolation_stack, x_size, y_size)
 
     elif server_action[0] == ServerActions.SEND_SPATIAL_VARIABLE.value:
-        array_length = np.empty(1, dtype='i')
-        
-        intercomm.Bcast(array_length, root = remote_leader)
-        variable_info_array = np.empty(array_length[0], dtype='S1')
-        intercomm.Bcast(variable_info_array, root = remote_leader)
-        variable_info = json.loads(variable_info_array.tobytes().decode("utf-8"))
-
+        variable_info = json.loads(receive_action_metadata_string())
         files[variable_info["file_name"]].receive_spatial_field(variable_info["variable_name"], global_vertex_indices)
 
     elif server_action[0] == ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
-        array_length = np.empty(1, dtype='i')
-        
-        intercomm.Bcast(array_length, root = remote_leader)
-        variable_info_array = np.empty(array_length[0], dtype='S1')
-        intercomm.Bcast(variable_info_array, root = remote_leader)
-        variable_info = json.loads(variable_info_array.tobytes().decode("utf-8"))
-
+        variable_info = json.loads(receive_action_metadata_string())
         files[variable_info["file_name"]].receive_non_spatial_field(intercomm, variable_info["variable_name"])
 
     elif server_action[0] == ServerActions.UPDATE_TIME_LENGTH.value:
-        array_length = np.empty(1, dtype='i')
-
-        intercomm.Bcast(array_length, root = remote_leader)
-        file_info = np.empty(array_length[0], dtype='S1')
-        intercomm.Bcast(file_info, root = remote_leader)
-        file_info = json.loads(file_info.tobytes().decode("utf-8"))
-        
+        file_info = json.loads(receive_action_metadata_string())
         files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"]);
