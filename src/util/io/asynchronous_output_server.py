@@ -243,46 +243,47 @@ files = {}
 while True:
     intercomm.Bcast(server_action, root = remote_leader)
     
-    if server_action[0] == ServerActions.FINISH.value:
-        break
-    
-    elif server_action[0] == ServerActions.CREATE_FILE.value:
-        file_name = receive_action_metadata_string()
-        files[file_name] = OutputFile(file_name)
+    match server_action[0]:
+        case ServerActions.FINISH.value:
+            break
 
-    elif server_action[0] == ServerActions.SET_FILE_ATTRIBUTES.value:
-        file_attributes = json.loads(receive_action_metadata_string())
-        files[file_attributes["file_name"]].set_attributes(file_attributes["attributes"])
+        case ServerActions.CREATE_FILE.value:
+            file_name = receive_action_metadata_string()
+            files[file_name] = OutputFile(file_name)
 
-    elif server_action[0] == ServerActions.SET_FILE_DIMENSION.value:
-        file_dimension = json.loads(receive_action_metadata_string())
-        files[file_dimension["file_name"]].set_dimension(file_dimension)
+        case ServerActions.SET_FILE_ATTRIBUTES.value:
+            file_attributes = json.loads(receive_action_metadata_string())
+            files[file_attributes["file_name"]].set_attributes(file_attributes["attributes"])
 
-    elif server_action[0] == ServerActions.INIT_YAC_GRID.value:
-        grid, interpolation_stack, global_vertex_indices, x_size, y_size = initialize_yac_grid() 
+        case ServerActions.SET_FILE_DIMENSION.value:
+            file_dimension = json.loads(receive_action_metadata_string())
+            files[file_dimension["file_name"]].set_dimension(file_dimension)
 
-    elif server_action[0] == ServerActions.FINISH_YAC_INITIALIZATION.value:
-        finish_yac_initialization() 
+        case ServerActions.INIT_YAC_GRID.value:
+            grid, interpolation_stack, global_vertex_indices, x_size, y_size = initialize_yac_grid()
 
-    elif server_action[0] == ServerActions.DEFINE_NON_SPATIAL_VARIABLE.value:
-        variable_metadata = json.loads(receive_action_metadata_string())
-        files[variable_metadata["file_name"]].define_variable(variable_metadata)
+        case ServerActions.FINISH_YAC_INITIALIZATION.value:
+            finish_yac_initialization()
 
-    elif server_action[0] == ServerActions.DEFINE_SPATIAL_VARIABLE.value:
-        variable_metadata = json.loads(receive_action_metadata_string())
-        files[variable_metadata["file_name"]].define_variable(variable_metadata)
+        case ServerActions.DEFINE_NON_SPATIAL_VARIABLE.value:
+            variable_metadata = json.loads(receive_action_metadata_string())
+            files[variable_metadata["file_name"]].define_variable(variable_metadata)
 
-        if variable_metadata["variable_name"] not in fields :
-            files[variable_metadata["file_name"]].define_yac_field(variable_metadata, grid, interpolation_stack, x_size, y_size)
+        case ServerActions.DEFINE_SPATIAL_VARIABLE.value:
+            variable_metadata = json.loads(receive_action_metadata_string())
+            files[variable_metadata["file_name"]].define_variable(variable_metadata)
 
-    elif server_action[0] == ServerActions.SEND_SPATIAL_VARIABLE.value:
-        variable_info = json.loads(receive_action_metadata_string())
-        files[variable_info["file_name"]].receive_spatial_field(variable_info["variable_name"], global_vertex_indices)
+            if variable_metadata["variable_name"] not in fields :
+                files[variable_metadata["file_name"]].define_yac_field(variable_metadata, grid, interpolation_stack, x_size, y_size)
 
-    elif server_action[0] == ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
-        variable_info = json.loads(receive_action_metadata_string())
-        files[variable_info["file_name"]].receive_non_spatial_field(intercomm, variable_info["variable_name"])
+        case ServerActions.SEND_SPATIAL_VARIABLE.value:
+            variable_info = json.loads(receive_action_metadata_string())
+            files[variable_info["file_name"]].receive_spatial_field(variable_info["variable_name"], global_vertex_indices)
 
-    elif server_action[0] == ServerActions.UPDATE_TIME_LENGTH.value:
-        file_info = json.loads(receive_action_metadata_string())
-        files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"]);
+        case ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
+            variable_info = json.loads(receive_action_metadata_string())
+            files[variable_info["file_name"]].receive_non_spatial_field(intercomm, variable_info["variable_name"])
+
+        case ServerActions.UPDATE_TIME_LENGTH.value:
+            file_info = json.loads(receive_action_metadata_string())
+            files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"]);
