@@ -183,11 +183,17 @@ protected:
   virtual void init_calving();
   virtual void init_frontal_melt();
   virtual void init_front_retreat();
-  virtual void deallocate_unused_diagnostics();
   virtual void update_diagnostics(double dt);
 
-  void init_outputs();
   virtual void allocate_diagnostics();
+  virtual void deallocate_unused_diagnostics();
+
+  void init_outputs(InputOptions options);
+  virtual std::set<std::string> output_variables(const std::string &keyword);
+  virtual std::set<VariableMetadata>
+  diagnostic_variables(const std::set<std::string> &variable_names) const;
+  virtual std::set<VariableMetadata> state_variables() const;
+  std::set<VariableMetadata> common_metadata() const;
 
   virtual void step(bool do_mass_continuity, bool do_skip);
   virtual void pre_step_hook();
@@ -195,31 +201,19 @@ protected:
 
   void reset_counters();
 
-  // see iMbootstrap.cc
   virtual void bootstrap_2d(const File &input_file);
-
-  // see iMoptions.cc
-  virtual std::set<std::string> output_variables(const std::string &keyword);
 
   virtual void compute_lat_lon();
 
-  // see iMIO.cc
   virtual void restart_2d(const File &input_file, unsigned int record);
   virtual void initialize_2d();
 
   void define_time(const OutputFile &file, bool with_bounds = false) const;
   void define_variables(const OutputFile &file, const std::set<VariableMetadata> &variables) const;
 
-  virtual std::set<VariableMetadata>
-  diagnostic_variables(const std::set<std::string> &variable_names) const;
-
-  virtual std::set<VariableMetadata> state_variables() const;
-
   virtual void write_state(const OutputFile &file) const;
 
   virtual void write_run_stats(const OutputFile &file) const;
-
-  std::set<VariableMetadata> common_metadata() const;
 
   virtual void write_diagnostics(const OutputFile &file,
                                  const std::set<std::string> &variable_names) const;

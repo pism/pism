@@ -3257,7 +3257,7 @@ protected:
 
 } // end of namespace diagnostics
 
-void IceModel::init_outputs() {
+void IceModel::init_outputs(InputOptions options) {
   allocate_diagnostics();
 
   init_snapshots();
@@ -3276,11 +3276,10 @@ void IceModel::init_outputs() {
 
   // read in the state (accumulators) if we are re-starting a run
   {
-    InputOptions opts = process_input_options(m_ctx->com(), m_config);
-    if (opts.type == INIT_RESTART) {
-      File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
+    if (options.type == INIT_RESTART) {
+      File file(m_grid->com, options.filename, io::PISM_GUESS, io::PISM_READONLY);
       for (const auto &d : m_diagnostics) {
-        d.second->init(file, opts.record);
+        d.second->init(file, options.record);
       }
     }
   }

@@ -783,7 +783,7 @@ void IceModel::misc_setup() {
   init_front_retreat();
 
   // initialize outputs
-  init_outputs();
+  init_outputs(opts);
 
 
   // a report on whether PISM-PIK modifications of IceModel are in use
