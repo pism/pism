@@ -177,8 +177,8 @@ protected:
 
   virtual YieldStressInputs yield_stress_inputs();
 
-  virtual void model_state_setup();
-  virtual void misc_setup();
+  virtual void model_state_setup(InputOptions input_options);
+  virtual void misc_setup(InputOptions input_options);
   virtual void init_calving();
   virtual void init_frontal_melt();
   virtual void init_front_retreat();
@@ -407,7 +407,7 @@ protected:
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
   //! Requested scalar diagnostics.
   std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
-  
+
   // Set of variables to put in the output file:
   std::set<std::string> m_output_vars;
 

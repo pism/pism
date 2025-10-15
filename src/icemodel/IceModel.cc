@@ -821,6 +821,8 @@ void IceModel::init() {
 
   const Profiling &profiling = m_ctx->profiling();
 
+  InputOptions input_options = process_input_options(m_ctx->com(), m_config);
+
   profiling.begin("initialization");
 
   //! The IceModel initialization sequence is this:
@@ -864,7 +866,7 @@ void IceModel::init() {
   //! 6) Initialize coupler models and fill the model state variables
   //! (from a PISM output file, from a bootstrapping file using some
   //! modeling choices or using formulas). Calls IceModel::regrid()
-  model_state_setup();
+  model_state_setup(input_options);
 
   //! 7) Report grid parameters:
   m_log->message(2, "Computational domain and grid:\n");
@@ -873,7 +875,7 @@ void IceModel::init() {
   //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the
   //! basal till model, initialize snapshots. This has to happen *after*
   //! regridding.
-  misc_setup();
+  misc_setup(input_options);
 
   profiling.end("initialization");
 }

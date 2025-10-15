@@ -93,17 +93,16 @@ namespace pism {
   Also, please avoid operations that would make it unsafe to call this more
   than once (memory allocation is one example).
  */
-void IceModel::model_state_setup() {
+void IceModel::model_state_setup(InputOptions input_options) {
 
-  // Check if we are initializing from a PISM output file:
-  InputOptions input = process_input_options(m_ctx->com(), m_config);
-
-  const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
+  const bool use_input_file =
+      input_options.type == INIT_BOOTSTRAP or input_options.type == INIT_RESTART;
 
   std::unique_ptr<File> input_file;
 
   if (use_input_file) {
-    input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
+    input_file.reset(
+        new File(m_grid->com, input_options.filename, io::PISM_GUESS, io::PISM_READONLY));
   }
 
   // Compute latitudes and longitudes *before* they might be needed.
@@ -116,9 +115,9 @@ void IceModel::model_state_setup() {
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
   {
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART:
-      restart_2d(*input_file, input.record);
+      restart_2d(*input_file, input_options.record);
       break;
     case INIT_BOOTSTRAP:
       bootstrap_2d(*input_file);
@@ -135,7 +134,7 @@ void IceModel::model_state_setup() {
 
   // Initialize a bed deformation model.
   if (m_beddef) {
-    m_beddef->init(input, m_geometry.ice_thickness, m_sea_level->elevation());
+    m_beddef->init(input_options, m_geometry.ice_thickness, m_sea_level->elevation());
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
   }
@@ -159,9 +158,9 @@ void IceModel::model_state_setup() {
 
   if (m_subglacial_hydrology) {
 
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART:
-      m_subglacial_hydrology->restart(*input_file, input.record);
+      m_subglacial_hydrology->restart(*input_file, input_options.record);
       break;
     case INIT_BOOTSTRAP:
       m_subglacial_hydrology->bootstrap(*input_file, m_geometry.ice_thickness);
@@ -184,9 +183,9 @@ void IceModel::model_state_setup() {
   if (m_basal_yield_stress_model) {
     auto inputs = yield_stress_inputs();
 
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART:
-      m_basal_yield_stress_model->restart(*input_file, input.record);
+      m_basal_yield_stress_model->restart(*input_file, input_options.record);
       break;
     case INIT_BOOTSTRAP:
       m_basal_yield_stress_model->bootstrap(*input_file, inputs);
@@ -219,17 +218,17 @@ void IceModel::model_state_setup() {
   //
   // The code then delays bootstrapping of the thickness field until the first time step.
   if (m_btu != nullptr) {
-    m_btu->init(input);
+    m_btu->init(input_options);
   }
 
   if (m_age_model) {
-    m_age_model->init(input);
+    m_age_model->init(input_options);
     m_grid->variables().add(m_age_model->age());
   }
 
   if (m_isochrones) {
-    if (input.type == INIT_RESTART) {
-      m_isochrones->restart(*input_file, (int)input.record);
+    if (input_options.type == INIT_RESTART) {
+      m_isochrones->restart(*input_file, (int)input_options.record);
     } else {
       m_isochrones->bootstrap(m_geometry.ice_thickness);
     }
@@ -237,9 +236,9 @@ void IceModel::model_state_setup() {
 
   // Initialize the energy balance sub-model.
   {
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART: {
-      m_energy_model->restart(*input_file, input.record);
+      m_energy_model->restart(*input_file, input_options.record);
       break;
     }
     case INIT_BOOTSTRAP: {
@@ -684,10 +683,9 @@ void IceModel::allocate_couplers() {
 }
 
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
-void IceModel::misc_setup() {
+void IceModel::misc_setup(InputOptions opts) {
 
   m_log->message(3, "Finishing initialization...\n");
-  InputOptions opts = process_input_options(m_ctx->com(), m_config);
 
   if (not(opts.type == INIT_OTHER)) {
     // initializing from a file

@@ -336,8 +336,8 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
   }
 }
 
-void IBIceModel::misc_setup() {
-  super::misc_setup();
+void IBIceModel::misc_setup(InputOptions input_options) {
+  super::misc_setup(input_options);
 
 
   // ------ Initialize MassEnth structures: base, cur, rate

@@ -46,7 +46,7 @@ protected:
   void allocate_stressbalance();
   void allocate_basal_yield_stress();
   void allocate_energy_model();
-  void model_state_setup();
+  void model_state_setup(InputOptions input_options);
 
   void energy_step();
   void hydrology_step();
