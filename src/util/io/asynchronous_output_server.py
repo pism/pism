@@ -150,9 +150,9 @@ class OutputFile:
 def receive_action_metadata_string():
     metadata_array_length = np.empty(1, dtype='i')
 
-    intercomm.Bcast(metadata_array_length, root = remote_leader)
+    intercomm.Recv([metadata_array_length, MPI.INT], source = remote_leader, tag = 0)
     metadata_array = np.empty(metadata_array_length[0], dtype='S1')
-    intercomm.Bcast(metadata_array, root = remote_leader)
+    intercomm.Recv([metadata_array, MPI.CHAR], source = remote_leader, tag = 0)
 
     return metadata_array.tobytes().decode("utf-8")
 
@@ -195,8 +195,8 @@ def initialize_yac_grid():
     x_size = np.empty(1, dtype='i')
     y_size = np.empty(1, dtype='i')
     
-    intercomm.Bcast(x_size, root = remote_leader)
-    intercomm.Bcast(y_size, root = remote_leader)
+    intercomm.Recv([x_size, MPI.INT], source = remote_leader, tag = 0)
+    intercomm.Recv([y_size, MPI.INT], source = remote_leader, tag = 0)
     grid_points = x_size[0] * y_size[0]
     
     longitudes = np.empty(grid_points, dtype='d')
@@ -241,7 +241,7 @@ received_non_grid_time_independent = False
 files = {}
 
 while True:
-    intercomm.Bcast(server_action, root = remote_leader)
+    intercomm.Recv([server_action, MPI.INT], source = remote_leader, tag = 0)
     
     match server_action[0]:
         case ServerActions.FINISH.value:

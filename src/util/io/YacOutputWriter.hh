@@ -147,6 +147,7 @@ private:
 
   void server_define_spatial_variable(const std::string &file_name, 
                                       const std::string &variable_metadata);
+  void server_send_action_metadata(const std::string &action_metadata);
 
   // Utility: Given grid size and patch bounds, return global indices of patch vertices
   static std::vector<int> compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size);
