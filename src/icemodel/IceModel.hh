@@ -52,7 +52,6 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/YieldStress.hh"
 #include "pism/util/ScalarForcing.hh" // for use with std::unique_ptr
-#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
