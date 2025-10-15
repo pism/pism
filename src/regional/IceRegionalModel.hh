@@ -55,7 +55,7 @@ protected:
   energy::Inputs energy_model_inputs();
   YieldStressInputs yield_stress_inputs();
 
-  void init_diagnostics();
+  void allocate_diagnostics();
 
 private:
   array::Scalar2 m_no_model_mask;

@@ -385,8 +385,8 @@ protected:
   }
 };
 
-void IceRegionalModel::init_diagnostics() {
-  IceModel::init_diagnostics();
+void IceRegionalModel::allocate_diagnostics() {
+  IceModel::allocate_diagnostics();
 
   if (m_ch_system) {
     m_diagnostics["ch_temp"]      = Diagnostic::Ptr(new CHTemperature(this));

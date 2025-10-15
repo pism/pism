@@ -3258,7 +3258,7 @@ protected:
 } // end of namespace diagnostics
 
 void IceModel::init_outputs() {
-  init_diagnostics();
+  allocate_diagnostics();
 
   init_snapshots();
   init_checkpoints();
@@ -3287,7 +3287,7 @@ void IceModel::init_outputs() {
 
 }
 
-void IceModel::init_diagnostics() {
+void IceModel::allocate_diagnostics() {
 
   using namespace diagnostics;
 

@@ -187,7 +187,7 @@ protected:
   virtual void update_diagnostics(double dt);
 
   void init_outputs();
-  virtual void init_diagnostics();
+  virtual void allocate_diagnostics();
 
   virtual void step(bool do_mass_continuity, bool do_skip);
   virtual void pre_step_hook();
