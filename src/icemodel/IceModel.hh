@@ -132,9 +132,9 @@ public:
   /** Advance the current PISM run to a specific time */
   IceModelTerminationReason run_to(double run_end);
 
-  virtual void save_results();
-
   void list_diagnostics(const std::string &list_type) const;
+
+  void write_final_output();
 
   const array::Scalar &calving() const;
   const array::Scalar &frontal_melt() const;
@@ -193,6 +193,14 @@ protected:
   diagnostic_variables(const std::set<std::string> &variable_names) const;
   virtual std::set<VariableMetadata> state_variables() const;
   std::set<VariableMetadata> common_metadata() const;
+
+  //! name of the output file
+  std::string m_output_filename;
+  // Set of diagnostic variables to put in the output file:
+  std::set<std::string> m_output_vars;
+  //! set of variables that will be written to the output file
+  std::set<VariableMetadata> m_output_file_contents;
+  void init_final_output();
 
   virtual void step(bool do_mass_continuity, bool do_skip);
   virtual void pre_step_hook();
@@ -408,19 +416,20 @@ protected:
   //! Requested scalar diagnostics.
   std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
 
-  // Set of variables to put in the output file:
-  std::set<std::string> m_output_vars;
-
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
   std::shared_ptr<OutputFile> m_snapshot_file;
   bool m_split_snapshots;
   std::vector<double> m_snapshot_times;
-  std::set<std::string> m_snapshot_vars;
   unsigned int m_current_snapshot;
+  //! set of diagnostics to write to snapshot files (one diagnostic may correspond to
+  //! multiple NetCDF variables)
+  std::set<std::string> m_snapshot_vars;
+  //! set of variables that will be written to snapshot files
+  std::set<VariableMetadata> m_snapshot_file_contents;
   void init_snapshots();
   void write_snapshot();
-  MaxTimestep save_max_timestep(double my_t);
+  MaxTimestep snapshots_max_timestep(double my_t);
 
   //! file to write scalar time-series to
   std::shared_ptr<OutputFile> m_ts_file;
@@ -450,6 +459,8 @@ protected:
   std::string m_checkpoint_filename;
   double m_last_checkpoint_time;
   std::set<std::string> m_checkpoint_vars;
+  //! set of variables that will be written to checkpoint files
+  std::set<VariableMetadata> m_checkpoint_file_contents;
   void init_checkpoints();
   bool write_checkpoint();
 

@@ -73,7 +73,7 @@ add_library (libpism
   icemodel/output.cc
   icemodel/output_checkpoint.cc
   icemodel/output_extra.cc
-  icemodel/output_save.cc
+  icemodel/output_snapshots.cc
   icemodel/output_ts.cc
   icemodel/printout.cc
   icemodel/timestepping.cc

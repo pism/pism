@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
       case PISM_DONE:
         {
           log->message(2, "... done with the run\n");
-          model->save_results();
+          model->write_final_output();
           exit_code = 0;
 
           if (verification_model and

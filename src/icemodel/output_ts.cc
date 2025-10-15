@@ -80,7 +80,7 @@ void IceModel::init_timeseries() {
     }
   }
 
-  // prune m_ts_diagnostics
+  // de-allocate unused scalar diagnostics
   {
     std::vector<std::string> missing;
     if (m_ts_file != nullptr and m_ts_vars.empty()) {
@@ -134,12 +134,13 @@ void IceModel::init_timeseries() {
       define_time(*m_ts_file, with_time_bounds);
       define_variables(*m_ts_file, variables);
     }
-
-    // initialize scalar diagnostics
-    for (const auto &d : m_ts_diagnostics) {
-      d.second->init(m_ts_file, m_ts_times);
-    }
   }
+
+  // initialize scalar diagnostics using m_ts_file allocated above:
+  for (const auto &d : m_ts_diagnostics) {
+    d.second->init(m_ts_file, m_ts_times);
+  }
+
 }
 
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.

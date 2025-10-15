@@ -683,17 +683,17 @@ void IceModel::allocate_couplers() {
 }
 
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
-void IceModel::misc_setup(InputOptions opts) {
+void IceModel::misc_setup(InputOptions input_options) {
 
   m_log->message(3, "Finishing initialization...\n");
 
-  if (not(opts.type == INIT_OTHER)) {
+  if (not(input_options.type == INIT_OTHER)) {
     // initializing from a file
-    File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
+    File file(m_grid->com, input_options.filename, io::PISM_GUESS, io::PISM_READONLY);
 
     std::string source = file.read_text_attribute("PISM_GLOBAL", "source");
 
-    if (opts.type == INIT_RESTART) {
+    if (input_options.type == INIT_RESTART) {
       // If it's missing, print a warning
       if (source.empty()) {
         m_log->message(
@@ -701,7 +701,8 @@ void IceModel::misc_setup(InputOptions opts) {
             "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
             "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
             "     ncatted -a source,global,c,c,PISM %s\n",
-            opts.filename.c_str(), opts.filename.c_str(), opts.filename.c_str());
+            input_options.filename.c_str(), input_options.filename.c_str(),
+            input_options.filename.c_str());
       } else if (source.find("PISM") == std::string::npos) {
         // If the 'source' attribute does not contain the string "PISM", then print
         // a message and stop:
@@ -709,7 +710,7 @@ void IceModel::misc_setup(InputOptions opts) {
             1,
             "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
             "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
-            opts.filename.c_str());
+            input_options.filename.c_str());
       }
     }
   }
@@ -733,28 +734,12 @@ void IceModel::misc_setup(InputOptions opts) {
     }
   }
 
-  m_output_vars = output_variables(m_config->get_string("output.size"));
-
-#if (Pism_USE_PROJ == 1)
-  {
-    std::string proj_string = m_grid->get_mapping_info()["proj_params"];
-    if (not proj_string.empty()) {
-      for (std::string v : {"lon", "lat"}) {
-        if (set_member(v, m_output_vars)) {
-          m_output_vars.insert(v + "_bnds");
-        }
-      }
-    }
-  }
-#endif
-
   init_calving();
   init_frontal_melt();
   init_front_retreat();
 
   // initialize outputs
-  init_outputs(opts);
-
+  init_outputs(input_options);
 
   // a report on whether PISM-PIK modifications of IceModel are in use
   {
@@ -778,15 +763,15 @@ void IceModel::misc_setup(InputOptions opts) {
   }
 
   if (m_fracture) {
-    if (opts.type == INIT_OTHER) {
+    if (input_options.type == INIT_OTHER) {
       m_fracture->initialize();
     } else {
       // initializing from a file
-      File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
+      File file(m_grid->com, input_options.filename, io::PISM_GUESS, io::PISM_READONLY);
 
-      if (opts.type == INIT_RESTART) {
-        m_fracture->restart(file, opts.record);
-      } else if (opts.type == INIT_BOOTSTRAP) {
+      if (input_options.type == INIT_RESTART) {
+        m_fracture->restart(file, input_options.record);
+      } else if (input_options.type == INIT_BOOTSTRAP) {
         m_fracture->bootstrap(file);
       }
     }

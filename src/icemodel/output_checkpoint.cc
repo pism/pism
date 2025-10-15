@@ -21,7 +21,6 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -31,16 +30,17 @@ void IceModel::init_checkpoints() {
   m_checkpoint_filename = m_config->get_string("output.checkpoint.file");
 
   if (m_checkpoint_filename.empty()) {
-    std::string output_file = m_config->get_string("output.file");
-    if (not output_file.empty()) {
-      m_checkpoint_filename = filename_add_suffix(output_file, "_checkpoint", "");
-    } else {
-      m_checkpoint_filename = "pism_checkpoint.nc";
-    }
+    m_checkpoint_filename = filename_add_suffix(m_output_filename, "_checkpoint", "");
   }
 
   m_checkpoint_vars = output_variables(m_config->get_string("output.checkpoint.size"));
   m_last_checkpoint_time = 0.0;
+
+  {
+    m_checkpoint_file_contents = pism::combine(common_metadata(), state_variables());
+    m_checkpoint_file_contents =
+        pism::combine(m_checkpoint_file_contents, diagnostic_variables(m_checkpoint_vars));
+  }
 }
 
 //! Write a checkpoint (i.e. an intermediate result of a run).
@@ -75,10 +75,10 @@ bool IceModel::write_checkpoint() {
     // time we write a checkpoint, moving the old file aside if it exists.
     file.close();
 
-    // define time dimension *without* time bounds
     {
-      auto variables = pism::combine(common_metadata(), state_variables());
-      variables = pism::combine(variables, diagnostic_variables(m_checkpoint_vars));
+      // define time dimension *without* time bounds
+      define_time(file);
+      define_variables(file, m_checkpoint_file_contents);
     }
 
     {

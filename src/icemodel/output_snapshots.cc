@@ -22,12 +22,11 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
 //! Computes the maximum time-step we can take and still hit all `-save_times`.
-MaxTimestep IceModel::save_max_timestep(double my_t) {
+MaxTimestep IceModel::snapshots_max_timestep(double my_t) {
 
   if (m_snapshots_filename.empty() or (not m_config->get_flag("time_stepping.hit_save_times"))) {
     return MaxTimestep("reporting (-save_times)");
@@ -62,6 +61,10 @@ void IceModel::init_snapshots() {
       return;
     }
   }
+
+  m_snapshot_file_contents = pism::combine(common_metadata(), state_variables());
+  m_snapshot_file_contents =
+      pism::combine(m_snapshot_file_contents, diagnostic_variables(m_snapshot_vars));
 
   try {
     // parse
@@ -143,11 +146,8 @@ void IceModel::write_snapshot() {
     m_snapshot_file = std::make_shared<OutputFile>(m_output_writer, filename);
 
     {
-      auto variables = pism::combine(common_metadata(), state_variables());
-      variables      = pism::combine(variables, diagnostic_variables(m_snapshot_vars));
-
       define_time(*m_snapshot_file);
-      define_variables(*m_snapshot_file, variables);
+      define_variables(*m_snapshot_file, m_snapshot_file_contents);
     }
   }
 

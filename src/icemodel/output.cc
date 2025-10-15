@@ -33,7 +33,6 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/projection.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -111,37 +110,56 @@ std::set<VariableMetadata> IceModel::common_metadata() const {
   return result;
 }
 
+void IceModel::init_final_output() {
+  m_output_filename = m_config->get_string("output.file");
+
+  if (m_output_filename.empty()) {
+    m_output_filename = "unnamed.nc";
+    m_log->message(2, "WARNING: output.file is empty. Using '%s' instead.\n",
+                   m_output_filename.c_str());
+  }
+
+  if (not ends_with(m_output_filename, ".nc")) {
+    m_log->message(2, "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+  }
+
+  m_output_vars = output_variables(m_config->get_string("output.size"));
+
+#if (Pism_USE_PROJ == 1)
+  {
+    std::string proj_string = m_grid->get_mapping_info()["proj_params"];
+    if (not proj_string.empty()) {
+      for (std::string v : {"lon", "lat"}) {
+        if (set_member(v, m_output_vars)) {
+          m_output_vars.insert(v + "_bnds");
+        }
+      }
+    }
+  }
+#endif
+
+  m_output_file_contents = pism::combine(common_metadata(), state_variables());
+  m_output_file_contents =
+      pism::combine(m_output_file_contents, diagnostic_variables(m_output_vars));
+}
+
 //! Save model state in NetCDF format.
 /*!
 Calls write_variables() to do the actual work.
  */
-void IceModel::save_results() {
+void IceModel::write_final_output() {
   append_history("PISM done");
-
-  std::string filename = m_config->get_string("output.file");
-
-  if (filename.empty()) {
-    m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.\n");
-    filename = "unnamed.nc";
-  }
-
-  if (not ends_with(filename, ".nc")) {
-    m_log->message(2, "PISM WARNING: output file name does not have the '.nc' suffix!\n");
-  }
 
   const Profiling &profiling = m_ctx->profiling();
 
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
-    m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
-    OutputFile file(m_output_writer, filename);
+    m_log->message(2, "Writing model state to file `%s'...\n", m_output_filename.c_str());
+    OutputFile file(m_output_writer, m_output_filename);
 
     {
-      auto variables = pism::combine(common_metadata(), state_variables());
-      variables      = pism::combine(variables, diagnostic_variables(m_output_vars));
-
       define_time(file);
-      define_variables(file, variables);
+      define_variables(file, m_output_file_contents);
     }
 
     {
@@ -227,14 +245,8 @@ void IceModel::write_state(const OutputFile &file) const {
 
 std::string IceModel::save_state_on_error(const std::string &suffix,
                                           const std::set<std::string> &additional_variables) {
-  std::string filename = m_config->get_string("output.file");
 
-  if (filename.empty()) {
-    m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.");
-    filename = "unnamed.nc";
-  }
-
-  filename = filename_add_suffix(filename, suffix, "");
+  auto filename = filename_add_suffix(m_output_filename, suffix, "");
 
   auto variable_names = output_variables("small");
   for (const auto &v : additional_variables) {

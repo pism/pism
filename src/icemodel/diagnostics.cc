@@ -3260,6 +3260,7 @@ protected:
 void IceModel::init_outputs(InputOptions options) {
   allocate_diagnostics();
 
+  init_final_output();
   init_snapshots();
   init_checkpoints();
   init_timeseries();
@@ -3275,15 +3276,12 @@ void IceModel::init_outputs(InputOptions options) {
   }
 
   // read in the state (accumulators) if we are re-starting a run
-  {
-    if (options.type == INIT_RESTART) {
-      File file(m_grid->com, options.filename, io::PISM_GUESS, io::PISM_READONLY);
-      for (const auto &d : m_diagnostics) {
-        d.second->init(file, options.record);
-      }
+  if (options.type == INIT_RESTART) {
+    File file(m_grid->com, options.filename, io::PISM_GUESS, io::PISM_READONLY);
+    for (const auto &d : m_diagnostics) {
+      d.second->init(file, options.record);
     }
   }
-
 }
 
 void IceModel::allocate_diagnostics() {

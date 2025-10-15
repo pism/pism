@@ -164,7 +164,7 @@ def main():
 
     model.run()
 
-    model.save_results()
+    model.write_final_output()
 
 def standalone_test():
     context = PISM.Context().ctx

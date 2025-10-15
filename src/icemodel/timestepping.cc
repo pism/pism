@@ -160,7 +160,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
   {
     restrictions.push_back(ts_max_timestep(current_time));
     restrictions.push_back(extras_max_timestep(current_time));
-    restrictions.push_back(save_max_timestep(current_time));
+    restrictions.push_back(snapshots_max_timestep(current_time));
   }
 
   // mass continuity stability criteria
