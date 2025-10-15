@@ -199,7 +199,6 @@ protected:
   virtual void bootstrap_2d(const File &input_file);
 
   // see iMoptions.cc
-  virtual void process_options();
   virtual std::set<std::string> output_variables(const std::string &keyword);
 
   virtual void compute_lat_lon();

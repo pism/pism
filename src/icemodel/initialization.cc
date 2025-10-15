@@ -970,24 +970,6 @@ void IceModel::allocate_bed_deformation() {
   m_submodels["bed deformation"] = m_beddef.get();
 }
 
-void IceModel::process_options() {
-  set_config_from_options(*m_config);
-  m_config->resolve_filenames();
-
-  // warn about some option combinations
-
-  if (m_config->get_number("time_stepping.maximum_time_step") <= 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "time_stepping.maximum_time_step has to be greater than 0.");
-  }
-
-  if (not m_config->get_flag("geometry.update.enabled") &&
-      m_config->get_flag("time_stepping.skip.enabled")) {
-    m_log->message(2,
-               "PISM WARNING: Both -skip and -no_mass are set.\n"
-               "              -skip only makes sense in runs updating ice geometry.\n");
-  }
-}
-
 //! Assembles a list of diagnostics corresponding to an output file size.
 std::set<std::string> IceModel::output_variables(const std::string &keyword) {
 

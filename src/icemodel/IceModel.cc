@@ -828,8 +828,20 @@ void IceModel::init() {
   //! 1) Initialize model time:
   time_setup();
 
-  //! 2) Process the options:
-  process_options();
+  //! 2) Set configuration parameters from command-line options
+  {
+    set_config_from_options(*m_config);
+    m_config->resolve_filenames();
+
+    // warn about some option combinations
+    if (not m_config->get_flag("geometry.update.enabled") &&
+        m_config->get_flag("time_stepping.skip.enabled")) {
+      m_log->message(2,
+                     "PISM WARNING: time_stepping.skip.enabled is 'true' and\n"
+                     "              geometry.update.enabled is 'false'\n"
+                     "              skipping time steps makes sense only with evolving geometry.\n");
+    }
+  }
 
   //! 3) Memory allocation:
   allocate_storage();
