@@ -183,7 +183,7 @@ protected:
   virtual void init_calving();
   virtual void init_frontal_melt();
   virtual void init_front_retreat();
-  virtual void prune_diagnostics();
+  virtual void deallocate_unused_diagnostics();
   virtual void update_diagnostics(double dt);
 
   void init_outputs();

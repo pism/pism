@@ -3266,7 +3266,7 @@ void IceModel::init_outputs() {
   init_extras();
 
   // de-allocate diagnostics that are not needed
-  prune_diagnostics();
+  deallocate_unused_diagnostics();
 
   // reset: this gives diagnostics a chance to capture the current state of the model at the
   // beginning of the run
@@ -3769,7 +3769,7 @@ static void warn_about_missing(const Logger &log,
  * FIXME: I need to make sure that these reporting mechanisms are active. It is possible that
  * variables are on a list, but that list is not actually used.
  */
-void IceModel::prune_diagnostics() {
+void IceModel::deallocate_unused_diagnostics() {
 
   // get the list of available diagnostics
   std::set<std::string> available;
@@ -3800,7 +3800,7 @@ void IceModel::prune_diagnostics() {
  *
  * This usually involves accumulating data needed to computed time-averaged quantities.
  *
- * Call this after prune_diagnostics() to avoid unnecessary work.
+ * Call this after deallocate_unused_diagnostics() to avoid unnecessary work.
  */
 void IceModel::update_diagnostics(double dt) {
   for (const auto &d : m_diagnostics) {
