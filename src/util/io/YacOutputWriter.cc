@@ -201,9 +201,9 @@ YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const Geom
 }
 
 YacOutputWriter::~YacOutputWriter() {
-    int continue_receiving = 0;
+    int server_action = FINISH;
     field_reqs.emplace_back();
-    MPI_Isend((void *) &continue_receiving, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
+    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
 }
 
 void YacOutputWriter::server_send_action_metadata(const std::string &action_metadata) {
