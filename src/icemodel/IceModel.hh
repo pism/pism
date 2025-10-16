@@ -110,6 +110,8 @@ class FrontRetreat;
 class PrescribedRetreat;
 class ScalarForcing;
 
+class OutputWriter;
+
 enum IceModelTerminationReason {PISM_DONE, PISM_CHEKPOINT, PISM_SIGNAL};
 
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
