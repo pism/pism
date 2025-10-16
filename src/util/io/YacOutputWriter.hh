@@ -136,18 +136,12 @@ private:
                         const std::vector<std::string> &dims);
   void initialize_grid();
   void finalize_yac_initialization();
-  void server_create_file(const std::string &file_name);
   void server_set_file_attributes(const std::string &file_name);
 
   void server_set_file_dimension(const std::string &file_name, 
                                  const std::string &name, 
                                  unsigned int length);
-  void server_define_non_spatial_variable(const std::string &file_name, 
-                                          const std::string &variable_metadata);
-
-  void server_define_spatial_variable(const std::string &file_name, 
-                                      const std::string &variable_metadata);
-  void server_send_action_metadata(const std::string &action_metadata);
+  void server_send_action(int server_action_id, const std::string &server_action_metadata = "");
 
   // Utility: Given grid size and patch bounds, return global indices of patch vertices
   static std::vector<int> compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size);

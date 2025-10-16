@@ -93,9 +93,7 @@ void YacOutputWriter::initialize_grid() {
   local_x_size = distributed_grid.xm;
   local_y_size = distributed_grid.ym;
   
-  int server_action = INIT_YAC_GRID;
-  field_reqs.emplace_back();
-  MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
+  server_send_action(INIT_YAC_GRID);
 
   field_reqs.emplace_back();
   MPI_Isend((void *) &x_size, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
@@ -167,7 +165,7 @@ void YacOutputWriter::define_yac_field(const std::string file_name,
     field_metadata["collection_size"] = collection_size;
     field_metadata["variable_name"] = metadata.get_name();
     field_metadata["file_name"] = file_name;
-    server_define_spatial_variable(file_name, field_metadata.dump());
+    server_send_action(DEFINE_SPATIAL_VARIABLE, field_metadata.dump());
 
     if(field_ids.find(metadata.get_name()) != field_ids.end()) return;
 
@@ -187,7 +185,7 @@ const File &YacOutputWriter::file(const std::string &file_name) {
     file_time_lengths[file_name] = 1;
 
     if(file_name.find("snapshot") != std::string::npos or file_name.find("timeseries") != std::string::npos)
-      server_create_file(file_name);
+        server_send_action(CREATE_FILE, file_name); 
   }
 
   return *m_files[file_name];
@@ -201,18 +199,20 @@ YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const Geom
 }
 
 YacOutputWriter::~YacOutputWriter() {
-    int server_action = FINISH;
-    field_reqs.emplace_back();
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
+    server_send_action(FINISH);
 }
 
-void YacOutputWriter::server_send_action_metadata(const std::string &action_metadata) {
-    int action_metadata_length = action_metadata.length();
+void YacOutputWriter::server_send_action(int server_action_id, const std::string &server_action_metadata) {
+    field_reqs.emplace_back(); 
+    MPI_Isend((void *) &server_action_id, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
+
+    int action_metadata_length = server_action_metadata.length();
+    if (action_metadata_length == 0) return;
 
     field_reqs.emplace_back();
     MPI_Isend((void *) &action_metadata_length, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
 
-    text_field_buffers.push_back(action_metadata);
+    text_field_buffers.push_back(server_action_metadata);
     field_reqs.emplace_back();
     MPI_Isend((void *) text_field_buffers.back().data(), action_metadata_length, MPI_CHAR, 0, 0, intercomm, &field_reqs.back());
 }
@@ -224,51 +224,15 @@ void YacOutputWriter::server_set_file_dimension(const std::string &file_name,
       file_dim["file_name"] = file_name;
       file_dim["dimension_name"] = name;
       file_dim["dimension_length"] = length;
-      std::string file_dimensions = file_dim.dump();
-
-      int server_action = SET_FILE_DIMENSION;
-      field_reqs.emplace_back();
-      MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
-      server_send_action_metadata(file_dimensions);
-}
-
-void YacOutputWriter::server_create_file(const std::string &file_name) {
-    int server_action = CREATE_FILE;
-    
-    field_reqs.emplace_back(); 
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
-    server_send_action_metadata(file_name);
+      server_send_action(SET_FILE_DIMENSION, file_dim.dump());
 }
 
 void YacOutputWriter::server_set_file_attributes(const std::string &file_name) {
-    int server_action = SET_FILE_ATTRIBUTES;
 
     nlohmann::json file_attributes_json;
     file_attributes_json["file_name"] = file_name;
     file_attributes_json["attributes"] = global_attributes[file_name];
-    std::string file_attributes = file_attributes_json.dump();
-    
-    field_reqs.emplace_back(); 
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
-    server_send_action_metadata(file_attributes); 
-}
-
-void YacOutputWriter::server_define_non_spatial_variable(const std::string &file_name, 
-                                                         const std::string &variable_metadata) {
-    int server_action = DEFINE_NON_SPATIAL_VARIABLE;
-
-    field_reqs.emplace_back();
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
-    server_send_action_metadata(variable_metadata); 
-}
-
-void YacOutputWriter::server_define_spatial_variable(const std::string &file_name, 
-                                                     const std::string &variable_metadata) {
-    int server_action = DEFINE_SPATIAL_VARIABLE;
-
-    field_reqs.emplace_back();
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
-    server_send_action_metadata(variable_metadata); 
+    server_send_action(SET_FILE_ATTRIBUTES, file_attributes_json.dump());
 }
 
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
@@ -315,7 +279,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
         non_spatial_variables_metadata[metadata.get_name()]["tag"] = variable_tags.size();
         variable_tags[metadata.get_name()] = variable_tags.size();
       }
-      server_define_non_spatial_variable(file_name, non_spatial_variables_metadata[metadata.get_name()].dump());
+      server_send_action(DEFINE_NON_SPATIAL_VARIABLE, non_spatial_variables_metadata[metadata.get_name()].dump());
     }
   }
 
@@ -333,16 +297,10 @@ void YacOutputWriter::append_time_impl(const std::string &file_name, double time
   if (file_name.find("snapshot") != std::string::npos or
       file_name.find("timeseries") != std::string::npos) {
         
-    int server_action = UPDATE_TIME_LENGTH;
-
     nlohmann::json file_metadata;
     file_metadata["file_name"] = file_name;
     file_metadata["time_dimension_length"] = time_dimension_length(file_name);
-    std::string file_info = file_metadata.dump();
-    
-    field_reqs.emplace_back();
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
-    server_send_action_metadata(file_info);
+    server_send_action(UPDATE_TIME_LENGTH, file_metadata.dump()); 
   }
   
   write_array(file_name, time_name(), { time_dimension_length(file_name) }, { 1 },
@@ -476,9 +434,7 @@ void YacOutputWriter::finalize_yac_initialization() {
       component_metadata[file.first]["dimensions"] = serialized_dims;
     }
 
-    int server_action = FINISH_YAC_INITIALIZATION;
-    field_reqs.emplace_back();
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
+    server_send_action(FINISH_YAC_INITIALIZATION);
 
     yac_cdef_component_metadata("pism", component_metadata.dump().c_str());
     yac_cdef_grid_metadata("pism_grid", serialized_dims.dump().c_str());
@@ -505,16 +461,11 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     else
         send_type = MPI_INT;
 
-    int server_action = SEND_NON_SPATIAL_VARIABLE;
 
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
     variable_info_json["variable_name"] = variable_name;
-    std::string variable_info = variable_info_json.dump();
-
-    field_reqs.emplace_back();
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
-    server_send_action_metadata(variable_info);
+    server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
 
     MPI_Isend((void *) (data + start[0]), count[0], send_type, 0, variable_tags[variable_name], intercomm, &send_req_handle);
     field_reqs.push_back(send_req_handle);
@@ -534,16 +485,10 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
 
   if(file_name.find("snapshot") != std::string::npos) {
 
-    int server_action = SEND_NON_SPATIAL_VARIABLE;
-
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
     variable_info_json["variable_name"] = variable_name;
-    std::string variable_info = variable_info_json.dump();
-
-    field_reqs.emplace_back();
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
-    server_send_action_metadata(variable_info);
+    server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
 
     text_field_buffers.push_back(input);
     MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &send_req_handle);
@@ -573,19 +518,13 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   }
 
   if (file_name.find("snapshot") != std::string::npos) {
-    int collection_size = metadata.z().length();
-
-    int server_action = SEND_SPATIAL_VARIABLE;
 
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
     variable_info_json["variable_name"] = variable_name;
-    std::string variable_info = variable_info_json.dump();
+    server_send_action(SEND_SPATIAL_VARIABLE, variable_info_json.dump());
     
-    field_reqs.emplace_back();
-    MPI_Isend((void *) &server_action, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
-    server_send_action_metadata(variable_info);
-
+    int collection_size = metadata.z().length();
     double ***send_field = new double **[collection_size];
     for (int c = 0; c < collection_size; c++) {
       // FIXME: memory leaks
