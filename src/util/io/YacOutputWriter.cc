@@ -80,7 +80,6 @@ void YacOutputWriter::initialize_yac() {
   remote_leader = component_leaders_ranks.back();
 
   MPI_Intercomm_create(local_comm, 0, global_comm, remote_leader, 0, &intercomm);
-  yac_initialized = true;
 }
 
 
@@ -88,8 +87,8 @@ void YacOutputWriter::initialize_grid() {
   int local_patch_size = -1;
   auto global_grid = m_geometry.latitude.grid();
   auto distributed_grid = m_geometry.latitude.grid()->info();
-  x_size = global_grid->Mx();
-  y_size = global_grid->My();
+  int x_size = global_grid->Mx();
+  int y_size = global_grid->My();
   local_x_size = distributed_grid.xm;
   local_y_size = distributed_grid.ym;
   
@@ -182,7 +181,6 @@ const File &YacOutputWriter::file(const std::string &file_name) {
     file->set_compression_level(m_compression_level);
 
     m_files[file_name] = file;
-    file_time_lengths[file_name] = 1;
 
     if(file_name.find("snapshot") != std::string::npos or file_name.find("timeseries") != std::string::npos)
         server_send_action(CREATE_FILE, file_name); 
@@ -228,11 +226,6 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 
   if (output_file.variable_exists(metadata.get_name())) {
     return;
-  }
-
-  if(file_name.find("snapshot") != std::string::npos and yac_grid_initialized and
-     file_name != current_snapshot_file) {
-      current_snapshot_file = file_name;
   }
 
   if (file_name.find("snapshot") != std::string::npos or
@@ -317,7 +310,7 @@ void YacOutputWriter::close_impl(const std::string &file_name) {
 }
 
 void YacOutputWriter::define_dimension_impl(const std::string &file_name,
-                                                    const std::string &name, unsigned int length) {
+                                            const std::string &name, unsigned int length) {
   const auto &output_file = file(file_name);
 
   if (output_file.dimension_exists(name)) {
@@ -502,10 +495,6 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   const auto &grid = grid_info(variable_name);
   unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
 
-  if(file_name.find("snapshot") != std::string::npos and time_dimension_length(file_name) != file_time_lengths[file_name]) {
-      file_time_lengths[file_name] = time_dimension_length(file_name);
-  }
-
   if(not yac_init_finished and file_name.find("snapshot") != std::string::npos) {
     finalize_yac_initialization();
   }
@@ -539,7 +528,6 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
 
     int info, error;
     yac_cput(field_ids[variable_name], collection_size, send_field, &info, &error);
-    written_vars[variable_name] = true;
   }
 
   std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };
