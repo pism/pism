@@ -325,15 +325,13 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
   OutputFile file(m_output_writer, filename);
 
   define_time(file);
-  define_variables(file, combine(common_metadata(), state_variables()));
+  define_variables(file, m_output_file_contents);
 
-  {
-    write_config(*m_config, "pism_config", file);
-    // assume that "dumpToFile" is expected to save the model state *only*.
-    file.append_time(m_time->current());
-    write_state(file);
-    write_run_stats(file);
-  }
+  write_config(*m_config, "pism_config", file);
+  file.append_time(m_time->current());
+  write_state(file);
+  write_diagnostics(file, m_output_vars);
+  write_run_stats(file);
 }
 
 void IBIceModel::misc_setup(InputOptions input_options) {
