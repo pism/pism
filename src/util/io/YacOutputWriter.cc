@@ -94,11 +94,11 @@ void YacOutputWriter::initialize_grid() {
   
   server_send_action(INIT_YAC_GRID);
 
-  field_reqs.emplace_back();
-  MPI_Isend((void *) &x_size, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
+  mpi_requests.emplace_back();
+  MPI_Isend((void *) &x_size, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
 
-  field_reqs.emplace_back();
-  MPI_Isend((void *) &y_size, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
+  mpi_requests.emplace_back();
+  MPI_Isend((void *) &y_size, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
 
   std::vector<int> patch_global_indices = compute_patch_global_indices(
                                                 x_size, 
@@ -201,18 +201,18 @@ YacOutputWriter::~YacOutputWriter() {
 }
 
 void YacOutputWriter::server_send_action(int server_action_id, const std::string &server_action_metadata) {
-    field_reqs.emplace_back(); 
-    MPI_Isend((void *) &server_action_id, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
+    mpi_requests.emplace_back(); 
+    MPI_Isend((void *) &server_action_id, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
 
     int action_metadata_length = server_action_metadata.length();
     if (action_metadata_length == 0) return;
 
-    field_reqs.emplace_back();
-    MPI_Isend((void *) &action_metadata_length, 1, MPI_INT, 0, 0, intercomm, &field_reqs.back());
+    mpi_requests.emplace_back();
+    MPI_Isend((void *) &action_metadata_length, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
 
     text_field_buffers.push_back(server_action_metadata);
-    field_reqs.emplace_back();
-    MPI_Isend((void *) text_field_buffers.back().data(), action_metadata_length, MPI_CHAR, 0, 0, intercomm, &field_reqs.back());
+    mpi_requests.emplace_back();
+    MPI_Isend((void *) text_field_buffers.back().data(), action_metadata_length, MPI_CHAR, 0, 0, intercomm, &mpi_requests.back());
 }
 
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
@@ -438,8 +438,8 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     variable_info_json["variable_name"] = variable_name;
     server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
 
-    field_reqs.emplace_back();
-    MPI_Isend((void *) (data + start[0]), count[0], send_type, 0, variable_tags[variable_name], intercomm, &field_reqs.back());
+    mpi_requests.emplace_back();
+    MPI_Isend((void *) (data + start[0]), count[0], send_type, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
   }
 
   output_file.write_variable(variable_name, start, count, data);
@@ -458,8 +458,8 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
     server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
 
     text_field_buffers.push_back(input);
-    field_reqs.emplace_back();
-    MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &field_reqs.back());
+    mpi_requests.emplace_back();
+    MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
   }
 
   const auto &output_file = file(file_name);
