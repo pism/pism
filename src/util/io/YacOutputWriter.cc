@@ -217,24 +217,6 @@ void YacOutputWriter::server_send_action(int server_action_id, const std::string
     MPI_Isend((void *) text_field_buffers.back().data(), action_metadata_length, MPI_CHAR, 0, 0, intercomm, &field_reqs.back());
 }
 
-void YacOutputWriter::server_set_file_dimension(const std::string &file_name, 
-                                                const std::string &name, 
-                                                unsigned int length) {
-      nlohmann::json file_dim;
-      file_dim["file_name"] = file_name;
-      file_dim["dimension_name"] = name;
-      file_dim["dimension_length"] = length;
-      server_send_action(SET_FILE_DIMENSION, file_dim.dump());
-}
-
-void YacOutputWriter::server_set_file_attributes(const std::string &file_name) {
-
-    nlohmann::json file_attributes_json;
-    file_attributes_json["file_name"] = file_name;
-    file_attributes_json["attributes"] = global_attributes[file_name];
-    server_send_action(SET_FILE_ATTRIBUTES, file_attributes_json.dump());
-}
-
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
                                            const VariableMetadata &metadata,
                                            const std::vector<std::string> &dims) {
@@ -344,8 +326,14 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
 
   dim_sizes[file_name][name] = length;
 
-  if(file_name.find("snapshot") != std::string::npos or file_name.find("timeseries") != std::string::npos)
-    server_set_file_dimension(file_name, name, length);
+  if (file_name.find("snapshot") != std::string::npos or 
+      file_name.find("timeseries") != std::string::npos) {
+      nlohmann::json file_dim;
+      file_dim["file_name"] = file_name;
+      file_dim["dimension_name"] = name;
+      file_dim["dimension_length"] = length;
+      server_send_action(SET_FILE_DIMENSION, file_dim.dump());
+  }
 
   output_file.define_dimension(name, length);
 }
@@ -360,8 +348,13 @@ void YacOutputWriter::set_global_attributes_impl(
     for (auto double_attribute : numbers)
         global_attributes[file_name][double_attribute.first] = double_attribute.second;
 
-    if(file_name.find("snapshot") != std::string::npos or file_name.find("timeseries") != std::string::npos)
-      server_set_file_attributes(file_name);
+    if (file_name.find("snapshot") != std::string::npos or 
+        file_name.find("timeseries") != std::string::npos) {
+        nlohmann::json file_attributes_json;
+        file_attributes_json["file_name"] = file_name;
+        file_attributes_json["attributes"] = global_attributes[file_name];
+        server_send_action(SET_FILE_ATTRIBUTES, file_attributes_json.dump());
+    }
 
   write_attributes(file_name, "PISM_GLOBAL", strings, numbers, io::PISM_DOUBLE);
 }
