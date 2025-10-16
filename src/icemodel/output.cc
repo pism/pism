@@ -36,6 +36,7 @@
 #include "pism/util/Component.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 
@@ -253,7 +254,10 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
     variable_names.insert(v);
   }
 
-  OutputFile file(m_output_writer, filename);
+  std::shared_ptr<OutputWriter> writer =
+      std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+
+  OutputFile file(writer, filename);
 
   {
     auto variables = pism::combine(common_metadata(), state_variables());

@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
+#include <memory>
 #include <petscsys.h>
 
 #include "pism/icemodel/IceModel.hh"
@@ -25,7 +26,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_signal.h"
-#include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 
@@ -64,7 +65,10 @@ int IceModel::process_signals() {
                    file_name.c_str());
     pism_signal = 0;
 
-    OutputFile file(m_output_writer, file_name);
+    std::shared_ptr<OutputWriter> writer =
+        std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+
+    OutputFile file(writer, file_name);
 
     {
       define_time(file);
