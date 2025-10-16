@@ -22,8 +22,6 @@
 #include <memory>
 #include <petscsys.h>
 
-#include "pism/pism_config.hh"
-
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/basalstrength/YieldStress.hh"
