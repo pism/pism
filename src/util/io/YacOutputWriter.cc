@@ -334,18 +334,19 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
 void YacOutputWriter::set_global_attributes_impl(
     const std::string &file_name, const std::map<std::string, std::string> &strings,
     const std::map<std::string, std::vector<double> > &numbers) {
+    nlohmann::json attributes_json;
 
     for (auto string_attribute : strings)
-        global_attributes[file_name][string_attribute.first] = string_attribute.second;
+        attributes_json[string_attribute.first] = string_attribute.second;
 
     for (auto double_attribute : numbers)
-        global_attributes[file_name][double_attribute.first] = double_attribute.second;
+        attributes_json[double_attribute.first] = double_attribute.second;
 
     if (file_name.find("snapshot") != std::string::npos or 
         file_name.find("timeseries") != std::string::npos) {
         nlohmann::json file_attributes_json;
         file_attributes_json["file_name"] = file_name;
-        file_attributes_json["attributes"] = global_attributes[file_name];
+        file_attributes_json["attributes"] = attributes_json;
         server_send_action(SET_FILE_ATTRIBUTES, file_attributes_json.dump());
     }
 
@@ -409,21 +410,7 @@ double YacOutputWriter::last_time_value_impl(const std::string &file_name) {
 }
 
 void YacOutputWriter::finalize_yac_initialization() {
-    nlohmann::json serialized_dims, component_metadata;
-
-    for (auto file : m_files) {
-      for (auto dim : dim_sizes[file.first])
-          serialized_dims[dim.first] = dim.second;
-
-      component_metadata[file.first]["global"] = global_attributes[file.first];
-      component_metadata[file.first]["non_field_variables"] = non_spatial_variables_metadata;
-      component_metadata[file.first]["dimensions"] = serialized_dims;
-    }
-
     server_send_action(FINISH_YAC_INITIALIZATION);
-
-    yac_cdef_component_metadata("pism", component_metadata.dump().c_str());
-    yac_cdef_grid_metadata("pism_grid", serialized_dims.dump().c_str());
     yac_cenddef();
     yac_init_finished = true;
 }
@@ -447,7 +434,6 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     else
         send_type = MPI_INT;
 
-
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
     variable_info_json["variable_name"] = variable_name;
@@ -455,7 +441,6 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
 
     MPI_Isend((void *) (data + start[0]), count[0], send_type, 0, variable_tags[variable_name], intercomm, &send_req_handle);
     field_reqs.push_back(send_req_handle);
-    sent_fields_count++;
   }
 
   output_file.write_variable(variable_name, start, count, data);
@@ -479,7 +464,6 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
     text_field_buffers.push_back(input);
     MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &send_req_handle);
     field_reqs.push_back(send_req_handle);
-    sent_fields_count++;
   }
 
   const auto &output_file = file(file_name);

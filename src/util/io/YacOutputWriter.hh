@@ -75,10 +75,7 @@ private:
   std::map<std::string, unsigned int> variable_tags;
   std::vector<std::string> text_field_buffers;
   nlohmann::json non_spatial_variables_metadata;
-  std::map<std::string, nlohmann::json> global_attributes;
-
   std::vector<MPI_Request> field_reqs;
-  unsigned int sent_fields_count = 0;
 
   //YAC variables
   int grid_id;
