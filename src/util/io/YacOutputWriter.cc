@@ -422,7 +422,6 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
                                                const double *data) {
   const auto &output_file = file(file_name);
   MPI_Datatype send_type;
-  MPI_Request send_req_handle;
 
   if(not yac_init_finished and file_name.find("snapshot") != std::string::npos) {
     finalize_yac_initialization();
@@ -439,8 +438,8 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     variable_info_json["variable_name"] = variable_name;
     server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
 
-    MPI_Isend((void *) (data + start[0]), count[0], send_type, 0, variable_tags[variable_name], intercomm, &send_req_handle);
-    field_reqs.push_back(send_req_handle);
+    field_reqs.emplace_back();
+    MPI_Isend((void *) (data + start[0]), count[0], send_type, 0, variable_tags[variable_name], intercomm, &field_reqs.back());
   }
 
   output_file.write_variable(variable_name, start, count, data);
@@ -452,18 +451,15 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
                                       const std::vector<unsigned int> &count,
                                       const std::string &input) {
 
-  MPI_Request send_req_handle;
-
   if(file_name.find("snapshot") != std::string::npos) {
-
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
     variable_info_json["variable_name"] = variable_name;
     server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
 
     text_field_buffers.push_back(input);
-    MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &send_req_handle);
-    field_reqs.push_back(send_req_handle);
+    field_reqs.emplace_back();
+    MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &field_reqs.back());
   }
 
   const auto &output_file = file(file_name);
