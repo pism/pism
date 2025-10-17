@@ -60,6 +60,8 @@ public:
        units::System::Ptr unit_system);
   virtual ~Time() = default;
 
+  void init_calendar(const std::string &calendar);
+
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);
 
@@ -82,8 +84,6 @@ public:
 
   //! \brief Returns the length of the current run, in years.
   std::string run_length() const;
-
-  void init_calendar(const std::string &calendar);
 
   std::vector<double> parse_times(const std::string &spec) const;
 
