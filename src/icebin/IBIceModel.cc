@@ -34,6 +34,9 @@ IBIceModel::IBIceModel(std::shared_ptr<pism::Grid> grid, const std::shared_ptr<C
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
+
+  m_time->set_start(params.time_start_s);
+  m_time->set(params.time_start_s);
 }
 
 IBIceModel::~IBIceModel() {
@@ -331,16 +334,6 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
     write_state(file);
     write_run_stats(file);
   }
-}
-
-void IBIceModel::time_setup() {
-  // super::m_grid_setup() trashes m_time->start().  Now set it correctly.
-  m_time->set_start(params.time_start_s);
-  m_time->set(params.time_start_s);
-
-  m_log->message(2, "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
-                 m_time->date(m_time->start()).c_str(), m_time->date(m_time->end()).c_str(),
-                 m_time->run_length().c_str(), m_time->calendar().c_str());
 }
 
 void IBIceModel::misc_setup() {

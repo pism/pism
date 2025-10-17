@@ -836,8 +836,24 @@ void IceModel::init() {
     }
   }
 
-  //! 2) Initialize model time:
-  time_setup();
+  // 2) Report run duration
+  {
+    bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
+
+    if (use_calendar) {
+      m_log->message(2, "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
+                     m_time->date(m_time->start()).c_str(), m_time->date(m_time->end()).c_str(),
+                     m_time->run_length().c_str(), m_time->calendar().c_str());
+    } else {
+      std::string time_units = m_config->get_string("output.runtime.time_unit_name");
+
+      double start = m_time->convert_time_interval(m_time->start(), time_units),
+             end = m_time->convert_time_interval(m_time->end(), time_units), length = end - start;
+
+      m_log->message(2, "* Run time: [%f %s, %f %s]  (%f %s)\n", start, time_units.c_str(), end,
+                     time_units.c_str(), length, time_units.c_str());
+    }
+  }
 
   //! 3) Memory allocation:
   allocate_storage();

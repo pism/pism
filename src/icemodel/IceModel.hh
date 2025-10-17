@@ -177,7 +177,6 @@ protected:
 
   virtual YieldStressInputs yield_stress_inputs();
 
-  virtual void time_setup();
   virtual void model_state_setup();
   virtual void misc_setup();
   virtual void init_calving();
