@@ -80,6 +80,8 @@ private:
   std::vector<double *> array_data;
   double *** yac_raw_send_array = nullptr;
 
+  std::map<std::string, bool> server_allowed_files;
+
   //YAC variables
   int grid_id;
   int vertex_points_id;

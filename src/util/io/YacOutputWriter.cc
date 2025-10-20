@@ -193,8 +193,10 @@ const File &YacOutputWriter::file(const std::string &file_name) {
 
     m_files[file_name] = file;
 
-    if(file_name.find("snapshot") != std::string::npos or file_name.find("timeseries") != std::string::npos)
-        server_send_action(CREATE_FILE, file_name); 
+    if(file_name.find("snapshot") != std::string::npos) {
+      server_allowed_files[file_name] = true;
+      server_send_action(CREATE_FILE, file_name);
+    }
   }
 
   return *m_files[file_name];
@@ -239,7 +241,7 @@ void YacOutputWriter::server_send_action(int server_action_id, const std::string
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
                                            const VariableMetadata &metadata,
                                            const std::vector<std::string> &dims) {
-  if(file_name.find("snapshot") != std::string::npos and not yac_grid_initialized and dims.size() > 1) {
+  if(server_allowed_files[file_name] and not yac_grid_initialized and dims.size() > 1) {
     initialize_grid();
   }
 
@@ -249,8 +251,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     return;
   }
 
-  if (file_name.find("snapshot") != std::string::npos or
-      file_name.find("timeseries") != std::string::npos) {
+  if (server_allowed_files[file_name]) {
 
     int horizontal_dims = 0;
     for (auto dim : dims)
@@ -290,8 +291,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 
 void YacOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
 
-  if (file_name.find("snapshot") != std::string::npos or
-      file_name.find("timeseries") != std::string::npos) {
+  if (server_allowed_files[file_name]) {
         
     nlohmann::json file_metadata;
     file_metadata["file_name"] = file_name;
@@ -340,8 +340,7 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
 
   dim_sizes[file_name][name] = length;
 
-  if (file_name.find("snapshot") != std::string::npos or 
-      file_name.find("timeseries") != std::string::npos) {
+  if (server_allowed_files[file_name]) {
       nlohmann::json file_dim;
       file_dim["file_name"] = file_name;
       file_dim["dimension_name"] = name;
@@ -363,8 +362,7 @@ void YacOutputWriter::set_global_attributes_impl(
     for (auto double_attribute : numbers)
         attributes_json[double_attribute.first] = double_attribute.second;
 
-    if (file_name.find("snapshot") != std::string::npos or 
-        file_name.find("timeseries") != std::string::npos) {
+    if (server_allowed_files[file_name]) {
         nlohmann::json file_attributes_json;
         file_attributes_json["file_name"] = file_name;
         file_attributes_json["attributes"] = attributes_json;
@@ -444,11 +442,11 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
   const auto &output_file = file(file_name);
   MPI_Datatype send_type;
 
-  if(not yac_init_finished and file_name.find("snapshot") != std::string::npos) {
+  if(not yac_init_finished and server_allowed_files[file_name]) {
     finalize_yac_initialization();
   }
 
-  if(file_name.find("snapshot") != std::string::npos) {
+  if(server_allowed_files[file_name]) {
     if( non_spatial_variables_metadata[variable_name]["dtype"] == "f8")
         send_type = MPI_DOUBLE;
     else
@@ -477,7 +475,7 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
                                       const std::vector<unsigned int> &count,
                                       const std::string &input) {
 
-  if(file_name.find("snapshot") != std::string::npos) {
+  if(server_allowed_files[file_name]) {
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
     variable_info_json["variable_name"] = variable_name;
@@ -503,7 +501,7 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   const auto &grid = grid_info(variable_name);
   unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
 
-  if(not yac_init_finished and file_name.find("snapshot") != std::string::npos) {
+  if(not yac_init_finished and server_allowed_files[file_name]) {
     finalize_yac_initialization();
   }
 
@@ -516,7 +514,7 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     }
   }
 
-  if (file_name.find("snapshot") != std::string::npos) {
+  if (server_allowed_files[file_name]) {
 
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
