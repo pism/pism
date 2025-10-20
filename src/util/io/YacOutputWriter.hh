@@ -66,7 +66,7 @@ private:
   bool yac_init_finished = false;
   bool yac_grid_initialized = false;
   int grid_size;
-  int local_rank = -1;
+  int my_rank = -1;
   int local_x_size;
   int local_y_size;
   const Geometry& m_geometry;
@@ -75,7 +75,8 @@ private:
   std::map<std::string, unsigned int> variable_tags;
   std::vector<std::string> text_field_buffers;
   nlohmann::json non_spatial_variables_metadata;
-  std::vector<MPI_Request> mpi_requests;
+  std::vector<MPI_Request> mpi_requests; 
+  std::vector<double *> array_data;
 
   //YAC variables
   int grid_id;

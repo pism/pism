@@ -69,7 +69,7 @@ void YacOutputWriter::initialize_yac() {
   yac_cget_comp_comm(1, &local_comm);
   yac_cget_comps_comm(comp_names, nbr_comps, &global_comm);
   MPI_Comm_size(global_comm, &global_size);
-  MPI_Comm_rank(local_comm, &local_rank);
+  MPI_Comm_rank(local_comm, &my_rank);
   std::vector<int> component_leaders_ranks(global_size);
 
   MPI_Comm_group(local_comm, &local_group);
@@ -94,11 +94,13 @@ void YacOutputWriter::initialize_grid() {
   
   server_send_action(INIT_YAC_GRID);
 
-  mpi_requests.emplace_back();
-  MPI_Isend((void *) &x_size, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
-
-  mpi_requests.emplace_back();
-  MPI_Isend((void *) &y_size, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
+  if (my_rank == 0) {
+    mpi_requests.emplace_back();
+    MPI_Isend((void *) &x_size, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
+  
+    mpi_requests.emplace_back();
+    MPI_Isend((void *) &y_size, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
+  }
 
   std::vector<int> patch_global_indices = compute_patch_global_indices(
                                                 x_size, 
@@ -201,6 +203,8 @@ YacOutputWriter::~YacOutputWriter() {
 }
 
 void YacOutputWriter::server_send_action(int server_action_id, const std::string &server_action_metadata) {
+    if (my_rank != 0) return;
+   
     mpi_requests.emplace_back(); 
     MPI_Isend((void *) &server_action_id, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
 
@@ -210,9 +214,7 @@ void YacOutputWriter::server_send_action(int server_action_id, const std::string
     mpi_requests.emplace_back();
     MPI_Isend((void *) &action_metadata_length, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
 
-    text_field_buffers.push_back(server_action_metadata);
-    mpi_requests.emplace_back();
-    MPI_Isend((void *) text_field_buffers.back().data(), action_metadata_length, MPI_CHAR, 0, 0, intercomm, &mpi_requests.back());
+    MPI_Send((void *) server_action_metadata.data(), action_metadata_length, MPI_CHAR, 0, 0, intercomm);
 }
 
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
@@ -438,8 +440,13 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     variable_info_json["variable_name"] = variable_name;
     server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
 
-    mpi_requests.emplace_back();
-    MPI_Isend((void *) (data + start[0]), count[0], send_type, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
+    if (my_rank == 0) {
+      //TODO: memory leak
+      array_data.push_back(new double[count[0]]);
+      memcpy(array_data.back(), data + start[0], count[0] * sizeof(double));
+      mpi_requests.emplace_back();
+      MPI_Isend((void *) (array_data.back()), count[0], send_type, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
+    }
   }
 
   output_file.write_variable(variable_name, start, count, data);
@@ -457,9 +464,11 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
     variable_info_json["variable_name"] = variable_name;
     server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
 
-    text_field_buffers.push_back(input);
-    mpi_requests.emplace_back();
-    MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
+    if (my_rank == 0) {
+      text_field_buffers.push_back(input);
+      mpi_requests.emplace_back();
+      MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
+    }
   }
 
   const auto &output_file = file(file_name);
