@@ -162,10 +162,19 @@ void YacOutputWriter::define_yac_field(const std::string file_name,
     if(dims.size() > 3)
         collection_size = dim_sizes[file_name][dims[3]];
 
+    // This allows a single allocation/deallocation of the yac_raw_send_array.
+    // With multiple files writing spatial variables it might become a problem 
+    // if the actual max collection size will be defined after a previous file 
+    // already finished its initialization.
+    // The check on the yac_raw_send_array nullity is to prevent extra 
+    // deallocation in the destructor.
+    if(collection_size > max_collection_size and yac_raw_send_array == nullptr) 
+      max_collection_size = collection_size;
+
+    field_metadata["file_name"] = file_name;
+    field_metadata["variable_name"] = metadata.get_name();
     field_metadata["timestep"] = "PT1M";
     field_metadata["collection_size"] = collection_size;
-    field_metadata["variable_name"] = metadata.get_name();
-    field_metadata["file_name"] = file_name;
     server_send_action(DEFINE_SPATIAL_VARIABLE, field_metadata.dump());
 
     if(field_ids.find(metadata.get_name()) != field_ids.end()) return;
@@ -200,6 +209,16 @@ YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const Geom
 
 YacOutputWriter::~YacOutputWriter() {
     server_send_action(FINISH);
+
+    for (auto &i : array_data)
+      delete i;
+
+    for (int c = 0; c < max_collection_size; c++) {
+      delete yac_raw_send_array[c][0];
+      delete yac_raw_send_array[c];
+    }
+
+    delete yac_raw_send_array;
 }
 
 void YacOutputWriter::server_send_action(int server_action_id, const std::string &server_action_metadata) {
@@ -441,7 +460,7 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
 
     if (my_rank == 0) {
-      //TODO: memory leak
+      // These arrays are deleted in the destructor
       array_data.push_back(new double[count[0]]);
       memcpy(array_data.back(), data + start[0], count[0] * sizeof(double));
       mpi_requests.emplace_back();
@@ -488,6 +507,15 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     finalize_yac_initialization();
   }
 
+  // These arrays are deleted in the destructor
+  if (yac_raw_send_array == nullptr) {
+    yac_raw_send_array = new double **[max_collection_size];
+    for (int c = 0; c < max_collection_size; c++) {
+      yac_raw_send_array[c]    = new double *[1];
+      yac_raw_send_array[c][0] = new double[grid_size];
+    }
+  }
+
   if (file_name.find("snapshot") != std::string::npos) {
 
     nlohmann::json variable_info_json;
@@ -496,11 +524,7 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     server_send_action(SEND_SPATIAL_VARIABLE, variable_info_json.dump());
     
     int collection_size = metadata.z().length();
-    double ***send_field = new double **[collection_size];
     for (int c = 0; c < collection_size; c++) {
-      // FIXME: memory leaks
-      send_field[c]    = new double *[1];
-      send_field[c][0] = new double[grid_size];
       for (int x = 0; x < local_x_size; x++) {
         for (int y = 0; y < local_y_size; y++) {
           int delta_x = collection_size;
@@ -510,13 +534,13 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
 
           int yac_index = x + y * local_x_size;
 
-          send_field[c][0][yac_index] = data[pism_index];
+          yac_raw_send_array[c][0][yac_index] = data[pism_index];
         }
       }
     }
 
     int info, error;
-    yac_cput(field_ids[variable_name], collection_size, send_field, &info, &error);
+    yac_cput(field_ids[variable_name], collection_size, yac_raw_send_array, &info, &error);
   }
 
   std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };

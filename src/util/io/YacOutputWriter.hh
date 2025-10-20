@@ -69,6 +69,7 @@ private:
   int my_rank = -1;
   int local_x_size;
   int local_y_size;
+  int max_collection_size = 0;
   const Geometry& m_geometry;
   std::map<std::string, int> field_ids;
   std::map<std::string, std::map<std::string, int>> dim_sizes;
@@ -77,6 +78,7 @@ private:
   nlohmann::json non_spatial_variables_metadata;
   std::vector<MPI_Request> mpi_requests; 
   std::vector<double *> array_data;
+  double *** yac_raw_send_array = nullptr;
 
   //YAC variables
   int grid_id;
