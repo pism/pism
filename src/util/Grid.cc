@@ -1451,7 +1451,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     // process configuration parameters controlling vertical grid size and extent
     P.vertical_grid_from_options(*config);
     // process configuration parameters controlling grid ownership ranges
-    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
+    P.ownership_ranges_from_options(*config, ctx->size());
 
     auto result = std::make_shared<Grid>(ctx, P);
 
@@ -1512,7 +1512,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       // process configuration parameters controlling vertical grid size and extent
       input_grid.vertical_grid_from_options(*config);
       // process configuration parameters controlling grid ownership ranges
-      input_grid.ownership_ranges_from_options(*ctx->config(), ctx->size());
+      input_grid.ownership_ranges_from_options(*config, ctx->size());
 
       auto result = std::make_shared<Grid>(ctx, input_grid);
 
@@ -1553,10 +1553,10 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     // not set, -bootstrap is not set either".
 
     // Use defaults from the configuration database
-    grid::Parameters P(*ctx->config());
-    P.horizontal_size_and_extent_from_options(*ctx->config());
-    P.vertical_grid_from_options(*ctx->config());
-    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
+    grid::Parameters P(*config);
+    P.horizontal_size_and_extent_from_options(*config);
+    P.vertical_grid_from_options(*config);
+    P.ownership_ranges_from_options(*config, ctx->size());
 
     return std::make_shared<Grid>(ctx, P);
   }
