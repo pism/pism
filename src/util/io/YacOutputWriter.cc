@@ -221,6 +221,8 @@ YacOutputWriter::~YacOutputWriter() {
     }
 
     delete yac_raw_send_array;
+
+    MPI_Barrier(intercomm);
 }
 
 void YacOutputWriter::server_send_action(int server_action_id, const std::string &server_action_metadata) {
