@@ -71,6 +71,7 @@ void Inputs::dump(const char *filename) const {
 
   VariableMetadata mapping{ "mapping", ctx->unit_system() };
   auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *config);
+  writer->initialize({}, true);
 
   OutputFile output(writer, filename);
 

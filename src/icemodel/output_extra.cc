@@ -350,7 +350,7 @@ void IceModel::write_extras() {
 
         auto bounds_name = m_time->variable_name() + "_bounds";
 
-        m_extra_file->write_array({ bounds_name, m_sys }, { time_start, 0 }, { 1, 2 },
+        m_extra_file->write_array(bounds_name, { time_start, 0 }, { 1, 2 },
                                   { m_last_extra, current_time });
       }
 

@@ -193,10 +193,9 @@ void IceModel::write_run_stats(const OutputFile &file) const {
     count = { 1, 1 };
   }
 
-  file.write_array({ "wall_clock_time", m_sys }, start, count, { wall_clock_hours });
-  file.write_array({ "model_years_per_processor_hour", m_sys }, start, count,
-                   { model_years / proc_hours });
-  file.write_array({ "step_counter", m_sys }, start, count, { (double)m_step_counter });
+  file.write_array("wall_clock_time", start, count, { wall_clock_hours });
+  file.write_array("model_years_per_processor_hour", start, count, { model_years / proc_hours });
+  file.write_array("step_counter", start, count, { (double)m_step_counter });
 }
 
 void IceModel::define_variables(const OutputFile &file,
@@ -256,6 +255,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
 
   std::shared_ptr<OutputWriter> writer =
       std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  writer->initialize({}, true);
 
   OutputFile file(writer, filename);
 

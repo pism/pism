@@ -36,6 +36,7 @@ using namespace pism;
       auto grid = $self->grid();
       const auto &config = *grid->ctx()->config();
       auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, config);
+      writer->initialize({}, true);
 
       // We expect the file to be present and ready to write into.
       OutputFile file(writer, filename);

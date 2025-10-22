@@ -378,6 +378,8 @@ int main(int argc, char *argv[]) {
 
     {
       auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
+      writer->initialize({}, true);
+
       // Write results to an output file:
       OutputFile file(writer, config->get_string("output.file"));
 

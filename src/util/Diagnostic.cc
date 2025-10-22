@@ -336,8 +336,9 @@ void TSDiagnostic::flush() {
   }
 
   if (len == m_start) {
-    auto time = m_grid->ctx()->time()->metadata(true);
-    auto time_bounds = m_grid->ctx()->time()->bounds_metadata();
+    bool with_bounds = true;
+    auto time = m_grid->ctx()->time()->metadata(with_bounds).get_name();
+    auto time_bounds = m_grid->ctx()->time()->bounds_metadata().get_name();
 
     // write requested times
     file.write_array(time, { m_start }, { (unsigned int)m_time.size() }, m_time);

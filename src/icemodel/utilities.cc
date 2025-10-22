@@ -67,6 +67,7 @@ int IceModel::process_signals() {
 
     std::shared_ptr<OutputWriter> writer =
         std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+    writer->initialize({}, true);
 
     OutputFile file(writer, file_name);
 

@@ -22,6 +22,7 @@ VecBundleWriter::VecBundleWriter(std::shared_ptr<pism::Grid> _grid, std::string 
       fname(_fname),
       vecs(_vecs),
       output_writer(new SynchronousOutputWriter(m_grid->com, *m_grid->ctx()->config())) {
+  output_writer->initialize({}, true);
 }
 
 void VecBundleWriter::init() {

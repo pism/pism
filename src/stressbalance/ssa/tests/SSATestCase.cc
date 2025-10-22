@@ -289,6 +289,8 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/, double /*x*/, double /*y*/
 //! Save the computation and data to a file.
 void SSATestCase::write(const std::string &filename) {
   auto writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  writer->initialize({}, true);
+
   // Write results to an output file:
   OutputFile file(writer, filename);
 

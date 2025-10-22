@@ -220,6 +220,8 @@ int main(int argc, char *argv[]) {
     log->message(1, "NUM ERRORS DONE\n");
 
     auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
+    writer->initialize({}, true);
+
     // Write results to an output file:
     OutputFile file(writer, outname);
 

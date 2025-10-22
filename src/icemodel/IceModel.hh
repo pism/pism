@@ -190,18 +190,44 @@ protected:
   virtual void deallocate_unused_diagnostics();
 
   void init_outputs(InputOptions options);
+
+  /*!
+   * Return the set of names of diagnostic quantities corresponding to a `keyword` (none,
+   * small, medium, big_2d, big).
+   */
   virtual std::set<std::string> output_variables(const std::string &keyword);
+
+  /*!
+   * Return the set of all the diagnostic variables corresponding to the set of requested
+   * diagnostic *quantities* in `variable_names` (one quantity may map to two or more
+   * variables, e.g. velocities (2 or 3 vector components) of quantities on the staggered
+   * grid (2 grid offsets)).
+   */
   virtual std::set<VariableMetadata>
   diagnostic_variables(const std::set<std::string> &variable_names) const;
+
+  /*!
+   * Return the set of "state" variables, i.e. variables that describe the state of
+   * IceModel, of all the sub-models, and of all the requested diagnostic variables.
+   */
   virtual std::set<VariableMetadata> state_variables() const;
+
+  /*!
+   * Return the set of "common" variables (i.e. ones written to most files): step counter,
+   * model-years-per-processor-hour, wall clock time since start, configuration
+   * parameters, grid mapping (if known).
+   */
   std::set<VariableMetadata> common_metadata() const;
 
-  //! name of the output file
+  //! Name of the output file
   std::string m_output_filename;
-  // Set of diagnostic variables to put in the output file:
+
+  // Set of diagnostic quantities to put in the output file:
   std::set<std::string> m_output_vars;
-  //! set of variables that will be written to the output file
+
+  //! Set of variables that will be written to the output file
   std::set<VariableMetadata> m_output_file_contents;
+
   void init_final_output();
 
   virtual void step(bool do_mass_continuity, bool do_skip);

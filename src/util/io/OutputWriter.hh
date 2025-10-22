@@ -21,6 +21,7 @@
 #define PISM_OUTPUTWRITER_H
 
 #include <map>
+#include <set>
 #include <memory>
 #include <string>
 #include <vector>
@@ -107,6 +108,16 @@ public:
   virtual ~OutputWriter();
 
   /*!
+   * Initialize the output writer. The set `array_variables` contains all array variables
+   * that may be written to output files (not necessarily to the same output file).
+   *
+   * This initialization step allows an OutputWriter implementation to use grid
+   * information for all distributed arrays to setup up communication between
+   * "computational" and "I/O" MPI ranks.
+   */
+  void initialize(const std::set<VariableMetadata> &array_variables, bool relaxed_mode = false);
+
+  /*!
    * Define a dimension.
    * 
    * No-op if the dimension already exists.
@@ -132,15 +143,6 @@ public:
    * FIXME
    */
   void define_variable(const std::string &file_name, const VariableMetadata &variable);
-
-  /*!
-   * Add a variable to the list of variables that can be written to output files.
-   *
-   * This has to be done before a spatial variable is *defined* in an output file.
-   *
-   * @param[in] metadata variable metadata (name, attributes, grid info, etc)
-   */
-  void add_variable(const VariableMetadata &metadata);
 
   /*!
    * Set global attributes for a given output file.
@@ -271,6 +273,16 @@ public:
   MPI_Comm comm() const;
 
 protected:
+
+  /*!
+   * Add a variable to the list of variables that can be written to output files.
+   *
+   * This has to be done before a spatial variable is *defined* in an output file.
+   *
+   * @param[in] metadata variable metadata (name, attributes, grid info, etc)
+   */
+  void add_variable(const VariableMetadata &metadata);
+
   /*!
    * Return the metadata for the variable `variable_name`.
    */
@@ -301,6 +313,11 @@ protected:
    * FIXME
    */
   void write_dimensions(const std::string &file_name, const VariableMetadata &variable);
+
+  /*!
+   * Implementation of initialize()
+   */
+  virtual void initialize_impl(const std::set<VariableMetadata> &array_variables) = 0;
 
   /*!
    * Implementation of set_global_attributes()

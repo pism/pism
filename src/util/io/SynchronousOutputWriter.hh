@@ -48,6 +48,8 @@ private:
 
   const File &file(const std::string &file_name);
 
+  void initialize_impl(const std::set<VariableMetadata> &array_variables);
+
   void define_dimension_impl(const std::string &file_name, const std::string &name,
                              unsigned int length);
 

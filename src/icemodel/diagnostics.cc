@@ -3282,6 +3282,17 @@ void IceModel::init_outputs(InputOptions options) {
       d.second->init(file, options.record);
     }
   }
+
+  // Tell the output writer about all the variables we may need to write:
+  {
+    std::set<VariableMetadata> all_variables;
+    all_variables = pism::combine(all_variables, m_output_file_contents);
+    all_variables = pism::combine(all_variables, m_snapshot_file_contents);
+    all_variables = pism::combine(all_variables, m_extra_file_contents);
+    all_variables = pism::combine(all_variables, m_checkpoint_file_contents);
+
+    m_output_writer->initialize(all_variables);
+  }
 }
 
 void IceModel::allocate_diagnostics() {

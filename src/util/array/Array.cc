@@ -523,6 +523,7 @@ void Array::write_impl(const OutputFile &file) const {
 void Array::dump(const char filename[]) const {
   auto ctx = grid()->ctx();
   auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *ctx->config());
+  writer->initialize({}, true);
 
   OutputFile file(writer, filename);
 

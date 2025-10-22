@@ -40,6 +40,15 @@ const File &SynchronousOutputWriter::file(const std::string &file_name) {
   return *m_files[file_name];
 }
 
+void SynchronousOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_variables) {
+  for (const auto &variable : array_variables) {
+    if (variable.grid_info() != nullptr) {
+      add_variable(variable);
+    }
+  }
+}
+
+
 SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &config)
     : OutputWriter(comm, config) {
   m_compression_level = static_cast<int>(config.get_number("output.compression_level"));

@@ -193,10 +193,10 @@ public:
         m_interval_length(0.0),
         m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
 
-    m_time_since_reset["units"]     = "seconds";
-    m_time_since_reset["long_name"] = "time since " + m_accumulator.get_name() + " was reset to 0";
+    m_time_since_reset.units("seconds").long_name("time since " + m_accumulator.get_name() +
+                                                  " was reset to 0");
 
-    m_accumulator.metadata()["long_name"] = "accumulator for the " + name + " diagnostic";
+    m_accumulator.metadata().long_name("accumulator for the " + name + " diagnostic");
 
     m_accumulator.set(0.0);
   }
@@ -226,7 +226,7 @@ protected:
 
     unsigned int time_length = output.time_dimension_length();
     unsigned int t_start     = time_length > 0 ? time_length - 1 : 0;
-    output.write_array(m_time_since_reset, { t_start }, { 1 }, { m_interval_length });
+    output.write_array(m_time_since_reset.get_name(), { t_start }, { 1 }, { m_interval_length });
   }
 
   virtual void update_impl(double dt) {

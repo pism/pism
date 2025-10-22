@@ -25,13 +25,11 @@
 #include <vector>
 #include <cassert>
 
-#include "io_helpers.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/GridInfo.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/OutputWriter.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
@@ -103,6 +101,7 @@ struct OutputWriter::Impl {
     experiment_id        = config.get_string("output.experiment_id");
     experiment_id_name   = config.get_string("output.experiment_id_dimension");
     experiment_id_max_length = (int)config.get_number("output.experiment_id_max_length");
+    relaxed_mode = false;
 
     if (not experiment_id.empty()) {
       auto format = config.get_string("output.format");
@@ -124,6 +123,10 @@ struct OutputWriter::Impl {
   std::string experiment_id_name;
   std::string experiment_id;
   int experiment_id_max_length;
+
+  // if true, call add_variable() in define_variable(), allowing a user to define array
+  // variables that were not declared using the call to initialize()
+  bool relaxed_mode;
 };
 
 bool &OutputWriter::already_written(const std::string &file_name,
@@ -142,6 +145,12 @@ OutputWriter::OutputWriter(MPI_Comm comm, const Config &config)
 
 OutputWriter::~OutputWriter() {
   delete m_impl;
+}
+
+void OutputWriter::initialize(const std::set<VariableMetadata> &array_variables,
+                              bool relaxed_mode) {
+  m_impl->relaxed_mode = relaxed_mode;
+  initialize_impl(array_variables);
 }
 
 MPI_Comm OutputWriter::comm() const {
@@ -208,7 +217,7 @@ std::vector<std::string> OutputWriter::define_dimensions(const std::string &file
   auto dimensions = variable.dimension_names();
   {
     if (variable.get_time_dependent()) {
-      dimensions.insert(dimensions.begin(), m_impl->time_name);
+      dimensions.insert(dimensions.begin(), time_name());
     }
 
     if (not m_impl->experiment_id.empty()) {
@@ -220,7 +229,10 @@ std::vector<std::string> OutputWriter::define_dimensions(const std::string &file
 
 void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &variable) {
 
-  add_variable(variable);
+  if (variable.grid_info() == nullptr or m_impl->relaxed_mode) {
+    // automatically add variables not associated with a grid
+    add_variable(variable);
+  }
 
   auto dimensions = define_dimensions(file_name, variable);
 
