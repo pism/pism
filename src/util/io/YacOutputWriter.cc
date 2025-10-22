@@ -185,6 +185,13 @@ void YacOutputWriter::define_yac_field(const std::string file_name,
     field_ids[metadata.get_name()] = field_id;
 }
 
+void YacOutputWriter::server_ensure_file_exists(const std::string &file_name) {
+    if(file_name.find("snapshot") != std::string::npos and !server_allowed_files[file_name]) {
+      server_allowed_files[file_name] = true;
+      server_send_action(CREATE_FILE, file_name);
+    }
+}
+
 const File &YacOutputWriter::file(const std::string &file_name) {
   if (m_files[file_name] == nullptr) {
     auto file = std::make_shared<File>(comm(), file_name, m_backend, io::PISM_READWRITE_MOVE);
@@ -192,11 +199,6 @@ const File &YacOutputWriter::file(const std::string &file_name) {
     file->set_compression_level(m_compression_level);
 
     m_files[file_name] = file;
-
-    if(file_name.find("snapshot") != std::string::npos) {
-      server_allowed_files[file_name] = true;
-      server_send_action(CREATE_FILE, file_name);
-    }
   }
 
   return *m_files[file_name];
@@ -247,11 +249,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     initialize_yac_grid();
   }
 
-  const auto &output_file = file(file_name);
-
-  if (output_file.variable_exists(metadata.get_name())) {
-    return;
-  }
+  server_ensure_file_exists(file_name);
 
   if (server_allowed_files[file_name]) {
 
@@ -289,6 +287,12 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     return;
   }
 
+  const auto &output_file = file(file_name);
+
+  if (output_file.variable_exists(metadata.get_name())) {
+    return;
+  }
+
   const auto &variable_name = metadata.get_name();
 
   auto type = metadata.get_output_type();
@@ -301,7 +305,6 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 void YacOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
 
   if (server_allowed_files[file_name]) {
-        
     nlohmann::json file_metadata;
     file_metadata["file_name"] = file_name;
     file_metadata["time_dimension_length"] = time_dimension_length(file_name);
@@ -315,6 +318,9 @@ void YacOutputWriter::append_time_impl(const std::string &file_name, double time
 
 void YacOutputWriter::append_history_impl(const std::string &file_name,
                                                   const std::string &text) {
+  server_ensure_file_exists(file_name);
+  if (server_allowed_files[file_name]) return;
+
   const auto &output_file = file(file_name);
 
   auto old_history = output_file.read_text_attribute("PISM_GLOBAL", "history");
@@ -342,15 +348,9 @@ void YacOutputWriter::close_impl(const std::string &file_name) {
 
 void YacOutputWriter::define_dimension_impl(const std::string &file_name,
                                             const std::string &name, unsigned int length) {
-  const auto &output_file = file(file_name);
-
-  if (output_file.dimension_exists(name)) {
-    return;
-  }
-
-  dim_sizes[file_name][name] = length;
-
+  server_ensure_file_exists(file_name);
   if (server_allowed_files[file_name]) {
+      dim_sizes[file_name][name] = length;
 
       for (auto dimension : file_dimensions[file_name])
         if (dimension == name)
@@ -364,6 +364,11 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
       file_dimensions[file_name].push_back(name);
 
       return;
+  }
+  const auto &output_file = file(file_name);
+
+  if (output_file.dimension_exists(name)) {
+    return;
   }
 
   output_file.define_dimension(name, length);
@@ -395,6 +400,10 @@ void YacOutputWriter::write_attributes(
     const std::string &file_name, const std::string &var_name,
     const std::map<std::string, std::string> &strings,
     const std::map<std::string, std::vector<double> > &numbers, io::Type output_type) {
+
+  server_ensure_file_exists(file_name);
+  if (server_allowed_files[file_name]) return;
+
   const auto &output_file = file(file_name);
 
   // Write text attributes:
@@ -428,11 +437,17 @@ void YacOutputWriter::write_attributes(
 }
 
 unsigned int YacOutputWriter::time_dimension_length_impl(const std::string &file_name) {
+  server_ensure_file_exists(file_name);
+  if (server_allowed_files[file_name]) {
+    return dim_sizes[file_name][time_name()];
+  }
+
   const auto &output_file = file(file_name);
   return output_file.dimension_length(time_name());
 }
 
 double YacOutputWriter::last_time_value_impl(const std::string &file_name) {
+  server_ensure_file_exists(file_name);
   const auto &output_file = file(file_name);
 
   auto t_length = output_file.dimension_length(time_name());
@@ -468,7 +483,7 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
                                                const std::vector<unsigned int> &start,
                                                const std::vector<unsigned int> &count,
                                                const double *data) {
-  const auto &output_file = file(file_name);
+  server_ensure_file_exists(file_name);
   MPI_Datatype send_type;
 
   if(server_allowed_files[file_name]) {
@@ -493,6 +508,7 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     return;
   }
 
+  const auto &output_file = file(file_name);
   output_file.write_variable(variable_name, start, count, data);
 }
 
@@ -502,6 +518,7 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
                                       const std::vector<unsigned int> &count,
                                       const std::string &input) {
 
+  server_ensure_file_exists(file_name);
   if(server_allowed_files[file_name]) {
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
@@ -524,7 +541,7 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
 void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
                                            const SpatialVariableMetadata &metadata,
                                            const double *data) {
-  const auto &output_file = file(file_name);
+  server_ensure_file_exists(file_name);
 
   const auto &variable_name = metadata.get_name();
   const auto &grid = grid_info(variable_name);
@@ -561,6 +578,8 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     yac_cput(field_ids[variable_name], collection_size, yac_raw_send_array, &info, &error);
     return;
   }
+
+  const auto &output_file = file(file_name);
 
   std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };
   std::vector<unsigned int> count = { grid.ym, grid.xm, n_levels };

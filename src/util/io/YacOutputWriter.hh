@@ -137,6 +137,7 @@ private:
                         const std::vector<std::string> &dims);
   void server_send_action(int server_action_id, 
                           const std::string &server_action_metadata = "");
+  void server_ensure_file_exists(const std::string &file_name);
 
   // Utility: Given grid size and patch bounds, return global indices of patch vertices
   static std::vector<int> compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size);
