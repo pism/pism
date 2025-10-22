@@ -127,12 +127,14 @@ private:
   void append_impl(const std::string &file_name);
   void sync_impl(const std::string &file_name);
   void close_impl(const std::string &file_name);
-  void initialize_yac();
+
+  void create_intercomm();
+  void initialize_yac_grid();
+  void end_yac_definitions();
+
   void define_yac_field(const std::string file_name,
                         const VariableMetadata &metadata,
                         const std::vector<std::string> &dims);
-  void initialize_grid();
-  void finalize_yac_initialization();
   void server_send_action(int server_action_id, 
                           const std::string &server_action_metadata = "");
 

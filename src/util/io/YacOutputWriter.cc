@@ -54,7 +54,7 @@ std::string pism_type_to_python_nc_type(pism::io::Type input) {
 }
 
 
-void YacOutputWriter::initialize_yac() {
+void YacOutputWriter::create_intercomm() {
   int nbr_comps = 2;
 
   const char * comp_names[] = {"pism", "pism_output_server"};
@@ -83,7 +83,7 @@ void YacOutputWriter::initialize_yac() {
 }
 
 
-void YacOutputWriter::initialize_grid() {
+void YacOutputWriter::initialize_yac_grid() {
   int local_patch_size = -1;
   auto global_grid = m_geometry.latitude.grid();
   auto distributed_grid = m_geometry.latitude.grid()->info();
@@ -206,7 +206,7 @@ YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const Geom
     : OutputWriter(comm, config), m_geometry(geometry) {
   m_compression_level = static_cast<int>(config.get_number("output.compression_level"));
   m_backend = string_to_backend(config.get_string("output.format"));
-  initialize_yac();
+  create_intercomm();
 }
 
 YacOutputWriter::~YacOutputWriter() {
@@ -244,7 +244,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
                                            const VariableMetadata &metadata,
                                            const std::vector<std::string> &dims) {
   if(server_allowed_files[file_name] and not yac_grid_initialized and dims.size() > 1) {
-    initialize_grid();
+    initialize_yac_grid();
   }
 
   const auto &output_file = file(file_name);
@@ -447,7 +447,7 @@ double YacOutputWriter::last_time_value_impl(const std::string &file_name) {
                                 file_name.c_str());
 }
 
-void YacOutputWriter::finalize_yac_initialization() {
+void YacOutputWriter::end_yac_definitions() {
     server_send_action(FINISH_YAC_INITIALIZATION);
     yac_cenddef();
     yac_init_finished = true;
@@ -462,7 +462,7 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
   MPI_Datatype send_type;
 
   if(not yac_init_finished and server_allowed_files[file_name]) {
-    finalize_yac_initialization();
+    end_yac_definitions();
   }
 
   if(server_allowed_files[file_name]) {
@@ -525,7 +525,7 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
 
   if(not yac_init_finished and server_allowed_files[file_name]) {
-    finalize_yac_initialization();
+    end_yac_definitions();
   }
 
   // These arrays are deleted in the destructor
