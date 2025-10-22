@@ -471,10 +471,6 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
   const auto &output_file = file(file_name);
   MPI_Datatype send_type;
 
-  if(not yac_init_finished and server_allowed_files[file_name]) {
-    end_yac_definitions();
-  }
-
   if(server_allowed_files[file_name]) {
     if( non_spatial_variables_metadata[variable_name]["dtype"] == "f8")
         send_type = MPI_DOUBLE;
