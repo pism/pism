@@ -255,6 +255,10 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 
   if (server_allowed_files[file_name]) {
 
+    for (auto variable : file_variables[file_name])
+      if (variable == metadata.get_name())
+        return;
+
     int horizontal_dims = 0;
     for (auto dim : dims)
       if (dim == "x" or dim == "y")
@@ -280,6 +284,9 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
       }
       server_send_action(DEFINE_NON_SPATIAL_VARIABLE, non_spatial_variables_metadata[metadata.get_name()].dump());
     }
+    file_variables[file_name].push_back(metadata.get_name());
+
+    return;
   }
 
   const auto &variable_name = metadata.get_name();
@@ -299,6 +306,7 @@ void YacOutputWriter::append_time_impl(const std::string &file_name, double time
     file_metadata["file_name"] = file_name;
     file_metadata["time_dimension_length"] = time_dimension_length(file_name);
     server_send_action(UPDATE_TIME_LENGTH, file_metadata.dump()); 
+    return;
   }
   
   write_array(file_name, time_name(), { time_dimension_length(file_name) }, { 1 },
@@ -343,11 +351,19 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
   dim_sizes[file_name][name] = length;
 
   if (server_allowed_files[file_name]) {
+
+      for (auto dimension : file_dimensions[file_name])
+        if (dimension == name)
+          return;
+
       nlohmann::json file_dim;
       file_dim["file_name"] = file_name;
       file_dim["dimension_name"] = name;
       file_dim["dimension_length"] = length;
       server_send_action(SET_FILE_DIMENSION, file_dim.dump());
+      file_dimensions[file_name].push_back(name);
+
+      return;
   }
 
   output_file.define_dimension(name, length);
@@ -369,6 +385,7 @@ void YacOutputWriter::set_global_attributes_impl(
         file_attributes_json["file_name"] = file_name;
         file_attributes_json["attributes"] = attributes_json;
         server_send_action(SET_FILE_ATTRIBUTES, file_attributes_json.dump());
+        return;
     }
 
   write_attributes(file_name, "PISM_GLOBAL", strings, numbers, io::PISM_DOUBLE);
@@ -466,6 +483,8 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
       mpi_requests.emplace_back();
       MPI_Isend((void *) (array_data.back()), count[0], send_type, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
     }
+
+    return;
   }
 
   output_file.write_variable(variable_name, start, count, data);
@@ -488,6 +507,8 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
       mpi_requests.emplace_back();
       MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
     }
+
+    return;
   }
 
   const auto &output_file = file(file_name);
@@ -541,6 +562,7 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
 
     int info, error;
     yac_cput(field_ids[variable_name], collection_size, yac_raw_send_array, &info, &error);
+    return;
   }
 
   std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };

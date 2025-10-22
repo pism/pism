@@ -75,6 +75,7 @@ private:
   std::map<std::string, std::map<std::string, int>> dim_sizes;
   std::map<std::string, unsigned int> variable_tags;
   std::vector<std::string> text_field_buffers;
+  std::map<std::string, std::vector<std::string>> file_variables, file_dimensions; 
   nlohmann::json non_spatial_variables_metadata;
   std::vector<MPI_Request> mpi_requests; 
   std::vector<double *> array_data;
