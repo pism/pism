@@ -294,7 +294,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     }
     file_variables[file_name].push_back(metadata.get_name());
 
-    return;
+    if(suppress_client_file_operations) return;
   }
 
   const auto &output_file = file(file_name);
@@ -318,7 +318,7 @@ void YacOutputWriter::append_time_impl(const std::string &file_name, double time
     file_metadata["file_name"] = file_name;
     file_metadata["time_dimension_length"] = time_dimension_length(file_name);
     server_send_action(UPDATE_TIME_LENGTH, file_metadata.dump()); 
-    return;
+    if(suppress_client_file_operations) return;
   }
   
   write_array(file_name, time_name(), { time_dimension_length(file_name) }, { 1 },
@@ -328,7 +328,7 @@ void YacOutputWriter::append_time_impl(const std::string &file_name, double time
 void YacOutputWriter::append_history_impl(const std::string &file_name,
                                                   const std::string &text) {
   server_ensure_file_exists(file_name);
-  if (server_allowed_files[file_name]) return;
+  if (server_allowed_files[file_name] and suppress_client_file_operations) return;
 
   const auto &output_file = file(file_name);
 
@@ -372,7 +372,7 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
       server_send_action(SET_FILE_DIMENSION, file_dim.dump());
       file_dimensions[file_name].push_back(name);
 
-      return;
+    if(suppress_client_file_operations) return;
   }
   const auto &output_file = file(file_name);
 
@@ -399,7 +399,7 @@ void YacOutputWriter::set_global_attributes_impl(
         file_attributes_json["file_name"] = file_name;
         file_attributes_json["attributes"] = attributes_json;
         server_send_action(SET_FILE_ATTRIBUTES, file_attributes_json.dump());
-        return;
+        if(suppress_client_file_operations) return;
     }
 
   write_attributes(file_name, "PISM_GLOBAL", strings, numbers, io::PISM_DOUBLE);
@@ -447,7 +447,7 @@ void YacOutputWriter::write_attributes(
 
 unsigned int YacOutputWriter::time_dimension_length_impl(const std::string &file_name) {
   server_ensure_file_exists(file_name);
-  if (server_allowed_files[file_name]) {
+  if (server_allowed_files[file_name] and suppress_client_file_operations) {
     return dim_sizes[file_name][time_name()];
   }
 
@@ -498,7 +498,7 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
       MPI_Isend((void *) (array_data.back()), count[0], send_type, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
     }
 
-    return;
+    if(suppress_client_file_operations) return;
   }
 
   const auto &output_file = file(file_name);
@@ -523,7 +523,7 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
       MPI_Isend((void *) (text_field_buffers.back().data() + start[0]), count[0], MPI_CHAR, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
     }
 
-    return;
+    if(suppress_client_file_operations) return;
   }
 
   const auto &output_file = file(file_name);
@@ -564,7 +564,7 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
 
     int info, error;
     yac_cput(field_ids[variable_name], collection_size, yac_raw_send_array, &info, &error);
-    return;
+    if(suppress_client_file_operations) return;
   }
 
   const auto &grid = grid_info(variable_name);

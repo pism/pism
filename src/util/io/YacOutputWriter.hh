@@ -65,6 +65,10 @@ private:
   MPI_Comm intercomm;
   bool yac_init_finished = false;
   bool yac_grid_initialized = false;
+
+  // This flag defines whether the client should also write the files written by the server
+  // It might be useful for debugging purposes
+  bool suppress_client_file_operations = false;
   int grid_size;
   int my_rank = -1;
   int local_x_size;
