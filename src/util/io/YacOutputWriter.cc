@@ -394,8 +394,8 @@ void YacOutputWriter::write_attributes(
     const std::map<std::string, std::string> &strings,
     const std::map<std::string, std::vector<double> > &numbers, io::Type output_type) {
 
-  server_ensure_file_exists(file_name);
-  if (server_allowed_files[file_name]) return;
+  //Since this subroutine is only called through others which already have
+  //checks for server files, we don't have to also explicitly call it here
 
   const auto &output_file = file(file_name);
 
