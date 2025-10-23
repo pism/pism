@@ -45,7 +45,7 @@ std::string pism_type_to_python_nc_type(pism::io::Type input) {
     {io::PISM_CHAR,  "S1"},
     {io::PISM_SHORT, "i2"},
     {io::PISM_INT,   "i4"},
-    {io::PISM_FLOAT, "f8"},
+    {io::PISM_FLOAT, "f4"},
     {io::PISM_DOUBLE,"f8"}
   };
 
@@ -495,13 +495,6 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
                                                const double *data) {
   server_ensure_file_exists(file_name);
   if(server_allowed_files[file_name]) {
-    MPI_Datatype send_type;
-
-    if( non_spatial_variables_metadata[variable_name]["dtype"] == "f8")
-        send_type = MPI_DOUBLE;
-    else
-        send_type = MPI_INT;
-
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
     variable_info_json["variable_name"] = variable_name;
@@ -512,7 +505,7 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
       array_data.push_back(new double[count[0]]);
       memcpy(array_data.back(), data + start[0], count[0] * sizeof(double));
       mpi_requests.emplace_back();
-      MPI_Isend((void *) (array_data.back()), count[0], send_type, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
+      MPI_Isend((void *) (array_data.back()), count[0], MPI_DOUBLE, 0, variable_tags[variable_name], intercomm, &mpi_requests.back());
     }
 
     if(suppress_client_file_operations) return;

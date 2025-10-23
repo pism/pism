@@ -126,13 +126,13 @@ class OutputFile:
                 size = 1
 
         if var_dims[0] == "time" or len(var_dims) == 1:
-            self.variables_data[variable_name] = np.empty(size, dtype = var_metadata["dtype"])
+            tmp_receival = np.empty(size, dtype = "f8")
             tag = int(var_metadata["tag"])
-            if(var_metadata["dtype"] == "f8"):
-                intercomm.Recv([self.variables_data[variable_name], MPI.DOUBLE], source = remote_leader, tag = tag)
-            elif(var_metadata["dtype"] == "i4"):
-                intercomm.Recv([self.variables_data[variable_name], MPI.INT], source = remote_leader, tag = tag)
+            if(var_metadata["dtype"] != "S1"):
+                intercomm.Recv([tmp_receival, MPI.DOUBLE], source = remote_leader, tag = tag)
+                self.variables_data[variable_name] = tmp_receival.astype(var_metadata["dtype"])
             else:
+                self.variables_data[variable_name] = np.empty(size, dtype = var_metadata["dtype"])
                 intercomm.Recv([self.variables_data[variable_name], MPI.CHAR], source = remote_leader, tag = tag, status = status)
 
         if "time" not in var_dims:
