@@ -337,10 +337,6 @@ int main(int argc, char *argv[]) {
           break;
         }
       case PISM_SIGNAL:
-        {
-          exit_code = 0;
-          break;
-        }
       case PISM_DONE:
         {
           log->message(2, "... done with the run\n");
