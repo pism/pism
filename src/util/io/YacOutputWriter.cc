@@ -107,7 +107,6 @@ void YacOutputWriter::initialize_yac_grid() {
                                                 distributed_grid.ys, 
                                                 distributed_grid.ym);
   local_patch_size = patch_global_indices.size();
-
   MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, intercomm);
 
   array::AccessScope list
@@ -135,7 +134,6 @@ void YacOutputWriter::initialize_yac_grid() {
 
   yac_cdef_grid_curve2d("pism_grid", nbr_vertices, cyclic_dims,
                         longitudes.data(), latitudes.data(), &grid_id);
-
   yac_cdef_points_unstruct(grid_id, grid_size, YAC_LOCATION_CORNER,
                            longitudes.data(), latitudes.data(), &vertex_points_id);
 
@@ -243,13 +241,11 @@ YacOutputWriter::~YacOutputWriter() {
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
                                            const VariableMetadata &metadata,
                                            const std::vector<std::string> &dims) {
-  if(server_allowed_files[file_name] and not yac_grid_initialized and dims.size() > 1) {
-    initialize_yac_grid();
-  }
-
   server_ensure_file_exists(file_name);
-
   if (server_allowed_files[file_name]) {
+    if(not yac_grid_initialized and dims.size() > 1) {
+      initialize_yac_grid();
+    }
 
     for (auto variable : file_variables[file_name])
       if (variable == metadata.get_name())
@@ -374,15 +370,15 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
 void YacOutputWriter::set_global_attributes_impl(
     const std::string &file_name, const std::map<std::string, std::string> &strings,
     const std::map<std::string, std::vector<double> > &numbers) {
-    nlohmann::json attributes_json;
-
-    for (auto string_attribute : strings)
-        attributes_json[string_attribute.first] = string_attribute.second;
-
-    for (auto double_attribute : numbers)
-        attributes_json[double_attribute.first] = double_attribute.second;
-
     if (server_allowed_files[file_name]) {
+        nlohmann::json attributes_json;
+
+        for (auto string_attribute : strings)
+            attributes_json[string_attribute.first] = string_attribute.second;
+
+        for (auto double_attribute : numbers)
+            attributes_json[double_attribute.first] = double_attribute.second;
+
         nlohmann::json file_attributes_json;
         file_attributes_json["file_name"] = file_name;
         file_attributes_json["attributes"] = attributes_json;
@@ -481,9 +477,9 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
                                                const std::vector<unsigned int> &count,
                                                const double *data) {
   server_ensure_file_exists(file_name);
-  MPI_Datatype send_type;
-
   if(server_allowed_files[file_name]) {
+    MPI_Datatype send_type;
+
     if( non_spatial_variables_metadata[variable_name]["dtype"] == "f8")
         send_type = MPI_DOUBLE;
     else
@@ -537,17 +533,13 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
 void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
                                            const SpatialVariableMetadata &metadata,
                                            const double *data) {
-  server_ensure_file_exists(file_name);
-
   const auto &variable_name = metadata.get_name();
-  const auto &grid = grid_info(variable_name);
-  unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
 
-  if(not yac_init_finished and server_allowed_files[file_name]) {
-    end_yac_definitions();
-  }
-
+  server_ensure_file_exists(file_name);
   if (server_allowed_files[file_name]) {
+    if(not yac_init_finished) {
+      end_yac_definitions();
+    }
 
     nlohmann::json variable_info_json;
     variable_info_json["file_name"] = file_name;
@@ -575,6 +567,8 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     return;
   }
 
+  const auto &grid = grid_info(variable_name);
+  unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
   const auto &output_file = file(file_name);
 
   std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };
