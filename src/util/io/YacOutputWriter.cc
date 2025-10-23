@@ -328,7 +328,13 @@ void YacOutputWriter::append_time_impl(const std::string &file_name, double time
 void YacOutputWriter::append_history_impl(const std::string &file_name,
                                                   const std::string &text) {
   server_ensure_file_exists(file_name);
-  if (server_allowed_files[file_name] and suppress_client_file_operations) return;
+  if (server_allowed_files[file_name]) {
+    nlohmann::json file_metadata;
+    file_metadata["file_name"] = file_name;
+    file_metadata["attributes"]["history"] = text;
+    server_send_action(SET_FILE_ATTRIBUTES, file_metadata.dump());
+    if (suppress_client_file_operations) return;
+  }
 
   const auto &output_file = file(file_name);
 
