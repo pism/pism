@@ -53,10 +53,8 @@ std::string pism_type_to_python_nc_type(pism::io::Type input) {
   return (it != type_map.end()) ? it->second : "None";  // "None" for NC_NAT
 }
 
-
 void YacOutputWriter::create_intercomm() {
   int nbr_comps = 2;
-
   const char * comp_names[] = {"pism", "pism_output_server"};
   const int local_leader_rank[]  = {0};
   int global_leader_rank[] = {-1};
@@ -185,6 +183,21 @@ void YacOutputWriter::define_yac_field(const std::string file_name,
     field_ids[metadata.get_name()] = field_id;
 }
 
+void YacOutputWriter::server_send_action(int server_action_id, const std::string &server_action_metadata) {
+    if (my_rank != 0) return;
+
+    mpi_requests.emplace_back();
+    MPI_Isend((void *) &server_action_id, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
+
+    int action_metadata_length = server_action_metadata.length();
+    if (action_metadata_length == 0) return;
+
+    mpi_requests.emplace_back();
+    MPI_Isend((void *) &action_metadata_length, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
+
+    MPI_Send((void *) server_action_metadata.data(), action_metadata_length, MPI_CHAR, 0, 0, intercomm);
+}
+
 void YacOutputWriter::server_ensure_file_exists(const std::string &file_name) {
     if(file_name.find("snapshot") != std::string::npos and !server_allowed_files[file_name]) {
       server_allowed_files[file_name] = true;
@@ -225,21 +238,6 @@ YacOutputWriter::~YacOutputWriter() {
     delete yac_raw_send_array;
 
     MPI_Barrier(intercomm);
-}
-
-void YacOutputWriter::server_send_action(int server_action_id, const std::string &server_action_metadata) {
-    if (my_rank != 0) return;
-   
-    mpi_requests.emplace_back(); 
-    MPI_Isend((void *) &server_action_id, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
-
-    int action_metadata_length = server_action_metadata.length();
-    if (action_metadata_length == 0) return;
-
-    mpi_requests.emplace_back();
-    MPI_Isend((void *) &action_metadata_length, 1, MPI_INT, 0, 0, intercomm, &mpi_requests.back());
-
-    MPI_Send((void *) server_action_metadata.data(), action_metadata_length, MPI_CHAR, 0, 0, intercomm);
 }
 
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
@@ -303,7 +301,6 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 }
 
 void YacOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
-
   if (server_allowed_files[file_name]) {
     nlohmann::json file_metadata;
     file_metadata["file_name"] = file_name;
@@ -517,7 +514,6 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
                                       const std::vector<unsigned int> &start,
                                       const std::vector<unsigned int> &count,
                                       const std::string &input) {
-
   server_ensure_file_exists(file_name);
   if(server_allowed_files[file_name]) {
     nlohmann::json variable_info_json;

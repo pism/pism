@@ -87,6 +87,21 @@ private:
   int grid_id;
   int vertex_points_id;
 
+  // --- Server-related subroutines ---
+  void create_intercomm();
+  void initialize_yac_grid();
+  void define_yac_field(const std::string file_name,
+                        const VariableMetadata &metadata,
+                        const std::vector<std::string> &dims);
+  void end_yac_definitions();
+  void server_send_action(int server_action_id,
+                          const std::string &server_action_metadata = "");
+  void server_ensure_file_exists(const std::string &file_name);
+
+  // Utility: Given grid size and patch bounds, return global indices of patch vertices
+  static std::vector<int> compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size);
+
+  // --- Interface implementation and utilities ---
   const File &file(const std::string &file_name);
 
   void define_dimension_impl(const std::string &file_name, const std::string &name,
@@ -127,20 +142,6 @@ private:
   void append_impl(const std::string &file_name);
   void sync_impl(const std::string &file_name);
   void close_impl(const std::string &file_name);
-
-  void create_intercomm();
-  void initialize_yac_grid();
-  void end_yac_definitions();
-
-  void define_yac_field(const std::string file_name,
-                        const VariableMetadata &metadata,
-                        const std::vector<std::string> &dims);
-  void server_send_action(int server_action_id, 
-                          const std::string &server_action_metadata = "");
-  void server_ensure_file_exists(const std::string &file_name);
-
-  // Utility: Given grid size and patch bounds, return global indices of patch vertices
-  static std::vector<int> compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size);
 };
 
 } // namespace pism
