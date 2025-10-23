@@ -181,6 +181,22 @@ void YacOutputWriter::define_yac_field(const std::string file_name,
     field_ids[metadata.get_name()] = field_id;
 }
 
+void YacOutputWriter::end_yac_definitions() {
+    server_send_action(FINISH_YAC_INITIALIZATION);
+    yac_cenddef();
+
+    // These arrays are deleted in the destructor
+    if (yac_raw_send_array == nullptr) {
+      yac_raw_send_array = new double **[max_collection_size];
+      for (int c = 0; c < max_collection_size; c++) {
+        yac_raw_send_array[c]    = new double *[1];
+        yac_raw_send_array[c][0] = new double[grid_size];
+      }
+    }
+
+    yac_init_finished = true;
+}
+
 void YacOutputWriter::server_send_action(int server_action_id, const std::string &server_action_metadata) {
     if (my_rank != 0) return;
 
@@ -453,22 +469,6 @@ double YacOutputWriter::last_time_value_impl(const std::string &file_name) {
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "time dimension in '%s' is absent or has length zero",
                                 file_name.c_str());
-}
-
-void YacOutputWriter::end_yac_definitions() {
-    server_send_action(FINISH_YAC_INITIALIZATION);
-    yac_cenddef();
-    
-    // These arrays are deleted in the destructor
-    if (yac_raw_send_array == nullptr) {
-      yac_raw_send_array = new double **[max_collection_size];
-      for (int c = 0; c < max_collection_size; c++) {
-        yac_raw_send_array[c]    = new double *[1];
-        yac_raw_send_array[c][0] = new double[grid_size];
-      }
-    }
-
-    yac_init_finished = true;
 }
 
 void YacOutputWriter::write_array_impl(const std::string &file_name,
