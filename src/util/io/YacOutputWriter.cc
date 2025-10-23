@@ -219,6 +219,17 @@ void YacOutputWriter::server_ensure_file_exists(const std::string &file_name) {
     }
 }
 
+std::vector<int> YacOutputWriter::compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size) {
+    std::vector<int> indices;
+    indices.reserve(x_size * y_size);
+    for (int j = y_start; j < y_start + y_size; ++j) {
+        for (int i = x_start; i < x_start + x_size; ++i) {
+            indices.push_back(j * x_global_size + i);
+        }
+    }
+    return indices;
+}
+
 const File &YacOutputWriter::file(const std::string &file_name) {
   if (m_files[file_name] == nullptr) {
     auto file = std::make_shared<File>(comm(), file_name, m_backend, io::PISM_READWRITE_MOVE);
@@ -594,17 +605,6 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
   }
 
   output_file.write_variable(variable_name, start, count, data);
-}
-
-std::vector<int> YacOutputWriter::compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size) {
-    std::vector<int> indices;
-    indices.reserve(x_size * y_size);
-    for (int j = y_start; j < y_start + y_size; ++j) {
-        for (int i = x_start; i < x_start + x_size; ++i) {
-            indices.push_back(j * x_global_size + i);
-        }
-    }
-    return indices;
 }
 
 } // namespace pism
