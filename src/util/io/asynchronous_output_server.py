@@ -18,8 +18,6 @@ class ServerActions(Enum):
     SEND_SPATIAL_VARIABLE = 9
     UPDATE_TIME_LENGTH = 10
 
-start_datetime   = "1850-01-01T00:00:00"
-end_datetime     = "1850-01-01T00:06:00"
 src_comp_name    = "pism"
 src_grid_name    = "pism_grid"
 target_grid_name = "pism_grid_output"
@@ -231,15 +229,7 @@ def initialize_yac_grid():
 def finish_yac_initialization():
     yac.enddef()
 
-time_independent_var_values = {}
-snapshot_counter = 0
-fields_nc_var = {}
-file_type_split = True
-no_files_initialized = True
-received_non_grid_time_independent = False
-
 files = {}
-
 while True:
     intercomm.Recv([server_action, MPI.INT], source = remote_leader, tag = 0)
     
