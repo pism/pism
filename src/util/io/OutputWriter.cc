@@ -353,31 +353,8 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
 
   write_dimensions(file_name, variable);
 
-  // make sure we have at least one level
-  size_t n_levels = std::max(variable.levels().size(), (std::size_t)1);
+  write_spatial_variable_impl(file_name, variable_name, input);
 
-  std::string units = variable["units"];
-  std::string output_units = variable["output_units"];
-
-  if (units != output_units) {
-    auto grid = *variable.grid_info();
-    auto data_size = grid.xm * grid.ym * n_levels;
-
-    // create a temporary array, convert to output units, and
-    // save
-    std::vector<double> tmp(data_size);
-    for (unsigned int k = 0; k < data_size; ++k) {
-      tmp[k] = input[k];
-    }
-
-    // convert units "in place"
-    units::Converter(variable.unit_system(), units, output_units)
-        .convert_doubles(tmp.data(), tmp.size());
-
-    write_spatial_variable_impl(file_name, variable_name, tmp.data());
-  } else {
-    write_spatial_variable_impl(file_name, variable_name, input);
-  }
   already_written(file_name, variable_name, time_dependent) = true;
 }
 
@@ -386,7 +363,6 @@ void OutputWriter::write_timeseries_variable(const std::string &file_name,
                                              const std::vector<unsigned int> &start,
                                              const std::vector<unsigned int> &count,
                                              const std::vector<double> &input) {
-  const auto &variable = variable_info(variable_name);
   auto S = start;
   auto C = count;
 
@@ -396,7 +372,7 @@ void OutputWriter::write_timeseries_variable(const std::string &file_name,
     C.insert(C.cbegin(), 1);
   }
 
-  write_array(file_name, variable, S, C, input);
+  write_array(file_name, variable_name, S, C, input);
 }
 
 void OutputWriter::append(const std::string &file_name) {

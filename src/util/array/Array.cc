@@ -483,39 +483,70 @@ void Array::write_impl(const OutputFile &file) const {
   auto log  = grid()->ctx()->log();
   auto time = timestamp(m_impl->grid->com);
 
-  // The simplest case:
+  // get the unit converter from internal to output units
+  auto unit_converter = [this](unsigned int j) {
+    auto ctx = grid()->ctx();
+    if (ctx->config()->get_flag("output.use_MKS")) {
+      // use internal units
+      return std::make_shared<units::Converter>();
+    }
+
+    std::string units        = metadata(j)["units"];
+    std::string output_units = metadata(j)["output_units"];
+
+    bool use_output_units =
+        (not units.empty() and not output_units.empty() and units != output_units);
+
+    if (use_output_units) {
+      return std::make_shared<units::Converter>(ctx->unit_system(), units, output_units);
+    }
+
+    return std::make_shared<units::Converter>();
+  };
+
+  // 3D arrays have more than one level, collections of fields have one level. This local
+  // array size is correct in both cases.
+  size_t local_array_size = grid()->xm() * grid()->ym() * levels().size();
+
+  // Scalar 2D and 3D arrays:
   if (ndof() == 1) {
     log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(0).get_name().c_str());
 
-    if (m_impl->ghosted) {
-      petsc::TemporaryGlobalVec tmp(dm());
+    petsc::TemporaryGlobalVec tmp(dm());
 
-      this->copy_to_vec(dm(), tmp);
+    this->copy_to_vec(dm(), tmp);
 
-      petsc::VecArray tmp_array(tmp);
+    petsc::VecArray tmp_array(tmp);
 
-      file.write_spatial_variable(metadata(0).get_name(), tmp_array.get());
-    } else {
-      petsc::VecArray v_array(vec());
-      file.write_spatial_variable(metadata(0).get_name(), v_array.get());
-    }
+    unit_converter(0)->convert_doubles(tmp_array.get(), local_array_size);
+
+    file.write_spatial_variable(metadata(0).get_name(), tmp_array.get());
+
     return;
   }
 
-  // Get the dof=1, stencil_width=0 DMDA (components are always scalar
-  // and we just need a global Vec):
-  auto da2 = grid()->get_dm(1, 0);
+  // 2D arrays with more than one degree of freedom (vectors, scalars on the staggered
+  // grid, collections of scalars)
+  {
+    // Get the dof=1, stencil_width=0 DMDA (components are always scalar
+    // and we just need a global Vec):
+    auto da2 = grid()->get_dm(1, 0);
 
-  // a temporary one-component vector, distributed across processors
-  // the same way v is
-  petsc::TemporaryGlobalVec tmp(da2);
+    // a temporary one-component vector, distributed across processors
+    // the same way v is
+    petsc::TemporaryGlobalVec tmp(da2);
 
-  for (unsigned int j = 0; j < ndof(); ++j) {
-    get_dof(da2, tmp, j);
+    for (unsigned int j = 0; j < ndof(); ++j) {
+      get_dof(da2, tmp, j);
 
-    petsc::VecArray tmp_array(tmp);
-    log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(j).get_name().c_str());
-    file.write_spatial_variable(metadata(j).get_name(), tmp_array.get());
+      petsc::VecArray tmp_array(tmp);
+
+      log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(j).get_name().c_str());
+
+      unit_converter(j)->convert_doubles(tmp_array.get(), local_array_size);
+
+      file.write_spatial_variable(metadata(j).get_name(), tmp_array.get());
+    }
   }
 }
 

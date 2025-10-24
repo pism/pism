@@ -19,17 +19,15 @@
 #include <cmath>
 #include <memory>
 
-#include "VariableMetadata.hh"
-#include "io/IO_Flags.hh"
-#include "io/OutputWriter.hh"
-#include "pism/util/Diagnostic.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/projection.hh"
+#include "pism/util/Diagnostic.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/OutputWriter.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -345,6 +343,25 @@ void TSDiagnostic::flush() {
     // write time bounds
     file.write_array(time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
                      m_bounds);
+  }
+
+  // Convert to output units, if necessary
+  //
+  // Note that data in m_values are not used after this call, so we can perform this
+  // conversion in place (without making a copy).
+  if (not m_config->get_flag("output.use_MKS")) {
+
+    std::string units = metadata()["units"];
+    std::string output_units = metadata()["output_units"];
+
+    bool use_output_units =
+        (not units.empty() and not output_units.empty() and units != output_units);
+
+    if (use_output_units) {
+      units::Converter converter(metadata().unit_system(), units, output_units);
+
+      converter.convert_doubles(m_values.data(), m_values.size());
+    }
   }
 
   // write values of a diagnostic
