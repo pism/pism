@@ -817,7 +817,7 @@ class ISMIP6(TestCase):
 
             out.append_time(t)
 
-            out.write_array(bounds, [j, 0], [1, 2], [t, t + dt])
+            out.write_array(bounds.get_name(), [j, 0], [1, 2], [t, t + dt])
 
             aSMB.set(t * SMB_anomaly)
 

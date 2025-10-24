@@ -55,7 +55,7 @@ class ForcingInput(unittest.TestCase):
 
         def write_data(filename, use_bounds=True, forward=True):
             bounds = ctx.time.bounds_metadata()
-            bounds.set_string("units", units)
+            bounds.units(units)
 
             time = ctx.time.metadata(use_bounds)
             time.units(units)
@@ -76,7 +76,7 @@ class ForcingInput(unittest.TestCase):
                 output.append_time(self.t[k])
 
                 if use_bounds:
-                    output.write_array(bounds, [k, 0], [1, 2], (self.tb[k], self.tb[k + 1]))
+                    output.write_array(bounds.get_name(), [k, 0], [1, 2], (self.tb[k], self.tb[k + 1]))
 
                 v.set(float(self.f[k]))
                 v.write(output)

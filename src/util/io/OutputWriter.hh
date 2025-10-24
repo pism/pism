@@ -185,18 +185,6 @@ public:
                    const std::vector<double> &input);
 
   /*!
-   * Write a 1D array `input` to a variable `variable_name` in the file `file_name`,
-   * converting from internal to "output" units if necessary.
-   *
-   * The array `input` is stored *redundantly* on all MPI ranks.
-   *
-   * FIXME: writing to the time variable will change the length of the time dimension.
-   */
-  void write_array(const std::string &file_name, const VariableMetadata &metadata,
-                   const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
-                   const std::vector<double> &input);
-
-  /*!
    * Write a text (string) variable.
    *
    * The array `input` is stored *redundantly* on all MPI ranks.
@@ -427,9 +415,6 @@ public:
   void append_history(const std::string &text) const;
 
   void write_array(const std::string &variable_name, const std::vector<unsigned int> &start,
-                   const std::vector<unsigned int> &count, const std::vector<double> &input) const;
-
-  void write_array(const VariableMetadata &metadata, const std::vector<unsigned int> &start,
                    const std::vector<unsigned int> &count, const std::vector<double> &input) const;
 
   void write_spatial_variable(const std::string &variable_name, const double *input) const;

@@ -278,20 +278,6 @@ void OutputWriter::write_text(const std::string &file_name, const std::string &v
   write_text_impl(file_name, variable_name, start, count, input);
 }
 
-void OutputWriter::write_array(const std::string &file_name, const VariableMetadata &metadata,
-                               const std::vector<unsigned int> &start,
-                               const std::vector<unsigned int> &count,
-                               const std::vector<double> &input) {
-  // create a copy of "data" to change units
-  std::vector<double> data = input;
-
-  // convert units "in place":
-  units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
-      .convert_doubles(data.data(), data.size());
-
-  write_array_impl(file_name, metadata.get_name(), start, count, data.data());
-}
-
 void OutputWriter::write_dimensions(const std::string &file_name,
                                     const VariableMetadata &variable) {
 
