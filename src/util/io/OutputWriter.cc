@@ -229,8 +229,8 @@ std::vector<std::string> OutputWriter::define_dimensions(const std::string &file
 
 void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &variable) {
 
-  if (variable.grid_info() == nullptr or m_impl->relaxed_mode) {
-    // automatically add variables not associated with a grid
+  if (m_impl->relaxed_mode and variable.grid_info() != nullptr) {
+    // add 2d and 3d variables in "relaxed" mode
     add_variable(variable);
   }
 
