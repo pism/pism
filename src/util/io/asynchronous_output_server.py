@@ -154,41 +154,6 @@ def receive_action_metadata_string():
 
     return metadata_array.tobytes().decode("utf-8")
 
-np.set_printoptions(threshold=np.inf)
-
-yac = YAC()
-
-component = yac.def_comp(target_comp_name)
-
-global_comm = yac.get_comps_comm(["pism", "pism_output_server"])
-local_comm  = component.comp_comm
-
-global_group = global_comm.Get_group()
-local_group  = local_comm.Get_group()
-
-local_leader = local_group.Translate_ranks([0], global_group)[0]
-
-sendbuf = np.array([local_leader], dtype='i')
-recvbuf = np.empty(global_comm.Get_size(), dtype='i')
-
-global_comm.Allgather([sendbuf, MPI.INT], [recvbuf, MPI.INT])
-remote_leader = recvbuf[0]
-remote_size = global_comm.Get_size() - local_comm.Get_size()
-
-intercomm = local_comm.Create_intercomm(
-    0,
-    global_comm,
-    remote_leader,
-    tag=0
-)
-
-server_action = np.empty(1, dtype='i')
-interpolation_stack = None
-grid = None
-global_vertex_indices = None
-x_size = 0
-y_size = 0
-
 def initialize_yac_grid():
     x_size = np.empty(1, dtype='i')
     y_size = np.empty(1, dtype='i')
@@ -229,7 +194,43 @@ def initialize_yac_grid():
 def finish_yac_initialization():
     yac.enddef()
 
+
+np.set_printoptions(threshold=np.inf)
+
+yac = YAC()
+
+component = yac.def_comp(target_comp_name)
+
+global_comm = yac.get_comps_comm(["pism", "pism_output_server"])
+local_comm  = component.comp_comm
+
+global_group = global_comm.Get_group()
+local_group  = local_comm.Get_group()
+
+local_leader = local_group.Translate_ranks([0], global_group)[0]
+
+sendbuf = np.array([local_leader], dtype='i')
+recvbuf = np.empty(global_comm.Get_size(), dtype='i')
+
+global_comm.Allgather([sendbuf, MPI.INT], [recvbuf, MPI.INT])
+remote_leader = recvbuf[0]
+remote_size = global_comm.Get_size() - local_comm.Get_size()
+
+intercomm = local_comm.Create_intercomm(
+    0,
+    global_comm,
+    remote_leader,
+    tag=0
+)
+
+server_action = np.empty(1, dtype='i')
+interpolation_stack = None
+grid = None
+global_vertex_indices = None
+x_size = 0
+y_size = 0
 files = {}
+
 while True:
     intercomm.Recv([server_action, MPI.INT], source = remote_leader, tag = 0)
     
