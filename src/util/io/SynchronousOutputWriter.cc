@@ -40,14 +40,10 @@ const File &SynchronousOutputWriter::file(const std::string &file_name) {
   return *m_files[file_name];
 }
 
-void SynchronousOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_variables) {
-  for (const auto &variable : array_variables) {
-    if (variable.grid_info() != nullptr) {
-      add_variable(variable);
-    }
-  }
+void SynchronousOutputWriter::initialize_impl(
+    const std::set<VariableMetadata> & /*array_variables*/) {
+  // empty
 }
-
 
 SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &config)
     : OutputWriter(comm, config) {
@@ -196,9 +192,9 @@ void SynchronousOutputWriter::write_text_impl(const std::string &file_name,
   output_file.write_text_variable(variable_name, start, count, input);
 }
 
-void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &file_name,
-                                                          const std::string &variable_name,
-                                                          const double *data) {
+void SynchronousOutputWriter::write_distributed_array_impl(const std::string &file_name,
+                                                           const std::string &variable_name,
+                                                           const double *data) {
 
   const auto &output_file = file(file_name);
 

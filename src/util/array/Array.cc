@@ -520,7 +520,7 @@ void Array::write_impl(const OutputFile &file) const {
 
     unit_converter(0)->convert_doubles(tmp_array.get(), local_array_size);
 
-    file.write_spatial_variable(metadata(0).get_name(), tmp_array.get());
+    file.write_distributed_array(metadata(0).get_name(), tmp_array.get());
 
     return;
   }
@@ -545,7 +545,7 @@ void Array::write_impl(const OutputFile &file) const {
 
       unit_converter(j)->convert_doubles(tmp_array.get(), local_array_size);
 
-      file.write_spatial_variable(metadata(j).get_name(), tmp_array.get());
+      file.write_distributed_array(metadata(j).get_name(), tmp_array.get());
     }
   }
 }

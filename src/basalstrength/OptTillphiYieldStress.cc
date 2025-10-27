@@ -296,7 +296,7 @@ std::set<VariableMetadata> OptTillphiYieldStress::state_impl() const {
 void OptTillphiYieldStress::write_state_impl(const OutputFile &output) const {
   MohrCoulombYieldStress::write_state_impl(output);
 
-  output.write_timeseries_variable(m_time_name, { 0 }, { 1 }, { m_t_last });
+  output.write_timeseries(m_time_name, { 0 }, { 1 }, { m_t_last });
 }
 
 DiagnosticList OptTillphiYieldStress::diagnostics_impl() const {

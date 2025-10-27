@@ -209,7 +209,7 @@ void SteadyState::write_state_impl(const OutputFile& output) const {
   auto t_length = output.time_dimension_length();
   auto t_start = t_length > 0 ? t_length - 1 : 0;
 
-  output.write_timeseries_variable(m_time_name, { t_start }, { 1 }, { m_t_last });
+  output.write_timeseries(m_time_name, { t_start }, { 1 }, { m_t_last });
 
   m_Q.write(output);
 }

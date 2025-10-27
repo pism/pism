@@ -53,16 +53,16 @@ void OutputFile::write_array(const std::string &variable_name,
   m_writer->write_array(m_file_name, variable_name, start, count, input);
 }
 
-void OutputFile::write_spatial_variable(const std::string &variable_name,
+void OutputFile::write_distributed_array(const std::string &variable_name,
                                         const double *input) const {
-  m_writer->write_spatial_variable(m_file_name, variable_name, input);
+  m_writer->write_distributed_array(m_file_name, variable_name, input);
 }
 
-void OutputFile::write_timeseries_variable(const std::string &variable_name,
+void OutputFile::write_timeseries(const std::string &variable_name,
                                            const std::vector<unsigned int> &start,
                                            const std::vector<unsigned int> &count,
                                            const std::vector<double> &input) const {
-  m_writer->write_timeseries_variable(m_file_name, variable_name, start, count, input);
+  m_writer->write_timeseries(m_file_name, variable_name, start, count, input);
 }
 
 void OutputFile::write_text(const std::string &variable_name,

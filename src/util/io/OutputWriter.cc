@@ -150,6 +150,13 @@ OutputWriter::~OutputWriter() {
 void OutputWriter::initialize(const std::set<VariableMetadata> &array_variables,
                               bool relaxed_mode) {
   m_impl->relaxed_mode = relaxed_mode;
+
+  for (const auto &variable : array_variables) {
+    if (variable.grid_info() != nullptr) {
+      add_variable(variable);
+    }
+  }
+
   initialize_impl(array_variables);
 }
 
@@ -323,7 +330,7 @@ void OutputWriter::write_dimensions(const std::string &file_name,
   }
 }
 
-void OutputWriter::write_spatial_variable(const std::string &file_name,
+void OutputWriter::write_distributed_array(const std::string &file_name,
                                           const std::string &variable_name,
                                           const double *input) {
   const auto &variable = variable_info(variable_name);
@@ -339,12 +346,12 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
 
   write_dimensions(file_name, variable);
 
-  write_spatial_variable_impl(file_name, variable_name, input);
+  write_distributed_array_impl(file_name, variable_name, input);
 
   already_written(file_name, variable_name, time_dependent) = true;
 }
 
-void OutputWriter::write_timeseries_variable(const std::string &file_name,
+void OutputWriter::write_timeseries(const std::string &file_name,
                                              const std::string &variable_name,
                                              const std::vector<unsigned int> &start,
                                              const std::vector<unsigned int> &count,
