@@ -118,29 +118,9 @@ public:
   void initialize(const std::set<VariableMetadata> &array_variables, bool relaxed_mode = false);
 
   /*!
-   * Define a dimension.
-   * 
-   * No-op if the dimension already exists.
-   *
-   * `length` of zero corresponds to an unlimited dimension.
-   */
-  void define_dimension(const std::string &file_name, const std::string &dimension_name,
-                        unsigned int length);
-
-  /*!
-   * Define a variable given a list of dimension names and set its attributes.
-   *
-   * Use this method to define coordinate variables (`x`, `y`, `time`, etc).
+   * Define a variable given its metadata.
    *
    * No-op if the variable already exists.
-   *
-   */
-  void define_variable(const std::string &file_name, const std::string &variable_name,
-                       const std::vector<std::string> &dims,
-                       io::Type type, const VariableAttributes &attributes);
-
-  /*!
-   * FIXME
    */
   void define_variable(const std::string &file_name, const VariableMetadata &variable);
 
@@ -261,6 +241,28 @@ public:
   MPI_Comm comm() const;
 
 protected:
+
+  /*!
+   * Define a dimension.
+   *
+   * No-op if the dimension already exists.
+   *
+   * `length` of zero corresponds to an unlimited dimension.
+   */
+  void define_dimension(const std::string &file_name, const std::string &dimension_name,
+                        unsigned int length);
+
+  /*!
+   * Define a variable given a list of dimension names and set its attributes.
+   *
+   * Use this method to define coordinate variables (`x`, `y`, `time`, etc).
+   *
+   * No-op if the variable already exists.
+   *
+   */
+  void define_variable(const std::string &file_name, const std::string &variable_name,
+                       const std::vector<std::string> &dims,
+                       io::Type type, const VariableAttributes &attributes);
 
   /*!
    * Add a variable to the list of variables that can be written to output files.
