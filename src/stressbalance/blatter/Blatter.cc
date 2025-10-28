@@ -801,7 +801,7 @@ Blatter::SolutionInfo Blatter::solve() {
   ierr = PCGetType(pc, &pc_type);
   PISM_CHK(ierr, "PCGetType");
 
-  if (std::string(pc_type) == PCMG) {
+  if (pc_type != nullptr and std::string(pc_type) == PCMG) {
     KSP coarse_ksp;
     ierr = PCMGGetCoarseSolve(pc, &coarse_ksp);
     PISM_CHK(ierr, "PCMGGetCoarseSolve");
