@@ -9,7 +9,7 @@ class ServerActions(Enum):
     CREATE_FILE = 0
     SET_FILE_DIMENSION = 1
     SET_FILE_ATTRIBUTES = 2
-    INIT_YAC_GRID = 3
+    START_YAC_INITIALIZATION = 3
     FINISH_YAC_INITIALIZATION = 4
     DEFINE_NON_SPATIAL_VARIABLE = 5
     DEFINE_SPATIAL_VARIABLE = 6
@@ -254,7 +254,7 @@ while True:
             file_dimension = json.loads(receive_action_metadata_string(yac_wrapper))
             files[file_dimension["file_name"]].set_dimension(file_dimension)
 
-        case ServerActions.INIT_YAC_GRID.value:
+        case ServerActions.START_YAC_INITIALIZATION.value:
            yac_wrapper.start_initialization() 
 
         case ServerActions.FINISH_YAC_INITIALIZATION.value:

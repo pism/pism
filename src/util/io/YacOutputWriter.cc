@@ -115,7 +115,7 @@ void YacOutputWriter::initialize_yac_grid() {
   local_x_size = distributed_grid.xm;
   local_y_size = distributed_grid.ym;
   
-  server_send_action(INIT_YAC_GRID);
+  server_send_action(START_YAC_INITIALIZATION);
 
   // Sends the global domain sizes to the server
   if (my_rank == 0) {
