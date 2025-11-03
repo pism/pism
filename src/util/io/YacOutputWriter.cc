@@ -322,7 +322,7 @@ YacOutputWriter::~YacOutputWriter() {
 
     delete yac_raw_send_array;
 
-    MPI_Barrier(intercomm);
+    yac_cfinalize();
 }
 
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
