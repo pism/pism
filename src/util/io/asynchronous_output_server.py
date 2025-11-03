@@ -156,7 +156,7 @@ class OutputFile:
         timestep, time_unit, time_reduction,
         yac_wrapper.interpolation_stack)
 
-    def receive_spatial_field(self, field_name, yac_wrappepr):
+    def receive_spatial_field(self, field_name, yac_wrapper):
         var_dims = self.variables_metadata[field_name]["dimensions"]
         collection_size = fields[field_name].collection_size
     
