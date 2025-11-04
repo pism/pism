@@ -18,8 +18,8 @@ class ServerActions(Enum):
     UPDATE_TIME_LENGTH = 9
     FINISH = 10
 
-src_comp_name    = "pism"
-src_grid_name    = "pism_grid"
+source_comp_name = "pism"
+source_grid_name = "pism_grid"
 target_grid_name = "pism_grid_output"
 target_comp_name = "pism_output_server"
 time_unit        = TimeUnit.ISO_FORMAT
@@ -151,7 +151,7 @@ class OutputFile:
         )
     
         yac_wrapper.yac.def_couple(
-        src_comp_name, src_grid_name, field_name,
+        source_comp_name, source_grid_name, field_name,
         target_comp_name, target_grid_name, field_name,
         timestep, time_unit, time_reduction,
         yac_wrapper.interpolation_stack)
