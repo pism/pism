@@ -24,7 +24,6 @@ target_grid_name = "pism_grid_output"
 target_comp_name = "pism_output_server"
 time_unit        = TimeUnit.ISO_FORMAT
 time_reduction   = 0
-fields           = {}
        
 class YacWrapper:
     def __init__(self):
@@ -33,6 +32,7 @@ class YacWrapper:
         self.global_vertex_indices = None
         self.x_size = 0
         self.y_size = 0
+        self.fields = {} 
 
         self.yac = YAC()
         self.component = self.yac.def_comp(target_comp_name)
@@ -146,7 +146,7 @@ class OutputFile:
         timestep = variable_metadata["timestep"] 
         collection_size = variable_metadata["collection_size"] 
     
-        fields[field_name] = Field.create(
+        yac_wrapper.fields[field_name] = Field.create(
             field_name, yac_wrapper.component, yac_wrapper.grid.corner_points, collection_size, timestep, TimeUnit.ISO_FORMAT
         )
     
@@ -158,10 +158,10 @@ class OutputFile:
 
     def receive_spatial_field(self, field_name, yac_wrapper):
         var_dims = self.variables_metadata[field_name]["dimensions"]
-        collection_size = fields[field_name].collection_size
+        collection_size = yac_wrapper.fields[field_name].collection_size
     
         values = []
-        data = fields[field_name].get()[0]
+        data = yac_wrapper.fields[field_name].get()[0]
 
         for level in range(collection_size):
             data[level] = data[level, np.argsort(yac_wrapper.global_vertex_indices)]
@@ -268,7 +268,7 @@ while True:
             variable_metadata = json.loads(receive_action_metadata_string(yac_wrapper))
             files[variable_metadata["file_name"]].define_variable(variable_metadata)
 
-            if variable_metadata["variable_name"] not in fields:
+            if variable_metadata["variable_name"] not in yac_wrapper.fields:
                 files[variable_metadata["file_name"]].define_yac_field(variable_metadata, yac_wrapper)
 
         case ServerActions.SEND_SPATIAL_VARIABLE.value:
