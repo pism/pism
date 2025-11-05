@@ -211,7 +211,7 @@ class OutputFile:
     def get_variable_metadata(self, variable_name):
         return self.variables_metadata[variable_name]
 
-    def receive_non_spatial_field(self, yac_wrappper, variable_name): 
+    def receive_non_spatial_field(self, variable_name, yac_wrapper):
         var_dims = self.variables_metadata[variable_name]["dimensions"]
         var_metadata = self.variables_metadata[variable_name]
         status = MPI.Status() 
@@ -301,7 +301,7 @@ while True:
 
         case ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
             variable_info = json.loads(receive_action_metadata_string(yac_wrapper))
-            files[variable_info["file_name"]].receive_non_spatial_field(yac_wrapper, variable_info["variable_name"])
+            files[variable_info["file_name"]].receive_non_spatial_field(variable_info["variable_name"], yac_wrapper)
 
         case ServerActions.UPDATE_TIME_LENGTH.value:
             file_info = json.loads(receive_action_metadata_string(yac_wrapper))
