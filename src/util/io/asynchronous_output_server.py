@@ -123,6 +123,10 @@ class YacWrapper:
     def finish_initialization(self):
         self.yac.enddef()
 
+    # Defines a YAC field for a spatial variable
+    # In the future, when multiple files share gridded variables, either a
+    # single field definition could be reused for multiple files or
+    # individual dedicated fields could be created for each variable/file combination
     def define_field(self, variable_metadata):
         field_name = variable_metadata["variable_name"]
         timestep = variable_metadata["timestep"]
