@@ -191,6 +191,9 @@ class OutputFile:
             if attr not in ignored_attributes and variable_metadata[attr] != "":
                 self.nc_variables[field_name].setncattr(attr, variable_metadata[attr])
 
+    def get_variable_metadata(self, variable_name):
+        return self.variables_metadata[variable_name]
+
     def receive_spatial_field(self, field_name, yac_wrapper):
         var_dims = self.variables_metadata[field_name]["dimensions"]
         collection_size = yac_wrapper.fields[field_name].collection_size
@@ -218,9 +221,6 @@ class OutputFile:
                 tmp[:, :, c] = values[c]
     
             self.nc_variables[field_name][self.time_index, :, :, :] = tmp
-
-    def get_variable_metadata(self, variable_name):
-        return self.variables_metadata[variable_name]
 
     def receive_non_spatial_field(self, variable_name, yac_wrapper):
         var_dims = self.variables_metadata[variable_name]["dimensions"]
