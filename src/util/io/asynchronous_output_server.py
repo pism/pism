@@ -123,6 +123,21 @@ class YacWrapper:
     def finish_initialization(self):
         self.yac.enddef()
 
+    def define_field(self, variable_metadata):
+        field_name = variable_metadata["variable_name"]
+        timestep = variable_metadata["timestep"]
+        collection_size = variable_metadata["collection_size"]
+
+        self.fields[field_name] = Field.create(
+            field_name, self.component, self.grid.corner_points, collection_size, timestep, TimeUnit.ISO_FORMAT
+        )
+
+        self.yac.def_couple(
+        source_comp_name, source_grid_name, field_name,
+        target_comp_name, target_grid_name, field_name,
+        timestep, time_unit, time_reduction,
+        self.interpolation_stack)
+
 # Class to wrap the NetCDF functionalities for writing files
 class OutputFile:
     # The constructor does empty initialization of most members and 
@@ -171,21 +186,6 @@ class OutputFile:
         for attr in variable_metadata:
             if attr not in ignored_attributes and variable_metadata[attr] != "":
                 self.nc_variables[field_name].setncattr(attr, variable_metadata[attr])
-
-    def define_yac_field(self, variable_metadata, yac_wrapper):
-        field_name = variable_metadata["variable_name"]
-        timestep = variable_metadata["timestep"] 
-        collection_size = variable_metadata["collection_size"] 
-    
-        yac_wrapper.fields[field_name] = Field.create(
-            field_name, yac_wrapper.component, yac_wrapper.grid.corner_points, collection_size, timestep, TimeUnit.ISO_FORMAT
-        )
-    
-        yac_wrapper.yac.def_couple(
-        source_comp_name, source_grid_name, field_name,
-        target_comp_name, target_grid_name, field_name,
-        timestep, time_unit, time_reduction,
-        yac_wrapper.interpolation_stack)
 
     def receive_spatial_field(self, field_name, yac_wrapper):
         var_dims = self.variables_metadata[field_name]["dimensions"]
@@ -300,7 +300,7 @@ while True:
             files[variable_metadata["file_name"]].define_variable(variable_metadata)
 
             if variable_metadata["variable_name"] not in yac_wrapper.fields:
-                files[variable_metadata["file_name"]].define_yac_field(variable_metadata, yac_wrapper)
+                yac_wrapper.define_field(variable_metadata)
 
         case ServerActions.SEND_SPATIAL_VARIABLE.value:
             variable_info = json.loads(receive_action_metadata_string(yac_wrapper))
