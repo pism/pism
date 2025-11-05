@@ -5,6 +5,7 @@ import json
 from mpi4py import MPI
 from enum import Enum
 
+# Actions that the server can handle
 class ServerActions(Enum):
     CREATE_FILE = 0
     SET_FILE_DIMENSION = 1
@@ -18,6 +19,7 @@ class ServerActions(Enum):
     UPDATE_TIME_LENGTH = 9
     FINISH = 10
 
+# YAC general component, grid and configuration variables
 source_comp_name = "pism"
 source_grid_name = "pism_grid"
 target_grid_name = "pism_grid_output"
