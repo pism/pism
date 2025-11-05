@@ -27,7 +27,11 @@ target_comp_name = "pism_output_server"
 time_unit        = TimeUnit.ISO_FORMAT
 time_reduction   = 0
        
+# Class to hold all YAC variables and definitions
 class YacWrapper:
+    # In the constructor the YAC initialization happens, followed
+    # by the creation of the intercommunicator, which is necessary for 
+    # direct communication with the client and receiving its information 
     def __init__(self):
         self.interpolation_stack = None
         self.grid = None
@@ -39,21 +43,27 @@ class YacWrapper:
         self.yac = YAC()
         self.component = self.yac.def_comp(target_comp_name)
         
-        global_comm = self.yac.get_comps_comm(["pism", "pism_output_server"])
+        # Get the local server communicator and group
         local_comm  = self.component.comp_comm
-        
-        global_group = global_comm.Get_group()
         local_group  = local_comm.Get_group()
+
+        # Get the global communicator and group (contatining all processes from client and server)
+        global_comm = self.yac.get_comps_comm(["pism", "pism_output_server"])
+        global_group = global_comm.Get_group()
         
-        local_leader = local_group.Translate_ranks([0], global_group)[0]
+        # Get the rank of the local leader in the global communicator
+        local_leader_global_rank = local_group.Translate_ranks([0], global_group)[0]
         
-        sendbuf = np.array([local_leader], dtype='i')
+        # Create buffers for exchanging global ranks for local component leaders
+        sendbuf = np.array([local_leader_global_rank], dtype='i')
         recvbuf = np.empty(global_comm.Get_size(), dtype='i')
         
+        # Exchange global ranks of local leaders
         global_comm.Allgather([sendbuf, MPI.INT], [recvbuf, MPI.INT])
         self.remote_leader = recvbuf[0]
         self.remote_size = global_comm.Get_size() - local_comm.Get_size()
         
+        # Create the intercommunicator with the received information
         self.intercomm = local_comm.Create_intercomm(
             0,
             global_comm,
@@ -61,43 +71,55 @@ class YacWrapper:
             tag=0
         )
         
+    # Starts the coupler initialization
+    # For YAC specifically the main task happening in 
+    # this subroutine is the grid definition
     def start_initialization(self):
+        # Variables for the global x and y sizes
         x_size = np.empty(1, dtype='i')
         y_size = np.empty(1, dtype='i')
+        client_local_domain_sizes = np.empty(self.remote_size, dtype='i')
+        displacements = np.empty(self.remote_size, dtype='i')
         
+        # Receive the global x and y sizes from the leader in the client
         self.intercomm.Recv([x_size, MPI.INT], source = self.remote_leader, tag = 0)
         self.intercomm.Recv([y_size, MPI.INT], source = self.remote_leader, tag = 0)
+        self.x_size = x_size[0]
+        self.y_size = y_size[0] 
+
+        # Total amount of grid points
         grid_points = x_size[0] * y_size[0]
         
+        # Gather the sizes of the local domains of all client processes
+        self.intercomm.Gather(None, client_local_domain_sizes, root = MPI.ROOT)
+        
+        # Calculate the array displacements for receiving geometrical data from client processes
+        displacements[0] = 0
+        for i in range(1, self.remote_size):
+            displacements[i] = displacements[i-1] + client_local_domain_sizes[i-1]
+        
+        # Create arrays for geometrical data and global data ordering
         longitudes = np.empty(grid_points, dtype='d')
         latitudes = np.empty(grid_points, dtype='d')
         self.global_vertex_indices = np.empty(grid_points, dtype='i')
-        displacements = np.empty(self.remote_size, dtype='i')
-        gather_buf = np.empty(self.remote_size, dtype='i')
+
+        # Receive latitudes, longitudes and the global ordering of points
+        self.intercomm.Gatherv(None, (self.global_vertex_indices, (client_local_domain_sizes, displacements)), root = MPI.ROOT)
+        self.intercomm.Gatherv(None, (latitudes, (client_local_domain_sizes, displacements)), root = MPI.ROOT)
+        self.intercomm.Gatherv(None, (longitudes, (client_local_domain_sizes, displacements)), root = MPI.ROOT)
         
-        self.intercomm.Gather(None, gather_buf, root = MPI.ROOT)
-        
-        displacements[0] = 0
-        for i in range(1, self.remote_size):
-            displacements[i] = displacements[i-1] + gather_buf[i-1]
-        
-        self.intercomm.Gatherv(None, (self.global_vertex_indices, (gather_buf, displacements)), root = MPI.ROOT)
-        self.intercomm.Gatherv(None, (latitudes, (gather_buf, displacements)), root = MPI.ROOT)
-        self.intercomm.Gatherv(None, (longitudes, (gather_buf, displacements)), root = MPI.ROOT)
-        
+        # Create grid and define point locations for corners (vertices)
         self.grid = CloudGrid(target_grid_name, longitudes, latitudes)
-        self.grid.set_global_index(self.global_vertex_indices, Location.CORNER)
+        self.grid.corner_points = self.grid.def_points(longitudes, latitudes)
         
-        vertex_points = self.grid.def_points(longitudes, latitudes)
-        self.grid.corner_points = vertex_points
-        
+        # Create the interpolation stack and add an nearest-neighbor inteporlation
+        # For the current purposes of the output server we just want the data to be transferred
+        # from the client to the server without any interpolation. Therefore, we use the NNN with a 
+        # single neighbor, and since the client and server grids match, the data should arrive the same.
         self.interpolation_stack = InterpolationStack()
         self.interpolation_stack.add_nnn(NNNReductionType.AVG, 1, 1., 0.)
-    
-        self.x_size = x_size[0]
-        self.y_size = y_size[0] 
-        self.yac.sync_def()
 
+    # Finalize the YAC definitions phase
     def finish_initialization(self):
         self.yac.enddef()
 
