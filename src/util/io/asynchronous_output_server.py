@@ -123,7 +123,10 @@ class YacWrapper:
     def finish_initialization(self):
         self.yac.enddef()
 
+# Class to wrap the NetCDF functionalities for writing files
 class OutputFile:
+    # The constructor does empty initialization of most members and 
+    # creates the dataset for the NetCDF file
     def __init__(self, file_name):
         self.name = file_name
         self.nc_dataset = Dataset(file_name[:-3] + "_server.nc", 'w')
@@ -135,35 +138,39 @@ class OutputFile:
         self.variables_data = {}
         self.time_index = 0 
 
+    # Sets the attributes in the NetCDF dataset
     def set_attributes(self, file_attributes):
         for attr in file_attributes:
             setattr(self.nc_dataset, attr, file_attributes[attr])
 
+    # Updates the time index used for writing to the datase
     def update_time_length(self, time_dimension_length):
         self.time_index = time_dimension_length
             
+    # Creates a dimension in the NetCDF dataset
     def set_dimension(self, dimension):
         self.dimensions[dimension["dimension_name"]] = dimension["dimension_length"]
         self.nc_dataset.createDimension(dimension["dimension_name"],
                                         dimension["dimension_length"] if dimension["dimension_length"] > 0
                                         else None)
                                     
+    # Defines a new variable in the NetCDF dataset 
     def define_variable(self, variable_metadata):
-        attributes = variable_metadata 
         field_name = variable_metadata["variable_name"]
         self.variables_metadata[field_name] = variable_metadata
     
-        fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
+        fill_value = variable_metadata["_FillValue"] if '_FillValue' in variable_metadata else None
     
         self.nc_variables[field_name] = self.nc_dataset.createVariable(field_name,
-                                                                   attributes["dtype"],
-                                                                   attributes["dimensions"],
+                                                                   variable_metadata["dtype"],
+                                                                   variable_metadata["dimensions"],
                                                                    fill_value=fill_value)
     
-        special = ['_FillValue', 'dimensions', 'tag', 'dtype', 'collection_size', 'file_name', 'timestep', 'variable_name']
-        for attr in attributes:
-            if attr not in special and attributes[attr] != "":
-                self.nc_variables[field_name].setncattr(attr, attributes[attr])
+        ignored_attributes = ['_FillValue', 'dimensions', 'tag', 'dtype', 
+                              'collection_size', 'file_name', 'timestep', 'variable_name']
+        for attr in variable_metadata:
+            if attr not in ignored_attributes and variable_metadata[attr] != "":
+                self.nc_variables[field_name].setncattr(attr, variable_metadata[attr])
 
     def define_yac_field(self, variable_metadata, yac_wrapper):
         field_name = variable_metadata["variable_name"]
