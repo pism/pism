@@ -30,6 +30,7 @@ PETSC_ARCH="linux-opt"
   --with-shared-libraries \
   --with-debugging=0 \
   --with-petsc4py \
+  --download-cmake \
   --download-scalapack \
   --download-mumps \
   --download-parmetis \
