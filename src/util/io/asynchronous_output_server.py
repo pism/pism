@@ -307,8 +307,8 @@ while True:
             break
 
         case ServerActions.CREATE_FILE.value:
-            file_name = receive_action_metadata_string(yac_wrapper)
-            files[file_name] = OutputFile(file_name)
+            file_metadata = json.loads(receive_action_metadata_string(yac_wrapper))
+            files[file_metadata["file_name"]] = OutputFile(file_metadata["file_name"])
 
         case ServerActions.SET_FILE_ATTRIBUTES.value:
             file_attributes = json.loads(receive_action_metadata_string(yac_wrapper))

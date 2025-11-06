@@ -273,7 +273,9 @@ void YacOutputWriter::server_ensure_file_exists(const std::string &file_name) {
     // straightforward by simply adding new clauses to this if condition.
     if(file_name.find("snapshot") != std::string::npos and !server_allowed_files[file_name]) {
       server_allowed_files[file_name] = true;
-      server_send_action(CREATE_FILE, file_name);
+      nlohmann::json file_metadata;
+      file_metadata["file_name"] = file_name;
+      server_send_action(CREATE_FILE, file_metadata.dump());
     }
 }
 
