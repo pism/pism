@@ -282,14 +282,14 @@ class OutputFile:
     def close(self):
         self.nc_dataset.close()
 
-def receive_action_metadata_string(yac_wrapper):
+def receive_action_metadata(yac_wrapper):
     metadata_array_length = np.empty(1, dtype='i')
 
     yac_wrapper.intercomm.Recv([metadata_array_length, MPI.INT], source = yac_wrapper.remote_leader, tag = 0)
     metadata_array = np.empty(metadata_array_length[0], dtype='S1')
     yac_wrapper.intercomm.Recv([metadata_array, MPI.CHAR], source = yac_wrapper.remote_leader, tag = 0)
 
-    return metadata_array.tobytes().decode("utf-8")
+    return json.loads(metadata_array.tobytes().decode("utf-8"))
 
 np.set_printoptions(threshold=np.inf)
 yac_wrapper = YacWrapper()
@@ -307,15 +307,15 @@ while True:
             break
 
         case ServerActions.CREATE_FILE.value:
-            file_metadata = json.loads(receive_action_metadata_string(yac_wrapper))
+            file_metadata = receive_action_metadata(yac_wrapper)
             files[file_metadata["file_name"]] = OutputFile(file_metadata["file_name"])
 
         case ServerActions.SET_FILE_ATTRIBUTES.value:
-            file_attributes = json.loads(receive_action_metadata_string(yac_wrapper))
+            file_attributes = receive_action_metadata(yac_wrapper)
             files[file_attributes["file_name"]].set_attributes(file_attributes["attributes"])
 
         case ServerActions.SET_FILE_DIMENSION.value:
-            file_dimension = json.loads(receive_action_metadata_string(yac_wrapper))
+            file_dimension = receive_action_metadata(yac_wrapper)
             files[file_dimension["file_name"]].set_dimension(file_dimension)
 
         case ServerActions.START_YAC_INITIALIZATION.value:
@@ -325,26 +325,26 @@ while True:
            yac_wrapper.finish_initialization() 
 
         case ServerActions.DEFINE_NON_SPATIAL_VARIABLE.value:
-            variable_metadata = json.loads(receive_action_metadata_string(yac_wrapper))
+            variable_metadata = receive_action_metadata(yac_wrapper)
             files[variable_metadata["file_name"]].define_variable(variable_metadata)
 
         case ServerActions.DEFINE_SPATIAL_VARIABLE.value:
-            variable_metadata = json.loads(receive_action_metadata_string(yac_wrapper))
+            variable_metadata = receive_action_metadata(yac_wrapper)
             files[variable_metadata["file_name"]].define_variable(variable_metadata)
 
             if variable_metadata["variable_name"] not in yac_wrapper.fields:
                 yac_wrapper.define_field(variable_metadata)
 
         case ServerActions.SEND_SPATIAL_VARIABLE.value:
-            variable_info = json.loads(receive_action_metadata_string(yac_wrapper))
+            variable_info = receive_action_metadata(yac_wrapper)
             files[variable_info["file_name"]].receive_spatial_field(variable_info["variable_name"], yac_wrapper)
 
         case ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
-            variable_info = json.loads(receive_action_metadata_string(yac_wrapper))
+            variable_info = receive_action_metadata(yac_wrapper)
             files[variable_info["file_name"]].receive_non_spatial_field(variable_info["variable_name"], yac_wrapper)
 
         case ServerActions.UPDATE_TIME_LENGTH.value:
-            file_info = json.loads(receive_action_metadata_string(yac_wrapper))
+            file_info = receive_action_metadata(yac_wrapper)
             files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"]);
 
 for file in files.values():
