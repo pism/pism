@@ -179,41 +179,54 @@ class OutputFile:
         self.variables_metadata[field_name] = variable_metadata
     
         fill_value = variable_metadata["_FillValue"] if '_FillValue' in variable_metadata else None
-    
         self.nc_variables[field_name] = self.nc_dataset.createVariable(field_name,
                                                                    variable_metadata["dtype"],
                                                                    variable_metadata["dimensions"],
                                                                    fill_value=fill_value)
     
+        # There are some attributes which were either already set in the variable creation
+        # or that are used only for the execution of the server. These all should be ignored
+        # when setting NetCDF variable attributes.
         ignored_attributes = ['_FillValue', 'dimensions', 'tag', 'dtype', 
                               'collection_size', 'file_name', 'timestep', 'variable_name']
         for attr in variable_metadata:
             if attr not in ignored_attributes and variable_metadata[attr] != "":
                 self.nc_variables[field_name].setncattr(attr, variable_metadata[attr])
 
+    # Returns the metadata stored for that variable
     def get_variable_metadata(self, variable_name):
         return self.variables_metadata[variable_name]
 
+    # Receives a spatial field through the coupler and writes its data to the corresponding NetCDF variable
     def receive_spatial_field(self, field_name, yac_wrapper):
-        var_dims = self.variables_metadata[field_name]["dimensions"]
+        # Number of vertical levels for that field in YAC
         collection_size = yac_wrapper.fields[field_name].collection_size
-    
-        values = []
+
+        # Variable for holding the raw data provided by the YAC get, which is directly issued here
         data = yac_wrapper.fields[field_name].get()[0]
 
+        # For each vertical level, reorders the received data according to the horizontal global vertex indices
         for level in range(collection_size):
             data[level] = data[level, np.argsort(yac_wrapper.global_vertex_indices)]
 
+        # Creates a 3D array for reshapping the raw data received from YAC
         values = np.ndarray(shape=(collection_size, yac_wrapper.y_size, yac_wrapper.x_size),
                             buffer=data, dtype="f8")
 
+        # Handles the data assignment to the NetCDF variable
+        # If the variable is a 2D field NOT time-dependent
         if len(self.nc_variables[field_name].shape) == 2:
             self.nc_variables[field_name][:, :] = values[0]
+
+        # If the variable is a time-dependent 2D field
         elif len(self.nc_variables[field_name].shape) == 3:
             self.nc_variables[field_name][self.time_index, :, :] = values[0]
+
+        # If the variable is a time-dependent 3D field
         else:
             assert collection_size > 1
     
+            # Temporary array for reordering the data for the NetCDF variable
             tmp = np.ndarray(shape=(yac_wrapper.y_size, yac_wrapper.x_size, collection_size),
                                 dtype=values.dtype)
     
