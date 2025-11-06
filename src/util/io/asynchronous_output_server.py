@@ -282,26 +282,31 @@ class OutputFile:
     def close(self):
         self.nc_dataset.close()
 
+# Receives the json string for the metadata of an action
 def receive_action_metadata(yac_wrapper):
     metadata_array_length = np.empty(1, dtype='i')
 
+    # First receive the length of the string array and then the array itself
     yac_wrapper.intercomm.Recv([metadata_array_length, MPI.INT], source = yac_wrapper.remote_leader, tag = 0)
     metadata_array = np.empty(metadata_array_length[0], dtype='S1')
     yac_wrapper.intercomm.Recv([metadata_array, MPI.CHAR], source = yac_wrapper.remote_leader, tag = 0)
 
+    # Decode the data and construct a dictionary from the json
     return json.loads(metadata_array.tobytes().decode("utf-8"))
 
 np.set_printoptions(threshold=np.inf)
 yac_wrapper = YacWrapper()
 server_action = np.empty(1, dtype='i')
-yac_data = None
 files = {}
 
+# Poll loop for listening for action requests from the client
 while True:
+    # Wait for an action
     yac_wrapper.intercomm.Recv([server_action, MPI.INT], 
                                 source = yac_wrapper.remote_leader, 
                                 tag = 0)
     
+    # Handle each action based on the action id
     match server_action[0]:
         case ServerActions.FINISH.value:
             break
@@ -347,5 +352,6 @@ while True:
             file_info = receive_action_metadata(yac_wrapper)
             files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"]);
 
+# Close all the files
 for file in files.values():
     file.close()
