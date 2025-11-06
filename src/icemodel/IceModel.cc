@@ -130,7 +130,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
     m_surface_input_for_hydrology->metadata()["valid_min"] = { 0.0 };
   }
 
-  m_output_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config, m_geometry);
+  m_output_writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
 }
 
 double IceModel::dt() const {
