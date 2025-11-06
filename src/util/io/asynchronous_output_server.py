@@ -235,34 +235,50 @@ class OutputFile:
     
             self.nc_variables[field_name][self.time_index, :, :, :] = tmp
 
+    # Receives a non-spatial field through the coupler intercommunicator and
+    # writes its data to the corresponding NetCDF variable
     def receive_non_spatial_field(self, variable_name, yac_wrapper):
-        var_dims = self.variables_metadata[variable_name]["dimensions"]
-        var_metadata = self.variables_metadata[variable_name]
+        variable_dims = self.variables_metadata[variable_name]["dimensions"]
+        variable_metadata = self.variables_metadata[variable_name]
         status = MPI.Status() 
-        if len(var_dims) > 0:
-            size = self.dimensions[var_dims[0]]
-            if len(var_dims) == 1 and var_dims[0] == "time" and size == 0:
-                size = 1
 
-        if var_dims[0] == "time" or len(var_dims) == 1:
+        # If the variables has any dimensions defined
+        if len(variable_dims) > 0:
+            # Find the size for the receive operation
+            size = self.dimensions[variable_dims[0]] if self.dimensions[variable_dims[0]] > 0 else 1
             tmp_receival = np.empty(size, dtype = "f8")
-            tag = int(var_metadata["tag"])
-            if(var_metadata["dtype"] != "S1"):
+            tag = int(variable_metadata["tag"])
+            # If the variable is not a string, receive it as double and cast it to the actual variable type
+            if(variable_metadata["dtype"] != "S1"):
                 yac_wrapper.intercomm.Recv([tmp_receival, MPI.DOUBLE], source = yac_wrapper.remote_leader, tag = tag)
-                self.variables_data[variable_name] = tmp_receival.astype(var_metadata["dtype"])
+                self.variables_data[variable_name] = tmp_receival.astype(variable_metadata["dtype"])
+            # If the variable is a string then receive the char array and use the status var
+            # The status is required to know how many chars were received for the NetCDF var assignment later
             else:
-                self.variables_data[variable_name] = np.empty(size, dtype = var_metadata["dtype"])
-                yac_wrapper.intercomm.Recv([self.variables_data[variable_name], MPI.CHAR], source = yac_wrapper.remote_leader, tag = tag, status = status)
+                self.variables_data[variable_name] = np.empty(size, dtype = variable_metadata["dtype"])
+                yac_wrapper.intercomm.Recv([self.variables_data[variable_name], MPI.CHAR],
+                                            source = yac_wrapper.remote_leader,
+                                            tag = tag, status = status)
 
-        if "time" not in var_dims:
-            if var_metadata["dtype"] == "S1":
+        # Handles the assignment of the data to the NetCDF variable
+        # If it is NOT time-dependent
+        if "time" not in variable_dims:
+            # If it is a text variable copy only the amount of received
+            # characters to avoid garbage at the end of the string
+            if variable_metadata["dtype"] == "S1":
                 char_count = status.Get_count(MPI.CHAR)
                 self.nc_variables[variable_name][:char_count] = self.variables_data[variable_name][:char_count]
+
+            # Otherwise simply assign all the received data
             else:
                 self.nc_variables[variable_name][:] = self.variables_data[variable_name]
+
+        # If the variable is time-dependent, assign it to the current time index of the file.
+        # So far there does not seem to be time-dependent text variables
         else:
             self.nc_variables[variable_name][self.time_index] = self.variables_data[variable_name]
 
+    # Closes the underlying NetCDF dataset
     def close(self):
         self.nc_dataset.close()
 
