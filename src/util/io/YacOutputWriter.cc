@@ -668,6 +668,9 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     }
 
     int info, error;
+    // TODO: we can add a check to verify that the time is still below the simulation end
+    // Since the snapshot output calls are normally equal or smaller than the number of time
+    // steps this should work fine nonetheless
     yac_cput(field_ids[variable_name], collection_size, yac_raw_send_array, &info, &error);
     if(suppress_client_file_operations) return;
   }
