@@ -310,7 +310,7 @@ def receive_action_metadata(yac_wrapper):
     metadata_array = np.empty(metadata_array_length[0], dtype='S1')
     yac_wrapper.intercomm.Recv([metadata_array, MPI.CHAR], source = yac_wrapper.remote_leader, tag = 0)
 
-    # Decode the data and construct a dictionary from the json
+    # Decode the data and construct a dictionary from the json string
     return json.loads(metadata_array.tobytes().decode("utf-8"))
 
 np.set_printoptions(threshold=np.inf)
@@ -321,6 +321,9 @@ files = {}
 # Poll loop for listening for action requests from the client
 while True:
     # Wait for an action
+    # TODO: We can encode the action in the message tag and use MPI_ANY_TAG,
+    # the buffer size could then be the value for the metadata buffer size.
+    # With this we could avoid one Send/Recv operation
     yac_wrapper.intercomm.Recv([server_action, MPI.INT], 
                                 source = yac_wrapper.remote_leader, 
                                 tag = 0)
