@@ -44,7 +44,7 @@ source_grid_name = "pism_grid"
 target_grid_name = "pism_grid_output"
 target_comp_name = "pism_output_server"
 time_unit        = TimeUnit.ISO_FORMAT
-time_reduction   = 0
+time_reduction   = Reduction.TIME_NONE
        
 # Class to hold all YAC variables and definitions
 class YacWrapper:
