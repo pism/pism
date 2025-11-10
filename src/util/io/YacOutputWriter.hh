@@ -36,6 +36,7 @@ namespace io {
 enum Backend : int;
 }
 
+// These have to match the actions which are defined on the server
 enum ServerActions {
     CREATE_FILE,
     SET_FILE_DIMENSION,

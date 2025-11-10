@@ -24,6 +24,7 @@ from mpi4py import MPI
 from enum import Enum
 
 # Actions that the server can handle
+# These have to match the actions which are defined on the client
 class ServerActions(Enum):
     CREATE_FILE = 0
     SET_FILE_DIMENSION = 1
