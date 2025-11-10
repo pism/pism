@@ -649,6 +649,8 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     
     // Copies the data from the argument array to the yac_raw_send_array
     // YAC will automatically buffer the data it is passed to
+    // Since the output interface is only called when the output is done,
+    // all calls to yac_cput should result in an actual data exchange
     int collection_size = metadata.z().length();
     for (int c = 0; c < collection_size; c++) {
       for (int x = 0; x < local_x_size; x++) {
