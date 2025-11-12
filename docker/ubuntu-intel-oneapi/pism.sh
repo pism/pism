@@ -7,7 +7,7 @@ set -u
 set -x
 
 N=${N:-8}
-opt_flags="-O3 -axCORE-AVX2 -xSSE4.2 -fp-model=precise"
+opt_flags="-O3 -axCORE-AVX512,CORE-AVX2,SSE4.2 -fp-model=precise"
 
 # run as pism_version=v2.0 ./pism.sh to build v2.0, etc
 pism_version=${pism_version:-dev}
