@@ -32,6 +32,6 @@ git clone --depth=1 -b v${petsc_version} https://gitlab.com/petsc/petsc.git .
   --download-mumps \
   --download-scalapack \
   --with-shared-libraries=1 \
-  --with-blaslapack-dir=${MKLROOT}  | tee petsc-configure.log
+  --with-blaslapack-dir=${MKLROOT}  || (cat configure.log && exit 1)
 
 make all && make install
