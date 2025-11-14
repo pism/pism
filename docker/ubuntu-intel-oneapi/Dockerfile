@@ -108,7 +108,7 @@ EOF
 # https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2025-1/use-the-setvars-and-oneapi-vars-scripts-with-linux.html
 #
 # for the right way to initialize Intel oneAPI.
-COPY hdf5.sh /tmp/
+COPY docker/ubuntu-intel-oneapi/hdf5.sh /tmp/
 RUN <<EOF
     echo "Install HDF5"
 
@@ -122,7 +122,7 @@ RUN <<EOF
     rm -rf /opt/hdf5/share/hdf5_examples
 EOF
 
-COPY netcdf.sh /tmp/
+COPY docker/ubuntu-intel-oneapi/netcdf.sh /tmp/
 RUN <<EOF
     echo "Install NetCDF"
 
@@ -135,7 +135,7 @@ RUN <<EOF
     rm -rf ${build_dir}
 EOF
 
-COPY yaxt.sh /tmp/
+COPY docker/ubuntu-intel-oneapi/yaxt.sh /tmp/
 RUN <<EOF
     echo "Install YAXT"
 
@@ -145,7 +145,7 @@ RUN <<EOF
     rm -rf /var/tmp/build/yaxt
 EOF
 
-COPY yac.sh /tmp/
+COPY docker/ubuntu-intel-oneapi/yac.sh /tmp/
 RUN <<EOF
     echo "Install YAC"
 
@@ -155,7 +155,7 @@ RUN <<EOF
     rm -rf /var/tmp/build/yac
 EOF
 
-COPY petsc.sh /tmp/
+COPY docker/ubuntu-intel-oneapi/petsc.sh /tmp/
 RUN <<EOF
     echo "Install PETSc"
 
@@ -169,11 +169,14 @@ RUN <<EOF
     rm -rf /opt/petsc/share/petsc
 EOF
 
-COPY pism.sh /tmp/
+COPY docker/ubuntu-intel-oneapi/pism.sh /tmp/
+# Copy the Docker context to /var/tmp/pism-src
+COPY . /var/tmp/pism-src
 RUN <<EOF
     echo "Install PISM"
 
     set -eux
+    export src_dir=/var/tmp/pism-src
     export build_dir=/var/tmp/build/pism
     export prefix=/opt/pism
 
