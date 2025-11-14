@@ -1,8 +1,8 @@
-name: Publish a PISM container using Intel oneAPI to GHCR
+name: Build PISM using Intel oneAPI C/C++ compilers and push to GHCR
 
 on:
   push:
-    branches: [ "ckhrulev/docker-ghcr", "dev", "main" ]
+    branches: [ "ckhrulev/docker-ghcr", "dev", "main" ] # FIXME: remove the docker-ghcr branch
 
 env:
   REGISTRY: ghcr.io
@@ -45,7 +45,8 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
         with:
-          context: docker/ubuntu-intel-oneapi/
+          context: .
+          file: docker/ubuntu-intel-oneapi/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
