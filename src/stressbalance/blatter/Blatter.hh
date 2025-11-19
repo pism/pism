@@ -115,9 +115,9 @@ protected:
 
   void init_impl();
 
-  void define_model_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
 
-  void write_model_state_impl(const OutputFile &output) const;
+  void write_state_impl(const OutputFile &output) const;
 
   static bool exterior_element(const int *node_type);
 

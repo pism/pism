@@ -18,6 +18,7 @@
 
 #include "pism/earth/LingleClark.hh"
 
+#include "BedDef.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
@@ -80,8 +81,8 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
       .units("meters");
 
   // coordinate variables of the extended grid should have different names
-  m_viscous_displacement->metadata().x().set_name("x_lc");
-  m_viscous_displacement->metadata().y().set_name("y_lc");
+  m_viscous_displacement->metadata().dimension("x").set_name("x_lc");
+  m_viscous_displacement->metadata().dimension("y").set_name("y_lc");
 
   // do not point to auxiliary coordinates "lon" and "lat".
   m_viscous_displacement->metadata()["coordinates"] = "";
@@ -319,15 +320,14 @@ void LingleClark::update_impl(const array::Scalar &load, double /*t*/, double dt
   m_topg.inc_state_counter();
 }
 
-void LingleClark::define_model_state_impl(const OutputFile &output) const {
-  BedDef::define_model_state_impl(output);
+std::set<VariableMetadata> LingleClark::state_impl() const {
+  auto variables = array::metadata({&m_elastic_displacement, m_viscous_displacement.get()});
 
-  m_viscous_displacement->define(output);
-  m_elastic_displacement.define(output);
+  return pism::combine(variables, BedDef::state_impl());
 }
 
-void LingleClark::write_model_state_impl(const OutputFile &output) const {
-  BedDef::write_model_state_impl(output);
+void LingleClark::write_state_impl(const OutputFile &output) const {
+  BedDef::write_state_impl(output);
 
   m_viscous_displacement->write(output);
   m_elastic_displacement.write(output);

@@ -364,13 +364,12 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   compute_enthalpy_cold(m_work, ice_thickness, m_work);
 }
 
-void TemperatureModel::define_model_state_impl(const OutputFile &output) const {
-  m_ice_temperature.define(output);
-  m_basal_melt_rate.define(output);
+std::set<VariableMetadata> TemperatureModel::state_impl() const {
   // ice enthalpy is not a part of the model state
+  return array::metadata({ &m_ice_temperature, &m_basal_melt_rate });
 }
 
-void TemperatureModel::write_model_state_impl(const OutputFile &output) const {
+void TemperatureModel::write_state_impl(const OutputFile &output) const {
   m_ice_temperature.write(output);
   m_basal_melt_rate.write(output);
   // ice enthalpy is not a part of the model state

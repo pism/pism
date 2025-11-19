@@ -58,7 +58,7 @@ vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
   m_calving_threshold.metadata(0)
       .long_name("threshold used by the 'von Mises' calving method")
       .units("Pa")
-      .set_time_independent(true); // no standard name
+      .set_time_dependent(false); // no standard name
 }
 
 void vonMisesCalving::init() {

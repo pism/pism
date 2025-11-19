@@ -22,8 +22,6 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/io/IO_Flags.hh"
-#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -48,47 +46,39 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
   // process shortcuts
   if (result.find("amount_fluxes") != result.end()) {
     result.erase("amount_fluxes");
-    result.insert("tendency_of_ice_amount");
-    result.insert("tendency_of_ice_amount_due_to_basal_mass_flux");
-    result.insert("tendency_of_ice_amount_due_to_conservation_error");
-    result.insert("tendency_of_ice_amount_due_to_discharge");
-    result.insert("tendency_of_ice_amount_due_to_flow");
-    result.insert("tendency_of_ice_amount_due_to_surface_mass_flux");
+    result.insert({ "tendency_of_ice_amount", "tendency_of_ice_amount_due_to_basal_mass_flux",
+                    "tendency_of_ice_amount_due_to_conservation_error",
+                    "tendency_of_ice_amount_due_to_discharge", "tendency_of_ice_amount_due_to_flow",
+                    "tendency_of_ice_amount_due_to_surface_mass_flux" });
   }
 
   if (result.find("mass_fluxes") != result.end()) {
     result.erase("mass_fluxes");
-    result.insert("tendency_of_ice_mass");
-    result.insert("tendency_of_ice_mass_due_to_basal_mass_flux");
-    result.insert("tendency_of_ice_mass_due_to_conservation_error");
-    result.insert("tendency_of_ice_mass_due_to_discharge");
-    result.insert("tendency_of_ice_mass_due_to_flow");
-    result.insert("tendency_of_ice_mass_due_to_surface_mass_flux");
+    result.insert({ "tendency_of_ice_mass", "tendency_of_ice_mass_due_to_basal_mass_flux",
+                    "tendency_of_ice_mass_due_to_conservation_error",
+                    "tendency_of_ice_mass_due_to_discharge", "tendency_of_ice_mass_due_to_flow",
+                    "tendency_of_ice_mass_due_to_surface_mass_flux" });
   }
 
   if (result.find("pdd_fluxes") != result.end()) {
     result.erase("pdd_fluxes");
-    result.insert("surface_accumulation_flux");
-    result.insert("surface_runoff_flux");
-    result.insert("surface_melt_flux");
+    result.insert({ "surface_accumulation_flux", "surface_runoff_flux", "surface_melt_flux" });
   }
 
   if (result.find("pdd_rates") != result.end()) {
     result.erase("pdd_rates");
-    result.insert("surface_accumulation_rate");
-    result.insert("surface_runoff_rate");
-    result.insert("surface_melt_rate");
+    result.insert({ "surface_accumulation_rate", "surface_runoff_rate", "surface_melt_rate" });
   }
 
   if (result.find("hydrology_fluxes") != result.end()) {
     result.erase("hydrology_fluxes");
-    result.insert("tendency_of_subglacial_water_mass");
-    result.insert("tendency_of_subglacial_water_mass_due_to_input");
-    result.insert("tendency_of_subglacial_water_mass_due_to_flow");
-    result.insert("tendency_of_subglacial_water_mass_due_to_conservation_error");
-    result.insert("tendency_of_subglacial_water_mass_at_grounded_margins");
-    result.insert("tendency_of_subglacial_water_mass_at_grounding_line");
-    result.insert("tendency_of_subglacial_water_mass_at_domain_boundary");
+    result.insert({ "tendency_of_subglacial_water_mass",
+                    "tendency_of_subglacial_water_mass_due_to_input",
+                    "tendency_of_subglacial_water_mass_due_to_flow",
+                    "tendency_of_subglacial_water_mass_due_to_conservation_error",
+                    "tendency_of_subglacial_water_mass_at_grounded_margins",
+                    "tendency_of_subglacial_water_mass_at_grounding_line",
+                    "tendency_of_subglacial_water_mass_at_domain_boundary" });
   }
 
   if (result.find("ismip6") != result.end()) {
@@ -117,7 +107,6 @@ void IceModel::init_extras() {
 
   m_extra_filename   = m_config->get_string("output.extra.file");
   std::string times  = m_config->get_string("output.extra.times");
-  std::string vars   = m_config->get_string("output.extra.vars");
   bool        split  = m_config->get_flag("output.extra.split");
   bool        append = m_config->get_flag("output.extra.append");
 
@@ -151,7 +140,25 @@ void IceModel::init_extras() {
                        "both output.extra.split and output.extra.append are set.");
   }
 
-  auto output_kind = m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS;
+  // initialize m_extra_vars and m_extra_file_contents
+  {
+    auto vars = m_config->get_string("output.extra.vars");
+    if (not vars.empty()) {
+      m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
+      m_log->message(2, "variables requested: %s\n", vars.c_str());
+    } else {
+      m_log->message(2,
+                     "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
+      m_extra_vars = {};
+    }
+
+    if (m_extra_vars.empty()) {
+      m_extra_file_contents = state_variables();
+    } else {
+      m_extra_file_contents = diagnostic_variables(m_extra_vars);
+    }
+    m_extra_file_contents = pism::combine(m_extra_file_contents, common_metadata());
+  }
 
   m_extra_file = nullptr;
   if (not split) {
@@ -185,11 +192,10 @@ void IceModel::init_extras() {
         m_next_extra  = 0;
       }
     } else {
-      // prepare the file
-      bool with_bounds = true;
-      io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
-      define_metadata(*m_extra_file, WRITE_MAPPING);
-      define_variables(*m_extra_file, output_kind, m_extra_vars);
+      // prepare the output file
+      bool with_time_bounds = true;
+      define_time(*m_extra_file, with_time_bounds);
+      define_variables(*m_extra_file, m_extra_file_contents);
     }
   }
 
@@ -227,13 +233,6 @@ void IceModel::init_extras() {
     }
   }
 
-  if (not vars.empty()) {
-    m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
-    m_log->message(2, "variables requested: %s\n", vars.c_str());
-  } else {
-    m_log->message(2,
-                   "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
-  }
 }
 
 //! Write spatially-variable diagnostic quantities.
@@ -306,13 +305,6 @@ void IceModel::write_extras() {
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
   {
-
-    std::string time_name = m_time->variable_name();
-
-    VariableMetadata time_bounds("time_bounds", m_sys);
-
-    auto output_kind = m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS;
-
     if (m_extra_file == nullptr) {
 
       std::string filename = m_extra_filename;
@@ -327,29 +319,44 @@ void IceModel::write_extras() {
       if (m_config->get_flag("output.extra.append")) {
         m_extra_file->append();
       } else {
-        // Prepare the file:
-        bool with_bounds = true;
-        io::define_time_dimension(*m_extra_file, m_time->metadata(), with_bounds);
-        define_metadata(*m_extra_file, WRITE_MAPPING);
-        define_variables(*m_extra_file, output_kind, m_extra_vars);
+        // prepare the output file
+        bool with_time_bounds = true;
+        define_time(*m_extra_file, with_time_bounds);
+        define_variables(*m_extra_file, m_extra_file_contents);
       }
     }
 
     m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
-    write_metadata(*m_extra_file);
-    // use the mid-point of the current reporting interval
-    double time = 0.5 * (m_last_extra + current_time);
-    write_variables(*m_extra_file, output_kind, m_extra_vars, time);
+    {
+      write_config(*m_config, "pism_config", *m_extra_file);
 
-    // Get the length of the time dimension *after* it is appended to.
-    auto time_length = m_extra_file->time_dimension_length();
-    auto time_start = time_length > 0 ? (time_length - 1) : 0;
+      // use the mid-point of the current reporting interval
+      double time = 0.5 * (m_last_extra + current_time);
+      m_extra_file->append_time(time);
 
-    // write time bounds
-    m_extra_file->write_array(time_bounds, { time_start, 0 }, { 1, 2 },
-                              { m_last_extra, current_time });
+      if (m_extra_vars.empty()) {
+        write_state(*m_extra_file);
+      } else {
+        write_diagnostics(*m_extra_file, m_extra_vars);
+      }
+
+      // write time bounds
+      {
+        // Get the length of the time dimension *after* it is appended to.
+        auto time_length = m_extra_file->time_dimension_length();
+        auto time_start  = time_length > 0 ? (time_length - 1) : 0;
+
+        auto bounds_name = m_time->variable_name() + "_bounds";
+
+        m_extra_file->write_array(bounds_name, { time_start, 0 }, { 1, 2 },
+                                  { m_last_extra, current_time });
+      }
+
+      write_run_stats(*m_extra_file);
+    }
+
     // make sure all changes are written
     m_extra_file->sync();
   }
@@ -366,7 +373,9 @@ void IceModel::write_extras() {
   m_last_extra = current_time;
 
   // reset accumulators in diagnostics that compute time averaged quantities
-  reset_diagnostics();
+  for (auto &d : m_diagnostics) {
+    d.second->reset();
+  }
 }
 
 } // end of namespace pism

@@ -94,11 +94,12 @@ static std::shared_ptr<array::Array3D> allocate_layer_thickness(std::shared_ptr<
   auto z_description =
       pism::printf("times for isochrones in '%s'; earliest deposition times for layers in '%s'",
                    isochrone_depth_variable_name, layer_thickness_variable_name);
-  auto &z = result->metadata(0).z();
+  auto &z = result->metadata(0).dimension("z");
   z.clear()
     .set_name(deposition_time_variable_name)
     .long_name(z_description)
     .units(time->units());
+
   z["calendar"] = time->calendar();
 
   return result;
@@ -320,7 +321,7 @@ static bool regridp(const Config &config) {
 
   auto regrid_vars = set_split(config.get_string("input.regrid.vars"), ',');
 
-  return member(details::layer_thickness_variable_name, regrid_vars);
+  return set_member(details::layer_thickness_variable_name, regrid_vars);
 }
 
 /*!
@@ -783,18 +784,18 @@ MaxTimestep Isochrones::max_timestep_deposition_times(double t) const {
 }
 
 /*!
- * Define the model state in an output file.
+ * Return the state information.
  *
  * We are saving layer thicknesses, deposition times, and the number of active layers.
  */
-void Isochrones::define_model_state_impl(const OutputFile &output) const {
-  m_layer_thickness->define(output);
+std::set<VariableMetadata> Isochrones::state_impl() const {
+  return array::metadata({m_layer_thickness.get()});
 }
 
 /*!
  * Write the model state to an output file.
  */
-void Isochrones::write_model_state_impl(const OutputFile &output) const {
+void Isochrones::write_state_impl(const OutputFile &output) const {
   m_layer_thickness->write(output);
 }
 
@@ -819,7 +820,7 @@ public:
                                     deposition_time_variable_name);
 
     m_vars[0].long_name(description).units("m");
-    auto &z = m_vars[0].z();
+    auto &z = m_vars[0].dimension("z");
     z.clear()
         .set_name(deposition_time_variable_name)
         .long_name(

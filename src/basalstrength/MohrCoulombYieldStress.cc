@@ -97,7 +97,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(std::shared_ptr<const Grid> grid)
   m_till_phi.metadata()
       .long_name("friction angle for till under grounded ice sheet")
       .units("degrees")
-      .set_time_independent(true);
+      .set_time_dependent(false);
 
   // in this model; need not be time-independent in general
 
@@ -224,12 +224,11 @@ void MohrCoulombYieldStress::set_till_friction_angle(const array::Scalar &input)
   m_till_phi.copy_from(input);
 }
 
-void MohrCoulombYieldStress::define_model_state_impl(const OutputFile &output) const {
-  m_basal_yield_stress.define(output);
-  m_till_phi.define(output);
+std::set<VariableMetadata> MohrCoulombYieldStress::state_impl() const {
+  return array::metadata({ &m_basal_yield_stress, &m_till_phi });
 }
 
-void MohrCoulombYieldStress::write_model_state_impl(const OutputFile &output) const {
+void MohrCoulombYieldStress::write_state_impl(const OutputFile &output) const {
   m_basal_yield_stress.write(output);
   m_till_phi.write(output);
 }

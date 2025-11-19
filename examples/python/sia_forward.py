@@ -104,4 +104,5 @@ F.close()
 
 # Save time & command line & results
 PISM.util.writeProvenance(output_file)
+
 vel_sia.write(output_file)

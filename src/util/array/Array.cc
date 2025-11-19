@@ -462,26 +462,19 @@ void Array::read_impl(const File &file, const unsigned int time) {
   }
 }
 
-//! \brief Define variables corresponding to an Array in a file opened using `file`.
-void Array::define(const OutputFile &file) const {
-  for (unsigned int j = 0; j < ndof(); ++j) {
-    file.define_spatial_variable(metadata(j), grid()->info());
-  }
-}
-
-//! @brief Returns a reference to the SpatialVariableMetadata object
+//! @brief Returns a reference to the VariableMetadata object
 //! containing metadata for the compoment N.
-SpatialVariableMetadata &Array::metadata(unsigned int N) {
+VariableMetadata &Array::metadata(unsigned int N) {
   assert(N < m_impl->dof);
   return m_impl->metadata[N];
 }
 
-const SpatialVariableMetadata &Array::metadata(unsigned int N) const {
+const VariableMetadata &Array::metadata(unsigned int N) const {
   assert(N < m_impl->dof);
   return m_impl->metadata[N];
 }
 
-std::vector<SpatialVariableMetadata> Array::all_metadata() const {
+std::vector<VariableMetadata> Array::all_metadata() const {
   return m_impl->metadata;
 }
 
@@ -490,39 +483,70 @@ void Array::write_impl(const OutputFile &file) const {
   auto log  = grid()->ctx()->log();
   auto time = timestamp(m_impl->grid->com);
 
-  // The simplest case:
+  // get the unit converter from internal to output units
+  auto unit_converter = [this](unsigned int j) {
+    auto ctx = grid()->ctx();
+    if (ctx->config()->get_flag("output.use_MKS")) {
+      // use internal units
+      return std::make_shared<units::Converter>();
+    }
+
+    std::string units        = metadata(j)["units"];
+    std::string output_units = metadata(j)["output_units"];
+
+    bool use_output_units =
+        (not units.empty() and not output_units.empty() and units != output_units);
+
+    if (use_output_units) {
+      return std::make_shared<units::Converter>(ctx->unit_system(), units, output_units);
+    }
+
+    return std::make_shared<units::Converter>();
+  };
+
+  // 3D arrays have more than one level, collections of fields have one level. This local
+  // array size is correct in both cases.
+  size_t local_array_size = grid()->xm() * grid()->ym() * levels().size();
+
+  // Scalar 2D and 3D arrays:
   if (ndof() == 1) {
     log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(0).get_name().c_str());
 
-    if (m_impl->ghosted) {
-      petsc::TemporaryGlobalVec tmp(dm());
+    petsc::TemporaryGlobalVec tmp(dm());
 
-      this->copy_to_vec(dm(), tmp);
+    this->copy_to_vec(dm(), tmp);
 
-      petsc::VecArray tmp_array(tmp);
+    petsc::VecArray tmp_array(tmp);
 
-      file.write_spatial_variable(metadata(0), tmp_array.get());
-    } else {
-      petsc::VecArray v_array(vec());
-      file.write_spatial_variable(metadata(0), v_array.get());
-    }
+    unit_converter(0)->convert_doubles(tmp_array.get(), local_array_size);
+
+    file.write_distributed_array(metadata(0).get_name(), tmp_array.get());
+
     return;
   }
 
-  // Get the dof=1, stencil_width=0 DMDA (components are always scalar
-  // and we just need a global Vec):
-  auto da2 = grid()->get_dm(1, 0);
+  // 2D arrays with more than one degree of freedom (vectors, scalars on the staggered
+  // grid, collections of scalars)
+  {
+    // Get the dof=1, stencil_width=0 DMDA (components are always scalar
+    // and we just need a global Vec):
+    auto da2 = grid()->get_dm(1, 0);
 
-  // a temporary one-component vector, distributed across processors
-  // the same way v is
-  petsc::TemporaryGlobalVec tmp(da2);
+    // a temporary one-component vector, distributed across processors
+    // the same way v is
+    petsc::TemporaryGlobalVec tmp(da2);
 
-  for (unsigned int j = 0; j < ndof(); ++j) {
-    get_dof(da2, tmp, j);
+    for (unsigned int j = 0; j < ndof(); ++j) {
+      get_dof(da2, tmp, j);
 
-    petsc::VecArray tmp_array(tmp);
-    log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(j).get_name().c_str());
-    file.write_spatial_variable(metadata(j), tmp_array.get());
+      petsc::VecArray tmp_array(tmp);
+
+      log->message(3, "[%s] Writing %s...\n", time.c_str(), metadata(j).get_name().c_str());
+
+      unit_converter(j)->convert_doubles(tmp_array.get(), local_array_size);
+
+      file.write_distributed_array(metadata(j).get_name(), tmp_array.get());
+    }
   }
 }
 
@@ -530,16 +554,20 @@ void Array::write_impl(const OutputFile &file) const {
 void Array::dump(const char filename[]) const {
   auto ctx = grid()->ctx();
   auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *ctx->config());
+  writer->initialize({}, true);
 
   OutputFile file(writer, filename);
 
-  if (not metadata(0).get_time_independent()) {
+  if (metadata(0).get_time_dependent()) {
     auto time = ctx->time();
-    io::define_time_dimension(file, time->metadata());
+    file.define_variable(time->metadata());
     file.append_time(time->current());
   }
 
-  define(file);
+  for (unsigned int k = 0; k < ndof(); ++k) {
+    file.define_variable(metadata(k));
+  }
+
   write(file);
 }
 
@@ -733,7 +761,7 @@ void Array::regrid(const std::string &filename, io::Default default_value) {
 }
 
 static void check_range(petsc::Vec &v,
-                        const SpatialVariableMetadata &metadata,
+                        const VariableMetadata &metadata,
                         const std::string &filename,
                         const Logger &log,
                         bool report_range) {
@@ -829,7 +857,6 @@ void Array::read(const File &file, const unsigned int time) {
 }
 
 void Array::write(const OutputFile &file) const {
-  define(file);
 
   MPI_Comm com = m_impl->grid->com;
   double start_time = get_time(com);
@@ -1214,6 +1241,16 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
   }
 }
 
+std::set<VariableMetadata> metadata(std::initializer_list<const Array *> vecs) {
+  std::set<VariableMetadata> result;
+  for (const auto *vec : vecs) {
+    for (const auto &var : vec->all_metadata()) {
+      result.insert(var);
+    }
+  }
+  return result;
+}
+
 } // end of namespace array
 
 void convert_vec(petsc::Vec &v, units::System::Ptr system,
@@ -1228,5 +1265,6 @@ void convert_vec(petsc::Vec &v, units::System::Ptr system,
   petsc::VecArray data(v);
   c.convert_doubles(data.get(), data_size);
 }
+
 
 } // end of namespace pism

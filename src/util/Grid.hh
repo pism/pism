@@ -19,6 +19,7 @@
 #ifndef PISM_GRID_H
 #define PISM_GRID_H
 
+#include "VariableMetadata.hh"
 #include "io/File.hh"
 #include <cassert>
 #include <memory> // shared_ptr
@@ -38,8 +39,8 @@ class Context;
 class File;
 class InputInterpolation;
 class Logger;
-class MappingInfo;
 class Vars;
+class VariableMetadata;
 
 namespace petsc {
 class DM;
@@ -147,7 +148,7 @@ public:
   //! Name of the variable used to initialize the instance (empty if not used)
   std::string variable_name;
 private:
-  Parameters() = default;
+  Parameters();
 };
 } // namespace grid
 
@@ -351,8 +352,8 @@ public:
   double x0() const;
   double y0() const;
 
-  const MappingInfo& get_mapping_info() const;
-  void set_mapping_info(const MappingInfo &info);
+  const VariableMetadata& get_mapping_info() const;
+  void set_mapping_info(const VariableMetadata &info);
 
   double dz_min() const;
   double dz_max() const;

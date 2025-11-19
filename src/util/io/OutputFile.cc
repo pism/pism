@@ -16,37 +16,20 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <string>
 
 #include "pism/util/io/OutputWriter.hh"
-#include <string>
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 
-OutputFile::OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name)
-    : m_file_name(file_name), m_writer(writer) {
+OutputFile::OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &name)
+    : m_file_name(name), m_writer(writer) {
   // empty
 }
 
-void OutputFile::add_extra_attributes(const std::map<std::string, std::string> &attributes) const {
-  m_writer->add_extra_attributes(m_file_name, attributes);
-}
-
-void OutputFile::define_dimension(const std::string &dimension_name, unsigned int length) const {
-  m_writer->define_dimension(m_file_name, dimension_name, length);
-}
-
-void OutputFile::define_variable(const VariableMetadata &metadata,
-                                 const std::vector<std::string> &dims) const {
-  m_writer->define_variable(m_file_name, metadata, dims);
-}
-
-void OutputFile::define_spatial_variable(const SpatialVariableMetadata &metadata,
-                                         const grid::DistributedGridInfo &grid) const {
-  m_writer->define_spatial_variable(m_file_name, metadata, grid);
-}
-
-void OutputFile::define_timeseries_variable(const VariableMetadata &metadata) const {
-  m_writer->define_timeseries_variable(m_file_name, metadata);
+void OutputFile::define_variable(const VariableMetadata &variable) const {
+  m_writer->define_variable(m_file_name, variable);
 }
 
 void OutputFile::set_global_attributes(
@@ -70,23 +53,16 @@ void OutputFile::write_array(const std::string &variable_name,
   m_writer->write_array(m_file_name, variable_name, start, count, input);
 }
 
-void OutputFile::write_array(const VariableMetadata &metadata,
-                             const std::vector<unsigned int> &start,
-                             const std::vector<unsigned int> &count,
-                             const std::vector<double> &input) const {
-  m_writer->write_array(m_file_name, metadata, start, count, input);
-}
-
-void OutputFile::write_spatial_variable(const SpatialVariableMetadata &metadata,
+void OutputFile::write_distributed_array(const std::string &variable_name,
                                         const double *input) const {
-  m_writer->write_spatial_variable(m_file_name, metadata, input);
+  m_writer->write_distributed_array(m_file_name, variable_name, input);
 }
 
-void OutputFile::write_timeseries_variable(const VariableMetadata &metadata,
+void OutputFile::write_timeseries(const std::string &variable_name,
                                            const std::vector<unsigned int> &start,
                                            const std::vector<unsigned int> &count,
                                            const std::vector<double> &input) const {
-  m_writer->write_timeseries_variable(m_file_name, metadata, start, count, input);
+  m_writer->write_timeseries(m_file_name, variable_name, start, count, input);
 }
 
 void OutputFile::write_text(const std::string &variable_name,
@@ -115,7 +91,7 @@ double OutputFile::last_time_value() const {
   return m_writer->last_time_value(m_file_name);
 }
 
-std::string OutputFile::name() const {
+const std::string &OutputFile::name() const {
   return m_file_name;
 }
 

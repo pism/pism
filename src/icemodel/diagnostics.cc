@@ -965,7 +965,7 @@ Rank::Rank(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]
       .long_name("processor rank")
       .units("1")
-      .set_time_independent(true)
+      .set_time_dependent(false)
       .set_output_type(io::PISM_INT);
 }
 
@@ -1085,7 +1085,7 @@ TemperaturePA::TemperaturePA(const IceModel *m)
 }
 
 std::shared_ptr<array::Array> TemperaturePA::compute_impl() const {
-  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
+  bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Array3D>(m_grid, "temp_pa", array::WITHOUT_GHOSTS, m_grid->z());
@@ -1149,7 +1149,7 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
 
 std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
 
-  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
+  bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Scalar>(m_grid, "temp_pa_base");
@@ -1416,7 +1416,7 @@ std::shared_ptr<array::Array> LiquidFraction::compute_impl() const {
       new array::Array3D(m_grid, "liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
+  bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
 
   if (cold_mode) {
     result->set(0.0);
@@ -2538,9 +2538,9 @@ LatLonBounds::LatLonBounds(const IceModel *m, const std::string &var_name,
 
   // set metadata:
   m_vars = { { m_sys, m_var_name + "_bnds", *m_grid, { 0.0, 1.0, 2.0, 3.0 } } };
-  m_vars[0].z().clear().set_name("nv4");
+  m_vars[0].dimension("z").clear().set_name("nv4");
 
-  m_vars[0].set_time_independent(true);
+  m_vars[0].set_time_dependent(false);
   if (m_var_name == "lon") {
     m_vars[0].long_name("longitude bounds").units("degree_east");
     m_vars[0]["valid_range"] = { -180, 180 };
@@ -3257,7 +3257,45 @@ protected:
 
 } // end of namespace diagnostics
 
-void IceModel::init_diagnostics() {
+void IceModel::init_outputs(InputOptions options) {
+  allocate_diagnostics();
+
+  init_final_output();
+  init_snapshots();
+  init_checkpoints();
+  init_timeseries();
+  init_extras();
+
+  // de-allocate diagnostics that are not needed
+  deallocate_unused_diagnostics();
+
+  // reset: this gives diagnostics a chance to capture the current state of the model at the
+  // beginning of the run
+  for (auto &d : m_diagnostics) {
+    d.second->reset();
+  }
+
+  // read in the state (accumulators) if we are re-starting a run
+  if (options.type == INIT_RESTART) {
+    File file(m_grid->com, options.filename, io::PISM_GUESS, io::PISM_READONLY);
+    for (const auto &d : m_diagnostics) {
+      d.second->init(file, options.record);
+    }
+  }
+
+  // Tell the output writer about all the variables we may need to write:
+  {
+    std::set<VariableMetadata> all_variables;
+    all_variables = pism::combine(all_variables, m_output_file_contents);
+    all_variables = pism::combine(all_variables, m_snapshot_file_contents);
+    all_variables = pism::combine(all_variables, m_extra_file_contents);
+    all_variables = pism::combine(all_variables, m_checkpoint_file_contents);
+
+    m_output_writer->initialize(all_variables);
+  }
+}
+
+void IceModel::allocate_diagnostics() {
 
   using namespace diagnostics;
 
@@ -3360,7 +3398,7 @@ void IceModel::init_diagnostics() {
   };
 
 #if (Pism_USE_PROJ==1)
-  std::string proj = m_grid->get_mapping_info().proj_string;
+  std::string proj = m_grid->get_mapping_info()["proj_params"];
   if (not proj.empty()) {
     m_diagnostics["lat_bnds"] = f(new LatLonBounds(this, "lat", proj));
     m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj));
@@ -3571,14 +3609,14 @@ void IceModel::list_diagnostics(const std::string &list_type) const {
     return;
   }
 
-  if (member(list_type, {"all", "spatial"})) {
+  if (set_member(list_type, {"all", "spatial"})) {
     m_log->message(1, "\n");
     m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
 
     print_diagnostics(*m_log, diag_metadata(m_diagnostics));
   }
 
-  if (member(list_type, {"all", "scalar"})) {
+  if (set_member(list_type, {"all", "scalar"})) {
     // scalar time-series
     m_log->message(1, "======== Available time-series ========\n");
 
@@ -3691,6 +3729,124 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
     result = result / total_ice_volume;
   } else {
     result = 0.0;
+  }
+  return result;
+}
+
+static void warn_about_missing(const Logger &log,
+                        const std::set<std::string> &vars,
+                        const std::string &type,
+                        const std::set<std::string> &available,
+                        bool stop) {
+  std::vector<std::string> missing;
+  for (const auto &v : vars) {
+    if (available.find(v) == available.end()) {
+      missing.push_back(v);
+    }
+  }
+
+  if (not missing.empty()) {
+    size_t N = missing.size();
+    const char *ending = N > 1 ? "s" : "";
+    const char *verb   = N > 1 ? "are" : "is";
+    if (stop) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "%s variable%s %s %s not available!\n"
+                                    "Available variables:\n- %s",
+                                    type.c_str(),
+                                    ending,
+                                    join(missing, ",").c_str(),
+                                    verb,
+                                    set_join(available, ",\n- ").c_str());
+    }
+
+    log.message(2,
+                "\nWARNING: %s variable%s %s %s not available!\n\n",
+                type.c_str(),
+                ending,
+                join(missing, ",").c_str(),
+                verb);
+  }
+}
+
+/*!
+ * De-allocate diagnostics that were not requested.
+ *
+ * Checks viewers, -extra_vars, -checkpoint, -save_vars, and regular output.
+ *
+ * FIXME: I need to make sure that these reporting mechanisms are active. It is possible that
+ * variables are on a list, but that list is not actually used.
+ */
+void IceModel::deallocate_unused_diagnostics() {
+
+  // get the list of available diagnostics
+  std::set<std::string> available;
+  for (const auto &d : m_diagnostics) {
+    available.insert(d.first);
+  }
+
+  auto extra_stop = m_config->get_flag("output.extra.stop_missing");
+  warn_about_missing(*m_log, m_extra_vars, "diagnostic", available, extra_stop);
+
+  // get the list of requested diagnostics
+  auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
+  requested = combine(requested, m_output_vars);
+  requested = combine(requested, m_snapshot_vars);
+  requested = combine(requested, m_extra_vars);
+  requested = combine(requested, m_checkpoint_vars);
+
+  // de-allocate diagnostics that were not requested
+  for (const auto &v : available) {
+    if (requested.find(v) == requested.end()) {
+      m_diagnostics.erase(v);
+    }
+  }
+}
+
+/*!
+ * Update diagnostics.
+ *
+ * This usually involves accumulating data needed to computed time-averaged quantities.
+ *
+ * Call this after deallocate_unused_diagnostics() to avoid unnecessary work.
+ */
+void IceModel::update_diagnostics(double dt) {
+  for (const auto &d : m_diagnostics) {
+    d.second->update(dt);
+  }
+
+  const double time = m_time->current();
+  for (const auto &d : m_ts_diagnostics) {
+    d.second->update(time - dt, time);
+  }
+}
+
+//! Writes variables listed in variable_names to file.
+void IceModel::write_diagnostics(const OutputFile &file,
+                                 const std::set<std::string> &variable_names) const {
+  for (const auto &variable : variable_names) {
+    auto diag = m_diagnostics.find(variable);
+
+    if (diag != m_diagnostics.end()) {
+      diag->second->compute()->write(file);
+    }
+  }
+}
+
+std::set<VariableMetadata>
+IceModel::diagnostic_variables(const std::set<std::string> &variable_names) const {
+  std::set<VariableMetadata> result{};
+  {
+    for (const auto &var : variable_names) {
+      auto diag = m_diagnostics.find(var);
+
+      if (diag != m_diagnostics.end()) {
+        const auto &D = diag->second;
+        for (unsigned int k = 0; k < D->n_variables(); ++k) {
+          result.insert(D->metadata(k));
+        }
+      }
+    }
   }
   return result;
 }

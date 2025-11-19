@@ -22,6 +22,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {
@@ -110,14 +111,14 @@ const array::Scalar &PIK::runoff_impl() const {
   return *m_runoff;
 }
 
-void PIK::define_model_state_impl(const OutputFile &output) const {
-  m_mass_flux->define(output);
-  SurfaceModel::define_model_state_impl(output);
+std::set<VariableMetadata> PIK::state_impl() const {
+  auto variables = array::metadata({ m_mass_flux.get() });
+  return pism::combine(variables, SurfaceModel::state_impl());
 }
 
-void PIK::write_model_state_impl(const OutputFile &output) const {
+void PIK::write_state_impl(const OutputFile &output) const {
   m_mass_flux->write(output);
-  SurfaceModel::write_model_state_impl(output);
+  SurfaceModel::write_state_impl(output);
 }
 
 } // end of namespace surface

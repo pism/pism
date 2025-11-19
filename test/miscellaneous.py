@@ -158,6 +158,8 @@ def grid_from_file_test():
     try:
         F = PISM.util.prepare_output(file_name)
 
+        F.define_variable(enthalpy.metadata())
+
         enthalpy.write(F)
 
         F.close()
@@ -312,12 +314,13 @@ def modelvecs_test():
     # test write()
     output_file = filename("test_ModelVecs")
     try:
-        F = PISM.util.prepare_output(output_file)
-        F.close()
-
+        F1 = PISM.util.prepare_output(output_file, append=False)
+        F1.close()
         vecs.write(output_file)
 
         # test writeall()
+        F2 = PISM.util.prepare_output(output_file, append=False)
+        F2.close()
         vecs.writeall(output_file)
     finally:
         os.remove(output_file)
@@ -371,11 +374,10 @@ def util_test():
 
     output_file = filename("test_pism_util")
     try:
-        F = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
+        F = PISM.util.prepare_output(output_file)
         F.close()
 
         PISM.util.writeProvenance(output_file)
-        PISM.util.writeProvenance(output_file, message="history string")
 
         PISM.util.fileHasVariable(output_file, "data")
     finally:

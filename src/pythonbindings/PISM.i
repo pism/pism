@@ -113,6 +113,7 @@
 %template(StringMap) std::map<std::string, std::string>;
 %template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
 %template(SizeDoubleMap) std::map<size_t, double>;
+%template(VariableSet) std::set<pism::VariableMetadata>;
 
 // Why did I include this?
 %include "cstring.i"
@@ -220,10 +221,24 @@ pism_class(pism::Logger, "pism/util/Logger.hh");
 %include pism_Vec.i
 /* End of independent PISM classes. */
 
+/* File uses Grid, so Grid has to be wrapped first. */
+%include pism_File.i
+
+/* make sure pism_File.i is included before VariableMetadata.hh */
+%include pism_VariableMetadata.i
+
+/* config_metadata() in Config.hh returns VariableMetadata by value, so SWIG needs to know about VariableMetadata to wrap it */
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
 %include "util/Config.hh"
 %include "util/NetCDFConfig.hh"
+%include pism_Config.i
+
+%shared_ptr(pism::OutputWriter)
+%shared_ptr(pism::SynchronousOutputWriter)
+%shared_ptr(pism::OutputFile)
+%include "util/io/OutputWriter.hh"
+%include "util/io/SynchronousOutputWriter.hh"
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::ColdEnthalpyConverter);
@@ -235,19 +250,11 @@ pism_class(pism::EnthalpyConverter, "pism/util/EnthalpyConverter.hh");
 
 %include pism_Grid.i
 
-/* File uses Grid, so Grid has to be wrapped first. */
-%include pism_File.i
-
-/* make sure pism_File.i is included before VariableMetadata.hh */
-%include pism_VariableMetadata.i
-
 /* array::Array uses Grid and VariableMetadata so they have to be wrapped first. */
 %include pism_Array.i
 
 /* pism::Vars uses array::Array, so Array has to be wrapped first. */
 %include pism_Vars.i
-
-%include pism_Config.i
 
 pism_class(pism::Time, "pism/util/Time.hh")
 

@@ -124,12 +124,11 @@ const array::Scalar &Given::runoff_impl() const {
   return *m_runoff;
 }
 
-void Given::define_model_state_impl(const OutputFile &output) const {
-  m_mass_flux->define(output);
-  m_temperature->define(output);
+std::set<VariableMetadata> Given::state_impl() const {
+  return array::metadata({ m_mass_flux.get(), m_temperature.get() });
 }
 
-void Given::write_model_state_impl(const OutputFile &output) const {
+void Given::write_state_impl(const OutputFile &output) const {
   m_mass_flux->write(output);
   m_temperature->write(output);
 }

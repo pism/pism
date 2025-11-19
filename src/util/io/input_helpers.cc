@@ -368,7 +368,7 @@ static void read_distributed_array(const File &file, const std::string &variable
   variable was not found in the input file
   - uses the last record in the file
 */
-void regrid_spatial_variable(const SpatialVariableMetadata &variable,
+void regrid_spatial_variable(const VariableMetadata &variable,
                              const Grid &target_grid,
                              const LocalInterpCtx &interp_context, const File &file,
                              const Logger &log,
@@ -610,7 +610,7 @@ void read_time_info(std::shared_ptr<units::System> unit_system, const File &file
 //! Read a variable from a file into an array `output`.
 /*! This also converts data from input units to internal units if needed.
  */
-void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &grid,
+void read_spatial_variable(const VariableMetadata &variable, const Grid &grid,
                            const File &file, unsigned int time, double *output) {
 
   const auto &log = *grid.ctx()->log();
@@ -629,8 +629,12 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
   {
     // Set of spatial dimensions for this field:
     std::set<int> axes{ X_AXIS, Y_AXIS };
-    if (axis_type_from_string(variable.z()["axis"]) == Z_AXIS) {
-      axes.insert(Z_AXIS);
+
+    for (const auto &dim : variable.dimensions()) {
+      if (axis_type_from_string(dim["axis"]) == Z_AXIS) {
+        axes.insert(Z_AXIS);
+        break;
+      }
     }
 
     int input_spatial_dim_count = 0; // number of spatial dimensions (input file)

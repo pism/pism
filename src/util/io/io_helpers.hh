@@ -20,7 +20,7 @@
 #ifndef PISM_IO_HELPERS_H
 #define PISM_IO_HELPERS_H
 
-#include "OutputWriter.hh"
+#include <set>
 #include <memory>
 #include <string>
 #include <vector>
@@ -33,7 +33,6 @@ class System;
 }
 
 class VariableMetadata;
-class SpatialVariableMetadata;
 class Grid;
 class File;
 class Logger;
@@ -58,14 +57,14 @@ void check_input_grid(const grid::InputGridInfo &input_grid,
                       const std::vector<double> &internal_z_levels,
                       bool allow_extrapolation);
 
-void regrid_spatial_variable(const SpatialVariableMetadata &variable,
+void regrid_spatial_variable(const VariableMetadata &variable,
                              const Grid& internal_grid,
                              const LocalInterpCtx &lic,
                              const File &file,
                              const Logger &log,
                              double *output);
 
-void read_spatial_variable(const SpatialVariableMetadata &variable,
+void read_spatial_variable(const VariableMetadata &variable,
                            const Grid& grid, const File &file,
                            unsigned int time, double *output);
 
@@ -89,13 +88,12 @@ void read_time_info(std::shared_ptr<units::System> unit_system, const File &file
 VariableMetadata read_attributes(const File &file, const std::string &variable_name,
                                  std::shared_ptr<units::System> unit_system);
 
-// writing utilities
+void define_variables(const OutputFile &file,
+                      const std::set<VariableMetadata> &variables,
+                      const VariableMetadata &mapping,
+                      bool use_internal_units);
 
-/*!
- * Define the time dimension
- */
-void define_time_dimension(const OutputFile &output_file, const VariableMetadata &metadata,
-                           bool with_bounds = false, int length = 0);
+// writing utilities
 
 void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
 

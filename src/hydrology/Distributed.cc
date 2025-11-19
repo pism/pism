@@ -18,6 +18,7 @@
 
 #include <algorithm> // std::min, std::max
 
+#include "Routing.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/hydrology/Distributed.hh"
 #include "pism/util/array/CellType.hh"
@@ -98,13 +99,12 @@ void Distributed::init_impl(const array::Scalar &W_till,
   m_P.copy_from(P);
 }
 
-void Distributed::define_model_state_impl(const OutputFile &output) const {
-  Routing::define_model_state_impl(output);
-  m_P.define(output);
+std::set<VariableMetadata> Distributed::state_impl() const {
+  return pism::combine(Routing::state_impl(), array::metadata({ &m_P }));
 }
 
-void Distributed::write_model_state_impl(const OutputFile &output) const {
-  Routing::write_model_state_impl(output);
+void Distributed::write_state_impl(const OutputFile &output) const {
+  Routing::write_state_impl(output);
   m_P.write(output);
 }
 

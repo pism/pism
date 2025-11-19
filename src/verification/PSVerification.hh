@@ -35,8 +35,8 @@ private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  void define_model_state_impl(const OutputFile &output) const;
-  void write_model_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
+  void write_state_impl(const OutputFile &output) const;
 
   MaxTimestep max_timestep_impl(double t) const;
 

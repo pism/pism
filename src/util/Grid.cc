@@ -30,20 +30,22 @@
 #include <vector>
 #include <utility>              // std::swap
 
-#include "pism/util/Interpolation1D.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/InputInterpolation.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/GridInfo.hh"
+#include "pism/util/InputInterpolation.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/petscwrappers/DM.hh"
-#include "pism/util/projection.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/projection.hh"
 
 namespace pism {
 
@@ -59,7 +61,7 @@ struct Grid::Impl : public grid::DistributedGridInfo {
 
   std::shared_ptr<const Context> ctx;
 
-  MappingInfo mapping_info;
+  VariableMetadata mapping_info;
 
   //! @brief array containing lenghts (in the x-direction) of processor sub-domains
   std::vector<PetscInt> procs_x;
@@ -898,7 +900,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
                                     variable.c_str());
     }
 
-    auto mapping = MappingInfo::FromFile(file, var.name, unit_system).cf_mapping;
+    auto mapping = mapping_info_from_file(file, var.name, unit_system);
 
     bool time_dimension_processed = false;
     for (const auto &dimension_name : file.dimensions(var.name)) {
@@ -915,19 +917,19 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
           // Try to detect rotated pole grids
           {
             if (mapping.get_string("grid_mapping_name") == "rotated_latitude_longitude" or
-                member(std_name, { "grid_latitude", "grid_longitude" }) or
-                member(dimension_name, { "rlat", "rlon" })) {
+                set_member(std_name, { "grid_latitude", "grid_longitude" }) or
+                set_member(dimension_name, { "rlat", "rlon" })) {
               units              = "degrees";
               longitude_latitude = true;
             }
           }
           // Try to detect longitude-latitude grids
           {
-            if (std_name == "longitude" or member(dimension_name, {"lon", "longitude"})) {
+            if (std_name == "longitude" or set_member(dimension_name, {"lon", "longitude"})) {
               units              = "degree_east";
               longitude_latitude = true;
             }
-            if (std_name == "latitude" or member(dimension_name, {"lat", "latitude"})) {
+            if (std_name == "latitude" or set_member(dimension_name, {"lat", "latitude"})) {
               units              = "degree_north";
               longitude_latitude = true;
             }
@@ -1130,7 +1132,19 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
   return result;
 }
 
-Parameters::Parameters(const Config &config) {
+Parameters::Parameters() {
+  Lx = 0;
+  Ly = 0;
+  x0 = 0;
+  y0 = 0;
+  Mx = 0;
+  My = 0;
+  registration = CELL_CENTER;
+  periodicity = NOT_PERIODIC;
+}
+
+Parameters::Parameters(const Config &config)
+  : Parameters() {
 
   periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
   registration = string_to_registration(config.get_string("grid.registration"));
@@ -1143,7 +1157,8 @@ Parameters::Parameters(const Config &config) {
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx_, double Ly_) {
+Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx_, double Ly_)
+  : Parameters() {
 
   periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
   registration = string_to_registration(config.get_string("grid.registration"));
@@ -1237,7 +1252,8 @@ void Parameters::ownership_ranges_from_options(const Config &config, unsigned in
 }
 
 Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &file,
-                       const std::string &variable, Registration r) {
+                       const std::string &variable, Registration r)
+  : Parameters() {
   InputGridInfo input_grid(file, variable, unit_system, r);
 
   Lx            = input_grid.Lx;
@@ -1435,11 +1451,11 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     // process configuration parameters controlling vertical grid size and extent
     P.vertical_grid_from_options(*config);
     // process configuration parameters controlling grid ownership ranges
-    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
+    P.ownership_ranges_from_options(*config, ctx->size());
 
     auto result = std::make_shared<Grid>(ctx, P);
 
-    auto mapping_info = MappingInfo::FromFile(grid_file, P.variable_name, unit_system);
+    auto mapping_info = mapping_info_from_file(grid_file, P.variable_name, unit_system);
     result->set_mapping_info(mapping_info);
 
     units::Converter km(unit_system, "m", "km");
@@ -1496,14 +1512,14 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       // process configuration parameters controlling vertical grid size and extent
       input_grid.vertical_grid_from_options(*config);
       // process configuration parameters controlling grid ownership ranges
-      input_grid.ownership_ranges_from_options(*ctx->config(), ctx->size());
+      input_grid.ownership_ranges_from_options(*config, ctx->size());
 
       auto result = std::make_shared<Grid>(ctx, input_grid);
 
       units::Converter km(unit_system, "m", "km");
 
       // get grid projection info
-      auto grid_mapping = MappingInfo::FromFile(input_file, variable_name, unit_system);
+      auto grid_mapping = mapping_info_from_file(input_file, variable_name, unit_system);
 
       result->set_mapping_info(grid_mapping);
 
@@ -1524,7 +1540,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       auto result = Grid::FromFile(ctx, input_file, candidates, r);
 
       // get grid projection info
-      auto grid_mapping = MappingInfo::FromFile(input_file, variable_name, unit_system);
+      auto grid_mapping = mapping_info_from_file(input_file, variable_name, unit_system);
 
       result->set_mapping_info(grid_mapping);
 
@@ -1537,22 +1553,22 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     // not set, -bootstrap is not set either".
 
     // Use defaults from the configuration database
-    grid::Parameters P(*ctx->config());
-    P.horizontal_size_and_extent_from_options(*ctx->config());
-    P.vertical_grid_from_options(*ctx->config());
-    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
+    grid::Parameters P(*config);
+    P.horizontal_size_and_extent_from_options(*config);
+    P.vertical_grid_from_options(*config);
+    P.ownership_ranges_from_options(*config, ctx->size());
 
     return std::make_shared<Grid>(ctx, P);
   }
 }
 
-const MappingInfo &Grid::get_mapping_info() const {
+const VariableMetadata &Grid::get_mapping_info() const {
   return m_impl->mapping_info;
 }
 
-void Grid::set_mapping_info(const MappingInfo &info) {
+void Grid::set_mapping_info(const VariableMetadata &info) {
   m_impl->mapping_info = info;
-  // FIXME: re-compute lat/lon coordinates
+  m_impl->mapping_info.set_output_type(io::PISM_INT);
 }
 
 std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<double> &levels,

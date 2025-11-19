@@ -444,7 +444,7 @@ class File(TestCase):
         vec = PISM.Scalar(grid, "v")
         vec.metadata(0).long_name("dummy variable for testing").units("kelvin").output_units("degree_Celsius").standard_name("standard_name")
         vec.set(1.0)
-        vec.metadata().set_time_independent(True)
+        vec.metadata().set_time_dependent(False)
         vec.dump(self.file_without_time)
 
         # file with two variables with the same standard name
@@ -454,7 +454,7 @@ class File(TestCase):
         vec.metadata(0).set_name("v")
 
         vec.set(2.0)
-        vec.metadata().set_time_independent(False)
+        vec.metadata().set_time_dependent(True)
         vec.dump(self.file_with_time)
 
         f = PISM.File(ctx.com(), self.file_with_time, PISM.PISM_NETCDF3, PISM.PISM_READWRITE)

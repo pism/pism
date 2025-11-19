@@ -41,8 +41,8 @@ protected:
   const array::Scalar& runoff_impl() const;
   const array::Scalar& temperature_impl() const;
 
-  void define_model_state_impl(const OutputFile &output) const;
-  void write_model_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
+  void write_state_impl(const OutputFile &output) const;
 
   MaxTimestep max_timestep_impl(double t) const;
 

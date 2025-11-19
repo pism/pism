@@ -315,23 +315,27 @@ void SurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-void SurfaceModel::define_model_state_impl(const OutputFile &output) const {
+std::set<VariableMetadata> SurfaceModel::state_impl() const {
+  std::set<VariableMetadata> result;
+
   if (m_atmosphere) {
-    m_atmosphere->define_model_state(output);
+    result = pism::combine(result, m_atmosphere->state());
   }
 
   if (m_input_model) {
-    m_input_model->define_model_state(output);
+    result = pism::combine(result, m_input_model->state());
   }
+
+  return result;
 }
 
-void SurfaceModel::write_model_state_impl(const OutputFile &output) const {
+void SurfaceModel::write_state_impl(const OutputFile &output) const {
   if (m_atmosphere) {
-    m_atmosphere->write_model_state(output);
+    m_atmosphere->write_state(output);
   }
 
   if (m_input_model) {
-    m_input_model->write_model_state(output);
+    m_input_model->write_state(output);
   }
 }
 

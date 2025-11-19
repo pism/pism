@@ -264,7 +264,7 @@ static double parse_date(const std::string &input,
   // empty tokens separated by "-", so "-1000-1-1" will produce ["1000", "1", "1"].
   bool year_is_negative = (spec[0] == '-');
 
-  if (year_is_negative and not member(calendar, {"365_day", "360_day", "noleap"})) {
+  if (year_is_negative and not set_member(calendar, {"365_day", "360_day", "noleap"})) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "negative dates such as '%s' are not allowed with the '%s' calendar.\n"
                                   "Please submit a bug report if this is a problem.",
@@ -436,7 +436,7 @@ void Time::init_calendar(const std::string &calendar_string) {
   double seconds_per_day = convert(m_unit_system, 1.0, "day", "seconds");
   if (calendar_string == "360_day") {
     m_year_length = 360 * seconds_per_day;
-  } else if (member(calendar_string, {"365_day", "noleap"})) {
+  } else if (set_member(calendar_string, {"365_day", "noleap"})) {
     m_year_length = 365 * seconds_per_day;
   } else {
     // use the ~365.2524-day year
@@ -474,11 +474,26 @@ std::string Time::variable_name() const {
   return m_variable_name;
 }
 
-VariableMetadata Time::metadata() const {
-  VariableMetadata result(variable_name(), units().system());
+VariableMetadata Time::metadata(bool with_bounds) const {
+  VariableMetadata result(variable_name(), { { variable_name(), io::PISM_UNLIMITED } },
+                          units().system());
   result.long_name("time").units(units());
   result["axis"]     = "T";
   result["calendar"] = calendar();
+
+  if (with_bounds) {
+    auto bounds_name = variable_name() + "_bounds";
+    result["bounds"] = bounds_name;
+  }
+  
+  return result;
+}
+
+VariableMetadata Time::bounds_metadata() const {
+  auto bounds_name = variable_name() + "_bounds";
+  VariableMetadata result(bounds_name, { { "nv", 2 } }, m_unit_system);
+
+  result.units(units()).set_time_dependent(true);
 
   return result;
 }
@@ -677,7 +692,7 @@ void Time::compute_times_simple(double time_start, double delta, double time_end
 }
 
 double Time::convert_time_interval(double T, const std::string &units) const {
-  if (member(units, {"year", "years", "yr", "a"})) {
+  if (set_member(units, {"year", "years", "yr", "a"})) {
     return this->seconds_to_years(T); // uses year length here
   }
   return convert(m_unit_system, T, "seconds", units);
@@ -722,7 +737,7 @@ Time::Time(MPI_Comm com,
 
   m_calendar_string = ::pism::calendar(file.get(), *config, log);
   init_calendar(m_calendar_string);
-  m_simple_calendar = member(m_calendar_string, {"360_day", "365_day", "no_leap"});
+  m_simple_calendar = set_member(m_calendar_string, {"360_day", "365_day", "no_leap"});
 
   m_run_start = start_time(*config,
                            file.get(),

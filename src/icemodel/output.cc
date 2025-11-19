@@ -19,6 +19,7 @@
 #include <gsl/gsl_interp.h>     // gsl_interp_bsearch()
 
 #include <algorithm>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -32,10 +33,10 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/projection.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 
 namespace pism {
 
@@ -69,95 +70,111 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
   return MaxTimestep(dt, description);
 }
 
-//! Define metadata variables and attributes in an output file
-void IceModel::define_metadata(const OutputFile &file, MappingTreatment mapping_flag) const {
+void IceModel::define_time(const OutputFile &file, bool with_bounds) const {
+  file.define_variable(m_time->metadata(with_bounds));
 
-  if (mapping_flag == WRITE_MAPPING) {
-    auto info = m_grid->get_mapping_info();
-
-    auto mapping = info.cf_mapping;
-    if (not info.proj_string.empty()) {
-      // Write the PROJ string to mapping:proj_params (for CDO).
-      mapping["proj_params"] = info.proj_string;
-    }
-
-    if (mapping.has_attributes()) {
-      file.define_variable(mapping, {});
-    }
-  }
-
-  m_config->define(file);
-
-  {
-    file.append_history(m_output_history);
-    file.set_global_attributes(m_output_global_attributes.all_strings(),
-                               m_output_global_attributes.all_doubles());
+  if (with_bounds) {
+    file.define_variable(m_time->bounds_metadata());
   }
 }
 
-void IceModel::write_metadata(const OutputFile &file) const {
-  m_config->write(file);
+std::set<VariableMetadata> IceModel::common_metadata() const {
+  VariableMetadata wall_clock("wall_clock_time", m_sys);
+  wall_clock.long_name("wall-clock time since the beginning of the run")
+      .units("hours")
+      .set_time_dependent(true)
+      .set_output_type(io::PISM_FLOAT);
+
+  VariableMetadata myph("model_years_per_processor_hour", m_sys);
+  myph.long_name("average number of model years per processor hour, since the beginning of the run")
+      .units("years / hour")
+      .set_time_dependent(true)
+      .set_output_type(io::PISM_FLOAT);
+
+  VariableMetadata step_counter("step_counter", m_sys);
+  step_counter.long_name("number of time steps since the beginning of the run")
+      .units("")
+      .set_time_dependent(true)
+      .set_output_type(io::PISM_INT);
+
+  std::set<VariableMetadata> result = { wall_clock, myph, step_counter, m_output_global_attributes,
+                                        config_metadata(*m_config) };
+
+  {
+    auto mapping = m_grid->get_mapping_info();
+
+    if (mapping.has_attributes()) {
+      result.insert(mapping);
+    }
+  }
+
+  return result;
+}
+
+void IceModel::init_final_output() {
+  m_output_filename = m_config->get_string("output.file");
+
+  if (m_output_filename.empty()) {
+    m_output_filename = "unnamed.nc";
+    m_log->message(2, "WARNING: output.file is empty. Using '%s' instead.\n",
+                   m_output_filename.c_str());
+  }
+
+  if (not ends_with(m_output_filename, ".nc")) {
+    m_log->message(2, "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+  }
+
+  m_output_vars = output_variables(m_config->get_string("output.size"));
+
+#if (Pism_USE_PROJ == 1)
+  {
+    std::string proj_string = m_grid->get_mapping_info()["proj_params"];
+    if (not proj_string.empty()) {
+      for (std::string v : {"lon", "lat"}) {
+        if (set_member(v, m_output_vars)) {
+          m_output_vars.insert(v + "_bnds");
+        }
+      }
+    }
+  }
+#endif
+
+  m_output_file_contents = pism::combine(common_metadata(), state_variables());
+  m_output_file_contents =
+      pism::combine(m_output_file_contents, diagnostic_variables(m_output_vars));
 }
 
 //! Save model state in NetCDF format.
 /*!
 Calls write_variables() to do the actual work.
  */
-void IceModel::save_results() {
+void IceModel::write_final_output() {
   append_history("PISM done");
-
-  std::string filename = m_config->get_string("output.file");
-
-  if (filename.empty()) {
-    m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.\n");
-    filename = "unnamed.nc";
-  }
-
-  if (not ends_with(filename, ".nc")) {
-    m_log->message(2, "PISM WARNING: output file name does not have the '.nc' suffix!\n");
-  }
 
   const Profiling &profiling = m_ctx->profiling();
 
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
-    m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
-    OutputFile file(m_output_writer, filename);
+    m_log->message(2, "Writing model state to file `%s'...\n", m_output_filename.c_str());
+    OutputFile file(m_output_writer, m_output_filename);
 
-    define_metadata(file, WRITE_MAPPING);
-    define_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+    {
+      define_time(file);
+      define_variables(file, m_output_file_contents);
+    }
 
-    write_metadata(file);
-    write_variables(file, INCLUDE_MODEL_STATE, m_output_vars, m_time->current());
+    {
+      write_config(*m_config, "pism_config", file);
+      file.append_time(m_time->current());
+      write_state(file);
+      write_diagnostics(file, m_output_vars);
+      write_run_stats(file);
+    }
   }
   profiling.end("io.model_state");
 }
 
-void IceModel::define_run_stats(const OutputFile &file) const {
-
-  VariableMetadata wall_clock("wall_clock_time", m_sys);
-  wall_clock.long_name("wall-clock time since the beginning of the run")
-      .units("hours")
-      .set_output_type(io::PISM_FLOAT);
-
-  VariableMetadata myph("model_years_per_processor_hour", m_sys);
-  myph.long_name("average number of model years per processor hour, since the beginning of the run")
-      .units("years / hour")
-      .set_output_type(io::PISM_FLOAT);
-
-  VariableMetadata step_counter("step_counter", m_sys);
-  step_counter.long_name("number of time steps since the beginning of the run")
-      .units("")
-      .set_output_type(io::PISM_INT);
-
-  file.define_timeseries_variable(wall_clock);
-  file.define_timeseries_variable(myph);
-  file.define_timeseries_variable(step_counter);
-}
-
 void IceModel::write_run_stats(const OutputFile &file) const {
-
-  auto time_name = m_time->variable_name();
 
   auto t_length = file.time_dimension_length();
   auto t_start = t_length > 0 ? t_length - 1 : 0;
@@ -166,120 +183,59 @@ void IceModel::write_run_stats(const OutputFile &file) const {
          proc_hours       = m_grid->size() * wall_clock_hours,
          model_years = m_time->convert_time_interval(m_time->current() - m_time->start(), "years");
 
-  std::vector<unsigned int> start = { t_start };
-  std::vector<unsigned int> count = { 1 };
-
-  if (not m_config->get_string("output.experiment_id").empty()) {
-    start.insert(start.cbegin(), 0);
-    count.insert(count.cbegin(), 1);
+  std::vector<unsigned int> start{};
+  std::vector<unsigned int> count{};
+  if (m_config->get_string("output.experiment_id").empty()) {
+    start = { t_start };
+    count = { 1 };
+  } else {
+    start = { 0, t_start };
+    count = { 1, 1 };
   }
 
-  file.write_array({ "wall_clock_time", m_sys }, start, count, { wall_clock_hours });
-  file.write_array({ "model_years_per_processor_hour", m_sys }, start, count,
-                   { model_years / proc_hours });
-  file.write_array({ "step_counter", m_sys }, start, count, { (double)m_step_counter });
+  file.write_array("wall_clock_time", start, count, { wall_clock_hours });
+  file.write_array("model_years_per_processor_hour", start, count, { model_years / proc_hours });
+  file.write_array("step_counter", start, count, { (double)m_step_counter });
 }
 
-void IceModel::define_variables(const OutputFile &file, OutputKind kind,
-                                const std::set<std::string> &variables) const {
+void IceModel::define_variables(const OutputFile &file,
+                                const std::set<VariableMetadata> &variables) const {
+  io::define_variables(file, variables,
+                       m_grid->get_mapping_info(),
+                       m_config->get_flag("output.use_MKS"));
+}
 
-  auto time_name = m_time->variable_name();
-
-  // define the time dimension if necessary (no-op if it is already defined)
+std::set<VariableMetadata> IceModel::state_variables() const {
+  std::set<VariableMetadata> result{};
   {
-    bool with_bounds = false;
-    io::define_time_dimension(file, m_time->metadata(), with_bounds);
-  }
-
-  define_run_stats(file);
-
-  // "lon" and "lat" are a part of the "model state", so we need to add "coordinates" when
-  // saving the model state even if "lon" and "lat" were not requested explicitly:
-  if ((member("lat", variables) and member("lon", variables)) or
-      kind == INCLUDE_MODEL_STATE) {
-    file.add_extra_attributes({ { "coordinates", "lat lon" } });
-  }
-
-  const auto &mapping = m_grid->get_mapping_info();
-  if (not mapping.proj_string.empty() or mapping.cf_mapping.has_attributes()) {
-    file.add_extra_attributes({ { "grid_mapping", mapping.cf_mapping.get_name() } });
-  }
-
-  if (kind == INCLUDE_MODEL_STATE) {
-    define_model_state(file);
-  }
-
-  define_diagnostics(file, variables);
-}
-
-void IceModel::write_variables(const OutputFile &file, OutputKind kind,
-                               const std::set<std::string> &variables, double time_seconds) const {
-  // append to the time dimension
-  file.append_time(time_seconds);
-
-  if (kind == INCLUDE_MODEL_STATE) {
-    write_model_state(file);
-  }
-  write_diagnostics(file, variables);
-
-  write_run_stats(file);
-}
-
-void IceModel::define_diagnostics(const OutputFile &file, const std::set<std::string> &variables) const {
-  for (const auto& variable : variables) {
-    auto diag = m_diagnostics.find(variable);
-
-    if (diag != m_diagnostics.end()) {
-      auto &D = *diag->second;
-      for (unsigned int n = 0; n < D.n_variables(); ++n) {
-        auto var = D.metadata(n);
-
-        if (var.get_name() == "lat" and member("lat_bnds", variables)) {
-          var["bounds"] = "lat_bnds";
-        }
-        if (var.get_name() == "lon" and member("lon_bnds", variables)) {
-          var["bounds"] = "lon_bnds";
-        }
-
-        file.define_spatial_variable(var, D.grid_info());
+    // IceModel's state variables:
+    for (auto *v : m_model_state) {
+      for (unsigned int k = 0; k < v->ndof(); ++k) {
+        result.insert(v->metadata(k));
       }
     }
-  }
-}
 
-//! \brief Writes variables listed in vars to filename, using nctype to write
-//! fields stored in dedicated Arrays.
-void IceModel::write_diagnostics(const OutputFile &file, const std::set<std::string> &variables) const {
-  for (const auto& variable : variables) {
-    auto diag = m_diagnostics.find(variable);
+    // state variables from sub-models:
+    for (const auto &m : m_submodels) {
+      result = pism::combine(result, m.second->state());
+    }
 
-    if (diag != m_diagnostics.end()) {
-      diag->second->compute()->write(file);
+    // state variables from diagnostics:
+    for (const auto &d : m_diagnostics) {
+      result = pism::combine(result, d.second->state());
     }
   }
+
+  return result;
 }
 
-void IceModel::define_model_state(const OutputFile &file) const {
-  for (auto *v : m_model_state) {
-    v->define(file);
-  }
-
-  for (const auto& m : m_submodels) {
-    m.second->define_model_state(file);
-  }
-
-  for (const auto& d : m_diagnostics) {
-    d.second->define_state(file);
-  }
-}
-
-void IceModel::write_model_state(const OutputFile &file) const {
+void IceModel::write_state(const OutputFile &file) const {
   for (auto *v : m_model_state) {
     v->write(file);
   }
 
   for (const auto& m : m_submodels) {
-    m.second->write_model_state(file);
+    m.second->write_state(file);
   }
 
   for (const auto& d : m_diagnostics) {
@@ -289,27 +245,35 @@ void IceModel::write_model_state(const OutputFile &file) const {
 
 std::string IceModel::save_state_on_error(const std::string &suffix,
                                           const std::set<std::string> &additional_variables) {
-  std::string filename = m_config->get_string("output.file");
 
-  if (filename.empty()) {
-    m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.");
-    filename = "unnamed.nc";
-  }
+  auto filename = filename_add_suffix(m_output_filename, suffix, "");
 
-  filename = filename_add_suffix(filename, suffix, "");
-
-  auto variables = output_variables("small");
+  auto variable_names = output_variables("small");
   for (const auto &v : additional_variables) {
-    variables.insert(v);
+    variable_names.insert(v);
   }
 
-  OutputFile file(m_output_writer, filename);
+  std::shared_ptr<OutputWriter> writer =
+      std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  writer->initialize({}, true);
 
-  define_metadata(file, WRITE_MAPPING);
-  define_variables(file, INCLUDE_MODEL_STATE, variables);
+  OutputFile file(writer, filename);
 
-  write_metadata(file);
-  write_variables(file, INCLUDE_MODEL_STATE, variables, m_time->current());
+  {
+    auto variables = pism::combine(common_metadata(), state_variables());
+    variables = pism::combine(variables, diagnostic_variables(variable_names));
+
+    define_time(file);
+    define_variables(file, variables);
+  }
+
+  {
+    write_config(*m_config, "pism_config", file);
+    file.append_time(m_time->current());
+    write_state(file);
+    write_diagnostics(file, variable_names);
+    write_run_stats(file);
+  }
 
   file.close();
 

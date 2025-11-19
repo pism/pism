@@ -45,9 +45,9 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  void define_model_state_impl(const OutputFile &output) const;
+  std::set<VariableMetadata> state_impl() const;
 
-  void write_model_state_impl(const OutputFile &output) const;
+  void write_state_impl(const OutputFile &output) const;
 
   DiagnosticList diagnostics_impl() const;
 

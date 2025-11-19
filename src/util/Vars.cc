@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2024 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2024, 2025 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -67,7 +67,7 @@ void Vars::add(const array::Array &v, const std::string &name) {
 */
 void Vars::add(const array::Array &v) {
 
-  const SpatialVariableMetadata &m = v.metadata();
+  const auto &m = v.metadata();
   std::string name = v.get_name();
 
   if (m.has_attribute("standard_name")) {
@@ -95,7 +95,7 @@ void Vars::add(const array::Array &v) {
 void Vars::remove(const std::string &name) {
 
   const array::Array *v = m_variables[name];
-  const SpatialVariableMetadata &m = v->metadata();
+  const auto &m = v->metadata();
 
   if (v != NULL) {              // the argument is a "short" name
     m_variables.erase(name);
@@ -214,7 +214,7 @@ std::set<std::string> Vars::keys() const {
 
 void Vars::add_shared(std::shared_ptr<array::Array> variable) {
 
-  const SpatialVariableMetadata &m = variable->metadata();
+  const auto &m = variable->metadata();
   std::string name = variable->get_name();
 
   if (m.has_attribute("standard_name")) {

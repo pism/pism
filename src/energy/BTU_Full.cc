@@ -68,7 +68,7 @@ BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
 
     m_temp = std::make_shared<array::Array3D>(m_grid, "litho_temp", array::WITHOUT_GHOSTS, z);
     {
-      auto &z_dim = m_temp->metadata(0).z();
+      auto &z_dim = m_temp->metadata(0).dimension("z");
 
       z_dim.set_name("zb").long_name("Z-coordinate in bedrock").units("m");
       z_dim["axis"]     = "Z";
@@ -136,12 +136,11 @@ double BTU_Full::depth_impl() const {
   return m_Lbz;
 }
 
-void BTU_Full::define_model_state_impl(const OutputFile &output) const {
-  m_bottom_surface_flux.define(output);
-  m_temp->define(output);
+std::set<VariableMetadata> BTU_Full::state_impl() const {
+  return array::metadata({ &m_bottom_surface_flux, m_temp.get() });
 }
 
-void BTU_Full::write_model_state_impl(const OutputFile &output) const {
+void BTU_Full::write_state_impl(const OutputFile &output) const {
   m_bottom_surface_flux.write(output);
   m_temp->write(output);
 }

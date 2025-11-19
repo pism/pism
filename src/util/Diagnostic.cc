@@ -19,16 +19,15 @@
 #include <cmath>
 #include <memory>
 
-#include "io/IO_Flags.hh"
-#include "io/OutputWriter.hh"
-#include "pism/util/Diagnostic.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/projection.hh"
+#include "pism/util/Diagnostic.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/OutputWriter.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -82,12 +81,16 @@ unsigned int Diagnostic::n_variables() const {
   return m_vars.size();
 }
 
-void Diagnostic::init(const File &input, unsigned int time) {
-  this->init_impl(input, time);
+std::set<VariableMetadata> Diagnostic::state() const {
+  return state_impl();
 }
 
-void Diagnostic::define_state(const OutputFile &output) const {
-  this->define_state_impl(output);
+std::set<VariableMetadata> Diagnostic::state_impl() const {
+  return {};
+}
+
+void Diagnostic::init(const File &input, unsigned int time) {
+  this->init_impl(input, time);
 }
 
 void Diagnostic::write_state(const OutputFile &output) const {
@@ -100,18 +103,13 @@ void Diagnostic::init_impl(const File &input, unsigned int time) {
   // empty
 }
 
-void Diagnostic::define_state_impl(const OutputFile &output) const {
-  (void) output;
-  // empty
-}
-
 void Diagnostic::write_state_impl(const OutputFile &output) const {
   (void) output;
   // empty
 }
 
 //! Get a metadata object corresponding to variable number N.
-SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
+VariableMetadata& Diagnostic::metadata(unsigned int N) {
   if (N >= m_vars.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "variable metadata index %d is out of bounds",
@@ -143,9 +141,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   : m_grid(grid),
     m_config(grid->ctx()->config()),
     m_sys(grid->ctx()->unit_system()),
-    m_variable(name, m_sys),
-    m_time_dimension(grid->ctx()->time()->variable_name(), m_sys),
-    m_time_bounds(m_time_dimension.get_name() + "_bounds", m_sys) {
+    m_variable(name, m_sys) {
 
   m_current_time = 0;
   m_start        = 0;
@@ -153,11 +149,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   m_buffer_size = static_cast<size_t>(m_config->get_number("output.timeseries.buffer_size"));
 
   m_variable["ancillary_variables"] = name + "_aux";
-
-  const auto &time = m_grid->ctx()->time();
-  m_time_dimension.long_name("time").units(time->units());
-  m_time_dimension["calendar"] = time->calendar();
-  m_time_dimension["axis"] = "T";
+  m_variable.set_time_dependent(true);
 }
 
 TSDiagnostic::~TSDiagnostic() {
@@ -167,10 +159,7 @@ TSDiagnostic::~TSDiagnostic() {
 void TSDiagnostic::set_units(const std::string &units,
                              const std::string &output_units) {
   m_variable.units(units);
-
-  if (not m_config->get_flag("output.use_MKS")) {
-    m_variable.output_units(output_units);
-  }
+  m_variable.output_units(output_units);
 }
 
 TSSnapshotDiagnostic::TSSnapshotDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
@@ -346,18 +335,38 @@ void TSDiagnostic::flush() {
 
   if (len == m_start) {
     bool with_bounds = true;
-    io::define_time_dimension(file, m_time_dimension, with_bounds);
+    auto time = m_grid->ctx()->time()->metadata(with_bounds).get_name();
+    auto time_bounds = m_grid->ctx()->time()->bounds_metadata().get_name();
 
     // write requested times
-    file.write_array(m_time_dimension, { m_start }, { (unsigned int)m_time.size() }, m_time);
+    file.write_array(time, { m_start }, { (unsigned int)m_time.size() }, m_time);
     // write time bounds
-    file.write_array(m_time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
+    file.write_array(time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
                      m_bounds);
   }
 
-  file.define_timeseries_variable(m_variable);
+  // Convert to output units, if necessary
+  //
+  // Note that data in m_values are not used after this call, so we can perform this
+  // conversion in place (without making a copy).
+  if (not m_config->get_flag("output.use_MKS")) {
+
+    std::string units = metadata()["units"];
+    std::string output_units = metadata()["output_units"];
+
+    bool use_output_units =
+        (not units.empty() and not output_units.empty() and units != output_units);
+
+    if (use_output_units) {
+      units::Converter converter(metadata().unit_system(), units, output_units);
+
+      converter.convert_doubles(m_values.data(), m_values.size());
+    }
+  }
+
   // write values of a diagnostic
-  file.write_timeseries_variable(m_variable, { m_start }, { (unsigned int)m_values.size() }, m_values);
+  file.write_timeseries(m_variable.get_name(), { m_start },
+                                 { (unsigned int)m_values.size() }, m_values);
 
   file.sync();
 

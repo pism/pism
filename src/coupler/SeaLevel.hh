@@ -51,8 +51,8 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void define_model_state_impl(const OutputFile &output) const;
-  virtual void write_model_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;

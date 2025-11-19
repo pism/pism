@@ -150,8 +150,18 @@ bool is_increasing(const std::vector<double> &a) {
   return true;
 }
 
-bool member(const std::string &string, const std::set<std::string> &set) {
-  return (set.find(string) != set.end());
+template<typename T, typename A>
+bool member(const T& x, const A& iterable) {
+  return std::any_of(iterable.begin(), iterable.end(),
+                     [&x](const std::string &y) { return x == y; });
+}
+
+bool set_member(const std::string &string, const std::set<std::string> &set) {
+  return member(string, set);
+}
+
+bool vector_member(const std::string &string, const std::vector<std::string> &vector) {
+  return member(string, vector);
 }
 
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {

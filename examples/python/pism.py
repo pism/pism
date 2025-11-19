@@ -98,7 +98,7 @@ class PythonOceanModel(PISM.PyOceanModel):
             traceback.print_exc()
             raise
 
-    def define_model_state(self, output):
+    def define_state(self, output):
         "Define model state variables in the file `output`."
         try:
             # This model does not have a state but this code shows how to define the state
@@ -109,7 +109,7 @@ class PythonOceanModel(PISM.PyOceanModel):
             traceback.print_exc()
             raise
 
-    def write_model_state(self, output):
+    def write_state(self, output):
         "Write model state variables to the file `output`."
         try:
             # This model does not have a state but this code shows how to save the state
@@ -164,7 +164,7 @@ def main():
 
     model.run()
 
-    model.save_results()
+    model.write_final_output()
 
 def standalone_test():
     context = PISM.Context().ctx

@@ -34,6 +34,9 @@ IBIceModel::IBIceModel(std::shared_ptr<pism::Grid> grid, const std::shared_ptr<C
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
+
+  m_time->set_start(params.time_start_s);
+  m_time->set(params.time_start_s);
 }
 
 IBIceModel::~IBIceModel() {
@@ -321,26 +324,18 @@ void IBIceModel::prepare_outputs(double time_s) {
 void IBIceModel::dumpToFile(const std::string &filename) const {
   OutputFile file(m_output_writer, filename);
 
-  define_metadata(file, WRITE_MAPPING);
-  define_variables(file, INCLUDE_MODEL_STATE, {});
+  define_time(file);
+  define_variables(file, m_output_file_contents);
 
-  write_metadata(file);
-  // assume that "dumpToFile" is expected to save the model state *only*.
-  write_variables(file, INCLUDE_MODEL_STATE, {}, m_time->current());
+  write_config(*m_config, "pism_config", file);
+  file.append_time(m_time->current());
+  write_state(file);
+  write_diagnostics(file, m_output_vars);
+  write_run_stats(file);
 }
 
-void IBIceModel::time_setup() {
-  // super::m_grid_setup() trashes m_time->start().  Now set it correctly.
-  m_time->set_start(params.time_start_s);
-  m_time->set(params.time_start_s);
-
-  m_log->message(2, "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
-                 m_time->date(m_time->start()).c_str(), m_time->date(m_time->end()).c_str(),
-                 m_time->run_length().c_str(), m_time->calendar().c_str());
-}
-
-void IBIceModel::misc_setup() {
-  super::misc_setup();
+void IBIceModel::misc_setup(InputOptions input_options) {
+  super::misc_setup(input_options);
 
 
   // ------ Initialize MassEnth structures: base, cur, rate

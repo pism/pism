@@ -22,8 +22,6 @@
 #include <memory>
 #include <petscsys.h>
 
-#include "pism/pism_config.hh"
-
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/basalstrength/YieldStress.hh"
@@ -226,7 +224,7 @@ void IceModel::allocate_storage() {
     m_velocity_bc_mask.metadata(0)
         .long_name("Mask prescribing Dirichlet boundary locations for the sliding velocity")
         .set_output_type(io::PISM_INT)
-        .set_time_independent(true);
+        .set_time_dependent(false);
     m_velocity_bc_mask.metadata()["flag_values"]   = { 0, 1 };
     m_velocity_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
 
@@ -252,7 +250,7 @@ void IceModel::allocate_storage() {
   {
     m_ice_thickness_bc_mask.metadata(0)
         .long_name("Mask specifying locations where ice thickness is held constant")
-        .set_time_independent(true)
+        .set_time_dependent(false)
         .set_output_type(io::PISM_INT);
     m_ice_thickness_bc_mask.metadata()["flag_values"] = {0, 1};
     m_ice_thickness_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
@@ -261,15 +259,13 @@ void IceModel::allocate_storage() {
   }
 
   // Add some variables to the list of "model state" fields.
-  m_model_state.insert(&m_velocity_bc_mask);
-  m_model_state.insert(&m_velocity_bc_values);
-
-  m_model_state.insert(&m_ice_thickness_bc_mask);
-
-  m_model_state.insert(&m_geometry.latitude);
-  m_model_state.insert(&m_geometry.longitude);
-  m_model_state.insert(&m_geometry.ice_thickness);
-  m_model_state.insert(&m_geometry.ice_area_specific_volume);
+  m_model_state = { &m_velocity_bc_mask,
+                    &m_velocity_bc_values,
+                    &m_ice_thickness_bc_mask,
+                    &m_geometry.latitude,
+                    &m_geometry.longitude,
+                    &m_geometry.ice_thickness,
+                    &m_geometry.ice_area_specific_volume };
 }
 
 //! Update the surface elevation and the flow-type mask when the geometry has changed.
@@ -736,11 +732,8 @@ IceModelTerminationReason IceModel::run() {
   const Profiling &profiling = m_ctx->profiling();
 
   bool do_mass_conserve = m_config->get_flag("geometry.update.enabled");
-  bool do_energy = member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
+  bool do_energy = set_member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
   bool do_skip = m_config->get_flag("time_stepping.skip.enabled");
-
-  // de-allocate diagnostics that are not needed
-  prune_diagnostics();
 
   // Enforce consistency *and* remove icebergs. During time-stepping we remove icebergs at
   // the end of the time step, so we need to ensure that ice geometry is "OK" before the
@@ -826,15 +819,41 @@ void IceModel::init() {
 
   const Profiling &profiling = m_ctx->profiling();
 
+  InputOptions input_options = process_input_options(m_ctx->com(), m_config);
+
   profiling.begin("initialization");
 
   //! The IceModel initialization sequence is this:
 
-  //! 1) Initialize model time:
-  time_setup();
+  //! 1) Warn about some option combinations
+  {
+    if (not m_config->get_flag("geometry.update.enabled") &&
+        m_config->get_flag("time_stepping.skip.enabled")) {
+      m_log->message(2,
+                     "PISM WARNING: time_stepping.skip.enabled is 'true' and\n"
+                     "              geometry.update.enabled is 'false'\n"
+                     "              skipping time steps makes sense only with evolving geometry.\n");
+    }
+  }
 
-  //! 2) Process the options:
-  process_options();
+  // 2) Report run duration
+  {
+    bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
+
+    if (use_calendar) {
+      m_log->message(2, "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
+                     m_time->date(m_time->start()).c_str(), m_time->date(m_time->end()).c_str(),
+                     m_time->run_length().c_str(), m_time->calendar().c_str());
+    } else {
+      std::string time_units = m_config->get_string("output.runtime.time_unit_name");
+
+      double start = m_time->convert_time_interval(m_time->start(), time_units),
+             end = m_time->convert_time_interval(m_time->end(), time_units), length = end - start;
+
+      m_log->message(2, "* Run time: [%f %s, %f %s]  (%f %s)\n", start, time_units.c_str(), end,
+                     time_units.c_str(), length, time_units.c_str());
+    }
+  }
 
   //! 3) Memory allocation:
   allocate_storage();
@@ -845,7 +864,7 @@ void IceModel::init() {
   //! 6) Initialize coupler models and fill the model state variables
   //! (from a PISM output file, from a bootstrapping file using some
   //! modeling choices or using formulas). Calls IceModel::regrid()
-  model_state_setup();
+  model_state_setup(input_options);
 
   //! 7) Report grid parameters:
   m_log->message(2, "Computational domain and grid:\n");
@@ -854,7 +873,7 @@ void IceModel::init() {
   //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the
   //! basal till model, initialize snapshots. This has to happen *after*
   //! regridding.
-  misc_setup();
+  misc_setup(input_options);
 
   profiling.end("initialization");
 }
@@ -910,126 +929,6 @@ const array::Scalar& IceModel::frontal_melt() const {
  */
 const array::Scalar& IceModel::forced_retreat() const {
   return m_thickness_change.forced_retreat;
-}
-
-void warn_about_missing(const Logger &log,
-                        const std::set<std::string> &vars,
-                        const std::string &type,
-                        const std::set<std::string> &available,
-                        bool stop) {
-  std::vector<std::string> missing;
-  for (const auto &v : vars) {
-    if (available.find(v) == available.end()) {
-      missing.push_back(v);
-    }
-  }
-
-  if (not missing.empty()) {
-    size_t N = missing.size();
-    const char *ending = N > 1 ? "s" : "";
-    const char *verb   = N > 1 ? "are" : "is";
-    if (stop) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "%s variable%s %s %s not available!\n"
-                                    "Available variables:\n- %s",
-                                    type.c_str(),
-                                    ending,
-                                    join(missing, ",").c_str(),
-                                    verb,
-                                    set_join(available, ",\n- ").c_str());
-    }
-
-    log.message(2,
-                "\nWARNING: %s variable%s %s %s not available!\n\n",
-                type.c_str(),
-                ending,
-                join(missing, ",").c_str(),
-                verb);
-  }
-}
-
-/*!
- * De-allocate diagnostics that were not requested.
- *
- * Checks viewers, -extra_vars, -checkpoint, -save_vars, and regular output.
- *
- * FIXME: I need to make sure that these reporting mechanisms are active. It is possible that
- * variables are on a list, but that list is not actually used.
- */
-void IceModel::prune_diagnostics() {
-
-  // get the list of available diagnostics
-  std::set<std::string> available;
-  for (const auto &d : m_diagnostics) {
-    available.insert(d.first);
-  }
-
-  auto extra_stop = m_config->get_flag("output.extra.stop_missing");
-  warn_about_missing(*m_log, m_extra_vars,      "diagnostic", available, extra_stop);
-
-  // get the list of requested diagnostics
-  auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
-  requested = combine(requested, m_output_vars);
-  requested = combine(requested, m_snapshot_vars);
-  requested = combine(requested, m_extra_vars);
-  requested = combine(requested, m_checkpoint_vars);
-
-  // de-allocate diagnostics that were not requested
-  for (const auto &v : available) {
-    if (requested.find(v) == requested.end()) {
-      m_diagnostics.erase(v);
-    }
-  }
-
-  // scalar time series
-  std::vector<std::string> missing;
-  if (m_ts_file != nullptr and m_ts_vars.empty()) {
-    // use all diagnostics
-  } else {
-    TSDiagnosticList diagnostics;
-    for (const auto &v : m_ts_vars) {
-      if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
-        diagnostics[v] = m_ts_diagnostics[v];
-      } else {
-        missing.push_back(v);
-      }
-    }
-    // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
-    m_ts_diagnostics = diagnostics;
-  }
-
-  if (not missing.empty()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "requested scalar diagnostics %s are not available",
-                                  join(missing, ",").c_str());
-  }
-}
-
-/*!
- * Update diagnostics.
- *
- * This usually involves accumulating data needed to computed time-averaged quantities.
- *
- * Call this after prune_diagnostics() to avoid unnecessary work.
- */
-void IceModel::update_diagnostics(double dt) {
-  for (const auto &d : m_diagnostics) {
-    d.second->update(dt);
-  }
-
-  const double time = m_time->current();
-  for (const auto &d : m_ts_diagnostics) {
-    d.second->update(time - dt, time);
-  }
-}
-
-/*!
- * Reset accumulators in diagnostics that compute time-averaged quantities.
- */
-void IceModel::reset_diagnostics() {
-  for (auto &d : m_diagnostics) {
-    d.second->reset();
-  }
 }
 
 IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &grid)

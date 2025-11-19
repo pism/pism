@@ -57,7 +57,7 @@ YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
       .units("kg m^-2 second^-1")
       .output_units("kg m^-2 year^-1")
       .standard_name("precipitation_flux")
-      .set_time_independent(true);
+      .set_time_dependent(false);
 }
 
 //! Reads in the precipitation data from the input file.
@@ -83,11 +83,11 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
   }
 }
 
-void YearlyCycle::define_model_state_impl(const OutputFile &output) const {
-  m_precipitation.define(output);
+std::set<VariableMetadata> YearlyCycle::state_impl() const {
+  return array::metadata({ &m_precipitation });
 }
 
-void YearlyCycle::write_model_state_impl(const OutputFile &output) const {
+void YearlyCycle::write_state_impl(const OutputFile &output) const {
   m_precipitation.write(output);
 }
 

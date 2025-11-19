@@ -48,11 +48,14 @@ private:
 
   const File &file(const std::string &file_name);
 
+  void initialize_impl(const std::set<VariableMetadata> &array_variables);
+
   void define_dimension_impl(const std::string &file_name, const std::string &name,
                              unsigned int length);
 
-  void define_variable_impl(const std::string &file_name, const VariableMetadata &metadata,
-                            const std::vector<std::string> &dims);
+  void define_variable_impl(const std::string &file_name, const std::string &variable_name,
+                            const std::vector<std::string> &dims, io::Type type,
+                            const VariableAttributes &attributes);
 
   void set_global_attributes_impl(const std::string &file_name,
                                   const std::map<std::string, std::string> &strings,
@@ -79,8 +82,8 @@ private:
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count, const std::string &input);
 
-  void write_spatial_variable_impl(const std::string &file_name,
-                                   const SpatialVariableMetadata &metadata, const double *data);
+  void write_distributed_array_impl(const std::string &file_name,
+                                    const std::string &variable_name, const double *data);
 
   void append_impl(const std::string &file_name);
   void sync_impl(const std::string &file_name);

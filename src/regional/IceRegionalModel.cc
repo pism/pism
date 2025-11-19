@@ -55,7 +55,7 @@ void IceRegionalModel::allocate_storage() {
   // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
   m_no_model_mask.metadata(0)
       .long_name("mask: zeros (modeling domain) and ones (no-model buffer near grid edges)")
-      .set_time_independent(true)
+      .set_time_dependent(false)
       .set_output_type(io::PISM_INT); // no units and no standard name
   m_no_model_mask.metadata()["flag_values"]   = { 0, 1 };
   m_no_model_mask.metadata()["flag_meanings"] = "normal special_treatment";
@@ -73,22 +73,19 @@ void IceRegionalModel::allocate_storage() {
       .long_name("saved ice thickness for use to keep driving stress constant in no_model strip")
       .units("m"); //  no standard name
 
-  m_model_state.insert(&m_thk_stored);
-  m_model_state.insert(&m_usurf_stored);
-  m_model_state.insert(&m_no_model_mask);
+  m_model_state =
+      pism::combine(m_model_state, { &m_thk_stored, &m_usurf_stored, &m_no_model_mask });
 }
 
-void IceRegionalModel::model_state_setup() {
+void IceRegionalModel::model_state_setup(InputOptions input_options) {
 
   // initialize the model state (including special fields)
-  IceModel::model_state_setup();
-
-  InputOptions input = process_input_options(m_ctx->com(), m_config);
+  IceModel::model_state_setup(input_options);
 
   // Initialize stored ice thickness and surface elevation. This goes here and not in
   // bootstrap_2d because bed topography is not initialized at the time bootstrap_2d is
   // called.
-  if (input.type == INIT_BOOTSTRAP) {
+  if (input_options.type == INIT_BOOTSTRAP) {
     if (m_config->get_flag("regional.zero_gradient")) {
       m_usurf_stored.set(0.0);
       m_thk_stored.set(0.0);
@@ -101,17 +98,19 @@ void IceRegionalModel::model_state_setup() {
   m_geometry_evolution->set_no_model_mask(m_no_model_mask);
 
   if (m_ch_system) {
-    const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
+    const bool use_input_file =
+        input_options.type == INIT_BOOTSTRAP or input_options.type == INIT_RESTART;
 
     std::unique_ptr<File> input_file;
 
     if (use_input_file) {
-      input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
+      input_file.reset(
+          new File(m_grid->com, input_options.filename, io::PISM_GUESS, io::PISM_READONLY));
     }
 
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART: {
-      m_ch_system->restart(*input_file, input.record);
+      m_ch_system->restart(*input_file, input_options.record);
       break;
     }
     case INIT_BOOTSTRAP: {
@@ -386,8 +385,8 @@ protected:
   }
 };
 
-void IceRegionalModel::init_diagnostics() {
-  IceModel::init_diagnostics();
+void IceRegionalModel::allocate_diagnostics() {
+  IceModel::allocate_diagnostics();
 
   if (m_ch_system) {
     m_diagnostics["ch_temp"]      = Diagnostic::Ptr(new CHTemperature(this));

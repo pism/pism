@@ -80,16 +80,18 @@ public:
 
   unsigned int n_variables() const;
 
-  SpatialVariableMetadata &metadata(unsigned int N = 0);
+  VariableMetadata &metadata(unsigned int N = 0);
+
+  std::set<VariableMetadata> state() const;
 
   void init(const File &input, unsigned int time);
-  void define_state(const OutputFile &output) const;
+
   void write_state(const OutputFile &output) const;
 
 protected:
   virtual void init_impl(const File &input, unsigned int time);
 
-  virtual void define_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
   virtual void update_impl(double dt);
@@ -119,7 +121,7 @@ protected:
   //! Configuration flags and parameters
   std::shared_ptr<const Config> m_config;
   //! metadata corresponding to NetCDF variables
-  std::vector<SpatialVariableMetadata> m_vars;
+  std::vector<VariableMetadata> m_vars;
   //! fill value (used often enough to justify storing it)
   double m_fill_value;
 };
@@ -191,10 +193,10 @@ public:
         m_interval_length(0.0),
         m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
 
-    m_time_since_reset["units"]     = "seconds";
-    m_time_since_reset["long_name"] = "time since " + m_accumulator.get_name() + " was reset to 0";
+    m_time_since_reset.units("seconds").long_name("time since " + m_accumulator.get_name() +
+                                                  " was reset to 0");
 
-    m_accumulator.metadata()["long_name"] = "accumulator for the " + name + " diagnostic";
+    m_accumulator.metadata().long_name("accumulator for the " + name + " diagnostic");
 
     m_accumulator.set(0.0);
   }
@@ -215,10 +217,8 @@ protected:
     }
   }
 
-  void define_state_impl(const OutputFile &output) const {
-    auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
-    m_accumulator.define(output);
-    output.define_timeseries_variable(m_time_since_reset);
+  std::set<VariableMetadata> state_impl() const {
+    return { m_accumulator.metadata(0), m_time_since_reset };
   }
 
   void write_state_impl(const OutputFile &output) const {
@@ -226,7 +226,7 @@ protected:
 
     unsigned int time_length = output.time_dimension_length();
     unsigned int t_start     = time_length > 0 ? time_length - 1 : 0;
-    output.write_array(m_time_since_reset, { t_start }, { 1 }, { m_interval_length });
+    output.write_array(m_time_since_reset.get_name(), { t_start }, { 1 }, { m_interval_length });
   }
 
   virtual void update_impl(double dt) {
@@ -302,8 +302,6 @@ protected:
 
   /*!
    * Set internal (MKS) and "output" units.
-   *
-   * output_units is ignored if output.use_MKS is set.
    */
   void set_units(const std::string &units, const std::string &output_units);
 
@@ -315,8 +313,6 @@ protected:
   std::shared_ptr<units::System> m_sys;
 
   VariableMetadata m_variable;
-  VariableMetadata m_time_dimension;
-  VariableMetadata m_time_bounds;
 
   // buffer for diagnostic time series
   std::vector<double> m_time;
