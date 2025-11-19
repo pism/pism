@@ -311,7 +311,7 @@ void OutputWriter::write_dimensions(const std::string &file_name,
       coordinates = &variable.levels();
     }
 
-    if (coordinates->empty()) {
+    if (coordinates == nullptr or coordinates->empty()) {
       // nothing to write for this dimension
       continue;
     }
