@@ -395,7 +395,7 @@ void IceRegionalModel::allocate_diagnostics() {
   }
 }
 
-void IceRegionalModel::hydrology_step() {
+void IceRegionalModel::hydrology_step(double t, double dt) {
   hydrology::Inputs inputs;
 
   array::Scalar &sliding_speed = *m_work2d[0];
@@ -408,18 +408,18 @@ void IceRegionalModel::hydrology_step() {
   inputs.ice_sliding_speed  = &sliding_speed;
 
   if (m_surface_input_for_hydrology) {
-    m_surface_input_for_hydrology->update(m_time->current(), m_dt);
-    m_surface_input_for_hydrology->average(m_time->current(), m_dt);
+    m_surface_input_for_hydrology->update(t, dt);
+    m_surface_input_for_hydrology->average(t, dt);
     inputs.surface_input_rate = m_surface_input_for_hydrology.get();
   } else if (m_config->get_flag("hydrology.surface_input_from_runoff")) {
     // convert [kg m-2] to [kg m-2 s-1]
     array::Scalar &surface_input_rate = *m_work2d[1];
     surface_input_rate.copy_from(m_surface->runoff());
-    surface_input_rate.scale(1.0 / m_dt);
+    surface_input_rate.scale(1.0 / dt);
     inputs.surface_input_rate = &surface_input_rate;
   }
 
-  m_subglacial_hydrology->update(m_time->current(), m_dt, inputs);
+  m_subglacial_hydrology->update(t, dt, inputs);
 }
 
 

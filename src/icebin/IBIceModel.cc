@@ -125,12 +125,12 @@ void IBIceModel::energy_step() {
   array::sum_columns(strain_heating3, 1.0, my_dt, cur.strain_heating);
 }
 
-void IBIceModel::massContExplicitStep() {
+void IBIceModel::massContExplicitStep(double dt) {
 
   printf("BEGIN IBIceModel::MassContExplicitStep()\n");
 
   m_ice_density              = m_config->get_number("constants.ice.density");
-  m_meter_per_s_to_kg_per_m2 = m_dt * m_ice_density;
+  m_meter_per_s_to_kg_per_m2 = dt * m_ice_density;
 
 
   // =========== The Mass Continuity Step Itself
@@ -159,9 +159,9 @@ void IBIceModel::massContExplicitStep() {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      cur.smb.mass(i, j) += m_dt * ib_surface->massxfer(i, j);
-      cur.smb.enth(i, j) += m_dt * ib_surface->enthxfer(i, j);
-      cur.deltah(i, j) += m_dt * ib_surface->deltah(i, j);
+      cur.smb.mass(i, j) += dt * ib_surface->massxfer(i, j);
+      cur.smb.enth(i, j) += dt * ib_surface->enthxfer(i, j);
+      cur.deltah(i, j) += dt * ib_surface->deltah(i, j);
     }
   }
 }

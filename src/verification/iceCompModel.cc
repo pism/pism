@@ -594,9 +594,9 @@ void IceCompModel::post_step_hook() {
 }
 
 
-void IceCompModel::print_summary(bool /* tempAndAge */) {
+void IceCompModel::print_summary(bool /* tempAndAge */, double dt) {
   //   we always show a summary at every step
-  IceModel::print_summary(true);
+  IceModel::print_summary(true, dt);
 }
 
 static void write(const File &file, unsigned int start, const char *name, const char *units,

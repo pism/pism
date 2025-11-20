@@ -84,7 +84,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
   result.update_ghosts();
 }
 
-void IceModel::front_retreat_step() {
+void IceModel::front_retreat_step(double t, double dt) {
 
   bool retreat_rate_based_calving = m_eigen_calving or m_vonmises_calving or m_hayhurst_calving;
   bool calving_is_active =
@@ -133,7 +133,7 @@ void IceModel::front_retreat_step() {
       inputs.geometry = &m_geometry;
       inputs.subglacial_water_flux = &flux_magnitude;
 
-      m_frontal_melt->update(inputs, m_time->current(), m_dt);
+      m_frontal_melt->update(inputs, t, dt);
     }
   }
 
@@ -164,7 +164,7 @@ void IceModel::front_retreat_step() {
     }
 
     // apply the frontal melt rate
-    m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
+    m_front_retreat->update_geometry(dt, m_geometry, m_ice_thickness_bc_mask,
                                      retreat_rate,
                                      m_geometry.ice_area_specific_volume,
                                      m_geometry.ice_thickness);
@@ -204,7 +204,7 @@ void IceModel::front_retreat_step() {
       }
 
       if (m_calving_rate_factor) {
-        double T = m_time->current() + 0.5 * m_dt;
+        double T = t + 0.5 * dt;
         retreat_rate.scale(m_calving_rate_factor->value(T));
       }
 
@@ -222,7 +222,7 @@ void IceModel::front_retreat_step() {
         }
       }
 
-      m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
+      m_front_retreat->update_geometry(dt, m_geometry, m_ice_thickness_bc_mask,
                                        retreat_rate,
                                        m_geometry.ice_area_specific_volume,
                                        m_geometry.ice_thickness);
@@ -268,7 +268,7 @@ void IceModel::front_retreat_step() {
       }
 
       if (m_thickness_threshold_calving) {
-        m_thickness_threshold_calving->update(m_time->current(), m_dt, modified_cell_type,
+        m_thickness_threshold_calving->update(t, dt, modified_cell_type,
                                               m_geometry.ice_thickness);
       }
     }
@@ -289,7 +289,7 @@ void IceModel::front_retreat_step() {
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
-    m_prescribed_retreat->update(m_time->current(), m_dt,
+    m_prescribed_retreat->update(t, dt,
                                  m_geometry.ice_thickness,
                                  m_geometry.ice_area_specific_volume);
 

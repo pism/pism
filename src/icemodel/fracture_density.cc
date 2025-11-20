@@ -24,7 +24,7 @@
 
 namespace pism {
 
-void IceModel::update_fracture_density() {
+void IceModel::update_fracture_density(double dt) {
   // generate the BC mask for the fracture density model
   //
   // This mask contains ones at the in-flow boundary according to the SSA Dirichlet BC
@@ -72,7 +72,7 @@ void IceModel::update_fracture_density() {
 
   // This model has the same time-step restriction as the mass transport code so we don't
   // check if this time step is short enough.
-  m_fracture->update(m_dt, m_geometry,
+  m_fracture->update(dt, m_geometry,
                      m_stress_balance->shallow()->velocity(),
                      hardness, bc_mask);
 }

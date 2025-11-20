@@ -53,7 +53,7 @@ protected:
                                        double &volerr, double &areaerr,
                                        double &gmaxHerr, double &gavHerr, double &gmaxetaerr,
                                        double &centerHerr);
-  virtual void print_summary(bool tempAndAge);
+  virtual void print_summary(bool tempAndAge, double dt);
 
   // related to tests A B C D H
   void initTestABCDH();

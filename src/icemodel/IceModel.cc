@@ -380,8 +380,8 @@ YieldStressInputs IceModel::yield_stress_inputs() {
 /*!
 During the time-step we perform the following actions:
  */
-void IceModel::step(bool do_mass_continuity,
-                    bool do_skip) {
+double IceModel::step(bool do_mass_continuity,
+                      bool do_skip) {
 
   m_step_counter++;
 
@@ -434,14 +434,15 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li determine the time step according to a variety of stability criteria
   auto dt_info = max_timestep(m_skip_countdown);
-  m_dt                       = dt_info.dt;
+  double dt = dt_info.dt;
+
   m_adaptive_timestep_reason = dt_info.reason;
   m_skip_countdown           = dt_info.skip_counter;
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (m_basal_yield_stress_model) {
     profiling.begin("basal_yield_stress");
-    m_basal_yield_stress_model->update(yield_stress_inputs(), current_time, m_dt);
+    m_basal_yield_stress_model->update(yield_stress_inputs(), current_time, dt);
     profiling.end("basal_yield_stress");
     m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
     m_stdout_flags += "y";
@@ -449,7 +450,7 @@ void IceModel::step(bool do_mass_continuity,
     m_stdout_flags += "$";
   }
 
-  dt_TempAge += m_dt;
+  dt_TempAge += dt;
 
   //! \li update the age of the ice (if appropriate)
   if (m_age_model and updateAtDepth) {
@@ -482,7 +483,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the fracture density field; see update_fracture_density()
   if (m_config->get_flag("fracture_density.enabled")) {
     profiling.begin("fracture_density");
-    update_fracture_density();
+    update_fracture_density(dt);
     profiling.end("fracture_density");
   }
 
@@ -513,7 +514,7 @@ void IceModel::step(bool do_mass_continuity,
 
       try {
         m_geometry_evolution->flow_step(m_geometry,
-                                        m_dt,
+                                        dt,
                                         m_stress_balance->advective_velocity(),
                                         m_stress_balance->diffusive_flux(),
                                         m_ice_thickness_bc_mask);
@@ -522,7 +523,7 @@ void IceModel::step(bool do_mass_continuity,
                                                       {"flux_staggered", "flux_divergence"});
 
         e.add_context("performing a mass transport time step (dt=%f s). (Note: Model state was saved to '%s'.)",
-                      m_dt, output_file.c_str());
+                      dt, output_file.c_str());
         throw;
       }
 
@@ -534,7 +535,7 @@ void IceModel::step(bool do_mass_continuity,
 
     // calving, frontal melt, and discharge accounting
     profiling.begin("front_retreat");
-    front_retreat_step();
+    front_retreat_step(current_time, dt);
     profiling.end("front_retreat");
 
     m_stdout_flags += "h";
@@ -543,14 +544,14 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   profiling.begin("sea_level");
-  m_sea_level->update(m_geometry, current_time, m_dt);
+  m_sea_level->update(m_geometry, current_time, dt);
   profiling.end("sea_level");
 
   profiling.begin("ocean");
   {
     ocean::Inputs inputs;
     inputs.geometry = &m_geometry;
-    m_ocean->update(inputs, current_time, m_dt);
+    m_ocean->update(inputs, current_time, dt);
   }
   profiling.end("ocean");
 
@@ -560,14 +561,14 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li Update surface and ocean models.
   profiling.begin("surface");
-  m_surface->update(m_geometry, current_time, m_dt);
+  m_surface->update(m_geometry, current_time, dt);
   profiling.end("surface");
 
 
   if (do_mass_continuity) {
     // compute and apply effective surface and basal mass balance
 
-    m_geometry_evolution->source_term_step(m_geometry, m_dt,
+    m_geometry_evolution->source_term_step(m_geometry, dt,
                                            m_ice_thickness_bc_mask,
                                            m_surface->mass_flux(),
                                            m_basal_melt_rate);
@@ -595,7 +596,7 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   if (m_isochrones) {
-    m_isochrones->update(current_time, m_dt,
+    m_isochrones->update(current_time, dt,
                          m_stress_balance->velocity_u(),
                          m_stress_balance->velocity_v(),
                          m_geometry.ice_thickness,
@@ -606,7 +607,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   profiling.begin("basal_hydrology");
-  hydrology_step();
+  hydrology_step(current_time, dt);
   profiling.end("basal_hydrology");
 
   //! \li compute the bed deformation, which depends on current thickness, bed elevation,
@@ -617,7 +618,7 @@ void IceModel::step(bool do_mass_continuity,
     profiling.begin("bed_deformation");
     m_beddef->update(m_geometry.ice_thickness,
                      m_geometry.sea_level_elevation,
-                     current_time, m_dt);
+                     current_time, dt);
     profiling.end("bed_deformation");
 
     m_new_bed_elevation = m_beddef->bed_elevation().state_counter() != topg_state_counter;
@@ -640,7 +641,7 @@ void IceModel::step(bool do_mass_continuity,
   post_step_hook();
 
   // Done with the step; now adopt the new time.
-  m_time->step(m_dt);
+  m_time->step(dt);
 
   if (updateAtDepth) {
     t_TempAge  = m_time->current();
@@ -662,12 +663,14 @@ void IceModel::step(bool do_mass_continuity,
 
   // end the flag line
   m_stdout_flags += " " + m_adaptive_timestep_reason;
+
+  return dt;
 }
 
 /*!
  * Note: don't forget to update IceRegionalModel::hydrology_step() if necessary.
  */
-void IceModel::hydrology_step() {
+void IceModel::hydrology_step(double t, double dt) {
   hydrology::Inputs inputs;
 
   array::Scalar &sliding_speed = *m_work2d[0];
@@ -680,18 +683,18 @@ void IceModel::hydrology_step() {
   inputs.ice_sliding_speed  = &sliding_speed;
 
   if (m_surface_input_for_hydrology) {
-    m_surface_input_for_hydrology->update(m_time->current(), m_dt);
-    m_surface_input_for_hydrology->average(m_time->current(), m_dt);
+    m_surface_input_for_hydrology->update(t, dt);
+    m_surface_input_for_hydrology->average(t, dt);
     inputs.surface_input_rate = m_surface_input_for_hydrology.get();
   } else if (m_config->get_flag("hydrology.surface_input_from_runoff")) {
     // convert [kg m-2] to [kg m-2 s-1]
     array::Scalar &surface_input_rate = *m_work2d[1];
     surface_input_rate.copy_from(m_surface->runoff());
-    surface_input_rate.scale(1.0 / m_dt);
+    surface_input_rate.scale(1.0 / dt);
     inputs.surface_input_rate = &surface_input_rate;
   }
 
-  m_subglacial_hydrology->update(m_time->current(), m_dt, inputs);
+  m_subglacial_hydrology->update(t, dt, inputs);
 }
 
 //! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
@@ -756,7 +759,7 @@ IceModelTerminationReason IceModel::run() {
 
   m_stdout_flags.erase(); // clear it out
   print_summary_line(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
-  print_summary(do_energy);  // report starting state
+  print_summary(do_energy, 0.0 /* time step length is not known yet */);  // report starting state
 
   t_TempAge = m_time->current();
   dt_TempAge = 0.0;
@@ -770,9 +773,9 @@ IceModelTerminationReason IceModel::run() {
 
     m_stdout_flags.erase();  // clear it out
 
-    step(do_mass_conserve, do_skip);
+    m_dt = step(do_mass_conserve, do_skip);
 
-    update_diagnostics(m_dt);
+    update_diagnostics(m_time->current(), dt());
 
     // report a summary for major steps or the last one
     bool updateAtDepth = m_skip_countdown == 0;
@@ -780,7 +783,7 @@ IceModelTerminationReason IceModel::run() {
 
     double time_resolution = m_config->get_number("time_stepping.resolution");
     const bool show_step = tempAgeStep or fabs(m_time->current() - m_time->end()) < time_resolution;
-    print_summary(show_step);
+    print_summary(show_step, dt());
 
     // update viewers before writing extras because writing extras resets diagnostics
     update_viewers();

@@ -184,7 +184,7 @@ protected:
   virtual void init_calving();
   virtual void init_frontal_melt();
   virtual void init_front_retreat();
-  virtual void update_diagnostics(double dt);
+  virtual void update_diagnostics(double t, double dt);
 
   virtual void allocate_diagnostics();
   virtual void deallocate_unused_diagnostics();
@@ -230,7 +230,7 @@ protected:
 
   void init_final_output();
 
-  virtual void step(bool do_mass_continuity, bool do_skip);
+  virtual double step(bool do_mass_continuity, bool do_skip);
   virtual void pre_step_hook();
   virtual void post_step_hook();
 
@@ -366,7 +366,7 @@ protected:
   virtual void bedrock_thermal_model_step();
   virtual void energy_step();
 
-  virtual void hydrology_step();
+  virtual void hydrology_step(double t, double dt);
 
   virtual void combine_basal_melt_rate(const Geometry &geometry,
                                        const array::Scalar &shelf_base_mass_flux,
@@ -385,7 +385,7 @@ protected:
    */
   void identify_open_ocean(const array::CellType &cell_type, array::Scalar1 &result);
 
-  virtual void front_retreat_step();
+  virtual void front_retreat_step(double t, double dt);
 
   void compute_geometry_change(const array::Scalar &thickness,
                                const array::Scalar &Href,
@@ -398,12 +398,12 @@ protected:
   virtual void regrid();
 
   // see iMfractures.cc
-  virtual void update_fracture_density();
+  virtual void update_fracture_density(double dt);
 
   // see iMreport.cc
   virtual double compute_temperate_base_fraction(double ice_area);
   virtual double compute_original_ice_fraction(double ice_volume);
-  virtual void print_summary(bool tempAndAge);
+  virtual void print_summary(bool tempAndAge, double dt);
   virtual void print_summary_line(bool printPrototype, bool tempAndAge,
                                   double delta_t,
                                   double volume, double area,

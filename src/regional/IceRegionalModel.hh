@@ -49,7 +49,7 @@ protected:
   void model_state_setup(InputOptions input_options);
 
   void energy_step();
-  void hydrology_step();
+  void hydrology_step(double t, double dt);
 
   stressbalance::Inputs stress_balance_inputs();
   energy::Inputs energy_model_inputs();

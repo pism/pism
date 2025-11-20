@@ -86,14 +86,14 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
   return (unsigned int)GlobalMax(grid->com, CFL_violation_count);
 }
 
-void IceModel::print_summary(bool tempAndAge) {
+void IceModel::print_summary(bool tempAndAge, double dt) {
 
   const array::Array3D
     &u3 = m_stress_balance->velocity_u(),
     &v3 = m_stress_balance->velocity_v();
 
   unsigned int n_CFL_violations = count_CFL_violations(u3, v3, m_geometry.ice_thickness,
-                                                       tempAndAge ? dt_TempAge : m_dt);
+                                                       tempAndAge ? dt_TempAge : dt);
 
   // report CFL violations
   if (n_CFL_violations > 0.0) {
@@ -120,7 +120,7 @@ void IceModel::print_summary(bool tempAndAge) {
   }
 
   // main report: 'S' line
-  print_summary_line(false, tempAndAge, m_dt,
+  print_summary_line(false, tempAndAge, dt,
                    volume, area, meltfrac, max_diffusivity);
 }
 

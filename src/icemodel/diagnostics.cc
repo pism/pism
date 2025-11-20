@@ -3810,14 +3810,13 @@ void IceModel::deallocate_unused_diagnostics() {
  *
  * Call this after deallocate_unused_diagnostics() to avoid unnecessary work.
  */
-void IceModel::update_diagnostics(double dt) {
+void IceModel::update_diagnostics(double t, double dt) {
   for (const auto &d : m_diagnostics) {
     d.second->update(dt);
   }
 
-  const double time = m_time->current();
   for (const auto &d : m_ts_diagnostics) {
-    d.second->update(time - dt, time);
+    d.second->update(t - dt, t);
   }
 }
 
