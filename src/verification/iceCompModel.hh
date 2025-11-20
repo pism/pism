@@ -65,7 +65,7 @@ protected:
   void initTestL();
 
   // related to tests F G; see iCMthermo.cc
-  virtual void energy_step();
+  virtual void energy_step(double t, double dt);
   void initTestFG();
   void getCompSourcesTestFG();
 

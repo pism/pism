@@ -44,7 +44,7 @@ const double IceCompModel::m_Tmin   = 223.15; // K
 const double IceCompModel::m_LforFG = 750000; // m
 const double IceCompModel::m_ApforG = 200; // m
 
-void IceCompModel::energy_step() {
+void IceCompModel::energy_step(double t, double dt) {
 
   energy::EnergyModelStats stats;
 
@@ -60,7 +60,7 @@ void IceCompModel::energy_step() {
                               m_surface->temperature(),
                               bedtoptemp);
 
-  m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
+  m_btu->update(bedtoptemp, t, dt);
 
   energy::Inputs inputs;
   {
@@ -92,7 +92,7 @@ void IceCompModel::energy_step() {
     inputs.volumetric_heating_rate = &m_strain_heating3_comp;
   }
 
-  m_energy_model->update(t_TempAge, dt_TempAge, inputs);
+  m_energy_model->update(t, dt, inputs);
 
   m_stdout_flags = m_energy_model->stdout_flags() + m_stdout_flags;
 }

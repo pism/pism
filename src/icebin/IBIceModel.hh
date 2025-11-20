@@ -118,14 +118,14 @@ public:
   }
   /** @return Current time for enthalpy timestepping */
   double enthalpy_t() const {
-    return t_TempAge;
+    return m_t_TempAge;
   }
 
   // I added these...
   void massContPreHook();
   void massContPostHook();
   // Pre and post for energy
-  void energy_step();
+  void energy_step(double t, double dt);
 
   void prepare_outputs(double time_s);
 

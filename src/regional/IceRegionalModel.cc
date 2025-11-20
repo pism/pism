@@ -262,10 +262,10 @@ energy::Inputs IceRegionalModel::energy_model_inputs() {
   return result;
 }
 
-void IceRegionalModel::energy_step() {
+void IceRegionalModel::energy_step(double t, double dt) {
 
   if (m_ch_system) {
-    bedrock_thermal_model_step();
+    bedrock_thermal_model_step(t, dt);
 
     energy::Inputs inputs = energy_model_inputs();
     const array::Array3D *strain_heating = inputs.volumetric_heating_rate;
@@ -281,17 +281,17 @@ void IceRegionalModel::energy_step() {
     // Convert to the loss of energy by the CH system:
     m_ch_warming_flux->scale(-1.0);
 
-    m_ch_system->update(t_TempAge, dt_TempAge, inputs);
+    m_ch_system->update(t, dt, inputs);
 
     // Add CH warming flux to the strain heating term:
     m_ch_warming_flux->scale(-1.0);
     m_ch_warming_flux->add(1.0, *strain_heating);
 
-    m_energy_model->update(t_TempAge, dt_TempAge, inputs);
+    m_energy_model->update(t, dt, inputs);
 
     m_stdout_flags = m_energy_model->stdout_flags() + m_stdout_flags;
   } else {
-    IceModel::energy_step();
+    IceModel::energy_step(t, dt);
   }
 }
 

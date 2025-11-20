@@ -337,9 +337,9 @@ protected:
   //! mass continuity time step, s
   double m_dt;
   //! time of last update for enthalpy/temperature
-  double t_TempAge;
+  double m_t_TempAge;
   //! enthalpy/temperature and age time-steps
-  double dt_TempAge;
+  double m_dt_TempAge;
 
   unsigned int m_skip_countdown;
 
@@ -363,8 +363,8 @@ protected:
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see energy.cc
-  virtual void bedrock_thermal_model_step();
-  virtual void energy_step();
+  virtual void bedrock_thermal_model_step(double t, double dt);
+  virtual void energy_step(double t, double dt);
 
   virtual void hydrology_step(double t, double dt);
 

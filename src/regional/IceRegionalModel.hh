@@ -48,7 +48,7 @@ protected:
   void allocate_energy_model();
   void model_state_setup(InputOptions input_options);
 
-  void energy_step();
+  void energy_step(double t, double dt);
   void hydrology_step(double t, double dt);
 
   stressbalance::Inputs stress_balance_inputs();

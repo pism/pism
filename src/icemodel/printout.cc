@@ -93,7 +93,7 @@ void IceModel::print_summary(bool tempAndAge, double dt) {
     &v3 = m_stress_balance->velocity_v();
 
   unsigned int n_CFL_violations = count_CFL_violations(u3, v3, m_geometry.ice_thickness,
-                                                       tempAndAge ? dt_TempAge : dt);
+                                                       tempAndAge ? m_dt_TempAge : dt);
 
   // report CFL violations
   if (n_CFL_violations > 0.0) {

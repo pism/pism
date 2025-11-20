@@ -84,19 +84,19 @@ void IBIceModel::massContPostHook() {
 }
 
 
-void IBIceModel::energy_step() {
+void IBIceModel::energy_step(double t, double dt) {
 
-  printf("BEGIN IBIceModel::energyStep(t=%f, dt=%f)\n", t_TempAge, dt_TempAge);
+  printf("BEGIN IBIceModel::energyStep(t=%f, dt=%f)\n", t, dt);
 
   // Enthalpy and mass continuity are stepped with different timesteps.
   // Fish out the timestep relevant to US.
   // const double my_t0 = t_TempAge;          // Time at beginning of timestep
-  const double my_dt = dt_TempAge;
+  const double my_dt = dt;
 
   // =========== BEFORE Energy Step
 
   // =========== The Energy Step Itself
-  super::energy_step();
+  super::energy_step(t, dt);
 
   // =========== AFTER Energy Step
 

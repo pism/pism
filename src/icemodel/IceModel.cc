@@ -135,7 +135,7 @@ double IceModel::dt() const {
 }
 
 void IceModel::reset_counters() {
-  dt_TempAge       = 0.0;
+  m_dt_TempAge       = 0.0;
   m_dt             = 0.0;
   m_skip_countdown = 0;
 
@@ -450,7 +450,7 @@ double IceModel::step(bool do_mass_continuity,
     m_stdout_flags += "$";
   }
 
-  dt_TempAge += dt;
+  m_dt_TempAge += dt;
 
   //! \li update the age of the ice (if appropriate)
   if (m_age_model and updateAtDepth) {
@@ -461,7 +461,7 @@ double IceModel::step(bool do_mass_continuity,
     inputs.w3            = &m_stress_balance->velocity_w();
 
     profiling.begin("age");
-    m_age_model->update(current_time, dt_TempAge, inputs);
+    m_age_model->update(m_t_TempAge, m_dt_TempAge, inputs);
     profiling.end("age");
     m_stdout_flags += "a";
   } else {
@@ -473,7 +473,7 @@ double IceModel::step(bool do_mass_continuity,
   //!  energy_step()
   if (updateAtDepth) { // do the energy step
     profiling.begin("energy");
-    energy_step();
+    energy_step(m_t_TempAge, m_dt_TempAge);
     profiling.end("energy");
     m_stdout_flags += "E";
   } else {
@@ -640,12 +640,13 @@ double IceModel::step(bool do_mass_continuity,
   //! \li call post_step_hook() to let derived classes do more
   post_step_hook();
 
-  // Done with the step; now adopt the new time.
+  // Done with the step; now adopt the new time. Note that this has to happen before we
+  // update m_t_TempAge below.
   m_time->step(dt);
 
   if (updateAtDepth) {
-    t_TempAge  = m_time->current();
-    dt_TempAge = 0.0;
+    m_t_TempAge  = m_time->current();
+    m_dt_TempAge = 0.0;
   }
 
   // Check if the ice thickness exceeded the height of the computational box and stop if it did.
@@ -761,8 +762,8 @@ IceModelTerminationReason IceModel::run() {
   print_summary_line(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
   print_summary(do_energy, 0.0 /* time step length is not known yet */);  // report starting state
 
-  t_TempAge = m_time->current();
-  dt_TempAge = 0.0;
+  m_t_TempAge = m_time->current();
+  m_dt_TempAge = 0.0;
 
   IceModelTerminationReason termination_reason = PISM_DONE;
   // main loop for time evolution
