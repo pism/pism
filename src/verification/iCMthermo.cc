@@ -260,11 +260,11 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   switch (m_testname) {
     case 'K':
       for (unsigned int k = 0; k < m_grid->Mz(); k++) {
-        TestKParameters K = exactK(m_time->current(), m_grid->z(k), m_bedrock_is_ice_forK);
+        TestKParameters K = exactK(m_time->current(), m_grid->z(k), (int)m_bedrock_is_ice_forK);
         Tex[k] = K.T;
       }
       for (unsigned int k = 0; k < Mbz; k++) {
-        TestKParameters K = exactK(m_time->current(), zblevels[k], m_bedrock_is_ice_forK);
+        TestKParameters K = exactK(m_time->current(), zblevels[k], (int)m_bedrock_is_ice_forK);
         Tbex[k] = K.T;
       }
       break;
