@@ -365,8 +365,8 @@ void TSDiagnostic::flush() {
   }
 
   // write values of a diagnostic
-  file.write_timeseries(m_variable.get_name(), { m_start },
-                                 { (unsigned int)m_values.size() }, m_values);
+  file.write_timeseries(m_variable.get_name(), { m_start }, { (unsigned int)m_values.size() },
+                        m_values);
 
   file.sync();
 

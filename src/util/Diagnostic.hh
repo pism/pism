@@ -281,10 +281,21 @@ public:
   TSDiagnostic(std::shared_ptr<const Grid> g, const std::string &name);
   virtual ~TSDiagnostic();
 
+  /*!
+   * "Update" a scalar diagnostic for the time step from `t0` to `t1`. Estimates values of
+   * a diagnostic quantity for all requested times in the time interval `[t0, t1]` and
+   * saves them in a buffer.
+   */
   void update(double t0, double t1);
 
+  /*!
+   * Flush the buffer to an output file.
+   */
   void flush();
 
+  /*!
+   * Initialize a scalar diagnostic.
+   */
   void init(std::shared_ptr<OutputFile> output_file,
             std::shared_ptr<std::vector<double> > requested_times);
 
