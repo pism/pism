@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <memory>
 static char help[] =
   "\nSIAFD_TEST\n"
   "  Testing program for SIA, time-independent calculations separate from\n"
@@ -32,14 +33,14 @@ static char help[] =
 #include "pism/util/Context.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/verification/tests/exactTestsFG.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -61,7 +62,7 @@ static void compute_strain_heating_errors(const array::Array3D &strain_heating,
 
   ParallelSection loop(grid.com);
   try {
-    for (auto p = grid.points(); p; p.next()) {
+    for (auto p : grid.points()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -114,7 +115,7 @@ static void computeSurfaceVelocityErrors(const Grid &grid,
 
   array::AccessScope list{&ice_thickness, &u3, &v3, &w3};
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     double xx = grid.x(i), yy = grid.y(j),
@@ -156,7 +157,7 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 
   array::AccessScope list{&temperature, &enthalpy, &thickness};
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     const double *T_ij = temperature.get_column(i,j);
@@ -193,7 +194,7 @@ static void setInitStateF(Grid &grid,
 
   array::AccessScope list{&thickness, &enthalpy};
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -294,8 +295,6 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    auto output_file = config->get_string("output.file");
-
     grid::Parameters P(*config);
     P.Lx = 900e3;
     P.Ly = P.Lx;
@@ -377,21 +376,40 @@ int main(int argc, char *argv[]) {
     reportErrors(*grid, ctx->unit_system(),
                  geometry.ice_thickness, u3, v3, w3, sigma);
 
-    // Write results to an output file:
-    File file(grid->com, output_file, io::PISM_NETCDF3, io::PISM_READWRITE_MOVE);
-    io::define_time(file, *ctx);
-    io::append_time(file, *ctx->config(), ctx->time()->current());
+    {
+      auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
+      writer->initialize({}, true);
 
-    geometry.ice_surface_elevation.write(file);
-    geometry.ice_thickness.write(file);
-    geometry.cell_type.write(file);
-    geometry.bed_elevation.write(file);
+      // Write results to an output file:
+      OutputFile file(writer, config->get_string("output.file"));
 
-    sia->diffusivity().write(file);
-    u3.write(file);
-    v3.write(file);
-    w3.write(file);
-    sigma.write(file);
+      const array::Array *vecs[] = {
+        &geometry.ice_surface_elevation,
+        &geometry.ice_thickness,
+        &geometry.cell_type,
+        &geometry.bed_elevation,
+        &sia->diffusivity(),
+        &u3,
+        &v3,
+        &w3,
+        &sigma,
+      };
+
+      // define
+      auto time = ctx->time();
+      file.define_variable(time->metadata());
+      for (const auto *vec : vecs) {
+        for (auto &var : vec->all_metadata()) {
+          file.define_variable(var);
+        }
+      }
+
+      // write
+      file.append_time(time->current());
+      for (const auto *vec : vecs) {
+        vec->write(file);
+      }
+    }
   }
   catch (...) {
     handle_fatal_errors(com);

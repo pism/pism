@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,7 @@
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
+#include <memory>
 
 namespace pism {
 
@@ -44,66 +45,102 @@ static std::set<std::string> process_ts_shortcuts(const Config &config,
 //! Initializes the code writing scalar time-series.
 void IceModel::init_timeseries() {
 
-  m_ts_filename = m_config->get_string("output.timeseries.filename");
+  auto ts_filename = m_config->get_string("output.timeseries.filename");
 
   auto times = m_config->get_string("output.timeseries.times");
   bool times_set = not times.empty();
 
-  if (times_set xor not m_ts_filename.empty()) {
+  if (times_set xor not ts_filename.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "you need to specity both -ts_file and -ts_times"
                        " to save scalar diagnostic time-series.");
   }
 
-  if (m_ts_filename.empty()) {
+  if (ts_filename.empty()) {
+    m_ts_diagnostics.clear();
     return;
   }
 
-  try {
-    *m_ts_times = m_time->parse_times(times);
-  } catch (RuntimeError &e) {
-    e.add_context("parsing the -ts_times argument %s", times.c_str());
-    throw;
+  // initialize m_ts_times and m_ts_vars
+  {
+    try {
+      *m_ts_times = m_time->parse_times(times);
+    } catch (RuntimeError &e) {
+      e.add_context("parsing the -ts_times argument %s", times.c_str());
+      throw;
+    }
+
+    m_log->message(2, "  saving scalar time-series to '%s'\n", ts_filename.c_str());
+    m_log->message(2, "  times requested: %s\n", times.c_str());
+
+    m_ts_vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
+    if (not m_ts_vars.empty()) {
+      m_ts_vars = process_ts_shortcuts(*m_config, m_ts_vars);
+      m_log->message(2, "variables requested: %s\n", set_join(m_ts_vars, ",").c_str());
+    }
   }
 
-  m_log->message(2, "  saving scalar time-series to '%s'\n", m_ts_filename.c_str());
-  m_log->message(2, "  times requested: %s\n", times.c_str());
+  // de-allocate unused scalar diagnostics
+  {
+    std::vector<std::string> missing;
+    if (m_ts_file != nullptr and m_ts_vars.empty()) {
+      // use all diagnostics
+    } else {
+      TSDiagnosticList diagnostics;
+      for (const auto &v : m_ts_vars) {
+        if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
+          diagnostics[v] = m_ts_diagnostics[v];
+        } else {
+          missing.push_back(v);
+        }
+      }
+      // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
+      m_ts_diagnostics = diagnostics;
+    }
 
-  m_ts_vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
-  if (not m_ts_vars.empty()) {
-    m_ts_vars = process_ts_shortcuts(*m_config, m_ts_vars);
-    m_log->message(2, "variables requested: %s\n", set_join(m_ts_vars, ",").c_str());
+    if (not missing.empty()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "requested scalar diagnostics %s are not available",
+                                    join(missing, ",").c_str());
+    }
   }
 
   // prepare the output file
   {
-    // default behavior is to move the file aside if it exists already; option allows appending
+    m_ts_file = std::make_shared<OutputFile>(m_output_writer, ts_filename);
     bool append = m_config->get_flag("output.timeseries.append");
-    auto mode = append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
-    File file(m_grid->com, m_ts_filename, io::PISM_NETCDF3, mode);      // Use NetCDF-3 to write time-series.
-    // add the last saved time to the list of requested times so that the first time is interpreted
-    // as the end of a reporting time step
-    std::string time_name = m_config->get_string("time.dimension_name");
-    if (append and file.dimension_length(time_name) > 0) {
-      auto time = io::read_1d_variable(file, time_name, m_time->units_string(), m_sys);
-      double
-        epsilon = m_config->get_number("time_stepping.resolution"), // usually one second
-        t       = vector_max(time);
+    // default behavior is to move the file aside if it exists already; option allows appending
+    if (append) {
+      m_ts_file->append();
+      if (m_ts_file->time_dimension_length() > 0) {
+        // add the last saved time to the list of requested times so that the first time is interpreted
+        // as the end of a reporting time step
+        double epsilon = m_config->get_number("time_stepping.resolution"), // usually one second
+            t          = m_ts_file->last_time_value();
 
-      // add this time only if it is strictly before the first requested one
-      if (t + epsilon < m_ts_times->front()) {
-        m_ts_times->insert(m_ts_times->begin(), t);
+        // add this time only if it is strictly before the first requested one
+        if (t + epsilon < m_ts_times->front()) {
+          m_ts_times->insert(m_ts_times->begin(), t);
+        }
       }
-    }
+    } else {
+      std::set<VariableMetadata> variables = { config_metadata(*m_config),
+                                               m_output_global_attributes };
+      for (const auto &d : m_ts_diagnostics) {
+        variables.insert(d.second->metadata());
+      }
 
-    write_metadata(file, SKIP_MAPPING, PREPEND_HISTORY);
-    write_run_stats(file, run_stats());
-
-    // initialize scalar diagnostics
-    for (auto d : m_ts_diagnostics) {
-      d.second->init(file, m_ts_times);
+      bool with_time_bounds = true;
+      define_time(*m_ts_file, with_time_bounds);
+      define_variables(*m_ts_file, variables);
     }
   }
+
+  // initialize scalar diagnostics using m_ts_file allocated above:
+  for (const auto &d : m_ts_diagnostics) {
+    d.second->init(m_ts_file, m_ts_times);
+  }
+
 }
 
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.
@@ -122,16 +159,19 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
 //! Flush scalar time-series.
 void IceModel::flush_timeseries() {
+
+  if (m_ts_file == nullptr) {
+    return;
+  }
+
+  write_config(*m_config, "pism_config", *m_ts_file);
+
   // flush all the time-series buffers:
-  for (auto d : m_ts_diagnostics) {
+  for (const auto &d : m_ts_diagnostics) {
     d.second->flush();
   }
 
-  // update run_stats in the time series output file
-  if (not m_ts_diagnostics.empty()) {
-    File file(m_grid->com, m_ts_filename, io::PISM_NETCDF3, io::PISM_READWRITE);
-    write_run_stats(file, run_stats());
-  }
+  // FIXME: update run stats
 }
 
 } // end of namespace pism

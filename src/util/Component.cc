@@ -29,6 +29,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
@@ -115,30 +116,21 @@ const Profiling &Component::profiling() const {
   return m_grid->ctx()->profiling();
 }
 
-/*! @brief Define model state variables in an output file. */
-/*!
- * This is needed to allow defining all the variables in an output file before any data is written
- * (an optimization needed to get decent performance writing NetCDF-3).
- */
-void Component::define_model_state(const File &output) const {
-  this->define_model_state_impl(output);
-}
-
 /*! @brief Write model state variables to an output file. */
-void Component::write_model_state(const File &output) const {
-  // define variables, if needed (this is a no-op if they are already defined)
-  this->define_model_state(output);
+void Component::write_state(const OutputFile &output) const {
+  this->write_state_impl(output);
+}
 
-  this->write_model_state_impl(output);
+std::set<VariableMetadata> Component::state() const {
+  return state_impl();
+}
+
+std::set<VariableMetadata> Component::state_impl() const {
+  return {};
 }
 
 /*! @brief The default (empty implementation). */
-void Component::define_model_state_impl(const File &output) const {
-  (void) output;
-}
-
-/*! @brief The default (empty implementation). */
-void Component::write_model_state_impl(const File &output) const {
+void Component::write_state_impl(const OutputFile &output) const {
   (void) output;
 }
 
@@ -167,9 +159,9 @@ void Component::regrid(const std::string &module_name, array::Array &variable,
     return;
   }
 
-  SpatialVariableMetadata &m = variable.metadata();
+  auto &m = variable.metadata();
 
-  if (((not regrid_vars.empty()) and member(m["short_name"], regrid_vars)) or
+  if (((not regrid_vars.empty()) and set_member(m["short_name"], regrid_vars)) or
       (regrid_vars.empty() and flag == REGRID_WITHOUT_REGRID_VARS)) {
 
     m_log->message(2,

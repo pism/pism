@@ -32,17 +32,19 @@ options = PISM.PETSc.Options()
 def write_state(model, filename):
     "Write the state of the model to a file"
 
-    PISM.util.prepare_output(filename)
-    f = PISM.File(model.grid().ctx().com(),
-                  filename,
-                  PISM.PISM_NETCDF3,
-                  PISM.PISM_READWRITE)
-    model.define_model_state(f)
-    model.write_model_state(f)
+    f = PISM.util.prepare_output(filename)
+
+    for v in model.state():
+        f.define_variable(v)
+
+    model.write_state(f)
 
     diags = model.diagnostics()
     for k in diags.keys():
-        diags[k].compute().write(f)
+        d = diags[k]
+        for k in range(d.n_variables()):
+            f.define_variable(d.metadata(k))
+        d.compute().write(f)
 
     f.close()
 
@@ -138,8 +140,15 @@ class Given(TestCase):
         self.M = 1001.0
 
         output = PISM.util.prepare_output(self.filename)
-        ice_surface_temp(self.grid, self.T).write(output)
-        climatic_mass_balance(self.grid, self.M).write(output)
+
+        T = ice_surface_temp(self.grid, self.T)
+        output.define_variable(T.metadata())
+        T.write(output)
+
+        M = climatic_mass_balance(self.grid, self.M)
+        output.define_variable(M.metadata())
+        M.write(output)
+
         output.close()
 
     def test_surface_given(self):
@@ -749,11 +758,11 @@ class ISMIP6(TestCase):
         SMB_ref = PISM.Scalar(grid, "climatic_mass_balance")
         T_ref   = PISM.Scalar(grid, "ice_surface_temp")
 
-        usurf.metadata(0).set_string("units", "m")
+        usurf.metadata(0).set_string("units", "m").set_time_dependent(False)
 
-        SMB_ref.metadata(0).long_name("reference SMB").units("kg m^-2 s^-1").output_units("kg m^-2 s^-1").standard_name("land_ice_surface_specific_mass_balance_flux")
+        SMB_ref.metadata(0).long_name("reference SMB").units("kg m^-2 s^-1").output_units("kg m^-2 s^-1").standard_name("land_ice_surface_specific_mass_balance_flux").set_time_dependent(False)
 
-        T_ref.metadata(0).set_string("units", "kelvin")
+        T_ref.metadata(0).set_string("units", "kelvin").set_time_dependent(False)
 
         out = PISM.util.prepare_output(filename, append_time=True)
 
@@ -763,7 +772,7 @@ class ISMIP6(TestCase):
 
         # write time-independent fields
         for v in [usurf, SMB_ref, T_ref]:
-            v.metadata().set_time_independent(True)
+            out.define_variable(v.metadata(0))
             v.write(out)
 
         out.close()
@@ -782,11 +791,17 @@ class ISMIP6(TestCase):
         dTdz = PISM.Scalar(grid, "ice_surface_temp_gradient")
         dTdz.metadata(0).long_name("surface temperature gradient").units("K m^-1").output_units("K m^-1")
 
-        out = PISM.util.prepare_output(filename, append_time=False)
+        time = self.ctx.time.metadata(with_bounds=True)
+        time.units("seconds since 1-1-1")
+        
+        out = PISM.util.prepare_output(filename, append_time=False, time=time)
 
-        bounds = PISM.VariableMetadata("time_bounds", self.ctx.unit_system)
+        bounds = self.ctx.time.bounds_metadata()
 
-        PISM.define_time_bounds(bounds, "time", "nv", out, PISM.PISM_DOUBLE)
+        out.define_variable(bounds)
+
+        for v in [aSMB, dSMBdz, aT, dTdz]:
+            out.define_variable(v.metadata())
 
         SMB_anomaly  = 1.0
         T_anomaly    = 1.0
@@ -800,9 +815,9 @@ class ISMIP6(TestCase):
 
             t = self.ctx.time.current() + j * dt
 
-            PISM.append_time(out, self.ctx.config, t)
+            out.append_time(t)
 
-            PISM.write_time_bounds(out, bounds, j, [t, t + dt])
+            out.write_array(bounds.get_name(), [j, 0], [1, 2], [t, t + dt])
 
             aSMB.set(t * SMB_anomaly)
 
@@ -814,10 +829,6 @@ class ISMIP6(TestCase):
 
             for v in [aSMB, dSMBdz, aT, dTdz]:
                 v.write(out)
-
-        out.redef()
-        out.write_attribute("time", "bounds", "time_bounds")
-        out.write_attribute("time", "units", "seconds since 1-1-1")
 
         out.close()
 

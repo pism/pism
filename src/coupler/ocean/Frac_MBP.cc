@@ -77,7 +77,7 @@ void Frac_MBP::update_impl(const Inputs &inputs, double t, double dt) {
 
   array::AccessScope list{&P_o, &geometry.ice_thickness};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double

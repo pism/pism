@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2022, 2023 Constantine Khroulev and Andy Aschwanden
+/* Copyright (C) 2018, 2019, 2020, 2022, 2023, 2025 Constantine Khroulev and Andy Aschwanden
  *
  * This file is part of PISM.
  *
@@ -63,7 +63,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
@@ -151,22 +151,20 @@ void FrontalMelt::update_impl(const FrontalMeltInputs &inputs, double t, double 
 MaxTimestep FrontalMelt::max_timestep_impl(double t) const {
   if (m_input_model) {
     return m_input_model->max_timestep(t);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-void FrontalMelt::define_model_state_impl(const File &output) const {
+std::set<VariableMetadata> FrontalMelt::state_impl() const {
   if (m_input_model) {
-    return m_input_model->define_model_state(output);
-  } else {
-    // no state to define
+    return m_input_model->state();
   }
+  return {};
 }
 
-void FrontalMelt::write_model_state_impl(const File &output) const {
+void FrontalMelt::write_state_impl(const OutputFile &output) const {
   if (m_input_model) {
-    return m_input_model->write_model_state(output);
+    return m_input_model->write_state(output);
   }
   // no state to write
 }
@@ -182,7 +180,7 @@ public:
 
     m_accumulator.metadata()["units"] = "m";
 
-    m_vars = { { m_sys, "frontal_melt_rate" } };
+    m_vars = { { m_sys, "frontal_melt_rate", *m_grid } };
     m_vars[0]
         .long_name("frontal melt rate")
         .units("m second^-1")
@@ -205,7 +203,7 @@ public:
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_retreat_rate", RATE) {
     m_accumulator.metadata()["units"] = "m";
 
-    m_vars = { { m_sys, "frontal_melt_retreat_rate" } };
+    m_vars = { { m_sys, "frontal_melt_retreat_rate", *m_grid } };
     m_vars[0]
         .long_name("retreat rate due to frontal melt")
         .units("m second^-1")

@@ -17,17 +17,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/atmosphere/CosineYearlyCycle.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/io/File.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
 
 #include "pism/util/ScalarForcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {

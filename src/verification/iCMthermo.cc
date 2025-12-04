@@ -44,7 +44,7 @@ const double IceCompModel::m_Tmin   = 223.15; // K
 const double IceCompModel::m_LforFG = 750000; // m
 const double IceCompModel::m_ApforG = 200; // m
 
-void IceCompModel::energy_step() {
+void IceCompModel::energy_step(double t, double dt) {
 
   energy::EnergyModelStats stats;
 
@@ -60,7 +60,7 @@ void IceCompModel::energy_step() {
                               m_surface->temperature(),
                               bedtoptemp);
 
-  m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
+  m_btu->update(bedtoptemp, t, dt);
 
   energy::Inputs inputs;
   {
@@ -92,7 +92,7 @@ void IceCompModel::energy_step() {
     inputs.volumetric_heating_rate = &m_strain_heating3_comp;
   }
 
-  m_energy_model->update(t_TempAge, dt_TempAge, inputs);
+  m_energy_model->update(t, dt, inputs);
 
   m_stdout_flags = m_energy_model->stdout_flags() + m_stdout_flags;
 }
@@ -104,7 +104,7 @@ void IceCompModel::initTestFG() {
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin
@@ -164,7 +164,7 @@ void IceCompModel::getCompSourcesTestFG() {
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double r = std::max(grid::radius(*m_grid, i, j), 1.0); // avoid singularity at origin
@@ -200,7 +200,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double r = grid::radius(*m_grid, i, j);
@@ -260,11 +260,11 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   switch (m_testname) {
     case 'K':
       for (unsigned int k = 0; k < m_grid->Mz(); k++) {
-        TestKParameters K = exactK(m_time->current(), m_grid->z(k), m_bedrock_is_ice_forK);
+        TestKParameters K = exactK(m_time->current(), m_grid->z(k), (int)m_bedrock_is_ice_forK);
         Tex[k] = K.T;
       }
       for (unsigned int k = 0; k < Mbz; k++) {
-        TestKParameters K = exactK(m_time->current(), zblevels[k], m_bedrock_is_ice_forK);
+        TestKParameters K = exactK(m_time->current(), zblevels[k], (int)m_bedrock_is_ice_forK);
         Tbex[k] = K.T;
       }
       break;
@@ -285,7 +285,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 
   array::AccessScope list{&ice_temperature, &bedrock_temp};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     Tb = bedrock_temp.get_column(i, j);
@@ -340,7 +340,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double r = std::max(grid::radius(*m_grid, i, j), 1.0);
@@ -398,7 +398,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double r = grid::radius(*m_grid, i, j);
@@ -455,7 +455,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double H = m_geometry.ice_thickness(i, j);
@@ -517,7 +517,7 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
 
   array::AccessScope list(basal_melt_rate);
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double err = fabs(basal_melt_rate(i, j) - bmelt);

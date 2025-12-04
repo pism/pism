@@ -22,13 +22,17 @@
 #include "pism/util/Context.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
+#include <vector>
 
 namespace pism {
 namespace stressbalance {
@@ -145,7 +149,7 @@ void SSATestCase::report(const std::string &testname) {
   array::AccessScope list{ &vel_ssa };
 
   double exactvelmax = 0, gexactvelmax = 0;
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double uexact, vexact;
@@ -203,11 +207,26 @@ void SSATestCase::report(const std::string &testname) {
                 convert(m_sys, gavverr, "m second-1", "m year-1"));
 }
 
+namespace details {
+static void write(const File &file, const char *name,
+                  const char *units,
+                  const char *long_name,
+                  unsigned int start, double value,
+                  io::Type type = io::PISM_DOUBLE) {
+  file.define_dimension("N", io::PISM_UNLIMITED);
+  file.define_variable(name, type, { "N" });
+  file.write_attribute(name, "units", units);
+  file.write_attribute(name, "long_name", long_name);
+  file.write_variable(name, { start }, { 1 }, &value);
+}
+} // namespace details
+
 void SSATestCase::report_netcdf(const std::string &testname, double max_vector, double rel_vector,
                                 double max_u, double max_v, double avg_u, double avg_v) {
   auto sys = m_grid->ctx()->unit_system();
 
   VariableMetadata global_attributes("PISM_GLOBAL", sys);
+  global_attributes["source"] = std::string("PISM ") + pism::revision;
 
   options::String filename("-report_file", "NetCDF error report file");
 
@@ -224,73 +243,40 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
     mode = io::PISM_READWRITE_MOVE;
   }
 
-  global_attributes["source"] = std::string("PISM ") + pism::revision;
-
   // Find the number of records in this file:
   File file(m_grid->com, filename, io::PISM_NETCDF3, mode); // OK to use NetCDF3.
   size_t start = static_cast<size_t>(file.dimension_length("N"));
 
-  io::write_attributes(file, global_attributes, io::PISM_DOUBLE);
+  for (const auto &arg : global_attributes.all_strings()) {
+    file.write_attribute("PISM_GLOBAL", arg.first, arg.second);
+  }
 
-  {
-    VariableMetadata err("N", sys);
-    io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-    io::write_timeseries(file, err, start, { (double)(start + 1) });
-  }
-  {
-    VariableMetadata dx{"dx", sys};
-    dx.units("meters");
-    io::define_timeseries(dx, "N", file, io::PISM_DOUBLE);
-    io::write_timeseries(file, dx, start, { m_grid->dx() });
-  }
-  {
-    VariableMetadata dy{"dy", sys};
-    dy.units("meters");
-    io::define_timeseries(dy, "N", file, io::PISM_DOUBLE);
-    io::write_timeseries(file, dy, start, { m_grid->dy() });
-  }
-  {
-    VariableMetadata test{"test", sys};
-    test.units("1");
-    io::define_timeseries(test, "N", file, io::PISM_INT);
-    io::write_timeseries(file, test, start, { (double)testname[0] });
-  }
-  {
-    VariableMetadata max_velocity{ "max_velocity", sys };
-    max_velocity.long_name("maximum ice velocity magnitude error").units("m year^-1");
-    io::define_timeseries(max_velocity, "N", file, io::PISM_DOUBLE);
-    io::write_timeseries(file, max_velocity, start, { max_vector });
-  }
-  {
-    VariableMetadata rel_velocity{ "relative_velocity", sys };
-    rel_velocity.long_name("relative ice velocity magnitude error").units("percent");
-    io::define_timeseries(rel_velocity, "N", file, io::PISM_DOUBLE);
-    io::write_timeseries(file, rel_velocity, start, { rel_vector });
-  }
-  {
-    VariableMetadata maximum_u{ "maximum_u", sys };
-    maximum_u.long_name("maximum error in the X-component of the ice velocity").units("m year^-1");
-    io::define_timeseries(maximum_u, "N", file, io::PISM_DOUBLE);
-    io::write_timeseries(file, maximum_u, start, { max_u });
-  }
-  {
-    VariableMetadata maximum_v{ "maximum_v", sys };
-    maximum_v.long_name("maximum error in the Y-component of the ice velocity").units("m year^-1");
-    io::define_timeseries(maximum_v, "N", file, io::PISM_DOUBLE);
-    io::write_timeseries(file, maximum_v, start, { max_v });
-  }
-  {
-    VariableMetadata average_u{ "average_u", sys };
-    average_u.long_name("average error in the X-component of the ice velocity").units("m year^-1");
-    io::define_timeseries(average_u, "N", file, io::PISM_DOUBLE);
-    io::write_timeseries(file, average_u, start, { avg_u });
-  }
-  {
-    VariableMetadata average_v{ "average_v", sys };
-    average_v.long_name("average error in the Y-component of the ice velocity").units("m year^-1");
-    io::define_timeseries(average_v, "N", file, io::PISM_DOUBLE);
-    io::write_timeseries(file, average_v, start, { avg_v });
-  }
+  details::write(file, "N", "", "", start, (double)(start + 1));
+
+  details::write(file, "dx", "meters", "", start, m_grid->dx());
+
+  details::write(file, "dy", "meters", "", start, m_grid->dy());
+
+  details::write(file, "test", "", "", start, (double)testname[0], io::PISM_INT);
+
+  details::write(file, "max_velocity", "m year^-1", "maximum ice velocity magnitude error", start,
+                 max_vector);
+
+  details::write(file, "relative_velocity", "percent", "relative ice velocity magnitude error",
+                 start, rel_vector);
+
+  details::write(file, "maximum_u", "m year^-1",
+                 "maximum error in the X-component of the ice velocity", start, max_u);
+
+  details::write(file, "maximum_v", "m year^-1",
+                 "maximum error in the Y-component of the ice velocity", start, max_v);
+
+  details::write(file, "average_u", "m year^-1",
+                 "average error in the X-component of the ice velocity", start, avg_u);
+
+  details::write(file, "average_v", "m year^-1",
+                 "average error in the Y-component of the ice velocity", start, avg_v);
+
   file.close();
 }
 
@@ -302,32 +288,54 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/, double /*x*/, double /*y*/
 
 //! Save the computation and data to a file.
 void SSATestCase::write(const std::string &filename) {
+  auto writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  writer->initialize({}, true);
 
   // Write results to an output file:
-  File file(m_grid->com, filename, io::PISM_NETCDF3, io::PISM_READWRITE_MOVE);
-  io::define_time(file, *m_grid->ctx());
-  io::append_time(file, *m_config, 0.0);
+  OutputFile file(writer, filename);
 
-  m_geometry.ice_surface_elevation.write(file);
-  m_geometry.ice_thickness.write(file);
-  m_bc_mask.write(file);
-  m_tauc.write(file);
-  m_geometry.bed_elevation.write(file);
-  m_ice_enthalpy.write(file);
-  m_bc_values.write(file);
+  // Write results to an output file:
+  file.define_variable(m_ctx->time()->metadata());
+  file.append_time(0.0);
 
-  m_ssa->velocity().write(file);
+  const array::Array *variables[] = {
+    &m_geometry.ice_surface_elevation, &m_geometry.ice_thickness, &m_bc_mask,   &m_tauc,
+    &m_geometry.bed_elevation,         &m_ice_enthalpy,           &m_bc_values, &m_ssa->velocity()
+  };
 
-  // write all diagnostics:
+  // define
+  for (const auto *v : variables) {
+    for (const auto &m : v->all_metadata()) {
+      file.define_variable(m);
+    }
+  }
+
+  // write
+  for (const auto *v : variables) {
+    v->write(file);
+  }
+
+  // write all easily available diagnostics:
   {
-    auto diagnostics = m_ssa->diagnostics();
-
-    for (auto &p : diagnostics) {
+    std::vector<std::shared_ptr<array::Array>> vecs;
+    for (auto &pair : m_ssa->diagnostics()) {
       try {
-        p.second->compute()->write(file);
+        vecs.push_back(pair.second->compute());
       } catch (RuntimeError &e) {
-        // ignore errors
+        // ignore errors: some diagnostics may need variables not present in this context
       }
+    }
+
+    // define
+    for (auto &v : vecs) {
+      for (auto &m : v->all_metadata()) {
+        file.define_variable(m);
+      }
+    }
+
+    // write
+    for (auto &v : vecs) {
+      v->write(file);
     }
   }
 
@@ -340,12 +348,18 @@ void SSATestCase::write(const std::string &filename) {
       .units("m s^-1");
 
   array::AccessScope list(tmp);
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     exactSolution(i, j, m_grid->x(i), m_grid->y(j),
                   &(tmp(i,j).u), &(tmp(i,j).v));
   }
+
+  // define
+  for (auto &m : tmp.all_metadata()) {
+    file.define_variable(m);
+  }
+  // write
   tmp.write(file);
 
   tmp.metadata(0)
@@ -358,11 +372,21 @@ void SSATestCase::write(const std::string &filename) {
     .units("m s^-1");
 
   tmp.add(-1.0, m_ssa->velocity());
+  // define
+  for (auto &m : tmp.all_metadata()) {
+    file.define_variable(m);
+  }
   tmp.write(file);
 
   array::Scalar error_mag(m_grid, "error_mag");
   error_mag.metadata(0).long_name("magnitude of the error").units("m s^-1");
   array::compute_magnitude(tmp, error_mag);
+
+  // define
+  for (auto &m : error_mag.all_metadata()) {
+    file.define_variable(m);
+  }
+  // write
   error_mag.write(file);
 
   file.close();

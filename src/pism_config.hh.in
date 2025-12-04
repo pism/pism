@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2023, 2024 PISM Authors
+/* Copyright (C) 2019, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,9 +46,6 @@ extern const char *cmake_version;
 
 /* Equal to 1 if PISM was built with debugging sanity checks enabled, 0 otherwise. */
 #cmakedefine01 Pism_DEBUG
-
-/* Equal to 1 if PISM was built with Jansson, 0 otherwise. */
-#cmakedefine01 Pism_USE_JANSSON
 
 /* Equal to 1 if PISM was built with PROJ, 0 otherwise. */
 #cmakedefine01 Pism_USE_PROJ

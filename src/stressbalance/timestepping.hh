@@ -31,6 +31,7 @@ class CellType1;
 class CellType2;
 class CellType;
 class Scalar;
+class Scalar1;
 class Vector;
 } // end of namespace array
 
@@ -50,6 +51,7 @@ struct CFLData {
  */
 CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
                             const array::CellType &cell_type,
+                            const array::Scalar1 *no_model_mask,
                             const array::Array3D &u3,
                             const array::Array3D &v3,
                             const array::Array3D &w3);
@@ -61,6 +63,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
  */
 CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
                             const array::CellType &cell_type,
+                            const array::Scalar1 *no_model_mask,
                             const array::Vector &velocity);
 
 /*!

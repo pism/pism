@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2023, 2024 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -69,6 +69,9 @@ protected:
                       const std::vector<unsigned int> &start,
                       const std::vector<unsigned int> &count,
                       const double *op) const;
+
+  void put_vara_text_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
+                          const std::vector<unsigned int> &count, const char *data) const;
 
   void inq_nvars_impl(int &result) const;
 

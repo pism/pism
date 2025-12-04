@@ -27,6 +27,7 @@
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace ocean {
@@ -208,7 +209,7 @@ static void relabel(RelabelingType type,
 
     ParallelSection loop(grid->com);
     try {
-      for (auto p = grid->points(); p; p.next()) {
+      for (auto p : grid->points()) {
         const int i = p.i(), j = p.j();
 
         int index = mask.as_int(i, j);
@@ -246,7 +247,7 @@ static void relabel(RelabelingType type,
     }
 
     // re-label
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       int component_index = mask.as_int(i, j);
@@ -260,7 +261,7 @@ static void relabel(RelabelingType type,
       }
     }
   } else {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       int component_index = mask.as_int(i, j);
@@ -298,7 +299,7 @@ void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar
 
     // assume that ocean points (i.e. floating, either icy or ice-free) at the edge of the
     // domain belong to the "open ocean"
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.ocean(i, j)) {
@@ -340,7 +341,7 @@ void PicoGeometry::compute_ice_rises(const array::CellType &cell_type, bool excl
     array::AccessScope list{ &cell_type, &m_tmp };
 
     // mask of zeros and ones: one if grounded ice, zero otherwise
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.grounded(i, j)) {
@@ -360,7 +361,7 @@ void PicoGeometry::compute_ice_rises(const array::CellType &cell_type, bool excl
     profiling().end("ocean.ice_rises.label");
 
     // mark floating ice areas in this mask (reduces the number of masks we need later)
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_tmp(i, j) == 0.0 and cell_type.icy(i, j)) {
@@ -390,7 +391,7 @@ void PicoGeometry::compute_continental_shelf_mask(const array::Scalar &bed_eleva
   {
     array::AccessScope list{ &bed_elevation, &ice_rise_mask, &m_tmp };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       m_tmp(i, j) = 0.0;
@@ -413,7 +414,7 @@ void PicoGeometry::compute_continental_shelf_mask(const array::Scalar &bed_eleva
     // At this point areas with bed > threshold are 1, everything else is zero.
     //
     // Now we need to mark the continental shelf itself.
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_tmp(i, j) > 0.0) {
@@ -446,7 +447,7 @@ void PicoGeometry::compute_ice_shelf_mask(const array::Scalar &ice_rise_mask,
   {
     array::AccessScope list{ &ice_rise_mask, &lake_mask, &m_tmp };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       int M = ice_rise_mask.as_int(i, j);
@@ -463,7 +464,7 @@ void PicoGeometry::compute_ice_shelf_mask(const array::Scalar &ice_rise_mask,
     profiling().end("ocean.ice_shelf_mask.label");
 
     // remove ice rises and lakes
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (ice_rise_mask.as_int(i, j) == RISE or lake_mask.as_int(i, j) == 1) {
@@ -492,7 +493,7 @@ void PicoGeometry::compute_ocean_mask(const array::CellType &cell_type, array::S
     array::AccessScope list{ &cell_type, &m_tmp };
 
     // mask of zeros and ones: one if ice-free ocean, zero otherwise
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.ice_free_ocean(i, j)) {
@@ -542,7 +543,7 @@ std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1
 
   array::AccessScope list{ &cell_type, &basin_mask };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     auto B = basin_mask.star_int(i, j);
@@ -626,7 +627,7 @@ void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cel
   array::AccessScope list{ &cell_type, &basin_mask, &shelf_mask };
 
   {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
       int s = shelf_mask.as_int(i, j);
       int b = basin_mask.as_int(i, j);
@@ -687,7 +688,7 @@ void PicoGeometry::split_ice_shelves(const array::CellType &cell_type,
 
   array::AccessScope list{ &cell_type, &basin_mask, &shelf_mask, &m_tmp };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     if (cell_type.as_int(i, j) == MASK_FLOATING) {
       int basin = basin_mask.as_int(i, j);
@@ -728,7 +729,7 @@ void PicoGeometry::split_ice_shelves(const array::CellType &cell_type,
     }
   }
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     if (cell_type.as_int(i, j) == MASK_FLOATING) {
       int b = basin_mask.as_int(i, j);
@@ -760,7 +761,7 @@ void PicoGeometry::compute_distances_gl(const array::Scalar &ocean_mask,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (ice_rises.as_int(i, j) == FLOATING or
@@ -813,7 +814,7 @@ void PicoGeometry::compute_distances_cf(const array::Scalar1 &ocean_mask,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (ice_rises.as_int(i, j) == FLOATING or
@@ -875,7 +876,7 @@ void eikonal_equation(array::Scalar1 &mask) {
 
     continue_loop = 0;
 
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (mask.as_int(i, j) == 0) {
@@ -917,7 +918,7 @@ void PicoGeometry::compute_box_mask(const array::Scalar &D_gl, const array::Scal
   std::vector<double> CF_distance_max(n_shelves, 0.0);
   std::vector<double> CF_distance_max1(n_shelves, 0.0);
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     int shelf_id = shelf_mask.as_int(i, j);
@@ -961,7 +962,7 @@ void PicoGeometry::compute_box_mask(const array::Scalar &D_gl, const array::Scal
 
   result.set(0.0);
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     int d_gl = D_gl.as_int(i, j);

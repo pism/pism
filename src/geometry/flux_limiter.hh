@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 PISM Authors
+/* Copyright (C) 2022, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,10 +27,16 @@ class Staggered1;
 
 /*! Limit fluxes to preserve non-negativity of a transported quantity.
  *
+ * @param[in] dt time step length (seconds)
+ * @param[in] x transported quantity (non-negative)
+ * @param[in] flux flux on the staggered grid
+ * @param[in] result flux with the limiter applied
+ *
+ * Returns the number of grid cells affected by the flux limiter.
+ *
+ * Does not require communication.
  */
-void make_nonnegative_preserving(double dt,
-                                 const array::Scalar1 &x,
-                                 const array::Staggered1 &flux,
-                                 array::Staggered &result);
+int make_nonnegative_preserving(double dt, const array::Scalar1 &x, const array::Staggered1 &flux,
+                                array::Staggered &result);
 
 } // end of namespace pism

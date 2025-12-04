@@ -31,6 +31,10 @@
     }
 }
 
+%ignore pism::GridPoint;
+%ignore pism::GridPoint::operator++;
+%ignore pism::GridPoints;
 %rename("GridParameters") "pism::grid::Parameters";
 %shared_ptr(pism::Grid);
+%include "util/GridInfo.hh"
 %include "util/Grid.hh"

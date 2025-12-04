@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2020, 2023 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2020, 2023, 2025 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 
 namespace pism {
 
-void IceModel::update_fracture_density() {
+void IceModel::update_fracture_density(double dt) {
   // generate the BC mask for the fracture density model
   //
   // This mask contains ones at the in-flow boundary according to the SSA Dirichlet BC
@@ -44,7 +44,7 @@ void IceModel::update_fracture_density() {
       list.add(m_velocity_bc_values);
     }
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.cell_type.grounded(i, j) and not do_fracground) {
@@ -72,7 +72,7 @@ void IceModel::update_fracture_density() {
 
   // This model has the same time-step restriction as the mass transport code so we don't
   // check if this time step is short enough.
-  m_fracture->update(m_dt, m_geometry,
+  m_fracture->update(dt, m_geometry,
                      m_stress_balance->shallow()->velocity(),
                      hardness, bc_mask);
 }

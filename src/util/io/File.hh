@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,9 @@ enum Backend : int;
 enum Mode : int;
 } // namespace io
 
-class Grid;
+namespace grid {
+class DistributedGridInfo;
+}
 
 /*!
  * Convert a string to PISM's backend type.
@@ -112,11 +114,14 @@ public:
                       const std::vector<unsigned int> &count,
                       const double *op) const;
 
+  void write_text_variable(const std::string &variable_name, const std::vector<unsigned int> &start,
+                           const std::vector<unsigned int> &count, const std::string &input) const;
+
   void set_variable_was_written(const std::string &name) const;
   bool get_variable_was_written(const std::string &name) const;
 
   void write_distributed_array(const std::string &variable_name,
-                               const Grid &grid,
+                               const grid::DistributedGridInfo &grid,
                                unsigned int z_count,
                                bool time_dependent,
                                const double *input) const;

@@ -24,6 +24,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace frontalmelt {
@@ -110,7 +111,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
   double water_density   = m_config->get_number("constants.fresh_water.density"),
          seconds_per_day = 86400;
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.icy(i, j)) {
@@ -143,7 +144,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
   m_frontal_melt_rate.update_ghosts();
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {

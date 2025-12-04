@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 PISM Authors
+/* Copyright (C) 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@
 namespace pism {
 
 class File;
-class SpatialVariableMetadata;
+class VariableMetadata;
 class Grid;
 class LocalInterpCtx;
 
@@ -55,12 +55,12 @@ public:
    * Set `record_index` to -1 to read the last record available in `file`.
    *
    */
-  double regrid(const SpatialVariableMetadata &metadata, const pism::File &file, int record_index,
+  double regrid(const VariableMetadata &metadata, const pism::File &file, int record_index,
                 const Grid &grid, petsc::Vec &output) const;
 
 protected:
   InputInterpolation();
-  virtual double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
+  virtual double regrid_impl(const VariableMetadata &metadata, const pism::File &file,
                              int record_index, const Grid &grid, petsc::Vec &output) const = 0;
 };
 
@@ -75,7 +75,7 @@ public:
                        InterpolationType type);
 
 private:
-  double regrid_impl(const SpatialVariableMetadata &metadata, const pism::File &file,
+  double regrid_impl(const VariableMetadata &metadata, const pism::File &file,
                      int record_index, const Grid &grid, petsc::Vec &output) const;
 
   std::shared_ptr<LocalInterpCtx> m_interp_context;

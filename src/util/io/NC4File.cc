@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/util/io/NC4File.hh"
+#include <cstddef>
+#include <vector>
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -173,6 +175,25 @@ void NC4File::put_vara_double_impl(const std::string &variable_name,
                                   false /*put*/);
 }
 
+void NC4File::put_vara_text_impl(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count, const char *data) const {
+  std::vector<size_t> nc_start{};
+  nc_start.reserve(start.size());
+  for (const auto &s : start) {
+    nc_start.push_back(s);
+  }
+
+  std::vector<size_t> nc_count{};
+  nc_count.reserve(count.size());
+  for (const auto &c : count) {
+    nc_count.push_back(c);
+  }
+
+  int stat =
+      nc_put_vara_text(m_file_id, get_varid(variable_name), nc_start.data(), nc_count.data(), data);
+  check(PISM_ERROR_LOCATION, stat);
+}
 
 void NC4File::inq_nvars_impl(int &result) const {
   int stat = nc_inq_nvars(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);

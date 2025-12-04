@@ -29,11 +29,13 @@
 
 #include <mpi.h>                // MPI_Comm
 
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/Units.hh"
 
 namespace pism {
 
 class File;
+class OutputFile;
 class Logger;
 
 
@@ -67,6 +69,9 @@ public:
    */
   enum UseFlag {REMEMBER_THIS_USE = 0, FORGET_THIS_USE = 1};
 
+  //! Maximum length of the JSON string (for writing to output files)
+  static int max_length;
+
   // Import settings from an override file
   void import_from(const Config &other);
 
@@ -77,11 +82,9 @@ public:
   const std::set<std::string>& parameters_used() const;
 
   void read(MPI_Comm com, const std::string &filename);
-  void write(MPI_Comm com, const std::string &filename, bool append = true) const;
   std::string filename() const;
 
   void read(const File &file);
-  void write(const File &file) const;
 
   bool is_set(const std::string &name) const;
 
@@ -129,10 +132,11 @@ public:
   std::pair<bool, double> valid_max(const std::string &parameter) const;
 
   std::shared_ptr<units::System> unit_system() const;
+
+  std::string json() const;
   // Implementations
 protected:
   virtual void read_impl(const File &nc) = 0;
-  virtual void write_impl(const File &nc) const = 0;
 
   virtual bool is_set_impl(const std::string &name) const = 0;
 
@@ -155,24 +159,6 @@ protected:
 private:
   struct Impl;
   Impl *m_impl;
-};
-
-class ConfigWithPrefix {
-public:
-  ConfigWithPrefix(std::shared_ptr<const Config> c, const std::string &prefix);
-
-  double get_number(const std::string &name) const;
-  double get_number(const std::string &name, const std::string &units) const;
-
-  std::string get_string(const std::string &name) const;
-
-  bool get_flag(const std::string& name) const;
-
-  void reset_prefix(const std::string &prefix);
-
-private:
-  std::string m_prefix;
-  std::shared_ptr<const Config> m_config;
 };
 
 std::shared_ptr<Config> config_from_options(MPI_Comm com, std::shared_ptr<units::System> unit_system);
@@ -206,6 +192,10 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
 //! Report unused configuration parameters to `stdout`.
 void print_unused_parameters(const Logger &log, int verbosity_threshhold,
                              const Config &config);
+
+VariableMetadata config_metadata(const Config &config);
+
+void write_config(const Config &config, const std::string &variable_name, const OutputFile &file);
 
 } // end of namespace pism
 

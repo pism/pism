@@ -24,6 +24,7 @@
 #include "pism/coupler/frontalmelt/FrontalMeltPhysics.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace frontalmelt {
@@ -92,7 +93,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   double seconds_per_day = 86400, grid_spacing = 0.5 * (m_grid->dx() + m_grid->dy());
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.icy(i, j)) {
@@ -128,7 +129,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   m_frontal_melt_rate.update_ghosts();
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {

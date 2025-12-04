@@ -32,7 +32,24 @@ using namespace pism;
 %rename(_regrid) pism::array::Array::regrid;
 %extend pism::array::Array
 {
-  %pythoncode "Array.py"
+    void write(const std::string &filename) const {
+      auto grid = $self->grid();
+      const auto &config = *grid->ctx()->config();
+      auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, config);
+      writer->initialize({}, true);
+
+      // We expect the file to be present and ready to write into.
+      OutputFile file(writer, filename);
+      file.append();
+
+      for (int k = 0; k < $self->ndof(); ++k) {
+        file.define_variable($self->metadata(k));
+      }
+
+      $self->write(file);
+    }
+
+    %pythoncode "Array.py"
 }
 
 // Shenanigans to allow python indexing to get at array::Array entries.  I couldn't figure out a more
@@ -125,6 +142,7 @@ std::vector<double> interp(int i, int j) {
 %include "util/stencils.hh"
 %template(DoubleStar) pism::stencils::Star<double>;
 
+%ignore pism::array::metadata;
 %include "util/array/Array.hh"
 
 %include "util/array/Array2D.hh"

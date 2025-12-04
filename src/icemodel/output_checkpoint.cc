@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2019, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2017, 2019, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,16 +30,17 @@ void IceModel::init_checkpoints() {
   m_checkpoint_filename = m_config->get_string("output.checkpoint.file");
 
   if (m_checkpoint_filename.empty()) {
-    std::string output_file = m_config->get_string("output.file");
-    if (not output_file.empty()) {
-      m_checkpoint_filename = filename_add_suffix(output_file, "_checkpoint", "");
-    } else {
-      m_checkpoint_filename = "pism_checkpoint.nc";
-    }
+    m_checkpoint_filename = filename_add_suffix(m_output_filename, "_checkpoint", "");
   }
 
   m_checkpoint_vars = output_variables(m_config->get_string("output.checkpoint.size"));
   m_last_checkpoint_time = 0.0;
+
+  {
+    m_checkpoint_file_contents = pism::combine(common_metadata(), state_variables());
+    m_checkpoint_file_contents =
+        pism::combine(m_checkpoint_file_contents, diagnostic_variables(m_checkpoint_vars));
+  }
 }
 
 //! Write a checkpoint (i.e. an intermediate result of a run).
@@ -69,17 +70,24 @@ bool IceModel::write_checkpoint() {
   double checkpoint_start_time = get_time(m_grid->com);
   profiling.begin("io.checkpoint");
   {
-    // Note: we open a new file every time we write a checkpoint, moving the old file
-    // aside if it exists.
-    File file(m_grid->com,
-              m_checkpoint_filename,
-              string_to_backend(m_config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE);
+    OutputFile file(m_output_writer, m_checkpoint_filename);
+    // Ensure that the checkpoint file is closed to force PISM to open a new file every
+    // time we write a checkpoint, moving the old file aside if it exists.
+    file.close();
 
-    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-    write_run_stats(file, run_stats());
+    {
+      // define time dimension *without* time bounds
+      define_time(file);
+      define_variables(file, m_checkpoint_file_contents);
+    }
 
-    save_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
+    {
+      write_config(*m_config, "pism_config", file);
+      file.append_time(m_time->current());
+      write_state(file);
+      write_diagnostics(file, m_checkpoint_vars);
+      write_run_stats(file);
+    }
   }
   profiling.end("io.checkpoint");
   double checkpoint_end_time = get_time(m_grid->com);

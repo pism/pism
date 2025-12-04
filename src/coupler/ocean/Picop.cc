@@ -121,16 +121,12 @@ void Picop::init_impl(const Geometry &geometry) {
                                         *m_water_column_pressure);
 }
 
-void Picop::define_model_state_impl(const File &output) const {
-
-  m_pico->define_model_state(output);
-  OceanModel::define_model_state_impl(output);
+std::set<VariableMetadata> Picop::state_impl() const {
+  return m_pico->state();
 }
 
-void Picop::write_model_state_impl(const File &output) const {
-
-  m_pico->write_model_state(output);
-  OceanModel::write_model_state_impl(output);
+void Picop::write_state_impl(const OutputFile &output) const {
+  m_pico->write_state(output);
 }
 
 // CODE Duplication: should this be a public member of PICO?
@@ -150,7 +146,7 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
 
   array::AccessScope list{&cell_type, &basal_melt_rate};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
 
     const int i = p.i(), j = p.j();
 
@@ -259,7 +255,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
                            &m_gammaTS,
                            &result};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     int i = p.i(), j = p.j();
 
     if (cell_type.floating_ice(i, j)) {
@@ -446,7 +442,7 @@ void transport_step(const array::Scalar1 &U_old, const array::CellType &cell_typ
 
   array::AccessScope scope{ &U_old, &cell_type, &U_new, &flow_direction };
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.floating_ice(i, j)) {
@@ -470,7 +466,7 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
 
   // Step 1: Initialize zgl0 at grounding line: bed elevation
   //         Normalize velocities
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     int i = p.i(), j = p.j();
     double flow_speed = adv_vel(i, j).magnitude();
     if (flow_speed > 0.0) {
@@ -502,7 +498,7 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
 
     // elevation of a plume origin that reached (x,y) cannot be above the elevation of the
     // bottom of the ice at (x,y)
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       int i = p.i(), j = p.j();
 
       if (cell_type.floating_ice(i, j)) {
@@ -515,7 +511,7 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
     }
 
     double residual = 0.0;
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       int i = p.i(), j = p.j();
       double denom = std::max(std::abs(result_old(i, j)), 1e-8);  // avoid divide-by-zero
       double rel_change = std::abs(result_new(i, j) - result_old(i, j)) / denom;
@@ -548,7 +544,7 @@ void Picop::compute_shelf_base_elevation(const Inputs &inputs,
   array::AccessScope scope{&cell_type,
                            &ice_surface_elevation, &ice_thickness, &result };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     int i = p.i(), j = p.j();      
       result(i, j) = ice_surface_elevation(i, j) - ice_thickness(i, j);
   }
@@ -581,7 +577,7 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
     diff_grounded = diff_uphill;
   }
   
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j(); {
 
     // To compute the x-derivative we use
@@ -669,7 +665,7 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
     transport_step(result_old, cell_type, m_flow_direction, result_new);
     
     double residual = 0.0;
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       int i = p.i(), j = p.j();
       double denom = std::max(std::abs(result_old(i, j)), 1e-8);  // avoid divide-by-zero
       double rel_change = std::abs(result_new(i, j) - result_old(i, j)) / denom;

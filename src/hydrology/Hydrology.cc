@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2024 PISM Authors
+// Copyright (C) 2012-2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace hydrology {
@@ -35,7 +36,7 @@ public:
 
     m_accumulator.metadata()["units"] = "kg";
 
-    m_vars = { { m_sys, "tendency_of_subglacial_water_mass" } };
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass", *m_grid } };
     m_vars[0]
         .long_name("rate of change of the total mass of subglacial water")
         .units("kg second^-1")
@@ -62,7 +63,7 @@ public:
 
     m_accumulator.metadata()["units"] = "m";
 
-    m_vars = { { m_sys, "subglacial_water_input_rate_from_surface" } };
+    m_vars = { { m_sys, "subglacial_water_input_rate_from_surface", *m_grid } };
     m_vars[0]
         .long_name("water input rate from the ice surface into the subglacial water system")
         .units("m second^-1")
@@ -86,7 +87,7 @@ public:
                                    TOTAL_CHANGE) {
     m_accumulator.metadata()["units"] = "kg";
 
-    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_input" } };
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_input", *m_grid } };
     m_vars[0]
         .long_name("subglacial water flux due to input")
         .units("kg second^-1")
@@ -112,7 +113,7 @@ public:
 
     m_accumulator.metadata()["units"] = "m^2";
 
-    m_vars = { { m_sys, "subglacial_water_flux" } };
+    m_vars = { { m_sys, "subglacial_water_flux", *m_grid } };
     m_vars[0]
         .long_name("magnitude of the subglacial water flux")
         .units("m^2 second^-1")
@@ -147,7 +148,7 @@ public:
 
     m_accumulator.metadata()["units"] = "kg";
 
-    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_grounded_margins" } };
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_grounded_margins", *m_grid } };
     m_vars[0]
         .long_name("subglacial water flux at grounded ice margins")
         .units("kg second^-1")
@@ -172,7 +173,7 @@ public:
 
     m_accumulator.metadata()["units"] = "kg";
 
-    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_grounding_line" } };
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_grounding_line", *m_grid } };
     m_vars[0]
         .long_name("subglacial water flux at grounding lines")
         .units("kg second^-1")
@@ -198,7 +199,7 @@ public:
 
     m_accumulator.metadata()["units"] = "kg";
 
-    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_conservation_error" } };
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_conservation_error", *m_grid } };
     m_vars[0]
         .long_name(
             "subglacial water flux due to conservation error (mass added to preserve non-negativity)")
@@ -224,7 +225,7 @@ public:
 
     m_accumulator.metadata()["units"] = "kg";
 
-    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary" } };
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary", *m_grid } };
     m_vars[0]
         .long_name("subglacial water flux at domain boundary (in regional model configurations)")
         .units("kg second^-1")
@@ -249,7 +250,7 @@ public:
 
     m_accumulator.metadata()["units"] = "kg";
 
-    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_flow" } };
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_flow", *m_grid } };
     m_vars[0]
         .long_name("rate of change subglacial water mass due to lateral flow")
         .units("kg second^-1")
@@ -411,7 +412,7 @@ void Hydrology::update(double t, double dt, const Inputs &inputs) {
 
   array::AccessScope list{ &m_W, &m_Wtill, &m_total_change };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     m_total_change(i, j) = m_W(i, j) + m_Wtill(i, j);
@@ -420,7 +421,7 @@ void Hydrology::update(double t, double dt, const Inputs &inputs) {
   this->update_impl(t, dt, inputs);
 
   // compute total change in meters
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     m_total_change(i, j) = (m_W(i, j) + m_Wtill(i, j)) - m_total_change(i, j);
   }
@@ -432,7 +433,7 @@ void Hydrology::update(double t, double dt, const Inputs &inputs) {
          kg_per_m      = water_density * m_grid->cell_area();
 
   list.add({ &m_flow_change, &m_input_change });
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     m_total_change(i, j) *= kg_per_m;
     m_input_change(i, j) *= kg_per_m;
@@ -464,11 +465,11 @@ DiagnosticList Hydrology::diagnostics_impl() const {
   return result;
 }
 
-void Hydrology::define_model_state_impl(const File &output) const {
-  m_Wtill.define(output, io::PISM_DOUBLE);
+std::set<VariableMetadata> Hydrology::state_impl() const {
+  return array::metadata({ &m_Wtill });
 }
 
-void Hydrology::write_model_state_impl(const File &output) const {
+void Hydrology::write_state_impl(const OutputFile &output) const {
   m_Wtill.write(output);
 }
 
@@ -486,7 +487,7 @@ void Hydrology::compute_overburden_pressure(const array::Scalar &ice_thickness,
 
   array::AccessScope list{ &ice_thickness, &result };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = ice_density * standard_gravity * ice_thickness(i, j);
@@ -559,7 +560,7 @@ void check_bounds(const array::Scalar &W, double W_max) {
   array::AccessScope list(W);
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (W(i,j) < 0.0) {
@@ -604,7 +605,7 @@ void Hydrology::compute_surface_input_rate(const array::CellType &mask,
   const double
     water_density = m_config->get_number("constants.fresh_water.density");
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
@@ -635,7 +636,7 @@ void Hydrology::compute_basal_melt_rate(const array::CellType &mask,
     water_density = m_config->get_number("constants.fresh_water.density"),
     C             = ice_density / water_density;
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
@@ -686,7 +687,7 @@ void Hydrology::enforce_bounds(const array::CellType &cell_type,
     fresh_water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m            = m_grid->cell_area() * fresh_water_density; // kg m-1
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (water_thickness(i, j) < 0.0) {
@@ -735,7 +736,7 @@ void Hydrology::enforce_bounds(const array::CellType &cell_type,
 
     list.add(M);
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (M(i, j) > 0.0) {

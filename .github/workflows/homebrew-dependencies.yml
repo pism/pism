@@ -17,5 +17,12 @@ jobs:
           brew tap pism/pism
           export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
           brew install --only-dependencies pism
-      - run: cmake -B build -S . -DCMAKE_C_FLAGS="-Werror" -DCMAKE_CXX_FLAGS="-Werror"
+      - run: cmake -B build -S . \
+          -DCMAKE_C_FLAGS="-Werror" \
+          -DCMAKE_CXX_FLAGS="-Werror" \
+          -DPism_BUILD_PYTHON_BINDINGS=YES \
+          -DPism_USE_PARALLEL_NETCDF4=YES \
+          -DPism_USE_YAC_INTERPOLATION=YES \
+          -DPism_USE_PROJ=YES
       - run: make -j -C build all
+      - run: make -C build test

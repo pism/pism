@@ -164,7 +164,7 @@ the time variable.
    File file(m_grid->com, m_config->get_string("output.format"),
             filename, PISM_READWRITE_CLOBBER);
 
-   io::define_time(file, *m_grid->ctx());
+   io::define_time(file, *m_grid->ctx()->time());
    io::append_time(file, *m_grid->ctx()->config(), current_time);
 
 When a file is opened with the mode `PISM_READWRITE_CLOBBER`, PISM checks if this file is

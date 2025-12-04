@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,16 +46,16 @@ protected:
   void allocate_stressbalance();
   void allocate_basal_yield_stress();
   void allocate_energy_model();
-  void model_state_setup();
+  void model_state_setup(InputOptions input_options);
 
-  void energy_step();
-  void hydrology_step();
+  void energy_step(double t, double dt);
+  void hydrology_step(double t, double dt);
 
   stressbalance::Inputs stress_balance_inputs();
   energy::Inputs energy_model_inputs();
   YieldStressInputs yield_stress_inputs();
 
-  void init_diagnostics();
+  void allocate_diagnostics();
 
 private:
   array::Scalar2 m_no_model_mask;

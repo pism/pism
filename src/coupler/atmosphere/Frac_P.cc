@@ -24,6 +24,7 @@
 #include "pism/coupler/util/options.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -128,7 +129,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
 
     array::AccessScope list{&P, &S};
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       P(i, j) *= S(i, j);

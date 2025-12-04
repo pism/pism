@@ -44,12 +44,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-I${CMAKE_BINARY_DIR}" APPEND)
 
-  if(Pism_USE_JANSSON)
-    set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_USE_JANSSON=1" APPEND)
-  else()
-    set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_USE_JANSSON=0" APPEND)
-  endif()
-
   if(Pism_DEBUG)
     set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_DEBUG=1" APPEND)
   else()

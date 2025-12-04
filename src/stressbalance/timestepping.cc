@@ -44,6 +44,7 @@ The maximum vertical velocity is computed but it does not affect the output.
  */
 CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
                             const array::CellType &cell_type,
+                            const array::Scalar1 *no_model_mask,
                             const array::Array3D &u3,
                             const array::Array3D &v3,
                             const array::Array3D &w3) {
@@ -55,6 +56,14 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
 
   array::AccessScope list{&ice_thickness, &u3, &v3, &w3, &cell_type};
 
+  bool has_no_model_mask;
+  if (no_model_mask != nullptr) {
+    has_no_model_mask = true;
+    list.add(*no_model_mask);
+  } else {
+    has_no_model_mask = false;
+  }
+  
   // update global max of abs of velocities for CFL; only velocities under surface
   const double
     one_over_dx = 1.0 / grid->dx(),
@@ -63,10 +72,17 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
   double u_max = 0.0, v_max = 0.0, w_max = 0.0;
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (cell_type.icy(i, j)) {
+      bool is_modeled = true;
+      if (has_no_model_mask) {
+        if ((*no_model_mask)(i, j) == 1) {
+          is_modeled = false;
+        }
+      }
+      
+      if ((cell_type.icy(i, j)) && is_modeled) {
         const int ks = grid->kBelowHeight(ice_thickness(i, j));
         const double
           *u = u3.get_column(i, j),
@@ -119,6 +135,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
  */
 CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
                             const array::CellType &cell_type,
+                            const array::Scalar1 *no_model_mask,
                             const array::Vector &velocity) {
 
   auto grid = ice_thickness.grid();
@@ -132,11 +149,26 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
 
   array::AccessScope list{&velocity, &cell_type};
 
+  bool has_no_model_mask;
+  if (no_model_mask != nullptr) {
+    has_no_model_mask = true;
+    list.add(*no_model_mask);
+  } else {
+    has_no_model_mask = false;
+  }
+  
   double u_max = 0.0, v_max = 0.0;
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.icy(i, j)) {
+    bool is_modeled = true;
+    if (has_no_model_mask) {
+      if ((*no_model_mask)(i, j) == 1) {
+        is_modeled = false;
+      }
+    }
+      
+    if ((cell_type.icy(i, j)) && is_modeled) {
       const double
         u_abs = fabs(velocity(i, j).u),
         v_abs = fabs(velocity(i, j).v);

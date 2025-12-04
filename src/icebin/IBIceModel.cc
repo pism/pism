@@ -34,6 +34,9 @@ IBIceModel::IBIceModel(std::shared_ptr<pism::Grid> grid, const std::shared_ptr<C
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
+
+  m_time->set_start(params.time_start_s);
+  m_time->set(params.time_start_s);
 }
 
 IBIceModel::~IBIceModel() {
@@ -81,19 +84,19 @@ void IBIceModel::massContPostHook() {
 }
 
 
-void IBIceModel::energy_step() {
+void IBIceModel::energy_step(double t, double dt) {
 
-  printf("BEGIN IBIceModel::energyStep(t=%f, dt=%f)\n", t_TempAge, dt_TempAge);
+  printf("BEGIN IBIceModel::energyStep(t=%f, dt=%f)\n", t, dt);
 
   // Enthalpy and mass continuity are stepped with different timesteps.
   // Fish out the timestep relevant to US.
   // const double my_t0 = t_TempAge;          // Time at beginning of timestep
-  const double my_dt = dt_TempAge;
+  const double my_dt = dt;
 
   // =========== BEFORE Energy Step
 
   // =========== The Energy Step Itself
-  super::energy_step();
+  super::energy_step(t, dt);
 
   // =========== AFTER Energy Step
 
@@ -122,12 +125,12 @@ void IBIceModel::energy_step() {
   array::sum_columns(strain_heating3, 1.0, my_dt, cur.strain_heating);
 }
 
-void IBIceModel::massContExplicitStep() {
+void IBIceModel::massContExplicitStep(double dt) {
 
   printf("BEGIN IBIceModel::MassContExplicitStep()\n");
 
   m_ice_density              = m_config->get_number("constants.ice.density");
-  m_meter_per_s_to_kg_per_m2 = m_dt * m_ice_density;
+  m_meter_per_s_to_kg_per_m2 = dt * m_ice_density;
 
 
   // =========== The Mass Continuity Step Itself
@@ -153,12 +156,12 @@ void IBIceModel::massContExplicitStep() {
     array::AccessScope access{ &ib_surface->massxfer, &ib_surface->enthxfer, &ib_surface->deltah,
                                &cur.smb, &cur.deltah };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      cur.smb.mass(i, j) += m_dt * ib_surface->massxfer(i, j);
-      cur.smb.enth(i, j) += m_dt * ib_surface->enthxfer(i, j);
-      cur.deltah(i, j) += m_dt * ib_surface->deltah(i, j);
+      cur.smb.mass(i, j) += dt * ib_surface->massxfer(i, j);
+      cur.smb.enth(i, j) += dt * ib_surface->enthxfer(i, j);
+      cur.deltah(i, j) += dt * ib_surface->deltah(i, j);
     }
   }
 }
@@ -238,7 +241,7 @@ void IBIceModel::set_rate(double dt) {
 
     {
       array::AccessScope access{ &vbase, &vcur, &vrate };
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         // rate = cur - base: Just for DELTA and EPSILON flagged vectors
@@ -264,7 +267,7 @@ void IBIceModel::reset_rate() {
     // This cannot go in the loop above with PETSc because
     // vbase is needed on the RHS of the equations above.
     array::AccessScope access{ &vbase, &vcur };
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
       // base = cur: For ALL vectors
       vbase(i, j) = vcur(i, j);
@@ -319,28 +322,20 @@ void IBIceModel::prepare_outputs(double time_s) {
 }
 
 void IBIceModel::dumpToFile(const std::string &filename) const {
-  File file(m_grid->com, filename,
-            string_to_backend(m_config->get_string("output.format")), io::PISM_READWRITE_MOVE);
+  OutputFile file(m_output_writer, filename);
 
-  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-  write_run_stats(file, run_stats());
+  define_time(file);
+  define_variables(file, m_output_file_contents);
 
-  // assume that "dumpToFile" is expected to save the model state *only*.
-  save_variables(file, INCLUDE_MODEL_STATE, {}, m_time->current());
+  write_config(*m_config, "pism_config", file);
+  file.append_time(m_time->current());
+  write_state(file);
+  write_diagnostics(file, m_output_vars);
+  write_run_stats(file);
 }
 
-void IBIceModel::time_setup() {
-  // super::m_grid_setup() trashes m_time->start().  Now set it correctly.
-  m_time->set_start(params.time_start_s);
-  m_time->set(params.time_start_s);
-
-  m_log->message(2, "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
-                 m_time->date(m_time->start()).c_str(), m_time->date(m_time->end()).c_str(),
-                 m_time->run_length().c_str(), m_time->calendar().c_str());
-}
-
-void IBIceModel::misc_setup() {
-  super::misc_setup();
+void IBIceModel::misc_setup(InputOptions input_options) {
+  super::misc_setup(input_options);
 
 
   // ------ Initialize MassEnth structures: base, cur, rate
@@ -378,7 +373,7 @@ void IBIceModel::compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &
 
   array::AccessScope access{ &ice_thickness, &ice_enthalpy, // Inputs
                              &enth2, &mass2 };              // Outputs
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     enth2(i, j) = 0;

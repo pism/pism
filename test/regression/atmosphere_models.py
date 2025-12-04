@@ -37,17 +37,17 @@ def write_state(model):
 
     try:
         output = PISM.util.prepare_output(o_filename)
-        model.define_model_state(output)
-        model.write_model_state(output)
+        for v in model.state():
+            output.define_variable(v)
+        model.write_state(output)
         output.close()
 
         ds = model.diagnostics()
         output = PISM.util.prepare_output(o_diagnostics)
 
         for d in ds:
-            ds[d].define(output, PISM.PISM_DOUBLE)
-
-        for d in ds:
+            for k in range(ds[d].n_variables()):
+                output.define_variable(ds[d].metadata(k))
             ds[d].compute().write(output)
 
         output.close()
@@ -205,6 +205,7 @@ class DeltaT2D(TestCase):
 
         try:
             output = PISM.util.prepare_output(self.filename)
+            output.define_variable(delta_T.metadata(0))
             delta_T.write(output)
         finally:
             output.close()
@@ -268,6 +269,7 @@ class DeltaP2D(TestCase):
 
         try:
             output = PISM.util.prepare_output(self.filename)
+            output.define_variable(delta_P.metadata(0))
             delta_P.write(output)
         finally:
             output.close()
@@ -299,8 +301,14 @@ class Given(TestCase):
         self.T = 250.0
 
         output = PISM.util.prepare_output(self.filename)
-        precipitation(self.grid, self.P).write(output)
-        air_temperature(self.grid, self.T).write(output)
+
+        P = precipitation(self.grid, self.P)
+        output.define_variable(P.metadata())
+        P.write(output)
+
+        T = air_temperature(self.grid, self.T)
+        output.define_variable(T.metadata())
+        T.write(output)
 
         config.set_string("atmosphere.given.file", self.filename)
 
@@ -331,7 +339,9 @@ class SeaRISE(TestCase):
         self.P = 10.0
 
         output = PISM.util.prepare_output(self.filename)
-        precipitation(self.grid, self.P).write(output)
+        P = precipitation(self.grid, self.P)
+        output.define_variable(P.metadata())
+        P.write(output)
 
         config.set_string("atmosphere.searise_greenland.file", self.filename)
 
@@ -360,16 +370,20 @@ class YearlyCycle(TestCase):
         self.P = 15.0
 
         output = PISM.util.prepare_output(self.filename)
-        precipitation(self.grid, self.P).write(output)
+        P = precipitation(self.grid, self.P)
+        output.define_variable(P.metadata())
+        P.write(output)
 
         T_mean = PISM.Scalar(self.grid, "air_temp_mean_annual")
         T_mean.metadata(0).long_name("mean annual near-surface air temperature").units("kelvin")
         T_mean.set(self.T_mean)
+        output.define_variable(T_mean.metadata())
         T_mean.write(output)
 
         T_summer = PISM.Scalar(self.grid, "air_temp_mean_summer")
         T_summer.metadata(0).long_name("mean summer near-surface air temperature").units("kelvin")
         T_summer.set(self.T_summer)
+        output.define_variable(T_summer.metadata())
         T_summer.write(output)
 
         config.set_string("atmosphere.yearly_cycle.file", self.filename)
@@ -406,25 +420,26 @@ class OneStation(TestCase):
         self.T = 263.15
         self.P = 10.0
 
-        time_name = config.get_string("time.dimension_name")
+        time = self.grid.ctx().time().metadata(with_bounds=True)
 
-        output = PISM.util.prepare_output(self.filename, append_time=True)
+        unit_system = time.unit_system()
 
-        output.redef()
+        output = PISM.util.prepare_output(self.filename, append_time=True, time=time)
 
-        output.define_dimension("nv", 2)
-        output.define_variable("time_bounds", PISM.PISM_DOUBLE, [time_name, "nv"])
-        output.write_attribute(time_name, "bounds", "time_bounds")
+        bounds = self.grid.ctx().time().bounds_metadata()
+        output.define_variable(bounds)
 
-        output.define_variable("precipitation", PISM.PISM_DOUBLE, [time_name])
-        output.write_attribute("precipitation", "units", "kg m^-2 s^-1")
+        precip = PISM.VariableMetadata("precipitation", unit_system)
+        precip.units("kg m^-2 s^-1").set_time_dependent(True)
+        output.define_variable(precip)
 
-        output.define_variable("air_temp", PISM.PISM_DOUBLE, [time_name])
-        output.write_attribute("air_temp", "units", "kelvin")
+        air_temp = PISM.VariableMetadata("air_temp", unit_system)
+        air_temp.units("kelvin").set_time_dependent(True)
+        output.define_variable(air_temp)
 
-        output.write_variable("precipitation", [0], [1], [self.P])
-        output.write_variable("air_temp", [0], [1], [self.T])
-        output.write_variable("time_bounds", [0, 0], [1, 2], [0, 1])
+        output.write_array(precip.get_name(), [0], [1], [self.P])
+        output.write_array(air_temp.get_name(), [0], [1], [self.T])
+        output.write_array(bounds.get_name(), [0, 0], [1, 2], [0, 1])
 
         output.close()
 
@@ -484,6 +499,9 @@ class Anomaly(TestCase):
         dP.set(self.dP)
 
         output = PISM.util.prepare_output(self.filename)
+        output.define_variable(dT.metadata())
+        output.define_variable(dP.metadata())
+
         dT.write(output)
         dP.write(output)
 
@@ -580,6 +598,7 @@ class FracP2D(TestCase):
 
         try:
             output = PISM.util.prepare_output(self.filename)
+            output.define_variable(frac_P.metadata(0))
             frac_P.write(output)
         finally:
             output.close()

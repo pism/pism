@@ -79,9 +79,11 @@ def run(dt, restart=False):
         # save the model state
         filename = "lingle_clark_model_state.nc"
         try:
-            PISM.util.prepare_output(filename)
-            f = PISM.File(grid.com, filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE)
-            model.write_model_state(f)
+            f = PISM.util.prepare_output(filename)
+            for v in model.state():
+                f.define_variable(v)
+
+            model.write_state(f)
             f.close()
 
             # create a new model

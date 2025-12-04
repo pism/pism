@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,10 +42,6 @@
 
 #if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"    // pj_release
-#endif
-
-#if (Pism_USE_JANSSON==1)
-#include <jansson.h>            // JANSSON_VERSION
 #endif
 
 #include <petsctime.h>          // PetscTime
@@ -154,8 +150,18 @@ bool is_increasing(const std::vector<double> &a) {
   return true;
 }
 
-bool member(const std::string &string, const std::set<std::string> &set) {
-  return (set.find(string) != set.end());
+template<typename T, typename A>
+bool member(const T& x, const A& iterable) {
+  return std::any_of(iterable.begin(), iterable.end(),
+                     [&x](const std::string &y) { return x == y; });
+}
+
+bool set_member(const std::string &string, const std::set<std::string> &set) {
+  return member(string, set);
+}
+
+bool vector_member(const std::string &string, const std::vector<std::string> &vector) {
+  return member(string, vector);
 }
 
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
@@ -255,10 +261,6 @@ std::string version() {
 
 #if (Pism_USE_PROJ==1)
   result += pism::printf("PROJ %s.\n", pj_release);
-#endif
-
-#if (Pism_USE_JANSSON==1)
-  result += pism::printf("Jansson %s.\n", JANSSON_VERSION);
 #endif
 
 #if (Pism_BUILD_PYTHON_BINDINGS==1)
@@ -418,18 +420,28 @@ double get_time(MPI_Comm comm) {
   return result;
 }
 
-std::string printf(const char *format, ...) {
-  std::string result(1024, ' ');
-  va_list arglist;
-  size_t length;
+std::string printf(const char* format, ...) {
+    std::string result(1024, '\0');          // allocate and zero-terminate
+    va_list ap;
+    va_start(ap, format);
 
-  va_start(arglist, format);
-  if((length = vsnprintf(&result[0], result.size(), format, arglist)) > result.size()) {
-    result.reserve(length);
-    vsnprintf(&result[0], result.size(), format, arglist);
-  }
-  va_end(arglist);
-  return result.substr(0, length);
+    // first try
+    va_list ap1; va_copy(ap1, ap);
+    int n = std::vsnprintf(&result[0], result.size(), format, ap1);
+    va_end(ap1);
+    if (n < 0) { va_end(ap); return {}; }
+
+    if (static_cast<size_t>(n) >= result.size()) {
+        // need a bigger buffer: resize (not reserve), and use a *fresh* va_list
+        result.resize(static_cast<size_t>(n) + 1);        // +1 for '\0' space
+        va_list ap2; va_copy(ap2, ap);
+        std::vsnprintf(&result[0], result.size(), format, ap2);
+        va_end(ap2);
+    }
+
+    va_end(ap);
+    result.resize(static_cast<size_t>(n));                // drop the '\0'
+    return result;
 }
 
 /*!

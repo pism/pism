@@ -38,7 +38,6 @@ public:
 
 protected:
   void read_impl(const File &file);
-  void write_impl(const File &file) const;
 
   bool is_set_impl(const std::string &name) const;
 

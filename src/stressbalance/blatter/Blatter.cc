@@ -39,6 +39,7 @@
 #include "pism/util/pism_utilities.hh" // pism::printf()
 #include "pism/util/fem/Quadrature.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -299,12 +300,15 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
        {"units", "1"},
        {"positive", "up"}};
 
-    m_u_sigma->metadata(0).z().set_name("z_sigma");
-    m_v_sigma->metadata(0).z().set_name("z_sigma");
+    auto &z_u = m_u_sigma->metadata(0).dimension("z");
+    auto &z_v = m_v_sigma->metadata(0).dimension("z");
+
+    z_u.set_name("z_sigma").clear();
+    z_v.set_name("z_sigma").clear();
 
     for (const auto &z_attr : z_attrs) {
-      m_u_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);
-      m_v_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);
+      z_u.set_string(z_attr.first, z_attr.second);
+      z_v.set_string(z_attr.first, z_attr.second);
     }
 
   }
@@ -547,7 +551,7 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
   {
     array::AccessScope list{&tauc, &H, &b, &sea_level, &m_parameters};
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -599,7 +603,7 @@ void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
 
   array::AccessScope list{enthalpy, &ice_thickness};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double H = ice_thickness(i, j);
@@ -690,12 +694,11 @@ void Blatter::init_impl() {
   }
 }
 
-void Blatter::define_model_state_impl(const File &output) const {
-  m_u_sigma->define(output, io::PISM_DOUBLE);
-  m_v_sigma->define(output, io::PISM_DOUBLE);
+std::set<VariableMetadata> Blatter::state_impl() const {
+  return array::metadata({ m_u_sigma.get(), m_v_sigma.get() });
 }
 
-void Blatter::write_model_state_impl(const File &output) const {
+void Blatter::write_state_impl(const OutputFile &output) const {
   m_u_sigma->write(output);
   m_v_sigma->write(output);
 }
@@ -800,7 +803,7 @@ Blatter::SolutionInfo Blatter::solve() {
   ierr = PCGetType(pc, &pc_type);
   PISM_CHK(ierr, "PCGetType");
 
-  if (std::string(pc_type) == PCMG) {
+  if (pc_type != nullptr and std::string(pc_type) == PCMG) {
     KSP coarse_ksp;
     ierr = PCMGGetCoarseSolve(pc, &coarse_ksp);
     PISM_CHK(ierr, "PCMGGetCoarseSolve");
@@ -1006,7 +1009,8 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   int snes_total_it = 0;
   int ksp_total_it = 0;
 
-  double ksp_rtol = 1e-5;
+  double ksp_rtol =
+      m_config->get_number("stress_balance.blatter.relative_convergence");
 
   double norm = 0.0;
   {
@@ -1110,7 +1114,7 @@ void Blatter::copy_solution() {
 
   array::AccessScope list{m_u_sigma.get(), m_v_sigma.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     auto *u = m_u_sigma->get_column(i, j);
@@ -1131,7 +1135,7 @@ void Blatter::get_basal_velocity(array::Vector &result) {
 
   array::AccessScope list{&result};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = x[j][i][0];      // STORAGE_ORDER
@@ -1150,7 +1154,7 @@ void Blatter::set_initial_guess(const array::Array3D &u_sigma,
 
   array::AccessScope list{&u_sigma, &v_sigma};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const auto *u = u_sigma.get_column(i, j);
@@ -1175,7 +1179,7 @@ void Blatter::compute_averaged_velocity(array::Vector &result) {
 
   array::AccessScope list{&result, &m_parameters};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double H = m_parameters(i, j).thickness;

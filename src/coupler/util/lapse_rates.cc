@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2022, 2023 PISM Authors
+/* Copyright (C) 2018, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,7 +35,7 @@ void lapse_rate_correction(const array::Scalar &surface,
 
   array::AccessScope list{&surface, &reference_surface, &result};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) -= lapse_rate * (surface(i,j) - reference_surface(i, j));

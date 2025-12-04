@@ -72,7 +72,7 @@ public:
     double divQ_SSA,             // [m s-1] ice equivalent
     double Href_to_H_flux,       // [m s-1] ice equivalent
     double nonneg_rule_flux);    // [m s-1] ice equivalent
-  virtual void massContExplicitStep();
+  virtual void massContExplicitStep(double dt);
 
 private:
   // Temporary variables inside massContExplicitStep()
@@ -98,8 +98,7 @@ public:
 
   virtual void allocate_subglacial_hydrology();
   virtual void allocate_couplers();
-  virtual void time_setup();
-  virtual void misc_setup();
+  virtual void misc_setup(InputOptions input_options);
 
   void compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &mass2);
 
@@ -119,14 +118,14 @@ public:
   }
   /** @return Current time for enthalpy timestepping */
   double enthalpy_t() const {
-    return t_TempAge;
+    return m_t_TempAge;
   }
 
   // I added these...
   void massContPreHook();
   void massContPostHook();
   // Pre and post for energy
-  void energy_step();
+  void energy_step(double t, double dt);
 
   void prepare_outputs(double time_s);
 

@@ -42,6 +42,7 @@
 #include <proj.h>
 
 #include "pism/util/Proj.hh"
+#include "pism/util/LonLatGrid.hh"
 
 #if (Pism_USE_YAC_INTERPOLATION == 0)
 #error "This code requires YAC"
@@ -52,75 +53,6 @@ extern "C" {
 }
 
 namespace pism {
-
-/*!
- * Utility class converting `x,y` coordinates in a projection to a `lon,lat` pair.
- *
- * Requires the `PROJ` library.
- */
-class LonLatCalculator {
-public:
-  LonLatCalculator(const std::string &proj_string)
-      : m_coordinate_mapping(proj_string, "EPSG:4326") {
-  }
-
-  std::array<double, 2> lonlat(double x, double y) {
-    PJ_COORD in, out;
-
-    in.xy = { x, y };
-    out   = proj_trans(m_coordinate_mapping, PJ_FWD, in);
-
-    return { out.lp.phi, out.lp.lam };
-  }
-
-private:
-  Proj m_coordinate_mapping;
-};
-
-/*!
- * Grid definition using coordinates in radians.
- */
-struct LonLatGrid {
-  std::vector<double> lon;
-  std::vector<double> lat;
-
-  /*!
-   *
-   * Converts a Cartesian grid in a `projection` that uses coordinates
-   * `x` and `y` in meters into the form that can be used to define a
-   * curvilinear grid in YAC.
-   *
-   * The `projection` string has to use the format compatible with PROJ.
-   */
-  LonLatGrid(const std::vector<double> &x, const std::vector<double> &y,
-             const std::string &projection) {
-
-    size_t nrow = y.size();
-    size_t ncol = x.size();
-    size_t N    = nrow * ncol;
-
-    lon.resize(N);
-    lat.resize(N);
-
-    // convert from (row, col) to the linear index in "cell" arrays
-    auto C = [ncol](size_t row, size_t col) { return row * ncol + col; };
-
-    // convert from degrees to radians
-    auto deg2rad = [](double degree) { return degree * M_PI / 180; };
-
-    pism::LonLatCalculator mapping(projection);
-
-    for (size_t row = 0; row < nrow; ++row) {
-      for (size_t col = 0; col < ncol; ++col) {
-        auto coords = mapping.lonlat(x[col], y[row]);
-
-        lon[C(row, col)] = deg2rad(coords[0]);
-        lat[C(row, col)] = deg2rad(coords[1]);
-      }
-    }
-  }
-};
-
 
 /*!
  * Define the PISM grid. Each PE defines its own subdomain.
@@ -220,7 +152,7 @@ static std::vector<double> grid_subset(int xs, int xm, const std::vector<double>
 }
 
 static double dx_estimate(Proj &mapping, double x1, double x2, double y) {
-  PJ_COORD p1, p2;
+  PJ_COORD p1 = proj_coord(0, 0, 0, 0), p2 = proj_coord(0, 0, 0, 0);
   p1.lp = {proj_torad(x1), proj_torad(y)};
   p2.lp = {proj_torad(x2), proj_torad(y)};
 
@@ -245,7 +177,7 @@ static double dx_min(const std::string &proj_string,
 }
 
 static double dy_estimate(Proj &mapping, double x, double y1, double y2) {
-  PJ_COORD p1, p2;
+  PJ_COORD p1 = proj_coord(0, 0, 0, 0), p2 = proj_coord(0, 0, 0, 0);
   p1.lp = {proj_torad(x), proj_torad(y1)};
   p2.lp = {proj_torad(x), proj_torad(y2)};
 
@@ -276,7 +208,9 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     : m_instance_id(0), m_source_field_id(0), m_target_field_id(0) {
   auto ctx = target_grid.ctx();
 
-  if (target_grid.get_mapping_info().proj_string.empty()) {
+  std::string target_proj_params = target_grid.get_mapping_info()["proj_params"];
+
+  if (target_proj_params.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "internal grid projection is not known");
   }
 
@@ -295,16 +229,18 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     grid::InputGridInfo source_grid_info(input_file, variable_name, ctx->unit_system(),
                                          pism::grid::CELL_CENTER);
 
-    auto source_grid_mapping = MappingInfo::FromFile(input_file, variable_name, ctx->unit_system());
+    auto source_grid_mapping = mapping_info_from_file(input_file, variable_name, ctx->unit_system());
 
-    std::string grid_mapping_name = source_grid_mapping.cf_mapping["grid_mapping_name"];
+    std::string grid_mapping_name = source_grid_mapping["grid_mapping_name"];
 
     log->message(2, "Input grid:\n");
     if (not grid_mapping_name.empty()) {
       log->message(2, " Grid mapping: %s\n", grid_mapping_name.c_str());
     }
-    if (not source_grid_mapping.proj_string.empty()) {
-      log->message(2, " PROJ string: '%s'\n", source_grid_mapping.proj_string.c_str());
+
+    std::string source_proj_params = source_grid_mapping["proj_params"];
+    if (not source_proj_params.empty()) {
+      log->message(2, " PROJ string: '%s'\n", source_proj_params.c_str());
     }
     source_grid_info.report(*log, 2, ctx->unit_system());
 
@@ -322,7 +258,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
     source_grid->set_mapping_info(source_grid_mapping);
 
-    if (source_grid->get_mapping_info().proj_string.empty()) {
+    if (source_proj_params.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unsupported or missing projection info for the grid '%s'",
                                     source_grid_name.c_str());
@@ -354,13 +290,13 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
         auto y = grid_subset(source_grid->ys(), source_grid->ym(), source_grid_info.y);
 
         m_source_field_id = define_field(
-            comp_ids[0], x, y, source_grid->get_mapping_info().proj_string, source_grid_name);
+            comp_ids[0], x, y, source_proj_params, source_grid_name);
 
         double dx = 0.0;
         double dy = 0.0;
         if (source_grid_info.longitude_latitude) {
-          dx = dx_min(source_grid_mapping.proj_string, x, y);
-          dy = dy_min(source_grid_mapping.proj_string, x, y);
+          dx = dx_min(source_proj_params, x, y);
+          dy = dy_min(source_proj_params, x, y);
         } else {
           dx = std::abs(x[1] - x[0]);
           dy = std::abs(y[1] - y[0]);
@@ -376,7 +312,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
         auto y = grid_subset(target_grid.ys(), target_grid.ym(), target_grid.y());
 
         m_target_field_id = define_field(
-            comp_ids[1], x, y, target_grid.get_mapping_info().proj_string, target_grid_name);
+            comp_ids[1], x, y, target_proj_params, target_grid_name);
 
         target_grid_spacing = GlobalMin(ctx->com(), std::min(target_grid.dx(), target_grid.dy()));
         log->message(2, " Target grid spacing: %3.3f m\n", target_grid_spacing);
@@ -501,7 +437,7 @@ void InputInterpolationYAC::regrid(const pism::File &file, pism::array::Scalar &
 }
 
 
-double InputInterpolationYAC::regrid_impl(const SpatialVariableMetadata &metadata,
+double InputInterpolationYAC::regrid_impl(const VariableMetadata &metadata,
                                           const pism::File &file, int record_index,
                                           const Grid & /* target_grid (unused) */,
                                           petsc::Vec &output) const {

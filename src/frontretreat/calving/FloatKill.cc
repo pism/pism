@@ -67,7 +67,7 @@ void FloatKill::update(array::Scalar &cell_type, array::Scalar &ice_thickness) {
 
   const bool dont_calve_near_grounded_ice = not m_calve_near_grounding_line;
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (m_old_mask.floating_ice(i, j)) {

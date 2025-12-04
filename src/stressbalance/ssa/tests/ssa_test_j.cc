@@ -76,7 +76,7 @@ void SSATestCaseJ::initializeSSACoefficients() {
 
   array::AccessScope list{&m_geometry.ice_thickness, &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double myx = m_grid->x(i), myy = m_grid->y(j);

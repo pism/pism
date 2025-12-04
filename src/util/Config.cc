@@ -21,7 +21,7 @@
 #include <cmath>                // std::round()
 #include <cstdlib>              // realpath()
 
-
+#include "VariableMetadata.hh"
 #include "pism/pism_config.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Config.hh"
@@ -30,6 +30,8 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/OutputWriter.hh"
+#include "pism/external/nlohmann/json.hpp"
 
 // include an implementation header so that we can allocate a NetCDFConfig instance in
 // config_from_options()
@@ -65,6 +67,10 @@ Config::~Config() {
   delete m_impl;
 }
 
+std::shared_ptr<units::System> Config::unit_system() const {
+  return m_impl->unit_system;
+}
+
 void Config::read(MPI_Comm com, const std::string &filename) {
 
   File file(com, filename, io::PISM_NETCDF3, io::PISM_READONLY); // OK to use netcdf3
@@ -77,19 +83,6 @@ void Config::read(const File &file) {
   m_impl->filename = file.name();
 }
 
-void Config::write(const File &file) const {
-  this->write_impl(file);
-}
-
-void Config::write(MPI_Comm com, const std::string &filename, bool append) const {
-
-  io::Mode mode = append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
-
-  File file(com, filename, io::PISM_NETCDF3, mode); // OK to use netcdf3
-
-  this->write(file);
-}
-
 //! \brief Returns the name of the file used to initialize the database.
 std::string Config::filename() const {
   return m_impl->filename;
@@ -99,7 +92,7 @@ void Config::import_from(const Config &other) {
   auto parameters = this->keys();
 
   for (const auto &p : other.all_doubles()) {
-    if (member(p.first, parameters)) {
+    if (set_member(p.first, parameters)) {
       this->set_numbers(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -109,7 +102,7 @@ void Config::import_from(const Config &other) {
   }
 
   for (const auto &p : other.all_strings()) {
-    if (member(p.first, parameters)) {
+    if (set_member(p.first, parameters)) {
       this->set_string(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -119,7 +112,7 @@ void Config::import_from(const Config &other) {
   }
 
   for (const auto &p : other.all_flags()) {
-    if (member(p.first, parameters)) {
+    if (set_member(p.first, parameters)) {
       this->set_flag(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -379,10 +372,6 @@ void Config::set_flag(const std::string& name, bool value,
   this->set_flag_impl(name, value);
 }
 
-std::shared_ptr<units::System> Config::unit_system() const {
-  return m_impl->unit_system;
-}
-
 static bool special_parameter(const std::string &name) {
   for (const auto &suffix : {"_doc", "_units", "_type", "_option", "_choices", "_valid_min", "_valid_max"}) {
     if (ends_with(name, suffix)) {
@@ -547,11 +536,11 @@ void set_flag_from_option(Config &config, const std::string &option,
   options::String opt("-" + option, doc, value ? "true" : "false", options::ALLOW_EMPTY);
 
   if (opt.is_set()) {
-    if (member(opt.value(), { "", "on", "yes", "true", "True" })) {
+    if (set_member(opt.value(), { "", "on", "yes", "true", "True" })) {
 
       value = true;
 
-    } else if (member(opt.value(), { "off", "no", "false", "False" })) {
+    } else if (set_member(opt.value(), { "off", "no", "false", "False" })) {
 
       value = false;
 
@@ -816,31 +805,6 @@ std::shared_ptr<Config> config_from_options(MPI_Comm com,
   return config;
 }
 
-ConfigWithPrefix::ConfigWithPrefix(std::shared_ptr<const Config> c, const std::string &prefix)
-    : m_prefix(prefix), m_config(c) {
-  // empty
-}
-
-double ConfigWithPrefix::get_number(const std::string &name) const {
-  return m_config->get_number(m_prefix + name);
-}
-
-double ConfigWithPrefix::get_number(const std::string &name, const std::string &units) const {
-  return m_config->get_number(m_prefix + name, units);
-}
-
-std::string ConfigWithPrefix::get_string(const std::string &name) const {
-  return m_config->get_string(m_prefix + name);
-}
-
-bool ConfigWithPrefix::get_flag(const std::string &name) const {
-  return m_config->get_flag(m_prefix + name);
-}
-
-void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
-  m_prefix = prefix;
-}
-
 std::set<std::string> Config::keys() const {
   std::set<std::string> result;
 
@@ -896,5 +860,99 @@ std::pair<bool, double> Config::valid_max(const std::string &parameter) const {
   }
   return { false, {} };
 }
+
+/*!
+ * Return the configuration as a JSON string containing parameter names, their values and
+ * (for numerical parameters) their units. Documentation strings, type information and
+ * command-line options are omitted to make this string as short as possible.
+ */
+std::string Config::json() const {
+  nlohmann::json json;
+
+  for (const auto &p : all_strings()) {
+    if (special_parameter(p.first)) {
+      continue;
+    }
+    json[p.first] = p.second;
+  }
+
+  for (const auto &p : all_doubles()) {
+    const auto &name  = p.first;
+    const auto &value = p.second;
+    if (special_parameter(name)) {
+      continue;
+    }
+
+    nlohmann::json entry;
+
+    if (value.size() == 1) {
+      if (type(name) == "integer") {
+        entry.push_back((int)value[0]);
+      } else {
+        entry.push_back(value[0]);
+      }
+    } else {
+      entry.push_back(value);
+    }
+    entry.push_back(units(name));
+
+    json[name] = entry;
+  }
+
+  for (const auto &p : all_flags()) {
+    if (special_parameter(p.first)) {
+      continue;
+    }
+    json[p.first] = p.second;
+  }
+
+  int indent = -1;              // compact form
+  char indent_char = ' ';
+  bool ensure_ascii = true;
+  return json.dump(indent, indent_char, ensure_ascii);
+}
+
+int Config::max_length = 32768;
+
+void write_config(const Config &config, const std::string &variable_name, const OutputFile &file) {
+
+  std::string data = config.json();
+
+  if ((int)data.size() + 1 > Config::max_length) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "unable to save configuration parameters to a file: JSON string length exceeds %d",
+        Config::max_length);
+  }
+
+  std::vector<unsigned int> start = { 0 };
+  std::vector<unsigned int> count = { (unsigned int)data.size() + 1 };
+
+  if (not config.get_string("output.experiment_id").empty()) {
+    start.insert(start.cbegin(), 0);
+    count.insert(count.cbegin(), 1);
+  }
+  file.write_text(variable_name, start, count, data);
+}
+
+VariableMetadata config_metadata(const Config &config) {
+  VariableMetadata result("pism_config", { { "cfg", Config::max_length } }, config.unit_system());
+  result.set_output_type(io::PISM_CHAR);
+
+  for (const auto &p : config.all_doubles()) {
+    result[p.first] = p.second;
+  }
+
+  for (const auto &p : config.all_strings()) {
+    result[p.first] = p.second;
+  }
+
+  for (const auto &p : config.all_flags()) {
+    result[p.first] = p.second ? "true" : "false";
+  }
+
+  return result;
+}
+
 
 } // end of namespace pism

@@ -19,7 +19,7 @@ export CFLAGS="-O3 -g -march=native"
 
 prefix=${prefix:-$HOME/local/yac}
 
-yaxt_version=0.11.3
+yaxt_version=0.11.4
 git clone -b release-${yaxt_version} \
     https://gitlab.dkrz.de/dkrz-sw/yaxt.git
 
@@ -34,7 +34,7 @@ make all && make install
 
 cd -
 
-yac_version=3.6.2
+yac_version=3.8.0
 git clone -b release-${yac_version} \
     https://gitlab.dkrz.de/dkrz-sw/yac.git
 

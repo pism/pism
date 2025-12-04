@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,8 +49,8 @@ protected:
   using EnergyModel::update_impl;
   virtual void update_impl(double t, double dt, const Inputs &inputs);
 
-  virtual void define_model_state_impl(const File &output) const;
-  virtual void write_model_state_impl(const File &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
+  virtual void write_state_impl(const OutputFile &output) const;
 };
 
 /*! @brief The "dummy" energy balance model. Reads in enthalpy from a file, but does not update it. */

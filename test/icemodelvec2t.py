@@ -54,29 +54,34 @@ class ForcingInput(unittest.TestCase):
         self.f = 2 * (self.t > 6) - 1
 
         def write_data(filename, use_bounds=True, forward=True):
-            bounds = PISM.VariableMetadata("time_bounds", ctx.unit_system)
-            bounds.set_string("units", units)
+            bounds = ctx.time.bounds_metadata()
+            bounds.units(units)
 
-            output = PISM.util.prepare_output(filename, append_time=False)
-            output.write_attribute("time", "units", units)
+            time = ctx.time.metadata(use_bounds)
+            time.units(units)
+
+            output = PISM.util.prepare_output(filename, append_time=False, time=time)
 
             if use_bounds:
-                PISM.define_time_bounds(bounds, "time", "nv", output, PISM.PISM_DOUBLE)
-                output.write_attribute("time", "bounds", "time_bounds")
+                output.define_variable(bounds)
 
             if forward:
                 order = range(N)
             else:
                 order = range(N - 1, -1, -1)
 
+            output.define_variable(v.metadata())
+
             for k in order:
-                PISM.append_time(output, "time", self.t[k])
+                output.append_time(self.t[k])
 
                 if use_bounds:
-                    PISM.write_time_bounds(output, bounds, k, (self.tb[k], self.tb[k + 1]))
+                    output.write_array(bounds.get_name(), [k, 0], [1, 2], (self.tb[k], self.tb[k + 1]))
 
                 v.set(float(self.f[k]))
                 v.write(output)
+
+            output.close()
 
         # regular forcing file
         write_data(self.filename, use_bounds=True)
@@ -93,11 +98,12 @@ class ForcingInput(unittest.TestCase):
         # file with one record
         output = PISM.util.prepare_output(self.one_record)
         v.set(float(self.f[-1]))
+        output.define_variable(v.metadata())
         v.write(output)
 
         # file without a time dimension
         v.set(float(self.f[-1]))
-        v.metadata().set_time_independent(True)
+        v.metadata().set_time_dependent(False)
         v.dump(self.no_time)
 
         self.times_linear = [1, 2, 3]

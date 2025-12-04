@@ -73,7 +73,7 @@ void PointwiseIsostasy::update_impl(const array::Scalar &load,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       m_topg(i, j) = m_topg_last(i, j) - f * (load(i, j) - m_load_last(i, j));

@@ -21,6 +21,7 @@
 
 #include <gsl/gsl_interp.h>     // gsl_interp_bsearch
 
+#include "NullTransport.hh"
 #include "pism/hydrology/EmptyingProblem.hh"
 
 #include "pism/util/Time.hh"    // time().current()
@@ -28,6 +29,8 @@
 #include "pism/util/Context.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 
 /* FIXMEs
  *
@@ -57,9 +60,9 @@ void SteadyState::initialization_message() const {
 }
 
 SteadyState::SteadyState(std::shared_ptr<const Grid> grid)
-  : NullTransport(grid) {
+    : NullTransport(grid),
+      m_time_name(m_config->get_string("time.dimension_name") + "_hydrology_steady") {
 
-  m_time_name = m_config->get_string("time.dimension_name") + "_hydrology_steady";
   m_t_last = time().current();
   m_update_interval = m_config->get_number("hydrology.steady.flux_update_interval", "seconds");
   m_t_eps = 1.0;
@@ -187,25 +190,27 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
   return MaxTimestep(dt, "hydrology 'steady'");
 }
 
-void SteadyState::define_model_state_impl(const File& output) const {
-  NullTransport::define_model_state_impl(output);
+std::set<VariableMetadata> SteadyState::state_impl() const {
+  auto variables = NullTransport::state_impl();
 
-  if (not output.variable_exists(m_time_name)) {
-    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
+  VariableMetadata T(m_time_name, m_sys);
+  T.long_name("time of the last update of the steady state subglacial water flux")
+      .units(time().units());
+  T["calendar"] = time().calendar();
 
-    output.write_attribute(m_time_name, "long_name",
-                        "time of the last update of the steady state subglacial water flux");
-    output.write_attribute(m_time_name, "calendar", time().calendar());
-    output.write_attribute(m_time_name, "units", time().units_string());
-  }
+  variables.insert(T);
 
-  m_Q.define(output, io::PISM_DOUBLE);
+  return pism::combine(variables, array::metadata({ &m_Q }));
 }
 
-void SteadyState::write_model_state_impl(const File& output) const {
-  NullTransport::write_model_state_impl(output);
+void SteadyState::write_state_impl(const OutputFile& output) const {
+  NullTransport::write_state_impl(output);
 
-  output.write_variable(m_time_name, {0}, {1}, &m_t_last);
+  auto t_length = output.time_dimension_length();
+  auto t_start = t_length > 0 ? t_length - 1 : 0;
+
+  output.write_timeseries(m_time_name, { t_start }, { 1 }, { m_t_last });
+
   m_Q.write(output);
 }
 
@@ -217,7 +222,13 @@ void SteadyState::restart_impl(const File &input_file, int record) {
   // Read m_t_last
   {
     if (input_file.variable_exists(m_time_name)) {
-      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
+      auto t_length = input_file.nrecords(m_time_name, "", m_sys);
+      auto t_last   = t_length > 0 ? t_length - 1 : 0;
+
+      auto t   = io::read_timeseries_variable(input_file, m_time_name,
+                                              time().units(), m_sys, t_last, 1);
+      m_t_last = t[0];
+
     } else {
       m_t_last = time().current();
     }
@@ -237,7 +248,12 @@ void SteadyState::bootstrap_impl(const File &input_file,
   // Read m_t_last
   {
     if (input_file.variable_exists(m_time_name)) {
-      input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
+      auto t_length = input_file.nrecords(m_time_name, "", m_sys);
+      auto t_last   = t_length > 0 ? t_length - 1 : 0;
+
+      auto t   = io::read_timeseries_variable(input_file, m_time_name,
+                                              time().units(), m_sys, t_last, 1);
+      m_t_last = t[0];
     } else {
       m_t_last = time().current();
     }
@@ -307,7 +323,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   // read time bounds data from a file
   m_time_bounds =
-      io::read_bounds(file, bounds_name, time().units_string(), m_grid->ctx()->unit_system());
+      io::read_bounds(file, bounds_name, time().units(), m_grid->ctx()->unit_system());
 
   // time bounds data overrides the time variable: we make t[j] be the
   // left end-point of the j-th interval

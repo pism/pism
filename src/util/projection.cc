@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,7 @@
 #include <vector>
 #include <tuple>
 
+#include "io/IO_Flags.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
@@ -40,16 +41,6 @@
 #endif
 
 namespace pism {
-
-MappingInfo::MappingInfo(const std::string &mapping_variable_name, units::System::Ptr unit_system)
-    : cf_mapping(mapping_variable_name, unit_system) {
-  // empty
-}
-
-MappingInfo::MappingInfo(const VariableMetadata &mapping_variable, const std::string &proj_string_)
-    : cf_mapping(mapping_variable), proj_string(proj_string_) {
-  // empty
-}
 
 int parse_epsg(const std::string &proj_string) {
   try {
@@ -314,8 +305,8 @@ static std::string get_proj_parameters(const File &input_file, const std::string
  * Obtains the string containing PROJ parameters as described in `get_proj_parameters()`.
  * If the grid mapping variable has
  */
-MappingInfo MappingInfo::FromFile(const File &input_file, const std::string &variable_name,
-                                  units::System::Ptr unit_system) {
+VariableMetadata mapping_info_from_file(const File &input_file, const std::string &variable_name,
+                                        units::System::Ptr unit_system) {
 
   auto mapping_variable_name = input_file.read_text_attribute(variable_name, "grid_mapping");
 
@@ -325,7 +316,8 @@ MappingInfo MappingInfo::FromFile(const File &input_file, const std::string &var
 
   // Initialize (and possibly validate) the CF-style grid mapping variable by reading
   // metadata from the input file:
-  VariableMetadata cf_mapping(mapping_variable_name, unit_system);
+  VariableMetadata cf_mapping(mapping_variable_name.empty() ? "mapping" : mapping_variable_name,
+                              unit_system);
   if (input_file.variable_exists(mapping_variable_name)) {
     // input file has a mapping variable
 
@@ -364,7 +356,13 @@ MappingInfo MappingInfo::FromFile(const File &input_file, const std::string &var
     }
   }
 
-  return {cf_mapping, proj_string};
+  // Store the PROJ string in the "proj_params" attribute - for compatibility with CDO and
+  // to retrieve later.
+  if (not proj_string.empty()) {
+    cf_mapping["proj_params"] = proj_string;
+  }
+
+  return cf_mapping;
 }
 
 enum LonLat {LONGITUDE, LATITUDE};
@@ -405,7 +403,7 @@ void compute_cell_areas(const std::string &projection, array::Scalar &result) {
 
   array::AccessScope list(result);
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -417,22 +415,18 @@ void compute_cell_areas(const std::string &projection, array::Scalar &result) {
       x_se = x + dx2, y_se = y - dy2,
       x_sw = x - dx2, y_sw = y - dy2;
 
-    PJ_COORD in, out;
+    PJ_COORD out;
 
-    in.xy = {x_nw, y_nw};
-    out = proj_trans(pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_nw, y_nw, 0, 0));
     double nw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    in.xy = {x_ne, y_ne};
-    out = proj_trans(pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_ne, y_ne, 0, 0));
     double ne[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    in.xy = {x_se, y_se};
-    out = proj_trans(pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_se, y_se, 0, 0));
     double se[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
-    in.xy = {x_sw, y_sw};
-    out = proj_trans(pism_to_geocent, PJ_FWD, in);
+    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_sw, y_sw, 0, 0));
     double sw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
 
     result(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
@@ -459,18 +453,17 @@ static void compute_lon_lat(const std::string &projection,
 
   array::AccessScope list{&result};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
-    PJ_COORD in, out;
-
-    in.xy = {grid->x(i), grid->y(j)};
-    out = proj_trans(crs, PJ_FWD, in);
+    PJ_COORD out = proj_trans(crs, PJ_FWD, proj_coord(grid->x(i), grid->y(j), 0, 0));
 
     if (which == LONGITUDE) {
-      result(i, j) = out.lp.phi;
-    } else {
+      // longitude: lambda
       result(i, j) = out.lp.lam;
+    } else {
+      // latitude: phi
+      result(i, j) = out.lp.phi;
     }
   }
 }
@@ -489,7 +482,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
   array::AccessScope list{&result};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     double x0 = grid->x(i), y0 = grid->y(j);
@@ -498,16 +491,16 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
     for (int k = 0; k < 4; ++k) {
 
-      PJ_COORD in, out;
-
-      in.xy = {x0 + x_offsets[k], y0 + y_offsets[k]};
+      PJ_COORD out;
 
       // compute lon,lat coordinates:
-      out = proj_trans(crs, PJ_FWD, in);
+      out = proj_trans(crs, PJ_FWD, proj_coord(x0 + x_offsets[k], y0 + y_offsets[k], 0, 0));
 
-      if (which == LATITUDE) {
+      if (which == LONGITUDE) {
+        // longitude: lambda
         values[k] = out.lp.lam;
       } else {
+        // latitude: phi
         values[k] = out.lp.phi;
       }
     }
@@ -895,23 +888,6 @@ std::string cf_to_proj(const VariableMetadata &mapping) {
   }
 
   return mappings[mapping_name](mapping) + common_flags(mapping);
-}
-
-void write_mapping(const File &file, const pism::MappingInfo &info) {
-
-  const auto &mapping = info.cf_mapping;
-  if (mapping.has_attributes()) {
-    auto name = mapping.get_name();
-    if (not file.variable_exists(name)) {
-      file.define_variable(name, io::PISM_DOUBLE, {});
-    }
-    io::write_attributes(file, mapping, io::PISM_DOUBLE);
-
-    // Write the PROJ string to mapping:proj_params (for CDO).
-    if (not info.proj_string.empty()) {
-      file.write_attribute(name, "proj_params", info.proj_string);
-    }
-  }
 }
 
 } // end of namespace pism

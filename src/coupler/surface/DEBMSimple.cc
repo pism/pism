@@ -34,6 +34,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
@@ -331,7 +332,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double latitude = geometry.latitude(i, j);
@@ -547,14 +548,13 @@ const array::Scalar &DEBMSimple::atmosphere_transmissivity() const {
   return m_transmissivity;
 }
 
-void DEBMSimple::define_model_state_impl(const File &output) const {
-  SurfaceModel::define_model_state_impl(output);
-  m_snow_depth.define(output, io::PISM_DOUBLE);
-  m_surface_albedo.define(output, io::PISM_DOUBLE);
+std::set<VariableMetadata> DEBMSimple::state_impl() const {
+  auto variables = array::metadata({&m_snow_depth, &m_surface_albedo});
+  return pism::combine(variables, SurfaceModel::state_impl());
 }
 
-void DEBMSimple::write_model_state_impl(const File &output) const {
-  SurfaceModel::write_model_state_impl(output);
+void DEBMSimple::write_state_impl(const OutputFile &output) const {
+  SurfaceModel::write_state_impl(output);
   m_snow_depth.write(output);
   m_surface_albedo.write(output);
 }
@@ -570,7 +570,7 @@ class DEBMSInsolation : public Diag<DEBMSimple>
 {
 public:
   DEBMSInsolation(const DEBMSimple *m) : Diag<DEBMSimple>(m) {
-    m_vars = { { m_sys, "insolation" } };
+    m_vars = { { m_sys, "insolation", *m_grid } };
     m_vars[0]
         .long_name(
             "mean top of atmosphere insolation during the period when the sun is above the critical angle Phi")
@@ -592,7 +592,7 @@ protected:
 
       array::AccessScope list{latitude, result.get()};
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         (*result)(i, j) = M.insolation_diagnostic(orbital.solar_declination,
@@ -634,7 +634,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)
@@ -690,7 +690,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)
@@ -743,7 +743,7 @@ public:
     }
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { { m_sys, name } };
+    m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)

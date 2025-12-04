@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -52,8 +52,9 @@ protected:
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
+
+  std::set<VariableMetadata> state_impl() const;
+  void write_state_impl(const OutputFile &output) const;
 
   std::shared_ptr<EmptyingProblem> m_emptying_problem;
 
@@ -63,9 +64,10 @@ protected:
   double m_update_interval;
   //! Temporal resolution to use when checking whether it's time to update
   double m_t_eps;
-  //! Name of the variable used to store the last update time.
-  std::string m_time_name;
 
+  //! Name of  the variable used to store the last update time
+  std::string m_time_name;
+  
   //! Times corresponding to records in the input file
   std::vector<double> m_time;
   //! Time bounds corresponding to records in the input file

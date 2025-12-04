@@ -59,7 +59,7 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
   unsigned int CFL_violation_count = 0;
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       const int ks = grid->kBelowHeight(ice_thickness(i,j));
@@ -86,14 +86,14 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
   return (unsigned int)GlobalMax(grid->com, CFL_violation_count);
 }
 
-void IceModel::print_summary(bool tempAndAge) {
+void IceModel::print_summary(bool tempAndAge, double dt) {
 
   const array::Array3D
     &u3 = m_stress_balance->velocity_u(),
     &v3 = m_stress_balance->velocity_v();
 
   unsigned int n_CFL_violations = count_CFL_violations(u3, v3, m_geometry.ice_thickness,
-                                                       tempAndAge ? dt_TempAge : m_dt);
+                                                       tempAndAge ? m_dt_TempAge : dt);
 
   // report CFL violations
   if (n_CFL_violations > 0.0) {
@@ -120,7 +120,7 @@ void IceModel::print_summary(bool tempAndAge) {
   }
 
   // main report: 'S' line
-  print_summary_line(false, tempAndAge, m_dt,
+  print_summary_line(false, tempAndAge, dt,
                    volume, area, meltfrac, max_diffusivity);
 }
 
@@ -165,7 +165,7 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
                                 double delta_t,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
-  const bool do_energy = member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
+  const bool do_energy = set_member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
   const int log10scalevol  = static_cast<int>(m_config->get_number("output.runtime.volume_scale_factor_log10")),
             log10scalearea = static_cast<int>(m_config->get_number("output.runtime.area_scale_factor_log10"));
   const std::string time_units = m_config->get_string("output.runtime.time_unit_name");

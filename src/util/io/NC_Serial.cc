@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -439,6 +439,35 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
     MPI_Send(const_cast<double *>(op), (int)local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);
   }
 }
+
+
+void NC_Serial::put_vara_text_impl(const std::string &variable_name,
+                                   const std::vector<unsigned int> &start,
+                                   const std::vector<unsigned int> &count, const char *data) const {
+  int stat = NC_NOERR;
+
+  if (m_rank == 0) {
+    std::vector<size_t> nc_start{};
+    nc_start.reserve(start.size());
+    for (const auto &s : start) {
+      nc_start.push_back(s);
+    }
+
+    std::vector<size_t> nc_count{};
+    nc_count.reserve(count.size());
+    for (const auto &c : count) {
+      nc_count.push_back(c);
+    }
+
+    stat = nc_put_vara_text(m_file_id, get_varid(variable_name), nc_start.data(), nc_count.data(),
+                            data);
+  }
+  MPI_Barrier(m_com);
+
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
+  check(PISM_ERROR_LOCATION, stat);
+}
+
 
 //! \brief Get the number of variables.
 void NC_Serial::inq_nvars_impl(int &result) const {

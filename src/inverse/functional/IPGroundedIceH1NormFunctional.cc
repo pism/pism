@@ -38,6 +38,11 @@ void IPGroundedIceH1NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) 
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
+  // initialize x_e to silence the static analyzer
+  for (unsigned int k = 0; k < Nk; ++k) {
+    x_e[k] = 0.0;
+  }
+
   array::AccessScope list{&x, &m_ice_mask};
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
@@ -96,6 +101,12 @@ void IPGroundedIceH1NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, do
   double b_e[Nk];
   double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
 
+  // initialize a_e and b_e to silence the static analyzer
+  for (unsigned int k = 0; k < Nk; ++k) {
+    a_e[k] = 0.0;
+    b_e[k] = 0.0;
+  }
+
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
@@ -153,6 +164,11 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar
 
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
+
+  // initialize x_e to silence the static analyzer
+  for (unsigned int k = 0; k < Nk; ++k) {
+    x_e[k] = 0.0;
+  }
 
   array::AccessScope list{&x, &gradient, &m_ice_mask};
 

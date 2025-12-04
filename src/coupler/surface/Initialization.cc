@@ -22,6 +22,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
@@ -42,13 +43,13 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
         .long_name(
             "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)")
         .units("kg m^-2 s^-1")
-        .set_time_independent(false);
+        .set_time_dependent(true);
 
     m_temperature.metadata(0)
         .long_name(
             "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)")
         .units("kelvin")
-        .set_time_independent(false);
+        .set_time_dependent(true);
 
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
     m_liquid_water_fraction->metadata().set_name("effective_ice_surface_liquid_water_fraction");
@@ -56,7 +57,7 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
         .long_name(
             "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)")
         .units("1")
-        .set_time_independent(false);
+        .set_time_dependent(true);
 
     m_layer_mass = allocate_layer_mass(grid);
     m_layer_mass->metadata().set_name("effective_surface_layer_mass");
@@ -64,7 +65,7 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
         .long_name(
             "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)")
         .units("kg")
-        .set_time_independent(false);
+        .set_time_dependent(true);
 
     m_layer_thickness = allocate_layer_thickness(grid);
     m_layer_thickness->metadata().set_name("effective_surface_layer_thickness");
@@ -72,7 +73,7 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
         .long_name(
             "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)")
         .units("meters")
-        .set_time_independent(false);
+        .set_time_dependent(true);
   }
 
   m_accumulation = allocate_accumulation(grid);
@@ -168,18 +169,22 @@ const array::Scalar &InitializationHelper::runoff_impl() const {
   return *m_runoff;
 }
 
-void InitializationHelper::define_model_state_impl(const File &output) const {
+std::set<VariableMetadata> InitializationHelper::state_impl() const {
+  std::set<VariableMetadata> variables{};
   for (auto *v : m_variables) {
-    v->define(output, io::PISM_DOUBLE);
+    for (auto &nc_var : v->all_metadata()) {
+      variables.insert(nc_var);
+    }
   }
-  m_input_model->define_model_state(output);
+
+  return pism::combine(variables, m_input_model->state());
 }
 
-void InitializationHelper::write_model_state_impl(const File &output) const {
+void InitializationHelper::write_state_impl(const OutputFile &output) const {
   for (auto *v : m_variables) {
     v->write(output);
   }
-  m_input_model->write_model_state(output);
+  m_input_model->write_state(output);
 }
 
 

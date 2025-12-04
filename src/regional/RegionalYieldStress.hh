@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -45,9 +45,9 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  void define_model_state_impl(const File &output) const;
+  std::set<VariableMetadata> state_impl() const;
 
-  void write_model_state_impl(const File &output) const;
+  void write_state_impl(const OutputFile &output) const;
 
   DiagnosticList diagnostics_impl() const;
 

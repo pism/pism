@@ -124,7 +124,7 @@ def test_interface():
             F = PISM.util.prepare_output("energy_model_state.nc")
 
             print("* Saving the model state...")
-            model.write_model_state(F)
+            model.write_state(F)
 
             print("* Restarting from a saved model state...")
             model.restart(F, 0)
@@ -146,7 +146,7 @@ def test_temp_restart_from_enth():
     initialize(enth_model)
 
     F = PISM.util.prepare_output("enth_model_state.nc")
-    enth_model.write_model_state(F)
+    enth_model.write_state(F)
 
     temp_model.restart(F, 0)
 
@@ -158,7 +158,7 @@ def test_enth_restart_from_temp():
     initialize(temp_model)
 
     F = PISM.util.prepare_output("temp_model_state.nc")
-    temp_model.write_model_state(F)
+    temp_model.write_state(F)
 
     enth_model.restart(F, 0)
 

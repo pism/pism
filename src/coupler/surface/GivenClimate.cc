@@ -23,6 +23,7 @@
 #include "pism/coupler/util/options.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
@@ -123,12 +124,11 @@ const array::Scalar &Given::runoff_impl() const {
   return *m_runoff;
 }
 
-void Given::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output, io::PISM_DOUBLE);
-  m_temperature->define(output, io::PISM_DOUBLE);
+std::set<VariableMetadata> Given::state_impl() const {
+  return array::metadata({ m_mass_flux.get(), m_temperature.get() });
 }
 
-void Given::write_model_state_impl(const File &output) const {
+void Given::write_state_impl(const OutputFile &output) const {
   m_mass_flux->write(output);
   m_temperature->write(output);
 }

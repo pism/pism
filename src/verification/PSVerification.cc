@@ -61,12 +61,11 @@ void Verification::init_impl(const Geometry &geometry) {
   update(geometry, time().current(), 0);
 }
 
-void Verification::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output, io::PISM_DOUBLE);
-  m_temperature->define(output, io::PISM_DOUBLE);
+std::set<VariableMetadata> Verification::state_impl() const {
+  return array::metadata({ m_mass_flux.get(), m_temperature.get() });
 }
 
-void Verification::write_model_state_impl(const File &output) const {
+void Verification::write_state_impl(const OutputFile &output) const {
   m_mass_flux->write(output);
   m_temperature->write(output);
 }
@@ -112,7 +111,7 @@ void Verification::update_L() {
     Lsqr        = L * L;
 
   array::AccessScope list(*m_mass_flux);
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double r = grid::radius(*m_grid, i, j);
@@ -189,7 +188,7 @@ void Verification::update_ABCDH(double time) {
   array::AccessScope list(*m_mass_flux);
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double r = grid::radius(*m_grid, i, j);
@@ -228,7 +227,7 @@ void Verification::update_FG(double time) {
 
   array::AccessScope list{m_mass_flux.get(), m_temperature.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin

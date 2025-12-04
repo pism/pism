@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,17 +16,17 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <memory>
 
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
-#include <memory>
 
 namespace pism {
 
 //! Computes the maximum time-step we can take and still hit all `-save_times`.
-MaxTimestep IceModel::save_max_timestep(double my_t) {
+MaxTimestep IceModel::snapshots_max_timestep(double my_t) {
 
   if (m_snapshots_filename.empty() or (not m_config->get_flag("time_stepping.hit_save_times"))) {
     return MaxTimestep("reporting (-save_times)");
@@ -61,6 +61,10 @@ void IceModel::init_snapshots() {
       return;
     }
   }
+
+  m_snapshot_file_contents = pism::combine(common_metadata(), state_variables());
+  m_snapshot_file_contents =
+      pism::combine(m_snapshot_file_contents, diagnostic_variables(m_snapshot_vars));
 
   try {
     // parse
@@ -139,18 +143,25 @@ void IceModel::write_snapshot() {
       filename = m_snapshots_filename;
     }
 
-    m_snapshot_file = std::make_shared<File>(
-        m_grid->com, filename, string_to_backend(m_config->get_string("output.format")),
-        io::PISM_READWRITE_MOVE);
+    m_snapshot_file = std::make_shared<OutputFile>(m_output_writer, filename);
 
-    write_metadata(*m_snapshot_file, WRITE_MAPPING, PREPEND_HISTORY);
+    {
+      define_time(*m_snapshot_file);
+      define_variables(*m_snapshot_file, m_snapshot_file_contents);
+    }
   }
 
   {
     m_log->message(2, "saving snapshot to %s at %s, for time-step goal %s\n", filename.c_str(),
                    m_time->date(m_time->current()).c_str(), m_time->date(saving_after).c_str());
-    write_run_stats(*m_snapshot_file, run_stats());
-    save_variables(*m_snapshot_file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
+
+    {
+      write_config(*m_config, "pism_config", *m_snapshot_file);
+      m_snapshot_file->append_time(m_time->current());
+      write_state(*m_snapshot_file);
+      write_diagnostics(*m_snapshot_file, m_snapshot_vars);
+      write_run_stats(*m_snapshot_file);
+    }
   }
 
   if (m_split_snapshots) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -62,6 +62,34 @@ public:
     return static_cast<T**>(m_array)[j][i];
   }
 
+  /*!
+   * Value at the north neighbor of (i, j)
+   */
+  inline const T& N(int i, int j) const {
+    return (*this)(i, j + 1);
+  }
+
+  /*!
+   * Value at the east neighbor of (i, j)
+   */
+  inline const T& E(int i, int j) const {
+    return (*this)(i + 1, j);
+  }
+
+  /*!
+   * Value at the south neighbor of (i, j)
+   */
+  inline const T& S(int i, int j) const {
+    return (*this)(i, j - 1);
+  }
+
+  /*!
+   * Value at the west neighbor of (i, j)
+   */
+  inline const T& W(int i, int j) const {
+    return (*this)(i - 1, j);
+  }
+
   void add(double alpha, const Array2D<T> &x) {
     details::add(*this, alpha, x, *this);
   }
@@ -82,10 +110,10 @@ protected:
     stencils::Star<T> result;
 
     result.c = self(i,j);
-    result.e = self(i+1,j);
-    result.w = self(i-1,j);
-    result.n = self(i,j+1);
-    result.s = self(i,j-1);
+    result.e = E(i,j);
+    result.w = W(i,j);
+    result.n = N(i,j);
+    result.s = S(i,j);
 
     return result;
   }

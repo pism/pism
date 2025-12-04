@@ -22,6 +22,7 @@
 #include <vector>
 #include <memory>
 
+#include "VariableMetadata.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Config.hh"
@@ -34,8 +35,8 @@ namespace pism {
 inline bool pism_is_valid_calendar_name(const std::string &name) {
   // Calendar names from the CF Conventions document (except the
   // 366_day (all_leap)):
-  return member(name, {"standard", "gregorian", "proleptic_gregorian",
-                       "noleap", "365_day", "julian", "360_day"});
+  return set_member(name, {"standard", "gregorian", "proleptic_gregorian",
+                           "noleap", "365_day", "julian", "360_day"});
 }
 
 //! \brief Time management class.
@@ -58,6 +59,8 @@ public:
        const Logger &log,
        units::System::Ptr unit_system);
   virtual ~Time() = default;
+
+  void init_calendar(const std::string &calendar);
 
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);
@@ -82,13 +85,17 @@ public:
   //! \brief Returns the length of the current run, in years.
   std::string run_length() const;
 
-  void init_calendar(const std::string &calendar);
-
   std::vector<double> parse_times(const std::string &spec) const;
 
-  //! Internal time units as a string.
-  std::string units_string() const;
+  //! Name of the NetCDF variable to use
+  std::string variable_name() const;
 
+  //! Metadata of the NetCDF variable for writing to an output file
+  VariableMetadata metadata(bool with_bounds = false) const;
+
+  //! Metadata of the NetCDF variable containing time bounds
+  VariableMetadata bounds_metadata() const;
+  
   /*!
    * Internal time units.
    */
@@ -149,6 +156,8 @@ protected:
   const units::System::Ptr m_unit_system;
   units::Unit m_time_units;
 
+  std::string m_variable_name;
+  
   //! Time resolution, in seconds.
   double m_t_eps;
 

@@ -181,10 +181,6 @@ macro(pism_find_prerequisites)
     endif()
   endif()
 
-  if (Pism_USE_JANSSON)
-    pism_find_library(JANSSON "jansson>=2.7")
-  endif()
-
 endmacro()
 
 macro(pism_set_dependencies)

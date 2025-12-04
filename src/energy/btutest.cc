@@ -24,7 +24,6 @@ static char help[] =
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/io/File.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
 #include "pism/util/Time.hh"
@@ -34,11 +33,12 @@ static char help[] =
 
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/io_helpers.hh"
 
 //! Allocate the verification context. Uses ColdEnthalpyConverter.
 std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &prefix) {
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
       // compute exact ice temperature at z=0 at time y
       {
         array::AccessScope list(bedtoptemp);
-        for (auto p = grid->points(); p; p.next()) {
+        for (auto p : grid->points()) {
           const int i = p.i(), j = p.j();
 
           bedtoptemp(i,j) = exactK(time, 0.0, 0).T;
@@ -219,16 +219,23 @@ int main(int argc, char *argv[]) {
                  max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
-    File file(grid->com,
-              outname,
-              string_to_backend(config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE);
+    auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
+    writer->initialize({}, true);
 
-    io::define_time(file, *ctx);
-    io::append_time(file, *ctx->config(), ctx->time()->current());
+    // Write results to an output file:
+    OutputFile file(writer, outname);
 
-    btu->write_model_state(file);
+    file.define_variable(time->metadata());
+    file.append_time(time->current());
 
+    auto variables =
+        pism::combine(btu->state(), array::metadata({ &bedtoptemp, &heat_flux_at_ice_base }));
+
+    for (const auto &v : variables) {
+      file.define_variable(v);
+    }
+
+    btu->write_state(file);
     bedtoptemp.write(file);
     heat_flux_at_ice_base.write(file);
 

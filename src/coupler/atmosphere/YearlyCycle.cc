@@ -26,8 +26,8 @@
 #include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -57,7 +57,7 @@ YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
       .units("kg m^-2 second^-1")
       .output_units("kg m^-2 year^-1")
       .standard_name("precipitation_flux")
-      .set_time_independent(true);
+      .set_time_dependent(false);
 }
 
 //! Reads in the precipitation data from the input file.
@@ -83,11 +83,11 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
   }
 }
 
-void YearlyCycle::define_model_state_impl(const File &output) const {
-  m_precipitation.define(output, io::PISM_DOUBLE);
+std::set<VariableMetadata> YearlyCycle::state_impl() const {
+  return array::metadata({ &m_precipitation });
 }
 
-void YearlyCycle::write_model_state_impl(const File &output) const {
+void YearlyCycle::write_state_impl(const OutputFile &output) const {
   m_precipitation.write(output);
 }
 
@@ -156,7 +156,7 @@ class MeanSummerTemperature : public Diag<YearlyCycle>
 {
 public:
   MeanSummerTemperature(const YearlyCycle *m) : Diag<YearlyCycle>(m) {
-    m_vars = { { m_sys, "air_temp_mean_summer" } };
+    m_vars = { { m_sys, "air_temp_mean_summer", *m_grid } };
     m_vars[0]
         .long_name("mean summer near-surface air temperature used in the cosine yearly cycle")
         .units("kelvin");

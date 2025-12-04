@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,14 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <cmath>
+#include <memory>
 
-#include "pism/util/Diagnostic.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Diagnostic.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/OutputWriter.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -78,15 +81,19 @@ unsigned int Diagnostic::n_variables() const {
   return m_vars.size();
 }
 
+std::set<VariableMetadata> Diagnostic::state() const {
+  return state_impl();
+}
+
+std::set<VariableMetadata> Diagnostic::state_impl() const {
+  return {};
+}
+
 void Diagnostic::init(const File &input, unsigned int time) {
   this->init_impl(input, time);
 }
 
-void Diagnostic::define_state(const File &output) const {
-  this->define_state_impl(output);
-}
-
-void Diagnostic::write_state(const File &output) const {
+void Diagnostic::write_state(const OutputFile &output) const {
   this->write_state_impl(output);
 }
 
@@ -96,18 +103,13 @@ void Diagnostic::init_impl(const File &input, unsigned int time) {
   // empty
 }
 
-void Diagnostic::define_state_impl(const File &output) const {
-  (void) output;
-  // empty
-}
-
-void Diagnostic::write_state_impl(const File &output) const {
+void Diagnostic::write_state_impl(const OutputFile &output) const {
   (void) output;
   // empty
 }
 
 //! Get a metadata object corresponding to variable number N.
-SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
+VariableMetadata& Diagnostic::metadata(unsigned int N) {
   if (N >= m_vars.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "variable metadata index %d is out of bounds",
@@ -117,15 +119,8 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const File &file, io::Type default_type) const {
-  this->define_impl(file, default_type);
-}
-
-//! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const File &file, io::Type default_type) const {
-  for (const auto &v : m_vars) {
-    io::define_spatial_variable(v, *m_grid, file, default_type);
-  }
+const grid::DistributedGridInfo &Diagnostic::grid_info() const {
+  return m_grid->info();
 }
 
 std::shared_ptr<array::Array> Diagnostic::compute() const {
@@ -146,10 +141,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   : m_grid(grid),
     m_config(grid->ctx()->config()),
     m_sys(grid->ctx()->unit_system()),
-    m_time_name(grid->ctx()->config()->get_string("time.dimension_name")),
-    m_variable(name, m_sys),
-    m_dimension(m_time_name, m_sys),
-    m_time_bounds(m_time_name + "_bounds", m_sys) {
+    m_variable(name, m_sys) {
 
   m_current_time = 0;
   m_start        = 0;
@@ -157,10 +149,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   m_buffer_size = static_cast<size_t>(m_config->get_number("output.timeseries.buffer_size"));
 
   m_variable["ancillary_variables"] = name + "_aux";
-
-  m_dimension.long_name("time").units(m_grid->ctx()->time()->units_string());
-  m_dimension["calendar"] = m_grid->ctx()->time()->calendar();
-  m_dimension["axis"] = "T";
+  m_variable.set_time_dependent(true);
 }
 
 TSDiagnostic::~TSDiagnostic() {
@@ -170,10 +159,7 @@ TSDiagnostic::~TSDiagnostic() {
 void TSDiagnostic::set_units(const std::string &units,
                              const std::string &output_units) {
   m_variable.units(units);
-
-  if (not m_config->get_flag("output.use_MKS")) {
-    m_variable.output_units(output_units);
-  }
+  m_variable.output_units(output_units);
 }
 
 TSSnapshotDiagnostic::TSSnapshotDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
@@ -334,18 +320,13 @@ void TSDiagnostic::flush() {
     return;
   }
 
-  auto time_name = m_config->get_string("time.dimension_name");
-
-  File file(m_grid->com, m_output_filename, io::PISM_NETCDF3,
-            io::PISM_READWRITE); // OK to use netcdf3
-
-  unsigned int len = file.dimension_length(time_name);
+  auto &file = *m_output_file;
+  auto len = file.time_dimension_length();
 
   if (len > 0) {
     // Note: does not perform unit conversion of the time read from the file. This should
     // be OK because this file was written by PISM.
-    double last_time = 0;
-    file.read_variable(time_name, {len - 1}, {1}, &last_time);
+    double last_time = file.last_time_value();
 
     if (last_time < m_time.front()) {
       m_start = len;
@@ -353,15 +334,41 @@ void TSDiagnostic::flush() {
   }
 
   if (len == m_start) {
-    io::define_timeseries(m_dimension, time_name, file, io::PISM_DOUBLE);
-    io::define_time_bounds(m_time_bounds, time_name, "nv", file, io::PISM_DOUBLE);
+    bool with_bounds = true;
+    auto time = m_grid->ctx()->time()->metadata(with_bounds).get_name();
+    auto time_bounds = m_grid->ctx()->time()->bounds_metadata().get_name();
 
-    io::write_timeseries(file, m_dimension, m_start, m_time);
-    io::write_time_bounds(file, m_time_bounds, m_start, m_bounds);
+    // write requested times
+    file.write_array(time, { m_start }, { (unsigned int)m_time.size() }, m_time);
+    // write time bounds
+    file.write_array(time_bounds, { m_start, 0 }, { (unsigned int)m_bounds.size() / 2, 2 },
+                     m_bounds);
   }
 
-  io::define_timeseries(m_variable, time_name, file, io::PISM_DOUBLE);
-  io::write_timeseries(file, m_variable, m_start, m_values);
+  // Convert to output units, if necessary
+  //
+  // Note that data in m_values are not used after this call, so we can perform this
+  // conversion in place (without making a copy).
+  if (not m_config->get_flag("output.use_MKS")) {
+
+    std::string units = metadata()["units"];
+    std::string output_units = metadata()["output_units"];
+
+    bool use_output_units =
+        (not units.empty() and not output_units.empty() and units != output_units);
+
+    if (use_output_units) {
+      units::Converter converter(metadata().unit_system(), units, output_units);
+
+      converter.convert_doubles(m_values.data(), m_values.size());
+    }
+  }
+
+  // write values of a diagnostic
+  file.write_timeseries(m_variable.get_name(), { m_start }, { (unsigned int)m_values.size() },
+                        m_values);
+
+  file.sync();
 
   m_start += m_time.size();
 
@@ -372,14 +379,14 @@ void TSDiagnostic::flush() {
   }
 }
 
-void TSDiagnostic::init(const File &output_file,
+void TSDiagnostic::init(std::shared_ptr<OutputFile> output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
-  m_output_filename = output_file.name();
+  m_output_file = output_file;
 
   m_requested_times = std::move(requested_times);
 
   // Get the number of records in the file (for appending):
-  m_start = output_file.dimension_length(m_dimension.get_name());
+  m_start = output_file->time_dimension_length();
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {

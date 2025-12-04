@@ -26,6 +26,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -158,7 +159,7 @@ void SSA::extrapolate_velocity(const array::CellType1 &cell_type,
                                array::Vector1 &velocity) const {
   array::AccessScope list{&cell_type, &velocity};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {
@@ -185,11 +186,11 @@ std::string SSA::stdout_report() const {
   return m_stdout_ssa;
 }
 
-void SSA::define_model_state_impl(const File &output) const {
-  m_velocity.define(output, io::PISM_DOUBLE);
+std::set<VariableMetadata> SSA::state_impl() const {
+  return array::metadata({ &m_velocity });
 }
 
-void SSA::write_model_state_impl(const File &output) const {
+void SSA::write_state_impl(const OutputFile &output) const {
   m_velocity.write(output);
 }
 

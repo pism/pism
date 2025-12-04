@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -56,24 +56,8 @@ std::string grid_name(const File &file, const std::string &variable_name,
  */
 VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_string);
 
-class MappingInfo {
-public:
-  MappingInfo(const std::string &mapping_variable_name, units::System::Ptr unit_system);
-  MappingInfo(const VariableMetadata &mapping_variable, const std::string &proj_string);
-
-  /*! @brief Get projection info from a file. */
-  static MappingInfo FromFile(const File &input_file, const std::string &variable_name,
-                              units::System::Ptr unit_system);
-
-  //! grid mapping description following CF conventions
-  VariableMetadata cf_mapping;
-
-  //! a projection definition string in a format recognized by PROJ 6.x+
-  std::string proj_string;
-};
-
-void write_mapping(const File &file, const pism::MappingInfo &info);
-
+VariableMetadata mapping_info_from_file(const File &input_file, const std::string &variable_name,
+                                        units::System::Ptr unit_system);
 /*!
  * Parse a string "EPSG:XXXX", "epsg:XXXX", "+init=epsg:XXXX" and return the EPSG code
  * (XXXX).

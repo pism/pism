@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -106,7 +106,7 @@ namespace diagnostics {
 class AirTemperatureSnapshot : public Diag<AtmosphereModel> {
 public:
   AirTemperatureSnapshot(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
-    m_vars = { { m_sys, "air_temp_snapshot" } };
+    m_vars = { { m_sys, "air_temp_snapshot", *m_grid } };
     m_vars[0].long_name("instantaneous value of the near-surface air temperature").units("kelvin");
   }
 
@@ -125,7 +125,7 @@ protected:
     array::AccessScope list(*result);
     ParallelSection loop(m_grid->com);
     try {
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         model->temp_time_series(i, j, temperature);
@@ -147,7 +147,7 @@ protected:
 class AirTemperature : public Diag<AtmosphereModel> {
 public:
   AirTemperature(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
-    m_vars = { { m_sys, "effective_air_temp" } };
+    m_vars = { { m_sys, "effective_air_temp", *m_grid } };
     m_vars[0].long_name("effective mean-annual near-surface air temperature").units("kelvin");
   }
 
@@ -165,7 +165,7 @@ protected:
 class Precipitation : public Diag<AtmosphereModel> {
 public:
   Precipitation(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
-    m_vars = { { m_sys, "effective_precipitation" } };
+    m_vars = { { m_sys, "effective_precipitation", *m_grid } };
     m_vars[0]
         .long_name("effective precipitation rate")
         .standard_name("precipitation_flux")
@@ -222,15 +222,16 @@ TSDiagnosticList AtmosphereModel::ts_diagnostics_impl() const {
   return {};
 }
 
-void AtmosphereModel::define_model_state_impl(const File &output) const {
+std::set<VariableMetadata> AtmosphereModel::state_impl() const {
   if (m_input_model) {
-    m_input_model->define_model_state(output);
+    return m_input_model->state();
   }
+  return {};
 }
 
-void AtmosphereModel::write_model_state_impl(const File &output) const {
+void AtmosphereModel::write_state_impl(const OutputFile &output) const {
   if (m_input_model) {
-    m_input_model->write_model_state(output);
+    m_input_model->write_state(output);
   }
 }
 

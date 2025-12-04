@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023, 2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -39,8 +39,8 @@ protected:
   const array::Scalar& melt_impl() const;
   const array::Scalar& runoff_impl() const;
 
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
+  std::set<VariableMetadata> state_impl() const;
+  void write_state_impl(const OutputFile &output) const;
 
   std::shared_ptr<array::Forcing> m_mass_flux;
   std::shared_ptr<array::Forcing> m_temperature;

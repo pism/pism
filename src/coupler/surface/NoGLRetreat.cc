@@ -58,7 +58,7 @@ void NoGLRetreat::init_impl(const Geometry &geometry) {
   array::AccessScope list{&sea_level, &bed, &ice_thickness,
                                &m_min_ice_thickness};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double H_min = 0.0;
@@ -93,7 +93,7 @@ void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
                                &m_smb_adjustment,
                                &m_min_ice_thickness};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double SMB_old = mass_flux(i, j);
@@ -150,7 +150,7 @@ public:
   {
     m_accumulator.metadata()["units"] = "kg m^-2";
 
-    m_vars = { { m_sys, "no_gl_retreat_smb_adjustment" } };
+    m_vars = { { m_sys, "no_gl_retreat_smb_adjustment", *m_grid } };
     m_vars[0]
         .long_name("SMB adjustment needed to maintain grounded ice extent")
         .units("kg m^-2 s^-1")

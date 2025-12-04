@@ -93,11 +93,11 @@ const array::Scalar& YieldStress::basal_material_yield_stress() {
  * called *after* the maximum time step is found. This means that during the first time
  * step basal_material_yield_stress() gets called before update().
  */
-void YieldStress::define_model_state_impl(const File &output) const {
-  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
+std::set<VariableMetadata> YieldStress::state_impl() const {
+  return array::metadata({ &m_basal_yield_stress });
 }
 
-void YieldStress::write_model_state_impl(const File &output) const {
+void YieldStress::write_state_impl(const OutputFile &output) const {
   m_basal_yield_stress.write(output);
 }
 

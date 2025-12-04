@@ -50,6 +50,7 @@
 .. _Bash: http://www.gnu.org/software/bash/
 .. _CalCalcs: https://cirrus.ucsd.edu/~pierce/calcalcs/calendars.html
 .. _CalCalcs-home: https://cirrus.ucsd.edu/~pierce/calcalcs/index.html
+.. _nlohmann-json: https://json.nlohmann.me/
 .. _CDO: https://code.mpimet.mpg.de/projects/cdo
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 .. _CMake: https://cmake.org/
@@ -137,7 +138,7 @@
 
 .. _YAXT: https://dkrz-sw.gitlab-pages.dkrz.de/yaxt/
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/
-.. _libyaml: https://pyyaml.org/wiki/LibYAML
+.. _libfyaml: https://github.com/pantoniou/libfyaml
 .. _Autoconf: https://www.gnu.org/software/autoconf/
 .. _Automake: https://www.gnu.org/software/automake/
 

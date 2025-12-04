@@ -74,7 +74,7 @@ add_library (libpism
   icemodel/output.cc
   icemodel/output_checkpoint.cc
   icemodel/output_extra.cc
-  icemodel/output_save.cc
+  icemodel/output_snapshots.cc
   icemodel/output_ts.cc
   icemodel/printout.cc
   icemodel/timestepping.cc
@@ -121,10 +121,6 @@ if (Pism_DEBUG)
     PRIVATE
     geometry/MPDATA2.cc
   )
-endif()
-
-if (Pism_USE_JANSSON)
-  target_link_libraries(libpism ${JANSSON_LIBRARIES})
 endif()
 
 if (Pism_USE_PROJ)

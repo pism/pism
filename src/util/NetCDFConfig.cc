@@ -16,12 +16,15 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <vector>
 
 #include "pism/util/NetCDFConfig.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
+#include "VariableMetadata.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/OutputWriter.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -190,16 +193,6 @@ void NetCDFConfig::read_impl(const File &file) {
   m_data = io::read_attributes(file, m_data.get_name(), m_data.unit_system());
 
   m_config_filename = file.name();
-}
-
-//! Write a config variable to a file (with all its attributes).
-void NetCDFConfig::write_impl(const File &file) const {
-
-  if (not file.variable_exists(m_data.get_name())) {
-    file.define_variable(m_data.get_name(), io::PISM_BYTE, {});
-  }
-
-  io::write_attributes(file, m_data, io::PISM_DOUBLE);
 }
 
 } // end of namespace pism

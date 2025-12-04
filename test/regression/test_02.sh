@@ -25,7 +25,7 @@ do
     do
 	if [ $i -le $j ]; then continue; fi
 	
-	$PISM_PATH/pism_nccmp -x -v rank,timestamp foo$i-02.nc foo$j-02.nc
+	$PISM_PATH/pism_nccmp -x -v rank,timestamp,step_counter,model_years_per_processor_hour,wall_clock_time,pism_config foo$i-02.nc foo$j-02.nc
 	if [ $? != 0 ];
 	then
 	    exit 1

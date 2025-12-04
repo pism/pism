@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017, 2018, 2023, 2024 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017, 2018, 2023, 2024, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -32,6 +32,7 @@ class Grid;
 
 namespace grid {
 class InputGridInfo;
+class DistributedGridInfo;
 }
 
 //! The "local interpolation context" describes the processor's part of the source NetCDF
@@ -53,9 +54,10 @@ class InputGridInfo;
 */
 class LocalInterpCtx {
 public:
-  LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
-                 InterpolationType type);
-  LocalInterpCtx(const grid::InputGridInfo &input_grid, const Grid &internal_grid,
+  LocalInterpCtx(const grid::InputGridInfo &input_grid,
+                 const grid::DistributedGridInfo &internal_grid, InterpolationType type);
+  LocalInterpCtx(const grid::InputGridInfo &input_grid,
+                 const grid::DistributedGridInfo &internal_grid,
                  const std::vector<double> &z_internal, InterpolationType type);
 
   int buffer_size() const;

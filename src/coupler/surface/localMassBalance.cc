@@ -450,7 +450,7 @@ void FaustoGrevePDDObject::update_temp_mj(const array::Scalar &surfelev,
 
   array::AccessScope list{&h, &lat_degN, &lon_degE, &m_temp_mj};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     m_temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }

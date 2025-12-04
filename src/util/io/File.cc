@@ -1,4 +1,4 @@
-// Copyright (C) 2012--2024 PISM Authors
+// Copyright (C) 2012--2025 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -467,7 +467,12 @@ AxisType File::dimension_type(const std::string &dimension_name,
     std::string
       axis          = read_text_attribute(dimension_name, "axis"),
       standard_name = read_text_attribute(dimension_name, "standard_name"),
+      long_name     = read_text_attribute(dimension_name, "long_name"),
       units         = read_text_attribute(dimension_name, "units");
+
+    if (long_name == "experiment ID") {
+      return EXP_ID_AXIS;
+    }
 
     // check if it has units compatible with "seconds":
 
@@ -481,13 +486,13 @@ AxisType File::dimension_type(const std::string &dimension_name,
       return T_AXIS;
     }
 
-    if (standard_name == "projection_x_coordinate" or
-        standard_name == "grid_longitude") {
+    if (set_member(standard_name, { "projection_x_coordinate", "grid_longitude", "longitude" }) or
+        units == "degree_east") {
       return X_AXIS;
     }
 
-    if (standard_name == "projection_y_coordinate" or
-        standard_name == "grid_latitude") {
+    if (set_member(standard_name, { "projection_y_coordinate", "grid_latitude", "latitude" }) or
+        units == "degree_north") {
       return Y_AXIS;
     }
 
@@ -499,12 +504,12 @@ AxisType File::dimension_type(const std::string &dimension_name,
     }
 
     // check the variable name:
-    if (member(dimension_name, {"x", "X", "rlon"}) or
+    if (set_member(dimension_name, {"x", "X", "rlon", "lon", "longitude"}) or
         dimension_name.find('x') == 0 or dimension_name.find('X') == 0) {
       return X_AXIS;
     }
 
-    if (member(dimension_name, {"y", "Y", "rlat"}) or
+    if (set_member(dimension_name, {"y", "Y", "rlat", "lat", "latitude"}) or
         dimension_name.find('y') == 0 or dimension_name.find('Y') == 0) {
       return Y_AXIS;
     }
@@ -721,9 +726,21 @@ void File::write_variable(const std::string &variable_name,
   }
 }
 
+void File::write_text_variable(const std::string &variable_name,
+                               const std::vector<unsigned int> &start,
+                               const std::vector<unsigned int> &count,
+                               const std::string &input) const {
+  try {
+    m_impl->nc->put_vara_text(variable_name, start, count, input);
+  } catch (RuntimeError &e) {
+    e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), name().c_str());
+    throw;
+  }
+}
+
 
 void File::write_distributed_array(const std::string &variable_name,
-                                   const Grid &grid,
+                                   const grid::DistributedGridInfo &grid,
                                    unsigned int z_count,
                                    bool time_dependent,
                                    const double *input) const {
@@ -769,7 +786,7 @@ void File::set_variable_was_written(const std::string &name) const {
 }
 
 bool File::get_variable_was_written(const std::string &name) const {
-  return member(name, m_impl->written_variables);
+  return set_member(name, m_impl->written_variables);
 }
 
 } // end of namespace pism

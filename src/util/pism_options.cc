@@ -55,7 +55,7 @@ bool maybe_show_usage(const Logger &log, const std::string &execname,
 
   log.message(2, "%s %s\n", execname.c_str(), pism::revision);
 
-  if (options::Bool("-version", "stop after printing print PISM version")) {
+  if (options::Bool("-version", "print PISM version and stop")) {
     log.message(2, pism::version());
     return terminate;
   }

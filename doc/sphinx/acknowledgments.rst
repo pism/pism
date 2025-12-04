@@ -32,11 +32,13 @@ Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and
 computations. Bob Bindschadler, Sophie Nowicki, Jesse Johnson, and others in the SeaRISE
 group have motivated and assisted PISM development in many ways.
 
-PISM includes the source code for two external libraries we rely on:
+PISM includes the source code for three external libraries we rely on:
 
 - `CalCalcs <CalCalcs-home_>`_, Copyright |copy| 2010 by David W. Pierce, GPL
 
 - ``cubature.c``, Copyright |copy| 2005 Steven G. Johnson, GPL
+
+- `JSON for Modern C++ <nlohmann-json>`_, Copyright |copy| 2013-2025 Niels Lohmann, MIT
 
 .. csv-table:: Past and current grants supporting PISM development.
    :name: tab-funding

@@ -15,27 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#include <memory>
 
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/stressbalance/SSB_Modifier.hh"
-#include "pism/util/EnthalpyConverter.hh"
+#include "pism/geometry/Geometry.hh"
 #include "pism/rheology/FlowLaw.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/util/Config.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/util/Time.hh"
-#include "pism/geometry/Geometry.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 namespace stressbalance {
 
 Inputs::Inputs() {
-  geometry = NULL;
+  geometry          = NULL;
   new_bed_elevation = true;
 
   basal_melt_rate       = NULL;
@@ -58,79 +61,67 @@ Inputs::Inputs() {
  * Save stress balance inputs to a file (for debugging).
  */
 void Inputs::dump(const char *filename) const {
-  if (not geometry) {
+  if (geometry == nullptr) {
     return;
   }
 
-  auto ctx = geometry->ice_thickness.grid()->ctx();
+  auto grid   = geometry->ice_thickness.grid();
+  auto ctx    = grid->ctx();
   auto config = ctx->config();
 
-  File output(ctx->com(), filename,
-              string_to_backend(config->get_string("output.format")),
-              io::PISM_READWRITE_MOVE);
+  VariableMetadata mapping{ "mapping", ctx->unit_system() };
+  auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *config);
+  writer->initialize({}, true);
 
-  config->write(output);
+  OutputFile output(writer, filename);
 
-  io::define_time(output, *ctx);
-  io::append_time(output, config->get_string("time.dimension_name"), ctx->time()->current());
+  write_config(*config, "pism_config", output);
 
-  {
-    geometry->latitude.write(output);
-    geometry->longitude.write(output);
+  auto time = ctx->time();
+  output.define_variable(time->metadata());
+  output.append_time(time->current());
 
-    geometry->bed_elevation.write(output);
-    geometry->sea_level_elevation.write(output);
+  const array::Array *geom[] = { &geometry->latitude,
+                                 &geometry->longitude,
+                                 &geometry->bed_elevation,
+                                 &geometry->sea_level_elevation,
+                                 &geometry->ice_thickness,
+                                 &geometry->ice_area_specific_volume,
+                                 &geometry->cell_type,
+                                 &geometry->cell_grounded_fraction,
+                                 &geometry->ice_surface_elevation };
 
-    geometry->ice_thickness.write(output);
-    geometry->ice_area_specific_volume.write(output);
-
-    geometry->cell_type.write(output);
-    geometry->cell_grounded_fraction.write(output);
-    geometry->ice_surface_elevation.write(output);
+  // define
+  for (const auto * vec : geom) {
+    for (const auto &var : vec->all_metadata()) {
+      output.define_variable(var);
+    }
+  }
+  // write
+  for (const auto * vec : geom) {
+    vec->write(output);
   }
 
-  if (basal_melt_rate) {
-    basal_melt_rate->write(output);
+  const array::Array *optional[] = { basal_melt_rate,
+                                     water_column_pressure,
+                                     fracture_density,
+                                     basal_yield_stress,
+                                     enthalpy,
+                                     age,
+                                     bc_mask,
+                                     bc_values,
+                                     no_model_mask,
+                                     no_model_ice_thickness,
+                                     no_model_surface_elevation };
+  // define
+  for (const auto * vec : optional) {
+    for (const auto &var : vec->all_metadata()) {
+      output.define_variable(var);
+    }
   }
-
-  if (water_column_pressure) {
-    water_column_pressure->write(output);
-  }
-
-  if (fracture_density) {
-    fracture_density->write(output);
-  }
-
-  if (basal_yield_stress) {
-    basal_yield_stress->write(output);
-  }
-
-  if (enthalpy) {
-    enthalpy->write(output);
-  }
-
-  if (age) {
-    age->write(output);
-  }
-
-  if (bc_mask) {
-    bc_mask->write(output);
-  }
-
-  if (bc_values) {
-    bc_values->write(output);
-  }
-
-  if (no_model_mask) {
-    no_model_mask->write(output);
-  }
-
-  if (no_model_ice_thickness) {
-    no_model_ice_thickness->write(output);
-  }
-
-  if (no_model_surface_elevation) {
-    no_model_surface_elevation->write(output);
+  // write
+  for (const auto * vec : optional) {
+    vec->write(output);
   }
 }
 
@@ -147,7 +138,7 @@ StressBalance::StressBalance(std::shared_ptr<const Grid> g,
       .long_name("vertical velocity of ice, relative to base of ice directly below")
       .units("m s^-1")
       .output_units("m year^-1")
-      .set_time_independent(false);
+      .set_time_dependent(true);
 
   m_strain_heating.metadata(0)
       .long_name("rate of strain heating in ice (dissipation heating)")
@@ -191,11 +182,13 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
 
       m_cfl_3d = ::pism::max_timestep_cfl_3d(inputs.geometry->ice_thickness,
                                              inputs.geometry->cell_type,
+                                             inputs.no_model_mask,
                                              u, v, m_w);
     }
 
     m_cfl_2d = ::pism::max_timestep_cfl_2d(inputs.geometry->ice_thickness,
                                            inputs.geometry->cell_type,
+                                           inputs.no_model_mask,
                                            m_shallow_stress_balance->velocity());
   }
   catch (RuntimeError &e) {
@@ -297,7 +290,7 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
 
   std::vector<double> u_x_plus_v_y(Mz);
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double *w_ij = result.get_column(i,j);
@@ -527,7 +520,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double H = thickness(i, j);
@@ -651,15 +644,16 @@ const SSB_Modifier* StressBalance::modifier() const {
   return m_modifier.get();
 }
 
+std::set<VariableMetadata> StressBalance::state_impl() const {
+  auto shallow = m_shallow_stress_balance->state();
+  auto modifier = m_modifier->state();
 
-void StressBalance::define_model_state_impl(const File &output) const {
-  m_shallow_stress_balance->define_model_state(output);
-  m_modifier->define_model_state(output);
+  return pism::combine(shallow, modifier);
 }
 
-void StressBalance::write_model_state_impl(const File &output) const {
-  m_shallow_stress_balance->write_model_state(output);
-  m_modifier->write_model_state(output);
+void StressBalance::write_state_impl(const OutputFile &output) const {
+  m_shallow_stress_balance->write_state(output);
+  m_modifier->write_state(output);
 }
 
 //! \brief Compute eigenvalues of the horizontal, vertically-integrated strain rate tensor.
@@ -691,7 +685,7 @@ void compute_2D_principal_strain_rates(const array::Vector1 &V,
 
   array::AccessScope list{&V, &mask, &result};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i,j)) {
@@ -775,7 +769,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
 
   array::AccessScope list{&velocity, &hardness, &result, &cell_type};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j)) {

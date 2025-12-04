@@ -19,6 +19,7 @@
 #ifndef PISM_GRID_H
 #define PISM_GRID_H
 
+#include "VariableMetadata.hh"
 #include "io/File.hh"
 #include <cassert>
 #include <memory> // shared_ptr
@@ -29,6 +30,7 @@
 #include <mpi.h>                // MPI_Comm
 
 #include "pism/util/Interpolation1D.hh"
+#include "pism/util/GridInfo.hh"
 
 namespace pism {
 
@@ -37,8 +39,8 @@ class Context;
 class File;
 class InputInterpolation;
 class Logger;
-class MappingInfo;
 class Vars;
+class VariableMetadata;
 
 namespace petsc {
 class DM;
@@ -51,21 +53,11 @@ class System;
 namespace grid {
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} VerticalSpacing;
-typedef enum {NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
-
-typedef enum {CELL_CENTER, CELL_CORNER} Registration;
-
-Registration string_to_registration(const std::string &keyword);
-std::string registration_to_string(Registration registration);
-
-Periodicity string_to_periodicity(const std::string &keyword);
-std::string periodicity_to_string(Periodicity p);
 
 VerticalSpacing string_to_spacing(const std::string &keyword);
 std::string spacing_to_string(VerticalSpacing s);
 
-//! @brief Contains parameters of an input file grid.
-class InputGridInfo {
+class InputGridInfo : public GridInfo {
 public:
   InputGridInfo(const File &file, const std::string &variable,
                 std::shared_ptr<units::System> unit_system, Registration registration);
@@ -74,25 +66,6 @@ public:
 
   // dimension lengths
   unsigned int t_len;
-  //! x-coordinate of the domain center
-  double x0;
-  //! y-coordinate of the domain center
-  double y0;
-  //! domain half-width
-  double Lx;
-  //! domain half-height
-  double Ly;
-  //! minimal value of the z dimension
-  double z_min;
-  //! maximal value of the z dimension
-  double z_max;
-
-  //! x coordinates
-  std::vector<double> x;
-  //! y coordinates
-  std::vector<double> y;
-  //! z coordinates
-  std::vector<double> z;
 
   std::string filename;
 
@@ -104,9 +77,13 @@ public:
   std::map<std::string, AxisType> dimension_types;
 
   bool longitude_latitude;
+
+  //! z coordinates: input grids may be 3-dimensional
+  std::vector<double> z;
 private:
   void reset();
 };
+
 
 //! Grid parameters; used to collect defaults before an Grid is allocated.
 /* Make sure that all of
@@ -171,62 +148,80 @@ public:
   //! Name of the variable used to initialize the instance (empty if not used)
   std::string variable_name;
 private:
-  Parameters() = default;
+  Parameters();
 };
 } // namespace grid
 
 class Grid;
 
-/** Iterator class for traversing the grid, including ghost points.
- *
- * Usage:
- *
- * `for (PointsWithGhosts p(grid, stencil_width); p; p.next()) { ... }`
- */
-class PointsWithGhosts {
+class GridPoint {
 public:
-  PointsWithGhosts(const Grid &grid, unsigned int stencil_width = 1);
-
-  int i() const {
-    return m_i;
-  }
-  int j() const {
-    return m_j;
+  GridPoint() : GridPoint(0, 0, 0, 0) {
   }
 
-  void next() {
-    assert(not m_done);
+  GridPoint(int i_, int j_, int i_first, int i_last) {
+    m_i = i_;
+    m_j = j_;
+    m_i_first = i_first;
+    m_i_last = i_last;
+  }
+
+  inline GridPoint &operator++() {
     m_i += 1;
     if (m_i > m_i_last) {
       m_i = m_i_first;        // wrap around
       m_j += 1;
     }
-    if (m_j > m_j_last) {
-      m_j = m_j_first;        // ensure that indexes are valid
-      m_done = true;
-    }
+
+    return *this;
   }
 
-  operator bool() const {
-    return not m_done;
+  inline GridPoint& operator*() {
+    return *this;
   }
+
+  inline bool operator!=(GridPoint &other) const {
+    return (m_j != other.m_j) or (m_i != other.m_i);
+  }
+
+  inline int i() const {
+    return m_i;
+  }
+
+  inline int j() const {
+    return m_j;
+  }
+
 private:
   int m_i, m_j;
-  int m_i_first, m_i_last, m_j_first, m_j_last;
-  bool m_done;
+  int m_i_first;
+  int m_i_last;
 };
 
-/** Iterator class for traversing the grid (without ghost points).
+/** Iterator class for traversing the grid, including ghost points.
  *
  * Usage:
  *
- * `for (Points p(grid); p; p.next()) { int i = p.i(), j = p.j(); ... }`
+ * `for (auto p : grid.points()) { ... }`
  */
-class Points : public PointsWithGhosts {
+class GridPoints {
 public:
-  Points(const Grid &g) : PointsWithGhosts(g, 0) {}
-};
+  GridPoints(const Grid &grid, unsigned int stencil_width = 0);
 
+  GridPoints(std::shared_ptr<const Grid> grid, unsigned int stencil_width = 0);
+
+  GridPoints(const grid::DistributedGridInfo &grid, unsigned int stencil_width = 0);
+
+  GridPoint &begin() {
+    return m_begin;
+  }
+  GridPoint &end() {
+    return m_end;
+  }
+private:
+  GridPoint m_begin;
+  GridPoint m_end;
+};
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
@@ -327,6 +322,8 @@ public:
 
   std::shared_ptr<const Context> ctx() const;
 
+  const grid::DistributedGridInfo& info() const;
+
   int xs() const;
   int xm() const;
   int ys() const;
@@ -355,8 +352,8 @@ public:
   double x0() const;
   double y0() const;
 
-  const MappingInfo& get_mapping_info() const;
-  void set_mapping_info(const MappingInfo &info);
+  const VariableMetadata& get_mapping_info() const;
+  void set_mapping_info(const VariableMetadata &info);
 
   double dz_min() const;
   double dz_max() const;
@@ -372,7 +369,11 @@ public:
   Vars& variables();
   const Vars& variables() const;
 
-  PointsWithGhosts points(unsigned int stencil_width = 0) const {
+  GridPoints points() const {
+    return {*this, 0};
+  }
+
+  GridPoints points_with_ghosts(unsigned int stencil_width) const {
     return {*this, stencil_width};
   }
 

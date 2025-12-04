@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021, 2022, 2023 Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2025 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -63,8 +63,9 @@ protected:
   // provides default (pass-through) implementations for "modifiers"
   virtual void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void define_model_state_impl(const File &output) const;
-  virtual void write_model_state_impl(const File &output) const;
+
+  virtual std::set<VariableMetadata> state_impl() const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;

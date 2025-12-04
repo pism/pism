@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010--2023, 2025 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -295,7 +295,7 @@ void BedSmoother::smoothed_thk(const array::Scalar &usurf,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(GHOSTS); p; p.next()) {
+    for (auto p : m_grid->points_with_ghosts(GHOSTS)) {
       const int i = p.i(), j = p.j();
 
       if (thk(i, j) < 0.0) {
@@ -370,7 +370,7 @@ void BedSmoother::theta(const array::Scalar &usurf, array::Scalar &result) const
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(GHOSTS); p; p.next()) {
+    for (auto p : m_grid->points_with_ghosts(GHOSTS)) {
       const int i = p.i(), j = p.j();
 
       const double H = usurf(i, j) - m_topgsmooth(i, j);

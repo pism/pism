@@ -25,13 +25,15 @@
 
 #include "pism/util/Config.hh"
 #include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/OutputWriter.hh"
 
 namespace pism {
+namespace grid {
+class DistributedGridInfo;
+}
 
 class Grid;
 
@@ -74,21 +76,23 @@ public:
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated Array.
   std::shared_ptr<array::Array> compute() const;
 
+  const grid::DistributedGridInfo &grid_info() const;
+
   unsigned int n_variables() const;
 
-  SpatialVariableMetadata &metadata(unsigned int N = 0);
+  VariableMetadata &metadata(unsigned int N = 0);
 
-  void define(const File &file, io::Type default_type) const;
+  std::set<VariableMetadata> state() const;
 
   void init(const File &input, unsigned int time);
-  void define_state(const File &output) const;
-  void write_state(const File &output) const;
+
+  void write_state(const OutputFile &output) const;
 
 protected:
-  virtual void define_impl(const File &file, io::Type default_type) const;
   virtual void init_impl(const File &input, unsigned int time);
-  virtual void define_state_impl(const File &output) const;
-  virtual void write_state_impl(const File &output) const;
+
+  virtual std::set<VariableMetadata> state_impl() const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual void update_impl(double dt);
   virtual void reset_impl();
@@ -117,7 +121,7 @@ protected:
   //! Configuration flags and parameters
   std::shared_ptr<const Config> m_config;
   //! metadata corresponding to NetCDF variables
-  std::vector<SpatialVariableMetadata> m_vars;
+  std::vector<VariableMetadata> m_vars;
   //! fill value (used often enough to justify storing it)
   double m_fill_value;
 };
@@ -189,10 +193,10 @@ public:
         m_interval_length(0.0),
         m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
 
-    m_time_since_reset["units"]     = "seconds";
-    m_time_since_reset["long_name"] = "time since " + m_accumulator.get_name() + " was reset to 0";
+    m_time_since_reset.units("seconds").long_name("time since " + m_accumulator.get_name() +
+                                                  " was reset to 0");
 
-    m_accumulator.metadata()["long_name"] = "accumulator for the " + name + " diagnostic";
+    m_accumulator.metadata().long_name("accumulator for the " + name + " diagnostic");
 
     m_accumulator.set(0.0);
   }
@@ -213,21 +217,16 @@ protected:
     }
   }
 
-  void define_state_impl(const File &output) const {
-    m_accumulator.define(output, io::PISM_DOUBLE);
-    io::define_timeseries(m_time_since_reset,
-                          Diagnostic::m_config->get_string("time.dimension_name"), output,
-                          io::PISM_DOUBLE);
+  std::set<VariableMetadata> state_impl() const {
+    return { m_accumulator.metadata(0), m_time_since_reset };
   }
 
-  void write_state_impl(const File &output) const {
+  void write_state_impl(const OutputFile &output) const {
     m_accumulator.write(output);
 
-    auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
-
-    unsigned int time_length = output.dimension_length(time_name);
+    unsigned int time_length = output.time_dimension_length();
     unsigned int t_start     = time_length > 0 ? time_length - 1 : 0;
-    io::write_timeseries(output, m_time_since_reset, t_start, { m_interval_length });
+    output.write_array(m_time_since_reset.get_name(), { t_start }, { 1 }, { m_interval_length });
   }
 
   virtual void update_impl(double dt) {
@@ -282,11 +281,23 @@ public:
   TSDiagnostic(std::shared_ptr<const Grid> g, const std::string &name);
   virtual ~TSDiagnostic();
 
+  /*!
+   * "Update" a scalar diagnostic for the time step from `t0` to `t1`. Estimates values of
+   * a diagnostic quantity for all requested times in the time interval `[t0, t1]` and
+   * saves them in a buffer.
+   */
   void update(double t0, double t1);
 
+  /*!
+   * Flush the buffer to an output file.
+   */
   void flush();
 
-  void init(const File &output_file, std::shared_ptr<std::vector<double> > requested_times);
+  /*!
+   * Initialize a scalar diagnostic.
+   */
+  void init(std::shared_ptr<OutputFile> output_file,
+            std::shared_ptr<std::vector<double> > requested_times);
 
   const VariableMetadata &metadata() const;
 
@@ -302,8 +313,6 @@ protected:
 
   /*!
    * Set internal (MKS) and "output" units.
-   *
-   * output_units is ignored if output.use_MKS is set.
    */
   void set_units(const std::string &units, const std::string &output_units);
 
@@ -312,14 +321,9 @@ protected:
   //! Configuration flags and parameters
   std::shared_ptr<const Config> m_config;
   //! the unit system
-  const units::System::Ptr m_sys;
-
-  //! time series object used to store computed values and metadata
-  std::string m_time_name;
+  std::shared_ptr<units::System> m_sys;
 
   VariableMetadata m_variable;
-  VariableMetadata m_dimension;
-  VariableMetadata m_time_bounds;
 
   // buffer for diagnostic time series
   std::vector<double> m_time;
@@ -331,9 +335,9 @@ protected:
   //! index into m_times
   unsigned int m_current_time;
 
-  //! the name of the file to save to (stored here because it is used by flush(), which is called
-  //! from update())
-  std::string m_output_filename;
+  //! the file to save to (stored here because it is used by flush(), which is called from
+  //! update())
+  std::shared_ptr<OutputFile> m_output_file;
   //! starting index used when flushing the buffer
   unsigned int m_start;
   //! size of the buffer used to store data
