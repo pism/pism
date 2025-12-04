@@ -41,7 +41,7 @@ NAME=frac_Mx${M}_yr-${YEARS}.nc
 
 output="-o $NAME -o_order zyx -o_size big"
 
-ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
+ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc -ssafd_ksp_rtol 1e-3"
 #-pik:-part_grid -cfbc -kill_icebergs
 
 extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} \
@@ -76,7 +76,7 @@ cmd_diag="mpiexec -n $NN ${PISMPREFIX}pism -regional -i ../Ross_combined.nc -boo
 # add "-verbose 4" to this command for additional internal info
 cmd_frac="mpiexec -n $NN ${PISMPREFIX}pism -regional -i startfile_Mx${M}.nc -surface given \
   ${ssa} -y ${YEARS} ${output} -front_retreat_file startfile_Mx${M}.nc \
-  ${fractures} ${extra} ${timeseries}"
+  ${fractures} ${extra} ${timeseries} -calving.methods thickness_calving -calving.thickness_calving.threshold 50"
 
 # -ssafd_picard_rtol 1.0e-3 -ssa_eps 5.0e15
 
