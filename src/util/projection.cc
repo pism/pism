@@ -316,7 +316,8 @@ VariableMetadata mapping_info_from_file(const File &input_file, const std::strin
 
   // Initialize (and possibly validate) the CF-style grid mapping variable by reading
   // metadata from the input file:
-  VariableMetadata cf_mapping(mapping_variable_name, unit_system);
+  VariableMetadata cf_mapping(mapping_variable_name.empty() ? "mapping" : mapping_variable_name,
+                              unit_system);
   if (input_file.variable_exists(mapping_variable_name)) {
     // input file has a mapping variable
 
