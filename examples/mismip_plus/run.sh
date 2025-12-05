@@ -2,101 +2,49 @@
 
 ncgen -o config.nc config.cdl
 
-# This run crashes
-
-# vy$Eh  2D CFL (overrides diffusivity) (dt=1.35834)
-# S 2289-04-27 04.724h:    0.02886    0.06576         17.83305       1334.53348
-# limited ice flux at 38 locations
-# PISM ERROR: Rank 0 failed with the following message.
-# PISM ERROR: ice thickness would exceed Lz at i=6, j=22 (H=6619.448750, Lz=6000.000000)
-#             Error location: /Users/andy/pism-dev-conda-petsc/src/geometry/GeometryEvolution.cc, line 762
-# PISM ERROR: Failure in a parallel section. See error messages above for more.
-#             while performing a mass transport time step (dt=6329730.000000 s). (Note: Model state was saved to 'state_g2km_ssa+sia_2500a_mass_transport_failed.nc'.)
-#             Error location: /Users/andy/pism-dev-conda-petsc/src/util/error_handling.cc, line 209
-
-
+spatial_vars="beta,bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line"
+regrid_vars="litho_temp,enthalpy,tillwat,bmelt,ice_area_specific_volume,thk"
 
 N=8
-run_length=10000
+run_length=50000
 sb="ssa+sia"
 resolution="8km"
 out=g${resolution}_${sb}_${run_length}a.nc
-mpirun -np $N pism -config_override config.nc \
+mpirun pism -config_override config.nc \
        -stress_balance.model $sb \
        -grid.dx $resolution \
        -grid.dy $resolution \
-       -i mismip+.nc \
+       -input.file mismip+.nc \
        -input.bootstrap yes \
        -o_size medium \
        -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
        -output.extra.file spatial_$out \
        -output.extra.times 100year \
-       -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
+       -output.extra.vars $spatial_vars \
+       -output.file state_$out \
        -time.run_length $run_length
-
-
-N=8
-run_length=10000
-sb="ssa+sia"
-resolution="8km"
-out=g${resolution}_${sb}_${run_length}a.nc
-mpirun -np $N pism -config_override config.nc \
-       -stress_balance.model $sb \
-       -grid.dx $resolution \
-       -grid.dy $resolution \
-       -i mismip+.nc \
-       -input.bootstrap yes \
-       -o_size medium \
-       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
-       -output.extra.file spatial_$out \
-       -output.extra.times 100year \
-       -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
-       -time.run_length $run_length
-
-
-
-
-# So we just run 2200 years
-N=8
-run_length=2200
-sb="ssa+sia"
-resolution="2km"
-out=g${resolution}_${sb}_${run_length}a.nc
-mpirun -np $N pism -config_override config.nc \
-       -stress_balance.model $sb \
-       -grid.dx $resolution \
-       -grid.dy $resolution \
-       -i mismip+.nc \
-       -input.bootstrap yes \
-       -o_size medium \
-       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
-       -output.extra.file spatial_$out \
-       -output.extra.times 100year \
-       -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
-       -time.run_length $run_length
-
 
 infile=state_$out
 
-# and then restart, saving every year.
-# This run succeeds *BECAUSE* we save every year.
-# Not writing a spatial time series, or writing every 100yr makes it crash.
-
 N=8
-run_length=500
+run_length=1000
 sb="ssa+sia"
-resolution="2km"
+resolution="4km"
 out=g${resolution}_${sb}_${run_length}a.nc
-mpirun -np $N pism -config_override config.nc \
+mpirun pism -config_override config.nc \
        -stress_balance.model $sb \
        -grid.dx $resolution \
        -grid.dy $resolution \
-       -i $infile \
+       -input.bootstrap yes \
+       -input.file mismip+.nc \
+       -input.regrid.file $infile \
+       -input.regrid.vars $regrid_vars \
        -o_size medium \
        -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
        -output.extra.file spatial_$out \
        -output.extra.times 10year \
-       -output.extra.vars bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,ice_mass_transport_across_grounding_line -output.file state_$out \
+       -output.extra.vars $spatial_vars \
+       -output.file state_$out \
        -time.run_length $run_length
 
 N=8
