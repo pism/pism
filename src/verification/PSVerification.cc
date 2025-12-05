@@ -95,7 +95,8 @@ void Verification::update_KO() {
 void Verification::update_L() {
   double     A0, T0;
 
-  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, m_EC);
+  double n = m_config->get_number("stress_balance.sia.Glen_exponent");
+  rheology::PatersonBuddCold tgaIce(n, *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -176,7 +177,8 @@ void Verification::update_ABCDH(double time) {
 
   double f = m_config->get_number("constants.ice.density") / m_config->get_number("bed_deformation.mantle_density");
 
-  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, m_EC);
+  double n = m_config->get_number("stress_balance.sia.Glen_exponent");
+  rheology::PatersonBuddCold tgaIce(n, *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant

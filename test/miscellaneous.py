@@ -599,9 +599,8 @@ def pism_context_test():
     print(ctx.prefix())
 
 
-def check_flow_law(factory, flow_law_name, EC, stored_data):
-    factory.set_default(flow_law_name)
-    law = factory.create()
+def check_flow_law(factory, flow_law_name, exponent, EC, stored_data):
+    law = factory.create(flow_law_name, exponent)
 
     depth = 2000
     gs = 1e-3
@@ -669,10 +668,11 @@ def flowlaw_test():
 
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
     EC = ctx.enthalpy_converter()
-    factory = PISM.FlowLawFactory("stress_balance.sia.", ctx.config(), EC)
+    factory = PISM.FlowLawFactory(ctx.config(), EC)
+    exponent = ctx.config().get_number("stress_balance.sia.Glen_exponent")
 
     for flow_law_name, data in data.items():
-        check_flow_law(factory, flow_law_name, EC, np.array(data))
+        check_flow_law(factory, flow_law_name, exponent, EC, np.array(data))
 
 
 def ssa_trivial_test():

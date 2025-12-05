@@ -19,17 +19,16 @@
 
 #include "pism/rheology/PatersonBudd.hh"
 #include <cmath>   // for pow
-#include <memory>  // for __shared_ptr_access
+#include <memory>  // for shared_ptr
 
 namespace pism {
 namespace rheology {
 
 // PatersonBudd
 
-PatersonBudd::PatersonBudd(const std::string &prefix,
-                           const Config &config,
+PatersonBudd::PatersonBudd(double exponent, const Config &config,
                            std::shared_ptr<EnthalpyConverter> ec)
-  : FlowLaw(prefix, config, ec) {
+    : FlowLaw(exponent, config, ec) {
   m_name = "Paterson-Budd";
 }
 

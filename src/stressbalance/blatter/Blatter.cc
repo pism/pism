@@ -314,9 +314,10 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
   }
 
   {
-    rheology::FlowLawFactory ice_factory("stress_balance.blatter.", m_config, m_EC);
+    rheology::FlowLawFactory ice_factory(m_config, m_EC);
     ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
-    m_flow_law = ice_factory.create();
+    m_flow_law = ice_factory.create(m_config->get_string("stress_balance.blatter.flow_law"),
+                                    m_config->get_number("stress_balance.blatter.Glen_exponent"));
   }
 
   double g = m_config->get_number("constants.standard_gravity");

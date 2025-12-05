@@ -44,9 +44,9 @@ vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
 {
 
   if (m_config->get_flag("calving.vonmises_calving.use_custom_flow_law")) {
-    auto EC = grid->ctx()->enthalpy_converter();
-    rheology::FlowLawFactory factory("calving.vonmises_calving.", m_config, EC);
-    m_flow_law = factory.create();
+    rheology::FlowLawFactory factory(m_config, grid->ctx()->enthalpy_converter());
+    m_flow_law = factory.create(m_config->get_string("calving.vonmises_calving.flow_law"),
+                                m_config->get_number("calving.vonmises_calving.Glen_exponent"));
   }
 
   m_calving_rate.metadata().set_name("vonmises_calving_rate");

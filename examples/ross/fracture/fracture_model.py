@@ -25,7 +25,11 @@ geometry.sea_level_elevation.set(0.0)
 geometry.ensure_consistency(0)
 
 # allocate the fracture density model
-flow_law = PISM.FlowLawFactory("stress_balance.ssa.", ctx.config, ctx.enthalpy_converter).create()
+n = ctx.config.get_number("stress_balance.ssa.Glen_exponent")
+
+factory = PISM.FlowLawFactory(ctx.config, ctx.enthalpy_converter)
+flow_law = factory.create(ctx.config.get_string("stress_balance.ssa.flow_law"),
+                          ctx.config.get_number("stress_balance.ssa.Glen_exponent"))
 fracture = PISM.FractureDensity(grid, flow_law)
 
 # initialize it using zero fracture age and density

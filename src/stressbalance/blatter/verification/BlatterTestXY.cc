@@ -30,7 +30,8 @@ BlatterTestXY::BlatterTestXY(std::shared_ptr<const Grid> grid, int Mz, int coars
   : Blatter(grid, Mz, coarsening_factor) {
 
   // use the isothermal Glen flow law
-  m_flow_law.reset(new rheology::IsothermalGlen("stress_balance.blatter.", *m_config, m_EC));
+  double n = m_config->get_number("stress_balance.blatter.Glen_exponent");
+  m_flow_law.reset(new rheology::IsothermalGlen(n, *m_config, m_EC));
 
   // make sure we use the same Glen exponent
   assert(m_flow_law->exponent() == 3.0);

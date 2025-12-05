@@ -32,7 +32,7 @@ namespace rheology {
 */
 class GPBLD : public FlowLaw {
 public:
-  GPBLD(const std::string &prefix, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
+  GPBLD(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
 protected:
   double softness_impl(double enthalpy, double pressure) const;
   void flow_n_impl(const double *stress, const double *enthalpy,
