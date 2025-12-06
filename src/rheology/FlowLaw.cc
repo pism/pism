@@ -45,7 +45,6 @@ FlowLaw::FlowLaw(double exponent, const Config &config,
 
   m_rho                = config.get_number("constants.ice.density");
   m_beta_CC_grad       = config.get_number("constants.ice.beta_Clausius_Clapeyron") * m_rho * m_standard_gravity;
-  m_melting_point_temp = config.get_number("constants.fresh_water.melting_point_temperature");
   m_n                  = exponent;
   m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
   m_hardness_power     = -1.0 / m_n;

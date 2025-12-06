@@ -120,8 +120,6 @@ protected:
   double m_rho;
   //! Clausius-Clapeyron gradient
   double m_beta_CC_grad;
-  //! melting point temperature (for water, 273.15 K)
-  double m_melting_point_temp;
 
   std::shared_ptr<EnthalpyConverter> m_EC;
 
