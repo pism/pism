@@ -146,9 +146,15 @@ salinity_ocean.attrs.update({"units": "g/kg"})
 
 basins =  xr.zeros_like(ds["bed"]) + basins
 basins.name = "basins"
+basins.attrs.update({"units": ""})
 
 ocean_ds = xr.merge([theta_ocean, salinity_ocean, basins])
 ocean_sym_ds = mirror_dataset(ocean_ds.copy(), dim="x")
+
+b = ocean_sym_ds["basins"]
+x_coord = ocean_sym_ds["x"]
+ocean_sym_ds["basins"] = b.where((x_coord<0) | (b == 0), 2)
+
 ocean_sym_ds.to_netcdf("ocean_sym.nc")
 
 print("Preparing climate forcing")
