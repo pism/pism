@@ -106,7 +106,7 @@ double GoldsbyKohlstedt::flow_from_temp(double stress, double temp,
   if (fabs(stress) < 1e-10) {
     return 0;
   }
-  const double T = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
+  const double T = temp + (m_beta_CC_grad / m_rho_g) * pressure;
   const double pV = pressure * m_V_act_vol;
   const double RT = m_ideal_gas_constant * T;
   // Diffusional Flow
@@ -150,7 +150,7 @@ GKparts GoldsbyKohlstedt::flowParts(double stress, double temp, double pressure)
     p.eps_diff=0.0; p.eps_disl=0.0; p.eps_gbs=0.0; p.eps_basal=0.0;
     return p;
   }
-  const double T = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
+  const double T = temp + (m_beta_CC_grad / m_rho_g) * pressure;
   const double pV = pressure * m_V_act_vol;
   const double RT = m_ideal_gas_constant * T;
   // Diffusional Flow
@@ -207,7 +207,7 @@ double GoldsbyKohlstedtStripped::flow_from_temp(double stress, double temp, doub
   if (fabs(stress) < 1e-10) {
     return 0;
   }
-  const double T = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
+  const double T = temp + (m_beta_CC_grad / m_rho_g) * pressure;
   const double RT = m_ideal_gas_constant * T;
   // NO Diffusional Flow
   // Dislocation Creep
