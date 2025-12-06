@@ -116,8 +116,8 @@ protected:
 protected:
   std::string m_name;
 
-  //! ice density
-  double m_rho;
+  //! ice density times acceleration due to gravity
+  double m_rho_g;
   //! Clausius-Clapeyron gradient
   double m_beta_CC_grad;
 
@@ -144,8 +144,6 @@ protected:
   //! critical temperature (cold -- warm transition)
   double m_crit_temp;
 
-  //! acceleration due to gravity
-  double m_standard_gravity;
   //! ideal gas constant
   double m_ideal_gas_constant;
   //! power law exponent

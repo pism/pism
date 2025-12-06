@@ -40,11 +40,13 @@ FlowLaw::FlowLaw(double exponent, const Config &config,
     throw RuntimeError(PISM_ERROR_LOCATION, "EC is NULL in FlowLaw::FlowLaw()");
   }
 
-  m_standard_gravity   = config.get_number("constants.standard_gravity");
+  auto rho = config.get_number("constants.ice.density");
+  auto standard_gravity   = config.get_number("constants.standard_gravity");
+
   m_ideal_gas_constant = config.get_number("constants.ideal_gas_constant");
 
-  m_rho                = config.get_number("constants.ice.density");
-  m_beta_CC_grad       = config.get_number("constants.ice.beta_Clausius_Clapeyron") * m_rho * m_standard_gravity;
+  m_rho_g              = rho * standard_gravity;
+  m_beta_CC_grad       = config.get_number("constants.ice.beta_Clausius_Clapeyron") * m_rho_g;
   m_n                  = exponent;
   m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
   m_hardness_power     = -1.0 / m_n;
