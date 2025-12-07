@@ -9,7 +9,7 @@ set -x
 prefix=${prefix:-/opt/petsc}
 build_dir=${build_dir:-/var/tmp/build/petsc}
 petsc_version=${petsc_version:-3.24.1}
-optimization_flags="-O3 -axCORE-AVX512,CORE-AVX2,SSE4.2 -fp-model=precise"
+optimization_flags="-O3 -axICELAKE-SERVER,COMMON-AVX512,CORE-AVX512,CORE-AVX2,SSE4.2 -fp-model=precise"
 
 rm -rf ${build_dir}
 mkdir -p ${build_dir}

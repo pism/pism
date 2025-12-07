@@ -7,7 +7,7 @@ set -u
 set -x
 
 N=${N:-8}
-opt_flags="-O3 -axCORE-AVX512,CORE-AVX2,SSE4.2 -fp-model=precise"
+opt_flags="-O3 -axICELAKE-SERVER,COMMON-AVX512,CORE-AVX512,CORE-AVX2,SSE4.2 -fp-model=precise"
 
 # Prerequisites:
 export PETSC_DIR=${PETSC_DIR:-/opt/petsc}
@@ -35,6 +35,6 @@ cmake \
     -DCMAKE_INSTALL_PREFIX=${prefix} \
     -DPism_USE_YAC_INTERPOLATION=YES \
     -DPism_USE_PARALLEL_NETCDF4=YES \
-    -DPism_USE_PROJ=YES  
+    -DPism_USE_PROJ=YES
 
 make -j $N -C ${build_dir} install
