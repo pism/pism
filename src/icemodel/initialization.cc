@@ -683,7 +683,7 @@ void IceModel::allocate_couplers() {
 }
 
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
-void IceModel::misc_setup(InputOptions input_options) {
+void IceModel::misc_setup(InputOptions input_options, DiagnosticReport report_type) {
 
   m_log->message(3, "Finishing initialization...\n");
 
@@ -739,7 +739,7 @@ void IceModel::misc_setup(InputOptions input_options) {
   init_front_retreat();
 
   // initialize outputs
-  init_outputs(input_options);
+  init_outputs(input_options, report_type);
 
   // a report on whether PISM-PIK modifications of IceModel are in use
   {

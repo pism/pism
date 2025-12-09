@@ -27,9 +27,8 @@ namespace rheology {
   This constructor just sets flow law factor for nonzero water content, from
   \ref AschwandenBlatter and \ref LliboutryDuval1985.
 */
-GPBLD::GPBLD(const std::string &prefix,
-             const Config &config, std::shared_ptr<EnthalpyConverter> ec)
-  : FlowLaw(prefix, config, ec) {
+GPBLD::GPBLD(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> ec)
+    : FlowLaw(exponent, config, ec) {
   m_name = "Glen-Paterson-Budd-Lliboutry-Duval";
 
   m_T_0              = config.get_number("constants.fresh_water.melting_point_temperature"); // K

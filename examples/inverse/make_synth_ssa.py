@@ -179,11 +179,10 @@ if __name__ == '__main__':
         # Generate a prior guess for hardav
 
         EC = PISM.EnthalpyConverter(config)
-        ice_factory = PISM.IceFlowLawFactory(grid.com, "stress_balance.ssa.", config, EC)
-        ice_factory.removeType(PISM.ICE_GOLDSBY_KOHLSTEDT)
-        ice_factory.setType(config.get_string("stress_balance.ssa.flow_law"))
-        ice_factory.setFromOptions()
-        flow_law = ice_factory.create()
+        ice_factory = PISM.IceFlowLawFactory(config, EC)
+        ice_factory.remove(PISM.ICE_GOLDSBY_KOHLSTEDT)
+        flow_law = ice_factory.create(config.get_string("stress_balance.ssa.flow_law"),
+                                      config.get_number("stress_balance.ssa.Glen_exponent"))
         averaged_hardness_vec(flow_law, vecs.land_ice_thickness, vecs.enthalpy, vecs.hardav)
 
         if design_prior_const is not None:

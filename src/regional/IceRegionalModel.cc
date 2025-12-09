@@ -385,14 +385,15 @@ protected:
   }
 };
 
-void IceRegionalModel::allocate_diagnostics() {
-  IceModel::allocate_diagnostics();
+std::map<std::string, Diagnostic::Ptr> IceRegionalModel::allocate_spatial_diagnostics() {
+  auto result = IceModel::allocate_spatial_diagnostics();
 
   if (m_ch_system) {
-    m_diagnostics["ch_temp"]      = Diagnostic::Ptr(new CHTemperature(this));
-    m_diagnostics["ch_liqfrac"]   = Diagnostic::Ptr(new CHLiquidWaterFraction(this));
-    m_diagnostics["ch_heat_flux"] = Diagnostic::Ptr(new CHHeatFlux(this));
+    result["ch_temp"]      = Diagnostic::Ptr(new CHTemperature(this));
+    result["ch_liqfrac"]   = Diagnostic::Ptr(new CHLiquidWaterFraction(this));
+    result["ch_heat_flux"] = Diagnostic::Ptr(new CHHeatFlux(this));
   }
+  return result;
 }
 
 void IceRegionalModel::hydrology_step(double t, double dt) {

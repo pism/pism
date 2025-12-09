@@ -76,7 +76,7 @@ namespace rheology {
 */
 class FlowLaw {
 public:
-  FlowLaw(const std::string &prefix, const Config &config,
+  FlowLaw(double exponent, const Config &config,
           std::shared_ptr<EnthalpyConverter> EC);
   virtual ~FlowLaw() = default;
 

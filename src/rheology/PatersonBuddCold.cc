@@ -20,14 +20,15 @@
 #include <cmath>
 
 #include "pism/rheology/PatersonBuddCold.hh"
+#include "pism/util/Config.hh"
 
 namespace pism {
 namespace rheology {
 
-PatersonBuddCold::PatersonBuddCold(const std::string &prefix,
+PatersonBuddCold::PatersonBuddCold(double exponent,
                                    const Config &config,
                                    std::shared_ptr<EnthalpyConverter> ec)
-  : PatersonBudd(prefix, config, ec) {
+  : PatersonBudd(exponent, config, ec) {
   m_name = "Paterson-Budd (cold case)";
 }
 
@@ -50,9 +51,16 @@ double PatersonBuddCold::flow_from_temp(double stress, double temp,
 // Rather than make this part of the base class, we just check at some reference values.
 bool FlowLawIsPatersonBuddCold(const FlowLaw &flow_law, const Config &config,
                                std::shared_ptr<EnthalpyConverter> EC) {
-  static const struct {double s, E, p, gs;} v[] = {
-    {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};
-  PatersonBuddCold cpb("stress_balance.sia.", config, EC); // This is unmodified cold Paterson-Budd
+  static const struct {
+    double s, E, p, gs;
+  } v[] = { { 1e3, 223, 1e6, 1e-3 },
+            { 450000, 475000, 500000, 525000 },
+            { 5e4, 268, 5e6, 3e-3 },
+            { 1e5, 273, 8e6, 5e-3 } };
+
+  double n = config.get_number("stress_balance.sia.Glen_exponent");
+  PatersonBuddCold cpb(n, config, EC); // This is unmodified cold Paterson-Budd
+
   for (int i=0; i<4; i++) {
     const double left  = flow_law.flow(v[i].s, v[i].E, v[i].p, v[i].gs),
       right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);

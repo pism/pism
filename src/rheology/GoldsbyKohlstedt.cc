@@ -27,9 +27,9 @@ namespace rheology {
 
 // Goldsby-Kohlstedt (forward) ice flow law
 
-GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &prefix,
+GoldsbyKohlstedt::GoldsbyKohlstedt(double exponent,
                                    const Config &config, std::shared_ptr<EnthalpyConverter> ec)
-  : FlowLaw(prefix, config, ec) {
+  : FlowLaw(exponent, config, ec) {
   m_name = "Goldsby-Kohlstedt / Paterson-Budd (hybrid)";
 
   m_V_act_vol      = -13.e-6;   // m^3/mol
@@ -188,10 +188,10 @@ GKparts GoldsbyKohlstedt::flowParts(double stress, double temp, double pressure)
 }
 /*****************/
 
-GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(const std::string &prefix,
+GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(double exponent,
                                                    const Config &config,
                                                    std::shared_ptr<EnthalpyConverter> ec)
-  : GoldsbyKohlstedt(prefix, config, ec) {
+  : GoldsbyKohlstedt(exponent, config, ec) {
   m_name = "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";
 
   m_d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)

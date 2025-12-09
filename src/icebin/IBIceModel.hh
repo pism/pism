@@ -98,7 +98,7 @@ public:
 
   virtual void allocate_subglacial_hydrology();
   virtual void allocate_couplers();
-  virtual void misc_setup(InputOptions input_options);
+  virtual void misc_setup(InputOptions input_options, DiagnosticReport report_type);
 
   void compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &mass2);
 

@@ -55,8 +55,7 @@ protected:
   energy::Inputs energy_model_inputs();
   YieldStressInputs yield_stress_inputs();
 
-  void allocate_diagnostics();
-
+  std::map<std::string, Diagnostic::Ptr> allocate_spatial_diagnostics();
 private:
   array::Scalar2 m_no_model_mask;
   array::Scalar2   m_usurf_stored;

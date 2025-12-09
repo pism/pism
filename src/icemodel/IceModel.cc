@@ -817,7 +817,7 @@ IceModelTerminationReason IceModel::run() {
 Please see the documenting comments of the functions called below to find
 explanations of their intended uses.
  */
-void IceModel::init() {
+void IceModel::init(DiagnosticReport report_type) {
   // Get the start time in seconds and ensure that it is consistent
   // across all processors.
   m_start_time = get_time(m_grid->com);
@@ -878,7 +878,7 @@ void IceModel::init() {
   //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the
   //! basal till model, initialize snapshots. This has to happen *after*
   //! regridding.
-  misc_setup(input_options);
+  misc_setup(input_options, report_type);
 
   profiling.end("initialization");
 }

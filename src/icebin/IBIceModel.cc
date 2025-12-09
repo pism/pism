@@ -334,9 +334,8 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
   write_run_stats(file);
 }
 
-void IBIceModel::misc_setup(InputOptions input_options) {
-  super::misc_setup(input_options);
-
+void IBIceModel::misc_setup(InputOptions input_options, DiagnosticReport report_type) {
+  super::misc_setup(input_options, report_type);
 
   // ------ Initialize MassEnth structures: base, cur, rate
   for (auto &ii : cur.all_vecs) {

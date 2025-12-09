@@ -123,9 +123,10 @@ DiagnosticList ShallowStressBalance::diagnostics_impl() const {
 ZeroSliding::ZeroSliding(std::shared_ptr<const Grid> g)
   : ShallowStressBalance(g) {
 
+  rheology::FlowLawFactory ice_factory(m_config, m_EC);
   // Use the SIA flow law.
-  rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
-  m_flow_law = ice_factory.create();
+  m_flow_law = ice_factory.create(m_config->get_string("stress_balance.sia.flow_law"),
+                                  m_config->get_number("stress_balance.sia.Glen_exponent"));
 }
 
 //! \brief Update the trivial shallow stress balance object.

@@ -305,16 +305,28 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    model->init();
-
     auto list_type = options::Keyword("-list_diagnostics",
                                       "List available diagnostic quantities and stop.",
                                       "all,spatial,scalar,json",
                                       "all");
 
     if (list_type.is_set()) {
-      model->list_diagnostics(list_type);
+      auto report = DIAG_NONE;
+      auto value = list_type.value();
+      if (value == "spatial") {
+        report = DIAG_SPATIAL;
+      } else if (value == "scalar") {
+        report = DIAG_SCALAR;
+      } else if (value == "json") {
+        report = DIAG_JSON;
+      } else {
+        report = DIAG_ALL;
+      }
+      model->init(report);
+
     } else {
+      model->init(DIAG_NONE);
+
       auto termination_reason = model->run();
 
       switch (termination_reason) {

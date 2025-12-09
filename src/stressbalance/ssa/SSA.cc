@@ -85,9 +85,10 @@ SSA::SSA(std::shared_ptr<const Grid> g)
   m_velocity.metadata(1).long_name("SSA model ice velocity in the Y direction");
 
   {
-    rheology::FlowLawFactory ice_factory("stress_balance.ssa.", m_config, m_EC);
+    rheology::FlowLawFactory ice_factory(m_config, m_EC);
     ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
-    m_flow_law = ice_factory.create();
+    m_flow_law = ice_factory.create(m_config->get_string("stress_balance.ssa.flow_law"),
+                                    m_config->get_number("stress_balance.ssa.Glen_exponent"));
   }
 }
 

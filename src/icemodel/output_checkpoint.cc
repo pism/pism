@@ -39,6 +39,10 @@ void IceModel::init_checkpoints() {
   {
     m_checkpoint_file_contents = pism::combine(common_metadata(), state_variables());
     m_checkpoint_file_contents =
+        pism::combine(m_checkpoint_file_contents, diagnostic_state_variables(m_checkpoint_vars));
+    m_checkpoint_file_contents =
+        pism::combine(m_checkpoint_file_contents, diagnostic_state_variables(m_extra_vars));
+    m_checkpoint_file_contents =
         pism::combine(m_checkpoint_file_contents, diagnostic_variables(m_checkpoint_vars));
   }
 }

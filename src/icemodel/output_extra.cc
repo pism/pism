@@ -153,7 +153,7 @@ void IceModel::init_extras() {
     }
 
     if (m_extra_vars.empty()) {
-      m_extra_file_contents = state_variables();
+      m_extra_file_contents = diagnostic_state_variables(m_extra_vars);
     } else {
       m_extra_file_contents = diagnostic_variables(m_extra_vars);
     }

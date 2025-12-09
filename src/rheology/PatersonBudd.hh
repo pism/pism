@@ -31,9 +31,7 @@ namespace rheology {
 //! Derived class of FlowLaw for Paterson-Budd (1982)-Glen ice.
 class PatersonBudd : public FlowLaw {
 public:
-  PatersonBudd(const std::string &prefix,
-               const Config &config,
-               std::shared_ptr<EnthalpyConverter> EC);
+  PatersonBudd(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
   virtual ~PatersonBudd() = default;
 
 protected:
