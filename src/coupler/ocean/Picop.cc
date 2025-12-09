@@ -270,7 +270,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       if (t_a < t_min) {
         t_a = t_min;
       }
-      m_log->message(2, "(%i, %i), z_gl 1 = %f", i, j, z_gl);
+
       const double t_f_gl = physics.characteristic_freezing_point(s_a, z_gl);
       const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
       m_gammaTS(i, j) = Gamma_TS;
@@ -278,12 +278,10 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double g_alpha = physics.geometric_scaling(Gamma_TS, alpha);
       m_geometric_scale(i, j) = g_alpha;
       m_length_scale(i, j) = l;
-      m_log->message(2, "(%i, %i), z_gl 2 = %f", i, j, z_gl);
-      double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
+      const double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
       const double M = physics.melt_function(t_a, t_f_gl, g_alpha);
-      double m =  M * physics.dimensionless_melt_curve(X_hat);
-
-      m_log->message(2, "(%i, %i) s_a=%f, t_a=%f, t_f_gl = %f, t_min=%f, zb=%f, zgl=%f, Gamma_TS=%f, alpha=%f, l=%f, X_hat=%f\n", i, j, s_a, t_a, t_f_gl, t_min, z_b, z_gl, Gamma_TS, alpha, l, X_hat);
+      const double M_hat =  physics.dimensionless_melt_curve(X_hat);
+      const double m = M * M_hat;
       result(i, j) = m;
     }    
   }

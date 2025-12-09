@@ -53,10 +53,8 @@ double PicopPhysics::characteristic_freezing_point(const double s_a, const doubl
 
 //! equation 5 in the PICOP paper.
 double PicopPhysics::effective_heat_exchange_coefficient(const double t_a, const double t_f_gl, const double alpha) const {
-  const double t2 = (t_a - t_f_gl) / lambda3;
-  const double num = E0 * sin(alpha);
-  const double denom = (CdTS0 + E0 * sin(alpha));
-  return YT * (gamma1 + gamma2 * t2 * num / denom);
+
+  return YT * (gamma1 + gamma2 * (((t_a-t_f_gl) * E0 * sin(alpha)) / (lambda3 * (CdTS0 + E0 * sin(alpha)))));
 }
 
 //! equation 6 in the PICOP paper.
@@ -65,9 +63,10 @@ double PicopPhysics::geometric_scaling(const double Gamma_TS, const double alpha
   const double CdTS = sqrt(Cd) * Gamma_TS;
   const double G1 = sqrt(sin(alpha) / (Cd + E0 * sin(alpha)));
   const double G2 = sqrt(CdTS / (CdTS + E0 * sin(alpha)));
-  const double G3 = (E0 * sin(alpha)) / (CdTS + E0 * sin(alpha));        
+  const double G3 = (E0 * sin(alpha))/(CdTS + E0 * sin(alpha));
   return G1 * G2 * G3;
 }
+
 //! equation 7 in the PICOP paper.
 double PicopPhysics::length_scaling(const double t_a, const double t_f_gl, const double Gamma_TS, const double alpha) const {
   const double CdTS = sqrt(Cd) * Gamma_TS;
