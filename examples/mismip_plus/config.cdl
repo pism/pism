@@ -25,6 +25,7 @@ netcdf pism_overrides {
     pism_overrides:hydrology.null_diffuse_till_water = "yes";
     pism_overrides:ocean.constant.melt_rate = 0.0;
     pism_overrides:ocean.models = "constant";
+    pism_overrides:ocean.pico.number_of_boxes = 5;
     pism_overrides:stress_balance.blatter.Mz = 17;
     pism_overrides:stress_balance.blatter.coarsening_factor = 4;
     pism_overrides:stress_balance.blatter.flow_law = "isothermal_glen";
