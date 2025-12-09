@@ -1,6 +1,9 @@
 #!/bin/bash
 
-python preprocess_sym.py
+# stop on error
+set -e
+
+python3 preprocess_sym.py
 ncgen -o config.nc config.cdl
 
 boot_file=mismip+_sym.nc
@@ -12,7 +15,7 @@ run_length=5000
 sb="ssa+sia"
 resolution="8km"
 out=g${resolution}_${sb}_${run_length}a.nc
-mpirun pism -config_override config.nc \
+mpirun -np $N pism -config_override config.nc \
        -geometry.front_retreat.prescribed.file $boot_file \
        -grid.dx $resolution \
        -grid.dy $resolution \
@@ -35,7 +38,7 @@ run_length=1000
 sb="ssa+sia"
 resolution="4km"
 out=g${resolution}_${sb}_${run_length}a.nc
-mpirun pism -config_override config.nc \
+mpirun -np $N pism -config_override config.nc \
        -stress_balance.model $sb \
        -geometry.front_retreat.prescribed.file $boot_file \
        -grid.dx $resolution \
@@ -60,7 +63,7 @@ run_length=100
 sb="ssa+sia"
 resolution="2km"
 out=g${resolution}_${sb}_${run_length}a.nc
-mpirun pism -config_override config.nc \
+mpirun -np $N pism -config_override config.nc \
        -stress_balance.model $sb \
        -geometry.front_retreat.prescribed.file $boot_file \
        -grid.dx $resolution \
@@ -85,7 +88,7 @@ run_length=1s
 sb="ssa+sia"
 resolution="2km"
 out=pico_g${resolution}_${sb}_${run_length}a.nc
-mpirun pism -config_override config.nc \
+mpirun -np $N pism -config_override config.nc \
        -stress_balance.model $sb \
        -geometry.front_retreat.prescribed.file $boot_file \
        -grid.dx $resolution \
@@ -116,7 +119,7 @@ run_length=1s
 sb="ssa+sia"
 resolution="2km"
 out=picop_g${resolution}_${sb}_${run_length}a.nc
-mpirun pism -config_override config.nc \
+mpirun -np $N pism -config_override config.nc \
        -stress_balance.model $sb \
        -geometry.front_retreat.prescribed.file $boot_file \
        -grid.dx $resolution \
