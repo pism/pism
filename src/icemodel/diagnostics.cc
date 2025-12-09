@@ -3257,16 +3257,22 @@ protected:
 
 } // end of namespace diagnostics
 
-void IceModel::init_outputs(InputOptions options) {
-  allocate_diagnostics();
+void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) {
+  m_diagnostics = allocate_spatial_diagnostics();
+  m_ts_diagnostics = allocate_scalar_diagnostics();
 
-  init_final_output();
-  init_snapshots();
-  init_checkpoints();
+  list_diagnostics(report_type);
+
+  // initialize diagnostics first: we need to know which spatial and scalar variables will
+  // be saved to determine which *state* variables for these diagnostics need to be saved
+  // to output files that can be used for re-starting.
   init_timeseries();
   init_extras();
+  // initialize outputs that can be used for re-starting:
+  init_snapshots();
+  init_checkpoints();
+  init_final_output();
 
-  // de-allocate diagnostics that are not needed
   deallocate_unused_diagnostics();
 
   // reset: this gives diagnostics a chance to capture the current state of the model at the
@@ -3295,53 +3301,54 @@ void IceModel::init_outputs(InputOptions options) {
   }
 }
 
-void IceModel::allocate_diagnostics() {
+std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() {
+  std::map<std::string, Diagnostic::Ptr> result;
 
   using namespace diagnostics;
 
-  using d = Diagnostic;
-  using f = Diagnostic::Ptr;    // "f" for "field"
-  m_diagnostics = {
+  using d       = Diagnostic;
+  using f       = Diagnostic::Ptr; // "f" for "field"
+  result = {
     // geometry
-    {"cell_grounded_fraction",              d::wrap(m_geometry.cell_grounded_fraction)},
-    {"height_above_flotation",              f(new HeightAboveFloatation(this))},
-    {"ice_area_specific_volume",            d::wrap(m_geometry.ice_area_specific_volume)},
-    {"ice_mass",                            f(new IceMass(this))},
-    {"lat",                                 d::wrap(m_geometry.latitude)},
-    {"lon",                                 d::wrap(m_geometry.longitude)},
-    {"mask",                                d::wrap(m_geometry.cell_type)},
-    {"thk",                                 f(new IceThickness(this))},
-    {"topg_sl_adjusted",                    f(new BedTopographySeaLevelAdjusted(this))},
-    {"usurf",                               f(new IceSurfaceElevation(this))},
-    {"ice_base_elevation",                  f(new IceBottomSurfaceElevation(this))},
-    {floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this))},
-    {grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this))},
-    {land_ice_area_fraction_name,           f(new IceAreaFraction(this))},
+    { "cell_grounded_fraction", d::wrap(m_geometry.cell_grounded_fraction) },
+    { "height_above_flotation", f(new HeightAboveFloatation(this)) },
+    { "ice_area_specific_volume", d::wrap(m_geometry.ice_area_specific_volume) },
+    { "ice_mass", f(new IceMass(this)) },
+    { "lat", d::wrap(m_geometry.latitude) },
+    { "lon", d::wrap(m_geometry.longitude) },
+    { "mask", d::wrap(m_geometry.cell_type) },
+    { "thk", f(new IceThickness(this)) },
+    { "topg_sl_adjusted", f(new BedTopographySeaLevelAdjusted(this)) },
+    { "usurf", f(new IceSurfaceElevation(this)) },
+    { "ice_base_elevation", f(new IceBottomSurfaceElevation(this)) },
+    { floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this)) },
+    { grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this)) },
+    { land_ice_area_fraction_name, f(new IceAreaFraction(this)) },
 
     // temperature, enthalpy, and liquid water fraction
-    {"enthalpybase", f(new IceEnthalpyBasal(this))},
-    {"enthalpysurf", f(new IceEnthalpySurface(this))},
-    {"bedtoptemp",   d::wrap(m_bedtoptemp)},
-    {"cts",          f(new CTS(this))},
-    {"liqfrac",      f(new LiquidFraction(this))},
-    {"temp",         f(new Temperature(this))},
-    {"temp_pa",      f(new TemperaturePA(this))},
-    {"tempbase",     f(new TemperatureBasal(this, BOTH))},
-    {"temppabase",   f(new TemperaturePABasal(this))},
-    {"tempsurf",     f(new TemperatureSurface(this))},
+    { "enthalpybase", f(new IceEnthalpyBasal(this)) },
+    { "enthalpysurf", f(new IceEnthalpySurface(this)) },
+    { "bedtoptemp", d::wrap(m_bedtoptemp) },
+    { "cts", f(new CTS(this)) },
+    { "liqfrac", f(new LiquidFraction(this)) },
+    { "temp", f(new Temperature(this)) },
+    { "temp_pa", f(new TemperaturePA(this)) },
+    { "tempbase", f(new TemperatureBasal(this, BOTH)) },
+    { "temppabase", f(new TemperaturePABasal(this)) },
+    { "tempsurf", f(new TemperatureSurface(this)) },
 
     // rheology-related stuff
-    {"tempicethk",          f(new TemperateIceThickness(this))},
-    {"tempicethk_basal",    f(new TemperateIceThicknessBasal(this))},
-    {"hardav",              f(new HardnessAverage(this))},
-    {"hardness",            f(new IceHardness(this))},
-    {"effective_viscosity", f(new IceViscosity(this))},
+    { "tempicethk", f(new TemperateIceThickness(this)) },
+    { "tempicethk_basal", f(new TemperateIceThicknessBasal(this)) },
+    { "hardav", f(new HardnessAverage(this)) },
+    { "hardness", f(new IceHardness(this)) },
+    { "effective_viscosity", f(new IceViscosity(this)) },
 
     // boundary conditions
-    {"vel_bc_mask",                    d::wrap(m_velocity_bc_mask)},
-    {"vel_bc_values",                  d::wrap(m_velocity_bc_values)},
-    {"ice_margin_pressure_difference", f(new IceMarginPressureDifference(this))},
-    {"thk_bc_mask",                    d::wrap(m_ice_thickness_bc_mask)},
+    { "vel_bc_mask", d::wrap(m_velocity_bc_mask) },
+    { "vel_bc_values", d::wrap(m_velocity_bc_values) },
+    { "ice_margin_pressure_difference", f(new IceMarginPressureDifference(this)) },
+    { "thk_bc_mask", d::wrap(m_ice_thickness_bc_mask) },
 
     // balancing the books
     // tendency_of_ice_amount = (tendency_of_ice_amount_due_to_flow +
@@ -3354,15 +3361,16 @@ void IceModel::allocate_diagnostics() {
     // tendency_of_ice_amount_due_to_discharge = (tendency_of_ice_amount_due_to_calving +
     //                                            tendency_of_ice_amount_due_to_frontal_melt +
     //                                            tendency_of_ice_amount_due_to_forced_retreat)
-    {"tendency_of_ice_amount",                           f(new TendencyOfIceAmount(this,          AMOUNT))},
-    {"tendency_of_ice_amount_due_to_flow",               f(new TendencyOfIceAmountDueToFlow(this, AMOUNT))},
-    {"tendency_of_ice_amount_due_to_conservation_error", f(new ConservationErrorFlux(this,        AMOUNT))},
-    {"tendency_of_ice_amount_due_to_surface_mass_flux",  f(new SurfaceFlux(this,                  AMOUNT))},
-    {"tendency_of_ice_amount_due_to_basal_mass_flux",    f(new BasalFlux(this,                    AMOUNT))},
-    {"tendency_of_ice_amount_due_to_discharge",          f(new DischargeFlux(this,                AMOUNT))},
-    {"tendency_of_ice_amount_due_to_calving",            f(new CalvingFlux(this,                  AMOUNT))},
-    {"tendency_of_ice_amount_due_to_frontal_melt",       f(new FrontalMeltFlux(this,              AMOUNT))},
-    {"tendency_of_ice_amount_due_to_forced_retreat",     f(new ForcedRetreatFlux(this,            AMOUNT))},
+    { "tendency_of_ice_amount", f(new TendencyOfIceAmount(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_flow", f(new TendencyOfIceAmountDueToFlow(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_conservation_error",
+      f(new ConservationErrorFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_surface_mass_flux", f(new SurfaceFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_basal_mass_flux", f(new BasalFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_discharge", f(new DischargeFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_calving", f(new CalvingFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_frontal_melt", f(new FrontalMeltFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_forced_retreat", f(new ForcedRetreatFlux(this, AMOUNT)) },
 
     // same, in terms of mass
     // tendency_of_ice_mass = (tendency_of_ice_mass_due_to_flow +
@@ -3375,54 +3383,68 @@ void IceModel::allocate_diagnostics() {
     // tendency_of_ice_mass_due_to_discharge = (tendency_of_ice_mass_due_to_calving +
     //                                          tendency_of_ice_mass_due_to_frontal_melt +
     //                                          tendency_of_ice_mass_due_to_forced_retreat)
-    {"tendency_of_ice_mass",                           f(new TendencyOfIceAmount(this,          MASS))},
-    {"tendency_of_ice_mass_due_to_flow",               f(new TendencyOfIceAmountDueToFlow(this, MASS))},
-    {"tendency_of_ice_mass_due_to_conservation_error", f(new ConservationErrorFlux(this,        MASS))},
-    {"tendency_of_ice_mass_due_to_surface_mass_flux",  f(new SurfaceFlux(this,                  MASS))},
-    {"tendency_of_ice_mass_due_to_basal_mass_flux",    f(new BasalFlux(this,                    MASS))},
-    {"tendency_of_ice_mass_due_to_discharge",          f(new DischargeFlux(this,                MASS))},
-    {"tendency_of_ice_mass_due_to_calving",            f(new CalvingFlux(this,                  MASS))},
-    {"tendency_of_ice_mass_due_to_frontal_melt",       f(new FrontalMeltFlux(this,              MASS))},
-    {"tendency_of_ice_mass_due_to_forced_retreat",     f(new ForcedRetreatFlux(this,            MASS))},
+    { "tendency_of_ice_mass", f(new TendencyOfIceAmount(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_flow", f(new TendencyOfIceAmountDueToFlow(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_conservation_error", f(new ConservationErrorFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_surface_mass_flux", f(new SurfaceFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_basal_mass_flux", f(new BasalFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_discharge", f(new DischargeFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_calving", f(new CalvingFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_frontal_melt", f(new FrontalMeltFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_forced_retreat", f(new ForcedRetreatFlux(this, MASS)) },
 
     // other rates and fluxes
-    {"basal_mass_flux_grounded", f(new BMBSplit(this, GROUNDED))},
-    {"basal_mass_flux_floating", f(new BMBSplit(this, SHELF))},
-    {"dHdt",                     f(new ThicknessRateOfChange(this))},
-    {"bmelt",                    d::wrap(m_basal_melt_rate)},
-    {"grounding_line_flux",      f(new GroundingLineFlux(this))},
-    {"ice_mass_transport_across_grounding_line", f(new MassTransportAcrossGroundingLine(this))},
+    { "basal_mass_flux_grounded", f(new BMBSplit(this, GROUNDED)) },
+    { "basal_mass_flux_floating", f(new BMBSplit(this, SHELF)) },
+    { "dHdt", f(new ThicknessRateOfChange(this)) },
+    { "bmelt", d::wrap(m_basal_melt_rate) },
+    { "grounding_line_flux", f(new GroundingLineFlux(this)) },
+    { "ice_mass_transport_across_grounding_line", f(new MassTransportAcrossGroundingLine(this)) },
 
     // misc
-    {"rank", f(new Rank(this))},
+    { "rank", f(new Rank(this)) },
   };
 
-#if (Pism_USE_PROJ==1)
+#if (Pism_USE_PROJ == 1)
   std::string proj = m_grid->get_mapping_info()["proj_params"];
   if (not proj.empty()) {
-    m_diagnostics["lat_bnds"] = f(new LatLonBounds(this, "lat", proj));
-    m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj));
+    result["lat_bnds"] = f(new LatLonBounds(this, "lat", proj));
+    result["lon_bnds"] = f(new LatLonBounds(this, "lon", proj));
   }
 #endif
 
   // add ISMIP6 variable names
   if (m_config->get_flag("output.ISMIP6")) {
-    m_diagnostics["base"]        = m_diagnostics["ice_base_elevation"];
-    m_diagnostics["lithk"]       = m_diagnostics["thk"];
-    m_diagnostics["dlithkdt"]    = m_diagnostics["dHdt"];
-    m_diagnostics["orog"]        = m_diagnostics["usurf"];
-    m_diagnostics["acabf"]       = m_diagnostics["tendency_of_ice_amount_due_to_surface_mass_flux"];
-    m_diagnostics["libmassbfgr"] = m_diagnostics["basal_mass_flux_grounded"];
-    m_diagnostics["libmassbffl"] = m_diagnostics["basal_mass_flux_floating"];
-    m_diagnostics["lifmassbf"]   = m_diagnostics["tendency_of_ice_amount_due_to_discharge"];
-    m_diagnostics["licalvf"]     = m_diagnostics["tendency_of_ice_amount_due_to_calving"];
-    m_diagnostics["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
-    m_diagnostics["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
-    m_diagnostics["ligroundf"]   = m_diagnostics["grounding_line_flux"];
+    result["base"]        = result["ice_base_elevation"];
+    result["lithk"]       = result["thk"];
+    result["dlithkdt"]    = result["dHdt"];
+    result["orog"]        = result["usurf"];
+    result["acabf"]       = result["tendency_of_ice_amount_due_to_surface_mass_flux"];
+    result["libmassbfgr"] = result["basal_mass_flux_grounded"];
+    result["libmassbffl"] = result["basal_mass_flux_floating"];
+    result["lifmassbf"]   = result["tendency_of_ice_amount_due_to_discharge"];
+    result["licalvf"]     = result["tendency_of_ice_amount_due_to_calving"];
+    result["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
+    result["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
+    result["ligroundf"]   = result["grounding_line_flux"];
   }
 
+  // get diagnostics from submodels
+  for (const auto& m : m_submodels) {
+    result = pism::combine(result, m.second->diagnostics());
+  }
+
+  return result;
+}
+
+std::map<std::string, TSDiagnostic::Ptr> IceModel::allocate_scalar_diagnostics() {
+  std::map<std::string, TSDiagnostic::Ptr> result;
+
+  using namespace diagnostics;
+
   using s = TSDiagnostic::Ptr; // "s" for "scalar"
-  m_ts_diagnostics = {
+
+  result = {
     // area
     {"ice_area_glacierized",                s(new scalar::IceAreaGlacierized(this))},
     {"ice_area_glacierized_cold_base",      s(new scalar::IceAreaGlacierizedColdBase(this))},
@@ -3470,22 +3492,23 @@ void IceModel::allocate_diagnostics() {
 
   // add ISMIP6 variable names
   if (m_config->get_flag("output.ISMIP6")) {
-    m_ts_diagnostics["iareafl"]         = m_ts_diagnostics["ice_area_glacierized_floating"];
-    m_ts_diagnostics["iareagr"]         = m_ts_diagnostics["ice_area_glacierized_grounded"];
-    m_ts_diagnostics["lim"]             = m_ts_diagnostics["ice_mass"];
-    m_ts_diagnostics["tendacabf"]       = m_ts_diagnostics["tendency_of_ice_mass_due_to_surface_mass_flux"];
-    m_ts_diagnostics["tendlibmassbf"]   = m_ts_diagnostics["tendency_of_ice_mass_due_to_basal_mass_flux"];
-    m_ts_diagnostics["tendlibmassbffl"] = m_ts_diagnostics["basal_mass_flux_floating"];
-    m_ts_diagnostics["tendlicalvf"]     = m_ts_diagnostics["tendency_of_ice_mass_due_to_calving"];
-    m_ts_diagnostics["tendlifmassbf"]   = m_ts_diagnostics["tendency_of_ice_mass_due_to_discharge"];
-    m_ts_diagnostics["tendligroundf"]   = m_ts_diagnostics["grounding_line_flux"];
+    result["iareafl"]         = result["ice_area_glacierized_floating"];
+    result["iareagr"]         = result["ice_area_glacierized_grounded"];
+    result["lim"]             = result["ice_mass"];
+    result["tendacabf"]       = result["tendency_of_ice_mass_due_to_surface_mass_flux"];
+    result["tendlibmassbf"]   = result["tendency_of_ice_mass_due_to_basal_mass_flux"];
+    result["tendlibmassbffl"] = result["basal_mass_flux_floating"];
+    result["tendlicalvf"]     = result["tendency_of_ice_mass_due_to_calving"];
+    result["tendlifmassbf"]   = result["tendency_of_ice_mass_due_to_discharge"];
+    result["tendligroundf"]   = result["grounding_line_flux"];
   }
 
   // get diagnostics from submodels
   for (const auto& m : m_submodels) {
-    m_diagnostics = pism::combine(m_diagnostics, m.second->diagnostics());
-    m_ts_diagnostics = pism::combine(m_ts_diagnostics, m.second->ts_diagnostics());
+    result = pism::combine(result, m.second->ts_diagnostics());
   }
+
+  return result;
 }
 
 using Metadata = std::map<std::string, std::vector<VariableMetadata>>;
@@ -3591,9 +3614,9 @@ static Metadata ts_diag_metadata(const std::map<std::string,TSDiagnostic::Ptr> &
   return result;
 }
 
-void IceModel::list_diagnostics(const std::string &list_type) const {
+void IceModel::list_diagnostics(DiagnosticReport type) const {
 
-  if (list_type == "json") {
+  if (type == DIAG_JSON) {
     m_log->message(1, "{\n");
 
     m_log->message(1, "\"spatial\" :\n");
@@ -3609,14 +3632,14 @@ void IceModel::list_diagnostics(const std::string &list_type) const {
     return;
   }
 
-  if (set_member(list_type, {"all", "spatial"})) {
+  if (type == DIAG_ALL or type == DIAG_SPATIAL) {
     m_log->message(1, "\n");
     m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
 
     print_diagnostics(*m_log, diag_metadata(m_diagnostics));
   }
 
-  if (set_member(list_type, {"all", "scalar"})) {
+  if (type == DIAG_ALL or type == DIAG_SCALAR) {
     // scalar time-series
     m_log->message(1, "======== Available time-series ========\n");
 
@@ -3850,4 +3873,20 @@ IceModel::diagnostic_variables(const std::set<std::string> &variable_names) cons
   return result;
 }
 
-} // end of namespace pism
+std::set<VariableMetadata>
+IceModel::diagnostic_state_variables(const std::set<std::string> &variable_names) const {
+  std::set<VariableMetadata> result{};
+  {
+    for (const auto &var : variable_names) {
+      auto diag = m_diagnostics.find(var);
+
+      if (diag != m_diagnostics.end()) {
+        const auto &D = diag->second;
+        result = pism::combine(result, D->state());
+      }
+    }
+  }
+  return result;
+}
+
+    } // end of namespace pism

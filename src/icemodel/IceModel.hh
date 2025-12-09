@@ -114,6 +114,8 @@ class OutputWriter;
 
 enum IceModelTerminationReason {PISM_DONE, PISM_CHEKPOINT, PISM_SIGNAL};
 
+enum DiagnosticReport {DIAG_NONE, DIAG_ALL, DIAG_SPATIAL, DIAG_SCALAR, DIAG_JSON};
+
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
 //! an ice sheet.
 class IceModel {
@@ -126,7 +128,7 @@ public:
   std::shared_ptr<Grid> grid() const;
   std::shared_ptr<Context> ctx() const;
 
-  void init();
+  void init(DiagnosticReport report_type);
 
   /** Run PISM in the "standalone" mode. */
   IceModelTerminationReason run();
@@ -134,7 +136,7 @@ public:
   /** Advance the current PISM run to a specific time */
   IceModelTerminationReason run_to(double run_end);
 
-  void list_diagnostics(const std::string &list_type) const;
+  void list_diagnostics(DiagnosticReport report_type) const;
 
   void write_final_output();
 
@@ -180,16 +182,17 @@ protected:
   virtual YieldStressInputs yield_stress_inputs();
 
   virtual void model_state_setup(InputOptions input_options);
-  virtual void misc_setup(InputOptions input_options);
+  virtual void misc_setup(InputOptions input_options, DiagnosticReport report_type);
   virtual void init_calving();
   virtual void init_frontal_melt();
   virtual void init_front_retreat();
   virtual void update_diagnostics(double t, double dt);
 
-  virtual void allocate_diagnostics();
-  virtual void deallocate_unused_diagnostics();
+  virtual std::map<std::string, Diagnostic::Ptr> allocate_spatial_diagnostics();
+  virtual std::map<std::string, TSDiagnostic::Ptr> allocate_scalar_diagnostics();
+  void deallocate_unused_diagnostics();
 
-  void init_outputs(InputOptions options);
+  void init_outputs(InputOptions options, DiagnosticReport report_type);
 
   /*!
    * Return the set of names of diagnostic quantities corresponding to a `keyword` (none,
@@ -208,9 +211,16 @@ protected:
 
   /*!
    * Return the set of "state" variables, i.e. variables that describe the state of
-   * IceModel, of all the sub-models, and of all the requested diagnostic variables.
+   * IceModel and of all its sub-models.
    */
   virtual std::set<VariableMetadata> state_variables() const;
+
+  /*!
+   * Return the set of "state" variables needed by the provided set of 2D and 3D
+   * diagnostic quantities.
+   */
+  std::set<VariableMetadata>
+  diagnostic_state_variables(const std::set<std::string> &variable_names) const;
 
   /*!
    * Return the set of "common" variables (i.e. ones written to most files): step counter,

@@ -141,6 +141,10 @@ void IceModel::init_final_output() {
 
   m_output_file_contents = pism::combine(common_metadata(), state_variables());
   m_output_file_contents =
+      pism::combine(m_output_file_contents, diagnostic_state_variables(m_output_vars));
+  m_output_file_contents =
+      pism::combine(m_output_file_contents, diagnostic_state_variables(m_extra_vars));
+  m_output_file_contents =
       pism::combine(m_output_file_contents, diagnostic_variables(m_output_vars));
 }
 
@@ -218,11 +222,6 @@ std::set<VariableMetadata> IceModel::state_variables() const {
     // state variables from sub-models:
     for (const auto &m : m_submodels) {
       result = pism::combine(result, m.second->state());
-    }
-
-    // state variables from diagnostics:
-    for (const auto &d : m_diagnostics) {
-      result = pism::combine(result, d.second->state());
     }
   }
 
