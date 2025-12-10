@@ -128,7 +128,7 @@ public:
   std::shared_ptr<Grid> grid() const;
   std::shared_ptr<Context> ctx() const;
 
-  void init(DiagnosticReport report_type);
+  void init(DiagnosticReport report_type = DIAG_NONE);
 
   /** Run PISM in the "standalone" mode. */
   IceModelTerminationReason run();
