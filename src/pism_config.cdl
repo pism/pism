@@ -1803,19 +1803,19 @@ netcdf pism_config {
     pism_config:ocean.picop.freezing_point_depth_coefficient_doc = "Sets the freezing point depth coefficient.";
     pism_config:ocean.picop.freezing_point_depth_coefficient_option = "freezing_point_depth_coefficient";
     pism_config:ocean.picop.freezing_point_depth_coefficient_type = "number";
-    pism_config:ocean.picop.freezing_point_depth_coefficient_units = "degree_Celsius m^-1";
+    pism_config:ocean.picop.freezing_point_depth_coefficient_units = "kelvin m^-1";
 
     pism_config:ocean.picop.freezing_point_offset = 8.32e-2;
     pism_config:ocean.picop.freezing_point_offset_doc = "Sets the freezing point offset.";
     pism_config:ocean.picop.freezing_point_offset_option = "freezing_point_offset";
     pism_config:ocean.picop.freezing_point_offset_type = "number";
-    pism_config:ocean.picop.freezing_point_offset_units = "degree_Celsius";
+    pism_config:ocean.picop.freezing_point_offset_units = "celsius";
 
     pism_config:ocean.picop.freezing_point_salinity_coefficient = -5.73e-2;
     pism_config:ocean.picop.freezing_point_salinity_coefficient_doc = "Sets the freezing point salinity coefficient.";
     pism_config:ocean.picop.freezing_point_salinity_coefficient_option = "freezing_point_salinity_coefficient";
     pism_config:ocean.picop.freezing_point_salinity_coefficient_type = "number";
-    pism_config:ocean.picop.freezing_point_salinity_coefficient_units = "degree_Celsius";
+    pism_config:ocean.picop.freezing_point_salinity_coefficient_units = "kelvin";
     
     pism_config:ocean.picop.heat_exchange_parameter = 6.0e-4;
     pism_config:ocean.picop.heat_exchange_parameter_doc = "Sets the heat exchange parameter.";
@@ -1839,7 +1839,7 @@ netcdf pism_config {
     pism_config:ocean.picop.melt_rate_parameter_doc = "Sets the melt rate parameter.";
     pism_config:ocean.picop.melt_rate_parameter_option = "melt_rate_parameter";
     pism_config:ocean.picop.melt_rate_parameter_type = "number";
-    pism_config:ocean.picop.melt_rate_parameter_units = "m yr^-1 degree_Celsius^-2";
+    pism_config:ocean.picop.melt_rate_parameter_units = "m yr^-1 kelvin^-2";
 
     pism_config:ocean.picop.periodic = "no";
     pism_config:ocean.picop.periodic_doc = "If true, interpret forcing data as periodic in time";

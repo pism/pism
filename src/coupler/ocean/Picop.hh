@@ -60,6 +60,7 @@ private:
   array::Scalar1 m_geometric_scale;
   array::Scalar1 m_length_scale;
   array::Scalar1 m_gammaTS;
+  array::Scalar1 m_dimensionless_coordinate;
   
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
