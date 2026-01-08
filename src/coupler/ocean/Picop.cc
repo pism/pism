@@ -66,6 +66,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_geometric_scale(grid, "picop_geometric_scale"),
     m_length_scale(grid, "picop_length_scale"),
     m_gammaTS(grid, "picop_GammaTS"),
+    m_dimensionless_coordinate(grid, "picop_dimensionless_coordinate"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
@@ -108,7 +109,8 @@ void Picop::init_impl(const Geometry &geometry) {
   (void) geometry;
 
   m_pico->init(geometry);
-  m_log->message(2, "* Initializing the Plume extension of PICO for the ocean ...\n");
+  m_log->message(2, "* Initializing the Plume extension of PICO (PICOP) for the ocean ...\n");
+  m_log->message(2, "  Note: PICOP requires stress balance computation to be enabled.\n");
 
   PicopPhysics picop_physics(*m_config);
 
@@ -189,10 +191,16 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
 
   if (inputs.stress_balance == nullptr) {
     // Use outputs from PICO if the stress balance is not available
+    m_log->message(3,
+                   "WARNING: PICOP requires stress balance for plume transport calculations.\n"
+                   "         Stress balance not available - falling back to PICO melt rates.\n"
+                   "         To use PICOP, enable stress balance computation.\n");
     m_shelf_base_temperature->copy_from(m_pico->shelf_base_temperature());
     m_shelf_base_mass_flux->copy_from(m_pico->shelf_base_mass_flux());
     return;
   }
+
+  m_log->message(3, "  PICOP: Computing plume-based melt rates...\n");
   
   PicopPhysics picop_physics(*m_config);
 
@@ -251,7 +259,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
   array::AccessScope scope{&T_a, &S_a, &cell_type,
                            &ice_surface_elevation, &ice_thickness,
                            &m_geometric_scale, &m_length_scale,
-                           &m_grounding_line_slope, &m_grounding_line_elevation,
+                           &m_grounding_line_slope, &m_grounding_line_elevation, &m_dimensionless_coordinate,
                            &m_gammaTS,
                            &result};
 
@@ -264,13 +272,12 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double alpha = m_grounding_line_slope(i, j);
             
       const double s_a = S_a(i, j);
-      const double t_min = physics.characteristic_freezing_point(s_a, 0.0);
-      double t_a = T_a(i, j) - 273.15;
+      double t_a = T_a(i, j);
+      const double t_min = physics.characteristic_freezing_point(s_a, 0);
       /* Low bound for Toc to ensure X_hat is between 0 and 1 */
       if (t_a < t_min) {
         t_a = t_min;
       }
-
       const double t_f_gl = physics.characteristic_freezing_point(s_a, z_gl);
       const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
       m_gammaTS(i, j) = Gamma_TS;
@@ -281,6 +288,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
       const double M = physics.melt_function(t_a, t_f_gl, g_alpha);
       const double M_hat =  physics.dimensionless_melt_curve(X_hat);
+      m_dimensionless_coordinate(i, j) = X_hat;
       const double m = M * M_hat;
       result(i, j) = m;
     }    
@@ -490,6 +498,7 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
 
   scope.add({ &result_old, &result_new, &cell_type, &ice_surface_elevation, &ice_thickness });
 
+  double residual = 0.0;
   for (int iter = 0; iter < max_iter; ++iter) {
 
     transport_step(result_old, cell_type, m_flow_direction, result_new);
@@ -508,7 +517,7 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
       }
     }
 
-    double residual = 0.0;
+    residual = 0.0;
     for (auto p : m_grid->points()) {
       int i = p.i(), j = p.j();
       double denom = std::max(std::abs(result_old(i, j)), 1e-8);  // avoid divide-by-zero
@@ -526,9 +535,11 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
       m_log->message(2, "grounding line elevation converged iteration %03d, max rel. change = %f\n", iter, residual);
       break;
     }
-    if (iter == max_iter) {
-      m_log->message(2, "grounding line elevation maximum number of iterations reached %03d, max rel. change = %f\n", max_iter, residual);
-    }
+  }
+
+  // Warn if maximum iterations reached without convergence
+  if (residual >= rtol) {
+    m_log->message(2, "grounding line elevation maximum number of iterations reached %03d, max rel. change = %f\n", max_iter, residual);
   }
 }
 
@@ -658,11 +669,12 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
 
   scope.add({ &result_old, &result_new, &adv_vel });
 
+  double residual = 0.0;
   for (int iter = 0; iter < max_iter; ++iter) {
 
     transport_step(result_old, cell_type, m_flow_direction, result_new);
-    
-    double residual = 0.0;
+
+    residual = 0.0;
     for (auto p : m_grid->points()) {
       int i = p.i(), j = p.j();
       double denom = std::max(std::abs(result_old(i, j)), 1e-8);  // avoid divide-by-zero
@@ -679,12 +691,12 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
       m_log->message(2, "grounding line slope converged iteration %03d, max rel. change = %f\n", iter, residual);
       break;
     }
-    if (iter == max_iter) {
-      m_log->message(2, "grounding line slope maximum number of iterations reached %03d, max rel .change = %f\n", max_iter, residual);
-    }
-  
   }
 
+  // Warn if maximum iterations reached without convergence
+  if (residual >= rtol) {
+    m_log->message(2, "grounding line slope maximum number of iterations reached %03d, max rel. change = %f\n", max_iter, residual);
+  }
 }
 // Write diagnostic variables to extra files if requested
 DiagnosticList Picop::diagnostics_impl() const {
@@ -698,6 +710,7 @@ DiagnosticList Picop::diagnostics_impl() const {
     { "picop_grounding_line_slope", Diagnostic::wrap(m_grounding_line_slope) },
     { "picop_geometric_scale", Diagnostic::wrap(m_geometric_scale) },
     { "picop_length_scale", Diagnostic::wrap(m_length_scale) },
+    { "picop_dimensionless_coordinate", Diagnostic::wrap(m_dimensionless_coordinate) },
     { "picop_gammaTS", Diagnostic::wrap(m_gammaTS) },
   };
 

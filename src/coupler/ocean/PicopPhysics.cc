@@ -37,9 +37,9 @@ PicopPhysics::PicopPhysics(const Config &config) {
     gamma1         = config.get_number("ocean.picop.heat_exchange_parameter_1");
     gamma2         = config.get_number("ocean.picop.heat_exchange_parameter_2");
     lambda1        = config.get_number("ocean.picop.freezing_point_salinity_coefficient");
-    lambda2        = config.get_number("ocean.picop.freezing_point_offset");
+    lambda2        = config.get_number("ocean.picop.freezing_point_offset", "kelvin");
     lambda3        = config.get_number("ocean.picop.freezing_point_depth_coefficient");
-    M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 degree_Celsius^-2");
+    M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
     x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
     YT = CdT / sqrt(Cd);
 }
@@ -114,7 +114,7 @@ double PicopPhysics::melt_rate(const double M, const double X_hat) const {
 
 //! equation 10 in the PICOP paper.
 double PicopPhysics::melt_function(const double t_a, const double t_f_gl, const double g_alpha) const {
-  // m s^-1  degC^-2 * 1 * deg_C^2
+  // m s^-1  delta_kelvin^-2 * 1 * (delta_kelvin)^2
   return M0 * g_alpha * pow(t_a - t_f_gl, 2);
 }
 
