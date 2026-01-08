@@ -63,10 +63,6 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
     m_shelf_base_elevation(grid, "picop_shelf_base_elevation"),
     m_grounding_line_slope(grid, "picop_grounding_line_slope"),
-    m_geometric_scale(grid, "picop_geometric_scale"),
-    m_length_scale(grid, "picop_length_scale"),
-    m_gammaTS(grid, "picop_GammaTS"),
-    m_dimensionless_coordinate(grid, "picop_dimensionless_coordinate"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
@@ -94,14 +90,6 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_grounding_line_slope.metadata()["_FillValue"] = { 0.0 };
   m_grounding_line_slope.set(0.0);
       
-  m_length_scale.metadata(0).long_name("length scale").units("m");
-  m_length_scale.metadata()["_FillValue"] = { 0.0 };
-  m_length_scale.set(0.0);
-
-  m_geometric_scale.metadata(0).long_name("length scale").units("");
-  m_geometric_scale.metadata()["_FillValue"] = { 0.0 };
-  m_geometric_scale.set(0.0);
-
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 }
 
@@ -258,9 +246,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
   
   array::AccessScope scope{&T_a, &S_a, &cell_type,
                            &ice_surface_elevation, &ice_thickness,
-                           &m_geometric_scale, &m_length_scale,
-                           &m_grounding_line_slope, &m_grounding_line_elevation, &m_dimensionless_coordinate,
-                           &m_gammaTS,
+                           &m_grounding_line_slope, &m_grounding_line_elevation,
                            &result};
 
   for (auto p : m_grid->points()) {
@@ -280,17 +266,10 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       }
       const double t_f_gl = physics.characteristic_freezing_point(s_a, z_gl);
       const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
-      m_gammaTS(i, j) = Gamma_TS;
       const double l = physics.length_scaling(t_a, t_f_gl, Gamma_TS, alpha);
       const double g_alpha = physics.geometric_scaling(Gamma_TS, alpha);
-      m_geometric_scale(i, j) = g_alpha;
-      m_length_scale(i, j) = l;
       const double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
-      const double M = physics.melt_function(t_a, t_f_gl, g_alpha);
-      const double M_hat =  physics.dimensionless_melt_curve(X_hat);
-      m_dimensionless_coordinate(i, j) = X_hat;
-      const double m = M * M_hat;
-      result(i, j) = m;
+      result(i, j)  = physics.melt_function(t_a, t_f_gl, g_alpha) * physics.dimensionless_melt_curve(X_hat);
     }    
   }
 }
@@ -702,16 +681,12 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
 DiagnosticList Picop::diagnostics_impl() const {
 
   DiagnosticList result = {
-    { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
     { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
+    { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
+    { "picop_grounding_line_slope", Diagnostic::wrap(m_grounding_line_slope) },
     { "picop_temperature", Diagnostic::wrap(m_theta_ocean) },
     { "picop_salinity", Diagnostic::wrap(m_salinity_ocean) },
     { "picop_shelf_base_elevation", Diagnostic::wrap(m_shelf_base_elevation) },
-    { "picop_grounding_line_slope", Diagnostic::wrap(m_grounding_line_slope) },
-    { "picop_geometric_scale", Diagnostic::wrap(m_geometric_scale) },
-    { "picop_length_scale", Diagnostic::wrap(m_length_scale) },
-    { "picop_dimensionless_coordinate", Diagnostic::wrap(m_dimensionless_coordinate) },
-    { "picop_gammaTS", Diagnostic::wrap(m_gammaTS) },
   };
 
   return combine(result, OceanModel::diagnostics_impl());
