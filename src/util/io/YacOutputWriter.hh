@@ -63,34 +63,34 @@ private:
   std::map<std::string, std::shared_ptr<File> > m_files;
   int m_compression_level;
   io::Backend m_backend;
-  MPI_Comm intercomm;
-  bool yac_init_finished = false;
-  bool yac_grid_initialized = false;
+  MPI_Comm m_intercomm;
+  bool m_yac_init_finished = false;
+  bool m_yac_grid_initialized = false;
 
   // This flag defines whether the client should also write the files written by the server
   // It might be useful for debugging purposes
-  bool suppress_client_file_operations = false;
-  int grid_size;
-  int my_rank = -1;
-  int local_x_size;
-  int local_y_size;
-  int max_collection_size = 0;
+  bool m_suppress_client_file_operations = false;
+  int m_grid_size;
+  int m_my_rank = -1;
+  int m_local_x_size;
+  int m_local_y_size;
+  int m_max_collection_size = 0;
   const Geometry& m_geometry;
-  std::map<std::string, int> field_ids;
-  std::map<std::string, std::map<std::string, int>> dim_sizes;
-  std::map<std::string, unsigned int> variable_tags;
-  std::vector<std::string> text_field_buffers;
-  std::map<std::string, std::vector<std::string>> file_variables, file_dimensions; 
-  nlohmann::json non_spatial_variables_metadata;
-  std::vector<MPI_Request> mpi_requests; 
-  std::vector<double *> array_data;
-  double *** yac_raw_send_array = nullptr;
+  std::map<std::string, int> m_field_ids;
+  std::map<std::string, std::map<std::string, int>> m_dim_sizes;
+  std::map<std::string, unsigned int> m_variable_tags;
+  std::vector<std::string> m_text_field_buffers;
+  std::map<std::string, std::vector<std::string>> m_file_variables, m_file_dimensions; 
+  nlohmann::json m_non_spatial_variables_metadata;
+  std::vector<MPI_Request> m_mpi_requests; 
+  std::vector<double *> m_array_data;
+  double *** m_yac_raw_send_array = nullptr;
 
-  std::map<std::string, bool> server_allowed_files;
+  std::map<std::string, bool> m_server_allowed_files;
 
   //YAC variables
-  int grid_id;
-  int vertex_points_id;
+  int m_grid_id;
+  int m_vertex_points_id;
 
   // --- Server-related subroutines ---
   void create_intercomm();
