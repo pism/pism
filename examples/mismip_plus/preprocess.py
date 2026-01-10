@@ -120,7 +120,7 @@ ds = xr.Dataset(
     attrs={"Conventions": "CF-1.8"}
 )
 ds_sym = mirror_dataset(ds.copy(), dim="x")
-ds_sym.to_netcdf("mismip+_sym.nc")
+ds_sym.to_netcdf("mismip+.nc")
 
 print("Preparing ocean forcing")
 
@@ -130,7 +130,7 @@ accum = xr.DataArray(0.3).pint.quantify("m yr^-1")
 cmb = (accum * rho_i)
 ice_surface_temp = xr.DataArray(-3).pint.quantify("degC")
 so = xr.DataArray(34.3).pint.quantify("g/kg")
-to = xr.DataArray(0.).pint.quantify("degC")
+to = xr.DataArray(3.5).pint.quantify("degC")
 
 basins = np.zeros_like(bed)
 basins[X<Lx+140e3] = 1
@@ -154,7 +154,7 @@ b = ocean_sym_ds["basins"]
 x_coord = ocean_sym_ds["x"]
 ocean_sym_ds["basins"] = b.where((x_coord<0) | (b == 0), 2)
 
-ocean_sym_ds.to_netcdf("ocean_sym.nc")
+ocean_sym_ds.to_netcdf("ocean.nc")
 
 print("Preparing climate forcing")
 
@@ -168,4 +168,4 @@ climatic_mass_balance.attrs.update({"units": "kg m^-2 yr^-1"})
 
 climate_ds = xr.merge([climatic_mass_balance, ice_surface_temp])
 climate_sym_ds = mirror_dataset(climate_ds.copy(), dim="x")
-climate_sym_ds.to_netcdf("climate_sym.nc")
+climate_sym_ds.to_netcdf("climate.nc")
