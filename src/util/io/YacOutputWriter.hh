@@ -95,7 +95,7 @@ private:
   // --- Server-related subroutines ---
   void create_intercomm();
   void initialize_yac_grid();
-  void define_yac_field(const std::string file_name,
+  void define_yac_field(const std::string &file_name,
                         const VariableMetadata &metadata,
                         const std::vector<std::string> &dims);
   void end_yac_definitions();
@@ -104,7 +104,9 @@ private:
   void server_ensure_file_exists(const std::string &file_name);
 
   // Utility: Given grid size and patch bounds, return global indices of patch vertices
-  static std::vector<int> compute_patch_global_indices(int x_global_size, int x_start, int x_size, int y_start, int y_size);
+  static std::vector<int> compute_patch_global_indices(unsigned int x_global_size,
+                                                       unsigned int x_start, unsigned int x_size,
+                                                       unsigned int y_start, unsigned int y_size);
 
   // --- Interface implementation and utilities ---
   const File &file(const std::string &file_name);
