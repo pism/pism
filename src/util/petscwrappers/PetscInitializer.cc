@@ -25,7 +25,7 @@
 
 #include "pism/util/error_handling.hh"
 
-#if (Pism_USE_YAC_INTERPOLATION == 1)
+#if (Pism_USE_YAC == 1)
 #include "pism/util/yaxt_wrapper.h"
 #endif
 
@@ -50,7 +50,7 @@ Initializer::Initializer(int argc, char **argv, const char *help) {
     }
   }
 
-#if (Pism_USE_YAC_INTERPOLATION == 1)
+#if (Pism_USE_YAC == 1)
   int yaxt_initialized = pism_yaxt_initialized();
   if (yaxt_initialized != 1) {
     pism_yaxt_initialize(PETSC_COMM_WORLD);
@@ -60,7 +60,7 @@ Initializer::Initializer(int argc, char **argv, const char *help) {
 
 Initializer::~Initializer() {
 
-#if (Pism_USE_YAC_INTERPOLATION == 1)
+#if (Pism_USE_YAC == 1)
   int yaxt_initialized = pism_yaxt_initialized();
   int yaxt_finalized = pism_yaxt_finalized();
   if (yaxt_initialized == 1 and yaxt_finalized != 1) {

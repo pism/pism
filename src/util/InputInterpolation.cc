@@ -34,7 +34,7 @@
 #include "pism/util/Config.hh"
 #include <string>
 
-#if (Pism_USE_YAC_INTERPOLATION == 1)
+#if (Pism_USE_YAC == 1)
 #include "InputInterpolationYAC.hh"
 #endif
 
@@ -112,7 +112,7 @@ InputInterpolation::create(const Grid &target_grid,
                            const std::vector<double> &levels, const File &input_file,
                            const std::string &variable_name, InterpolationType type) {
 
-#if (Pism_USE_YAC_INTERPOLATION == 1)
+#if (Pism_USE_YAC == 1)
   {
     std::string source_projection = mapping_info_from_file(
         input_file, variable_name, target_grid.ctx()->unit_system())["proj_params"];

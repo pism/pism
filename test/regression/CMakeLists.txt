@@ -104,7 +104,7 @@ if (Pism_USE_PROJ)
   pism_test (epsg_code_processing test_epsg_processing.py)
 endif()
 
-if (Pism_USE_YAC_INTERPOLATION)
+if (Pism_USE_YAC)
   pism_test (regridding:yac:inverted_y interpolation_inverted_y.sh)
 endif()
 

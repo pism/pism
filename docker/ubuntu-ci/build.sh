@@ -56,6 +56,6 @@ ${CMAKE_PREFIX}/bin/cmake -S ${source_dir} \
                -DPism_USE_PARALLEL_NETCDF4=YES \
                -DPism_USE_PNETCDF=YES \
                -DPism_USE_PROJ=YES \
-               -DPism_USE_YAC_INTERPOLATION=YES
+               -DPism_USE_YAC=YES
 
 make --no-print-directory -C ${build_dir} -j ${N} ${target}

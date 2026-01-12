@@ -159,7 +159,7 @@ macro(pism_find_prerequisites)
     pism_find_library(PROJ "proj>=6.0")
   endif()
 
-  if (Pism_USE_YAC_INTERPOLATION)
+  if (Pism_USE_YAC)
     if (NOT Pism_USE_PROJ)
       message(FATAL_ERROR "Please build PISM with PROJ to use YAC for interpolation")
     endif()

@@ -44,7 +44,7 @@
 #include "pism/util/Proj.hh"
 #include "pism/util/LonLatGrid.hh"
 
-#if (Pism_USE_YAC_INTERPOLATION == 0)
+#if (Pism_USE_YAC == 0)
 #error "This code requires YAC"
 #endif
 
