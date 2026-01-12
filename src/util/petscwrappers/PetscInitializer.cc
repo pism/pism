@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2023, 2024 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2023, 2024, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,7 +44,18 @@ Initializer::Initializer(int argc, char **argv, const char *help) {
   const char * start_datetime = "1850-01-01T00:00:00";
   const char * end_datetime   = "1850-12-31T00:00:00";
 
-  MPI_Init(&argc, &argv);
+  // Initialize MPI only if it was not done yet
+  {
+    int flag = 0;
+    MPI_Initialized(&flag);
+
+    if (flag == 0) {
+      MPI_Init(&argc, &argv);
+      m_finalize_mpi = true;
+    } else {
+      m_finalize_mpi = false;
+    }
+  }
 
   pism_yaxt_initialize(MPI_COMM_WORLD);
   yac_cinit();
@@ -91,6 +102,10 @@ Initializer::~Initializer() {
   if (petsc_initialized == PETSC_TRUE) {
     // there is nothing we can do if this fails
     ierr = PetscFinalize(); CHKERRCONTINUE(ierr);
+  }
+
+  if (m_finalize_mpi) {
+    MPI_Finalize();
   }
 }
 
