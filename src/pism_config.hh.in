@@ -51,7 +51,7 @@ extern const char *cmake_version;
 #cmakedefine01 Pism_USE_PROJ
 
 /* Equal to 1 if PISM was built with YAC for interpolation, 0 otherwise. */
-#cmakedefine01 Pism_USE_YAC_INTERPOLATION
+#cmakedefine01 Pism_USE_YAC
 
 /* Equal to 1 if PISM was built with parallel I/O support using NetCDF-4, 0 otherwise. */
 #cmakedefine01 Pism_USE_PARALLEL_NETCDF4

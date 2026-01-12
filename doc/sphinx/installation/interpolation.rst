@@ -19,12 +19,12 @@ installed, then use the following commands to install both YAXT and YAC:
    :start-after: manual-begin
    :end-before: manual-end
 
-To build PISM with these libraries, set the CMake variable `Pism_USE_YAC_INTERPOLATION`
+To build PISM with these libraries, set the CMake variable `Pism_USE_YAC`
 and include YAC's installation prefix in `CMAKE_PREFIX_PATH`:
 
 .. code-block:: bash
 
-   cmake -DPism_USE_YAC_INTERPOLATION=YES \
+   cmake -DPism_USE_YAC=YES \
          -DCMAKE_PREFIX_PATH="$HOME/local/yac;..." \
          ...
 

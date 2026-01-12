@@ -64,7 +64,7 @@ add_library (util OBJECT
   InputInterpolation.cc
 )
 
-if(Pism_USE_YAC_INTERPOLATION)
+if(Pism_USE_YAC)
   set_source_files_properties(InputInterpolationYAC.cc
     PROPERTIES
     INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")

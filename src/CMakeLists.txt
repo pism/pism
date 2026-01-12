@@ -135,7 +135,7 @@ if (Pism_USE_EVERYTRACE)
   target_link_libraries(libpism ${EVERYTRACE_LIBRARY})
 endif()
 
-if(Pism_USE_YAC_INTERPOLATION)
+if(Pism_USE_YAC)
   target_link_libraries(libpism PkgConfig::YAC)
 endif()
 
