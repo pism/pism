@@ -22,16 +22,13 @@
 #include <cmath>
 #include <cstring>
 
-#include "pism/util/io/YacOutputWriter.hh"
-#include "pism/util/io/IO_Flags.hh"
-#include "YacOutputWriter.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/GridInfo.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/GridInfo.hh"
-#include "mpi.h"
+#include "pism/util/io/YacOutputWriter.hh"
 
 extern "C" {
 #include "yac.h"

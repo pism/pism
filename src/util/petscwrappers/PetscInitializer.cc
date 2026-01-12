@@ -27,22 +27,17 @@
 
 #if (Pism_USE_YAC == 1)
 #include "pism/util/yaxt_wrapper.h"
-#endif
 
 extern "C" {
 #include "yac.h"
 }
+#endif
 
 namespace pism {
 namespace petsc {
 
 Initializer::Initializer(int argc, char **argv, const char *help) {
 
-  PetscErrorCode ierr = 0;
-  PetscBool initialized = PETSC_FALSE;
-  int yac_comp_id;
-  const char * start_datetime = "1850-01-01T00:00:00";
-  const char * end_datetime   = "1850-12-31T00:00:00";
 
   // Initialize MPI only if it was not done yet
   {
@@ -57,6 +52,10 @@ Initializer::Initializer(int argc, char **argv, const char *help) {
     }
   }
 
+#if (Pism_USE_YAC == 1)
+  int yac_comp_id;
+  const char * start_datetime = "1850-01-01T00:00:00";
+  const char * end_datetime   = "1850-12-31T00:00:00";
   pism_yaxt_initialize(MPI_COMM_WORLD);
   yac_cinit();
   yac_cdef_calendar(YAC_YEAR_OF_365_DAYS);
@@ -64,8 +63,10 @@ Initializer::Initializer(int argc, char **argv, const char *help) {
 
   yac_cdef_comp("pism", &yac_comp_id);
   yac_cget_comp_comm(yac_comp_id, &PETSC_COMM_WORLD);
+#endif
 
-  ierr = PetscInitialized(&initialized);
+  PetscBool initialized = PETSC_FALSE;
+  PetscErrorCode ierr = PetscInitialized(&initialized);
   PISM_CHK(ierr, "PetscInitialized");
 
   if (initialized == PETSC_FALSE) {
