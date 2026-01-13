@@ -16,6 +16,8 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+import logging
+
 import netCDF4
 import yac
 import numpy as np
@@ -23,6 +25,8 @@ import json
 from mpi4py import MPI
 from enum import Enum
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class ServerActions(Enum):
     """Actions that the server can handle.
@@ -76,7 +80,6 @@ class YacWrapper:
         global_group = global_comm.Get_group()
 
         # Get the rank of the local leader in the global communicator
-        print(global_group)
         local_leader_global_rank = local_group.Translate_ranks([0], global_group)[0]
 
         # Create buffers for exchanging global ranks for local component leaders
@@ -355,47 +358,57 @@ while True:
             break
 
         case ServerActions.CREATE_FILE.value:
-            file_metadata = receive_action_metadata(yac_wrapper)
-            files[file_metadata["file_name"]] = OutputFile(file_metadata["file_name"])
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"CREATE_FILE {metadata['file_name']}")
+            files[metadata["file_name"]] = OutputFile(metadata["file_name"])
 
         case ServerActions.SET_FILE_ATTRIBUTES.value:
-            file_attributes = receive_action_metadata(yac_wrapper)
-            files[file_attributes["file_name"]].set_attributes(file_attributes["attributes"])
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"SET_FILE_ATTRIBUTES {metadata['file_name']}")
+            files[metadata["file_name"]].set_attributes(metadata["attributes"])
 
         case ServerActions.SET_FILE_DIMENSION.value:
-            file_dimension = receive_action_metadata(yac_wrapper)
-            files[file_dimension["file_name"]].set_dimension(file_dimension)
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"SET_FILE_DIMENSION {metadata['dimension_name']} in {metadata['file_name']}")
+            files[metadata["file_name"]].set_dimension(metadata)
 
         case ServerActions.START_YAC_INITIALIZATION.value:
+            logger.debug("START_YAC_INITIALIZATION")
             yac_wrapper.start_initialization()
 
         case ServerActions.FINISH_YAC_INITIALIZATION.value:
+            logger.debug("FINISH_YAC_INITIALIZATION")
             yac_wrapper.finish_initialization()
 
         case ServerActions.DEFINE_NON_SPATIAL_VARIABLE.value:
-            variable_metadata = receive_action_metadata(yac_wrapper)
-            files[variable_metadata["file_name"]].define_variable(variable_metadata)
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"DEFINE_NON_SPATIAL_VARIABLE {metadata['variable_name']} in {metadata['file_name']}")
+            files[metadata["file_name"]].define_variable(metadata)
 
         case ServerActions.DEFINE_SPATIAL_VARIABLE.value:
-            variable_metadata = receive_action_metadata(yac_wrapper)
-            files[variable_metadata["file_name"]].define_variable(variable_metadata)
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"DEFINE_SPATIAL_VARIABLE {metadata['variable_name']} in {metadata['file_name']}")
+            files[metadata["file_name"]].define_variable(metadata)
 
-            if variable_metadata["variable_name"] not in yac_wrapper.fields:
-                yac_wrapper.define_field(variable_metadata)
+            if metadata["variable_name"] not in yac_wrapper.fields:
+                yac_wrapper.define_field(metadata)
 
         case ServerActions.SEND_SPATIAL_VARIABLE.value:
-            info = receive_action_metadata(yac_wrapper)
-            files[info["file_name"]].receive_spatial_field(info["variable_name"],
-                                                           yac_wrapper)
-
-        case ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
-            info = receive_action_metadata(yac_wrapper)
-            files[info["file_name"]].receive_non_spatial_field(info["variable_name"],
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"SEND_SPATIAL_VARIABLE {metadata['variable_name']} in {metadata['file_name']}")
+            files[metadata["file_name"]].receive_spatial_field(metadata["variable_name"],
                                                                yac_wrapper)
 
+        case ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"SEND_NON_SPATIAL_VARIABLE {metadata['variable_name']} in {metadata['file_name']}")
+            files[metadata["file_name"]].receive_non_spatial_field(metadata["variable_name"],
+                                                                   yac_wrapper)
+
         case ServerActions.UPDATE_TIME_LENGTH.value:
-            file_info = receive_action_metadata(yac_wrapper)
-            files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"])
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"UPDATE_TIME_LENGTH in {metadata['file_name']}")
+            files[metadata["file_name"]].update_time_length(metadata["time_dimension_length"])
 
 # Close all the files
 for file in files.values():
