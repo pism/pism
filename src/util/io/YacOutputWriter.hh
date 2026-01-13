@@ -69,7 +69,7 @@ private:
 
   // This flag defines whether the client should also write the files written by the server
   // It might be useful for debugging purposes
-  bool m_suppress_client_file_operations = false;
+  bool m_suppress_client_file_operations = true;
   int m_grid_size;
   int m_my_rank = -1;
   int m_local_x_size;
