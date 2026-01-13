@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -131,6 +131,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   }
 
   m_output_writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  m_snapshot_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config, m_geometry);
 }
 
 double IceModel::dt() const {

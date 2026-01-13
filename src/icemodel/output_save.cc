@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -140,7 +140,7 @@ void IceModel::write_snapshot() {
       filename = m_snapshots_filename;
     }
 
-    m_snapshot_file = std::make_shared<OutputFile>(m_output_writer, filename);
+    m_snapshot_file = std::make_shared<OutputFile>(m_snapshot_writer, filename);
 
     io::define_time_dimension(*m_snapshot_file, m_time->metadata());
     define_metadata(*m_snapshot_file, WRITE_MAPPING);

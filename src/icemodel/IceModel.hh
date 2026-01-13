@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -246,6 +246,7 @@ protected:
   std::shared_ptr<Time> m_time;
 
   std::shared_ptr<OutputWriter> m_output_writer;
+  std::shared_ptr<OutputWriter> m_snapshot_writer;
   
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
