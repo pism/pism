@@ -28,7 +28,7 @@ namespace rheology {
 //! Cold case of Paterson-Budd
 class PatersonBuddCold : public PatersonBudd {
 public:
-  PatersonBuddCold(const std::string &prefix, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
+  PatersonBuddCold(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
   virtual ~PatersonBuddCold() = default;
 
   //! Return the temperature T corresponding to a given value A=A(T).

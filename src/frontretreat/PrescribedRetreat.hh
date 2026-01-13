@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2022, 2023 PISM Authors
+/* Copyright (C) 2019, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -45,6 +45,7 @@ public:
   void init();
 
   void update(double t, double dt,
+              const array::CellType1 &cell_type,
               array::Scalar &ice_thickness,
               array::Scalar &ice_area_specific_volume);
 

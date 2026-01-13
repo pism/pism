@@ -76,7 +76,7 @@ namespace rheology {
 */
 class FlowLaw {
 public:
-  FlowLaw(const std::string &prefix, const Config &config,
+  FlowLaw(double exponent, const Config &config,
           std::shared_ptr<EnthalpyConverter> EC);
   virtual ~FlowLaw() = default;
 
@@ -116,12 +116,10 @@ protected:
 protected:
   std::string m_name;
 
-  //! ice density
-  double m_rho;
+  //! ice density times acceleration due to gravity
+  double m_rho_g;
   //! Clausius-Clapeyron gradient
   double m_beta_CC_grad;
-  //! melting point temperature (for water, 273.15 K)
-  double m_melting_point_temp;
 
   std::shared_ptr<EnthalpyConverter> m_EC;
 
@@ -146,8 +144,6 @@ protected:
   //! critical temperature (cold -- warm transition)
   double m_crit_temp;
 
-  //! acceleration due to gravity
-  double m_standard_gravity;
   //! ideal gas constant
   double m_ideal_gas_constant;
   //! power law exponent

@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -49,15 +49,8 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
         vecs = self.modeldata.vecs
         config = grid.ctx().config()
 
-        writer = PISM.SynchronousOutputWriter(grid.com, config)
-        output = PISM.OutputFile(writer, filename)
-        if append:
-            output.append()
-
         for name in grid.variables().keys():
-            grid.variables().get(name).write(output)
-
-        output.close()
+            grid.variables().get(name).write(filename)
 
 
 class InvSSAPlotListener(PISM.invert.listener.PlotListener):

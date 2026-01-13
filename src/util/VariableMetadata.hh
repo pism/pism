@@ -24,6 +24,8 @@
 #include <string>
 #include <memory>
 
+#include "pism/util/GridInfo.hh"
+
 namespace pism {
 namespace units {
 class System;
@@ -112,10 +114,32 @@ private:
   using ConstAttribute::ConstAttribute;
 };
 
+class DimensionMetadata;
+
+class VariableAttributes {
+public:
+  //! string and boolean attributes
+  std::map<std::string, std::string> strings;
+
+  //! scalar and array attributes
+  std::map<std::string, std::vector<double> > numbers;
+
+  //! @brief The unit system to use.
+  std::shared_ptr<units::System> unit_system;
+
+  bool is_set(const std::string &name) const;
+};
+
 class VariableMetadata {
 public:
   VariableMetadata(const std::string &name, std::shared_ptr<units::System> system,
                    unsigned int ndims = 0);
+  VariableMetadata(const std::string &name,
+                   const std::vector<std::tuple<std::string, int> > &dimensions,
+                   std::shared_ptr<units::System> system);
+  VariableMetadata(std::shared_ptr<units::System> system, const std::string &name, const Grid &grid,
+                   const std::vector<double> &levels = { 0.0 });
+
   virtual ~VariableMetadata() = default;
 
   Attribute operator[](const std::string &name) {
@@ -158,8 +182,8 @@ public:
   VariableMetadata &set_string(const std::string &name, const std::string &value);
   VariableMetadata &set_units_without_validation(const std::string &value);
 
-  bool get_time_independent() const;
-  VariableMetadata &set_time_independent(bool flag);
+  bool get_time_dependent() const;
+  VariableMetadata &set_time_dependent(bool flag);
 
   io::Type get_output_type() const;
   VariableMetadata &set_output_type(io::Type type);
@@ -172,11 +196,25 @@ public:
 
   unsigned int n_spatial_dimensions() const;
 
+  /*!
+   * Spatial variables return distributed grid info. All other variables return nullptr.
+   */
+  const grid::DistributedGridInfo *grid_info() const;
+
+  const std::vector<double>& levels() const;
+
+  std::vector<DimensionMetadata> dimensions() const;
+  std::vector<std::string> dimension_names() const;
+
+  DimensionMetadata& dimension(const std::string &name);
+  const DimensionMetadata& dimension(const std::string &name) const;
+
   bool has_attribute(const std::string &name) const;
   bool has_attributes() const;
 
   const std::map<std::string, std::string> &all_strings() const;
   const std::map<std::string, std::vector<double> > &all_doubles() const;
+  const VariableAttributes &attributes() const;
 
   void report_to_stdout(const Logger &log, int verbosity_threshold) const;
   void check_range(const std::string &filename, double min, double max) const;
@@ -185,55 +223,43 @@ public:
 protected:
   unsigned int m_n_spatial_dims;
 
+  std::vector<DimensionMetadata> m_dimensions;
+
+  std::shared_ptr<grid::DistributedGridInfo> m_grid_info;
+
+  //! vertical grid levels (or similar)
+  std::vector<double> m_levels;
+
+  virtual std::vector<DimensionMetadata> dimensions_impl() const;
+
 private:
-  //! @brief The unit system to use.
-  std::shared_ptr<units::System> m_unit_system;
+  VariableAttributes m_attributes;
 
-  //! string and boolean attributes
-  std::map<std::string, std::string> m_strings;
+  std::string m_name;
 
-  //! scalar and array attributes
-  std::map<std::string, std::vector<double> > m_doubles;
-  std::string m_short_name;
-  bool m_time_independent;
-
+  bool m_time_dependent;
+  
   io::Type m_output_type;
 };
 
 class DimensionMetadata : public VariableMetadata {
 public:
   DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
-                    unsigned int length);
-  unsigned int length() const;
+                    int length, bool coordinate_variable = false);
+  int length() const;
+  bool coordinate_variable() const;
 private:
-  unsigned int m_length;
+  std::vector<DimensionMetadata> dimensions_impl() const;
+
+  int m_length;
+  bool m_coordinate_variable;
 };
 
-//! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
-class SpatialVariableMetadata : public VariableMetadata {
-public:
-  SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
-                          const Grid &grid,
-                          const std::vector<double> &levels = { 0.0 });
-  SpatialVariableMetadata(std::shared_ptr<units::System> system, const std::string &name,
-                          unsigned int Mx, double dx, unsigned int My, double dy,
-                          const std::vector<double> &levels = { 0.0 });
-  virtual ~SpatialVariableMetadata() = default;
-
-  const std::vector<double>& levels() const;
-
-  DimensionMetadata& x();
-  DimensionMetadata& y();
-  DimensionMetadata& z();
-
-  const DimensionMetadata& x() const;
-  const DimensionMetadata& y() const;
-  const DimensionMetadata& z() const;
-
-private:
-  DimensionMetadata m_x, m_y, m_z;
-  std::vector<double> m_zlevels;
-};
+// Comparison operator for VariableMetadata (we need it to store VariableMetadata in
+// sorted containers)
+inline bool operator<(const VariableMetadata &a, const VariableMetadata &b) {
+  return a.get_name() < b.get_name();
+}
 
 } // end of namespace pism
 

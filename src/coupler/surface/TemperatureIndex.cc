@@ -292,7 +292,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       // the temperature time series from the AtmosphereModel and its modifiers
@@ -484,14 +484,14 @@ const array::Scalar& TemperatureIndex::air_temp_sd() const {
   return *m_air_temp_sd;
 }
 
-void TemperatureIndex::define_model_state_impl(const OutputFile &output) const {
-  SurfaceModel::define_model_state_impl(output);
-  m_firn_depth.define(output);
-  m_snow_depth.define(output);
+std::set<VariableMetadata> TemperatureIndex::state_impl() const {
+  auto variables = array::metadata({ &m_firn_depth, &m_snow_depth });
+
+  return pism::combine(variables, SurfaceModel::state_impl());
 }
 
-void TemperatureIndex::write_model_state_impl(const OutputFile &output) const {
-  SurfaceModel::write_model_state_impl(output);
+void TemperatureIndex::write_state_impl(const OutputFile &output) const {
+  SurfaceModel::write_state_impl(output);
   m_firn_depth.write(output);
   m_snow_depth.write(output);
 }

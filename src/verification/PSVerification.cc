@@ -61,12 +61,11 @@ void Verification::init_impl(const Geometry &geometry) {
   update(geometry, time().current(), 0);
 }
 
-void Verification::define_model_state_impl(const OutputFile &output) const {
-  m_mass_flux->define(output);
-  m_temperature->define(output);
+std::set<VariableMetadata> Verification::state_impl() const {
+  return array::metadata({ m_mass_flux.get(), m_temperature.get() });
 }
 
-void Verification::write_model_state_impl(const OutputFile &output) const {
+void Verification::write_state_impl(const OutputFile &output) const {
   m_mass_flux->write(output);
   m_temperature->write(output);
 }
@@ -96,7 +95,8 @@ void Verification::update_KO() {
 void Verification::update_L() {
   double     A0, T0;
 
-  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, m_EC);
+  double n = m_config->get_number("stress_balance.sia.Glen_exponent");
+  rheology::PatersonBuddCold tgaIce(n, *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -112,7 +112,7 @@ void Verification::update_L() {
     Lsqr        = L * L;
 
   array::AccessScope list(*m_mass_flux);
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double r = grid::radius(*m_grid, i, j);
@@ -177,7 +177,8 @@ void Verification::update_ABCDH(double time) {
 
   double f = m_config->get_number("constants.ice.density") / m_config->get_number("bed_deformation.mantle_density");
 
-  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, m_EC);
+  double n = m_config->get_number("stress_balance.sia.Glen_exponent");
+  rheology::PatersonBuddCold tgaIce(n, *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -189,7 +190,7 @@ void Verification::update_ABCDH(double time) {
   array::AccessScope list(*m_mass_flux);
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double r = grid::radius(*m_grid, i, j);
@@ -228,7 +229,7 @@ void Verification::update_FG(double time) {
 
   array::AccessScope list{m_mass_flux.get(), m_temperature.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin

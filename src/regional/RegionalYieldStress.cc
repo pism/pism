@@ -43,7 +43,7 @@ static void set_no_model_yield_stress(double tauc,
 
   array::AccessScope list{&mask, &basal_yield_stress};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask(i, j) > 0.5) {
@@ -98,16 +98,14 @@ void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
   set_no_model_yield_stress(m_high_tauc, *inputs.no_model_mask, m_basal_yield_stress);
 }
 
-void RegionalYieldStress::define_model_state_impl(const OutputFile &output) const {
-  m_input->define_model_state(output);
+std::set<VariableMetadata> RegionalYieldStress::state_impl() const {
+  auto variables = array::metadata({&m_basal_yield_stress});
 
-  // define tauc (this is likely to be a no-op because m_input should have defined it by
-  // now)
-  m_basal_yield_stress.define(output);
+  return pism::combine(variables, m_input->state());
 }
 
-void RegionalYieldStress::write_model_state_impl(const OutputFile &output) const {
-  m_input->write_model_state(output);
+void RegionalYieldStress::write_state_impl(const OutputFile &output) const {
+  m_input->write_state(output);
   // Write basal yield stress that includes the modification containing high yield stress
   // in "no model" areas, overwriting the field written by m_input.
   m_basal_yield_stress.write(output);

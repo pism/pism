@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
+#include <string>
 
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/util/Config.hh"
@@ -35,53 +36,45 @@ namespace rheology {
 
 using ECPtr = std::shared_ptr<EnthalpyConverter>;
 
-FlowLaw *create_isothermal_glen(const std::string &pre, const Config &config, ECPtr EC) {
-  return new (IsothermalGlen)(pre, config, EC);
+FlowLaw *create_isothermal_glen(double exponent, const Config &config, ECPtr EC) {
+  return new (IsothermalGlen)(exponent, config, EC);
 }
 
-FlowLaw *create_pb(const std::string &pre, const Config &config, ECPtr EC) {
-  return new (PatersonBudd)(pre, config, EC);
+FlowLaw *create_pb(double exponent, const Config &config, ECPtr EC) {
+  return new (PatersonBudd)(exponent, config, EC);
 }
 
-FlowLaw *create_gpbld(const std::string &pre, const Config &config, ECPtr EC) {
-  return new (GPBLD)(pre, config, EC);
+FlowLaw *create_gpbld(double exponent, const Config &config, ECPtr EC) {
+  return new (GPBLD)(exponent, config, EC);
 }
 
-FlowLaw *create_hooke(const std::string &pre, const Config &config, ECPtr EC) {
-  return new (Hooke)(pre, config, EC);
+FlowLaw *create_hooke(double exponent, const Config &config, ECPtr EC) {
+  return new (Hooke)(exponent, config, EC);
 }
 
-FlowLaw *create_arr(const std::string &pre, const Config &config, ECPtr EC) {
-  return new (PatersonBuddCold)(pre, config, EC);
+FlowLaw *create_arr(double exponent, const Config &config, ECPtr EC) {
+  return new (PatersonBuddCold)(exponent, config, EC);
 }
 
-FlowLaw *create_arrwarm(const std::string &pre, const Config &config, ECPtr EC) {
-  return new (PatersonBuddWarm)(pre, config, EC);
+FlowLaw *create_arrwarm(double exponent, const Config &config, ECPtr EC) {
+  return new (PatersonBuddWarm)(exponent, config, EC);
 }
 
-FlowLaw *create_goldsby_kohlstedt(const std::string &pre, const Config &config, ECPtr EC) {
-  return new (GoldsbyKohlstedt)(pre, config, EC);
+FlowLaw *create_goldsby_kohlstedt(double exponent, const Config &config, ECPtr EC) {
+  return new (GoldsbyKohlstedt)(exponent, config, EC);
 }
 
-FlowLawFactory::FlowLawFactory(const std::string &prefix,
-                               std::shared_ptr<const Config> conf,
+FlowLawFactory::FlowLawFactory(std::shared_ptr<const Config> conf,
                                std::shared_ptr<EnthalpyConverter> EC)
   : m_config(conf), m_EC(EC) {
 
-  m_prefix = prefix;
-
-  assert(not prefix.empty());
-
-  m_flow_laws.clear();
-  add(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen);
-  add(ICE_PB, &create_pb);
-  add(ICE_GPBLD, &create_gpbld);
-  add(ICE_HOOKE, &create_hooke);
-  add(ICE_ARR, &create_arr);
-  add(ICE_ARRWARM, &create_arrwarm);
-  add(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt);
-
-  set_default(m_config->get_string(prefix + "flow_law"));
+  m_flow_laws = { { ICE_ISOTHERMAL_GLEN, create_isothermal_glen },
+                  { ICE_PB, create_pb },
+                  { ICE_GPBLD, create_gpbld },
+                  { ICE_HOOKE, create_hooke },
+                  { ICE_ARR, create_arr },
+                  { ICE_ARRWARM, create_arrwarm },
+                  { ICE_GOLDSBY_KOHLSTEDT, create_goldsby_kohlstedt } };
 }
 
 void FlowLawFactory::add(const std::string &name, FlowLawCreator icreate) {
@@ -92,27 +85,17 @@ void FlowLawFactory::remove(const std::string &name) {
   m_flow_laws.erase(name);
 }
 
-void FlowLawFactory::set_default(const std::string &type) {
-  if (m_flow_laws[type] == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Selected ice flow law \"%s\" is not available"
-                                  " (prefix=\"%s\").",
-                                  type.c_str(), m_prefix.c_str());
-  }
-
-  m_type_name = type;
-}
-
-std::shared_ptr<FlowLaw> FlowLawFactory::create() {
+std::shared_ptr<FlowLaw> FlowLawFactory::create(const std::string &type_name, double exponent) {
   // find the function that can create selected flow law:
-  auto r = m_flow_laws[m_type_name];
-  if (r == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Selected ice flow law \"%s\" is not available,\n"
-                                  "but we shouldn't be able to get here anyway",
-                                  m_type_name.c_str());
+  if (m_flow_laws[type_name] == nullptr) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "Selected ice flow law \"%s\" is not available", type_name.c_str());
   }
+
+  auto r = m_flow_laws[type_name];
 
   // create an FlowLaw instance:
-  return std::shared_ptr<FlowLaw>((*r)(m_prefix, *m_config, m_EC));
+  return std::shared_ptr<FlowLaw>((*r)(exponent, *m_config, m_EC));
 }
 
 } // end of namespace rheology

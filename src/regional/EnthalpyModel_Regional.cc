@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -81,7 +81,7 @@ void EnthalpyModel_Regional::update_impl(double t, double dt,
   array::AccessScope list{&no_model_mask, &m_work, &m_ice_enthalpy,
       &m_basal_melt_rate, &m_basal_melt_rate_stored};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (no_model_mask(i, j) > 0.5) {

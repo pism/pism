@@ -173,24 +173,21 @@ void Pico::init_impl(const Geometry &geometry) {
                                         *m_water_column_pressure);
 }
 
-void Pico::define_model_state_impl(const OutputFile &output) const {
+std::set<VariableMetadata> Pico::state_impl() const {
+  auto variables =
+      array::metadata({ &m_geometry.basin_mask(), &m_Soc_box0, &m_Toc_box0, &m_overturning });
 
-  m_geometry.basin_mask().define(output);
-  m_Soc_box0.define(output);
-  m_Toc_box0.define(output);
-  m_overturning.define(output);
-
-  OceanModel::define_model_state_impl(output);
+  return pism::combine(variables, OceanModel::state_impl());
 }
 
-void Pico::write_model_state_impl(const OutputFile &output) const {
+void Pico::write_state_impl(const OutputFile &output) const {
 
   m_geometry.basin_mask().write(output);
   m_Soc_box0.write(output);
   m_Toc_box0.write(output);
   m_overturning.write(output);
 
-  OceanModel::write_model_state_impl(output);
+  OceanModel::write_state_impl(output);
 }
 
 /*!
@@ -209,7 +206,7 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
 
   array::AccessScope list{&cell_type, &basal_melt_rate};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
 
     const int i = p.i(), j = p.j();
 
@@ -398,7 +395,7 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
   // compute the sum for each basin for region that intersects with the continental shelf
   // area and is not covered by an ice shelf. (continental shelf mask excludes ice shelf
   // areas)
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (continental_shelf_mask.as_int(i, j) == 2) {
@@ -483,7 +480,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins
   {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
       int s = shelf_mask.as_int(i, j);
       int b = basin_mask.as_int(i, j);
@@ -530,7 +527,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
   // now set potential temperature and salinity box 0:
 
   int low_temperature_counter = 0;
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     // make sure all temperatures are zero at the beginning of each time step
@@ -601,7 +598,7 @@ void Pico::beckmann_goosse(const PicoPhysics &physics,
   array::AccessScope list{ &ice_thickness, &cell_type, &shelf_mask,      &Toc_box0,          &Soc_box0,
                                 &Toc,           &Soc,       &basal_melt_rate, &basal_temperature };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.floating_ice(i, j)) {
@@ -651,7 +648,7 @@ void Pico::process_box1(const PicoPhysics &physics,
 
   // basal melt rate, ambient temperature and salinity and overturning calculation
   // for each box1 grid cell.
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     int shelf_id = shelf_mask.as_int(i, j);
@@ -737,7 +734,7 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
 
     int n_beckmann_goosse_cells = 0;
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       int shelf_id = shelf_mask.as_int(i, j);
@@ -828,7 +825,7 @@ void Pico::compute_box_average(int box_id,
   std::vector<int> n_cells(m_n_shelves);
   {
     std::vector<int> n_cells_per_box(m_n_shelves, 0);
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       int shelf_id = shelf_mask.as_int(i, j);
@@ -872,7 +869,7 @@ void Pico::compute_box_area(int box_id,
 
   auto cell_area = m_grid->cell_area();
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     int shelf_id = shelf_mask.as_int(i, j);

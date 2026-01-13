@@ -72,34 +72,6 @@
 
 namespace pism {
 
-//! Initialize time from an input file or command-line options.
-void IceModel::time_setup() {
-
-  bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
-
-  if (use_calendar) {
-    m_log->message(2,
-                   "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
-                   m_time->date(m_time->start()).c_str(),
-                   m_time->date(m_time->end()).c_str(),
-                   m_time->run_length().c_str(),
-                   m_time->calendar().c_str());
-  } else {
-    std::string time_units = m_config->get_string("output.runtime.time_unit_name");
-
-    double
-      start  = m_time->convert_time_interval(m_time->start(), time_units),
-      end    = m_time->convert_time_interval(m_time->end(), time_units),
-      length = end - start;
-
-    m_log->message(2,
-                   "* Run time: [%f %s, %f %s]  (%f %s)\n",
-                   start, time_units.c_str(),
-                   end, time_units.c_str(),
-                   length, time_units.c_str());
-  }
-}
-
 //! Sets the starting values of model state variables.
 /*!
   There are two cases:
@@ -121,17 +93,16 @@ void IceModel::time_setup() {
   Also, please avoid operations that would make it unsafe to call this more
   than once (memory allocation is one example).
  */
-void IceModel::model_state_setup() {
+void IceModel::model_state_setup(InputOptions input_options) {
 
-  // Check if we are initializing from a PISM output file:
-  InputOptions input = process_input_options(m_ctx->com(), m_config);
-
-  const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
+  const bool use_input_file =
+      input_options.type == INIT_BOOTSTRAP or input_options.type == INIT_RESTART;
 
   std::unique_ptr<File> input_file;
 
   if (use_input_file) {
-    input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
+    input_file.reset(
+        new File(m_grid->com, input_options.filename, io::PISM_GUESS, io::PISM_READONLY));
   }
 
   // Compute latitudes and longitudes *before* they might be needed.
@@ -144,9 +115,9 @@ void IceModel::model_state_setup() {
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
   {
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART:
-      restart_2d(*input_file, input.record);
+      restart_2d(*input_file, input_options.record);
       break;
     case INIT_BOOTSTRAP:
       bootstrap_2d(*input_file);
@@ -163,7 +134,7 @@ void IceModel::model_state_setup() {
 
   // Initialize a bed deformation model.
   if (m_beddef) {
-    m_beddef->init(input, m_geometry.ice_thickness, m_sea_level->elevation());
+    m_beddef->init(input_options, m_geometry.ice_thickness, m_sea_level->elevation());
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
   }
@@ -187,9 +158,9 @@ void IceModel::model_state_setup() {
 
   if (m_subglacial_hydrology) {
 
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART:
-      m_subglacial_hydrology->restart(*input_file, input.record);
+      m_subglacial_hydrology->restart(*input_file, input_options.record);
       break;
     case INIT_BOOTSTRAP:
       m_subglacial_hydrology->bootstrap(*input_file, m_geometry.ice_thickness);
@@ -212,9 +183,9 @@ void IceModel::model_state_setup() {
   if (m_basal_yield_stress_model) {
     auto inputs = yield_stress_inputs();
 
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART:
-      m_basal_yield_stress_model->restart(*input_file, input.record);
+      m_basal_yield_stress_model->restart(*input_file, input_options.record);
       break;
     case INIT_BOOTSTRAP:
       m_basal_yield_stress_model->bootstrap(*input_file, inputs);
@@ -247,17 +218,17 @@ void IceModel::model_state_setup() {
   //
   // The code then delays bootstrapping of the thickness field until the first time step.
   if (m_btu != nullptr) {
-    m_btu->init(input);
+    m_btu->init(input_options);
   }
 
   if (m_age_model) {
-    m_age_model->init(input);
+    m_age_model->init(input_options);
     m_grid->variables().add(m_age_model->age());
   }
 
   if (m_isochrones) {
-    if (input.type == INIT_RESTART) {
-      m_isochrones->restart(*input_file, (int)input.record);
+    if (input_options.type == INIT_RESTART) {
+      m_isochrones->restart(*input_file, (int)input_options.record);
     } else {
       m_isochrones->bootstrap(m_geometry.ice_thickness);
     }
@@ -265,9 +236,9 @@ void IceModel::model_state_setup() {
 
   // Initialize the energy balance sub-model.
   {
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART: {
-      m_energy_model->restart(*input_file, input.record);
+      m_energy_model->restart(*input_file, input_options.record);
       break;
     }
     case INIT_BOOTSTRAP: {
@@ -298,7 +269,7 @@ void IceModel::model_state_setup() {
   {
     array::AccessScope list{ &m_ice_thickness_bc_mask, &m_velocity_bc_mask };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_velocity_bc_mask.as_int(i, j) != 0) {
@@ -492,7 +463,7 @@ void IceModel::allocate_iceberg_remover() {
     auto model      = m_config->get_string("stress_balance.model");
     auto ssa_method = m_config->get_string("stress_balance.ssa.method");
 
-    if ((member(model, { "ssa", "ssa+sia" }) and ssa_method == "fem") or model == "blatter") {
+    if ((set_member(model, { "ssa", "ssa+sia" }) and ssa_method == "fem") or model == "blatter") {
       m_iceberg_remover = std::make_shared<calving::IcebergRemoverFEM>(m_grid);
     } else {
       m_iceberg_remover = std::make_shared<calving::IcebergRemover>(m_grid);
@@ -619,7 +590,7 @@ void IceModel::allocate_basal_yield_stress() {
   std::string model = m_config->get_string("stress_balance.model");
 
   // only these two use the yield stress (so far):
-  if (member(model, { "ssa", "ssa+sia", "blatter" })) {
+  if (set_member(model, { "ssa", "ssa+sia", "blatter" })) {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
@@ -712,18 +683,17 @@ void IceModel::allocate_couplers() {
 }
 
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
-void IceModel::misc_setup() {
+void IceModel::misc_setup(InputOptions input_options, DiagnosticReport report_type) {
 
   m_log->message(3, "Finishing initialization...\n");
-  InputOptions opts = process_input_options(m_ctx->com(), m_config);
 
-  if (not(opts.type == INIT_OTHER)) {
+  if (not(input_options.type == INIT_OTHER)) {
     // initializing from a file
-    File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
+    File file(m_grid->com, input_options.filename, io::PISM_GUESS, io::PISM_READONLY);
 
     std::string source = file.read_text_attribute("PISM_GLOBAL", "source");
 
-    if (opts.type == INIT_RESTART) {
+    if (input_options.type == INIT_RESTART) {
       // If it's missing, print a warning
       if (source.empty()) {
         m_log->message(
@@ -731,7 +701,8 @@ void IceModel::misc_setup() {
             "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
             "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
             "     ncatted -a source,global,c,c,PISM %s\n",
-            opts.filename.c_str(), opts.filename.c_str(), opts.filename.c_str());
+            input_options.filename.c_str(), input_options.filename.c_str(),
+            input_options.filename.c_str());
       } else if (source.find("PISM") == std::string::npos) {
         // If the 'source' attribute does not contain the string "PISM", then print
         // a message and stop:
@@ -739,7 +710,7 @@ void IceModel::misc_setup() {
             1,
             "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
             "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
-            opts.filename.c_str());
+            input_options.filename.c_str());
       }
     }
   }
@@ -763,26 +734,12 @@ void IceModel::misc_setup() {
     }
   }
 
-  m_output_vars = output_variables(m_config->get_string("output.size"));
-
-#if (Pism_USE_PROJ == 1)
-  {
-    std::string proj_string = m_grid->get_mapping_info().proj_string;
-    if (not proj_string.empty()) {
-      m_output_vars.insert("lon_bnds");
-      m_output_vars.insert("lat_bnds");
-    }
-  }
-#endif
-
   init_calving();
   init_frontal_melt();
   init_front_retreat();
-  init_diagnostics();
-  init_snapshots();
-  init_checkpoints();
-  init_timeseries();
-  init_extras();
+
+  // initialize outputs
+  init_outputs(input_options, report_type);
 
   // a report on whether PISM-PIK modifications of IceModel are in use
   {
@@ -800,38 +757,21 @@ void IceModel::misc_setup() {
     }
   }
 
-  // initialize diagnostics
-  {
-    // reset: this gives diagnostics a chance to capture the current state of the model at the
-    // beginning of the run
-    for (const auto &d : m_diagnostics) {
-      d.second->reset();
-    }
-
-    // read in the state (accumulators) if we are re-starting a run
-    if (opts.type == INIT_RESTART) {
-      File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
-      for (const auto &d : m_diagnostics) {
-        d.second->init(file, opts.record);
-      }
-    }
-  }
-
   if (m_surface_input_for_hydrology) {
     ForcingOptions surface_input(*m_ctx, "hydrology.surface_input");
     m_surface_input_for_hydrology->init(surface_input.filename, surface_input.periodic);
   }
 
   if (m_fracture) {
-    if (opts.type == INIT_OTHER) {
+    if (input_options.type == INIT_OTHER) {
       m_fracture->initialize();
     } else {
       // initializing from a file
-      File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
+      File file(m_grid->com, input_options.filename, io::PISM_GUESS, io::PISM_READONLY);
 
-      if (opts.type == INIT_RESTART) {
-        m_fracture->restart(file, opts.record);
-      } else if (opts.type == INIT_BOOTSTRAP) {
+      if (input_options.type == INIT_RESTART) {
+        m_fracture->restart(file, input_options.record);
+      } else if (input_options.type == INIT_BOOTSTRAP) {
         m_fracture->bootstrap(file);
       }
     }
@@ -878,7 +818,7 @@ void IceModel::init_calving() {
   std::set<std::string> methods = set_split(m_config->get_string("calving.methods"), ',');
   bool allocate_front_retreat   = false;
 
-  if (member("thickness_calving", methods)) {
+  if (set_member("thickness_calving", methods)) {
 
     if (not m_thickness_threshold_calving) {
       m_thickness_threshold_calving = std::make_shared<calving::CalvingAtThickness>(m_grid);
@@ -891,7 +831,7 @@ void IceModel::init_calving() {
   }
 
 
-  if (member("eigen_calving", methods)) {
+  if (set_member("eigen_calving", methods)) {
     allocate_front_retreat = true;
 
     if (not m_eigen_calving) {
@@ -904,7 +844,7 @@ void IceModel::init_calving() {
     m_submodels["eigen calving"] = m_eigen_calving.get();
   }
 
-  if (member("vonmises_calving", methods)) {
+  if (set_member("vonmises_calving", methods)) {
     allocate_front_retreat = true;
 
     if (not m_vonmises_calving) {
@@ -918,7 +858,7 @@ void IceModel::init_calving() {
     m_submodels["von Mises calving"] = m_vonmises_calving.get();
   }
 
-  if (member("hayhurst_calving", methods)) {
+  if (set_member("hayhurst_calving", methods)) {
     allocate_front_retreat = true;
 
     if (not m_hayhurst_calving) {
@@ -931,7 +871,7 @@ void IceModel::init_calving() {
     m_submodels["Hayhurst calving"] = m_hayhurst_calving.get();
   }
 
-  if (member("float_kill", methods)) {
+  if (set_member("float_kill", methods)) {
     if (not m_float_kill_calving) {
       m_float_kill_calving = std::make_shared<calving::FloatKill>(m_grid);
     }
@@ -985,24 +925,6 @@ void IceModel::allocate_bed_deformation() {
   m_submodels["bed deformation"] = m_beddef.get();
 }
 
-void IceModel::process_options() {
-  set_config_from_options(*m_config);
-  m_config->resolve_filenames();
-
-  // warn about some option combinations
-
-  if (m_config->get_number("time_stepping.maximum_time_step") <= 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "time_stepping.maximum_time_step has to be greater than 0.");
-  }
-
-  if (not m_config->get_flag("geometry.update.enabled") &&
-      m_config->get_flag("time_stepping.skip.enabled")) {
-    m_log->message(2,
-               "PISM WARNING: Both -skip and -no_mass are set.\n"
-               "              -skip only makes sense in runs updating ice geometry.\n");
-  }
-}
-
 //! Assembles a list of diagnostics corresponding to an output file size.
 std::set<std::string> IceModel::output_variables(const std::string &keyword) {
 
@@ -1027,7 +949,7 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
 
 void IceModel::compute_lat_lon() {
 
-  std::string projection = m_grid->get_mapping_info().proj_string;
+  std::string projection = m_grid->get_mapping_info()["proj_params"];
 
   const char *compute_lon_lat = "grid.recompute_longitude_and_latitude";
 

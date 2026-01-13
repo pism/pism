@@ -64,8 +64,9 @@ protected:
   virtual void init_impl(const Geometry &geometry) = 0;
   virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
 
-  virtual void define_model_state_impl(const OutputFile &output) const;
-  virtual void write_model_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
+
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 

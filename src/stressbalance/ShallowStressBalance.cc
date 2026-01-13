@@ -123,9 +123,10 @@ DiagnosticList ShallowStressBalance::diagnostics_impl() const {
 ZeroSliding::ZeroSliding(std::shared_ptr<const Grid> g)
   : ShallowStressBalance(g) {
 
+  rheology::FlowLawFactory ice_factory(m_config, m_EC);
   // Use the SIA flow law.
-  rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
-  m_flow_law = ice_factory.create();
+  m_flow_law = ice_factory.create(m_config->get_string("stress_balance.sia.flow_law"),
+                                  m_config->get_number("stress_balance.sia.Glen_exponent"));
 }
 
 //! \brief Update the trivial shallow stress balance object.
@@ -154,7 +155,7 @@ void ShallowStressBalance::compute_basal_frictional_heating(const array::Vector 
 
   array::AccessScope list{&V, &result, &tauc, &mask};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ocean(i,j)) {
@@ -201,7 +202,7 @@ std::shared_ptr<array::Array> SSB_taud::compute_impl() const {
 
   array::AccessScope list{ surface, thickness, result.get() };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double pressure = ice_density * standard_gravity * (*thickness)(i, j);
@@ -258,7 +259,7 @@ std::shared_ptr<array::Array> SSB_taub::compute_impl() const {
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
   array::AccessScope list{ tauc, &velocity, &mask, result.get() };
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded_ice(i, j)) {
@@ -338,7 +339,7 @@ std::shared_ptr<array::Array> SSB_beta::compute_impl() const {
   const array::Vector &velocity = model->velocity();
 
   array::AccessScope list{tauc, &velocity, result.get()};
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);

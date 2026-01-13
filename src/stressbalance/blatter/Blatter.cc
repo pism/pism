@@ -300,20 +300,24 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
        {"units", "1"},
        {"positive", "up"}};
 
-    m_u_sigma->metadata(0).z().set_name("z_sigma").clear();
-    m_v_sigma->metadata(0).z().set_name("z_sigma").clear();
+    auto &z_u = m_u_sigma->metadata(0).dimension("z");
+    auto &z_v = m_v_sigma->metadata(0).dimension("z");
+
+    z_u.set_name("z_sigma").clear();
+    z_v.set_name("z_sigma").clear();
 
     for (const auto &z_attr : z_attrs) {
-      m_u_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);
-      m_v_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);
+      z_u.set_string(z_attr.first, z_attr.second);
+      z_v.set_string(z_attr.first, z_attr.second);
     }
 
   }
 
   {
-    rheology::FlowLawFactory ice_factory("stress_balance.blatter.", m_config, m_EC);
+    rheology::FlowLawFactory ice_factory(m_config, m_EC);
     ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
-    m_flow_law = ice_factory.create();
+    m_flow_law = ice_factory.create(m_config->get_string("stress_balance.blatter.flow_law"),
+                                    m_config->get_number("stress_balance.blatter.Glen_exponent"));
   }
 
   double g = m_config->get_number("constants.standard_gravity");
@@ -548,7 +552,7 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
   {
     array::AccessScope list{&tauc, &H, &b, &sea_level, &m_parameters};
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -600,7 +604,7 @@ void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
 
   array::AccessScope list{enthalpy, &ice_thickness};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double H = ice_thickness(i, j);
@@ -691,12 +695,11 @@ void Blatter::init_impl() {
   }
 }
 
-void Blatter::define_model_state_impl(const OutputFile &output) const {
-  m_u_sigma->define(output);
-  m_v_sigma->define(output);
+std::set<VariableMetadata> Blatter::state_impl() const {
+  return array::metadata({ m_u_sigma.get(), m_v_sigma.get() });
 }
 
-void Blatter::write_model_state_impl(const OutputFile &output) const {
+void Blatter::write_state_impl(const OutputFile &output) const {
   m_u_sigma->write(output);
   m_v_sigma->write(output);
 }
@@ -801,7 +804,7 @@ Blatter::SolutionInfo Blatter::solve() {
   ierr = PCGetType(pc, &pc_type);
   PISM_CHK(ierr, "PCGetType");
 
-  if (std::string(pc_type) == PCMG) {
+  if (pc_type != nullptr and std::string(pc_type) == PCMG) {
     KSP coarse_ksp;
     ierr = PCMGGetCoarseSolve(pc, &coarse_ksp);
     PISM_CHK(ierr, "PCMGGetCoarseSolve");
@@ -1112,7 +1115,7 @@ void Blatter::copy_solution() {
 
   array::AccessScope list{m_u_sigma.get(), m_v_sigma.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     auto *u = m_u_sigma->get_column(i, j);
@@ -1133,7 +1136,7 @@ void Blatter::get_basal_velocity(array::Vector &result) {
 
   array::AccessScope list{&result};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = x[j][i][0];      // STORAGE_ORDER
@@ -1152,7 +1155,7 @@ void Blatter::set_initial_guess(const array::Array3D &u_sigma,
 
   array::AccessScope list{&u_sigma, &v_sigma};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const auto *u = u_sigma.get_column(i, j);
@@ -1177,7 +1180,7 @@ void Blatter::compute_averaged_velocity(array::Vector &result) {
 
   array::AccessScope list{&result, &m_parameters};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double H = m_parameters(i, j).thickness;

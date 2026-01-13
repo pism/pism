@@ -98,18 +98,17 @@ class PythonOceanModel(PISM.PyOceanModel):
             traceback.print_exc()
             raise
 
-    def define_model_state(self, output):
-        "Define model state variables in the file `output`."
+    def state(self):
         try:
             # This model does not have a state but this code shows how to define the state
             # in models that do.
-            self.shelf_base_temperature.define(output, PISM.PISM_DOUBLE)
-            self.shelf_base_mass_flux.define(output, PISM.PISM_DOUBLE)
+            return PISM.VariableSet([self.shelf_base_temperature.metadata(0),
+                                     self.shelf_base_mass_flux.metadata(0)])
         except Exception:
             traceback.print_exc()
             raise
 
-    def write_model_state(self, output):
+    def write_state(self, output):
         "Write model state variables to the file `output`."
         try:
             # This model does not have a state but this code shows how to save the state
@@ -164,7 +163,7 @@ def main():
 
     model.run()
 
-    model.save_results()
+    model.write_final_output()
 
 def standalone_test():
     context = PISM.Context().ctx

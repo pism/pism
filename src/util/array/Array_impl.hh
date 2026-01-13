@@ -71,7 +71,7 @@ struct Array::Impl {
   std::string name;
 
   //! Metadata (NetCDF variable attributes)
-  std::vector<SpatialVariableMetadata> metadata;
+  std::vector<VariableMetadata> metadata;
 
   //! The computational grid
   std::shared_ptr<const Grid> grid;

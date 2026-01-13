@@ -52,7 +52,6 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/YieldStress.hh"
 #include "pism/util/ScalarForcing.hh" // for use with std::unique_ptr
-#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
@@ -111,7 +110,11 @@ class FrontRetreat;
 class PrescribedRetreat;
 class ScalarForcing;
 
+class OutputWriter;
+
 enum IceModelTerminationReason {PISM_DONE, PISM_CHEKPOINT, PISM_SIGNAL};
+
+enum DiagnosticReport {DIAG_NONE, DIAG_ALL, DIAG_SPATIAL, DIAG_SCALAR, DIAG_JSON};
 
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
 //! an ice sheet.
@@ -125,7 +128,7 @@ public:
   std::shared_ptr<Grid> grid() const;
   std::shared_ptr<Context> ctx() const;
 
-  void init();
+  void init(DiagnosticReport report_type = DIAG_NONE);
 
   /** Run PISM in the "standalone" mode. */
   IceModelTerminationReason run();
@@ -133,9 +136,9 @@ public:
   /** Advance the current PISM run to a specific time */
   IceModelTerminationReason run_to(double run_end);
 
-  virtual void save_results();
+  void list_diagnostics(DiagnosticReport report_type) const;
 
-  void list_diagnostics(const std::string &list_type) const;
+  void write_final_output();
 
   const array::Scalar &calving() const;
   const array::Scalar &frontal_melt() const;
@@ -178,56 +181,87 @@ protected:
 
   virtual YieldStressInputs yield_stress_inputs();
 
-  virtual void time_setup();
-  virtual void model_state_setup();
-  virtual void misc_setup();
-  virtual void init_diagnostics();
+  virtual void model_state_setup(InputOptions input_options);
+  virtual void misc_setup(InputOptions input_options, DiagnosticReport report_type);
   virtual void init_calving();
   virtual void init_frontal_melt();
   virtual void init_front_retreat();
-  virtual void prune_diagnostics();
-  virtual void update_diagnostics(double dt);
-  virtual void reset_diagnostics();
+  virtual void update_diagnostics(double t, double dt);
 
-  virtual void step(bool do_mass_continuity, bool do_skip);
+  virtual std::map<std::string, Diagnostic::Ptr> allocate_spatial_diagnostics();
+  virtual std::map<std::string, TSDiagnostic::Ptr> allocate_scalar_diagnostics();
+  void deallocate_unused_diagnostics();
+
+  void init_outputs(InputOptions options, DiagnosticReport report_type);
+
+  /*!
+   * Return the set of names of diagnostic quantities corresponding to a `keyword` (none,
+   * small, medium, big_2d, big).
+   */
+  virtual std::set<std::string> output_variables(const std::string &keyword);
+
+  /*!
+   * Return the set of all the diagnostic variables corresponding to the set of requested
+   * diagnostic *quantities* in `variable_names` (one quantity may map to two or more
+   * variables, e.g. velocities (2 or 3 vector components) of quantities on the staggered
+   * grid (2 grid offsets)).
+   */
+  virtual std::set<VariableMetadata>
+  diagnostic_variables(const std::set<std::string> &variable_names) const;
+
+  /*!
+   * Return the set of "state" variables, i.e. variables that describe the state of
+   * IceModel and of all its sub-models.
+   */
+  virtual std::set<VariableMetadata> state_variables() const;
+
+  /*!
+   * Return the set of "state" variables needed by the provided set of 2D and 3D
+   * diagnostic quantities.
+   */
+  std::set<VariableMetadata>
+  diagnostic_state_variables(const std::set<std::string> &variable_names) const;
+
+  /*!
+   * Return the set of "common" variables (i.e. ones written to most files): step counter,
+   * model-years-per-processor-hour, wall clock time since start, configuration
+   * parameters, grid mapping (if known).
+   */
+  std::set<VariableMetadata> common_metadata() const;
+
+  //! Name of the output file
+  std::string m_output_filename;
+
+  // Set of diagnostic quantities to put in the output file:
+  std::set<std::string> m_output_vars;
+
+  //! Set of variables that will be written to the output file
+  std::set<VariableMetadata> m_output_file_contents;
+
+  void init_final_output();
+
+  virtual double step(bool do_mass_continuity, bool do_skip);
   virtual void pre_step_hook();
   virtual void post_step_hook();
 
   void reset_counters();
 
-  // see iMbootstrap.cc
   virtual void bootstrap_2d(const File &input_file);
-
-  // see iMoptions.cc
-  virtual void process_options();
-  virtual std::set<std::string> output_variables(const std::string &keyword);
 
   virtual void compute_lat_lon();
 
-  // see iMIO.cc
   virtual void restart_2d(const File &input_file, unsigned int record);
   virtual void initialize_2d();
 
-  enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
-  virtual void define_variables(const OutputFile &file, OutputKind kind,
-                                const std::set<std::string> &variables) const;
+  void define_time(const OutputFile &file, bool with_bounds = false) const;
+  void define_variables(const OutputFile &file, const std::set<VariableMetadata> &variables) const;
 
-  virtual void write_variables(const OutputFile &file, OutputKind kind,
-                               const std::set<std::string> &variables, double time) const;
+  virtual void write_state(const OutputFile &file) const;
 
-  virtual void define_model_state(const OutputFile &file) const;
-  virtual void write_model_state(const OutputFile &file) const;
-  virtual void define_run_stats(const OutputFile &file) const;
   virtual void write_run_stats(const OutputFile &file) const;
 
-  enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
-  virtual void define_metadata(const OutputFile &file, MappingTreatment mapping_flag) const;
-  virtual void write_metadata(const OutputFile &file) const;
-
-  virtual void define_diagnostics(const OutputFile &file,
-                                  const std::set<std::string> &variables) const;
   virtual void write_diagnostics(const OutputFile &file,
-                                 const std::set<std::string> &variables) const;
+                                 const std::set<std::string> &variable_names) const;
 
   std::string save_state_on_error(const std::string &suffix,
                                   const std::set<std::string> &additional_variables);
@@ -247,7 +281,7 @@ protected:
 
   std::shared_ptr<OutputWriter> m_output_writer;
   std::shared_ptr<OutputWriter> m_snapshot_writer;
-  
+
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
   std::string m_output_history;
@@ -314,9 +348,9 @@ protected:
   //! mass continuity time step, s
   double m_dt;
   //! time of last update for enthalpy/temperature
-  double t_TempAge;
+  double m_t_TempAge;
   //! enthalpy/temperature and age time-steps
-  double dt_TempAge;
+  double m_dt_TempAge;
 
   unsigned int m_skip_countdown;
 
@@ -340,10 +374,10 @@ protected:
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see energy.cc
-  virtual void bedrock_thermal_model_step();
-  virtual void energy_step();
+  virtual void bedrock_thermal_model_step(double t, double dt);
+  virtual void energy_step(double t, double dt);
 
-  virtual void hydrology_step();
+  virtual void hydrology_step(double t, double dt);
 
   virtual void combine_basal_melt_rate(const Geometry &geometry,
                                        const array::Scalar &shelf_base_mass_flux,
@@ -362,7 +396,7 @@ protected:
    */
   void identify_open_ocean(const array::CellType &cell_type, array::Scalar1 &result);
 
-  virtual void front_retreat_step();
+  virtual void front_retreat_step(double t, double dt);
 
   void compute_geometry_change(const array::Scalar &thickness,
                                const array::Scalar &Href,
@@ -375,12 +409,12 @@ protected:
   virtual void regrid();
 
   // see iMfractures.cc
-  virtual void update_fracture_density();
+  virtual void update_fracture_density(double dt);
 
   // see iMreport.cc
   virtual double compute_temperate_base_fraction(double ice_area);
   virtual double compute_original_ice_fraction(double ice_volume);
-  virtual void print_summary(bool tempAndAge);
+  virtual void print_summary(bool tempAndAge, double dt);
   virtual void print_summary_line(bool printPrototype, bool tempAndAge,
                                   double delta_t,
                                   double volume, double area,
@@ -421,19 +455,20 @@ protected:
   //! Requested scalar diagnostics.
   std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
 
-  // Set of variables to put in the output file:
-  std::set<std::string> m_output_vars;
-
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
   std::shared_ptr<OutputFile> m_snapshot_file;
   bool m_split_snapshots;
   std::vector<double> m_snapshot_times;
-  std::set<std::string> m_snapshot_vars;
   unsigned int m_current_snapshot;
+  //! set of diagnostics to write to snapshot files (one diagnostic may correspond to
+  //! multiple NetCDF variables)
+  std::set<std::string> m_snapshot_vars;
+  //! set of variables that will be written to snapshot files
+  std::set<VariableMetadata> m_snapshot_file_contents;
   void init_snapshots();
   void write_snapshot();
-  MaxTimestep save_max_timestep(double my_t);
+  MaxTimestep snapshots_max_timestep(double my_t);
 
   //! file to write scalar time-series to
   std::shared_ptr<OutputFile> m_ts_file;
@@ -450,6 +485,10 @@ protected:
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
+
+  //! set of variables that will be written to extra files
+  std::set<VariableMetadata> m_extra_file_contents;
+
   std::shared_ptr<OutputFile> m_extra_file;
   void init_extras();
   void write_extras();
@@ -459,6 +498,8 @@ protected:
   std::string m_checkpoint_filename;
   double m_last_checkpoint_time;
   std::set<std::string> m_checkpoint_vars;
+  //! set of variables that will be written to checkpoint files
+  std::set<VariableMetadata> m_checkpoint_file_contents;
   void init_checkpoints();
   bool write_checkpoint();
 

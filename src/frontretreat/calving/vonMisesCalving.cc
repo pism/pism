@@ -44,9 +44,9 @@ vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
 {
 
   if (m_config->get_flag("calving.vonmises_calving.use_custom_flow_law")) {
-    auto EC = grid->ctx()->enthalpy_converter();
-    rheology::FlowLawFactory factory("calving.vonmises_calving.", m_config, EC);
-    m_flow_law = factory.create();
+    rheology::FlowLawFactory factory(m_config, grid->ctx()->enthalpy_converter());
+    m_flow_law = factory.create(m_config->get_string("calving.vonmises_calving.flow_law"),
+                                m_config->get_number("calving.vonmises_calving.Glen_exponent"));
   }
 
   m_calving_rate.metadata().set_name("vonmises_calving_rate");
@@ -58,7 +58,7 @@ vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
   m_calving_threshold.metadata(0)
       .long_name("threshold used by the 'von Mises' calving method")
       .units("Pa")
-      .set_time_independent(true); // no standard name
+      .set_time_dependent(false); // no standard name
 }
 
 void vonMisesCalving::init() {
@@ -125,7 +125,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
 
   double glen_exponent = m_flow_law->exponent();
 
-  for (auto pt = m_grid->points(); pt; pt.next()) {
+  for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
 
     // Find partially filled or empty grid boxes on the icefree ocean, which

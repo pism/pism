@@ -21,7 +21,7 @@
 #include <cmath>                // std::round()
 #include <cstdlib>              // realpath()
 
-
+#include "VariableMetadata.hh"
 #include "pism/pism_config.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Config.hh"
@@ -30,6 +30,7 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/OutputWriter.hh"
 #include "pism/external/nlohmann/json.hpp"
 
 // include an implementation header so that we can allocate a NetCDFConfig instance in
@@ -82,14 +83,6 @@ void Config::read(const File &file) {
   m_impl->filename = file.name();
 }
 
-void Config::define(const OutputFile &file) const {
-  this->define_impl(file);
-}
-
-void Config::write(const OutputFile &file) const {
-  this->write_impl(file);
-}
-
 //! \brief Returns the name of the file used to initialize the database.
 std::string Config::filename() const {
   return m_impl->filename;
@@ -99,7 +92,7 @@ void Config::import_from(const Config &other) {
   auto parameters = this->keys();
 
   for (const auto &p : other.all_doubles()) {
-    if (member(p.first, parameters)) {
+    if (set_member(p.first, parameters)) {
       this->set_numbers(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -109,7 +102,7 @@ void Config::import_from(const Config &other) {
   }
 
   for (const auto &p : other.all_strings()) {
-    if (member(p.first, parameters)) {
+    if (set_member(p.first, parameters)) {
       this->set_string(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -119,7 +112,7 @@ void Config::import_from(const Config &other) {
   }
 
   for (const auto &p : other.all_flags()) {
-    if (member(p.first, parameters)) {
+    if (set_member(p.first, parameters)) {
       this->set_flag(p.first, p.second, CONFIG_USER);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -543,11 +536,11 @@ void set_flag_from_option(Config &config, const std::string &option,
   options::String opt("-" + option, doc, value ? "true" : "false", options::ALLOW_EMPTY);
 
   if (opt.is_set()) {
-    if (member(opt.value(), { "", "on", "yes", "true", "True" })) {
+    if (set_member(opt.value(), { "", "on", "yes", "true", "True" })) {
 
       value = true;
 
-    } else if (member(opt.value(), { "off", "no", "false", "False" })) {
+    } else if (set_member(opt.value(), { "off", "no", "false", "False" })) {
 
       value = false;
 
@@ -918,5 +911,48 @@ std::string Config::json() const {
   bool ensure_ascii = true;
   return json.dump(indent, indent_char, ensure_ascii);
 }
+
+int Config::max_length = 32768;
+
+void write_config(const Config &config, const std::string &variable_name, const OutputFile &file) {
+
+  std::string data = config.json();
+
+  if ((int)data.size() + 1 > Config::max_length) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "unable to save configuration parameters to a file: JSON string length exceeds %d",
+        Config::max_length);
+  }
+
+  std::vector<unsigned int> start = { 0 };
+  std::vector<unsigned int> count = { (unsigned int)data.size() + 1 };
+
+  if (not config.get_string("output.experiment_id").empty()) {
+    start.insert(start.cbegin(), 0);
+    count.insert(count.cbegin(), 1);
+  }
+  file.write_text(variable_name, start, count, data);
+}
+
+VariableMetadata config_metadata(const Config &config) {
+  VariableMetadata result("pism_config", { { "cfg", Config::max_length } }, config.unit_system());
+  result.set_output_type(io::PISM_CHAR);
+
+  for (const auto &p : config.all_doubles()) {
+    result[p.first] = p.second;
+  }
+
+  for (const auto &p : config.all_strings()) {
+    result[p.first] = p.second;
+  }
+
+  for (const auto &p : config.all_flags()) {
+    result[p.first] = p.second ? "true" : "false";
+  }
+
+  return result;
+}
+
 
 } // end of namespace pism

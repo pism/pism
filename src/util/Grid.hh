@@ -19,6 +19,7 @@
 #ifndef PISM_GRID_H
 #define PISM_GRID_H
 
+#include "VariableMetadata.hh"
 #include "io/File.hh"
 #include <cassert>
 #include <memory> // shared_ptr
@@ -38,8 +39,8 @@ class Context;
 class File;
 class InputInterpolation;
 class Logger;
-class MappingInfo;
 class Vars;
+class VariableMetadata;
 
 namespace petsc {
 class DM;
@@ -147,64 +148,80 @@ public:
   //! Name of the variable used to initialize the instance (empty if not used)
   std::string variable_name;
 private:
-  Parameters() = default;
+  Parameters();
 };
 } // namespace grid
 
 class Grid;
 
-/** Iterator class for traversing the grid, including ghost points.
- *
- * Usage:
- *
- * `for (PointsWithGhosts p(grid, stencil_width); p; p.next()) { ... }`
- */
-class PointsWithGhosts {
+class GridPoint {
 public:
-  PointsWithGhosts(const grid::DistributedGridInfo &grid, unsigned int stencil_width = 1);
-  PointsWithGhosts(const Grid &grid, unsigned int stencil_width = 1);
-
-  int i() const {
-    return m_i;
-  }
-  int j() const {
-    return m_j;
+  GridPoint() : GridPoint(0, 0, 0, 0) {
   }
 
-  void next() {
-    assert(not m_done);
+  GridPoint(int i_, int j_, int i_first, int i_last) {
+    m_i = i_;
+    m_j = j_;
+    m_i_first = i_first;
+    m_i_last = i_last;
+  }
+
+  inline GridPoint &operator++() {
     m_i += 1;
     if (m_i > m_i_last) {
       m_i = m_i_first;        // wrap around
       m_j += 1;
     }
-    if (m_j > m_j_last) {
-      m_j = m_j_first;        // ensure that indexes are valid
-      m_done = true;
-    }
+
+    return *this;
   }
 
-  operator bool() const {
-    return not m_done;
+  inline GridPoint& operator*() {
+    return *this;
   }
+
+  inline bool operator!=(GridPoint &other) const {
+    return (m_j != other.m_j) or (m_i != other.m_i);
+  }
+
+  inline int i() const {
+    return m_i;
+  }
+
+  inline int j() const {
+    return m_j;
+  }
+
 private:
   int m_i, m_j;
-  int m_i_first, m_i_last, m_j_first, m_j_last;
-  bool m_done;
+  int m_i_first;
+  int m_i_last;
 };
 
-/** Iterator class for traversing the grid (without ghost points).
+/** Iterator class for traversing the grid, including ghost points.
  *
  * Usage:
  *
- * `for (Points p(grid); p; p.next()) { int i = p.i(), j = p.j(); ... }`
+ * `for (auto p : grid.points()) { ... }`
  */
-class Points : public PointsWithGhosts {
+class GridPoints {
 public:
-  Points(const grid::DistributedGridInfo &g) : PointsWithGhosts(g, 0) {}
-  Points(const Grid &g) : PointsWithGhosts(g, 0) {}
-};
+  GridPoints(const Grid &grid, unsigned int stencil_width = 0);
 
+  GridPoints(std::shared_ptr<const Grid> grid, unsigned int stencil_width = 0);
+
+  GridPoints(const grid::DistributedGridInfo &grid, unsigned int stencil_width = 0);
+
+  GridPoint &begin() {
+    return m_begin;
+  }
+  GridPoint &end() {
+    return m_end;
+  }
+private:
+  GridPoint m_begin;
+  GridPoint m_end;
+};
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
@@ -335,8 +352,8 @@ public:
   double x0() const;
   double y0() const;
 
-  const MappingInfo& get_mapping_info() const;
-  void set_mapping_info(const MappingInfo &info);
+  const VariableMetadata& get_mapping_info() const;
+  void set_mapping_info(const VariableMetadata &info);
 
   double dz_min() const;
   double dz_max() const;
@@ -352,7 +369,11 @@ public:
   Vars& variables();
   const Vars& variables() const;
 
-  PointsWithGhosts points(unsigned int stencil_width = 0) const {
+  GridPoints points() const {
+    return {*this, 0};
+  }
+
+  GridPoints points_with_ghosts(unsigned int stencil_width) const {
     return {*this, stencil_width};
   }
 

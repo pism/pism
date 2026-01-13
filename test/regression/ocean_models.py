@@ -38,17 +38,19 @@ def water_column_pressure(ice_thickness):
     return 0.5 * water_density * g * water_depth**2 / ice_thickness
 
 def create_given_input_file(filename, grid, temperature, mass_flux):
-    PISM.util.prepare_output(filename)
+    output = PISM.util.prepare_output(filename)
 
     T = PISM.Scalar(grid, "shelfbtemp")
     T.metadata(0).long_name("shelf base temperature").units("kelvin")
     T.set(temperature)
-    T.write(filename)
+    output.define_variable(T.metadata())
+    T.write(output)
 
     M = PISM.Scalar(grid, "shelfbmassflux")
     M.metadata(0).long_name("shelf base mass flux").units("kg m^-2 s^-1")
     M.set(mass_flux)
-    M.write(filename)
+    output.define_variable(M.metadata())
+    M.write(output)
 
 def check_model(model, T, SMB, water_column_pressure):
     "Check values returned by an ocean model"
@@ -201,19 +203,20 @@ class GivenTHTest(TestCase):
         self.geometry.ensure_consistency(0.0)
 
         self.filename = tmp_name("ocean_given_th_input")
-        filename = self.filename
 
-        PISM.util.prepare_output(filename)
+        output = PISM.util.prepare_output(self.filename)
 
         Th = PISM.Scalar(self.grid, "theta_ocean")
         Th.metadata(0).long_name("potential temperature").units("kelvin")
         Th.set(potential_temperature)
-        Th.write(filename)
+        output.define_variable(Th.metadata())
+        Th.write(output)
 
         S = PISM.Scalar(self.grid, "salinity_ocean")
         S.metadata(0).long_name("ocean salinity").units("g/kg")
         S.set(salinity)
-        S.write(filename)
+        output.define_variable(S.metadata())
+        S.write(output)
 
         config.set_string("ocean.th.file", self.filename)
 
@@ -260,7 +263,8 @@ class DeltaT(TestCase):
         check_modifier(self.model, modifier, self.dT, 0.0, 0.0)
 
     def tearDown(self):
-        os.remove(self.filename)
+        pass
+        # os.remove(self.filename)
 
 class DeltaSMB(TestCase):
     def setUp(self):

@@ -125,7 +125,7 @@ protected:
     array::AccessScope list(*result);
     ParallelSection loop(m_grid->com);
     try {
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         model->temp_time_series(i, j, temperature);
@@ -222,15 +222,16 @@ TSDiagnosticList AtmosphereModel::ts_diagnostics_impl() const {
   return {};
 }
 
-void AtmosphereModel::define_model_state_impl(const OutputFile &output) const {
+std::set<VariableMetadata> AtmosphereModel::state_impl() const {
   if (m_input_model) {
-    m_input_model->define_model_state(output);
+    return m_input_model->state();
   }
+  return {};
 }
 
-void AtmosphereModel::write_model_state_impl(const OutputFile &output) const {
+void AtmosphereModel::write_state_impl(const OutputFile &output) const {
   if (m_input_model) {
-    m_input_model->write_model_state(output);
+    m_input_model->write_state(output);
   }
 }
 

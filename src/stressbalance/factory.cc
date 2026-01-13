@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2020, 2021, 2023, 2024 PISM Authors
+/* Copyright (C) 2017, 2018, 2020, 2021, 2023, 2024, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -54,13 +54,13 @@ std::shared_ptr<StressBalance> create(const std::string &model,
 
   auto ssa_method = config->get_string("stress_balance.ssa.method");
   std::shared_ptr<ShallowStressBalance> sliding;
-  if (member(model, {"none", "sia"})) {
+  if (set_member(model, {"none", "sia"})) {
     sliding = std::make_shared<ZeroSliding>(grid);
-  } else if (member(model, {"prescribed_sliding", "prescribed_sliding+sia"})) {
+  } else if (set_member(model, {"prescribed_sliding", "prescribed_sliding+sia"})) {
     sliding = std::make_shared<PrescribedSliding>(grid);
-  } else if (member(model, {"weertman_sliding", "weertman_sliding+sia"})) {
+  } else if (set_member(model, {"weertman_sliding", "weertman_sliding+sia"})) {
     sliding = std::make_shared<WeertmanSliding>(grid);
-  } else if (member(model, {"ssa", "ssa+sia"})) {
+  } else if (set_member(model, {"ssa", "ssa+sia"})) {
     if (ssa_method == "fd") {
       sliding = std::make_shared<SSAFD>(grid, regional);
     } else if (ssa_method == "fd_snes") {
@@ -74,9 +74,9 @@ std::shared_ptr<StressBalance> create(const std::string &model,
   }
 
   std::shared_ptr<SSB_Modifier> modifier;
-  if (member(model, {"none", "ssa", "prescribed_sliding", "weertman_sliding"})) {
+  if (set_member(model, {"none", "ssa", "prescribed_sliding", "weertman_sliding"})) {
     modifier = std::make_shared<ConstantInColumn>(grid);
-  } else if (member(model, {"prescribed_sliding+sia", "weertman_sliding+sia", "ssa+sia", "sia"})) {
+  } else if (set_member(model, {"prescribed_sliding+sia", "weertman_sliding+sia", "ssa+sia", "sia"})) {
     if (regional) {
       modifier = std::make_shared<SIAFD_Regional>(grid);
     } else {

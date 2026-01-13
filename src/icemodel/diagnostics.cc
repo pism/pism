@@ -95,7 +95,7 @@ protected:
 
       array::AccessScope list{ result.get(), &thickness, &area_specific_volume, &m_last_amount };
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         // m * (kg / m^3) = kg / m^2
@@ -125,7 +125,7 @@ protected:
 
     array::AccessScope list{ &m_last_amount, &thickness, &area_specific_volume };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       // m * (kg / m^3) = kg / m^2
@@ -187,7 +187,7 @@ protected:
 
     array::AccessScope list{ &m_accumulator, &dH, &dV };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
@@ -246,7 +246,7 @@ protected:
 
     array::AccessScope list{ &m_accumulator, &SMB };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
@@ -301,7 +301,7 @@ protected:
 
     array::AccessScope list{ &m_accumulator, &BMB };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
@@ -356,7 +356,7 @@ protected:
 
     auto cell_area = m_grid->cell_area();
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
@@ -395,7 +395,7 @@ static void accumulate_changes(const IceModel *model, double factor, ChangeKind 
     scope.add(forced_retreat);
   }
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (add_calving) {
@@ -663,7 +663,7 @@ static double ice_volume(const array::Scalar &ice_thickness,
   array::AccessScope list{&ice_thickness, &ice_enthalpy};
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       double H = ice_thickness(i, j);
@@ -703,7 +703,7 @@ static double base_area(const array::Scalar &ice_thickness,
   array::AccessScope list{&ice_thickness, &ice_enthalpy};
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       double thickness = ice_thickness(i, j);
@@ -792,7 +792,7 @@ std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl() const 
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double delta_p = 0.0;
@@ -870,7 +870,7 @@ protected:
 
     array::AccessScope list{ &input, &cell_type, &m_accumulator };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_kind == GROUNDED and cell_type.grounded(i, j)) {
@@ -931,7 +931,7 @@ std::shared_ptr<array::Array> HardnessAverage::compute_impl() const {
   array::AccessScope list{ &cell_type, &ice_enthalpy, &ice_thickness, result.get() };
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double *Eij = ice_enthalpy.get_column(i, j);
@@ -965,7 +965,7 @@ Rank::Rank(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]
       .long_name("processor rank")
       .units("1")
-      .set_time_independent(true)
+      .set_time_dependent(false)
       .set_output_type(io::PISM_INT);
 }
 
@@ -976,7 +976,7 @@ std::shared_ptr<array::Array> Rank::compute_impl() const {
 
   array::AccessScope list{ result.get() };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     (*result)(p.i(), p.j()) = m_grid->rank();
   }
 
@@ -1046,7 +1046,7 @@ std::shared_ptr<array::Array> Temperature::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       Tij = result->get_column(i,j);
@@ -1085,7 +1085,7 @@ TemperaturePA::TemperaturePA(const IceModel *m)
 }
 
 std::shared_ptr<array::Array> TemperaturePA::compute_impl() const {
-  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
+  bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Array3D>(m_grid, "temp_pa", array::WITHOUT_GHOSTS, m_grid->z());
@@ -1103,7 +1103,7 @@ std::shared_ptr<array::Array> TemperaturePA::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto pt = m_grid->points(); pt; pt.next()) {
+    for (auto pt : m_grid->points()) {
       const int i = pt.i(), j = pt.j();
 
       Tij = result->get_column(i,j);
@@ -1149,7 +1149,7 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
 
 std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
 
-  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
+  bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Scalar>(m_grid, "temp_pa_base");
@@ -1164,7 +1164,7 @@ std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto pt = m_grid->points(); pt; pt.next()) {
+    for (auto pt : m_grid->points()) {
       const int i = pt.i(), j = pt.j();
 
       const auto *Enthij = enthalpy.get_column(i,j);
@@ -1218,7 +1218,7 @@ std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl() const {
 
   array::AccessScope list{&ice_thickness, result.get()};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) = std::max(ice_thickness(i,j) - 1.0, 0.0);
@@ -1226,7 +1226,7 @@ std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl() const {
 
   extract_surface(ice_enthalpy, *result, *result);  // slice at 1 m below the surface
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (ice_thickness(i,j) <= 1.0) {
@@ -1320,7 +1320,7 @@ std::shared_ptr<array::Array> TemperatureBasal::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double depth = thickness(i, j), pressure = EC->pressure(depth),
@@ -1377,7 +1377,7 @@ std::shared_ptr<array::Array> TemperatureSurface::compute_impl() const {
   double depth = 1.0, pressure = EC->pressure(depth);
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (thickness(i, j) > 1) {
@@ -1416,7 +1416,7 @@ std::shared_ptr<array::Array> LiquidFraction::compute_impl() const {
       new array::Array3D(m_grid, "liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  bool cold_mode = member(m_config->get_string("energy.model"), {"cold", "none"});
+  bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
 
   if (cold_mode) {
     result->set(0.0);
@@ -1457,7 +1457,7 @@ std::shared_ptr<array::Array> TemperateIceThickness::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.icy(i, j)) {
@@ -1525,7 +1525,7 @@ std::shared_ptr<array::Array> TemperateIceThicknessBasal::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double H = ice_thickness(i, j);
@@ -1799,7 +1799,7 @@ public:
     array::AccessScope list{ &dH, &dV };
 
     double volume_change = 0.0;
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
       // m * m^2 = m^3
       volume_change += (dH(i, j) + dV(i, j)) * cell_area;
@@ -2037,7 +2037,7 @@ public:
     array::AccessScope list{ &ice_thickness, &cell_type };
 
     double volume = 0.0;
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double H = ice_thickness(i, j);
@@ -2073,7 +2073,7 @@ public:
     array::AccessScope list{ &ice_thickness, &cell_type };
 
     double volume = 0.0;
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double H = ice_thickness(i, j);
@@ -2243,7 +2243,7 @@ double mass_change(const IceModel *model, TermType term, AreaType area) {
   }
 
   double volume_change = 0.0;
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     if ((area == BOTH) or (area == GROUNDED and cell_type.grounded(i, j)) or
@@ -2387,7 +2387,7 @@ public:
 
     array::AccessScope list{ &calving, &frontal_melt, &forced_retreat };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
       // m^2 * m = m^3
       volume_change += cell_area * (calving(i, j) + frontal_melt(i, j) + forced_retreat(i, j));
@@ -2425,7 +2425,7 @@ public:
 
     array::AccessScope list{ &calving };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
       // m^2 * m = m^3
       volume_change += cell_area * calving(i, j);
@@ -2538,9 +2538,9 @@ LatLonBounds::LatLonBounds(const IceModel *m, const std::string &var_name,
 
   // set metadata:
   m_vars = { { m_sys, m_var_name + "_bnds", *m_grid, { 0.0, 1.0, 2.0, 3.0 } } };
-  m_vars[0].z().clear().set_name("nv4");
+  m_vars[0].dimension("z").clear().set_name("nv4");
 
-  m_vars[0].set_time_independent(true);
+  m_vars[0].set_time_dependent(false);
   if (m_var_name == "lon") {
     m_vars[0].long_name("longitude bounds").units("degree_east");
     m_vars[0]["valid_range"] = { -180, 180 };
@@ -2612,7 +2612,7 @@ std::shared_ptr<array::Array> IceAreaFraction::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.icy(i, j)) {
@@ -2690,7 +2690,7 @@ std::shared_ptr<array::Array> IceAreaFractionGrounded::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
       if (cell_type.ice_free(i, j)) {
         (*result)(i, j) = 0.0;
@@ -2769,7 +2769,7 @@ std::shared_ptr<array::Array> HeightAboveFloatation::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double thickness = ice_thickness(i, j), bed = bed_topography(i, j),
@@ -2821,7 +2821,7 @@ std::shared_ptr<array::Array> IceMass::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       // count all ice, including cells which have so little they
@@ -2842,7 +2842,7 @@ std::shared_ptr<array::Array> IceMass::compute_impl() const {
   if (m_config->get_flag("geometry.part_grid.enabled")) {
     const array::Scalar &Href = model->geometry().ice_area_specific_volume;
     list.add(Href);
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (ice_thickness(i, j) <= 0.0 and Href(i, j) > 0.0) {
@@ -2878,7 +2878,7 @@ std::shared_ptr<array::Array> BedTopographySeaLevelAdjusted::compute_impl() cons
 
   array::AccessScope list{ &bed, &sea_level, result.get() };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i, j) = bed(i, j) - sea_level(i, j);
@@ -2924,7 +2924,7 @@ std::shared_ptr<array::Array> IceHardness::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
       const double *E = ice_enthalpy.get_column(i, j);
       const double H  = ice_thickness(i, j);
@@ -3004,7 +3004,7 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double *E = ice_enthalpy.get_column(i, j);
@@ -3257,53 +3257,98 @@ protected:
 
 } // end of namespace diagnostics
 
-void IceModel::init_diagnostics() {
+void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) {
+  m_diagnostics = allocate_spatial_diagnostics();
+  m_ts_diagnostics = allocate_scalar_diagnostics();
+
+  list_diagnostics(report_type);
+
+  // initialize diagnostics first: we need to know which spatial and scalar variables will
+  // be saved to determine which *state* variables for these diagnostics need to be saved
+  // to output files that can be used for re-starting.
+  init_timeseries();
+  init_extras();
+  // initialize outputs that can be used for re-starting:
+  init_snapshots();
+  init_checkpoints();
+  init_final_output();
+
+  deallocate_unused_diagnostics();
+
+  // reset: this gives diagnostics a chance to capture the current state of the model at the
+  // beginning of the run
+  for (auto &d : m_diagnostics) {
+    d.second->reset();
+  }
+
+  // read in the state (accumulators) if we are re-starting a run
+  if (options.type == INIT_RESTART) {
+    File file(m_grid->com, options.filename, io::PISM_GUESS, io::PISM_READONLY);
+    for (const auto &d : m_diagnostics) {
+      d.second->init(file, options.record);
+    }
+  }
+
+  // Tell the output writer about all the variables we may need to write:
+  {
+    std::set<VariableMetadata> all_variables;
+    all_variables = pism::combine(all_variables, m_output_file_contents);
+    all_variables = pism::combine(all_variables, m_snapshot_file_contents);
+    all_variables = pism::combine(all_variables, m_extra_file_contents);
+    all_variables = pism::combine(all_variables, m_checkpoint_file_contents);
+
+    m_output_writer->initialize(all_variables);
+  }
+}
+
+std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() {
+  std::map<std::string, Diagnostic::Ptr> result;
 
   using namespace diagnostics;
 
-  using d = Diagnostic;
-  using f = Diagnostic::Ptr;    // "f" for "field"
-  m_diagnostics = {
+  using d       = Diagnostic;
+  using f       = Diagnostic::Ptr; // "f" for "field"
+  result = {
     // geometry
-    {"cell_grounded_fraction",              d::wrap(m_geometry.cell_grounded_fraction)},
-    {"height_above_flotation",              f(new HeightAboveFloatation(this))},
-    {"ice_area_specific_volume",            d::wrap(m_geometry.ice_area_specific_volume)},
-    {"ice_mass",                            f(new IceMass(this))},
-    {"lat",                                 d::wrap(m_geometry.latitude)},
-    {"lon",                                 d::wrap(m_geometry.longitude)},
-    {"mask",                                d::wrap(m_geometry.cell_type)},
-    {"thk",                                 f(new IceThickness(this))},
-    {"topg_sl_adjusted",                    f(new BedTopographySeaLevelAdjusted(this))},
-    {"usurf",                               f(new IceSurfaceElevation(this))},
-    {"ice_base_elevation",                  f(new IceBottomSurfaceElevation(this))},
-    {floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this))},
-    {grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this))},
-    {land_ice_area_fraction_name,           f(new IceAreaFraction(this))},
+    { "cell_grounded_fraction", d::wrap(m_geometry.cell_grounded_fraction) },
+    { "height_above_flotation", f(new HeightAboveFloatation(this)) },
+    { "ice_area_specific_volume", d::wrap(m_geometry.ice_area_specific_volume) },
+    { "ice_mass", f(new IceMass(this)) },
+    { "lat", d::wrap(m_geometry.latitude) },
+    { "lon", d::wrap(m_geometry.longitude) },
+    { "mask", d::wrap(m_geometry.cell_type) },
+    { "thk", f(new IceThickness(this)) },
+    { "topg_sl_adjusted", f(new BedTopographySeaLevelAdjusted(this)) },
+    { "usurf", f(new IceSurfaceElevation(this)) },
+    { "ice_base_elevation", f(new IceBottomSurfaceElevation(this)) },
+    { floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this)) },
+    { grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this)) },
+    { land_ice_area_fraction_name, f(new IceAreaFraction(this)) },
 
     // temperature, enthalpy, and liquid water fraction
-    {"enthalpybase", f(new IceEnthalpyBasal(this))},
-    {"enthalpysurf", f(new IceEnthalpySurface(this))},
-    {"bedtoptemp",   d::wrap(m_bedtoptemp)},
-    {"cts",          f(new CTS(this))},
-    {"liqfrac",      f(new LiquidFraction(this))},
-    {"temp",         f(new Temperature(this))},
-    {"temp_pa",      f(new TemperaturePA(this))},
-    {"tempbase",     f(new TemperatureBasal(this, BOTH))},
-    {"temppabase",   f(new TemperaturePABasal(this))},
-    {"tempsurf",     f(new TemperatureSurface(this))},
+    { "enthalpybase", f(new IceEnthalpyBasal(this)) },
+    { "enthalpysurf", f(new IceEnthalpySurface(this)) },
+    { "bedtoptemp", d::wrap(m_bedtoptemp) },
+    { "cts", f(new CTS(this)) },
+    { "liqfrac", f(new LiquidFraction(this)) },
+    { "temp", f(new Temperature(this)) },
+    { "temp_pa", f(new TemperaturePA(this)) },
+    { "tempbase", f(new TemperatureBasal(this, BOTH)) },
+    { "temppabase", f(new TemperaturePABasal(this)) },
+    { "tempsurf", f(new TemperatureSurface(this)) },
 
     // rheology-related stuff
-    {"tempicethk",          f(new TemperateIceThickness(this))},
-    {"tempicethk_basal",    f(new TemperateIceThicknessBasal(this))},
-    {"hardav",              f(new HardnessAverage(this))},
-    {"hardness",            f(new IceHardness(this))},
-    {"effective_viscosity", f(new IceViscosity(this))},
+    { "tempicethk", f(new TemperateIceThickness(this)) },
+    { "tempicethk_basal", f(new TemperateIceThicknessBasal(this)) },
+    { "hardav", f(new HardnessAverage(this)) },
+    { "hardness", f(new IceHardness(this)) },
+    { "effective_viscosity", f(new IceViscosity(this)) },
 
     // boundary conditions
-    {"vel_bc_mask",                    d::wrap(m_velocity_bc_mask)},
-    {"vel_bc_values",                  d::wrap(m_velocity_bc_values)},
-    {"ice_margin_pressure_difference", f(new IceMarginPressureDifference(this))},
-    {"thk_bc_mask",                    d::wrap(m_ice_thickness_bc_mask)},
+    { "vel_bc_mask", d::wrap(m_velocity_bc_mask) },
+    { "vel_bc_values", d::wrap(m_velocity_bc_values) },
+    { "ice_margin_pressure_difference", f(new IceMarginPressureDifference(this)) },
+    { "thk_bc_mask", d::wrap(m_ice_thickness_bc_mask) },
 
     // balancing the books
     // tendency_of_ice_amount = (tendency_of_ice_amount_due_to_flow +
@@ -3316,15 +3361,16 @@ void IceModel::init_diagnostics() {
     // tendency_of_ice_amount_due_to_discharge = (tendency_of_ice_amount_due_to_calving +
     //                                            tendency_of_ice_amount_due_to_frontal_melt +
     //                                            tendency_of_ice_amount_due_to_forced_retreat)
-    {"tendency_of_ice_amount",                           f(new TendencyOfIceAmount(this,          AMOUNT))},
-    {"tendency_of_ice_amount_due_to_flow",               f(new TendencyOfIceAmountDueToFlow(this, AMOUNT))},
-    {"tendency_of_ice_amount_due_to_conservation_error", f(new ConservationErrorFlux(this,        AMOUNT))},
-    {"tendency_of_ice_amount_due_to_surface_mass_flux",  f(new SurfaceFlux(this,                  AMOUNT))},
-    {"tendency_of_ice_amount_due_to_basal_mass_flux",    f(new BasalFlux(this,                    AMOUNT))},
-    {"tendency_of_ice_amount_due_to_discharge",          f(new DischargeFlux(this,                AMOUNT))},
-    {"tendency_of_ice_amount_due_to_calving",            f(new CalvingFlux(this,                  AMOUNT))},
-    {"tendency_of_ice_amount_due_to_frontal_melt",       f(new FrontalMeltFlux(this,              AMOUNT))},
-    {"tendency_of_ice_amount_due_to_forced_retreat",     f(new ForcedRetreatFlux(this,            AMOUNT))},
+    { "tendency_of_ice_amount", f(new TendencyOfIceAmount(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_flow", f(new TendencyOfIceAmountDueToFlow(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_conservation_error",
+      f(new ConservationErrorFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_surface_mass_flux", f(new SurfaceFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_basal_mass_flux", f(new BasalFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_discharge", f(new DischargeFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_calving", f(new CalvingFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_frontal_melt", f(new FrontalMeltFlux(this, AMOUNT)) },
+    { "tendency_of_ice_amount_due_to_forced_retreat", f(new ForcedRetreatFlux(this, AMOUNT)) },
 
     // same, in terms of mass
     // tendency_of_ice_mass = (tendency_of_ice_mass_due_to_flow +
@@ -3337,54 +3383,68 @@ void IceModel::init_diagnostics() {
     // tendency_of_ice_mass_due_to_discharge = (tendency_of_ice_mass_due_to_calving +
     //                                          tendency_of_ice_mass_due_to_frontal_melt +
     //                                          tendency_of_ice_mass_due_to_forced_retreat)
-    {"tendency_of_ice_mass",                           f(new TendencyOfIceAmount(this,          MASS))},
-    {"tendency_of_ice_mass_due_to_flow",               f(new TendencyOfIceAmountDueToFlow(this, MASS))},
-    {"tendency_of_ice_mass_due_to_conservation_error", f(new ConservationErrorFlux(this,        MASS))},
-    {"tendency_of_ice_mass_due_to_surface_mass_flux",  f(new SurfaceFlux(this,                  MASS))},
-    {"tendency_of_ice_mass_due_to_basal_mass_flux",    f(new BasalFlux(this,                    MASS))},
-    {"tendency_of_ice_mass_due_to_discharge",          f(new DischargeFlux(this,                MASS))},
-    {"tendency_of_ice_mass_due_to_calving",            f(new CalvingFlux(this,                  MASS))},
-    {"tendency_of_ice_mass_due_to_frontal_melt",       f(new FrontalMeltFlux(this,              MASS))},
-    {"tendency_of_ice_mass_due_to_forced_retreat",     f(new ForcedRetreatFlux(this,            MASS))},
+    { "tendency_of_ice_mass", f(new TendencyOfIceAmount(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_flow", f(new TendencyOfIceAmountDueToFlow(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_conservation_error", f(new ConservationErrorFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_surface_mass_flux", f(new SurfaceFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_basal_mass_flux", f(new BasalFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_discharge", f(new DischargeFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_calving", f(new CalvingFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_frontal_melt", f(new FrontalMeltFlux(this, MASS)) },
+    { "tendency_of_ice_mass_due_to_forced_retreat", f(new ForcedRetreatFlux(this, MASS)) },
 
     // other rates and fluxes
-    {"basal_mass_flux_grounded", f(new BMBSplit(this, GROUNDED))},
-    {"basal_mass_flux_floating", f(new BMBSplit(this, SHELF))},
-    {"dHdt",                     f(new ThicknessRateOfChange(this))},
-    {"bmelt",                    d::wrap(m_basal_melt_rate)},
-    {"grounding_line_flux",      f(new GroundingLineFlux(this))},
-    {"ice_mass_transport_across_grounding_line", f(new MassTransportAcrossGroundingLine(this))},
+    { "basal_mass_flux_grounded", f(new BMBSplit(this, GROUNDED)) },
+    { "basal_mass_flux_floating", f(new BMBSplit(this, SHELF)) },
+    { "dHdt", f(new ThicknessRateOfChange(this)) },
+    { "bmelt", d::wrap(m_basal_melt_rate) },
+    { "grounding_line_flux", f(new GroundingLineFlux(this)) },
+    { "ice_mass_transport_across_grounding_line", f(new MassTransportAcrossGroundingLine(this)) },
 
     // misc
-    {"rank", f(new Rank(this))},
+    { "rank", f(new Rank(this)) },
   };
 
-#if (Pism_USE_PROJ==1)
-  std::string proj = m_grid->get_mapping_info().proj_string;
+#if (Pism_USE_PROJ == 1)
+  std::string proj = m_grid->get_mapping_info()["proj_params"];
   if (not proj.empty()) {
-    m_diagnostics["lat_bnds"] = f(new LatLonBounds(this, "lat", proj));
-    m_diagnostics["lon_bnds"] = f(new LatLonBounds(this, "lon", proj));
+    result["lat_bnds"] = f(new LatLonBounds(this, "lat", proj));
+    result["lon_bnds"] = f(new LatLonBounds(this, "lon", proj));
   }
 #endif
 
   // add ISMIP6 variable names
   if (m_config->get_flag("output.ISMIP6")) {
-    m_diagnostics["base"]        = m_diagnostics["ice_base_elevation"];
-    m_diagnostics["lithk"]       = m_diagnostics["thk"];
-    m_diagnostics["dlithkdt"]    = m_diagnostics["dHdt"];
-    m_diagnostics["orog"]        = m_diagnostics["usurf"];
-    m_diagnostics["acabf"]       = m_diagnostics["tendency_of_ice_amount_due_to_surface_mass_flux"];
-    m_diagnostics["libmassbfgr"] = m_diagnostics["basal_mass_flux_grounded"];
-    m_diagnostics["libmassbffl"] = m_diagnostics["basal_mass_flux_floating"];
-    m_diagnostics["lifmassbf"]   = m_diagnostics["tendency_of_ice_amount_due_to_discharge"];
-    m_diagnostics["licalvf"]     = m_diagnostics["tendency_of_ice_amount_due_to_calving"];
-    m_diagnostics["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
-    m_diagnostics["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
-    m_diagnostics["ligroundf"]   = m_diagnostics["grounding_line_flux"];
+    result["base"]        = result["ice_base_elevation"];
+    result["lithk"]       = result["thk"];
+    result["dlithkdt"]    = result["dHdt"];
+    result["orog"]        = result["usurf"];
+    result["acabf"]       = result["tendency_of_ice_amount_due_to_surface_mass_flux"];
+    result["libmassbfgr"] = result["basal_mass_flux_grounded"];
+    result["libmassbffl"] = result["basal_mass_flux_floating"];
+    result["lifmassbf"]   = result["tendency_of_ice_amount_due_to_discharge"];
+    result["licalvf"]     = result["tendency_of_ice_amount_due_to_calving"];
+    result["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
+    result["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
+    result["ligroundf"]   = result["grounding_line_flux"];
   }
 
+  // get diagnostics from submodels
+  for (const auto& m : m_submodels) {
+    result = pism::combine(result, m.second->diagnostics());
+  }
+
+  return result;
+}
+
+std::map<std::string, TSDiagnostic::Ptr> IceModel::allocate_scalar_diagnostics() {
+  std::map<std::string, TSDiagnostic::Ptr> result;
+
+  using namespace diagnostics;
+
   using s = TSDiagnostic::Ptr; // "s" for "scalar"
-  m_ts_diagnostics = {
+
+  result = {
     // area
     {"ice_area_glacierized",                s(new scalar::IceAreaGlacierized(this))},
     {"ice_area_glacierized_cold_base",      s(new scalar::IceAreaGlacierizedColdBase(this))},
@@ -3432,22 +3492,23 @@ void IceModel::init_diagnostics() {
 
   // add ISMIP6 variable names
   if (m_config->get_flag("output.ISMIP6")) {
-    m_ts_diagnostics["iareafl"]         = m_ts_diagnostics["ice_area_glacierized_floating"];
-    m_ts_diagnostics["iareagr"]         = m_ts_diagnostics["ice_area_glacierized_grounded"];
-    m_ts_diagnostics["lim"]             = m_ts_diagnostics["ice_mass"];
-    m_ts_diagnostics["tendacabf"]       = m_ts_diagnostics["tendency_of_ice_mass_due_to_surface_mass_flux"];
-    m_ts_diagnostics["tendlibmassbf"]   = m_ts_diagnostics["tendency_of_ice_mass_due_to_basal_mass_flux"];
-    m_ts_diagnostics["tendlibmassbffl"] = m_ts_diagnostics["basal_mass_flux_floating"];
-    m_ts_diagnostics["tendlicalvf"]     = m_ts_diagnostics["tendency_of_ice_mass_due_to_calving"];
-    m_ts_diagnostics["tendlifmassbf"]   = m_ts_diagnostics["tendency_of_ice_mass_due_to_discharge"];
-    m_ts_diagnostics["tendligroundf"]   = m_ts_diagnostics["grounding_line_flux"];
+    result["iareafl"]         = result["ice_area_glacierized_floating"];
+    result["iareagr"]         = result["ice_area_glacierized_grounded"];
+    result["lim"]             = result["ice_mass"];
+    result["tendacabf"]       = result["tendency_of_ice_mass_due_to_surface_mass_flux"];
+    result["tendlibmassbf"]   = result["tendency_of_ice_mass_due_to_basal_mass_flux"];
+    result["tendlibmassbffl"] = result["basal_mass_flux_floating"];
+    result["tendlicalvf"]     = result["tendency_of_ice_mass_due_to_calving"];
+    result["tendlifmassbf"]   = result["tendency_of_ice_mass_due_to_discharge"];
+    result["tendligroundf"]   = result["grounding_line_flux"];
   }
 
   // get diagnostics from submodels
   for (const auto& m : m_submodels) {
-    m_diagnostics = pism::combine(m_diagnostics, m.second->diagnostics());
-    m_ts_diagnostics = pism::combine(m_ts_diagnostics, m.second->ts_diagnostics());
+    result = pism::combine(result, m.second->ts_diagnostics());
   }
+
+  return result;
 }
 
 using Metadata = std::map<std::string, std::vector<VariableMetadata>>;
@@ -3553,9 +3614,9 @@ static Metadata ts_diag_metadata(const std::map<std::string,TSDiagnostic::Ptr> &
   return result;
 }
 
-void IceModel::list_diagnostics(const std::string &list_type) const {
+void IceModel::list_diagnostics(DiagnosticReport type) const {
 
-  if (list_type == "json") {
+  if (type == DIAG_JSON) {
     m_log->message(1, "{\n");
 
     m_log->message(1, "\"spatial\" :\n");
@@ -3571,14 +3632,14 @@ void IceModel::list_diagnostics(const std::string &list_type) const {
     return;
   }
 
-  if (member(list_type, {"all", "spatial"})) {
+  if (type == DIAG_ALL or type == DIAG_SPATIAL) {
     m_log->message(1, "\n");
     m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
 
     print_diagnostics(*m_log, diag_metadata(m_diagnostics));
   }
 
-  if (member(list_type, {"all", "scalar"})) {
+  if (type == DIAG_ALL or type == DIAG_SCALAR) {
     // scalar time-series
     m_log->message(1, "======== Available time-series ========\n");
 
@@ -3604,7 +3665,7 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
   array::AccessScope list{&enthalpy, &m_geometry.cell_type, &m_geometry.ice_thickness};
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.cell_type.icy(i, j)) {
@@ -3662,7 +3723,7 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
   // compute local original volume
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.cell_type.icy(i, j)) {
@@ -3695,4 +3756,137 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
   return result;
 }
 
-} // end of namespace pism
+static void warn_about_missing(const Logger &log,
+                        const std::set<std::string> &vars,
+                        const std::string &type,
+                        const std::set<std::string> &available,
+                        bool stop) {
+  std::vector<std::string> missing;
+  for (const auto &v : vars) {
+    if (available.find(v) == available.end()) {
+      missing.push_back(v);
+    }
+  }
+
+  if (not missing.empty()) {
+    size_t N = missing.size();
+    const char *ending = N > 1 ? "s" : "";
+    const char *verb   = N > 1 ? "are" : "is";
+    if (stop) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "%s variable%s %s %s not available!\n"
+                                    "Available variables:\n- %s",
+                                    type.c_str(),
+                                    ending,
+                                    join(missing, ",").c_str(),
+                                    verb,
+                                    set_join(available, ",\n- ").c_str());
+    }
+
+    log.message(2,
+                "\nWARNING: %s variable%s %s %s not available!\n\n",
+                type.c_str(),
+                ending,
+                join(missing, ",").c_str(),
+                verb);
+  }
+}
+
+/*!
+ * De-allocate diagnostics that were not requested.
+ *
+ * Checks viewers, -extra_vars, -checkpoint, -save_vars, and regular output.
+ *
+ * FIXME: I need to make sure that these reporting mechanisms are active. It is possible that
+ * variables are on a list, but that list is not actually used.
+ */
+void IceModel::deallocate_unused_diagnostics() {
+
+  // get the list of available diagnostics
+  std::set<std::string> available;
+  for (const auto &d : m_diagnostics) {
+    available.insert(d.first);
+  }
+
+  auto extra_stop = m_config->get_flag("output.extra.stop_missing");
+  warn_about_missing(*m_log, m_extra_vars, "diagnostic", available, extra_stop);
+
+  // get the list of requested diagnostics
+  auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
+  requested = combine(requested, m_output_vars);
+  requested = combine(requested, m_snapshot_vars);
+  requested = combine(requested, m_extra_vars);
+  requested = combine(requested, m_checkpoint_vars);
+
+  // de-allocate diagnostics that were not requested
+  for (const auto &v : available) {
+    if (requested.find(v) == requested.end()) {
+      m_diagnostics.erase(v);
+    }
+  }
+}
+
+/*!
+ * Update diagnostics.
+ *
+ * This usually involves accumulating data needed to computed time-averaged quantities.
+ *
+ * Call this after deallocate_unused_diagnostics() to avoid unnecessary work.
+ */
+void IceModel::update_diagnostics(double t, double dt) {
+  for (const auto &d : m_diagnostics) {
+    d.second->update(dt);
+  }
+
+  for (const auto &d : m_ts_diagnostics) {
+    d.second->update(t - dt, t);
+  }
+}
+
+//! Writes variables listed in variable_names to file.
+void IceModel::write_diagnostics(const OutputFile &file,
+                                 const std::set<std::string> &variable_names) const {
+  for (const auto &variable : variable_names) {
+    auto diag = m_diagnostics.find(variable);
+
+    if (diag != m_diagnostics.end()) {
+      diag->second->compute()->write(file);
+    }
+  }
+}
+
+std::set<VariableMetadata>
+IceModel::diagnostic_variables(const std::set<std::string> &variable_names) const {
+  std::set<VariableMetadata> result{};
+  {
+    for (const auto &var : variable_names) {
+      auto diag = m_diagnostics.find(var);
+
+      if (diag != m_diagnostics.end()) {
+        const auto &D = diag->second;
+        for (unsigned int k = 0; k < D->n_variables(); ++k) {
+          result.insert(D->metadata(k));
+        }
+      }
+    }
+  }
+  return result;
+}
+
+std::set<VariableMetadata>
+IceModel::diagnostic_state_variables(const std::set<std::string> &variable_names) const {
+  std::set<VariableMetadata> result{};
+  {
+    for (const auto &var : variable_names) {
+      auto diag = m_diagnostics.find(var);
+
+      if (diag != m_diagnostics.end()) {
+        const auto &D = diag->second;
+        result = pism::combine(result, D->state());
+      }
+    }
+  }
+  return result;
+}
+
+    } // end of namespace pism

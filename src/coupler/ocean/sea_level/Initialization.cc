@@ -70,16 +70,14 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   }
 }
 
-void InitializationHelper::define_model_state_impl(const OutputFile &output) const {
-  m_sea_level.define(output);
-
-  m_input_model->define_model_state(output);
+std::set<VariableMetadata> InitializationHelper::state_impl() const {
+  return pism::combine(m_input_model->state(), array::metadata({ &m_sea_level }));
 }
 
-void InitializationHelper::write_model_state_impl(const OutputFile &output) const {
+void InitializationHelper::write_state_impl(const OutputFile &output) const {
   m_sea_level.write(output);
 
-  m_input_model->write_model_state(output);
+  m_input_model->write_state(output);
 }
 
 const array::Scalar& InitializationHelper::sea_level_elevation_impl() const {

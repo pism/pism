@@ -315,23 +315,27 @@ void SurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-void SurfaceModel::define_model_state_impl(const OutputFile &output) const {
+std::set<VariableMetadata> SurfaceModel::state_impl() const {
+  std::set<VariableMetadata> result;
+
   if (m_atmosphere) {
-    m_atmosphere->define_model_state(output);
+    result = pism::combine(result, m_atmosphere->state());
   }
 
   if (m_input_model) {
-    m_input_model->define_model_state(output);
+    result = pism::combine(result, m_input_model->state());
   }
+
+  return result;
 }
 
-void SurfaceModel::write_model_state_impl(const OutputFile &output) const {
+void SurfaceModel::write_state_impl(const OutputFile &output) const {
   if (m_atmosphere) {
-    m_atmosphere->write_model_state(output);
+    m_atmosphere->write_state(output);
   }
 
   if (m_input_model) {
-    m_input_model->write_model_state(output);
+    m_input_model->write_state(output);
   }
 }
 
@@ -361,7 +365,7 @@ void SurfaceModel::dummy_accumulation(const array::Scalar& smb, array::Scalar& r
 
   array::AccessScope list{&result, &smb};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     result(i,j) = std::max(smb(i,j), 0.0);
   }
@@ -381,7 +385,7 @@ void SurfaceModel::dummy_runoff(const array::Scalar& smb, array::Scalar& result)
 
   array::AccessScope list{&result, &smb};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     result(i,j) = std::max(-smb(i,j), 0.0);
   }
@@ -582,7 +586,7 @@ protected:
 
       array::AccessScope list{&m_melt_mass, &melt_amount};
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
         m_melt_mass(i, j) = melt_amount(i, j) * cell_area;
       }
@@ -645,7 +649,7 @@ protected:
 
       array::AccessScope list{&m_runoff_mass, &runoff_amount};
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
         m_runoff_mass(i, j) = runoff_amount(i, j) * cell_area;
       }
@@ -706,7 +710,7 @@ protected:
 
       array::AccessScope list{&m_accumulation_mass, &accumulation_amount};
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
         m_accumulation_mass(i, j) = accumulation_amount(i, j) * cell_area;
       }
@@ -734,7 +738,7 @@ static double integrate(const array::Scalar &input) {
 
   double result = 0.0;
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     result += input(i, j) * cell_area;

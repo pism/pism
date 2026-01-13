@@ -28,8 +28,9 @@ namespace rheology {
 //! The Hooke flow law.
 class Hooke : public PatersonBudd {
 public:
-  Hooke(const std::string &prefix, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
+  Hooke(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
   virtual ~Hooke() = default;
+
 protected:
   virtual double softness_from_temp(double T_pa) const;
 

@@ -21,6 +21,7 @@
 
 #include <string>
 
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Diagnostic.hh"
 
@@ -90,10 +91,10 @@ InputOptions process_input_options(MPI_Comm com, std::shared_ptr<const Config> c
 
   \subsection pismcomponent_output Writing to an output file
 
-  A PISM component needs to implement the following I/O methods:
+  A PISM component needs to implement the following I/O-related methods:
 
-  - define_model_state_impl()
-  - write_model_state_impl()
+  - state_impl()
+  - write_state_impl()
 
   Why are all these methods needed? In PISM we separate defining and writing
   NetCDF variables because defining all the NetCDF variables before writing
@@ -129,8 +130,9 @@ public:
 
   const Profiling &profiling() const;
 
-  void define_model_state(const OutputFile &output) const;
-  void write_model_state(const OutputFile &output) const;
+  void write_state(const OutputFile &output) const;
+
+  std::set<VariableMetadata> state() const;
 
   //! Reports the maximum time-step the model can take at time t.
   MaxTimestep max_timestep(double t) const;
@@ -138,8 +140,8 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void define_model_state_impl(const OutputFile &output) const;
-  virtual void write_model_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
+  virtual void write_state_impl(const OutputFile &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;

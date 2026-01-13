@@ -62,7 +62,7 @@ static void compute_strain_heating_errors(const array::Array3D &strain_heating,
 
   ParallelSection loop(grid.com);
   try {
-    for (auto p = grid.points(); p; p.next()) {
+    for (auto p : grid.points()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -115,7 +115,7 @@ static void computeSurfaceVelocityErrors(const Grid &grid,
 
   array::AccessScope list{&ice_thickness, &u3, &v3, &w3};
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     double xx = grid.x(i), yy = grid.y(j),
@@ -157,7 +157,7 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 
   array::AccessScope list{&temperature, &enthalpy, &thickness};
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     const double *T_ij = temperature.get_column(i,j);
@@ -194,7 +194,7 @@ static void setInitStateF(Grid &grid,
 
   array::AccessScope list{&thickness, &enthalpy};
 
-  for (auto p = grid.points(); p; p.next()) {
+  for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -295,8 +295,6 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    auto output_file = config->get_string("output.file");
-
     grid::Parameters P(*config);
     P.Lx = 900e3;
     P.Ly = P.Lx;
@@ -378,24 +376,40 @@ int main(int argc, char *argv[]) {
     reportErrors(*grid, ctx->unit_system(),
                  geometry.ice_thickness, u3, v3, w3, sigma);
 
-    auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
-    // Write results to an output file:
-    OutputFile file(writer, output_file);
+    {
+      auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
+      writer->initialize({}, true);
 
-    auto time = ctx->time();
-    io::define_time_dimension(file, time->metadata());
-    file.append_time(time->current());
+      // Write results to an output file:
+      OutputFile file(writer, config->get_string("output.file"));
 
-    geometry.ice_surface_elevation.write(file);
-    geometry.ice_thickness.write(file);
-    geometry.cell_type.write(file);
-    geometry.bed_elevation.write(file);
+      const array::Array *vecs[] = {
+        &geometry.ice_surface_elevation,
+        &geometry.ice_thickness,
+        &geometry.cell_type,
+        &geometry.bed_elevation,
+        &sia->diffusivity(),
+        &u3,
+        &v3,
+        &w3,
+        &sigma,
+      };
 
-    sia->diffusivity().write(file);
-    u3.write(file);
-    v3.write(file);
-    w3.write(file);
-    sigma.write(file);
+      // define
+      auto time = ctx->time();
+      file.define_variable(time->metadata());
+      for (const auto *vec : vecs) {
+        for (auto &var : vec->all_metadata()) {
+          file.define_variable(var);
+        }
+      }
+
+      // write
+      file.append_time(time->current());
+      for (const auto *vec : vecs) {
+        vec->write(file);
+      }
+    }
   }
   catch (...) {
     handle_fatal_errors(com);

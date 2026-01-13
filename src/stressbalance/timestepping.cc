@@ -72,7 +72,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
   double u_max = 0.0, v_max = 0.0, w_max = 0.0;
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       bool is_modeled = true;
@@ -158,7 +158,7 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
   }
   
   double u_max = 0.0, v_max = 0.0;
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     bool is_modeled = true;

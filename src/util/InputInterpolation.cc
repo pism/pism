@@ -32,6 +32,7 @@
 #include "pism/util/projection.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Config.hh"
+#include <string>
 
 #if (Pism_USE_YAC == 1)
 #include "InputInterpolationYAC.hh"
@@ -41,7 +42,7 @@
 
 namespace pism {
 
-double InputInterpolation::regrid(const SpatialVariableMetadata &metadata, const pism::File &file,
+double InputInterpolation::regrid(const VariableMetadata &metadata, const pism::File &file,
                                   int record_index, const Grid &grid, petsc::Vec &output) const {
   if (record_index == -1) {
     auto nrecords =
@@ -83,7 +84,7 @@ InputInterpolation3D::InputInterpolation3D(const Grid &target_grid,
 }
 
 
-double InputInterpolation3D::regrid_impl(const SpatialVariableMetadata &metadata,
+double InputInterpolation3D::regrid_impl(const VariableMetadata &metadata,
                                          const pism::File &file,
                                          int record_index,
                                          const Grid &target_grid,
@@ -113,11 +114,10 @@ InputInterpolation::create(const Grid &target_grid,
 
 #if (Pism_USE_YAC == 1)
   {
-    auto source_projection =
-        MappingInfo::FromFile(input_file, variable_name, target_grid.ctx()->unit_system())
-            .proj_string;
+    std::string source_projection = mapping_info_from_file(
+        input_file, variable_name, target_grid.ctx()->unit_system())["proj_params"];
 
-    auto target_projection = target_grid.get_mapping_info().proj_string;
+    std::string target_projection = target_grid.get_mapping_info()["proj_params"];
 
     bool use_yac =
         (levels.size() < 2 and (not source_projection.empty()) and (not target_projection.empty()));

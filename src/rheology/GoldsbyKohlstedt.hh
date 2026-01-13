@@ -44,7 +44,7 @@ struct GKparts {
 */
 class GoldsbyKohlstedt : public FlowLaw {
 public:
-  GoldsbyKohlstedt(const std::string &prefix,
+  GoldsbyKohlstedt(double exponent,
                    const Config &config,
                    std::shared_ptr<EnthalpyConverter> EC);
 protected:
@@ -77,7 +77,7 @@ protected:
 */
 class GoldsbyKohlstedtStripped : public GoldsbyKohlstedt {
 public:
-  GoldsbyKohlstedtStripped(const std::string &prefix,
+  GoldsbyKohlstedtStripped(double exponent,
                            const Config &config, std::shared_ptr<EnthalpyConverter> EC);
 
 protected:

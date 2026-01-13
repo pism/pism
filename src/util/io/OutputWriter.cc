@@ -30,7 +30,6 @@
 #include "pism/util/GridInfo.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/OutputWriter.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
@@ -38,47 +37,57 @@ namespace pism {
 /*!
  * Pre-process variable attributes for writing.
  */
-static VariableMetadata format_attributes(const VariableMetadata &metadata) {
+static VariableAttributes format_attributes(const VariableAttributes &metadata) {
 
   // make a copy so we can edit metadata
   auto variable = metadata;
 
-  std::string units = variable["units"], output_units = variable["output_units"];
+  auto get = [&variable](const std::string &name) {
+    auto j = variable.strings.find(name);
+    if (j != variable.strings.end()) {
+      return j->second;
+    }
+
+    return std::string{};
+  };
+
+  std::string units        = get("units");
+  std::string output_units = get("output_units");
 
   // output units should never be written to a file
-  variable["output_units"] = "";
+  variable.strings["output_units"] = "";
 
   bool use_output_units =
       (not units.empty() and not output_units.empty() and units != output_units);
 
   if (use_output_units) {
     // Replace "units" with "output_units"
-    if (variable.has_attribute("units")) {
-      variable["units"] = output_units;
+    if (variable.is_set("units")) {
+      variable.strings["units"] = output_units;
     }
 
-    units::Converter c(variable.unit_system(), units, output_units);
+    units::Converter c(variable.unit_system, units, output_units);
 
     // We need to convert units of valid_min, valid_max and valid_range:
     {
-      if (variable.has_attribute("valid_range")) {
-        auto bounds = variable.get_numbers("valid_range");
+      if (variable.is_set("valid_range")) {
+        auto bounds = variable.numbers["valid_range"];
 
-        variable["valid_range"] = { c(bounds[0]), c(bounds[1]) };
+        variable.numbers["valid_range"] = { c(bounds[0]), c(bounds[1]) };
       } else {
-        if (variable.has_attribute("valid_min")) {
-          auto min              = variable.get_number("valid_min");
-          variable["valid_min"] = { c(min) };
+        if (variable.is_set("valid_min")) {
+          auto min                      = variable.numbers["valid_min"][0];
+          variable.numbers["valid_min"] = { c(min) };
         }
-        if (variable.has_attribute("valid_max")) {
-          auto max              = variable.get_number("valid_max");
-          variable["valid_max"] = { c(max) };
+        if (variable.is_set("valid_max")) {
+          auto max                      = variable.numbers["valid_max"][0];
+          variable.numbers["valid_max"] = { c(max) };
         }
       }
 
-      if (variable.has_attribute("_FillValue")) {
-        auto fill              = variable.get_number("_FillValue");
-        variable["_FillValue"] = { c(fill) };
+      if (variable.is_set("_FillValue")) {
+        auto fill                      = variable.numbers["_FillValue"][0];
+        variable.numbers["_FillValue"] = { c(fill) };
       }
     }
   }
@@ -89,10 +98,10 @@ struct OutputWriter::Impl {
   Impl(MPI_Comm comm_, const Config &config)
       : comm(comm_) {
     time_name            = config.get_string("time.dimension_name");
-    use_internal_units   = config.get_flag("output.use_MKS");
     experiment_id        = config.get_string("output.experiment_id");
     experiment_id_name   = config.get_string("output.experiment_id_dimension");
-    experiment_id_length = (int)config.get_number("output.experiment_id_max_length");
+    experiment_id_max_length = (int)config.get_number("output.experiment_id_max_length");
+    relaxed_mode = false;
 
     if (not experiment_id.empty()) {
       auto format = config.get_string("output.format");
@@ -107,14 +116,17 @@ struct OutputWriter::Impl {
 
   std::string time_name;
   MPI_Comm comm;
-  std::map<std::string, std::map<std::string, std::string> > extra_attributes;
-  bool use_internal_units;
+
   std::map<std::tuple<std::string, std::string>, bool> written_time_independent;
   std::map<std::tuple<std::string, std::string>, bool> written_time_dependent;
-  std::map<std::string, grid::DistributedGridInfo> grids;
+  std::map<std::string, VariableMetadata> variables;
   std::string experiment_id_name;
   std::string experiment_id;
-  int experiment_id_length;
+  int experiment_id_max_length;
+
+  // if true, call add_variable() in define_variable(), allowing a user to define array
+  // variables that were not declared using the call to initialize()
+  bool relaxed_mode;
 };
 
 bool &OutputWriter::already_written(const std::string &file_name,
@@ -131,15 +143,21 @@ OutputWriter::OutputWriter(MPI_Comm comm, const Config &config)
     : m_impl(new Impl(comm, config)) {
 }
 
-void OutputWriter::add_extra_attributes(const std::string &file_name,
-                                        const std::map<std::string, std::string> &attributes) {
-  for (const auto &attr : attributes) {
-    m_impl->extra_attributes[file_name][attr.first] = attr.second;
-  }
-}
-
 OutputWriter::~OutputWriter() {
   delete m_impl;
+}
+
+void OutputWriter::initialize(const std::set<VariableMetadata> &array_variables,
+                              bool relaxed_mode) {
+  m_impl->relaxed_mode = relaxed_mode;
+
+  for (const auto &variable : array_variables) {
+    if (variable.grid_info() != nullptr) {
+      add_variable(variable);
+    }
+  }
+
+  initialize_impl(array_variables);
 }
 
 MPI_Comm OutputWriter::comm() const {
@@ -150,8 +168,14 @@ const std::string &OutputWriter::time_name() const {
   return m_impl->time_name;
 }
 
-const grid::DistributedGridInfo &OutputWriter::grid_info(const std::string &variable_name) const {
-  return m_impl->grids[variable_name];
+const VariableMetadata &OutputWriter::variable_info(const std::string &variable_name) const {
+  auto i = m_impl->variables.find(variable_name);
+  if (i != m_impl->variables.end()) {
+    return i->second;
+  }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "variable '%s' was not added using add_variable()",
+                                variable_name.c_str());
 }
 
 void OutputWriter::define_dimension(const std::string &file_name, const std::string &dimension_name,
@@ -159,96 +183,78 @@ void OutputWriter::define_dimension(const std::string &file_name, const std::str
   define_dimension_impl(file_name, dimension_name, length);
 }
 
-void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &metadata,
-                                   const std::vector<std::string> &dims) {
-  define_variable_impl(file_name, format_attributes(metadata), dims);
+void OutputWriter::define_variable(const std::string &file_name, const std::string &variable_name,
+                                   const std::vector<std::string> &dims, io::Type type,
+                                   const VariableAttributes &attributes) {
+  define_variable_impl(file_name, variable_name, dims, type, format_attributes(attributes));
 }
 
-void OutputWriter::define_spatial_variable(const std::string &file_name,
-                                           const SpatialVariableMetadata &metadata,
-                                           const grid::DistributedGridInfo &grid) {
+std::vector<std::string> OutputWriter::define_dimensions(const std::string &file_name,
+                                                         const VariableMetadata &variable) {
 
-  // Make a copy of `metadata` so we can modify it:
-  auto var               = metadata;
-  const auto &name       = var.get_name();
-  const auto &extra_attributes = m_impl->extra_attributes[file_name];
-
-  if (m_impl->grids.find(name) == m_impl->grids.end()) {
-    m_impl->grids[name] = grid;
-  }
-
-  if (m_impl->use_internal_units) {
-    var.output_units(var["units"]);
-  }
-
-  // add extra attributes such as "grid_mapping" and "coordinates". Variables lat, lon,
-  // lat_bnds, and lon_bnds should not have these attributes to support CDO (see issue
-  // #384).
-  //
-  // We check names of x and y dimensions to avoid setting extra attributes for variables
-  // that use a different grid (e.g. viscous_bed_displacement written by the Lingle-Clark
-  // bed deformation model).
-  if (metadata.x().get_name() == "x" and metadata.y().get_name() == "y") {
-    if (not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
-      for (const auto &attr : extra_attributes) {
-        const auto &attr_name  = attr.first;
-        const auto &attr_value = attr.second;
-        var[attr_name]         = attr_value;
-      }
+  // define dimensions and corresponding coordinate variables
+  for (const auto &dimension : variable.dimensions()) {
+    define_dimension(file_name, dimension.get_name(), dimension.length());
+    if (dimension.coordinate_variable()) {
+      define_variable(file_name, dimension.get_name(), dimension.dimension_names(),
+                      dimension.get_output_type(), dimension.attributes());
     }
   }
 
-  std::vector<std::string> dims{};
+  // define the experiment ID dimension and its variable
+  if (not m_impl->experiment_id.empty()) {
+    const auto &exp_id = m_impl->experiment_id_name;
 
-  if (not experiment_id().empty()) {
-    define_experiment_id(file_name, metadata.unit_system());
-    // add the "experiment_id" dimension to the beginning of the list of dimensions
-    dims = { m_impl->experiment_id_name };
+    VariableMetadata id(exp_id, { { exp_id, 1 }, { "nc", m_impl->experiment_id_max_length } },
+                        variable.unit_system());
+
+    // NOTE (also FIXME because this is not great): this long name is significant: we use it
+    // to recognize the experiment ID dimension in File::dimension_type(). This is needed to
+    // compute start and count arrays correctly when re-starting from a file containing this
+    // dimension.
+    id.long_name("experiment ID");
+
+    define_dimension(file_name, exp_id, 1);
+    define_dimension(file_name, "nc", m_impl->experiment_id_max_length);
+    define_variable(file_name, exp_id, { exp_id, "nc" }, io::PISM_CHAR, id.attributes());
   }
 
-  if (not var.get_time_independent()) {
-    dims.push_back(m_impl->time_name);
-  }
-
-  // define dimensions and coordinate variables; assemble the list of dimension names:
-  //
-  // Note the order: y,x,z
-  for (const auto &dimension : { var.y(), var.x(), var.z() }) {
-
-    auto dimension_name = dimension.get_name();
-
-    if (dimension_name.empty()) {
-      // var.z().dimension_name() is empty if var is a 2D variable
-      continue;
+  // build the list of dimension names, adding the name of the time dimension (for
+  // time-dependent variables) and the experiment ID dimension (if requested)
+  auto dimensions = variable.dimension_names();
+  {
+    if (variable.get_time_dependent()) {
+      dimensions.insert(dimensions.begin(), time_name());
     }
 
-    dims.push_back(dimension_name);
-    define_dimension(file_name, dimension_name, dimension.length());
-    define_variable(file_name, dimension, { dimension_name });
+    if (not m_impl->experiment_id.empty()) {
+      dimensions.insert(dimensions.begin(), m_impl->experiment_id_name);
+    }
   }
-
-  assert(dims.size() > 1);
-
-  // define the variable itself:
-  define_variable(file_name, var, dims);
+  return dimensions;
 }
 
-void OutputWriter::define_timeseries_variable(const std::string &file_name,
-                                              const VariableMetadata &metadata) {
+void OutputWriter::define_variable(const std::string &file_name, const VariableMetadata &variable) {
 
-  std::vector<std::string> dims{};
-
-  if (not experiment_id().empty()) {
-    define_experiment_id(file_name, metadata.unit_system());
-    // add the "experiment_id" dimension to the beginning of the list of dimensions
-    dims = { m_impl->experiment_id_name };
+  if (m_impl->relaxed_mode and variable.grid_info() != nullptr) {
+    // add 2d and 3d variables in "relaxed" mode
+    add_variable(variable);
   }
 
-  dims.push_back(m_impl->time_name);
+  auto dimensions = define_dimensions(file_name, variable);
 
-  define_variable(file_name, metadata, dims);
+  // define the variable
+  define_variable(file_name, variable.get_name(), dimensions, variable.get_output_type(),
+                  variable.attributes());
 }
 
+void OutputWriter::add_variable(const VariableMetadata &metadata) {
+  const auto &name = metadata.get_name();
+
+  if (m_impl->variables.find(name) == m_impl->variables.end()) {
+    m_impl->variables.insert({ name, metadata });
+  }
+}
 
 void OutputWriter::set_global_attributes(
     const std::string &file_name, const std::map<std::string, std::string> &strings,
@@ -274,34 +280,62 @@ void OutputWriter::write_array(const std::string &file_name, const std::string &
 }
 
 void OutputWriter::write_text(const std::string &file_name, const std::string &variable_name,
-                               const std::vector<unsigned int> &start,
-                               const std::vector<unsigned int> &count,
-                              const std::string &input) {
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count, const std::string &input) {
   write_text_impl(file_name, variable_name, start, count, input);
 }
 
-void OutputWriter::write_array(const std::string &file_name, const VariableMetadata &metadata,
-                               const std::vector<unsigned int> &start,
-                               const std::vector<unsigned int> &count,
-                               const std::vector<double> &input) {
-  // create a copy of "data" to change units
-  std::vector<double> data = input;
+void OutputWriter::write_dimensions(const std::string &file_name,
+                                    const VariableMetadata &variable) {
 
-  // convert units "in place":
-  units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
-      .convert_doubles(data.data(), data.size());
+  for (const auto &dim : variable.dimensions()) {
+    auto axis_type = axis_type_from_string(dim["axis"]);
 
-  write_array_impl(file_name, metadata.get_name(), start, count, data.data());
+    const std::vector<double> *coordinates = nullptr;
+    switch (axis_type) {
+    case X_AXIS: {
+      const auto *grid = variable.grid_info();
+      if (grid != nullptr) {
+        coordinates = &grid->x;
+      }
+      break;
+    }
+    case Y_AXIS: {
+      const auto *grid = variable.grid_info();
+      if (grid != nullptr) {
+        coordinates = &grid->y;
+      }
+      break;
+    }
+    default:
+      coordinates = &variable.levels();
+    }
+
+    if (coordinates == nullptr or coordinates->empty()) {
+      // nothing to write for this dimension
+      continue;
+    }
+
+    auto dimension_name = dim.get_name();
+    if (not already_written(file_name, dimension_name, false)) {
+      write_array(file_name, dimension_name, { 0 }, { (unsigned int)coordinates->size() },
+                  *coordinates);
+      already_written(file_name, dimension_name, false) = true;
+    }
+  }
+
+  // write experiment ID
+  if (not experiment_id().empty()) {
+    write_experiment_id(file_name);
+  }
 }
 
-void OutputWriter::write_spatial_variable(const std::string &file_name,
-                                          const SpatialVariableMetadata &metadata,
+void OutputWriter::write_distributed_array(const std::string &file_name,
+                                          const std::string &variable_name,
                                           const double *input) {
-  const auto &variable_name = metadata.get_name();
-  const auto &grid          = grid_info(variable_name);
+  const auto &variable = variable_info(variable_name);
 
-  // check if we need to write this variable
-  bool time_dependent = not metadata.get_time_independent();
+  bool time_dependent = variable.get_time_dependent();
 
   // Avoid writing time-independent variables more than once (saves time when writing to
   // extra_files) and also avoid writing time-dependent variables more than once per time
@@ -310,62 +344,15 @@ void OutputWriter::write_spatial_variable(const std::string &file_name,
     return;
   }
 
-  // write dimensions:
-  {
-    std::map<std::string, const std::vector<double> &> data = { { metadata.x().get_name(), grid.x },
-                                                                { metadata.y().get_name(), grid.y },
-                                                                { metadata.z().get_name(),
-                                                                  metadata.levels() } };
-    for (const auto &p : data) {
-      const auto &dimension_name = p.first;
-      const auto &coordinates    = p.second;
+  write_dimensions(file_name, variable);
 
-      if (dimension_name.empty() or coordinates.empty()) {
-        continue;
-      }
+  write_distributed_array_impl(file_name, variable_name, input);
 
-      if (not already_written(file_name, dimension_name, false)) {
-        write_array(file_name, dimension_name, { 0 }, { (unsigned int)coordinates.size() },
-                    coordinates);
-        already_written(file_name, dimension_name, false) = true;
-      }
-    }
-  }
-
-  // write experiment ID
-  if (not experiment_id().empty()) {
-    write_experiment_id(file_name);
-  }
-
-  // make sure we have at least one level
-  unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
-
-  std::string units = metadata["units"];
-  std::string output_units = m_impl->use_internal_units ? units : metadata["output_units"];
-
-  if (units != output_units) {
-    auto data_size = grid.xm * grid.ym * n_levels;
-
-    // create a temporary array, convert to output units, and
-    // save
-    std::vector<double> tmp(data_size);
-    for (unsigned int k = 0; k < data_size; ++k) {
-      tmp[k] = input[k];
-    }
-
-    // convert units "in place"
-    units::Converter(metadata.unit_system(), units, output_units)
-        .convert_doubles(tmp.data(), tmp.size());
-
-    write_spatial_variable_impl(file_name, metadata, tmp.data());
-  } else {
-    write_spatial_variable_impl(file_name, metadata, input);
-  }
   already_written(file_name, variable_name, time_dependent) = true;
 }
 
-void OutputWriter::write_timeseries_variable(const std::string &file_name,
-                                             const VariableMetadata &metadata,
+void OutputWriter::write_timeseries(const std::string &file_name,
+                                             const std::string &variable_name,
                                              const std::vector<unsigned int> &start,
                                              const std::vector<unsigned int> &count,
                                              const std::vector<double> &input) {
@@ -378,7 +365,7 @@ void OutputWriter::write_timeseries_variable(const std::string &file_name,
     C.insert(C.cbegin(), 1);
   }
 
-  write_array(file_name, metadata, S, C, input);
+  write_array(file_name, variable_name, S, C, input);
 }
 
 void OutputWriter::append(const std::string &file_name) {
@@ -401,21 +388,6 @@ double OutputWriter::last_time_value(const std::string &file_name) {
   return last_time_value_impl(file_name);
 }
 
-void OutputWriter::define_experiment_id(const std::string &file_name,
-                                        std::shared_ptr<units::System> unit_system) {
-  auto &dim_name = m_impl->experiment_id_name;
-
-  VariableMetadata exp_id(dim_name, unit_system);
-  // NOTE: this long name is significant: we use it to recognize the experiment ID
-  // dimension in File::dimension_type(). This is needed to compute start and count arrays
-  // correctly when re-starting from a file containing this dimension.
-  exp_id.set_output_type(io::PISM_CHAR).long_name("experiment ID");
-
-  define_dimension(file_name, dim_name, 1);
-  define_dimension(file_name, "nc", m_impl->experiment_id_length);
-  define_variable(file_name, exp_id, { dim_name, "nc" });
-}
-
 void OutputWriter::write_experiment_id(const std::string &file_name) {
   const auto &variable_name = m_impl->experiment_id_name;
   if (already_written(file_name, variable_name, false)) {
@@ -426,7 +398,7 @@ void OutputWriter::write_experiment_id(const std::string &file_name) {
   write_text(file_name, variable_name, { 0, 0 }, { 1, (unsigned)exp_id.size() + 1 }, exp_id);
 
   // mark experiment ID as "already written"
-  already_written(file_name, m_impl->experiment_id_name, false) = true;
+  already_written(file_name, variable_name, false) = true;
 }
 
 const std::string &OutputWriter::experiment_id() const {

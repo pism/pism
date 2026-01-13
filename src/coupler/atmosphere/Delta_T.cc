@@ -132,7 +132,7 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
 
     array::AccessScope list{&T, &delta};
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       T(i, j) += delta(i, j);

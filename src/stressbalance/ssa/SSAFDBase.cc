@@ -166,7 +166,7 @@ void SSAFDBase::compute_driving_stress(const array::Scalar &ice_thickness,
     list.add(*no_model_mask);
   }
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double pressure = EC.pressure(ice_thickness(i, j)); // FIXME issue #15
@@ -348,7 +348,7 @@ void SSAFDBase::assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_
 
   result.set(0.0);
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     Vector2d taud = driving_stress(i, j);
@@ -613,7 +613,7 @@ void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_ma
   /* matrix assembly loop */
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       // Easy cases:
@@ -996,7 +996,7 @@ void SSAFDBase::compute_average_ice_hardness(const array::Scalar1 &ice_thickness
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       E_ij = enthalpy.get_column(i, j);
@@ -1061,7 +1061,7 @@ void SSAFDBase::adjust_driving_stress(const array::Scalar &ice_thickness,
   array::AccessScope list{ &driving_stress, &cell_type, no_model_mask, &surface_elevation,
                            &ice_thickness };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     auto M = no_model_mask->star_int(i, j);
@@ -1200,7 +1200,7 @@ void SSAFDBase::fracture_induced_softening(const array::Scalar1 &fracture_densit
 
   array::AccessScope list{ &ice_hardness, &fracture_density };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     for (int o = 0; o < 2; o++) {
@@ -1278,7 +1278,7 @@ void SSAFDBase::compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const int
@@ -1366,7 +1366,7 @@ void SSAFDBase::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const arra
   auto U = [&velocity](int i, int j) { return velocity[j][i].u; };
   auto V = [&velocity](int i, int j) { return velocity[j][i].v; };
 
-  for (auto p = m_grid->points(1); p; p.next()) {
+  for (auto p : m_grid->points_with_ghosts(1)) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, i-offset
@@ -1398,7 +1398,7 @@ void SSAFDBase::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const arra
 
   list.add({ &result, &hardness, &ice_thickness });
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double u_x, u_y, v_x, v_y, H, nu, W;
@@ -1517,7 +1517,7 @@ void SSAFDBase::compute_residual(const Inputs &inputs, const pism::Vector2d *con
   }
 
   array::AccessScope scope{&m_rhs};
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     result[j][i] -= m_rhs(i, j); // STORAGE_ORDER

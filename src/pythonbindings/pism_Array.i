@@ -36,10 +36,15 @@ using namespace pism;
       auto grid = $self->grid();
       const auto &config = *grid->ctx()->config();
       auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, config);
+      writer->initialize({}, true);
 
       // We expect the file to be present and ready to write into.
       OutputFile file(writer, filename);
       file.append();
+
+      for (int k = 0; k < $self->ndof(); ++k) {
+        file.define_variable($self->metadata(k));
+      }
 
       $self->write(file);
     }
@@ -137,6 +142,7 @@ std::vector<double> interp(int i, int j) {
 %include "util/stencils.hh"
 %template(DoubleStar) pism::stencils::Star<double>;
 
+%ignore pism::array::metadata;
 %include "util/array/Array.hh"
 
 %include "util/array/Array2D.hh"

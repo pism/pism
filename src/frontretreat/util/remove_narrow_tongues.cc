@@ -75,7 +75,7 @@ void remove_narrow_tongues(const Geometry &geometry,
 
   array::AccessScope list{&mask, &bed, &sea_level, &ice_thickness};
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
     if (mask.ice_free(i, j) or
         (mask.grounded_ice(i, j) and bed(i, j) >= sea_level(i, j))) {

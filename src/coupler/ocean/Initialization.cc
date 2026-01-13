@@ -88,20 +88,22 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   }
 }
 
-void InitializationHelper::define_model_state_impl(const OutputFile &output) const {
-  m_water_column_pressure->define(output);
-  m_shelf_base_mass_flux->define(output);
-  m_shelf_base_temperature->define(output);
+std::set<VariableMetadata> InitializationHelper::state_impl() const {
+  auto variables = array::metadata({
+      m_water_column_pressure.get(),
+      m_shelf_base_mass_flux.get(),
+      m_shelf_base_temperature.get(),
+  });
 
-  m_input_model->define_model_state(output);
+  return pism::combine(variables, m_input_model->state());
 }
 
-void InitializationHelper::write_model_state_impl(const OutputFile &output) const {
+void InitializationHelper::write_state_impl(const OutputFile &output) const {
   m_water_column_pressure->write(output);
   m_shelf_base_mass_flux->write(output);
   m_shelf_base_temperature->write(output);
 
-  m_input_model->write_model_state(output);
+  m_input_model->write_state(output);
 }
 
 const array::Scalar& InitializationHelper::shelf_base_temperature_impl() const {

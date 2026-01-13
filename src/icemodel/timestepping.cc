@@ -160,7 +160,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
   {
     restrictions.push_back(ts_max_timestep(current_time));
     restrictions.push_back(extras_max_timestep(current_time));
-    restrictions.push_back(save_max_timestep(current_time));
+    restrictions.push_back(snapshots_max_timestep(current_time));
   }
 
   // mass continuity stability criteria
@@ -222,7 +222,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
     // "max" and "end of the run" limit the "big" time-step (in
     // the context of the "skipping" mechanism), so we might need to
     // reset the skip_counter_result to 1.
-    if (member(dt_max.description(), {max, end}) and counter > 1) {
+    if (set_member(dt_max.description(), {max, end}) and counter > 1) {
       result.skip_counter = 1;
     }
   }

@@ -60,7 +60,7 @@ void IceModel::update_viewers() {
   auto viewers = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
 
   // map-plane viewers
-  for (auto v : viewers) {
+  for (const auto& v : viewers) {
     if (m_grid->variables().is_available(v)) {
       this->view_field(m_grid->variables().get(v));
     } else {

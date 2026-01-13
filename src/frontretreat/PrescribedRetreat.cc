@@ -22,6 +22,7 @@
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 
@@ -55,28 +56,32 @@ void PrescribedRetreat::init() {
   m_retreat_mask->init(opt.filename, opt.periodic);
 }
 
-void PrescribedRetreat::update(double t, double dt, array::Scalar &ice_thickness,
+void PrescribedRetreat::update(double t, double dt,
+                               const array::CellType1 &cell_type,
+                               array::Scalar &ice_thickness,
                                array::Scalar &ice_area_specific_volume) {
   m_retreat_mask->update(t, dt);
   m_retreat_mask->average(t, dt);
 
   double eps = 1e-12;
 
-  array::AccessScope list{ m_retreat_mask.get(), &ice_thickness, &ice_area_specific_volume };
+  array::AccessScope list{ m_retreat_mask.get(), &cell_type, &ice_thickness, &ice_area_specific_volume };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    double f = (*m_retreat_mask)(i, j);
+    if (cell_type.ice_margin(i, j)) {
+      double f = (*m_retreat_mask)(i, j);
 
-    if (f <= 0.0) {
-      ice_area_specific_volume(i, j) = 0.0;
-      ice_thickness(i, j)            = 0.0;
-    } else if (f < 1.0 - eps) {
-      ice_area_specific_volume(i, j) = ice_thickness(i, j) * f;
-      ice_thickness(i, j)            = 0.0;
-    } else {
-      // M == 1.0: do nothing
+      if (f <= 0.0) {
+        ice_area_specific_volume(i, j) = 0.0;
+        ice_thickness(i, j)            = 0.0;
+      } else if (f < 1.0 - eps) {
+        ice_area_specific_volume(i, j) = ice_thickness(i, j) * f;
+        ice_thickness(i, j)            = 0.0;
+      } else {
+        // M == 1.0: do nothing
+      }
     }
   }
 }

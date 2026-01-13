@@ -2924,6 +2924,7 @@ netcdf pism_config {
     pism_config:time_stepping.maximum_time_step_option = "max_dt";
     pism_config:time_stepping.maximum_time_step_type = "number";
     pism_config:time_stepping.maximum_time_step_units = "365days";
+    pism_config:time_stepping.maximum_time_step_valid_min = 1e-6;
 
     pism_config:time_stepping.resolution = 1.0;
     pism_config:time_stepping.resolution_doc = "Time steps are rounded down to be a multiple of this number (set to zero to allow arbitrary time step lengths)";

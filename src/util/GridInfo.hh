@@ -42,9 +42,9 @@ public:
   double x0;
   //! y-coordinate of the domain center
   double y0;
-  //! domain half-width
+  //! domain half-width in the X direction
   double Lx;
-  //! domain half-height
+  //! domain half-width in the Y direction
   double Ly;
 
   //! x coordinates
@@ -55,30 +55,41 @@ public:
 
 class DistributedGridInfo : public GridInfo {
 public:
+  //! Grid periodicity in X and Y directions
   grid::Periodicity periodicity;
-
-  //! horizontal grid spacing
-  double dx;
-  //! horizontal grid spacing
-  double dy;
-  //! cell area (meters^2)
-  double cell_area;
-
+  //! Grid registration (cell center or cell corner)
   grid::Registration registration;
 
+  //! Grid spacing in the X direction
+  double dx;
+  //! Grid spacing in the Y direction
+  double dy;
+  //! Cell area (meters^2) (same as dx*dy)
+  double cell_area;
+
+  //! Starting index (in the X direction) of the patch owned by the current MPI rank
   unsigned int xs;
+  //! Number of grid points (in the X direction) of the patch owned by the current MPI
+  //! rank
   unsigned int xm;
+  //! Starting index of the patch owned by the current MPI rank (X direction)
   unsigned int ys;
+  //! Number of grid points (in the Y direction) of the patch owned by the current MPI
+  //! rank
   unsigned int ym;
 
-  //! number of grid points in the x-direction
+  //! Total number of grid points in the X direction
   unsigned int Mx;
-  //! number of grid points in the y-direction
+  //! Total number of grid points in the Y direction
   unsigned int My;
 
+  //! Number of grid points in the largest patch (max(xm*ym) over all MPI ranks)
   int max_patch_size;
 
+  //! Current MPI rank
   int rank;
+
+  //! MPI Communicator size
   int size;
 };
 

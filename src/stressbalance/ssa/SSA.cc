@@ -85,9 +85,10 @@ SSA::SSA(std::shared_ptr<const Grid> g)
   m_velocity.metadata(1).long_name("SSA model ice velocity in the Y direction");
 
   {
-    rheology::FlowLawFactory ice_factory("stress_balance.ssa.", m_config, m_EC);
+    rheology::FlowLawFactory ice_factory(m_config, m_EC);
     ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
-    m_flow_law = ice_factory.create();
+    m_flow_law = ice_factory.create(m_config->get_string("stress_balance.ssa.flow_law"),
+                                    m_config->get_number("stress_balance.ssa.Glen_exponent"));
   }
 }
 
@@ -159,7 +160,7 @@ void SSA::extrapolate_velocity(const array::CellType1 &cell_type,
                                array::Vector1 &velocity) const {
   array::AccessScope list{&cell_type, &velocity};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {
@@ -186,11 +187,11 @@ std::string SSA::stdout_report() const {
   return m_stdout_ssa;
 }
 
-void SSA::define_model_state_impl(const OutputFile &output) const {
-  m_velocity.define(output);
+std::set<VariableMetadata> SSA::state_impl() const {
+  return array::metadata({ &m_velocity });
 }
 
-void SSA::write_model_state_impl(const OutputFile &output) const {
+void SSA::write_state_impl(const OutputFile &output) const {
   m_velocity.write(output);
 }
 

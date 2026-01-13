@@ -119,12 +119,11 @@ void FractureDensity::initialize() {
   m_age.set(0.0);
 }
 
-void FractureDensity::define_model_state_impl(const OutputFile &output) const {
-  m_density.define(output);
-  m_age.define(output);
+std::set<VariableMetadata> FractureDensity::state_impl() const {
+  return array::metadata({ &m_density, &m_age });
 }
 
-void FractureDensity::write_model_state_impl(const OutputFile &output) const {
+void FractureDensity::write_state_impl(const OutputFile &output) const {
   m_density.write(output);
   m_age.write(output);
 }
@@ -227,7 +226,7 @@ void FractureDensity::update(double dt,
 
   double minH = m_config->get_number("stress_balance.ice_free_thickness_standard");
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double tempFD = 0.0;

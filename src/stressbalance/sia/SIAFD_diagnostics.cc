@@ -139,7 +139,7 @@ static void copy_staggered_vec(const array::Staggered &input, array::Staggered &
 
   array::AccessScope list{ &input, &output };
 
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     output(i, j, 0) = input(i, j, 0);

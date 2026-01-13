@@ -81,7 +81,7 @@ void CalvingAtThickness::init() {
   } else {
     double calving_threshold = m_config->get_number("calving.thickness_calving.threshold");
 
-    SpatialVariableMetadata attributes = m_calving_threshold->metadata();
+    auto attributes = m_calving_threshold->metadata();
     // replace with a constant array::Forcing
     m_calving_threshold = array::Forcing::Constant(m_grid,
                                                   "thickness_calving_threshold",
@@ -120,7 +120,7 @@ void CalvingAtThickness::update(double t,
   const auto &threshold = *m_calving_threshold;
 
   array::AccessScope list{&cell_type, &ice_thickness, &m_old_mask, &threshold};
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (m_old_mask.floating_ice(i, j)           &&

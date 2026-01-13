@@ -104,8 +104,8 @@ protected:
   virtual void update_impl(const array::Scalar &bedrock_top_temperature,
                            double t, double dt);
 
-  virtual void define_model_state_impl(const OutputFile &output) const;
-  virtual void write_model_state_impl(const OutputFile &output) const;
+  virtual std::set<VariableMetadata> state_impl() const;
+  virtual void write_state_impl(const OutputFile &output) const;
 protected:
   //! bedrock thermal layer temperature, in kelvin; part of state; uses equally-spaced
   //! layers.

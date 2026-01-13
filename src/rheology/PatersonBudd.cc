@@ -19,17 +19,16 @@
 
 #include "pism/rheology/PatersonBudd.hh"
 #include <cmath>   // for pow
-#include <memory>  // for __shared_ptr_access
+#include <memory>  // for shared_ptr
 
 namespace pism {
 namespace rheology {
 
 // PatersonBudd
 
-PatersonBudd::PatersonBudd(const std::string &prefix,
-                           const Config &config,
+PatersonBudd::PatersonBudd(double exponent, const Config &config,
                            std::shared_ptr<EnthalpyConverter> ec)
-  : FlowLaw(prefix, config, ec) {
+    : FlowLaw(exponent, config, ec) {
   m_name = "Paterson-Budd";
 }
 
@@ -50,7 +49,7 @@ double PatersonBudd::flow_impl(double stress, double E,
 double PatersonBudd::flow_from_temp(double stress, double temp,
                                     double pressure, double /*gs*/) const {
   // pressure-adjusted temperature:
-  const double T_pa = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
+  const double T_pa = temp + (m_beta_CC_grad / m_rho_g) * pressure;
   return softness_from_temp(T_pa) * pow(stress, m_n-1);
 }
 

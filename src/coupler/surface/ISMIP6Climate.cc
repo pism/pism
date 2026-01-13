@@ -47,7 +47,7 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
         .units("kg m^-2 s^-1")
         .output_units("kg m^-2 year^-1")
         .standard_name("land_ice_surface_specific_mass_balance_flux")
-        .set_time_independent(true);
+        .set_time_dependent(false);
 
     auto smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
     m_mass_flux_reference.metadata()["valid_range"] = { -smb_max, smb_max };
@@ -56,14 +56,14 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
         .long_name("reference surface altitude")
         .units("m")
         .standard_name("surface_altitude")
-        .set_time_independent(true);
+        .set_time_dependent(false);
 
     m_surface_reference.metadata()["valid_range"] = { 0.0, m_grid->Lz() };
 
     m_temperature_reference.metadata(0)
         .long_name("reference temperature")
         .units("kelvin")
-        .set_time_independent(true);
+        .set_time_dependent(false);
 
     m_temperature_reference.metadata()["valid_range"] = { 0.0, 373.15 };
   }
@@ -185,7 +185,7 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
 
   array::AccessScope list{ &h, &h_ref, &SMB, &SMB_ref, &aSMB, &dSMBdz, &T, &T_ref, &aT, &dTdz };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     SMB(i, j) = SMB_ref(i, j) + aSMB(i, j) + dSMBdz(i, j) * (h(i, j) - h_ref(i, j));

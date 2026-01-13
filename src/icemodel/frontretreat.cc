@@ -50,7 +50,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
 
   // assume that ice-free ocean points at the edge of the domain belong to the "global
   // ocean"
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free_ocean(i, j)) {
@@ -71,7 +71,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
 
   // create a mask that contains ones at "ice free ocean" locations connected to the edge
   // of the domain and zeros elsewhere:
-  for (auto p = grid->points(); p; p.next()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free_ocean(i, j) and result.as_int(i, j) == 0) {
@@ -84,7 +84,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
   result.update_ghosts();
 }
 
-void IceModel::front_retreat_step() {
+void IceModel::front_retreat_step(double t, double dt) {
 
   bool retreat_rate_based_calving = m_eigen_calving or m_vonmises_calving or m_hayhurst_calving;
   bool calving_is_active =
@@ -133,7 +133,7 @@ void IceModel::front_retreat_step() {
       inputs.geometry = &m_geometry;
       inputs.subglacial_water_flux = &flux_magnitude;
 
-      m_frontal_melt->update(inputs, m_time->current(), m_dt);
+      m_frontal_melt->update(inputs, t, dt);
     }
   }
 
@@ -154,7 +154,7 @@ void IceModel::front_retreat_step() {
     if (frontal_melt_only_open_ocean) {
       array::AccessScope list{ &retreat_rate, &open_ocean_mask };
 
-      for (Points p(*m_grid); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         if (open_ocean_mask(i, j) < 0.5) {
@@ -164,7 +164,7 @@ void IceModel::front_retreat_step() {
     }
 
     // apply the frontal melt rate
-    m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
+    m_front_retreat->update_geometry(dt, m_geometry, m_ice_thickness_bc_mask,
                                      retreat_rate,
                                      m_geometry.ice_area_specific_volume,
                                      m_geometry.ice_thickness);
@@ -204,7 +204,7 @@ void IceModel::front_retreat_step() {
       }
 
       if (m_calving_rate_factor) {
-        double T = m_time->current() + 0.5 * m_dt;
+        double T = t + 0.5 * dt;
         retreat_rate.scale(m_calving_rate_factor->value(T));
       }
 
@@ -213,7 +213,7 @@ void IceModel::front_retreat_step() {
       {
         array::AccessScope list{ &open_ocean_mask, &retreat_rate };
 
-        for (Points p(*m_grid); p; p.next()) {
+        for (auto p : m_grid->points()) {
           const int i = p.i(), j = p.j();
 
           if (open_ocean_mask(i, j) < 0.5) {
@@ -222,7 +222,7 @@ void IceModel::front_retreat_step() {
         }
       }
 
-      m_front_retreat->update_geometry(m_dt, m_geometry, m_ice_thickness_bc_mask,
+      m_front_retreat->update_geometry(dt, m_geometry, m_ice_thickness_bc_mask,
                                        retreat_rate,
                                        m_geometry.ice_area_specific_volume,
                                        m_geometry.ice_thickness);
@@ -249,7 +249,7 @@ void IceModel::front_retreat_step() {
 
         array::AccessScope list{ &modified_cell_type, &cell_type, &open_ocean_mask };
 
-        for (Points p(*m_grid); p; p.next()) {
+        for (auto p : m_grid->points()) {
           const int i = p.i(), j = p.j();
 
           if (cell_type.ice_free_ocean(i, j) and open_ocean_mask(i, j) < 0.5) {
@@ -268,7 +268,7 @@ void IceModel::front_retreat_step() {
       }
 
       if (m_thickness_threshold_calving) {
-        m_thickness_threshold_calving->update(m_time->current(), m_dt, modified_cell_type,
+        m_thickness_threshold_calving->update(t, dt, modified_cell_type,
                                               m_geometry.ice_thickness);
       }
     }
@@ -289,7 +289,8 @@ void IceModel::front_retreat_step() {
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
-    m_prescribed_retreat->update(m_time->current(), m_dt,
+    m_prescribed_retreat->update(t, dt,
+                                 m_geometry.cell_type,
                                  m_geometry.ice_thickness,
                                  m_geometry.ice_area_specific_volume);
 
@@ -344,7 +345,7 @@ void IceModel::compute_geometry_change(const array::Scalar &thickness,
   array::AccessScope list{&thickness, &thickness_old,
       &Href, &Href_old, &output};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double

@@ -22,6 +22,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -30,19 +31,11 @@
 namespace pism {
 
 class Config;
-class SpatialVariableMetadata;
 class VariableMetadata;
-
-namespace grid {
-class DistributedGridInfo;
-}
+class VariableAttributes;
 
 namespace io {
 enum Type : int;
-}
-
-namespace units {
-class System;
 }
 
 /*!
@@ -96,6 +89,11 @@ class System;
  * set *once* and not modified afterwards. (This should make it possible to aggregate all
  * metadata and write all of it at once.)
  *
+ * All variables associated with a grid (2D and 3D arrays, etc) have to be "declared"
+ * using a call to `initialize(array_variables)`. This allows a class derived from
+ * OutputWriter to set up infrastructure needed to write these variables. For example: an
+ * implementation of asynchronous I/O can set up communication for all files *at once*.
+ *
  * PISM buffers scalar time-dependent diagnostics to reduce the number of I/O operations.
  * 2D and 3D arrays are written one time record at a time (increase the length of time
  * dimension by one, write a bunch of variables, increase the length of time dimension by
@@ -107,74 +105,21 @@ public:
   virtual ~OutputWriter();
 
   /*!
-   * Add attributes to all 2D and 3D variables using "x" and "y" dimensions except for
-   * "lat", "lon", "lat_bnds" and "lon_bnds".
+   * Initialize the output writer. The set `array_variables` contains all array variables
+   * that may be written to output files (not necessarily to the same output file).
    *
-   * These attributes (usually 'coordinates = "lat lon"' and "grid_mapping") are used to
-   * provide grid information.
-   *
-   * A variable should have the "coordinates" attribute only if the file contains
-   * variables "lat" and "lon". Similarly, a variable should have the "grid_mapping"
-   * attribute only if the file contains a grid mapping variable. The code writing a
-   * variable has no way to determine the contents of an output file, so this method
-   * allows IceModel to use the information *it* has to adjust metadata of 2D and 3D
-   * variables written to output files.
+   * This initialization step allows an OutputWriter implementation to use grid
+   * information for all distributed arrays to setup up communication between
+   * "computational" and "I/O" MPI ranks.
    */
-  void add_extra_attributes(const std::string &file_name,
-                            const std::map<std::string, std::string> &attributes);
+  void initialize(const std::set<VariableMetadata> &array_variables, bool relaxed_mode = false);
 
   /*!
-   * Define a dimension.
-   * 
-   * No-op if the dimension already exists.
-   *
-   * `length` of zero corresponds to an unlimited dimension.
-   */
-  void define_dimension(const std::string &file_name, const std::string &dimension_name,
-                        unsigned int length);
-
-  /*!
-   * Define a variable given a list of dimension names and set its attributes.
-   *
-   * Use this method to define coordinate variables (`x`, `y`, `time`, etc). For scalar
-   * time-dependent model outputs, use `define_timeseries_variable()`.
+   * Define a variable given its metadata.
    *
    * No-op if the variable already exists.
-   *
-   * The name of the variable is obtained using `metadata.get_name()` and its type using `metadata.get_output_type()`.
    */
-  void define_variable(const std::string &file_name, const VariableMetadata &metadata,
-                       const std::vector<std::string> &dims);
-
-  /*!
-   * Define a 2D or 3D (possibly time-dependent) variable and set its attributes.
-   *
-   * No-op if the variable already exists.
-   *
-   * Stores domain decomposition `grid` and makes it accessible using grid_info().
-   *
-   * @param[in] file_name name of the output file
-   * @param[in] metadata variable metadata (name, attributes, etc)
-   * @param[in] grid domain decomposition information
-   */
-  void define_spatial_variable(const std::string &file_name,
-                               const SpatialVariableMetadata &metadata,
-                               const grid::DistributedGridInfo &grid);
-
-  /*!
-   * Define a scalar time-dependent variable and set its attributes.
-   *
-   * This method should be used to define variables containing scalar time-dependent model
-   * outputs. Use `define_variable()` to define coordinate variables (`x`, `y`, `time`,
-   * etc).
-   *
-   * No-op if the variable already exists.
-   *
-   * @param[in] file_name name of the output file
-   * @param[in] metadata variable metadata (name, attributes, etc)
-   */
-  void define_timeseries_variable(const std::string &file_name,
-                                  const VariableMetadata &metadata);
+  void define_variable(const std::string &file_name, const VariableMetadata &variable);
 
   /*!
    * Set global attributes for a given output file.
@@ -214,50 +159,37 @@ public:
                    const std::vector<double> &input);
 
   /*!
-   * Write a 1D array `input` to a variable `variable_name` in the file `file_name`,
-   * converting from internal to "output" units if necessary.
+   * Write a text (or string; type NC_CHAR) variable.
    *
-   * The array `input` is stored *redundantly* on all MPI ranks.
-   *
-   * FIXME: writing to the time variable will change the length of the time dimension.
-   */
-  void write_array(const std::string &file_name, const VariableMetadata &metadata,
-                   const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
-                   const std::vector<double> &input);
-
-  /*!
-   * Write a text (string) variable.
-   *
-   * The array `input` is stored *redundantly* on all MPI ranks.
-   *
+   * The string `input` is stored *redundantly* on all MPI ranks.
    */
   void write_text(const std::string &file_name, const std::string &variable_name,
                   const std::vector<unsigned int> &start, const std::vector<unsigned int> &count,
                   const std::string &input);
 
   /*!
-   * Write a 2D or 3D array `input` described by `metadata` to the file `file_name`.
+   * Write a 2D or 3D array `input` to the variable `variable_name` in file `file_name`.
    *
    * Write coordinate variables (`x`, `y`, `z`, etc) required by this variable.
-   *
-   * Convert from internal to output units, if necessary.
    *
    * May be a no-op if this variable is time-independent and was written already.
    *
    * The array `input` is distributed across MPI ranks in the communicator used to create
    * this `OutputWriter` instance. Uses domain decomposition information provided to
-   * `define_spatial_variable()`.
+   * `define_variable()` and `initialize(array_variables)`.
    */
-  void write_spatial_variable(const std::string &file_name, const SpatialVariableMetadata &metadata,
-                              const double *input);
+  void write_distributed_array(const std::string &file_name, const std::string &variable_name,
+                               const double *input);
 
   /*!
    * Write a scalar time-dependent variable.
+   *
+   * `input` is stored redundantly by each MPI process.
    */
-  void write_timeseries_variable(const std::string &file_name, const VariableMetadata &metadata,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 const std::vector<double> &input);
+
+  void write_timeseries(const std::string &file_name, const std::string &variable_name,
+                        const std::vector<unsigned int> &start,
+                        const std::vector<unsigned int> &count, const std::vector<double> &input);
   /*!
    * Indicate that the file `file_name` should be open for appending.
    *
@@ -293,17 +225,48 @@ public:
    * Used when appending to an existing file.
    */
   double last_time_value(const std::string &file_name);
-  
-protected:
+
   /*!
    * Return the MPI communicator
    */
   MPI_Comm comm() const;
 
+protected:
   /*!
-   * Return the domain decomposition information for the variable `variable_name`.
+   * Define a dimension.
+   *
+   * No-op if the dimension already exists.
+   *
+   * `length` of zero corresponds to an unlimited dimension.
    */
-  const grid::DistributedGridInfo &grid_info(const std::string &variable_name) const;
+  void define_dimension(const std::string &file_name, const std::string &dimension_name,
+                        unsigned int length);
+
+  /*!
+   * Define a variable given a list of dimension names and set its attributes.
+   *
+   * Use this method to define coordinate variables (`x`, `y`, `time`, etc).
+   *
+   * No-op if the variable already exists.
+   *
+   */
+  void define_variable(const std::string &file_name, const std::string &variable_name,
+                       const std::vector<std::string> &dims, io::Type type,
+                       const VariableAttributes &attributes);
+
+  /*!
+   * Add a variable to the list of variables that can be written to output files.
+   *
+   * This has to be done before a spatial variable is *defined* in an output file.
+   *
+   * @param[in] metadata variable metadata (name, attributes, grid info, etc)
+   */
+  void add_variable(const VariableMetadata &metadata);
+
+  /*!
+   * Return the metadata for the variable `variable_name`.
+   */
+  const VariableMetadata &variable_info(const std::string &variable_name) const;
 
   /*!
    * Return `true` if variable `variable_name` was already written to the file
@@ -317,6 +280,29 @@ protected:
    * Return the name of the time dimension and the corresponding coordinate variable.
    */
   const std::string &time_name() const;
+
+  /*!
+   * Define dimensions corresponding to a `variable`. If a dimension has the corresponding
+   * coordinate variable this method will define *both* the dimension and coordinate
+   * variable.
+   *
+   * Returns the list of dimension names for `variable` that can be used to define it. (A
+   * NetCDF variable may depend on other dimensions *in addition* to the ones in
+   * `variable`, for example the time dimension or the dimension corresponding to
+   * "output.experiment_id")
+   */
+  std::vector<std::string> define_dimensions(const std::string &file_name,
+                                             const VariableMetadata &variable);
+
+  /*!
+   * Write dimensions corresponding to a `variable` (except for the time dimension).
+   */
+  void write_dimensions(const std::string &file_name, const VariableMetadata &variable);
+
+  /*!
+   * Implementation of initialize()
+   */
+  virtual void initialize_impl(const std::set<VariableMetadata> &array_variables) = 0;
 
   /*!
    * Implementation of set_global_attributes()
@@ -335,8 +321,9 @@ protected:
   /*!
    * Implementation of define_variable()
    */
-  virtual void define_variable_impl(const std::string &file_name, const VariableMetadata &metadata,
-                                    const std::vector<std::string> &dims) = 0;
+  virtual void define_variable_impl(const std::string &file_name, const std::string &variable_name,
+                                    const std::vector<std::string> &dims, io::Type type,
+                                    const VariableAttributes &attributes) = 0;
 
   /*!
    * Implementation of append_time()
@@ -376,9 +363,9 @@ protected:
   /*!
    * Implementation of write_spatial_variable()
    */
-  virtual void write_spatial_variable_impl(const std::string &file_name,
-                                           const SpatialVariableMetadata &metadata,
-                                           const double *data) = 0;
+  virtual void write_distributed_array_impl(const std::string &file_name,
+                                            const std::string &variable_name,
+                                            const double *data) = 0;
 
   /*!
    * Implementation of append()
@@ -397,8 +384,6 @@ protected:
 
   const std::string &experiment_id() const;
 private:
-  void define_experiment_id(const std::string &file_name,
-                            std::shared_ptr<units::System> unit_system);
   void write_experiment_id(const std::string &file_name);
 
   struct Impl;
@@ -415,18 +400,9 @@ private:
  */
 class OutputFile {
 public:
-  OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &file_name);
+  OutputFile(std::shared_ptr<OutputWriter> writer, const std::string &name);
 
-  void add_extra_attributes(const std::map<std::string, std::string> &attributes) const;
-
-  void define_dimension(const std::string &dimension_name, unsigned int length) const;
-
-  void define_variable(const VariableMetadata &metadata, const std::vector<std::string> &dims) const;
-
-  void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                               const grid::DistributedGridInfo &grid) const;
-
-  void define_timeseries_variable(const VariableMetadata &metadata) const;
+  void define_variable(const VariableMetadata &variable) const;
 
   void set_global_attributes(const std::map<std::string, std::string> &strings,
                              const std::map<std::string, std::vector<double> > &numbers) const;
@@ -438,15 +414,11 @@ public:
   void write_array(const std::string &variable_name, const std::vector<unsigned int> &start,
                    const std::vector<unsigned int> &count, const std::vector<double> &input) const;
 
-  void write_array(const VariableMetadata &metadata, const std::vector<unsigned int> &start,
-                   const std::vector<unsigned int> &count, const std::vector<double> &input) const;
+  void write_distributed_array(const std::string &variable_name, const double *input) const;
 
-  void write_spatial_variable(const SpatialVariableMetadata &metadata, const double *input) const;
-
-  void write_timeseries_variable(const VariableMetadata &metadata,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 const std::vector<double> &input) const;
+  void write_timeseries(const std::string &variable_name, const std::vector<unsigned int> &start,
+                        const std::vector<unsigned int> &count,
+                        const std::vector<double> &input) const;
 
   void write_text(const std::string &variable_name, const std::vector<unsigned int> &start,
                   const std::vector<unsigned int> &count, const std::string &input) const;
@@ -461,7 +433,8 @@ public:
 
   double last_time_value() const;
 
-  std::string name() const;
+  const std::string &name() const;
+
 private:
   std::string m_file_name;
   std::shared_ptr<OutputWriter> m_writer;

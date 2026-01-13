@@ -20,7 +20,7 @@ pism \
   -output.timeseries.buffer_size 100 \
   -output.timeseries.filename ts.nc \
   -output.timeseries.times 1 \
-  -output.timeseries.variables ice_volume \
+  -output.timeseries.variables ice_volume,tendency_of_ice_mass \
   -y 1000 \
   ""
 
@@ -32,6 +32,6 @@ pism \
   -output.timeseries.buffer_size 100 \
   -output.timeseries.filename ts.nc \
   -output.timeseries.times 1 \
-  -output.timeseries.variables ice_volume \
+  -output.timeseries.variables ice_volume,tendency_of_ice_mass \
   -y 1000 \
   ""

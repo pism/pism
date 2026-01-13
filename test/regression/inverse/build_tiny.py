@@ -114,8 +114,10 @@ if __name__ == '__main__':
             if (i == 0) or (i == grid.Mx() - 1) or (j == 0) or (j == grid.My() - 1):
                 no_model_mask[i, j] = 1
 
-    output_filename = config.get_string("output.file")
-    F = PISM.util.prepare_output(output_filename)
+    filename = config.get_string("output.file")
+    F = PISM.util.prepare_output(filename)
     F.close()
-    vecs.writeall(output_filename)
-    PISM.util.writeProvenance(output_filename)
+
+    vecs.writeall(filename)
+
+    PISM.util.writeProvenance(filename)

@@ -208,7 +208,9 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     : m_instance_id(0), m_source_field_id(0), m_target_field_id(0) {
   auto ctx = target_grid.ctx();
 
-  if (target_grid.get_mapping_info().proj_string.empty()) {
+  std::string target_proj_params = target_grid.get_mapping_info()["proj_params"];
+
+  if (target_proj_params.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "internal grid projection is not known");
   }
 
@@ -227,16 +229,18 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     grid::InputGridInfo source_grid_info(input_file, variable_name, ctx->unit_system(),
                                          pism::grid::CELL_CENTER);
 
-    auto source_grid_mapping = MappingInfo::FromFile(input_file, variable_name, ctx->unit_system());
+    auto source_grid_mapping = mapping_info_from_file(input_file, variable_name, ctx->unit_system());
 
-    std::string grid_mapping_name = source_grid_mapping.cf_mapping["grid_mapping_name"];
+    std::string grid_mapping_name = source_grid_mapping["grid_mapping_name"];
 
     log->message(2, "Input grid:\n");
     if (not grid_mapping_name.empty()) {
       log->message(2, " Grid mapping: %s\n", grid_mapping_name.c_str());
     }
-    if (not source_grid_mapping.proj_string.empty()) {
-      log->message(2, " PROJ string: '%s'\n", source_grid_mapping.proj_string.c_str());
+
+    std::string source_proj_params = source_grid_mapping["proj_params"];
+    if (not source_proj_params.empty()) {
+      log->message(2, " PROJ string: '%s'\n", source_proj_params.c_str());
     }
     source_grid_info.report(*log, 2, ctx->unit_system());
 
@@ -254,7 +258,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
     source_grid->set_mapping_info(source_grid_mapping);
 
-    if (source_grid->get_mapping_info().proj_string.empty()) {
+    if (source_proj_params.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "unsupported or missing projection info for the grid '%s'",
                                     source_grid_name.c_str());
@@ -286,13 +290,13 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
         auto y = grid_subset(source_grid->ys(), source_grid->ym(), source_grid_info.y);
 
         m_source_field_id = define_field(
-            comp_ids[0], x, y, source_grid->get_mapping_info().proj_string, source_grid_name);
+            comp_ids[0], x, y, source_proj_params, source_grid_name);
 
         double dx = 0.0;
         double dy = 0.0;
         if (source_grid_info.longitude_latitude) {
-          dx = dx_min(source_grid_mapping.proj_string, x, y);
-          dy = dy_min(source_grid_mapping.proj_string, x, y);
+          dx = dx_min(source_proj_params, x, y);
+          dy = dy_min(source_proj_params, x, y);
         } else {
           dx = std::abs(x[1] - x[0]);
           dy = std::abs(y[1] - y[0]);
@@ -308,7 +312,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
         auto y = grid_subset(target_grid.ys(), target_grid.ym(), target_grid.y());
 
         m_target_field_id = define_field(
-            comp_ids[1], x, y, target_grid.get_mapping_info().proj_string, target_grid_name);
+            comp_ids[1], x, y, target_proj_params, target_grid_name);
 
         target_grid_spacing = GlobalMin(ctx->com(), std::min(target_grid.dx(), target_grid.dy()));
         log->message(2, " Target grid spacing: %3.3f m\n", target_grid_spacing);
@@ -433,7 +437,7 @@ void InputInterpolationYAC::regrid(const pism::File &file, pism::array::Scalar &
 }
 
 
-double InputInterpolationYAC::regrid_impl(const SpatialVariableMetadata &metadata,
+double InputInterpolationYAC::regrid_impl(const VariableMetadata &metadata,
                                           const pism::File &file, int record_index,
                                           const Grid & /* target_grid (unused) */,
                                           petsc::Vec &output) const {

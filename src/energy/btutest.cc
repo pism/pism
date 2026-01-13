@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
       // compute exact ice temperature at z=0 at time y
       {
         array::AccessScope list(bedtoptemp);
-        for (auto p = grid->points(); p; p.next()) {
+        for (auto p : grid->points()) {
           const int i = p.i(), j = p.j();
 
           bedtoptemp(i,j) = exactK(time, 0.0, 0).T;
@@ -220,14 +220,22 @@ int main(int argc, char *argv[]) {
     log->message(1, "NUM ERRORS DONE\n");
 
     auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
+    writer->initialize({}, true);
+
     // Write results to an output file:
     OutputFile file(writer, outname);
 
-    io::define_time_dimension(file, time->metadata());
+    file.define_variable(time->metadata());
     file.append_time(time->current());
 
-    btu->write_model_state(file);
+    auto variables =
+        pism::combine(btu->state(), array::metadata({ &bedtoptemp, &heat_flux_at_ice_base }));
 
+    for (const auto &v : variables) {
+      file.define_variable(v);
+    }
+
+    btu->write_state(file);
     bedtoptemp.write(file);
     heat_flux_at_ice_base.write(file);
 

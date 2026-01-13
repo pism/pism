@@ -55,7 +55,7 @@ void IceRegionalModel::allocate_storage() {
   // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
   m_no_model_mask.metadata(0)
       .long_name("mask: zeros (modeling domain) and ones (no-model buffer near grid edges)")
-      .set_time_independent(true)
+      .set_time_dependent(false)
       .set_output_type(io::PISM_INT); // no units and no standard name
   m_no_model_mask.metadata()["flag_values"]   = { 0, 1 };
   m_no_model_mask.metadata()["flag_meanings"] = "normal special_treatment";
@@ -73,22 +73,19 @@ void IceRegionalModel::allocate_storage() {
       .long_name("saved ice thickness for use to keep driving stress constant in no_model strip")
       .units("m"); //  no standard name
 
-  m_model_state.insert(&m_thk_stored);
-  m_model_state.insert(&m_usurf_stored);
-  m_model_state.insert(&m_no_model_mask);
+  m_model_state =
+      pism::combine(m_model_state, { &m_thk_stored, &m_usurf_stored, &m_no_model_mask });
 }
 
-void IceRegionalModel::model_state_setup() {
+void IceRegionalModel::model_state_setup(InputOptions input_options) {
 
   // initialize the model state (including special fields)
-  IceModel::model_state_setup();
-
-  InputOptions input = process_input_options(m_ctx->com(), m_config);
+  IceModel::model_state_setup(input_options);
 
   // Initialize stored ice thickness and surface elevation. This goes here and not in
   // bootstrap_2d because bed topography is not initialized at the time bootstrap_2d is
   // called.
-  if (input.type == INIT_BOOTSTRAP) {
+  if (input_options.type == INIT_BOOTSTRAP) {
     if (m_config->get_flag("regional.zero_gradient")) {
       m_usurf_stored.set(0.0);
       m_thk_stored.set(0.0);
@@ -101,17 +98,19 @@ void IceRegionalModel::model_state_setup() {
   m_geometry_evolution->set_no_model_mask(m_no_model_mask);
 
   if (m_ch_system) {
-    const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
+    const bool use_input_file =
+        input_options.type == INIT_BOOTSTRAP or input_options.type == INIT_RESTART;
 
     std::unique_ptr<File> input_file;
 
     if (use_input_file) {
-      input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
+      input_file.reset(
+          new File(m_grid->com, input_options.filename, io::PISM_GUESS, io::PISM_READONLY));
     }
 
-    switch (input.type) {
+    switch (input_options.type) {
     case INIT_RESTART: {
-      m_ch_system->restart(*input_file, input.record);
+      m_ch_system->restart(*input_file, input_options.record);
       break;
     }
     case INIT_BOOTSTRAP: {
@@ -234,7 +233,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
     array::AccessScope list
       {&m_no_model_mask, &m_velocity_bc_mask, &m_ice_thickness_bc_mask};
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_no_model_mask(i, j) > 0.5) {
@@ -263,10 +262,10 @@ energy::Inputs IceRegionalModel::energy_model_inputs() {
   return result;
 }
 
-void IceRegionalModel::energy_step() {
+void IceRegionalModel::energy_step(double t, double dt) {
 
   if (m_ch_system) {
-    bedrock_thermal_model_step();
+    bedrock_thermal_model_step(t, dt);
 
     energy::Inputs inputs = energy_model_inputs();
     const array::Array3D *strain_heating = inputs.volumetric_heating_rate;
@@ -282,17 +281,17 @@ void IceRegionalModel::energy_step() {
     // Convert to the loss of energy by the CH system:
     m_ch_warming_flux->scale(-1.0);
 
-    m_ch_system->update(t_TempAge, dt_TempAge, inputs);
+    m_ch_system->update(t, dt, inputs);
 
     // Add CH warming flux to the strain heating term:
     m_ch_warming_flux->scale(-1.0);
     m_ch_warming_flux->add(1.0, *strain_heating);
 
-    m_energy_model->update(t_TempAge, dt_TempAge, inputs);
+    m_energy_model->update(t, dt, inputs);
 
     m_stdout_flags = m_energy_model->stdout_flags() + m_stdout_flags;
   } else {
-    IceModel::energy_step();
+    IceModel::energy_step(t, dt);
   }
 }
 
@@ -386,17 +385,18 @@ protected:
   }
 };
 
-void IceRegionalModel::init_diagnostics() {
-  IceModel::init_diagnostics();
+std::map<std::string, Diagnostic::Ptr> IceRegionalModel::allocate_spatial_diagnostics() {
+  auto result = IceModel::allocate_spatial_diagnostics();
 
   if (m_ch_system) {
-    m_diagnostics["ch_temp"]      = Diagnostic::Ptr(new CHTemperature(this));
-    m_diagnostics["ch_liqfrac"]   = Diagnostic::Ptr(new CHLiquidWaterFraction(this));
-    m_diagnostics["ch_heat_flux"] = Diagnostic::Ptr(new CHHeatFlux(this));
+    result["ch_temp"]      = Diagnostic::Ptr(new CHTemperature(this));
+    result["ch_liqfrac"]   = Diagnostic::Ptr(new CHLiquidWaterFraction(this));
+    result["ch_heat_flux"] = Diagnostic::Ptr(new CHHeatFlux(this));
   }
+  return result;
 }
 
-void IceRegionalModel::hydrology_step() {
+void IceRegionalModel::hydrology_step(double t, double dt) {
   hydrology::Inputs inputs;
 
   array::Scalar &sliding_speed = *m_work2d[0];
@@ -409,18 +409,18 @@ void IceRegionalModel::hydrology_step() {
   inputs.ice_sliding_speed  = &sliding_speed;
 
   if (m_surface_input_for_hydrology) {
-    m_surface_input_for_hydrology->update(m_time->current(), m_dt);
-    m_surface_input_for_hydrology->average(m_time->current(), m_dt);
+    m_surface_input_for_hydrology->update(t, dt);
+    m_surface_input_for_hydrology->average(t, dt);
     inputs.surface_input_rate = m_surface_input_for_hydrology.get();
   } else if (m_config->get_flag("hydrology.surface_input_from_runoff")) {
     // convert [kg m-2] to [kg m-2 s-1]
     array::Scalar &surface_input_rate = *m_work2d[1];
     surface_input_rate.copy_from(m_surface->runoff());
-    surface_input_rate.scale(1.0 / m_dt);
+    surface_input_rate.scale(1.0 / dt);
     inputs.surface_input_rate = &surface_input_rate;
   }
 
-  m_subglacial_hydrology->update(m_time->current(), m_dt, inputs);
+  m_subglacial_hydrology->update(t, dt, inputs);
 }
 
 

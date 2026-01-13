@@ -61,8 +61,9 @@ SIAFD::SIAFD(std::shared_ptr<const Grid> g)
       m_config->get_number("stress_balance.sia.enhancement_factor_interglacial");
 
   {
-    rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
-    m_flow_law = ice_factory.create();
+    rheology::FlowLawFactory ice_factory(m_config, m_EC);
+    m_flow_law = ice_factory.create(m_config->get_string("stress_balance.sia.flow_law"),
+                                    m_config->get_number("stress_balance.sia.Glen_exponent"));
   }
 
   const bool compute_grain_size_using_age =
@@ -229,7 +230,7 @@ void SIAFD::surface_gradient_eta(const array::Scalar2 &ice_thickness,
 
   auto GHOSTS = eta.stencil_width();
 
-  for (auto p = m_grid->points(GHOSTS); p; p.next()) {
+  for (auto p : m_grid->points_with_ghosts(GHOSTS)) {
     const int i = p.i(), j = p.j();
 
     eta(i, j) = pow(ice_thickness(i, j), etapow);
@@ -242,7 +243,7 @@ void SIAFD::surface_gradient_eta(const array::Scalar2 &ice_thickness,
   assert(h_x.stencil_width() >= 1);
   assert(h_y.stencil_width() >= 1);
 
-  for (auto p = m_grid->points(1); p; p.next()) {
+  for (auto p : m_grid->points_with_ghosts(1)) {
     const int i = p.i(), j = p.j();
 
     auto b = bed_elevation.box(i, j);
@@ -299,7 +300,7 @@ void SIAFD::surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
   // surface elevation needs more ghosts
   assert(h.stencil_width() >= 2);
 
-  for (auto p = m_grid->points(1); p; p.next()) {
+  for (auto p : m_grid->points_with_ghosts(1)) {
     const int i = p.i(), j = p.j();
 
     // I-offset
@@ -378,7 +379,7 @@ void SIAFD::surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevatio
   assert(w_i.stencil_width() >= 1);
   assert(w_j.stencil_width() >= 1);
 
-  for (auto p = m_grid->points(1); p; p.next()) {
+  for (auto p : m_grid->points_with_ghosts(1)) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, i-offset
@@ -420,7 +421,7 @@ void SIAFD::surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevatio
     }
   }
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, j-offset
@@ -590,7 +591,7 @@ void SIAFD::compute_diffusivity(bool full_update, const Geometry &geometry,
   for (int o = 0; o < 2; o++) {
     ParallelSection loop(m_grid->com);
     try {
-      for (auto p = m_grid->points(1); p; p.next()) {
+      for (auto p : m_grid->points_with_ghosts(1)) {
         const int i = p.i(), j = p.j();
 
         // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i, j) and (i+oi, j+oj)
@@ -754,7 +755,7 @@ void SIAFD::compute_diffusive_flux(const array::Staggered &h_x, const array::Sta
   for (int o = 0; o < 2; o++) {
     ParallelSection loop(m_grid->com);
     try {
-      for (auto p = m_grid->points(1); p; p.next()) {
+      for (auto p : m_grid->points_with_ghosts(1)) {
         const int i = p.i(), j = p.j();
 
         const double slope = (o == 0) ? h_x(i, j, o) : h_y(i, j, o);
@@ -810,7 +811,7 @@ void SIAFD::compute_I(const Geometry &geometry) {
   for (int o = 0; o < 2; ++o) {
     ParallelSection loop(m_grid->com);
     try {
-      for (auto p = m_grid->points(1); p; p.next()) {
+      for (auto p : m_grid->points_with_ghosts(1)) {
         const int i = p.i(), j = p.j();
 
         const int oi = 1 - o, oj = o;
@@ -873,7 +874,7 @@ void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry, const array
 
   const unsigned int Mz = m_grid->Mz();
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double

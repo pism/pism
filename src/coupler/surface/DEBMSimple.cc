@@ -332,7 +332,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double latitude = geometry.latitude(i, j);
@@ -548,14 +548,13 @@ const array::Scalar &DEBMSimple::atmosphere_transmissivity() const {
   return m_transmissivity;
 }
 
-void DEBMSimple::define_model_state_impl(const OutputFile &output) const {
-  SurfaceModel::define_model_state_impl(output);
-  m_snow_depth.define(output);
-  m_surface_albedo.define(output);
+std::set<VariableMetadata> DEBMSimple::state_impl() const {
+  auto variables = array::metadata({&m_snow_depth, &m_surface_albedo});
+  return pism::combine(variables, SurfaceModel::state_impl());
 }
 
-void DEBMSimple::write_model_state_impl(const OutputFile &output) const {
-  SurfaceModel::write_model_state_impl(output);
+void DEBMSimple::write_state_impl(const OutputFile &output) const {
+  SurfaceModel::write_state_impl(output);
   m_snow_depth.write(output);
   m_surface_albedo.write(output);
 }
@@ -593,7 +592,7 @@ protected:
 
       array::AccessScope list{latitude, result.get()};
 
-      for (auto p = m_grid->points(); p; p.next()) {
+      for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         (*result)(i, j) = M.insolation_diagnostic(orbital.solar_declination,

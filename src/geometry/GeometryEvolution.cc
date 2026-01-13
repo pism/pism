@@ -385,7 +385,7 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
   array::AccessScope list{ &H, &dH_SMB, &dH_BMB };
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       // To preserve non-negativity of thickness we need to apply changes in this exact order.
@@ -585,7 +585,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
   ParallelSection loop(m_grid->com);
   try {
     // compute advective fluxes and put them in output
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j(), M = cell_type.as_int(i, j);
 
       const double H   = ice_thickness(i, j);
@@ -618,7 +618,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
     }
 
     // limit the advective flux and add the diffusive flux to it to get the total
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j(), M = cell_type.as_int(i, j);
 
       for (int n = 0; n < 2; ++n) {
@@ -658,7 +658,7 @@ void GeometryEvolution::compute_flux_divergence(double dt, const array::Staggere
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       auto Q = flux.star(i, j);
@@ -725,7 +725,7 @@ void GeometryEvolution::update_in_place(double dt, const array::Scalar &bed_topo
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double divQ = flux_divergence(i, j);
@@ -839,7 +839,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
     // will be destroyed at the end of the block
     array::AccessScope list{ &cell_type, &ice_thickness, &area_specific_volume, &residual };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (residual(i, j) <= 0.0) {
@@ -868,7 +868,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
     residual.update_ghosts();
 
     // update area_specific_volume using adjusted residuals
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       auto R = residual.star(i, j);
@@ -902,7 +902,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
     array::AccessScope list{ &m_impl->thickness, &ice_thickness, &ice_surface_elevation,
                              &bed_topography, &cell_type };
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (area_specific_volume(i, j) <= 0.0) {
@@ -962,7 +962,7 @@ void GeometryEvolution::ensure_nonnegativity(const array::Scalar &ice_thickness,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const double H = ice_thickness(i, j), dH = thickness_change(i, j);
@@ -1025,7 +1025,7 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       // Don't modify ice thickness at Dirichlet B.C. locations and in the ice-free ocean.
@@ -1137,7 +1137,7 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const array::CellType1 
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       const int M = m_no_model_mask.as_int(i, j);
@@ -1186,7 +1186,7 @@ void RegionalGeometryEvolution::compute_surface_and_basal_mass_balance(double dt
 
   ParallelSection loop(m_grid->com);
   try {
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (m_no_model_mask(i, j) > 0.5) {
@@ -1274,7 +1274,7 @@ void ice_flow_rate_across_grounding_line(const array::CellType1 &cell_type,
 
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       double result = 0.0;
@@ -1318,7 +1318,7 @@ double total_grounding_line_flux(const array::CellType1 &cell_type,
 
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.ocean(i, j)) {

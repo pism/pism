@@ -158,6 +158,8 @@ def grid_from_file_test():
     try:
         F = PISM.util.prepare_output(file_name)
 
+        F.define_variable(enthalpy.metadata())
+
         enthalpy.write(F)
 
         F.close()
@@ -312,12 +314,13 @@ def modelvecs_test():
     # test write()
     output_file = filename("test_ModelVecs")
     try:
-        F = PISM.util.prepare_output(output_file)
-        F.close()
-
+        F1 = PISM.util.prepare_output(output_file, append=False)
+        F1.close()
         vecs.write(output_file)
 
         # test writeall()
+        F2 = PISM.util.prepare_output(output_file, append=False)
+        F2.close()
         vecs.writeall(output_file)
     finally:
         os.remove(output_file)
@@ -371,11 +374,10 @@ def util_test():
 
     output_file = filename("test_pism_util")
     try:
-        F = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
+        F = PISM.util.prepare_output(output_file)
         F.close()
 
         PISM.util.writeProvenance(output_file)
-        PISM.util.writeProvenance(output_file, message="history string")
 
         PISM.util.fileHasVariable(output_file, "data")
     finally:
@@ -597,9 +599,8 @@ def pism_context_test():
     print(ctx.prefix())
 
 
-def check_flow_law(factory, flow_law_name, EC, stored_data):
-    factory.set_default(flow_law_name)
-    law = factory.create()
+def check_flow_law(factory, flow_law_name, exponent, EC, stored_data):
+    law = factory.create(flow_law_name, exponent)
 
     depth = 2000
     gs = 1e-3
@@ -667,10 +668,11 @@ def flowlaw_test():
 
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
     EC = ctx.enthalpy_converter()
-    factory = PISM.FlowLawFactory("stress_balance.sia.", ctx.config(), EC)
+    factory = PISM.FlowLawFactory(ctx.config(), EC)
+    exponent = ctx.config().get_number("stress_balance.sia.Glen_exponent")
 
     for flow_law_name, data in data.items():
-        check_flow_law(factory, flow_law_name, EC, np.array(data))
+        check_flow_law(factory, flow_law_name, exponent, EC, np.array(data))
 
 
 def ssa_trivial_test():

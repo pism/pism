@@ -27,9 +27,9 @@ namespace rheology {
 
 // Hooke
 
-Hooke::Hooke(const std::string &prefix,
+Hooke::Hooke(double exponent,
              const Config &config, std::shared_ptr<EnthalpyConverter> ec)
-  : PatersonBudd(prefix, config, ec) {
+  : PatersonBudd(exponent, config, ec) {
   m_name = "Hooke";
 
   m_Q_Hooke  = config.get_number("flow_law.Hooke.Q");

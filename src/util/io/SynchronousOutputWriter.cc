@@ -24,6 +24,7 @@
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/GridInfo.hh"
+#include <cstddef>
 
 namespace pism {
 
@@ -39,6 +40,11 @@ const File &SynchronousOutputWriter::file(const std::string &file_name) {
   return *m_files[file_name];
 }
 
+void SynchronousOutputWriter::initialize_impl(
+    const std::set<VariableMetadata> & /*array_variables*/) {
+  // empty
+}
+
 SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &config)
     : OutputWriter(comm, config) {
   m_compression_level = static_cast<int>(config.get_number("output.compression_level"));
@@ -46,21 +52,19 @@ SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &co
 }
 
 void SynchronousOutputWriter::define_variable_impl(const std::string &file_name,
-                                                   const VariableMetadata &metadata,
-                                                   const std::vector<std::string> &dims) {
+                                                   const std::string &variable_name,
+                                                   const std::vector<std::string> &dims,
+                                                   io::Type type,
+                                                   const VariableAttributes &attributes) {
   const auto &output_file = file(file_name);
 
-  if (output_file.variable_exists(metadata.get_name())) {
+  if (output_file.variable_exists(variable_name)) {
     return;
   }
 
-  const auto &variable_name = metadata.get_name();
-
-  auto type = metadata.get_output_type();
-
   output_file.define_variable(variable_name, type, dims);
 
-  write_attributes(file_name, variable_name, metadata.all_strings(), metadata.all_doubles(), type);
+  write_attributes(file_name, variable_name, attributes.strings, attributes.numbers, type);
 }
 
 void SynchronousOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
@@ -188,20 +192,27 @@ void SynchronousOutputWriter::write_text_impl(const std::string &file_name,
   output_file.write_text_variable(variable_name, start, count, input);
 }
 
-void SynchronousOutputWriter::write_spatial_variable_impl(const std::string &file_name,
-                                                          const SpatialVariableMetadata &metadata,
-                                                          const double *data) {
+void SynchronousOutputWriter::write_distributed_array_impl(const std::string &file_name,
+                                                           const std::string &variable_name,
+                                                           const double *data) {
 
   const auto &output_file = file(file_name);
 
-  const auto &variable_name = metadata.get_name();
-  const auto &grid = grid_info(variable_name);
+  const auto &metadata = variable_info(variable_name);
+
+  if (metadata.grid_info() == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' has no grid info",
+                                  variable_name.c_str());
+  }
+
+  const auto &grid = *metadata.grid_info();
+
   unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
-  
+
   std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };
   std::vector<unsigned int> count = { grid.ym, grid.xm, n_levels };
 
-  if (not metadata.get_time_independent()) {
+  if (metadata.get_time_dependent()) {
     auto t_length = time_dimension_length(file_name);
     auto t_start  = t_length > 0 ? t_length - 1 : 0;
 

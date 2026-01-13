@@ -22,6 +22,7 @@
 #include <initializer_list>
 #include <memory>               // shared_ptr, dynamic_pointer_cast
 #include <cstdint>              // uint64_t
+#include <set>
 
 #include "pism/util/error_handling.hh" // RuntimeError
 
@@ -37,7 +38,7 @@ class Default;
 class Grid;
 class File;
 class OutputFile;
-class SpatialVariableMetadata;
+class VariableMetadata;
 
 namespace petsc {
 class DM;
@@ -230,8 +231,6 @@ public:
   void set_name(const std::string &name);
   const std::string& get_name() const;
 
-  void define(const OutputFile &file) const;
-
   void read(const std::string &filename, unsigned int time);
   void read(const File &file, unsigned int time);
 
@@ -250,10 +249,11 @@ public:
 
   void set(double c);
 
-  SpatialVariableMetadata& metadata(unsigned int N = 0);
+  VariableMetadata& metadata(unsigned int N = 0);
 
-  const SpatialVariableMetadata& metadata(unsigned int N = 0) const;
+  const VariableMetadata& metadata(unsigned int N = 0) const;
 
+  std::vector<VariableMetadata> all_metadata() const;
   int state_counter() const;
   void inc_state_counter();
 
@@ -322,6 +322,8 @@ static typename std::shared_ptr<T> cast(std::shared_ptr<Array> input) {
 
   return result;
 }
+
+std::set<VariableMetadata> metadata(std::initializer_list<const Array *> vecs);
 
 } // end of namespace array
 

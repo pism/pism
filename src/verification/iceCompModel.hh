@@ -53,7 +53,7 @@ protected:
                                        double &volerr, double &areaerr,
                                        double &gmaxHerr, double &gavHerr, double &gmaxetaerr,
                                        double &centerHerr);
-  virtual void print_summary(bool tempAndAge);
+  virtual void print_summary(bool tempAndAge, double dt);
 
   // related to tests A B C D H
   void initTestABCDH();
@@ -65,7 +65,7 @@ protected:
   void initTestL();
 
   // related to tests F G; see iCMthermo.cc
-  virtual void energy_step();
+  virtual void energy_step(double t, double dt);
   void initTestFG();
   void getCompSourcesTestFG();
 

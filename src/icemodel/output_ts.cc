@@ -57,23 +57,52 @@ void IceModel::init_timeseries() {
   }
 
   if (ts_filename.empty()) {
+    m_ts_diagnostics.clear();
     return;
   }
 
-  try {
-    *m_ts_times = m_time->parse_times(times);
-  } catch (RuntimeError &e) {
-    e.add_context("parsing the -ts_times argument %s", times.c_str());
-    throw;
+  // initialize m_ts_times and m_ts_vars
+  {
+    try {
+      *m_ts_times = m_time->parse_times(times);
+    } catch (RuntimeError &e) {
+      e.add_context("parsing the -ts_times argument %s", times.c_str());
+      throw;
+    }
+
+    m_log->message(2, "  saving scalar time-series to '%s'\n", ts_filename.c_str());
+    m_log->message(2, "  times requested: %s\n", times.c_str());
+
+    m_ts_vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
+    if (not m_ts_vars.empty()) {
+      m_ts_vars = process_ts_shortcuts(*m_config, m_ts_vars);
+      m_log->message(2, "variables requested: %s\n", set_join(m_ts_vars, ",").c_str());
+    }
   }
 
-  m_log->message(2, "  saving scalar time-series to '%s'\n", ts_filename.c_str());
-  m_log->message(2, "  times requested: %s\n", times.c_str());
+  // de-allocate unused scalar diagnostics
+  {
+    std::vector<std::string> missing;
+    if (m_ts_file != nullptr and m_ts_vars.empty()) {
+      // use all diagnostics
+    } else {
+      TSDiagnosticList diagnostics;
+      for (const auto &v : m_ts_vars) {
+        if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
+          diagnostics[v] = m_ts_diagnostics[v];
+        } else {
+          missing.push_back(v);
+        }
+      }
+      // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
+      m_ts_diagnostics = diagnostics;
+    }
 
-  m_ts_vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
-  if (not m_ts_vars.empty()) {
-    m_ts_vars = process_ts_shortcuts(*m_config, m_ts_vars);
-    m_log->message(2, "variables requested: %s\n", set_join(m_ts_vars, ",").c_str());
+    if (not missing.empty()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "requested scalar diagnostics %s are not available",
+                                    join(missing, ",").c_str());
+    }
   }
 
   // prepare the output file
@@ -95,14 +124,23 @@ void IceModel::init_timeseries() {
         }
       }
     } else {
-      define_metadata(*m_ts_file, SKIP_MAPPING);
-    }
+      std::set<VariableMetadata> variables = { config_metadata(*m_config),
+                                               m_output_global_attributes };
+      for (const auto &d : m_ts_diagnostics) {
+        variables.insert(d.second->metadata());
+      }
 
-    // initialize scalar diagnostics
-    for (const auto &d : m_ts_diagnostics) {
-      d.second->init(m_ts_file, m_ts_times);
+      bool with_time_bounds = true;
+      define_time(*m_ts_file, with_time_bounds);
+      define_variables(*m_ts_file, variables);
     }
   }
+
+  // initialize scalar diagnostics using m_ts_file allocated above:
+  for (const auto &d : m_ts_diagnostics) {
+    d.second->init(m_ts_file, m_ts_times);
+  }
+
 }
 
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.
@@ -126,7 +164,7 @@ void IceModel::flush_timeseries() {
     return;
   }
 
-  write_metadata(*m_ts_file);
+  write_config(*m_config, "pism_config", *m_ts_file);
 
   // flush all the time-series buffers:
   for (const auto &d : m_ts_diagnostics) {

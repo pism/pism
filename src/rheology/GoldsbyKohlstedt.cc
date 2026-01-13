@@ -27,9 +27,9 @@ namespace rheology {
 
 // Goldsby-Kohlstedt (forward) ice flow law
 
-GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &prefix,
+GoldsbyKohlstedt::GoldsbyKohlstedt(double exponent,
                                    const Config &config, std::shared_ptr<EnthalpyConverter> ec)
-  : FlowLaw(prefix, config, ec) {
+  : FlowLaw(exponent, config, ec) {
   m_name = "Goldsby-Kohlstedt / Paterson-Budd (hybrid)";
 
   m_V_act_vol      = -13.e-6;   // m^3/mol
@@ -106,7 +106,7 @@ double GoldsbyKohlstedt::flow_from_temp(double stress, double temp,
   if (fabs(stress) < 1e-10) {
     return 0;
   }
-  const double T = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
+  const double T = temp + (m_beta_CC_grad / m_rho_g) * pressure;
   const double pV = pressure * m_V_act_vol;
   const double RT = m_ideal_gas_constant * T;
   // Diffusional Flow
@@ -150,7 +150,7 @@ GKparts GoldsbyKohlstedt::flowParts(double stress, double temp, double pressure)
     p.eps_diff=0.0; p.eps_disl=0.0; p.eps_gbs=0.0; p.eps_basal=0.0;
     return p;
   }
-  const double T = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
+  const double T = temp + (m_beta_CC_grad / m_rho_g) * pressure;
   const double pV = pressure * m_V_act_vol;
   const double RT = m_ideal_gas_constant * T;
   // Diffusional Flow
@@ -188,10 +188,10 @@ GKparts GoldsbyKohlstedt::flowParts(double stress, double temp, double pressure)
 }
 /*****************/
 
-GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(const std::string &prefix,
+GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(double exponent,
                                                    const Config &config,
                                                    std::shared_ptr<EnthalpyConverter> ec)
-  : GoldsbyKohlstedt(prefix, config, ec) {
+  : GoldsbyKohlstedt(exponent, config, ec) {
   m_name = "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";
 
   m_d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)
@@ -207,7 +207,7 @@ double GoldsbyKohlstedtStripped::flow_from_temp(double stress, double temp, doub
   if (fabs(stress) < 1e-10) {
     return 0;
   }
-  const double T = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
+  const double T = temp + (m_beta_CC_grad / m_rho_g) * pressure;
   const double RT = m_ideal_gas_constant * T;
   // NO Diffusional Flow
   // Dislocation Creep

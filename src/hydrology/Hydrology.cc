@@ -412,7 +412,7 @@ void Hydrology::update(double t, double dt, const Inputs &inputs) {
 
   array::AccessScope list{ &m_W, &m_Wtill, &m_total_change };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     m_total_change(i, j) = m_W(i, j) + m_Wtill(i, j);
@@ -421,7 +421,7 @@ void Hydrology::update(double t, double dt, const Inputs &inputs) {
   this->update_impl(t, dt, inputs);
 
   // compute total change in meters
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     m_total_change(i, j) = (m_W(i, j) + m_Wtill(i, j)) - m_total_change(i, j);
   }
@@ -433,7 +433,7 @@ void Hydrology::update(double t, double dt, const Inputs &inputs) {
          kg_per_m      = water_density * m_grid->cell_area();
 
   list.add({ &m_flow_change, &m_input_change });
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
     m_total_change(i, j) *= kg_per_m;
     m_input_change(i, j) *= kg_per_m;
@@ -465,11 +465,11 @@ DiagnosticList Hydrology::diagnostics_impl() const {
   return result;
 }
 
-void Hydrology::define_model_state_impl(const OutputFile &output) const {
-  m_Wtill.define(output);
+std::set<VariableMetadata> Hydrology::state_impl() const {
+  return array::metadata({ &m_Wtill });
 }
 
-void Hydrology::write_model_state_impl(const OutputFile &output) const {
+void Hydrology::write_state_impl(const OutputFile &output) const {
   m_Wtill.write(output);
 }
 
@@ -487,7 +487,7 @@ void Hydrology::compute_overburden_pressure(const array::Scalar &ice_thickness,
 
   array::AccessScope list{ &ice_thickness, &result };
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = ice_density * standard_gravity * ice_thickness(i, j);
@@ -560,7 +560,7 @@ void check_bounds(const array::Scalar &W, double W_max) {
   array::AccessScope list(W);
   ParallelSection loop(grid->com);
   try {
-    for (auto p = grid->points(); p; p.next()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (W(i,j) < 0.0) {
@@ -605,7 +605,7 @@ void Hydrology::compute_surface_input_rate(const array::CellType &mask,
   const double
     water_density = m_config->get_number("constants.fresh_water.density");
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
@@ -636,7 +636,7 @@ void Hydrology::compute_basal_melt_rate(const array::CellType &mask,
     water_density = m_config->get_number("constants.fresh_water.density"),
     C             = ice_density / water_density;
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
@@ -687,7 +687,7 @@ void Hydrology::enforce_bounds(const array::CellType &cell_type,
     fresh_water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m            = m_grid->cell_area() * fresh_water_density; // kg m-1
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (water_thickness(i, j) < 0.0) {
@@ -736,7 +736,7 @@ void Hydrology::enforce_bounds(const array::CellType &cell_type,
 
     list.add(M);
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       if (M(i, j) > 0.0) {

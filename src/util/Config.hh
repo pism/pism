@@ -29,6 +29,7 @@
 
 #include <mpi.h>                // MPI_Comm
 
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/Units.hh"
 
 namespace pism {
@@ -68,6 +69,9 @@ public:
    */
   enum UseFlag {REMEMBER_THIS_USE = 0, FORGET_THIS_USE = 1};
 
+  //! Maximum length of the JSON string (for writing to output files)
+  static int max_length;
+
   // Import settings from an override file
   void import_from(const Config &other);
 
@@ -81,9 +85,6 @@ public:
   std::string filename() const;
 
   void read(const File &file);
-
-  void define(const OutputFile &file) const;
-  void write(const OutputFile &file) const;
 
   bool is_set(const std::string &name) const;
 
@@ -136,8 +137,6 @@ public:
   // Implementations
 protected:
   virtual void read_impl(const File &nc) = 0;
-  virtual void define_impl(const OutputFile &nc) const = 0;
-  virtual void write_impl(const OutputFile &nc) const = 0;
 
   virtual bool is_set_impl(const std::string &name) const = 0;
 
@@ -193,6 +192,10 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
 //! Report unused configuration parameters to `stdout`.
 void print_unused_parameters(const Logger &log, int verbosity_threshhold,
                              const Config &config);
+
+VariableMetadata config_metadata(const Config &config);
+
+void write_config(const Config &config, const std::string &variable_name, const OutputFile &file);
 
 } // end of namespace pism
 

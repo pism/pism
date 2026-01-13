@@ -37,21 +37,17 @@ namespace rheology {
 #define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
-typedef FlowLaw*(*FlowLawCreator)(const std::string &,
-                                  const Config &, std::shared_ptr<EnthalpyConverter>);
+typedef FlowLaw *(*FlowLawCreator)(double, const Config &, std::shared_ptr<EnthalpyConverter>);
 
 class FlowLawFactory {
 public:
-  FlowLawFactory(const std::string &prefix,
-                 std::shared_ptr<const Config> conf,
+  FlowLawFactory(std::shared_ptr<const Config> conf,
                  std::shared_ptr<EnthalpyConverter> my_EC);
   ~FlowLawFactory() = default;
-  void set_default(const std::string &name);
   void add(const std::string &name, FlowLawCreator);
   void remove(const std::string &name);
-  std::shared_ptr<FlowLaw> create();
+  std::shared_ptr<FlowLaw> create(const std::string &type_name, double exponent);
 private:
-  std::string m_type_name, m_prefix;
   std::map<std::string, FlowLawCreator> m_flow_laws;
   std::shared_ptr<const Config> m_config;
   std::shared_ptr<EnthalpyConverter> m_EC;
