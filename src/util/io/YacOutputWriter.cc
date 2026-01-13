@@ -420,6 +420,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 
 void YacOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
   if (m_server_allowed_files[file_name]) {
+    // FIXME: the argument `time_seconds` is ignored
     // Gathers time_dimension_length metadata and sends it to the server
     nlohmann::json file_metadata;
     file_metadata["file_name"] = file_name;
