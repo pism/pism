@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -334,6 +334,13 @@ void OutputWriter::write_distributed_array(const std::string &file_name,
                                           const std::string &variable_name,
                                           const double *input) {
   const auto &variable = variable_info(variable_name);
+
+  if (variable.grid_info() == nullptr) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "write_distributed_array() called for a variable (%s) that has no grid info",
+        variable_name.c_str());
+  }
 
   bool time_dependent = variable.get_time_dependent();
 

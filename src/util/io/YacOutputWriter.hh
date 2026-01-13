@@ -71,17 +71,15 @@ private:
   // It might be useful for debugging purposes
   bool m_suppress_client_file_operations = true;
   int m_grid_size;
-  int m_my_rank = -1;
-  int m_local_x_size;
-  int m_local_y_size;
+  bool m_leader;
   int m_max_collection_size = 0;
   const Geometry& m_geometry;
   std::map<std::string, int> m_field_ids;
   std::map<std::string, std::map<std::string, int>> m_dim_sizes;
   std::map<std::string, unsigned int> m_variable_tags;
   std::vector<std::string> m_text_field_buffers;
-  std::map<std::string, std::vector<std::string>> m_file_variables, m_file_dimensions; 
-  nlohmann::json m_non_spatial_variables_metadata;
+  std::map<std::string, std::map<std::string, bool> > m_defined_variable, m_defined_dimension;
+
   std::vector<MPI_Request> m_mpi_requests; 
   std::vector<double *> m_array_data;
   double *** m_yac_raw_send_array = nullptr;
@@ -94,10 +92,12 @@ private:
 
   // --- Server-related subroutines ---
   void create_intercomm();
-  void initialize_yac_grid();
-  void define_yac_field(const std::string &file_name,
-                        const VariableMetadata &metadata,
-                        const std::vector<std::string> &dims);
+
+  void initialize_yac_grid(const std::string &variable_name);
+
+  void define_yac_field(const std::string &file_name, const std::string &variable_name,
+                        const std::vector<std::string> &dims, io::Type type,
+                        const VariableAttributes &attributes);
   void end_yac_definitions();
   void server_send_action(int server_action_id,
                           const std::string &server_action_metadata = "");
@@ -110,12 +110,14 @@ private:
 
   // --- Interface implementation and utilities ---
   const File &file(const std::string &file_name);
+  void initialize_impl(const std::set<VariableMetadata> &array_variables);
 
   void define_dimension_impl(const std::string &file_name, const std::string &name,
                              unsigned int length);
 
-  void define_variable_impl(const std::string &file_name, const VariableMetadata &metadata,
-                            const std::vector<std::string> &dims);
+  void define_variable_impl(const std::string &file_name, const std::string &variable_name,
+                            const std::vector<std::string> &dims, io::Type type,
+                            const VariableAttributes &attributes);
 
   void set_global_attributes_impl(const std::string &file_name,
                                   const std::map<std::string, std::string> &strings,
@@ -143,8 +145,8 @@ private:
                        const std::vector<unsigned int> &count,
                        const std::string &input);
 
-  void write_spatial_variable_impl(const std::string &file_name,
-                                   const SpatialVariableMetadata &metadata, const double *data);
+  void write_distributed_array_impl(const std::string &file_name, const std::string &variable_name,
+                                    const double *data);
 
   void append_impl(const std::string &file_name);
   void sync_impl(const std::string &file_name);

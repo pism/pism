@@ -37,19 +37,30 @@ extern "C" {
 
 namespace pism {
 
-std::string pism_type_to_python_nc_type(pism::io::Type input) {
+namespace details {
+/*!
+ * Store variable attributes from `attributes` in a JSON object `json`.
+ */
+static void to_json(const VariableAttributes &attributes, nlohmann::json &json) {
+  for (const auto &attribute : attributes.strings) {
+    json[attribute.first] = attribute.second;
+  }
+
+  for (const auto &attribute : attributes.numbers) {
+    json[attribute.first] = attribute.second;
+  }
+}
+
+static std::string to_python_type(pism::io::Type input) {
   static const std::map<pism::io::Type, std::string> type_map = {
-    {io::PISM_BYTE,  "i1"},
-    {io::PISM_CHAR,  "S1"},
-    {io::PISM_SHORT, "i2"},
-    {io::PISM_INT,   "i4"},
-    {io::PISM_FLOAT, "f4"},
-    {io::PISM_DOUBLE,"f8"}
+    { io::PISM_BYTE, "i1" }, { io::PISM_CHAR, "S1" },  { io::PISM_SHORT, "i2" },
+    { io::PISM_INT, "i4" },  { io::PISM_FLOAT, "f4" }, { io::PISM_DOUBLE, "f8" }
   };
 
   auto it = type_map.find(input);
-  return (it != type_map.end()) ? it->second : "None";  // "None" for NC_NAT
+  return (it != type_map.end()) ? it->second : "None"; // "None" for NC_NAT
 }
+} // namespace details
 
 // Even if we are using YAC, certain forms of interaction with the server cannot 
 // be made using only YAC functionalities. Sending actions, non-gridded data 
@@ -74,7 +85,11 @@ void YacOutputWriter::create_intercomm() {
   yac_cget_comp_comm(1, &local_comm);
   yac_cget_comps_comm(comp_names, nbr_comps, &global_comm);
   MPI_Comm_size(global_comm, &global_size);
-  MPI_Comm_rank(local_comm, &m_my_rank);
+  {
+    int rank = -1;
+    MPI_Comm_rank(local_comm, &rank);
+    m_leader = (rank == 0);
+  }
   std::vector<int> component_leaders_ranks(global_size);
 
   // We retrieve the process group information from both local and global communicators
@@ -97,37 +112,28 @@ void YacOutputWriter::create_intercomm() {
 
 // Initializes the YAC grid and sends the gometrical information to 
 // the server so that it can also initialize its own grid
-void YacOutputWriter::initialize_yac_grid() {
-  
-  // Global grid containing all the points
-  auto global_grid = m_geometry.latitude.grid();
-  
-  // Distributed grid containing the domain decomposition information
-  auto distributed_grid = m_geometry.latitude.grid()->info();
+void YacOutputWriter::initialize_yac_grid(const std::string &variable_name) {
 
-  // Global and local x and y sizes
-  int x_size = (int)global_grid->Mx();
-  int y_size = (int)global_grid->My();
-  m_local_x_size = (int)distributed_grid.xm;
-  m_local_y_size = (int)distributed_grid.ym;
-  
+  // Distributed grid containing the domain decomposition information
+  const auto &grid = *variable_info(variable_name).grid_info();
+
   server_send_action(START_YAC_INITIALIZATION);
 
   // Sends the global domain sizes to the server
-  if (m_my_rank == 0) {
+  if (m_leader) {
+    // FIXME: one MPI_Isend() sending 2 integers would be enough here
+    int x_size = (int)grid.Mx;
     m_mpi_requests.emplace_back();
     MPI_Isend((void *) &x_size, 1, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
   
+    int y_size = (int)grid.My;
     m_mpi_requests.emplace_back();
     MPI_Isend((void *) &y_size, 1, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
   }
 
-  // Translate local point indices to global point indices
-  auto patch_global_indices = compute_patch_global_indices(
-      x_size, distributed_grid.xs, distributed_grid.xm, distributed_grid.ys, distributed_grid.ym);
-
   // Will hold the amount of points for the local grid patch of this process
-  int local_patch_size = (int)patch_global_indices.size();
+  int local_patch_size = (int)(grid.xm * grid.ym);
+  m_grid_size = local_patch_size;
 
   // Gathers on the server the size of the local patch from each process
   MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, m_intercomm);
@@ -138,19 +144,23 @@ void YacOutputWriter::initialize_yac_grid() {
       &m_geometry.longitude,
     };
 
-  m_grid_size = m_local_x_size * m_local_y_size;
   int cyclic_dims[] = {0, 0};
-  int nbr_vertices[] = {m_local_x_size, m_local_y_size};
+  int nbr_vertices[] = {(int)grid.xm, (int)grid.ym};
   std::vector<double> latitudes(local_patch_size);
   std::vector<double> longitudes(local_patch_size);
 
   // Converts the process local latitudes and longitudes from degrees to radians
   int it = 0;
-  for (auto p = global_grid->points(); p; p.next(), it++) {
+  for (auto p : GridPoints(grid)) {
     const int i = p.i(), j = p.j();
     latitudes[it] = (m_geometry.latitude(i, j) * M_PI) / 180.0;
     longitudes[it] = (m_geometry.longitude(i, j) * M_PI) / 180.0;
+    it++;
   }
+
+  // Translate local point indices to global point indices
+  auto patch_global_indices =
+      compute_patch_global_indices(grid.Mx, grid.xs, grid.xm, grid.ys, grid.ym);
 
   // Sends the global indices of local points to the server, followed by local latitudes and longitudes
   MPI_Gatherv(patch_global_indices.data(), local_patch_size, MPI_INT, NULL, NULL, NULL, MPI_INT, 0,
@@ -163,7 +173,7 @@ void YacOutputWriter::initialize_yac_grid() {
   // Defines the YAC grid and points using the local points 
   yac_cdef_grid_curve2d("pism_grid", nbr_vertices, cyclic_dims,
                         longitudes.data(), latitudes.data(), &m_grid_id);
-  yac_cdef_points_unstruct(m_grid_id, m_grid_size, YAC_LOCATION_CORNER,
+  yac_cdef_points_unstruct(m_grid_id, local_patch_size, YAC_LOCATION_CORNER,
                            longitudes.data(), latitudes.data(), &m_vertex_points_id);
 
   m_yac_grid_initialized = true;
@@ -171,26 +181,27 @@ void YacOutputWriter::initialize_yac_grid() {
 
 // Subroutine to define a YAC field
 void YacOutputWriter::define_yac_field(const std::string &file_name,
-                                       const VariableMetadata &metadata,
-                                       const std::vector<std::string> &dims){
-    int field_id, collection_size = 1;
-    nlohmann::json field_metadata;
+                                       const std::string &variable_name,
+                                       const std::vector<std::string> &dims, io::Type type,
+                                       const VariableAttributes &attributes) {
 
-    // Gathers all the field metadata into the json object
-    field_metadata["dimensions"] = dims;
-    field_metadata["dtype"] = pism_type_to_python_nc_type(metadata.get_output_type());
+  int collection_size = 1;
+  if (dims.size() > 3) {
+    collection_size = m_dim_sizes[file_name][dims[3]];
+  }
 
-    for (const auto &attribute : metadata.all_strings()) {
-      field_metadata[attribute.first] = attribute.second;
-    }
+  // Gathers all the field metadata into the json object
+  nlohmann::json field_metadata;
+  {
+    details::to_json(attributes, field_metadata);
 
-    for (const auto &attribute : metadata.all_doubles()) {
-      field_metadata[attribute.first] = attribute.second;
-    }
-
-    if (dims.size() > 3) {
-      collection_size = m_dim_sizes[file_name][dims[3]];
-    }
+    field_metadata["dimensions"]      = dims;
+    field_metadata["dtype"]           = details::to_python_type(type);
+    field_metadata["file_name"]       = file_name;
+    field_metadata["variable_name"]   = variable_name;
+    field_metadata["timestep"]        = "PT1M";
+    field_metadata["collection_size"] = collection_size;
+  }
 
     // This allows a single allocation/deallocation of the yac_raw_send_array.
     // With multiple files writing spatial variables it might become a problem 
@@ -202,22 +213,19 @@ void YacOutputWriter::define_yac_field(const std::string &file_name,
       m_max_collection_size = collection_size;
     }
 
-    field_metadata["file_name"] = file_name;
-    field_metadata["variable_name"] = metadata.get_name();
-    field_metadata["timestep"] = "PT1M";
-    field_metadata["collection_size"] = collection_size;
     server_send_action(DEFINE_SPATIAL_VARIABLE, field_metadata.dump());
 
     // If the field has already been defined, return
     // Note that a spatial variable can theoretically be defined on the server 
     // for multiple files but only one YAC field will be created
-    if (m_field_ids.find(metadata.get_name()) != m_field_ids.end()) {
+    if (m_field_ids.find(variable_name) != m_field_ids.end()) {
       return;
     }
 
-    yac_cdef_field(metadata.get_name().c_str(), 1, &m_vertex_points_id, 1,
+    int field_id = -1;
+    yac_cdef_field(variable_name.c_str(), 1, &m_vertex_points_id, 1,
                    collection_size, "PT1M", YAC_TIME_UNIT_ISO_FORMAT, &field_id);
-    m_field_ids[metadata.get_name()] = field_id;
+    m_field_ids[variable_name] = field_id;
 }
 
 // This subroutine ends the YAC definitions phase.
@@ -245,11 +253,15 @@ void YacOutputWriter::end_yac_definitions() {
 // TODO: the metadata should be a json string for all actions
 void YacOutputWriter::server_send_action(int server_action_id,
                                          const std::string &server_action_metadata) {
-  // Only process 0 needs to send actions to the server
-  if (m_my_rank != 0) {
+  // Only the leader process needs to send actions to the server
+  if (not m_leader) {
     return;
   }
 
+  // FIXME: encode action ID in JSON and then use one MPI_Isend() to send the message. The
+  // Python code will then use MPI_Probe() + MPI_Get_count() + MPI_Recv() to get all of
+  // the info.
+  //
   // First the action id is sent to the server
   m_mpi_requests.emplace_back();
   MPI_Isend((void *)&server_action_id, 1, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
@@ -282,9 +294,9 @@ void YacOutputWriter::server_ensure_file_exists(const std::string &file_name) {
     // straightforward by simply adding new clauses to this if condition.
     if(file_name.find("snapshot") != std::string::npos and !m_server_allowed_files[file_name]) {
       m_server_allowed_files[file_name] = true;
-      nlohmann::json file_metadata;
-      file_metadata["file_name"] = file_name;
-      server_send_action(CREATE_FILE, file_metadata.dump());
+      nlohmann::json info;
+      info["file_name"] = file_name;
+      server_send_action(CREATE_FILE, info.dump());
     }
 }
 
@@ -341,29 +353,29 @@ YacOutputWriter::~YacOutputWriter() {
     yac_cfinalize();
 }
 
-void YacOutputWriter::define_variable_impl(const std::string &file_name,
-                                           const VariableMetadata &metadata,
-                                           const std::vector<std::string> &dims) {
-  server_ensure_file_exists(file_name);
+void YacOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_variables) {
 
-  const auto &variable_name = metadata.get_name();
+}
+
+void YacOutputWriter::define_variable_impl(const std::string &file_name,
+                                           const std::string &variable_name,
+                                           const std::vector<std::string> &dims, io::Type type,
+                                           const VariableAttributes &attributes) {
+  server_ensure_file_exists(file_name);
 
   // Checks whether the file for which this action was called is allowed for the server
   if (m_server_allowed_files[file_name]) {
     // Initialize the YAC grid if it has not yet been initialized 
     if(not m_yac_grid_initialized and dims.size() > 1) {
-      initialize_yac_grid();
+      initialize_yac_grid(variable_name);
     }
 
     // If this variable was already defined for this file, return
-    for (const auto &variable : m_file_variables[file_name]) {
-      if (variable == variable_name) {
-        return;
-      }
+    if (m_defined_variable[file_name][variable_name]) {
+      return;
     }
 
     // Small heuristic to find if the variable is gridded or not
-    // FIXME: This is unreliable. Use metadata.n_spatial_dimensions() instead.
     int horizontal_dims = 0;
     for (const auto &dim : dims) {
       if (dim == "x" or dim == "y") {
@@ -373,32 +385,28 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 
     if (horizontal_dims == 2) {
       // If the variable is gridded, define a yac field for it
-      define_yac_field(file_name, metadata, dims);
+      define_yac_field(file_name, variable_name, dims, type, attributes);
     } else {
-      // If the variable is not gridded, pack all its metadata and tell the server to define it for this file
-      m_non_spatial_variables_metadata[variable_name]["variable_name"] = variable_name;
-      m_non_spatial_variables_metadata[variable_name]["dimensions"] = dims;
-      m_non_spatial_variables_metadata[variable_name]["dtype"] = pism_type_to_python_nc_type(metadata.get_output_type());
-      m_non_spatial_variables_metadata[variable_name]["file_name"] = file_name;
+      // If the variable is not gridded, pack all its metadata and tell the server to
+      // define it for this file
 
-      for (const auto &attribute : metadata.all_strings()) {
-        m_non_spatial_variables_metadata[variable_name][attribute.first] =
-            attribute.second;
-      }
+      nlohmann::json metadata;
+      details::to_json(attributes, metadata);
 
-      for (const auto &attribute : metadata.all_doubles()) {
-        m_non_spatial_variables_metadata[variable_name][attribute.first] =
-            attribute.second;
-      }
+      metadata["variable_name"] = variable_name;
+      metadata["dimensions"] = dims;
+      metadata["dtype"] = details::to_python_type(type);
+      metadata["file_name"] = file_name;
 
       if(not dims.empty()) {
-        m_non_spatial_variables_metadata[variable_name]["tag"] = m_variable_tags.size();
+        metadata["tag"] = m_variable_tags.size();
         m_variable_tags[variable_name] = m_variable_tags.size();
       }
-      server_send_action(DEFINE_NON_SPATIAL_VARIABLE, m_non_spatial_variables_metadata[variable_name].dump());
+      server_send_action(DEFINE_NON_SPATIAL_VARIABLE, metadata.dump());
     }
-    // Save the variable as already defined for this file 
-    m_file_variables[file_name].push_back(variable_name);
+
+    // Save the variable as already defined for this file
+    m_defined_variable[file_name][variable_name] = true;
 
     if (m_suppress_client_file_operations) {
       return;
@@ -411,11 +419,9 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     return;
   }
 
-  auto type = metadata.get_output_type();
-
   output_file.define_variable(variable_name, type, dims);
 
-  write_attributes(file_name, variable_name, metadata.all_strings(), metadata.all_doubles(), type);
+  write_attributes(file_name, variable_name, attributes.strings, attributes.numbers, type);
 }
 
 void YacOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
@@ -441,10 +447,10 @@ void YacOutputWriter::append_history_impl(const std::string &file_name,
   server_ensure_file_exists(file_name);
   if (m_server_allowed_files[file_name]) {
     // Gathers history metadata and sends it to the server
-    nlohmann::json file_metadata;
-    file_metadata["file_name"] = file_name;
-    file_metadata["attributes"]["history"] = text;
-    server_send_action(SET_FILE_ATTRIBUTES, file_metadata.dump());
+    nlohmann::json info;
+    info["file_name"] = file_name;
+    info["attributes"]["history"] = text;
+    server_send_action(SET_FILE_ATTRIBUTES, info.dump());
 
     if (m_suppress_client_file_operations) {
       return;
@@ -483,11 +489,9 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
     m_dim_sizes[file_name][name] = (int)length;
 
       // If this dimension has already been defined for this file, return
-      for (const auto &dimension : m_file_dimensions[file_name]) {
-        if (dimension == name) {
-          return;
-        }
-      }
+    if (m_defined_dimension[file_name][name]) {
+      return;
+    }
 
       // Gathers the dimension metadata and sends it to the server
       nlohmann::json file_dim;
@@ -495,7 +499,8 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
       file_dim["dimension_name"] = name;
       file_dim["dimension_length"] = length;
       server_send_action(SET_FILE_DIMENSION, file_dim.dump());
-      m_file_dimensions[file_name].push_back(name);
+
+      m_defined_dimension[file_name][name] = true;
 
       if (m_suppress_client_file_operations) {
         return;
@@ -616,19 +621,20 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
 
     // Gathers the variable name into the json object and sends it 
     // to the server for identification of which variable to receive
-    nlohmann::json variable_info_json;
-    variable_info_json["file_name"] = file_name;
-    variable_info_json["variable_name"] = variable_name;
-    server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
+    nlohmann::json info;
+    info["file_name"] = file_name;
+    info["variable_name"] = variable_name;
+    server_send_action(SEND_NON_SPATIAL_VARIABLE, info.dump());
 
     // Non-gridded variables are sent uniquely by the process with rank 0
-    if (m_my_rank == 0) {
+    if (m_leader) {
       // Buffers the argument array so that the asynchronous operation can finish after its lifetime
       // These arrays are deleted in the destructor
       m_array_data.push_back(new double[count[0]]);
       memcpy(m_array_data.back(), data + start[0], count[0] * sizeof(double));
       m_mpi_requests.emplace_back();
-      MPI_Isend((void *) (m_array_data.back()), (int)count[0], MPI_DOUBLE, 0, (int)m_variable_tags[variable_name], m_intercomm, &m_mpi_requests.back());
+      MPI_Isend((void *)(m_array_data.back()), (int)count[0], MPI_DOUBLE, 0,
+                (int)m_variable_tags[variable_name], m_intercomm, &m_mpi_requests.back());
     }
 
     if (m_suppress_client_file_operations) {
@@ -649,13 +655,13 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
   if(m_server_allowed_files[file_name]) {
     // Gathers the variable name into the json object and sends it 
     // to the server for identification of which variable to receive
-    nlohmann::json variable_info_json;
-    variable_info_json["file_name"] = file_name;
-    variable_info_json["variable_name"] = variable_name;
-    server_send_action(SEND_NON_SPATIAL_VARIABLE, variable_info_json.dump());
+    nlohmann::json info;
+    info["file_name"] = file_name;
+    info["variable_name"] = variable_name;
+    server_send_action(SEND_NON_SPATIAL_VARIABLE, info.dump());
 
     // Text variables are sent uniquely by the process with rank 0
-    if (m_my_rank == 0) {
+    if (m_leader) {
       // Text fields are buffered so that the asynchronous send can finish after the arguments lifetime
       // Since it is buffered inside of a vector, the deallocation happens automatically at the destructor
       m_text_field_buffers.push_back(input);
@@ -673,11 +679,15 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
   output_file.write_text_variable(variable_name, start, count, input);
 }
 
-void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
-                                                  const SpatialVariableMetadata &metadata,
-                                                  const double *data) {
-  const auto &variable_name = metadata.get_name();
+void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
+                                                   const std::string &variable_name,
+                                                   const double *data) {
 
+
+  auto variable = variable_info(variable_name);
+
+  const auto *grid = variable.grid_info();
+  
   server_ensure_file_exists(file_name);
   if (m_server_allowed_files[file_name]) {
     // If the YAC end of definitions has not yet been done, perfom it now
@@ -687,25 +697,29 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
 
     // Gathers the variable name into the json object and sends it 
     // to the server for identification of which variable to receive
-    nlohmann::json variable_info_json;
-    variable_info_json["file_name"] = file_name;
-    variable_info_json["variable_name"] = variable_name;
-    server_send_action(SEND_SPATIAL_VARIABLE, variable_info_json.dump());
-    
+    {
+      nlohmann::json info;
+      info["file_name"]     = file_name;
+      info["variable_name"] = variable_name;
+      server_send_action(SEND_SPATIAL_VARIABLE, info.dump());
+    }
+
     // Copies the data from the argument array to the yac_raw_send_array
     // YAC will automatically buffer the data it is passed to
     // Since the output interface is only called when the output is done,
     // all calls to yac_cput should result in an actual data exchange
-    int collection_size = (int)metadata.z().length();
+    int local_x_size = (int)grid->xm;
+    int local_y_size = (int)grid->ym;
+    int collection_size = (int)variable.levels().size();
     for (int c = 0; c < collection_size; c++) {
-      for (int x = 0; x < m_local_x_size; x++) {
-        for (int y = 0; y < m_local_y_size; y++) {
+      for (int x = 0; x < local_x_size; x++) {
+        for (int y = 0; y < local_y_size; y++) {
           int delta_x = collection_size;
-          int delta_y = collection_size * m_local_x_size;
+          int delta_y = collection_size * local_x_size;
 
           int pism_index = y * delta_y + x * delta_x + c;
 
-          int yac_index = x + y * m_local_x_size;
+          int yac_index = x + y * local_x_size;
 
           m_yac_raw_send_array[c][0][yac_index] = data[pism_index];
         }
@@ -722,14 +736,13 @@ void YacOutputWriter::write_spatial_variable_impl(const std::string &file_name,
     }
   }
 
-  const auto &grid = grid_info(variable_name);
-  unsigned int n_levels = std::max(metadata.levels().size(), (std::size_t)1);
+  unsigned int n_levels = std::max(variable.levels().size(), (std::size_t)1);
   const auto &output_file = file(file_name);
 
-  std::vector<unsigned int> start = { grid.ys, grid.xs, 0 };
-  std::vector<unsigned int> count = { grid.ym, grid.xm, n_levels };
+  std::vector<unsigned int> start = { grid->ys, grid->xs, 0 };
+  std::vector<unsigned int> count = { grid->ym, grid->xm, n_levels };
 
-  if (not metadata.get_time_independent()) {
+  if (variable.get_time_dependent()) {
     auto t_length = time_dimension_length(file_name);
     auto t_start  = t_length > 0 ? t_length - 1 : 0;
 
