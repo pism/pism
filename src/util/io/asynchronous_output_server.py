@@ -16,7 +16,7 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-from netCDF4 import Dataset
+import netCDF4
 import yac
 import numpy as np
 import json
@@ -24,9 +24,12 @@ from mpi4py import MPI
 from enum import Enum
 
 
-# Actions that the server can handle
-# These have to match the actions which are defined on the client
 class ServerActions(Enum):
+    """Actions that the server can handle.
+
+    These have to match the actions which are defined on the client
+    """
+
     CREATE_FILE = 0
     SET_FILE_DIMENSION = 1
     SET_FILE_ATTRIBUTES = 2
@@ -45,12 +48,11 @@ source_comp_name = "pism"
 source_grid_name = "pism_grid"
 target_grid_name = "pism_grid_output"
 target_comp_name = "pism_output_server"
-time_unit = yac.TimeUnit.ISO_FORMAT
-time_reduction = yac.Reduction.TIME_NONE
 
 
-# Class to hold all YAC variables and definitions
 class YacWrapper:
+    """Class holding all YAC variables and definitions."""
+
     # In the constructor the YAC initialization happens, followed
     # by the creation of the intercommunicator, which is necessary for
     # direct communication with the client and receiving its information
@@ -74,6 +76,7 @@ class YacWrapper:
         global_group = global_comm.Get_group()
 
         # Get the rank of the local leader in the global communicator
+        print(global_group)
         local_leader_global_rank = local_group.Translate_ranks([0], global_group)[0]
 
         # Create buffers for exchanging global ranks for local component leaders
@@ -126,9 +129,13 @@ class YacWrapper:
         self.global_vertex_indices = np.empty(grid_points, dtype='i')
 
         # Receive latitudes, longitudes and the global ordering of points
-        self.intercomm.Gatherv(None, (self.global_vertex_indices, (client_local_domain_sizes, displacements)), root=MPI.ROOT)
-        self.intercomm.Gatherv(None, (latitudes, (client_local_domain_sizes, displacements)), root=MPI.ROOT)
-        self.intercomm.Gatherv(None, (longitudes, (client_local_domain_sizes, displacements)), root=MPI.ROOT)
+        self.intercomm.Gatherv(None, (self.global_vertex_indices,
+                                      (client_local_domain_sizes, displacements)),
+                               root=MPI.ROOT)
+        self.intercomm.Gatherv(None, (latitudes, (client_local_domain_sizes, displacements)),
+                               root=MPI.ROOT)
+        self.intercomm.Gatherv(None, (longitudes, (client_local_domain_sizes, displacements)),
+                               root=MPI.ROOT)
 
         # Create grid and define point locations for corners (vertices)
         self.grid = yac.CloudGrid(target_grid_name, longitudes, latitudes)
@@ -141,37 +148,40 @@ class YacWrapper:
         self.interpolation_stack = yac.InterpolationStack()
         self.interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1., 0.)
 
-    # Finalize the YAC definitions phase
     def finish_initialization(self):
+        """Finalize the YAC definitions phase."""
         self.yac.enddef()
 
-    # Defines a YAC field for a spatial variable
     # In the future, when multiple files share gridded variables, either a
     # single field definition could be reused for multiple files or
     # individual dedicated fields could be created for each variable/file combination
     def define_field(self, variable_metadata):
+        """Define a YAC field for a spatial variable."""
         field_name = variable_metadata["variable_name"]
         timestep = variable_metadata["timestep"]
         collection_size = variable_metadata["collection_size"]
 
-        self.fields[field_name] = yac.Field.create(
-            field_name, self.component, self.grid.corner_points, collection_size, timestep, yac.TimeUnit.ISO_FORMAT
-        )
+        time_unit = yac.TimeUnit.ISO_FORMAT
+        time_reduction = yac.Reduction.TIME_NONE
 
-        self.yac.def_couple(
-        source_comp_name, source_grid_name, field_name,
-        target_comp_name, target_grid_name, field_name,
-        timestep, time_unit, time_reduction,
-        self.interpolation_stack)
+        self.fields[field_name] = yac.Field.create(field_name, self.component,
+                                                   self.grid.corner_points, collection_size,
+                                                   timestep, yac.TimeUnit.ISO_FORMAT)
+
+        self.yac.def_couple(source_comp_name, source_grid_name, field_name,
+                            target_comp_name, target_grid_name, field_name,
+                            timestep, time_unit, time_reduction,
+                            self.interpolation_stack)
 
 
-# Class to wrap the NetCDF functionalities for writing files
 class OutputFile:
+    """Class wrapping NetCDF functionalities for writing files."""
+
     # The constructor does empty initialization of most members and
     # creates the dataset for the NetCDF file
     def __init__(self, file_name):
         self.name = file_name
-        self.nc_dataset = Dataset(file_name[:-3] + "_server.nc", 'w')
+        self.nc_dataset = netCDF4.Dataset(file_name[:-3] + "_server.nc", 'w')
         self.nc_variables = {}
         self.variables_metadata = {}
         self.dimensions = {}
@@ -180,24 +190,24 @@ class OutputFile:
         self.variables_data = {}
         self.time_index = 0
 
-    # Sets the attributes in the NetCDF dataset
     def set_attributes(self, file_attributes):
+        """Set attributes in the NetCDF dataset."""
         for attr in file_attributes:
             setattr(self.nc_dataset, attr, file_attributes[attr])
 
-    # Updates the time index used for writing to the datase
     def update_time_length(self, time_dimension_length):
+        """Update the time index used for writing to the dataset."""
         self.time_index = time_dimension_length
 
-    # Creates a dimension in the NetCDF dataset
     def set_dimension(self, dimension):
+        """Create a dimension in the NetCDF dataset."""
         name = dimension["dimension_name"]
         length = dimension["dimension_length"]
         self.dimensions[name] = length
         self.nc_dataset.createDimension(name, length if length > 0 else None)
 
-    # Defines a new variable in the NetCDF dataset
     def define_variable(self, variable_metadata):
+        """Define a new variable in the NetCDF dataset."""
         field_name = variable_metadata["variable_name"]
         self.variables_metadata[field_name] = variable_metadata
 
@@ -217,12 +227,12 @@ class OutputFile:
             if attr not in ignored_attributes and value != "":
                 self.nc_variables[field_name].setncattr(attr, value)
 
-    # Returns the metadata stored for that variable
     def get_variable_metadata(self, variable_name):
+        """Return the metadata stored for `variable_name`."""
         return self.variables_metadata[variable_name]
 
-    # Receives a spatial field through the coupler and writes its data to the corresponding NetCDF variable
     def receive_spatial_field(self, field_name, yac_wrapper):
+        """Receive a spatial field and write to the corresponding NetCDF variable."""
         # Number of vertical levels for that field in YAC
         collection_size = yac_wrapper.fields[field_name].collection_size
 
@@ -252,18 +262,18 @@ class OutputFile:
 
             # Temporary array for reordering the data for the NetCDF variable
             tmp = np.ndarray(shape=(yac_wrapper.y_size, yac_wrapper.x_size, collection_size),
-                                dtype=values.dtype)
+                             dtype=values.dtype)
 
             for c in range(collection_size):
                 tmp[:, :, c] = values[c]
 
             self.nc_variables[field_name][self.time_index, :, :, :] = tmp
 
-    # Receives a non-spatial field through the coupler intercommunicator and
-    # writes its data to the corresponding NetCDF variable
     def receive_non_spatial_field(self, variable_name, yac_wrapper):
+        """Receive a non-spatial variable and write to the corresponding NetCDF variable."""
         variable_dims = self.variables_metadata[variable_name]["dimensions"]
         variable_metadata = self.variables_metadata[variable_name]
+        dtype = variable_metadata["dtype"]
         status = MPI.Status()
 
         # If the variables has any dimensions defined
@@ -274,24 +284,26 @@ class OutputFile:
             tag = int(variable_metadata["tag"])
 
             # If the variable is not a string, receive it as double and cast it to the actual variable type
-            if (variable_metadata["dtype"] != "S1"):
-                yac_wrapper.intercomm.Recv([tmp_receival, MPI.DOUBLE], source=yac_wrapper.remote_leader, tag=tag)
-                self.variables_data[variable_name] = tmp_receival.astype(variable_metadata["dtype"])
+            if (dtype != "S1"):
+                yac_wrapper.intercomm.Recv([tmp_receival, MPI.DOUBLE],
+                                           source=yac_wrapper.remote_leader, tag=tag)
+                self.variables_data[variable_name] = tmp_receival.astype(dtype)
 
-            # If the variable is a string then receive the char array and use the status var
-            # The status is required to know how many chars were received for the NetCDF var assignment later
+            # If the variable is a string then receive the char array and use the status
+            # var. The status is required to know how many chars were received for the
+            # NetCDF var assignment later
             else:
-                self.variables_data[variable_name] = np.empty(size, dtype=variable_metadata["dtype"])
+                self.variables_data[variable_name] = np.empty(size, dtype=dtype)
                 yac_wrapper.intercomm.Recv([self.variables_data[variable_name], MPI.CHAR],
-                                            source=yac_wrapper.remote_leader,
-                                            tag=tag, status=status)
+                                           source=yac_wrapper.remote_leader,
+                                           tag=tag, status=status)
 
         # Handles the assignment of the data to the NetCDF variable
         # If it is NOT time-dependent
         if "time" not in variable_dims:
             # If it is a text variable copy only the amount of received
             # characters to avoid garbage at the end of the string
-            if variable_metadata["dtype"] == "S1":
+            if dtype == "S1":
                 char_count = status.Get_count(MPI.CHAR)
                 self.nc_variables[variable_name][:char_count] = self.variables_data[variable_name][:char_count]
 
@@ -304,13 +316,13 @@ class OutputFile:
         else:
             self.nc_variables[variable_name][self.time_index] = self.variables_data[variable_name]
 
-    # Closes the underlying NetCDF dataset
     def close(self):
+        """Close the underlying NetCDF dataset."""
         self.nc_dataset.close()
 
 
-# Receives the json string for the metadata of an action
 def receive_action_metadata(yac_wrapper):
+    """Receive the json string for the metadata of an action."""
     metadata_array_length = np.empty(1, dtype='i')
 
     # First receive the length of the string array and then the array itself
@@ -334,8 +346,8 @@ while True:
     # the buffer size could then be the value for the metadata buffer size.
     # With this we could avoid one Send/Recv operation
     yac_wrapper.intercomm.Recv([server_action, MPI.INT],
-                                source=yac_wrapper.remote_leader,
-                                tag=0)
+                               source=yac_wrapper.remote_leader,
+                               tag=0)
 
     # Handle each action based on the action id
     match server_action[0]:
@@ -372,16 +384,18 @@ while True:
                 yac_wrapper.define_field(variable_metadata)
 
         case ServerActions.SEND_SPATIAL_VARIABLE.value:
-            variable_info = receive_action_metadata(yac_wrapper)
-            files[variable_info["file_name"]].receive_spatial_field(variable_info["variable_name"], yac_wrapper)
+            info = receive_action_metadata(yac_wrapper)
+            files[info["file_name"]].receive_spatial_field(info["variable_name"],
+                                                           yac_wrapper)
 
         case ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
-            variable_info = receive_action_metadata(yac_wrapper)
-            files[variable_info["file_name"]].receive_non_spatial_field(variable_info["variable_name"], yac_wrapper)
+            info = receive_action_metadata(yac_wrapper)
+            files[info["file_name"]].receive_non_spatial_field(info["variable_name"],
+                                                               yac_wrapper)
 
         case ServerActions.UPDATE_TIME_LENGTH.value:
             file_info = receive_action_metadata(yac_wrapper)
-            files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"]);
+            files[file_info["file_name"]].update_time_length(file_info["time_dimension_length"])
 
 # Close all the files
 for file in files.values():
