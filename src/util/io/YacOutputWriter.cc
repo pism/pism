@@ -328,22 +328,8 @@ void YacOutputWriter::server_ensure_file_exists(const std::string &file_name) {
     }
 }
 
-const File &YacOutputWriter::file(const std::string &file_name) {
-  if (m_files[file_name] == nullptr) {
-    auto file = std::make_shared<File>(comm(), file_name, m_backend, io::PISM_READWRITE_MOVE);
-
-    file->set_compression_level(m_compression_level);
-
-    m_files[file_name] = file;
-  }
-
-  return *m_files[file_name];
-}
-
 YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const Geometry& geometry)
     : OutputWriter(comm, config), m_geometry(geometry) {
-  m_compression_level = static_cast<int>(config.get_number("output.compression_level"));
-  m_backend = string_to_backend(config.get_string("output.format"));
   create_intercomm();
 }
 
@@ -365,7 +351,7 @@ YacOutputWriter::~YacOutputWriter() {
 }
 
 void YacOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_variables) {
-  // FIXME: define all the grids
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
 }
 
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
@@ -419,16 +405,6 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
       return;
     }
   }
-
-  const auto &output_file = file(file_name);
-
-  if (output_file.variable_exists(variable_name)) {
-    return;
-  }
-
-  output_file.define_variable(variable_name, type, dims);
-
-  write_attributes(file_name, variable_name, attributes.strings, attributes.numbers, type);
 }
 
 void YacOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
@@ -463,30 +439,22 @@ void YacOutputWriter::append_history_impl(const std::string &file_name,
       return;
     }
   }
-
-  const auto &output_file = file(file_name);
-
-  auto old_history = output_file.read_text_attribute("PISM_GLOBAL", "history");
-
-  output_file.write_attribute("PISM_GLOBAL", "history", old_history + text);
 }
 
 void YacOutputWriter::append_impl(const std::string &file_name) {
-  if (m_files[file_name] == nullptr) {
-    m_files[file_name] =
-        std::make_shared<File>(comm(), file_name, io::PISM_GUESS, io::PISM_READWRITE);
-  }
+  // FIXME: send the "action" to open the file in "append" mode
+  //
+  // The output server will open the file and send back the time dimension length and the
+  // last value of the "time" variable.
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
 }
 
 void YacOutputWriter::sync_impl(const std::string &file_name) {
-  m_files[file_name]->sync();
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
 }
 
 void YacOutputWriter::close_impl(const std::string &file_name) {
-  if (m_files[file_name] != nullptr) {
-    m_files[file_name]->close();
-    m_files[file_name].reset();
-  }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
 }
 
 void YacOutputWriter::define_dimension_impl(const std::string &file_name,
@@ -517,13 +485,6 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
       return;
     }
   }
-  const auto &output_file = file(file_name);
-
-  if (output_file.dimension_exists(name)) {
-    return;
-  }
-
-  output_file.define_dimension(name, length);
 }
 
 void YacOutputWriter::set_global_attributes_impl(
@@ -552,48 +513,6 @@ void YacOutputWriter::set_global_attributes_impl(
       return;
     }
   }
-
-  write_attributes(file_name, "PISM_GLOBAL", strings, numbers, io::PISM_DOUBLE);
-}
-
-void YacOutputWriter::write_attributes(
-    const std::string &file_name, const std::string &var_name,
-    const std::map<std::string, std::string> &strings,
-    const std::map<std::string, std::vector<double> > &numbers, io::Type output_type) {
-
-  //Since this subroutine is only called through others which already have
-  //checks for server files, we don't have to also explicitly call it here
-
-  const auto &output_file = file(file_name);
-
-  // Write text attributes:
-  for (const auto &s : strings) {
-    const auto &name  = s.first;
-    const auto &value = s.second;
-
-    if (value.empty()) {
-      continue;
-    }
-
-    output_file.write_attribute(var_name, name, value);
-  }
-
-  // Write double attributes:
-  for (const auto &d : numbers) {
-    const auto &name   = d.first;
-    const auto &values = d.second;
-
-    if (values.empty()) {
-      continue;
-    }
-
-    if (output_type == io::PISM_CHAR) {
-      // save attributes of a character variable as "double"
-      output_type = io::PISM_DOUBLE;
-    }
-
-    output_file.write_attribute(var_name, name, output_type, values);
-  }
 }
 
 unsigned int YacOutputWriter::time_dimension_length_impl(const std::string &file_name) {
@@ -604,18 +523,8 @@ unsigned int YacOutputWriter::time_dimension_length_impl(const std::string &file
 
 double YacOutputWriter::last_time_value_impl(const std::string &file_name) {
   server_ensure_file_exists(file_name);
-  const auto &output_file = file(file_name);
-
-  auto t_length = output_file.dimension_length(time_name());
-
-  if (t_length > 0) {
-    double time = 0;
-    output_file.read_variable("time", { t_length - 1 }, { 1 }, &time);
-    return time;
-  }
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "time dimension in '%s' is absent or has length zero",
-                                file_name.c_str());
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
+  return 0.0;
 }
 
 void YacOutputWriter::write_array_impl(const std::string &file_name,
@@ -648,9 +557,6 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
       return;
     }
   }
-
-  const auto &output_file = file(file_name);
-  output_file.write_variable(variable_name, start, count, data);
 }
 
 void YacOutputWriter::write_text_impl(const std::string &file_name,
@@ -681,9 +587,6 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
       return;
     }
   }
-
-  const auto &output_file = file(file_name);
-  output_file.write_text_variable(variable_name, start, count, input);
 }
 
 void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
@@ -742,27 +645,6 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
       return;
     }
   }
-
-  unsigned int n_levels = std::max(variable.levels().size(), (std::size_t)1);
-  const auto &output_file = file(file_name);
-
-  std::vector<unsigned int> start = { grid->ys, grid->xs, 0 };
-  std::vector<unsigned int> count = { grid->ym, grid->xm, n_levels };
-
-  if (variable.get_time_dependent()) {
-    auto t_length = time_dimension_length(file_name);
-    auto t_start  = t_length > 0 ? t_length - 1 : 0;
-
-    start.insert(start.cbegin(), t_start);
-    count.insert(count.cbegin(), 1);
-  }
-
-  if (not experiment_id().empty()) {
-    start.insert(start.cbegin(), 0);
-    count.insert(count.cbegin(), 1);
-  }
-
-  output_file.write_variable(variable_name, start, count, data);
 }
 
 } // namespace pism

@@ -59,9 +59,6 @@ public:
   ~YacOutputWriter();
 
 private:
-  std::map<std::string, std::shared_ptr<File> > m_files;
-  int m_compression_level;
-  io::Backend m_backend;
   MPI_Comm m_intercomm;
   bool m_yac_init_finished = false;
   bool m_yac_grid_initialized = false;
@@ -105,7 +102,6 @@ private:
   void server_ensure_file_exists(const std::string &file_name);
 
   // --- Interface implementation and utilities ---
-  const File &file(const std::string &file_name);
   void initialize_impl(const std::set<VariableMetadata> &array_variables);
 
   void define_dimension_impl(const std::string &file_name, const std::string &name,
@@ -118,11 +114,6 @@ private:
   void set_global_attributes_impl(const std::string &file_name,
                                   const std::map<std::string, std::string> &strings,
                                   const std::map<std::string, std::vector<double> > &numbers);
-
-  void write_attributes(const std::string &file_name, const std::string &var_name,
-                        const std::map<std::string, std::string> &strings,
-                        const std::map<std::string, std::vector<double> > &numbers,
-                        io::Type output_type);
 
   void append_time_impl(const std::string &file_name, double time_seconds);
 
