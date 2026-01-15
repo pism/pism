@@ -342,6 +342,16 @@ yac_wrapper = YacWrapper()
 server_action = np.empty(1, dtype='i')
 files = {}
 
+# FIXME: This (Python) side should be responsible for opening the file (if necessary)
+# given a file name in the "action" message.
+
+# FIXME: Add the "append" action which would open the file and send the length of the time
+# dimension and its last value back to PISM. If the file does not exist if would send a
+# message ingicating that opening the file failed.
+
+# FIXME: Add the "append history" action. The current implementation uses
+# SET_FILE_ATTRIBUTES, which over-writes history instead of appending.
+
 # Poll loop for listening for action requests from the client
 while True:
     # Wait for an action
