@@ -97,9 +97,8 @@ private:
                         const std::vector<std::string> &dims, io::Type type,
                         const VariableAttributes &attributes);
   void end_yac_definitions();
-  void server_send_action(int server_action_id,
-                          const std::string &server_action_metadata = "");
-  void server_ensure_file_exists(const std::string &file_name);
+
+  void send_action(int action_id, const std::string &action_metadata = "");
 
   // --- Interface implementation and utilities ---
   void initialize_impl(const std::set<VariableMetadata> &array_variables);
