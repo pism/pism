@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2025, 2026 Andy Aschwanden, Constantine Khrulev
  *
  * This file is part of PISM.
  *

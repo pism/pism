@@ -184,6 +184,43 @@ Prefix: ``ocean.pico.``
 .. pism-parameters::
    :prefix: ocean.pico.
 
+.. _sec-picop:
+
+PICOP
++++++
+
+:|options|: ``-ocean picop``
+:|variables|: :var:`theta_ocean` (potential ocean temperature), [kelvin],
+
+              :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg],
+
+              :var:`basins` (mask of large-scale ocean basins that ocean input is averaged over), [integer]
+:|implementation|: ``pism::ocean::Pico``
+
+The PICOP model of :cite:`Pelle2019` combines PICO with the buoyant plume melt rate
+parameterization of :cite:`Lazeroms2018`. The plume model is a basal melt rate parameterization
+based on the theory of buoyant meltwater plumes that travel upward along the base of the
+ice shelf from the grounding line to the location where the plume loses buoyancy.
+The two-dimensional formulation from :cite:`Lazeroms2018` is adapted from the one-dimensional
+plume model developed by :cite:`Jenkins1991` for a plume traveling in direction `X` in an
+ocean with ambient temperature `T_a` and salinity `S_a` provided by PICO.
+We define the grounding line depth, `z_gl`, over the entire ice shelf,
+as it is necessary to determine where individual plumes originate in order to employ this
+parameterization. As a first approximation, we solve an advection equation:
+
+.. math::
+   :label: eq-grounding-line-depth
+
+   \left\{ v \cdot \nabla z_gl + \epsilon \Delta z_gl,
+
+.. rubric:: Parameters
+
+Prefix: ``ocean.picop.``
+
+.. pism-parameters::
+   :prefix: ocean.picop.
+
+      
 .. _sec-ocean-delta-sl:
 
 Scalar sea level offsets

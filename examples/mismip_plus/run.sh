@@ -18,21 +18,21 @@ run_length=5000yr
 sb="ssa+sia"
 resolution="8km"
 out=g${resolution}_${sb}_${run_length}.nc
-mpirun pism -config_override config.nc \
-       -geometry.front_retreat.prescribed.file $boot_file \
-       -grid.dx $resolution \
-       -grid.dy $resolution \
-       -input.file $boot_file \
-       -input.bootstrap yes \
-       -o_size medium \
-       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
-       -output.extra.file spatial_$out \
-       -output.extra.times 100year \
-       -output.extra.vars $spatial_vars \
-       -output.file state_$out \
-       -stress_balance.model $sb \
-       -surface.given.file $climate_file \
-       -time.run_length $run_length
+# mpirun pism -config_override config.nc \
+#        -geometry.front_retreat.prescribed.file $boot_file \
+#        -grid.dx $resolution \
+#        -grid.dy $resolution \
+#        -input.file $boot_file \
+#        -input.bootstrap yes \
+#        -o_size medium \
+#        -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
+#        -output.extra.file spatial_$out \
+#        -output.extra.times 100year \
+#        -output.extra.vars $spatial_vars \
+#        -output.file state_$out \
+#        -stress_balance.model $sb \
+#        -surface.given.file $climate_file \
+#        -time.run_length $run_length
 
 infile=state_$out
 
@@ -40,23 +40,23 @@ run_length=1000yr
 sb="ssa+sia"
 resolution="4km"
 out=g${resolution}_${sb}_${run_length}.nc
-mpirun pism -config_override config.nc \
-       -stress_balance.model $sb \
-       -geometry.front_retreat.prescribed.file $boot_file \
-       -grid.dx $resolution \
-       -grid.dy $resolution \
-       -input.bootstrap yes \
-       -input.file $boot_file \
-       -input.regrid.file $infile \
-       -input.regrid.vars $regrid_vars \
-       -o_size medium \
-       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
-       -output.extra.file spatial_$out \
-       -output.extra.times 10year \
-       -output.extra.vars $spatial_vars \
-       -output.file state_$out \
-       -surface.given.file $climate_file \
-       -time.run_length $run_length
+# mpirun pism -config_override config.nc \
+#        -stress_balance.model $sb \
+#        -geometry.front_retreat.prescribed.file $boot_file \
+#        -grid.dx $resolution \
+#        -grid.dy $resolution \
+#        -input.bootstrap yes \
+#        -input.file $boot_file \
+#        -input.regrid.file $infile \
+#        -input.regrid.vars $regrid_vars \
+#        -o_size medium \
+#        -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
+#        -output.extra.file spatial_$out \
+#        -output.extra.times 10year \
+#        -output.extra.vars $spatial_vars \
+#        -output.file state_$out \
+#        -surface.given.file $climate_file \
+#        -time.run_length $run_length
 
 infile=state_$out
 
@@ -64,27 +64,27 @@ run_length=100yr
 sb="ssa+sia"
 resolution="2km"
 out=g${resolution}_${sb}_${run_length}.nc
-mpirun pism -config_override config.nc \
-       -stress_balance.model $sb \
-       -geometry.front_retreat.prescribed.file $boot_file \
-       -grid.dx $resolution \
-       -grid.dy $resolution \
-       -input.bootstrap yes \
-       -input.file $boot_file \
-       -input.regrid.file $infile \
-       -input.regrid.vars $regrid_vars \
-       -o_size medium \
-       -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
-       -output.extra.file spatial_$out \
-       -output.extra.times 10year \
-       -output.extra.vars $spatial_vars \
-       -output.file state_$out \
-       -surface.given.file $climate_file \
-       -time.run_length $run_length
+# mpirun pism -config_override config.nc \
+#        -stress_balance.model $sb \
+#        -geometry.front_retreat.prescribed.file $boot_file \
+#        -grid.dx $resolution \
+#        -grid.dy $resolution \
+#        -input.bootstrap yes \
+#        -input.file $boot_file \
+#        -input.regrid.file $infile \
+#        -input.regrid.vars $regrid_vars \
+#        -o_size medium \
+#        -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
+#        -output.extra.file spatial_$out \
+#        -output.extra.times 10year \
+#        -output.extra.vars $spatial_vars \
+#        -output.file state_$out \
+#        -surface.given.file $climate_file \
+#        -time.run_length $run_length
 
 infile=state_$out
 
-run_length=100yr
+run_length=1s
 sb="ssa+sia"
 resolution="2km"
 out=pico_g${resolution}_${sb}_${run_length}.nc
@@ -99,7 +99,7 @@ pism -config_override config.nc \
        -o_size medium \
        -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
        -output.extra.file spatial_$out \
-       -output.extra.times 1yr \
+       -output.extra.times 1s \
        -output.extra.vars $pico_spatial_vars,$spatial_vars \
        -output.file state_$out \
        -surface.given.file $climate_file \

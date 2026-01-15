@@ -1,5 +1,5 @@
-// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022, 2023, 2025 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
-// and Matthias Mengel
+// Copyright (C) 2012-2019, 2021, 2022, 2023, 2024, 2025, 2026 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
+// Albrecht, Matthias Mengel, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
