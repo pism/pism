@@ -51,6 +51,10 @@ static void to_json(const VariableAttributes &attributes, nlohmann::json &json) 
   }
 }
 
+/*!
+ * Convert a PISM data type to a string that describes the same type as a NumPy dtype
+ * object (in Python).
+ */
 static std::string to_python_type(pism::io::Type input) {
   static const std::map<pism::io::Type, std::string> type_map = {
     { io::PISM_BYTE, "i1" }, { io::PISM_CHAR, "S1" },  { io::PISM_SHORT, "i2" },
@@ -70,11 +74,10 @@ static std::string to_python_type(pism::io::Type input) {
 void YacOutputWriter::create_intercomm() {
   // At this point YAC has already been initialized in the PetscInitializer.cc
   // and on the server side. Both client and server components have already been defined.
-  int nbr_comps = 2;
-  const char * comp_names[] = {"pism", "pism_output_server"};
+  const int nbr_comps = 2;
+  const char * comp_names[nbr_comps] = {"pism", "pism_output_server"};
   const int local_leader_rank[]  = {0};
   int local_leader_global_rank[] = {-1};
-  int remote_leader;
   int global_size;
 
   MPI_Comm local_comm, global_comm;
@@ -82,6 +85,15 @@ void YacOutputWriter::create_intercomm() {
 
   // We get the local component communicator and a global communicator which 
   // contains all client and server processes
+  //
+  // FIXME: the yac_cget_comp_comm(1, &local_comm) below uses a hard-wired component ID
+  // ("1"). I am pretty sure this is unnecessary, because the same call is used to set
+  // PETSC_COMM_WORLD in petsc::Initializer::Initializer(), so local_comm here should be
+  // the same as PETSC_COMM_WORLD, which is available using this->comm().
+  //
+  // Also FIXME: both local_comm and global_comm should be de-allocated using
+  // MPI_Comm_free(). The same is true about local_group and global_group (using
+  // MPI_Group_free()).
   yac_cget_comp_comm(1, &local_comm);
   yac_cget_comps_comm(comp_names, nbr_comps, &global_comm);
   MPI_Comm_size(global_comm, &global_size);
@@ -105,12 +117,15 @@ void YacOutputWriter::create_intercomm() {
                             global_group, local_leader_global_rank);
   MPI_Allgather(local_leader_global_rank, 1, MPI_INT, 
                 component_leaders_ranks.data(), 1, MPI_INT, global_comm);
-  remote_leader = component_leaders_ranks.back();
+  int remote_leader = component_leaders_ranks.back();
 
-  MPI_Intercomm_create(local_comm, 0, global_comm, remote_leader, 0, &m_intercomm);
+  // FIXME: we need to call MPI_Comm_free() in the destructor.
+  int tag = 0;
+  MPI_Intercomm_create(local_comm, local_leader_rank[0], global_comm, remote_leader, tag,
+                       &m_intercomm);
 }
 
-// Initializes the YAC grid and sends the gometrical information to 
+// Initializes the YAC grid and sends the geometrical information to 
 // the server so that it can also initialize its own grid
 void YacOutputWriter::initialize_yac_grid(const std::string &variable_name) {
 
@@ -185,47 +200,49 @@ void YacOutputWriter::define_yac_field(const std::string &file_name,
                                        const std::vector<std::string> &dims, io::Type type,
                                        const VariableAttributes &attributes) {
 
-  int collection_size = 1;
-  if (dims.size() > 3) {
-    collection_size = m_dim_sizes[file_name][dims[3]];
-  }
+  const auto &variable = variable_info(variable_name);
 
-  // Gathers all the field metadata into the json object
-  nlohmann::json field_metadata;
+  int collection_size = std::max((int)variable.levels().size(), 1);
+
+  // Gather all the field metadata into the json object and send to the output server
   {
-    details::to_json(attributes, field_metadata);
+    nlohmann::json info;
 
-    field_metadata["dimensions"]      = dims;
-    field_metadata["dtype"]           = details::to_python_type(type);
-    field_metadata["file_name"]       = file_name;
-    field_metadata["variable_name"]   = variable_name;
-    field_metadata["timestep"]        = "PT1M";
-    field_metadata["collection_size"] = collection_size;
+    details::to_json(attributes, info);
+    info["dimensions"]      = dims;
+    info["dtype"]           = details::to_python_type(type);
+    info["file_name"]       = file_name;
+    info["variable_name"]   = variable_name;
+    info["timestep"]        = "PT1M";
+    info["collection_size"] = collection_size;
+
+    server_send_action(DEFINE_SPATIAL_VARIABLE, info.dump());
   }
 
-    // This allows a single allocation/deallocation of the yac_raw_send_array.
-    // With multiple files writing spatial variables it might become a problem 
-    // if the actual max collection size will be defined after a previous file 
-    // already finished its initialization.
-    // The check on the yac_raw_send_array nullity is to prevent extra 
-    // deallocation in the destructor.
-    if (collection_size > m_max_collection_size and m_yac_raw_send_array == nullptr) {
-      m_max_collection_size = collection_size;
-    }
+  // This allows a single allocation/deallocation of the yac_raw_send_array.
+  //
+  // With multiple files writing spatial variables it might become a problem
+  // if the actual max collection size will be defined after a previous file
+  // already finished its initialization.
+  //
+  // The check on the yac_raw_send_array nullity is to prevent extra
+  // deallocation in the destructor.
+  if (collection_size > m_max_collection_size and m_yac_raw_send_array == nullptr) {
+    m_max_collection_size = collection_size;
+  }
 
-    server_send_action(DEFINE_SPATIAL_VARIABLE, field_metadata.dump());
+  // If the field has already been defined, return
+  //
+  // Note that a spatial variable can theoretically be defined on the server
+  // for multiple files but only one YAC field will be created
+  if (m_field_ids.find(variable_name) != m_field_ids.end()) {
+    return;
+  }
 
-    // If the field has already been defined, return
-    // Note that a spatial variable can theoretically be defined on the server 
-    // for multiple files but only one YAC field will be created
-    if (m_field_ids.find(variable_name) != m_field_ids.end()) {
-      return;
-    }
-
-    int field_id = -1;
-    yac_cdef_field(variable_name.c_str(), 1, &m_vertex_points_id, 1,
-                   collection_size, "PT1M", YAC_TIME_UNIT_ISO_FORMAT, &field_id);
-    m_field_ids[variable_name] = field_id;
+  int field_id = -1;
+  yac_cdef_field(variable_name.c_str(), 1, &m_vertex_points_id, 1, collection_size, "PT1M",
+                 YAC_TIME_UNIT_ISO_FORMAT, &field_id);
+  m_field_ids[variable_name] = field_id;
 }
 
 // This subroutine ends the YAC definitions phase.
@@ -354,36 +371,32 @@ YacOutputWriter::~YacOutputWriter() {
 }
 
 void YacOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_variables) {
-
+  // FIXME: define all the grids
 }
 
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
                                            const std::string &variable_name,
                                            const std::vector<std::string> &dims, io::Type type,
                                            const VariableAttributes &attributes) {
+
+  // If this variable was already defined for this file, return
+  if (m_defined_variable[file_name][variable_name]) {
+    return;
+  }
+
   server_ensure_file_exists(file_name);
 
+  const auto &variable = variable_info(variable_name);
+  
   // Checks whether the file for which this action was called is allowed for the server
   if (m_server_allowed_files[file_name]) {
-    // Initialize the YAC grid if it has not yet been initialized 
-    if(not m_yac_grid_initialized and dims.size() > 1) {
-      initialize_yac_grid(variable_name);
-    }
+    bool gridded_variable = variable.grid_info() != nullptr;
 
-    // If this variable was already defined for this file, return
-    if (m_defined_variable[file_name][variable_name]) {
-      return;
-    }
-
-    // Small heuristic to find if the variable is gridded or not
-    int horizontal_dims = 0;
-    for (const auto &dim : dims) {
-      if (dim == "x" or dim == "y") {
-        horizontal_dims++;
+    if (gridded_variable) {
+      // Initialize the YAC grid if it has not yet been initialized
+      if (not m_yac_grid_initialized) {
+        initialize_yac_grid(variable_name);
       }
-    }
-
-    if (horizontal_dims == 2) {
       // If the variable is gridded, define a yac field for it
       define_yac_field(file_name, variable_name, dims, type, attributes);
     } else {
@@ -488,23 +501,25 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
   if (m_server_allowed_files[file_name]) {
     m_dim_sizes[file_name][name] = (int)length;
 
-      // If this dimension has already been defined for this file, return
+    // If this dimension has already been defined for this file, return
     if (m_defined_dimension[file_name][name]) {
       return;
     }
 
-      // Gathers the dimension metadata and sends it to the server
-      nlohmann::json file_dim;
-      file_dim["file_name"] = file_name;
-      file_dim["dimension_name"] = name;
-      file_dim["dimension_length"] = length;
-      server_send_action(SET_FILE_DIMENSION, file_dim.dump());
+    // Gathers the dimension metadata and sends it to the server
+    {
+      nlohmann::json info;
+      info["file_name"]        = file_name;
+      info["dimension_name"]   = name;
+      info["dimension_length"] = length;
+      server_send_action(SET_FILE_DIMENSION, info.dump());
+    }
 
-      m_defined_dimension[file_name][name] = true;
+    m_defined_dimension[file_name][name] = true;
 
-      if (m_suppress_client_file_operations) {
-        return;
-      }
+    if (m_suppress_client_file_operations) {
+      return;
+    }
   }
   const auto &output_file = file(file_name);
 
