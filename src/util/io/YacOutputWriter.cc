@@ -30,6 +30,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/YacOutputWriter.hh"
+#include "pism/util/json.hpp"
 
 extern "C" {
 #include "yac.h"
@@ -64,6 +65,24 @@ static std::string to_python_type(pism::io::Type input) {
   auto it = type_map.find(input);
   return (it != type_map.end()) ? it->second : "None"; // "None" for NC_NAT
 }
+
+/*!
+ * Calculate global indices for local points given the start and size of the local patch
+ * and the global x size.
+ */
+std::vector<int> patch_global_indices(unsigned int x_global_size, unsigned int x_start,
+                                      unsigned int x_size, unsigned int y_start,
+                                      unsigned int y_size) {
+  std::vector<int> indices;
+  indices.reserve((size_t)x_size * y_size);
+  for (unsigned int j = y_start; j < y_start + y_size; ++j) {
+    for (unsigned int i = x_start; i < x_start + x_size; ++i) {
+      indices.push_back((int)(j * x_global_size + i));
+    }
+  }
+  return indices;
+}
+
 } // namespace details
 
 // Even if we are using YAC, certain forms of interaction with the server cannot 
@@ -175,7 +194,7 @@ void YacOutputWriter::initialize_yac_grid(const std::string &variable_name) {
 
   // Translate local point indices to global point indices
   auto patch_global_indices =
-      compute_patch_global_indices(grid.Mx, grid.xs, grid.xm, grid.ys, grid.ym);
+    details::patch_global_indices(grid.Mx, grid.xs, grid.xm, grid.ys, grid.ym);
 
   // Sends the global indices of local points to the server, followed by local latitudes and longitudes
   MPI_Gatherv(patch_global_indices.data(), local_patch_size, MPI_INT, NULL, NULL, NULL, MPI_INT, 0,
@@ -301,37 +320,12 @@ void YacOutputWriter::server_send_action(int server_action_id,
 // It should be always called before any other action is performed on a server file.
 // It will check whether the file already exists and if not will tell the server to create it.
 void YacOutputWriter::server_ensure_file_exists(const std::string &file_name) {
-    // The server_allowed_files map is used to define which files can be written by the server.
-    // This map is checked for all relevant actions which operate on a file. 
-    // Currently, due to the different staged and staggered definitions 
-    // in YAC and PISM, only snapshot files can be written.
-    // These files are however the ones which will likely provide the largest 
-    // benefits in model execution time reduction when written asynchronously.
-    // Future server extensions to other allowed file classes should be 
-    // straightforward by simply adding new clauses to this if condition.
-    if(file_name.find("snapshot") != std::string::npos and !m_server_allowed_files[file_name]) {
+    if(not m_server_allowed_files[file_name]) {
       m_server_allowed_files[file_name] = true;
       nlohmann::json info;
       info["file_name"] = file_name;
       server_send_action(CREATE_FILE, info.dump());
     }
-}
-
-// This subroutine takes the start and size of the local patch and 
-// the global x size to calculate the corresponding global indices for local points.
-std::vector<int> YacOutputWriter::compute_patch_global_indices(unsigned int x_global_size,
-                                                               unsigned int x_start,
-                                                               unsigned int x_size,
-                                                               unsigned int y_start,
-                                                               unsigned int y_size) {
-  std::vector<int> indices;
-  indices.reserve((size_t)x_size * y_size);
-  for (unsigned int j = y_start; j < y_start + y_size; ++j) {
-    for (unsigned int i = x_start; i < x_start + x_size; ++i) {
-      indices.push_back((int)(j * x_global_size + i));
-    }
-  }
-  return indices;
 }
 
 const File &YacOutputWriter::file(const std::string &file_name) {
@@ -497,14 +491,16 @@ void YacOutputWriter::close_impl(const std::string &file_name) {
 
 void YacOutputWriter::define_dimension_impl(const std::string &file_name,
                                             const std::string &name, unsigned int length) {
+
+  // If this dimension has already been defined for this file, return
+  if (m_defined_dimension[file_name][name]) {
+    return;
+  }
+
   server_ensure_file_exists(file_name);
+
   if (m_server_allowed_files[file_name]) {
     m_dim_sizes[file_name][name] = (int)length;
-
-    // If this dimension has already been defined for this file, return
-    if (m_defined_dimension[file_name][name]) {
-      return;
-    }
 
     // Gathers the dimension metadata and sends it to the server
     {
@@ -602,12 +598,8 @@ void YacOutputWriter::write_attributes(
 
 unsigned int YacOutputWriter::time_dimension_length_impl(const std::string &file_name) {
   server_ensure_file_exists(file_name);
-  if (m_server_allowed_files[file_name] and m_suppress_client_file_operations) {
-    return m_dim_sizes[file_name][time_name()];
-  }
 
-  const auto &output_file = file(file_name);
-  return output_file.dimension_length(time_name());
+  return m_dim_sizes[file_name][time_name()];
 }
 
 double YacOutputWriter::last_time_value_impl(const std::string &file_name) {

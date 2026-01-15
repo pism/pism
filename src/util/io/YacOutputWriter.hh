@@ -26,7 +26,6 @@
 #include "OutputWriter.hh"
 #include "pism/util/io/OutputWriter.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/json.hpp"
 
 namespace pism {
 
@@ -86,6 +85,8 @@ private:
 
   std::map<std::string, bool> m_server_allowed_files;
 
+  std::set<std::string> m_open_files;
+
   //YAC variables
   int m_grid_id;
   int m_vertex_points_id;
@@ -102,11 +103,6 @@ private:
   void server_send_action(int server_action_id,
                           const std::string &server_action_metadata = "");
   void server_ensure_file_exists(const std::string &file_name);
-
-  // Utility: Given grid size and patch bounds, return global indices of patch vertices
-  static std::vector<int> compute_patch_global_indices(unsigned int x_global_size,
-                                                       unsigned int x_start, unsigned int x_size,
-                                                       unsigned int y_start, unsigned int y_size);
 
   // --- Interface implementation and utilities ---
   const File &file(const std::string &file_name);
