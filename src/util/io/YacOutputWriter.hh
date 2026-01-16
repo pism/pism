@@ -60,31 +60,47 @@ public:
 
 private:
   MPI_Comm m_intercomm;
+
+  //! True if the current MPI process is responsible for sending non-gridded data.
+  bool m_leader;
+
   bool m_yac_init_finished = false;
   bool m_yac_grid_initialized = false;
 
-  // This flag defines whether the client should also write the files written by the server
-  // It might be useful for debugging purposes
-  bool m_suppress_client_file_operations = true;
   int m_grid_size;
-  bool m_leader;
   int m_max_collection_size = 0;
   const Geometry& m_geometry;
-  std::map<std::string, int> m_field_ids;
-  std::map<std::string, std::map<std::string, int>> m_dim_sizes;
-  std::map<std::string, unsigned int> m_variable_tags;
-  std::vector<std::string> m_text_field_buffers;
-  std::map<std::string, std::map<std::string, bool> > m_defined_variable, m_defined_dimension;
 
-  std::vector<MPI_Request> m_mpi_requests; 
+  //! YAC field ID corresponding to a particular variable (by name)
+  std::map<std::string, int> m_field_ids;
+
+  //! Length of the time dimension in a file
+  std::map<std::string, int> m_time_length;
+
+  //! Tags for MPI messages sending non-gridded variable data
+  std::map<std::string, unsigned int> m_variable_tags;
+
+  //! buffers used to send text (write_text_impl())
+  std::vector<std::string> m_text_field_buffers;
+
+  // FIXME: we need to make sure that lists of variables and dimensions below are accurate
+  // for files that are opened for appending
+
+  //! List of all variables defined in a given file (used to avoid defining a variable
+  //! more than once)
+  std::map<std::string, std::map<std::string, bool> > m_defined_variable;
+
+  //! List of all dimensions defined in a given file (used to avoid defining a variable
+  //! more than once)
+  std::map<std::string, std::map<std::string, bool> > m_defined_dimension;
+
+  std::vector<MPI_Request> m_mpi_requests;
+
   std::vector<double *> m_array_data;
   double *** m_yac_raw_send_array = nullptr;
 
-  std::map<std::string, bool> m_server_allowed_files;
-
-  std::set<std::string> m_open_files;
-
   //YAC variables
+  // FIXME: 
   int m_grid_id;
   int m_vertex_points_id;
 

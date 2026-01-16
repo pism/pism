@@ -191,6 +191,8 @@ class OutputFile:
         self.comm_reqs = []
         self.text_req_indices = {}
         self.variables_data = {}
+        # FIXME: time_index is not needed. We always write gridded field to the last time
+        # record.
         self.time_index = 0
 
     def set_attributes(self, file_attributes):
