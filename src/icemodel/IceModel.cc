@@ -129,7 +129,14 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   }
 
   m_output_writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
-  m_snapshot_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config, m_geometry);
+
+  try {
+    m_snapshot_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config, m_geometry);
+  } catch (RuntimeError &e) {
+    e.add_context("allocating the YAC-based asynchronous output writer");
+    // throw;
+    m_snapshot_writer = m_output_writer;
+  }
 }
 
 double IceModel::dt() const {
