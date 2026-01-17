@@ -134,11 +134,6 @@ int InputInterpolationYAC::define_field(int component_id, const std::vector<doub
   return field_id;
 }
 
-static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const char *source,
-                                   int line) {
-  throw pism::RuntimeError::formatted(pism::ErrorLocation(source, line), "YAC error: %s", msg);
-}
-
 /*!
  * Extract the "local" (corresponding to the current sub-domain) grid subset.
  */
@@ -213,8 +208,6 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
   if (target_proj_params.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "internal grid projection is not known");
   }
-
-  yac_set_abort_handler((yac_abort_func)pism_yac_error_handler);
 
   try {
     auto log = ctx->log();

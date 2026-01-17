@@ -31,13 +31,18 @@
 extern "C" {
 #include "yac.h"
 }
+
+static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const char *source,
+                                   int line) {
+  throw pism::RuntimeError::formatted(pism::ErrorLocation(source, line), "YAC error: %s", msg);
+}
+
 #endif
 
 namespace pism {
 namespace petsc {
 
 Initializer::Initializer(int argc, char **argv, const char *help) {
-
 
   // Initialize MPI only if it was not done yet
   {
@@ -58,6 +63,9 @@ Initializer::Initializer(int argc, char **argv, const char *help) {
   const char * end_datetime   = "1850-12-31T00:00:00";
   pism_yaxt_initialize(MPI_COMM_WORLD);
   yac_cinit();
+
+  yac_set_abort_handler((yac_abort_func)pism_yac_error_handler);
+
   yac_cdef_calendar(YAC_YEAR_OF_365_DAYS);
   yac_cdef_datetime ( start_datetime, end_datetime );
 
