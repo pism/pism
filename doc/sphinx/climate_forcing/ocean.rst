@@ -195,7 +195,7 @@ PICOP
               :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg],
 
               :var:`basins` (mask of large-scale ocean basins that ocean input is averaged over), [integer]
-:|implementation|: ``pism::ocean::Pico``
+:|implementation|: ``pism::ocean::Picop``
 
 The PICOP model of :cite:`Pelle2019` combines PICO with the buoyant plume melt rate
 parameterization of :cite:`Lazeroms2018`. The plume model is a basal melt rate parameterization
@@ -204,14 +204,39 @@ ice shelf from the grounding line to the location where the plume loses buoyancy
 The two-dimensional formulation from :cite:`Lazeroms2018` is adapted from the one-dimensional
 plume model developed by :cite:`Jenkins1991` for a plume traveling in direction `X` in an
 ocean with ambient temperature `T_a` and salinity `S_a` provided by PICO.
-We define the grounding line depth, `z_gl`, over the entire ice shelf,
+We define the grounding line depth, `z_{\mathrm{gl}}`, over the entire ice shelf,
 as it is necessary to determine where individual plumes originate in order to employ this
 parameterization. As a first approximation, we solve an advection equation:
 
 .. math::
    :label: eq-grounding-line-depth
 
-   \left\{ v \cdot \nabla z_gl + \epsilon \Delta z_gl,
+    v \cdot \nabla z_{\mathrm{gl}} + \epsilon \Delta z_{\mathrm{gl}}, \\
+    z_{\mathrm{gl}} = z_{\mathrm{gl}0},
+
+where `z_{\mathrm{gl}}` is the grounding line height deﬁned at the ground-
+ing line 0, `\Gamma` is the ice shelf, and as a ﬁrst approximation, `v`
+is the modeled, depth-averaged ice velocity. Note that `\epsilon` is a
+small diffusion coefﬁcient introduced to minimize noise and
+to provide numerical stability.
+
+A dimensionless coordinate, `\hat X`, is compute as the difference between the elevation of the shelf base,
+`z_{\mathrm{b}}`, the grounding line elevation `z_{\mathrm{gl}}`, and a dimensionless length scale, `l`, as
+
+.. math::
+   :label: eq-dimensionless-coordinate
+
+    \hat X = \frac{z_{\mathrm{b}} = z_{\mathrm{gl}}}{l},
+
+where `l` is defined by Eqn 6--7 in :cite:`Pelle2019`. The melt rate `\dot m` is then calculated as
+
+.. math::
+   :label: eq-melt-rate
+
+    \dot m = \hat M(\hat X) M,
+
+where `\hat M` is a dimensionless melt curve define in :cite:`Lazeroms2018` and `M` is given by Eqn 10
+in :cite:`Pelle2019`.
 
 .. rubric:: Parameters
 
