@@ -21,6 +21,7 @@
 #include <memory>
 #include <cmath>
 #include <cstring>
+#include <mpi.h>
 
 #include "pism/util/Config.hh"
 #include "pism/util/GridInfo.hh"
@@ -92,38 +93,26 @@ static std::vector<int> patch_global_indices(unsigned int x_global_size, unsigne
 void YacOutputWriter::create_intercomm() {
   // At this point YAC has already been initialized in the PetscInitializer.cc
   // and on the server side. Both client and server components have already been defined.
-  const int nbr_comps = 2;
-  const char * comp_names[nbr_comps] = {"pism", "pism_output_server"};
-  const int local_leader_rank[]  = {0};
-  int local_leader_global_rank[] = {-1};
-  int global_size;
-
-  MPI_Comm local_comm, global_comm;
-  MPI_Group local_group, global_group;
 
   // We get the local component communicator and a global communicator which 
   // contains all client and server processes
   //
-  // FIXME: the yac_cget_comp_comm(1, &local_comm) below uses a hard-wired component ID
-  // ("1"). I am pretty sure this is unnecessary, because the same call is used to set
-  // PETSC_COMM_WORLD in petsc::Initializer::Initializer(), so local_comm here should be
-  // the same as PETSC_COMM_WORLD, which is available using this->comm().
-  //
-  // Also FIXME: both local_comm and global_comm should be de-allocated using
-  // MPI_Comm_free(). The same is true about local_group and global_group (using
-  // MPI_Group_free()).
-  yac_cget_comp_comm(1, &local_comm);
-  yac_cget_comps_comm(comp_names, nbr_comps, &global_comm);
-  MPI_Comm_size(global_comm, &global_size);
+  // FIXME: global_comm should be de-allocated using MPI_Comm_free(). The same is
+  // true about local_group and global_group (using MPI_Group_free()).
+  MPI_Comm global_comm = MPI_COMM_NULL;
   {
-    int rank = -1;
-    MPI_Comm_rank(local_comm, &rank);
-    m_leader = (rank == 0);
+    const int nbr_comps               = 2;
+    const char *comp_names[nbr_comps] = { "pism", "pism_output_server" };
+    yac_cget_comps_comm(comp_names, nbr_comps, &global_comm);
   }
+
+  int global_size = 0;
+  MPI_Comm_size(global_comm, &global_size);
   std::vector<int> component_leaders_ranks(global_size);
 
   // We retrieve the process group information from both local and global communicators
-  MPI_Comm_group(local_comm, &local_group);
+  MPI_Group local_group = MPI_GROUP_NULL, global_group = MPI_GROUP_NULL;
+  MPI_Comm_group(comm(), &local_group);
   MPI_Comm_group(global_comm, &global_group);
 
   // For the creation of the intercommunicator we need to set leaders on both groups.
@@ -131,6 +120,8 @@ void YacOutputWriter::create_intercomm() {
   // We then find the corresponding rank of each leader in the global group and
   // exchange this information between the processes. 
   // The intercomm creation is then done using this information. 
+  const int local_leader_rank[]  = {0};
+  int local_leader_global_rank[] = {-1};
   MPI_Group_translate_ranks(local_group, 1, local_leader_rank, 
                             global_group, local_leader_global_rank);
   MPI_Allgather(local_leader_global_rank, 1, MPI_INT, 
@@ -139,7 +130,7 @@ void YacOutputWriter::create_intercomm() {
 
   // FIXME: we need to call MPI_Comm_free() in the destructor.
   int tag = 0;
-  MPI_Intercomm_create(local_comm, local_leader_rank[0], global_comm, remote_leader, tag,
+  MPI_Intercomm_create(comm(), local_leader_rank[0], global_comm, remote_leader, tag,
                        &m_intercomm);
 }
 
@@ -328,6 +319,13 @@ void YacOutputWriter::send_action(int action_id,
 
 YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config)
     : OutputWriter(comm, config) {
+
+  {
+    int rank = -1;
+    MPI_Comm_rank(comm, &rank);
+    m_leader = (rank == 0);
+  }
+
   create_intercomm();
 }
 
