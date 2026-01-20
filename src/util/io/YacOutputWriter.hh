@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -55,7 +55,7 @@ enum ServerActions {
  */
 class YacOutputWriter : public OutputWriter {
 public:
-  YacOutputWriter(MPI_Comm comm, const Config &config, const Geometry & geometry);
+  YacOutputWriter(MPI_Comm comm, const Config &config);
   ~YacOutputWriter();
 
 private:
@@ -69,7 +69,6 @@ private:
 
   int m_grid_size;
   int m_max_collection_size = 0;
-  const Geometry& m_geometry;
 
   //! YAC field ID corresponding to a particular variable (by name)
   std::map<std::string, int> m_field_ids;

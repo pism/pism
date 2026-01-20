@@ -171,24 +171,33 @@ void YacOutputWriter::initialize_yac_grid(const std::string &variable_name) {
   // Gathers on the server the size of the local patch from each process
   MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, m_intercomm);
 
-  array::AccessScope list
-    {
-      &m_geometry.latitude,
-      &m_geometry.longitude,
-    };
-
-  int cyclic_dims[] = {0, 0};
-  int nbr_vertices[] = {(int)grid.xm, (int)grid.ym};
+  // Generate "fake" longitudes and latitudes for the local patch of the grid. Here
+  // longitudes and latitudes range from 0 to 1 (inclusive) for the "global" grid (a local
+  // patch covers a part of this).
+  //
+  // This is sufficient for moving data from PISM to the output server and does not
+  // require projection info.
+  //
+  // FIXME: make it possible to use projection info to use real lon,lat coordinates of
+  // grid points. This will be necessary for "on the fly" post-processing in the output
+  // server.
   std::vector<double> latitudes(local_patch_size);
   std::vector<double> longitudes(local_patch_size);
+  {
+    const auto &x = grid.x;
+    const auto &y = grid.y;
 
-  // Converts the process local latitudes and longitudes from degrees to radians
-  int it = 0;
-  for (auto p : GridPoints(grid)) {
-    const int i = p.i(), j = p.j();
-    latitudes[it] = (m_geometry.latitude(i, j) * M_PI) / 180.0;
-    longitudes[it] = (m_geometry.longitude(i, j) * M_PI) / 180.0;
-    it++;
+    double x_min  = x.front();
+    double y_min  = y.front();
+    double x_span = x.back() - x_min;
+    double y_span = y.back() - y_min;
+    int it        = 0;
+    for (auto p : GridPoints(grid)) {
+      const int i = p.i(), j = p.j();
+      longitudes[it] = (x[i] - x_min) / x_span;
+      latitudes[it]  = (y[j] - y_min) / y_span;
+      it++;
+    }
   }
 
   // Translate local point indices to global point indices
@@ -204,6 +213,8 @@ void YacOutputWriter::initialize_yac_grid(const std::string &variable_name) {
               m_intercomm);
 
   // Defines the YAC grid and points using the local points 
+  int cyclic_dims[] = {0, 0};
+  int nbr_vertices[] = {(int)grid.xm, (int)grid.ym};
   yac_cdef_grid_curve2d("pism_grid", nbr_vertices, cyclic_dims,
                         longitudes.data(), latitudes.data(), &m_grid_id);
   yac_cdef_points_unstruct(m_grid_id, local_patch_size, YAC_LOCATION_CORNER,
@@ -315,8 +326,8 @@ void YacOutputWriter::send_action(int action_id,
            m_intercomm);
 }
 
-YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const Geometry& geometry)
-    : OutputWriter(comm, config), m_geometry(geometry) {
+YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config)
+    : OutputWriter(comm, config) {
   create_intercomm();
 }
 
@@ -337,7 +348,11 @@ YacOutputWriter::~YacOutputWriter() {
     yac_cfinalize();
 }
 
+/*!
+ * Define all the grids and send grid information to the other side.
+ */
 void YacOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_variables) {
+
   throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
 }
 
