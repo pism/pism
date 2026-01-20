@@ -1,6 +1,11 @@
 .. default-role:: literal
 
+Changes since v2.2.2
+====================
 
+- Added the PICOP subshelf melt model by Pelle et al (2019).
+
+  
 Changes since v2.2.0
 ====================
 
