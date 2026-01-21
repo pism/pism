@@ -339,10 +339,15 @@ def receive_action_metadata(yac_wrapper):
     """Receive the json string for the metadata of an action."""
     metadata_array_length = np.empty(1, dtype='i')
 
-    # First receive the length of the string array and then the array itself
-    yac_wrapper.intercomm.Recv([metadata_array_length, MPI.INT], source=yac_wrapper.remote_leader, tag=0)
-    metadata_array = np.empty(metadata_array_length[0], dtype='S1')
-    yac_wrapper.intercomm.Recv([metadata_array, MPI.CHAR], source=yac_wrapper.remote_leader, tag=0)
+    comm = yac_wrapper.intercomm
+
+    status = MPI.Status()
+    comm.Probe(source=yac_wrapper.remote_leader, status=status)
+
+    metadata_length = status.Get_count(MPI.CHAR)
+
+    metadata_array = np.empty(metadata_length, dtype='S1')
+    comm.Recv([metadata_array, MPI.CHAR], source=yac_wrapper.remote_leader, tag=0)
 
     # Decode the data and construct a dictionary from the json string
     return json.loads(metadata_array.tobytes().decode("utf-8"))

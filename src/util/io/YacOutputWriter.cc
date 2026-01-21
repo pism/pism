@@ -316,14 +316,10 @@ void YacOutputWriter::send_action(int action_id,
     return;
   }
 
-  // If there are metadata fields, then the string length and the contents are sent to the server
-  int action_metadata_length = (int)action_metadata.length();
+  // Send the metadata string to the output server:
   m_mpi_requests.emplace_back();
-  MPI_Isend((void *)&action_metadata_length, 1, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
-
-  //FIXME: Currently there are runtime errors if this is also done asynchronously
-  MPI_Send((void *)action_metadata.data(), action_metadata_length, MPI_CHAR, 0, 0,
-           m_intercomm);
+  MPI_Isend((void *)action_metadata.data(), (int)action_metadata.length(), MPI_CHAR, 0, 0,
+            m_intercomm, &m_mpi_requests.back());
 }
 
 YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config)
