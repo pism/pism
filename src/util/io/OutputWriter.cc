@@ -168,6 +168,10 @@ const std::string &OutputWriter::time_name() const {
   return m_impl->time_name;
 }
 
+bool OutputWriter::variable_info_is_available(const std::string &variable_name) const {
+  return m_impl->variables.find(variable_name) != m_impl->variables.end();
+}
+
 const VariableMetadata &OutputWriter::variable_info(const std::string &variable_name) const {
   auto i = m_impl->variables.find(variable_name);
   if (i != m_impl->variables.end()) {

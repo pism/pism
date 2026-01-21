@@ -25,6 +25,7 @@
 
 #include "pism/util/Config.hh"
 #include "pism/util/GridInfo.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
@@ -83,6 +84,16 @@ static std::vector<int> patch_global_indices(unsigned int x_global_size, unsigne
   return indices;
 }
 
+/*!
+ * Return the string identifying the grid used by a variable by using the names of the
+ * first two dimensions. (The third dimension, if present, will correspond to a vertical
+ * or some other coordinate.)
+ */
+std::string grid_name(const VariableMetadata &variable) {
+  const auto &dims = variable.dimensions();
+  return dims[0].get_name() + "-" + dims[1].get_name();
+}
+
 } // namespace details
 
 // Even if we are using YAC, certain forms of interaction with the server cannot 
@@ -102,7 +113,7 @@ void YacOutputWriter::create_intercomm() {
   MPI_Comm global_comm = MPI_COMM_NULL;
   {
     const int nbr_comps               = 2;
-    const char *comp_names[nbr_comps] = { "pism", "pism_output_server" };
+    const char *comp_names[nbr_comps] = { "pism", "pism_output" };
     yac_cget_comps_comm(comp_names, nbr_comps, &global_comm);
   }
 
@@ -136,12 +147,23 @@ void YacOutputWriter::create_intercomm() {
 
 // Initializes the YAC grid and sends the geometrical information to 
 // the server so that it can also initialize its own grid
-void YacOutputWriter::initialize_yac_grid(const std::string &variable_name) {
+void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
+
+  const auto grid_name = details::grid_name(variable);
+
+  if (m_point_set_id.find(grid_name) != m_point_set_id.end()) {
+    // this grid was defined already
+    return;
+  }
 
   // Distributed grid containing the domain decomposition information
-  const auto &grid = *variable_info(variable_name).grid_info();
+  const auto &grid = *variable.grid_info();
 
-  send_action(START_YAC_INITIALIZATION);
+  {
+    nlohmann::json info;
+    info["grid_name"] = grid_name;
+    send_action(DEFINE_YAC_GRID, info.dump());
+  }
 
   // Sends the global domain sizes to the server
   if (m_leader) {
@@ -157,7 +179,6 @@ void YacOutputWriter::initialize_yac_grid(const std::string &variable_name) {
 
   // Will hold the amount of points for the local grid patch of this process
   int local_patch_size = (int)(grid.xm * grid.ym);
-  m_grid_size = local_patch_size;
 
   // Gathers on the server the size of the local patch from each process
   MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, m_intercomm);
@@ -206,81 +227,69 @@ void YacOutputWriter::initialize_yac_grid(const std::string &variable_name) {
   // Defines the YAC grid and points using the local points 
   int cyclic_dims[] = {0, 0};
   int nbr_vertices[] = {(int)grid.xm, (int)grid.ym};
-  yac_cdef_grid_curve2d("pism_grid", nbr_vertices, cyclic_dims,
-                        longitudes.data(), latitudes.data(), &m_grid_id);
-  yac_cdef_points_unstruct(m_grid_id, local_patch_size, YAC_LOCATION_CORNER,
-                           longitudes.data(), latitudes.data(), &m_vertex_points_id);
+  int grid_id = -1;
+  int point_set_id = -1;
+  yac_cdef_grid_curve2d(grid_name.c_str(), nbr_vertices, cyclic_dims, longitudes.data(),
+                        latitudes.data(), &grid_id);
+  yac_cdef_points_unstruct(grid_id, local_patch_size, YAC_LOCATION_CORNER, longitudes.data(),
+                           latitudes.data(), &point_set_id);
 
-  m_yac_grid_initialized = true;
+  m_point_set_id[grid_name] = point_set_id;
 }
 
 // Subroutine to define a YAC field
-void YacOutputWriter::define_yac_field(const std::string &file_name,
-                                       const std::string &variable_name,
-                                       const std::vector<std::string> &dims, io::Type type,
-                                       const VariableAttributes &attributes) {
+void YacOutputWriter::define_yac_field(const VariableMetadata &variable) {
 
-  const auto &variable = variable_info(variable_name);
-
-  int collection_size = std::max((int)variable.levels().size(), 1);
-
-  // Gather all the field metadata into the json object and send to the output server
-  {
-    nlohmann::json info;
-
-    details::to_json(attributes, info);
-    info["dimensions"]      = dims;
-    info["dtype"]           = details::to_python_type(type);
-    info["file_name"]       = file_name;
-    info["variable_name"]   = variable_name;
-    info["timestep"]        = "PT1M";
-    info["collection_size"] = collection_size;
-
-    send_action(DEFINE_SPATIAL_VARIABLE, info.dump());
-  }
-
-  // This allows a single allocation/deallocation of the yac_raw_send_array.
-  //
-  // With multiple files writing spatial variables it might become a problem
-  // if the actual max collection size will be defined after a previous file
-  // already finished its initialization.
-  //
-  // The check on the yac_raw_send_array nullity is to prevent extra
-  // deallocation in the destructor.
-  if (collection_size > m_max_collection_size and m_yac_raw_send_array == nullptr) {
-    m_max_collection_size = collection_size;
-  }
-
+  const auto &variable_name = variable.get_name();
+  
   // If the field has already been defined, return
-  //
-  // Note that a spatial variable can theoretically be defined on the server
-  // for multiple files but only one YAC field will be created
   if (m_field_ids.find(variable_name) != m_field_ids.end()) {
     return;
   }
 
-  int field_id = -1;
-  yac_cdef_field(variable_name.c_str(), 1, &m_vertex_points_id, 1, collection_size, "PT1M",
-                 YAC_TIME_UNIT_ISO_FORMAT, &field_id);
-  m_field_ids[variable_name] = field_id;
+  int collection_size = std::max((int)variable.levels().size(), 1);
+
+  // define the field
+  {
+    int point_set_id = m_point_set_id[details::grid_name(variable)];
+
+    int field_id = -1;
+    yac_cdef_field(variable_name.c_str(), 1, &point_set_id, 1, collection_size, "PT1M",
+                   YAC_TIME_UNIT_ISO_FORMAT, &field_id);
+
+    m_field_ids[variable_name] = field_id;
+  }
+
+  // tell the output server to define the field
+  {
+    nlohmann::json info;
+
+    info["variable_name"]   = variable_name;
+    info["timestep"]        = "PT1M";
+    info["collection_size"] = collection_size;
+    info["grid_name"]       = details::grid_name(variable);
+
+    send_action(DEFINE_YAC_FIELD, info.dump());
+  }
 }
 
 // This subroutine ends the YAC definitions phase.
 // No components, grids or fields can be defined after this.
 void YacOutputWriter::end_yac_definitions() {
-    send_action(FINISH_YAC_INITIALIZATION);
-    yac_cenddef();
+  send_action(FINISH_YAC_INITIALIZATION);
+  yac_cenddef();
 
-    // These arrays are deleted in the destructor
-    if (m_yac_raw_send_array == nullptr) {
-      m_yac_raw_send_array = new double **[m_max_collection_size];
-      for (int c = 0; c < m_max_collection_size; c++) {
-        m_yac_raw_send_array[c]    = new double *[1];
-        m_yac_raw_send_array[c][0] = new double[m_grid_size];
-      }
+  int max_collection_size = m_max_collection_size["y-x"];
+  int patch_size          = m_patch_size["y-x"];
+
+  // These arrays are deleted in the destructor
+  if (m_yac_raw_send_array == nullptr) {
+    m_yac_raw_send_array = new double **[max_collection_size];
+    for (int c = 0; c < max_collection_size; c++) {
+      m_yac_raw_send_array[c]    = new double *[1];
+      m_yac_raw_send_array[c][0] = new double[patch_size];
     }
-
-    m_yac_init_finished = true;
+  }
 }
 
 // This subroutine sends an action to the server, so it knows what to do next.
@@ -336,7 +345,9 @@ YacOutputWriter::~YacOutputWriter() {
       delete i;
     }
 
-    for (int c = 0; c < m_max_collection_size; c++) {
+    // FIXME: support multiple grids
+    int max_collection_size = m_max_collection_size["y-x"];
+    for (int c = 0; c < max_collection_size; c++) {
       delete m_yac_raw_send_array[c][0];
       delete m_yac_raw_send_array[c];
     }
@@ -351,7 +362,34 @@ YacOutputWriter::~YacOutputWriter() {
  */
 void YacOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_variables) {
 
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
+  for (const auto &variable : array_variables) {
+    if (variable.grid_info() == nullptr) {
+      continue;
+    }
+
+    auto grid_name = details::grid_name(variable);
+
+    const auto &grid = *variable.grid_info();
+
+    m_patch_size[grid_name] = (int)(grid.xm * grid.ym);
+
+    int collection_size = std::max((int)variable.levels().size(), 1);
+    if (m_max_collection_size.find(grid_name) != m_max_collection_size.end()) {
+      // max collection size was already set
+      int old_max = m_max_collection_size[grid_name];
+      m_max_collection_size[grid_name] = std::max(old_max, collection_size);
+    } else {
+      m_max_collection_size[grid_name] = collection_size;
+    }
+
+    // define the grid (if necessary)
+    define_yac_grid(variable);
+
+    // define the YAC field
+    define_yac_field(variable);
+  }
+
+  end_yac_definitions();
 }
 
 void YacOutputWriter::define_variable_impl(const std::string &file_name,
@@ -364,17 +402,26 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     return;
   }
 
-  const auto &variable = variable_info(variable_name);
+  bool gridded = (variable_info_is_available(variable_name) and
+                  variable_info(variable_name).grid_info() != nullptr);
 
-  bool gridded_variable = variable.grid_info() != nullptr;
+  if (gridded) {
+    nlohmann::json info;
 
-  if (gridded_variable) {
-    // Initialize the YAC grid if it has not yet been initialized
-    if (not m_yac_grid_initialized) {
-      initialize_yac_grid(variable_name);
-    }
-    // If the variable is gridded, define a yac field for it
-    define_yac_field(file_name, variable_name, dims, type, attributes);
+    const auto &variable = variable_info(variable_name);
+
+    int collection_size = std::max((int)variable.levels().size(), 1);
+
+    details::to_json(attributes, info);
+    info["dimensions"]      = dims;
+    info["dtype"]           = details::to_python_type(type);
+    info["file_name"]       = file_name;
+    info["variable_name"]   = variable_name;
+    info["timestep"]        = "PT1M";
+    info["collection_size"] = collection_size;
+    info["grid_name"]       = details::grid_name(variable);
+
+    send_action(DEFINE_GRIDDED_VARIABLE, info.dump());
   } else {
     // If the variable is not gridded, pack all its metadata and tell the server to
     // define it for this file
@@ -391,7 +438,7 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
       metadata["tag"]                = m_variable_tags.size();
       m_variable_tags[variable_name] = m_variable_tags.size();
     }
-    send_action(DEFINE_NON_SPATIAL_VARIABLE, metadata.dump());
+    send_action(DEFINE_VARIABLE, metadata.dump());
   }
 
   // Save the variable as already defined for this file
@@ -462,7 +509,7 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
     info["file_name"]        = file_name;
     info["dimension_name"]   = name;
     info["dimension_length"] = length;
-    send_action(SET_FILE_DIMENSION, info.dump());
+    send_action(DEFINE_DIMENSION, info.dump());
   }
 
   m_defined_dimension[file_name][name] = true;
@@ -507,19 +554,24 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
   nlohmann::json info;
   info["file_name"]     = file_name;
   info["variable_name"] = variable_name;
-  send_action(SEND_NON_SPATIAL_VARIABLE, info.dump());
+  info["start"] = start;
+  info["count"] = count;
+  send_action(SEND_VARIABLE, info.dump());
 
   // Non-gridded variables are sent by the leader process
   if (m_leader) {
-    // FIXME: arguments `start` and `count` are used incorrectly
-
-    // Buffers the argument array so that the asynchronous operation can finish after its lifetime
-    // These arrays are deleted in the destructor
-    m_array_data.push_back(new double[count[0]]);
-    memcpy(m_array_data.back(), data + start[0], count[0] * sizeof(double));
+    int data_size = 1;
+    for (const auto &c : count) {
+      data_size *= (int)c;
+    }
+    // Buffers the argument array so that the asynchronous operation can finish after its
+    // lifetime. These arrays are deleted in the destructor
+    double *buffer = new double[data_size];
+    m_array_data.push_back(buffer);
+    memcpy(buffer, data, data_size * sizeof(double));
     m_mpi_requests.emplace_back();
-    MPI_Isend((void *)(m_array_data.back()), (int)count[0], MPI_DOUBLE, 0,
-              (int)m_variable_tags[variable_name], m_intercomm, &m_mpi_requests.back());
+    MPI_Isend((void *)(buffer), data_size, MPI_DOUBLE, 0, (int)m_variable_tags[variable_name],
+              m_intercomm, &m_mpi_requests.back());
   }
 }
 
@@ -534,18 +586,18 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
   nlohmann::json info;
   info["file_name"]     = file_name;
   info["variable_name"] = variable_name;
-  send_action(SEND_NON_SPATIAL_VARIABLE, info.dump());
+  info["start"] = start;
+  info["count"] = count;
+  send_action(SEND_VARIABLE, info.dump());
 
   // Text variables are sent by the leader process
   if (m_leader) {
-    // FIXME: arguments `start` and `count` are used incorrectly
-
     // Text fields are buffered so that the asynchronous send can finish after the
     // arguments lifetime. Since it is buffered inside of a vector, the de-allocation
     // happens automatically at the destructor
-    m_text_field_buffers.push_back(input);
+    m_text_buffers.push_back(input);
     m_mpi_requests.emplace_back();
-    MPI_Isend((void *)(m_text_field_buffers.back().data() + start[0]), (int)count[0], MPI_CHAR, 0,
+    MPI_Isend((void *)(m_text_buffers.back().data()), (int)input.size(), MPI_CHAR, 0,
               (int)m_variable_tags[variable_name], m_intercomm, &m_mpi_requests.back());
   }
 }
@@ -559,42 +611,38 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
 
   const auto *grid = variable.grid_info();
 
-  // If the YAC end of definitions has not yet been done, perfom it now
-  if (not m_yac_init_finished) {
-    end_yac_definitions();
-  }
-
   // Gather the variable name into the JSON object and send it to the server for
   // identification of which variable to receive.
   {
     nlohmann::json info;
     info["file_name"]     = file_name;
     info["variable_name"] = variable_name;
-    send_action(SEND_SPATIAL_VARIABLE, info.dump());
+    send_action(SEND_GRIDDED_VARIABLE, info.dump());
   }
 
   // Copies the data from the argument array to the yac_raw_send_array
   // YAC will automatically buffer the data it is passed to
   // Since the output interface is only called when the output is done,
   // all calls to yac_cput should result in an actual data exchange
-  int local_x_size    = (int)grid->xm;
-  int local_y_size    = (int)grid->ym;
-  int collection_size = (int)variable.levels().size();
-  for (int c = 0; c < collection_size; c++) {
-    for (int x = 0; x < local_x_size; x++) {
-      for (int y = 0; y < local_y_size; y++) {
-        int delta_x = collection_size;
-        int delta_y = collection_size * local_x_size;
+  int collection_size = std::max((int)variable.levels().size(), 1);
+  {
+    int x_size  = (int)grid->xm;
+    int y_size  = (int)grid->ym;
+    int delta_x_p = collection_size;
+    int delta_y_p = collection_size * x_size;
+    int delta_x_y = 1;
+    int delta_y_y = x_size;
+    for (int c = 0; c < collection_size; c++) {
+      for (int x = 0; x < x_size; x++) {
+        for (int y = 0; y < y_size; y++) {
+          int pism_index = y * delta_y_p + x * delta_x_p + c;
+          int yac_index  = y * delta_y_y + x * delta_x_y;
 
-        int pism_index = y * delta_y + x * delta_x + c;
-
-        int yac_index = x + y * local_x_size;
-
-        m_yac_raw_send_array[c][0][yac_index] = data[pism_index];
+          m_yac_raw_send_array[c][0][yac_index] = data[pism_index];
+        }
       }
     }
   }
-
   int info, error;
   // TODO: we can add a check to verify that the time is still below the simulation end
   // Since the snapshot output calls are normally equal or smaller than the number of time

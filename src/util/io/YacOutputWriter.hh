@@ -25,7 +25,6 @@
 
 #include "OutputWriter.hh"
 #include "pism/util/io/OutputWriter.hh"
-#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 
@@ -36,18 +35,19 @@ enum Backend : int;
 }
 
 // These have to match the actions which are defined on the server
-enum ServerActions {
-    CREATE_FILE,
-    SET_FILE_DIMENSION,
-    SET_FILE_ATTRIBUTES,
-    START_YAC_INITIALIZATION,
-    FINISH_YAC_INITIALIZATION,
-    DEFINE_NON_SPATIAL_VARIABLE,
-    DEFINE_SPATIAL_VARIABLE,
-    SEND_NON_SPATIAL_VARIABLE,
-    SEND_SPATIAL_VARIABLE,
-    UPDATE_TIME_LENGTH,
-    FINISH
+enum ServerActions : int {
+    CREATE_FILE = 0,
+    DEFINE_DIMENSION = 1,
+    SET_FILE_ATTRIBUTES = 2,
+    DEFINE_YAC_GRID = 3,
+    DEFINE_YAC_FIELD = 4,
+    FINISH_YAC_INITIALIZATION = 5,
+    DEFINE_VARIABLE = 6,
+    DEFINE_GRIDDED_VARIABLE = 7,
+    SEND_VARIABLE = 8,
+    SEND_GRIDDED_VARIABLE = 9,
+    UPDATE_TIME_LENGTH = 10,
+    FINISH = 11
 };
 
 /*!
@@ -64,24 +64,12 @@ private:
   //! True if the current MPI process is responsible for sending non-gridded data.
   bool m_leader;
 
-  bool m_yac_init_finished = false;
-  bool m_yac_grid_initialized = false;
-
-  int m_grid_size;
-  int m_max_collection_size = 0;
-
-  //! YAC field ID corresponding to a particular variable (by name)
-  std::map<std::string, int> m_field_ids;
-
   //! Length of the time dimension in a file
   std::map<std::string, int> m_time_length;
 
-  //! Tags for MPI messages sending non-gridded variable data
-  std::map<std::string, unsigned int> m_variable_tags;
-
-  //! buffers used to send text (write_text_impl())
-  std::vector<std::string> m_text_field_buffers;
-
+  //! last time value in an output file
+  std::map<std::string, double> m_last_time;
+  
   // FIXME: we need to make sure that lists of variables and dimensions below are accurate
   // for files that are opened for appending
 
@@ -89,33 +77,52 @@ private:
   //! more than once)
   std::map<std::string, std::map<std::string, bool> > m_defined_variable;
 
-  //! List of all dimensions defined in a given file (used to avoid defining a variable
+  //! List of all dimensions defined in a given file (used to avoid defining a dimension
   //! more than once)
   std::map<std::string, std::map<std::string, bool> > m_defined_dimension;
 
-  std::vector<MPI_Request> m_mpi_requests;
+  // --- YAC Grid information
+
+  //! YAC grid ID and point ID corresponding to a grid name
+  std::map<std::string, int> m_point_set_id;
+
+  //! YAC field ID corresponding to a particular variable (by name)
+  std::map<std::string, int> m_field_ids;
+
+  //! Maximum collection size corresponding to a grid name
+  std::map<std::string, int> m_max_collection_size;
+
+  //! Size of the local grid patch corresponding to a grid name
+  std::map<std::string, int> m_patch_size;
+
+  // --- Buffers ---
+
+  //! buffers used to send text (write_text_impl())
+  std::vector<std::string> m_text_buffers;
 
   std::vector<double *> m_array_data;
+
   double *** m_yac_raw_send_array = nullptr;
 
-  //YAC variables
-  // FIXME: 
-  int m_grid_id;
-  int m_vertex_points_id;
+  // --- MPI Communication
+
+  //! Tags for MPI messages sending non-gridded variable data
+  std::map<std::string, unsigned int> m_variable_tags;
+
+  std::vector<MPI_Request> m_mpi_requests;
 
   // --- Server-related subroutines ---
   void create_intercomm();
 
-  void initialize_yac_grid(const std::string &variable_name);
+  void define_yac_grid(const VariableMetadata &variable);
 
-  void define_yac_field(const std::string &file_name, const std::string &variable_name,
-                        const std::vector<std::string> &dims, io::Type type,
-                        const VariableAttributes &attributes);
+  void define_yac_field(const VariableMetadata &variable);
+
   void end_yac_definitions();
 
   void send_action(int action_id, const std::string &action_metadata = "");
 
-  // --- Interface implementation and utilities ---
+  // --- Interface implementation ---
   void initialize_impl(const std::set<VariableMetadata> &array_variables);
 
   void define_dimension_impl(const std::string &file_name, const std::string &name,

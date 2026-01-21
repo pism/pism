@@ -268,6 +268,8 @@ protected:
    */
   const VariableMetadata &variable_info(const std::string &variable_name) const;
 
+  bool variable_info_is_available(const std::string &variable_name) const;
+  
   /*!
    * Return `true` if variable `variable_name` was already written to the file
    * `file_name`. Used to avoid writing coordinate variables and time-independent 2D and

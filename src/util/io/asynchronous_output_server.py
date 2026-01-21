@@ -26,7 +26,7 @@ from mpi4py import MPI
 from enum import Enum
 
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("pism_output")
 
 class ServerActions(Enum):
     """Actions that the server can handle.
@@ -35,24 +35,22 @@ class ServerActions(Enum):
     """
 
     CREATE_FILE = 0
-    SET_FILE_DIMENSION = 1
+    DEFINE_DIMENSION = 1
     SET_FILE_ATTRIBUTES = 2
-    START_YAC_INITIALIZATION = 3
-    FINISH_YAC_INITIALIZATION = 4
-    DEFINE_NON_SPATIAL_VARIABLE = 5
-    DEFINE_SPATIAL_VARIABLE = 6
-    SEND_NON_SPATIAL_VARIABLE = 7
-    SEND_SPATIAL_VARIABLE = 8
-    UPDATE_TIME_LENGTH = 9
-    FINISH = 10
+    DEFINE_YAC_GRID = 3
+    DEFINE_YAC_FIELD = 4
+    FINISH_YAC_INITIALIZATION = 5
+    DEFINE_VARIABLE = 6
+    DEFINE_GRIDDED_VARIABLE = 7
+    SEND_VARIABLE = 8
+    SEND_GRIDDED_VARIABLE = 9
+    UPDATE_TIME_LENGTH = 10
+    FINISH = 11
 
 
 # YAC general component, grid and configuration variables
 source_comp_name = "pism"
-source_grid_name = "pism_grid"
-target_grid_name = "pism_grid_output"
-target_comp_name = "pism_output_server"
-
+target_comp_name = "pism_output"
 
 class YacWrapper:
     """Class holding all YAC variables and definitions."""
@@ -76,7 +74,7 @@ class YacWrapper:
         local_group = local_comm.Get_group()
 
         # Get the global communicator and group (contatining all processes from client and server)
-        global_comm = self.yac.get_comps_comm(["pism", "pism_output_server"])
+        global_comm = self.yac.get_comps_comm([source_comp_name, target_comp_name])
         global_group = global_comm.Get_group()
 
         # Get the rank of the local leader in the global communicator
@@ -102,12 +100,15 @@ class YacWrapper:
     # Starts the coupler initialization
     # For YAC specifically the main task happening in
     # this subroutine is the grid definition
-    def start_initialization(self):
+    def start_initialization(self, metadata):
         # Variables for the global x and y sizes
         x_size = np.empty(1, dtype='i')
         y_size = np.empty(1, dtype='i')
         client_local_domain_sizes = np.empty(self.remote_size, dtype='i')
         displacements = np.empty(self.remote_size, dtype='i')
+
+        # the grid name in pism_output has to be different
+        grid_name = metadata['grid_name'] + "_output"
 
         # Receive the global x and y sizes from the leader in the client
         self.intercomm.Recv([x_size, MPI.INT], source=self.remote_leader, tag=0)
@@ -141,7 +142,7 @@ class YacWrapper:
                                root=MPI.ROOT)
 
         # Create grid and define point locations for corners (vertices)
-        self.grid = yac.CloudGrid(target_grid_name, longitudes, latitudes)
+        self.grid = yac.CloudGrid(grid_name, longitudes, latitudes)
         self.grid.corner_points = self.grid.def_points(longitudes, latitudes)
 
         # Create the interpolation stack and add an nearest-neighbor inteporlation
@@ -158,11 +159,12 @@ class YacWrapper:
     # In the future, when multiple files share gridded variables, either a
     # single field definition could be reused for multiple files or
     # individual dedicated fields could be created for each variable/file combination
-    def define_field(self, variable_metadata):
+    def define_field(self, metadata):
         """Define a YAC field for a spatial variable."""
-        field_name = variable_metadata["variable_name"]
-        timestep = variable_metadata["timestep"]
-        collection_size = variable_metadata["collection_size"]
+        field_name = metadata["variable_name"]
+        timestep = metadata["timestep"]
+        collection_size = metadata["collection_size"]
+        grid_name = metadata["grid_name"]
 
         time_unit = yac.TimeUnit.ISO_FORMAT
         time_reduction = yac.Reduction.TIME_NONE
@@ -171,7 +173,10 @@ class YacWrapper:
                                                    self.grid.corner_points, collection_size,
                                                    timestep, yac.TimeUnit.ISO_FORMAT)
 
-        self.yac.def_couple(source_comp_name, source_grid_name, field_name,
+        # the grid name in pism_output has to be different
+        target_grid_name = grid_name + "_output"
+
+        self.yac.def_couple(source_comp_name, grid_name, field_name,
                             target_comp_name, target_grid_name, field_name,
                             timestep, time_unit, time_reduction,
                             self.interpolation_stack)
@@ -184,7 +189,7 @@ class OutputFile:
     # creates the dataset for the NetCDF file
     def __init__(self, file_name):
         self.name = file_name
-        self.nc_dataset = netCDF4.Dataset(file_name[:-3] + "_server.nc", 'w')
+        self.nc_dataset = netCDF4.Dataset(file_name, 'w')
         self.nc_variables = {}
         self.variables_metadata = {}
         self.dimensions = {}
@@ -281,6 +286,10 @@ class OutputFile:
         dtype = variable_metadata["dtype"]
         status = MPI.Status()
 
+        #
+        # FIXME: use "start" and "count" arrays sent in variable_metadata
+        #
+
         # If the variables has any dimensions defined
         if len(variable_dims) > 0:
             # Find the size for the receive operation
@@ -344,6 +353,14 @@ yac_wrapper = YacWrapper()
 server_action = np.empty(1, dtype='i')
 files = {}
 
+
+def get_file(name):
+    """Return the file object, opening it if necessary."""
+    if name not in files:
+        files[name] = OutputFile(name)
+    return files[name]
+
+
 # FIXME: This (Python) side should be responsible for opening the file (if necessary)
 # given a file name in the "action" message.
 
@@ -353,6 +370,7 @@ files = {}
 
 # FIXME: Add the "append history" action. The current implementation uses
 # SET_FILE_ATTRIBUTES, which over-writes history instead of appending.
+
 
 # Poll loop for listening for action requests from the client
 while True:
@@ -367,60 +385,73 @@ while True:
     # Handle each action based on the action id
     match server_action[0]:
         case ServerActions.FINISH.value:
+            logger.debug("DONE")
             break
 
         case ServerActions.CREATE_FILE.value:
+            # This can be the used as the stub of the "append" action.
             metadata = receive_action_metadata(yac_wrapper)
-            logger.debug(f"CREATE_FILE {metadata['file_name']}")
-            files[metadata["file_name"]] = OutputFile(metadata["file_name"])
+            file_name = metadata['file_name']
+            logger.debug(f"CREATE_FILE {file_name}")
+            files[file_name] = OutputFile(file_name)
 
         case ServerActions.SET_FILE_ATTRIBUTES.value:
             metadata = receive_action_metadata(yac_wrapper)
-            logger.debug(f"SET_FILE_ATTRIBUTES {metadata['file_name']}")
-            files[metadata["file_name"]].set_attributes(metadata["attributes"])
+            file_name = metadata['file_name']
+            logger.debug(f"SET_FILE_ATTRIBUTES {file_name}")
+            get_file(file_name).set_attributes(metadata["attributes"])
 
-        case ServerActions.SET_FILE_DIMENSION.value:
+        case ServerActions.DEFINE_DIMENSION.value:
             metadata = receive_action_metadata(yac_wrapper)
-            logger.debug(f"SET_FILE_DIMENSION {metadata['dimension_name']} in {metadata['file_name']}")
-            files[metadata["file_name"]].set_dimension(metadata)
+            file_name = metadata['file_name']
+            logger.debug(f"DEFINE_DIMENSION {metadata['dimension_name']} in {file_name}")
+            get_file(file_name).set_dimension(metadata)
 
-        case ServerActions.START_YAC_INITIALIZATION.value:
-            logger.debug("START_YAC_INITIALIZATION")
-            yac_wrapper.start_initialization()
+        case ServerActions.DEFINE_YAC_GRID.value:
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"DEFINE_YAC_GRID {metadata['grid_name']}")
+            yac_wrapper.start_initialization(metadata)
+
+        case ServerActions.DEFINE_YAC_FIELD.value:
+            metadata = receive_action_metadata(yac_wrapper)
+            logger.debug(f"DEFINE_YAC_FIELD {metadata['variable_name']}")
+
+            if metadata["variable_name"] not in yac_wrapper.fields:
+                yac_wrapper.define_field(metadata)
 
         case ServerActions.FINISH_YAC_INITIALIZATION.value:
             logger.debug("FINISH_YAC_INITIALIZATION")
             yac_wrapper.finish_initialization()
 
-        case ServerActions.DEFINE_NON_SPATIAL_VARIABLE.value:
+        case ServerActions.DEFINE_VARIABLE.value:
             metadata = receive_action_metadata(yac_wrapper)
-            logger.debug(f"DEFINE_NON_SPATIAL_VARIABLE {metadata['variable_name']} in {metadata['file_name']}")
-            files[metadata["file_name"]].define_variable(metadata)
+            file_name = metadata['file_name']
+            logger.debug(f"DEFINE_VARIABLE {metadata['variable_name']} in {file_name}")
+            get_file(file_name).define_variable(metadata)
 
-        case ServerActions.DEFINE_SPATIAL_VARIABLE.value:
+        case ServerActions.DEFINE_GRIDDED_VARIABLE.value:
             metadata = receive_action_metadata(yac_wrapper)
-            logger.debug(f"DEFINE_SPATIAL_VARIABLE {metadata['variable_name']} in {metadata['file_name']}")
-            files[metadata["file_name"]].define_variable(metadata)
+            file_name = metadata['file_name']
+            logger.debug(f"DEFINE_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
+            get_file(file_name).define_variable(metadata)
 
-            if metadata["variable_name"] not in yac_wrapper.fields:
-                yac_wrapper.define_field(metadata)
-
-        case ServerActions.SEND_SPATIAL_VARIABLE.value:
+        case ServerActions.SEND_GRIDDED_VARIABLE.value:
             metadata = receive_action_metadata(yac_wrapper)
-            logger.debug(f"SEND_SPATIAL_VARIABLE {metadata['variable_name']} in {metadata['file_name']}")
-            files[metadata["file_name"]].receive_spatial_field(metadata["variable_name"],
-                                                               yac_wrapper)
+            file_name = metadata['file_name']
+            logger.debug(f"SEND_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
+            get_file(file_name).receive_spatial_field(metadata["variable_name"], yac_wrapper)
 
-        case ServerActions.SEND_NON_SPATIAL_VARIABLE.value:
+        case ServerActions.SEND_VARIABLE.value:
             metadata = receive_action_metadata(yac_wrapper)
-            logger.debug(f"SEND_NON_SPATIAL_VARIABLE {metadata['variable_name']} in {metadata['file_name']}")
-            files[metadata["file_name"]].receive_non_spatial_field(metadata["variable_name"],
-                                                                   yac_wrapper)
+            file_name = metadata['file_name']
+            logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
+            get_file(file_name).receive_non_spatial_field(metadata["variable_name"], yac_wrapper)
 
         case ServerActions.UPDATE_TIME_LENGTH.value:
             metadata = receive_action_metadata(yac_wrapper)
-            logger.debug(f"UPDATE_TIME_LENGTH in {metadata['file_name']}")
-            files[metadata["file_name"]].update_time_length(metadata["time_dimension_length"])
+            file_name = metadata['file_name']
+            logger.debug(f"UPDATE_TIME_LENGTH in {file_name}")
+            get_file(file_name).update_time_length(metadata["time_dimension_length"])
 
 # Close all the files
 for file in files.values():
