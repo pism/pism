@@ -1,4 +1,9 @@
 .. default-role:: literal
+		  
+Changes since v2.0.7
+====================
+
+- Applied a patch to work with PETSc versions >= 3.21.
 
 Changes since v2.0.6
 ====================
