@@ -74,14 +74,21 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
   m_callback_data.ssa = this;
 
   ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
+#if PETSC_VERSION_LT(3,21,0)
                                   (DMDASNESFunction)function_callback,
+#else
+                                  (DMDASNESFunctionFn*)function_callback,
+#endif
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
   ierr = DMDASNESSetJacobianLocal(*m_da,
+#if PETSC_VERSION_LT(3,21,0)
                                   (DMDASNESJacobian)jacobian_callback,
+#else
+                                  (DMDASNESJacobianFn*)jacobian_callback,
+#endif
                                   &m_callback_data);
-  PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 
   ierr = DMSetMatType(*m_da, "baij");
   PISM_CHK(ierr, "DMSetMatType");

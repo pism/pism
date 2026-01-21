@@ -119,7 +119,23 @@ SNESProblem<DOF, U>::SNESProblem(IceGrid::ConstPtr g)
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   m_callbackData.da = *m_DA;
   m_callbackData.solver = this;
+  
+  ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
+#if PETSC_VERSION_LT(3,21,0)
+                                  (DMDASNESFunction)SNESProblem<DOF, U>::function_callback,
+#else
+                                  (DMDASNESFunctionFn*)SNESProblem<DOF, U>::function_callback,
+#endif
+                                  &m_callbackData);
+  PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
+  ierr = DMDASNESSetJacobianLocal(*m_DA,
+#if PETSC_VERSION_LT(3,21,0)
+                                  (DMDASNESJacobian)SNESProblem<DOF, U>::jacobian_callback,
+#else
+                                  (DMDASNESJacobianFn*)SNESProblem<DOF, U>::jacobian_callback,
+#endif
+                                  &m_callbackData);
   ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
                                   (DMDASNESFunction)SNESProblem<DOF, U>::function_callback,
                                   &m_callbackData);
