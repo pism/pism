@@ -305,23 +305,15 @@ void YacOutputWriter::send_action(int action_id,
     return;
   }
 
-  // FIXME: encode action ID in JSON and then use one MPI_Isend() to send the message. The
-  // Python code will then use MPI_Probe() + MPI_Get_count() + MPI_Recv() to get all of
-  // the info.
-  //
-  // First the action id is sent to the server
-  m_mpi_requests.emplace_back();
-  MPI_Isend((void *)&action_id, 1, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
+  nlohmann::json message{};
+  message["action"] = action_id;
+  message["info"]   = metadata;
 
-  if (metadata.empty()) {
-    return;
-  }
-
-  auto action_metadata = metadata.dump();
+  auto message_string = message.dump();
 
   // Send the metadata string to the output server:
   m_mpi_requests.emplace_back();
-  MPI_Isend((void *)action_metadata.data(), (int)action_metadata.length(), MPI_CHAR, 0, 0,
+  MPI_Isend((void *)message_string.data(), (int)message_string.length(), MPI_CHAR, 0, 0,
             m_intercomm, &m_mpi_requests.back());
 }
 

@@ -335,25 +335,29 @@ class OutputFile:
         self.nc_dataset.close()
 
 
-def receive_action_metadata(yac_wrapper):
-    """Receive the json string for the metadata of an action."""
+def receive_action(yac_wrapper):
+    """Receive the JSON string encoding an action and its metadata."""
     comm = yac_wrapper.intercomm
 
     status = MPI.Status()
     comm.Probe(source=yac_wrapper.remote_leader, tag=0, status=status)
 
-    metadata_length = status.Get_count(MPI.CHAR)
+    length = status.Get_count(MPI.CHAR)
 
-    metadata_array = np.empty(metadata_length, dtype='S1')
-    comm.Recv([metadata_array, MPI.CHAR], source=yac_wrapper.remote_leader, tag=0)
+    string = np.empty(length, dtype='S1')
+    comm.Recv([string, MPI.CHAR], source=yac_wrapper.remote_leader, tag=0)
 
+    string = string.tobytes().decode("utf-8")
+    try:
+        return json.loads(string)
     # Decode the data and construct a dictionary from the json string
-    return json.loads(metadata_array.tobytes().decode("utf-8"))
+    except BaseException:
+        logger.critical(f"failed to parse action string '{string}'")
+        raise
 
 
 np.set_printoptions(threshold=np.inf)
 yac_wrapper = YacWrapper()
-server_action = np.empty(1, dtype='i')
 files = {}
 
 
@@ -362,10 +366,6 @@ def get_file(name):
     if name not in files:
         files[name] = OutputFile(name)
     return files[name]
-
-
-# FIXME: This (Python) side should be responsible for opening the file (if necessary)
-# given a file name in the "action" message.
 
 # FIXME: Add the "append" action which would open the file and send the length of the time
 # dimension and its last value back to PISM. If the file does not exist if would send a
@@ -381,42 +381,40 @@ while True:
     # TODO: We can encode the action in the message tag and use MPI_ANY_TAG,
     # the buffer size could then be the value for the metadata buffer size.
     # With this we could avoid one Send/Recv operation
-    yac_wrapper.intercomm.Recv([server_action, MPI.INT],
-                               source=yac_wrapper.remote_leader,
-                               tag=0)
+
+    message = receive_action(yac_wrapper)
+    action_id = message['action']
+    metadata = message['info']
+
+    try:
+        file_name = metadata['file_name']
+    except BaseException:
+        file_name = None
 
     # Handle each action based on the action id
-    match server_action[0]:
+    match action_id:
         case ServerActions.FINISH.value:
             logger.debug("DONE")
             break
 
         case ServerActions.CREATE_FILE.value:
             # This can be the used as the stub of the "append" action.
-            metadata = receive_action_metadata(yac_wrapper)
-            file_name = metadata['file_name']
             logger.debug(f"CREATE_FILE {file_name}")
             files[file_name] = OutputFile(file_name)
 
         case ServerActions.SET_FILE_ATTRIBUTES.value:
-            metadata = receive_action_metadata(yac_wrapper)
-            file_name = metadata['file_name']
             logger.debug(f"SET_FILE_ATTRIBUTES {file_name}")
             get_file(file_name).set_attributes(metadata["attributes"])
 
         case ServerActions.DEFINE_DIMENSION.value:
-            metadata = receive_action_metadata(yac_wrapper)
-            file_name = metadata['file_name']
             logger.debug(f"DEFINE_DIMENSION {metadata['dimension_name']} in {file_name}")
             get_file(file_name).set_dimension(metadata)
 
         case ServerActions.DEFINE_YAC_GRID.value:
-            metadata = receive_action_metadata(yac_wrapper)
             logger.debug(f"DEFINE_YAC_GRID {metadata['grid_name']}")
             yac_wrapper.start_initialization(metadata)
 
         case ServerActions.DEFINE_YAC_FIELD.value:
-            metadata = receive_action_metadata(yac_wrapper)
             logger.debug(f"DEFINE_YAC_FIELD {metadata['variable_name']}")
 
             if metadata["variable_name"] not in yac_wrapper.fields:
@@ -427,32 +425,22 @@ while True:
             yac_wrapper.finish_initialization()
 
         case ServerActions.DEFINE_VARIABLE.value:
-            metadata = receive_action_metadata(yac_wrapper)
-            file_name = metadata['file_name']
             logger.debug(f"DEFINE_VARIABLE {metadata['variable_name']} in {file_name}")
             get_file(file_name).define_variable(metadata)
 
         case ServerActions.DEFINE_GRIDDED_VARIABLE.value:
-            metadata = receive_action_metadata(yac_wrapper)
-            file_name = metadata['file_name']
             logger.debug(f"DEFINE_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
             get_file(file_name).define_variable(metadata)
 
         case ServerActions.SEND_GRIDDED_VARIABLE.value:
-            metadata = receive_action_metadata(yac_wrapper)
-            file_name = metadata['file_name']
             logger.debug(f"SEND_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
             get_file(file_name).receive_spatial_field(metadata["variable_name"], yac_wrapper)
 
         case ServerActions.SEND_VARIABLE.value:
-            metadata = receive_action_metadata(yac_wrapper)
-            file_name = metadata['file_name']
             logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
             get_file(file_name).receive_non_spatial_field(metadata["variable_name"], yac_wrapper)
 
         case ServerActions.UPDATE_TIME_LENGTH.value:
-            metadata = receive_action_metadata(yac_wrapper)
-            file_name = metadata['file_name']
             logger.debug(f"UPDATE_TIME_LENGTH in {file_name}")
             get_file(file_name).update_time_length(metadata["time_dimension_length"])
 
