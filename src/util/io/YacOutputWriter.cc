@@ -162,7 +162,8 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
   {
     nlohmann::json info;
     info["grid_name"] = grid_name;
-    send_action(DEFINE_YAC_GRID, info.dump());
+
+    send_action(DEFINE_YAC_GRID, info);
   }
 
   // Sends the global domain sizes to the server
@@ -269,14 +270,14 @@ void YacOutputWriter::define_yac_field(const VariableMetadata &variable) {
     info["collection_size"] = collection_size;
     info["grid_name"]       = details::grid_name(variable);
 
-    send_action(DEFINE_YAC_FIELD, info.dump());
+    send_action(DEFINE_YAC_FIELD, info);
   }
 }
 
 // This subroutine ends the YAC definitions phase.
 // No components, grids or fields can be defined after this.
 void YacOutputWriter::end_yac_definitions() {
-  send_action(FINISH_YAC_INITIALIZATION);
+  send_action(FINISH_YAC_INITIALIZATION, {});
   yac_cenddef();
 
   int max_collection_size = m_max_collection_size["y-x"];
@@ -298,7 +299,7 @@ void YacOutputWriter::end_yac_definitions() {
 // parameters in the metadata. 
 // TODO: the metadata should be a json string for all actions
 void YacOutputWriter::send_action(int action_id,
-                                  const std::string &action_metadata) {
+                                  const nlohmann::json &metadata) {
   // Only the leader process needs to send actions to the server
   if (not m_leader) {
     return;
@@ -312,9 +313,11 @@ void YacOutputWriter::send_action(int action_id,
   m_mpi_requests.emplace_back();
   MPI_Isend((void *)&action_id, 1, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
 
-  if (action_metadata.empty()) {
+  if (metadata.empty()) {
     return;
   }
+
+  auto action_metadata = metadata.dump();
 
   // Send the metadata string to the output server:
   m_mpi_requests.emplace_back();
@@ -335,7 +338,7 @@ YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config)
 }
 
 YacOutputWriter::~YacOutputWriter() {
-    send_action(FINISH);
+  send_action(FINISH, {});
 
     for (auto &i : m_array_data) {
       delete i;
@@ -417,24 +420,24 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     info["collection_size"] = collection_size;
     info["grid_name"]       = details::grid_name(variable);
 
-    send_action(DEFINE_GRIDDED_VARIABLE, info.dump());
+    send_action(DEFINE_GRIDDED_VARIABLE, info);
   } else {
     // If the variable is not gridded, pack all its metadata and tell the server to
     // define it for this file
 
-    nlohmann::json metadata;
-    details::to_json(attributes, metadata);
+    nlohmann::json info;
+    details::to_json(attributes, info);
 
-    metadata["variable_name"] = variable_name;
-    metadata["dimensions"]    = dims;
-    metadata["dtype"]         = details::to_python_type(type);
-    metadata["file_name"]     = file_name;
+    info["variable_name"] = variable_name;
+    info["dimensions"]    = dims;
+    info["dtype"]         = details::to_python_type(type);
+    info["file_name"]     = file_name;
 
     if (not dims.empty()) {
-      metadata["tag"]                = m_variable_tags.size();
+      info["tag"]                    = m_variable_tags.size();
       m_variable_tags[variable_name] = m_variable_tags.size();
     }
-    send_action(DEFINE_VARIABLE, metadata.dump());
+    send_action(DEFINE_VARIABLE, info);
   }
 
   // Save the variable as already defined for this file
@@ -453,7 +456,7 @@ void YacOutputWriter::append_time_impl(const std::string &file_name, double time
     nlohmann::json file_metadata;
     file_metadata["file_name"] = file_name;
     file_metadata["time_dimension_length"] = time_dimension_length(file_name);
-    send_action(UPDATE_TIME_LENGTH, file_metadata.dump());
+    send_action(UPDATE_TIME_LENGTH, file_metadata);
   }
   
   write_array(file_name, time_name(), { time_dimension_length(file_name) }, { 1 },
@@ -467,7 +470,7 @@ void YacOutputWriter::append_history_impl(const std::string &file_name, const st
   nlohmann::json info;
   info["file_name"]             = file_name;
   info["attributes"]["history"] = text;
-  send_action(SET_FILE_ATTRIBUTES, info.dump());
+  send_action(SET_FILE_ATTRIBUTES, info);
 }
 
 void YacOutputWriter::append_impl(const std::string &file_name) {
@@ -505,7 +508,7 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
     info["file_name"]        = file_name;
     info["dimension_name"]   = name;
     info["dimension_length"] = length;
-    send_action(DEFINE_DIMENSION, info.dump());
+    send_action(DEFINE_DIMENSION, info);
   }
 
   m_defined_dimension[file_name][name] = true;
@@ -528,7 +531,7 @@ void YacOutputWriter::set_global_attributes_impl(
   nlohmann::json file_attributes_json;
   file_attributes_json["file_name"]  = file_name;
   file_attributes_json["attributes"] = attributes_json;
-  send_action(SET_FILE_ATTRIBUTES, file_attributes_json.dump());
+  send_action(SET_FILE_ATTRIBUTES, file_attributes_json);
 }
 
 unsigned int YacOutputWriter::time_dimension_length_impl(const std::string &file_name) {
@@ -552,7 +555,7 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
   info["variable_name"] = variable_name;
   info["start"] = start;
   info["count"] = count;
-  send_action(SEND_VARIABLE, info.dump());
+  send_action(SEND_VARIABLE, info);
 
   // Non-gridded variables are sent by the leader process
   if (m_leader) {
@@ -584,7 +587,7 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
   info["variable_name"] = variable_name;
   info["start"] = start;
   info["count"] = count;
-  send_action(SEND_VARIABLE, info.dump());
+  send_action(SEND_VARIABLE, info);
 
   // Text variables are sent by the leader process
   if (m_leader) {
@@ -613,7 +616,7 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
     nlohmann::json info;
     info["file_name"]     = file_name;
     info["variable_name"] = variable_name;
-    send_action(SEND_GRIDDED_VARIABLE, info.dump());
+    send_action(SEND_GRIDDED_VARIABLE, info);
   }
 
   // Copies the data from the argument array to the yac_raw_send_array

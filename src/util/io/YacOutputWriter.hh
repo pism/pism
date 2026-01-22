@@ -25,6 +25,7 @@
 
 #include "OutputWriter.hh"
 #include "pism/util/io/OutputWriter.hh"
+#include "pism/util/json.hpp"
 
 namespace pism {
 
@@ -120,7 +121,7 @@ private:
 
   void end_yac_definitions();
 
-  void send_action(int action_id, const std::string &action_metadata = "");
+  void send_action(int action_id, const nlohmann::json &metadata);
 
   // --- Interface implementation ---
   void initialize_impl(const std::set<VariableMetadata> &array_variables);

@@ -337,12 +337,10 @@ class OutputFile:
 
 def receive_action_metadata(yac_wrapper):
     """Receive the json string for the metadata of an action."""
-    metadata_array_length = np.empty(1, dtype='i')
-
     comm = yac_wrapper.intercomm
 
     status = MPI.Status()
-    comm.Probe(source=yac_wrapper.remote_leader, status=status)
+    comm.Probe(source=yac_wrapper.remote_leader, tag=0, status=status)
 
     metadata_length = status.Get_count(MPI.CHAR)
 
