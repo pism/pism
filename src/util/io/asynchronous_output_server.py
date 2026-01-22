@@ -185,13 +185,18 @@ class OutputFile:
     # The constructor does empty initialization of most members and
     # creates the dataset for the NetCDF file
     def __init__(self, file_name):
-        self.name = file_name
         self.nc_dataset = netCDF4.Dataset(file_name, 'w')
-        self.nc_variables = {}
+        self.nc_variables = {}  # FIXME: not needed (self.nc_variables[name] is the same
+        # as self.nc_dataset.variables[name])
         self.variables_metadata = {}
+        # FIXME: self.dimensions is not needed because it is used to compute size, which
+        # should be dont using "count"
         self.dimensions = {}
+        # FIXME: unused
         self.comm_reqs = []
+        # FIXME: unused
         self.text_req_indices = {}
+        # FIXME: why do we need to store these (variables_data)?
         self.variables_data = {}
         # FIXME: time_index is not needed. We always write gridded field to the last time
         # record.
@@ -206,7 +211,7 @@ class OutputFile:
         """Update the time index used for writing to the dataset."""
         self.time_index = time_dimension_length
 
-    def set_dimension(self, dimension):
+    def define_dimension(self, dimension):
         """Create a dimension in the NetCDF dataset."""
         name = dimension["dimension_name"]
         length = dimension["dimension_length"]
@@ -234,11 +239,7 @@ class OutputFile:
             if attr not in ignored_attributes and value != "":
                 self.nc_variables[field_name].setncattr(attr, value)
 
-    def get_variable_metadata(self, variable_name):
-        """Return the metadata stored for `variable_name`."""
-        return self.variables_metadata[variable_name]
-
-    def receive_spatial_field(self, field_name, yac_wrapper):
+    def receive_gridded_variable(self, field_name, yac_wrapper):
         """Receive a spatial field and write to the corresponding NetCDF variable."""
         # Number of vertical levels for that field in YAC
         collection_size = yac_wrapper.fields[field_name].collection_size
@@ -276,7 +277,7 @@ class OutputFile:
 
             self.nc_variables[field_name][self.time_index, :, :, :] = tmp
 
-    def receive_non_spatial_field(self, variable_name, yac_wrapper):
+    def receive_variable(self, variable_name, yac_wrapper):
         """Receive a non-spatial variable and write to the corresponding NetCDF variable."""
         variable_dims = self.variables_metadata[variable_name]["dimensions"]
         variable_metadata = self.variables_metadata[variable_name]
@@ -290,19 +291,27 @@ class OutputFile:
         # If the variables has any dimensions defined
         if len(variable_dims) > 0:
             # Find the size for the receive operation
+            # FIXME: this size calculation is wrong: use the "count" array instead
             size = self.dimensions[variable_dims[0]] if self.dimensions[variable_dims[0]] > 0 else 1
-            tmp_receival = np.empty(size, dtype="f8")
+            tmp = np.empty(size, dtype="f8")
             tag = int(variable_metadata["tag"])
 
-            # If the variable is not a string, receive it as double and cast it to the actual variable type
+            # FIXME: casting to the "actual variable type" should not be needed: type
+            # conversion is performed by NetCDF.
+            #
+            # If the variable is not a string, receive it as double and cast it to the
+            # actual variable type
             if (dtype != "S1"):
-                yac_wrapper.intercomm.Recv([tmp_receival, MPI.DOUBLE],
+                yac_wrapper.intercomm.Recv([tmp, MPI.DOUBLE],
                                            source=yac_wrapper.remote_leader, tag=tag)
-                self.variables_data[variable_name] = tmp_receival.astype(dtype)
+                self.variables_data[variable_name] = tmp.astype(dtype)
 
             # If the variable is a string then receive the char array and use the status
             # var. The status is required to know how many chars were received for the
             # NetCDF var assignment later
+            #
+            # FIXME: this use of MPI_Status is unnecessary: we have the length of the
+            # string from the "count" array.
             else:
                 self.variables_data[variable_name] = np.empty(size, dtype=dtype)
                 yac_wrapper.intercomm.Recv([self.variables_data[variable_name], MPI.CHAR],
@@ -316,14 +325,16 @@ class OutputFile:
             # characters to avoid garbage at the end of the string
             if dtype == "S1":
                 char_count = status.Get_count(MPI.CHAR)
+                # FIXME: slicing in this assignment is wrong: use start and count instead
                 self.nc_variables[variable_name][:char_count] = self.variables_data[variable_name][:char_count]
 
             # Otherwise simply assign all the received data
             else:
+                # FIXME: use start and count
                 self.nc_variables[variable_name][:] = self.variables_data[variable_name]
 
-        # If the variable is time-dependent, assign it to the current time index of the file.
-        # So far there does not seem to be time-dependent text variables
+        # If the variable is time-dependent, assign it to the current time index of the
+        # file. So far there does not seem to be time-dependent text variables
         else:
             self.nc_variables[variable_name][self.time_index] = self.variables_data[variable_name]
 
@@ -405,7 +416,7 @@ while True:
 
         case ServerActions.DEFINE_DIMENSION.value:
             logger.debug(f"DEFINE_DIMENSION {metadata['dimension_name']} in {file_name}")
-            get_file(file_name).set_dimension(metadata)
+            get_file(file_name).define_dimension(metadata)
 
         case ServerActions.DEFINE_YAC_GRID.value:
             logger.debug(f"DEFINE_YAC_GRID {metadata['grid_name']}")
@@ -431,11 +442,11 @@ while True:
 
         case ServerActions.SEND_GRIDDED_VARIABLE.value:
             logger.debug(f"SEND_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
-            get_file(file_name).receive_spatial_field(metadata["variable_name"], yac_wrapper)
+            get_file(file_name).receive_gridded_variable(metadata["variable_name"], yac_wrapper)
 
         case ServerActions.SEND_VARIABLE.value:
             logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
-            get_file(file_name).receive_non_spatial_field(metadata["variable_name"], yac_wrapper)
+            get_file(file_name).receive_variable(metadata["variable_name"], yac_wrapper)
 
         case ServerActions.UPDATE_TIME_LENGTH.value:
             logger.debug(f"UPDATE_TIME_LENGTH in {file_name}")
