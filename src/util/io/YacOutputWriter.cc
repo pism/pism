@@ -440,10 +440,10 @@ void YacOutputWriter::append_time_impl(const std::string &file_name, double time
   // `time_name()` will automatically update the length of the time dimension.
   {
     // Gathers time_dimension_length metadata and sends it to the server
-    nlohmann::json file_metadata;
-    file_metadata["file_name"] = file_name;
-    file_metadata["time_dimension_length"] = time_dimension_length(file_name);
-    send_action(UPDATE_TIME_LENGTH, file_metadata);
+    nlohmann::json info;
+    info["file_name"] = file_name;
+    info["time_dimension_length"] = time_dimension_length(file_name);
+    send_action(UPDATE_TIME_LENGTH, info);
   }
   
   write_array(file_name, time_name(), { time_dimension_length(file_name) }, { 1 },
