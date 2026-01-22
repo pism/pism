@@ -101,9 +101,6 @@ class YacWrapper:
     # For YAC specifically the main task happening in
     # this subroutine is the grid definition
     def start_initialization(self, metadata):
-        # Variables for the global x and y sizes
-        x_size = np.empty(1, dtype='i')
-        y_size = np.empty(1, dtype='i')
         client_local_domain_sizes = np.empty(self.remote_size, dtype='i')
         displacements = np.empty(self.remote_size, dtype='i')
 
@@ -111,13 +108,13 @@ class YacWrapper:
         grid_name = metadata['grid_name'] + "_output"
 
         # Receive the global x and y sizes from the leader in the client
-        self.intercomm.Recv([x_size, MPI.INT], source=self.remote_leader, tag=0)
-        self.intercomm.Recv([y_size, MPI.INT], source=self.remote_leader, tag=0)
-        self.x_size = x_size[0]
-        self.y_size = y_size[0]
+        grid_size = np.empty(2, dtype='i')
+        self.intercomm.Recv([grid_size, MPI.INT], source=self.remote_leader, tag=0)
+        self.x_size = grid_size[0]
+        self.y_size = grid_size[1]
 
-        # Total amount of grid points
-        grid_points = x_size[0] * y_size[0]
+        # Total number of grid points
+        grid_points = self.x_size * self.y_size
 
         # Gather the sizes of the local domains of all client processes
         self.intercomm.Gather(None, client_local_domain_sizes, root=MPI.ROOT)

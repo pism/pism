@@ -168,14 +168,9 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
 
   // Sends the global domain sizes to the server
   if (m_leader) {
-    // FIXME: one MPI_Isend() sending 2 integers would be enough here
-    int x_size = (int)grid.Mx;
+    int grid_size[2] = {(int)grid.Mx, (int)grid.My};
     m_mpi_requests.emplace_back();
-    MPI_Isend((void *) &x_size, 1, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
-  
-    int y_size = (int)grid.My;
-    m_mpi_requests.emplace_back();
-    MPI_Isend((void *) &y_size, 1, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
+    MPI_Isend((void *) &grid_size, 2, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
   }
 
   // Will hold the amount of points for the local grid patch of this process
