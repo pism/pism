@@ -422,22 +422,15 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 }
 
 void YacOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
-  // FIXME: we need to increment the value of the time length for this file so
-  // time_dimension_length() returns the correct value (and the same with
-  // last_time_value()).
-  //
-  // FIXME: this (the code block below) should not be necessary. Writing to the variable
-  // `time_name()` will automatically update the length of the time dimension.
+  m_time_length[file_name] += 1;
+  m_last_time[file_name] = time_seconds;
+
   {
-    // Gathers time_dimension_length metadata and sends it to the server
     nlohmann::json info;
     info["file_name"] = file_name;
-    info["time_dimension_length"] = time_dimension_length(file_name);
-    send_action(UPDATE_TIME_LENGTH, info);
+    info["time"] = time_seconds;
+    send_action(APPEND_TIME, info);
   }
-  
-  write_array(file_name, time_name(), { time_dimension_length(file_name) }, { 1 },
-              { time_seconds });
 }
 
 void YacOutputWriter::append_history_impl(const std::string &file_name, const std::string &text) {

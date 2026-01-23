@@ -43,7 +43,7 @@ class ServerActions(Enum):
     DEFINE_VARIABLE = 6
     SEND_VARIABLE = 7
     SEND_GRIDDED_VARIABLE = 8
-    UPDATE_TIME_LENGTH = 9
+    APPEND_TIME = 9
     FINISH = 10
 
 
@@ -206,9 +206,10 @@ class OutputFile:
         for attr in file_attributes:
             setattr(self.nc_dataset, attr, file_attributes[attr])
 
-    def update_time_length(self, time_dimension_length):
-        """Update the time index used for writing to the dataset."""
-        self.time_index = time_dimension_length
+    def append_time(self, time_seconds):
+        """Create one more time record by adding a value to the time dimension."""
+        self.time_index = len(self.nc_dataset.dimensions["time"])
+        self.nc_dataset.variables["time"][self.time_index] = time_seconds
 
     def define_dimension(self, dimension):
         """Create a dimension in the NetCDF dataset."""
@@ -441,9 +442,9 @@ while True:
             logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
             get_file(file_name).receive_variable(metadata["variable_name"], yac_wrapper)
 
-        case ServerActions.UPDATE_TIME_LENGTH.value:
-            logger.debug(f"UPDATE_TIME_LENGTH in {file_name}")
-            get_file(file_name).update_time_length(metadata["time_dimension_length"])
+        case ServerActions.APPEND_TIME.value:
+            logger.debug(f"APPEND_TIME in {file_name}")
+            get_file(file_name).append_time(metadata["time"])
 
 # Close all the files
 for file in files.values():

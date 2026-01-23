@@ -47,7 +47,7 @@ enum ServerActions : int {
     DEFINE_VARIABLE = 6,
     SEND_VARIABLE = 7,
     SEND_GRIDDED_VARIABLE = 8,
-    UPDATE_TIME_LENGTH = 9,
+    APPEND_TIME = 9,
     FINISH = 10
 };
 
