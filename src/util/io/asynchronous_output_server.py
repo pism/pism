@@ -188,7 +188,6 @@ class OutputFile:
     # creates the dataset for the NetCDF file
     def __init__(self, file_name):
         self.nc_dataset = netCDF4.Dataset(file_name, 'w')
-        self.nc_variables = {}  # FIXME: not needed (self.nc_variables[name] is the same
         # as self.nc_dataset.variables[name])
         self.variables_metadata = {}
         # FIXME: self.dimensions is not needed because it is used to compute size, which
@@ -228,23 +227,25 @@ class OutputFile:
         attributes = metadata["attributes"]
 
         fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
-        self.nc_variables[name] = self.nc_dataset.createVariable(name,
-                                                                 metadata["dtype"],
-                                                                 metadata["dimensions"],
-                                                                 fill_value=fill_value)
+        nc_variable = self.nc_dataset.createVariable(name,
+                                                     metadata["dtype"],
+                                                     metadata["dimensions"],
+                                                     fill_value=fill_value)
 
         ignored_attributes = ['_FillValue']
         for attr, value in attributes.items():
             if attr not in ignored_attributes and value != "":
-                self.nc_variables[name].setncattr(attr, value)
+                nc_variable.setncattr(attr, value)
 
-    def receive_gridded_variable(self, field_name, yac_wrapper):
+    def receive_gridded_variable(self, name, yac_wrapper):
         """Receive a spatial field and write to the corresponding NetCDF variable."""
         # Number of vertical levels for that field in YAC
-        collection_size = yac_wrapper.fields[field_name].collection_size
+        nc_variable = self.nc_dataset.variables[name]
+
+        collection_size = yac_wrapper.fields[name].collection_size
 
         # Variable for holding the raw data provided by the YAC get, which is directly issued here
-        data = yac_wrapper.fields[field_name].get()[0]
+        data = yac_wrapper.fields[name].get()[0]
 
         # For each vertical level, reorders the received data according to the horizontal
         # global vertex indices
@@ -257,12 +258,12 @@ class OutputFile:
 
         # Handles the data assignment to the NetCDF variable
         # If the variable is a 2D field NOT time-dependent
-        if len(self.nc_variables[field_name].shape) == 2:
-            self.nc_variables[field_name][:, :] = values[0]
+        if len(nc_variable.shape) == 2:
+            nc_variable[:, :] = values[0]
 
         # If the variable is a time-dependent 2D field
-        elif len(self.nc_variables[field_name].shape) == 3:
-            self.nc_variables[field_name][self.time_index, :, :] = values[0]
+        elif len(nc_variable.shape) == 3:
+            nc_variable[self.time_index, :, :] = values[0]
 
         # If the variable is a time-dependent 3D field
         else:
@@ -275,15 +276,16 @@ class OutputFile:
             for c in range(collection_size):
                 tmp[:, :, c] = values[c]
 
-            self.nc_variables[field_name][self.time_index, :, :, :] = tmp
+            nc_variable[self.time_index, :, :, :] = tmp
 
-    def receive_variable(self, variable_name, yac_wrapper):
+    def receive_variable(self, name, yac_wrapper):
         """Receive a non-gridded variable data and write it to the corresponding NetCDF
         variable."""
-        variable_dims = self.variables_metadata[variable_name]["dimensions"]
-        variable_metadata = self.variables_metadata[variable_name]
+        variable_dims = self.variables_metadata[name]["dimensions"]
+        variable_metadata = self.variables_metadata[name]
         dtype = variable_metadata["dtype"]
         status = MPI.Status()
+        nc_variable = self.nc_dataset.variables[name]
 
         #
         # FIXME: use "start" and "count" arrays sent in variable_metadata
@@ -305,7 +307,7 @@ class OutputFile:
             if (dtype != "S1"):
                 yac_wrapper.intercomm.Recv([tmp, MPI.DOUBLE],
                                            source=yac_wrapper.remote_leader, tag=tag)
-                self.variables_data[variable_name] = tmp.astype(dtype)
+                self.variables_data[name] = tmp.astype(dtype)
 
             # If the variable is a string then receive the char array and use the status
             # var. The status is required to know how many chars were received for the
@@ -314,8 +316,8 @@ class OutputFile:
             # FIXME: this use of MPI_Status is unnecessary: we have the length of the
             # string from the "count" array.
             else:
-                self.variables_data[variable_name] = np.empty(size, dtype=dtype)
-                yac_wrapper.intercomm.Recv([self.variables_data[variable_name], MPI.CHAR],
+                self.variables_data[name] = np.empty(size, dtype=dtype)
+                yac_wrapper.intercomm.Recv([self.variables_data[name], MPI.CHAR],
                                            source=yac_wrapper.remote_leader,
                                            tag=tag, status=status)
 
@@ -327,17 +329,17 @@ class OutputFile:
             if dtype == "S1":
                 char_count = status.Get_count(MPI.CHAR)
                 # FIXME: slicing in this assignment is wrong: use start and count instead
-                self.nc_variables[variable_name][:char_count] = self.variables_data[variable_name][:char_count]
+                nc_variable[:char_count] = self.variables_data[name][:char_count]
 
             # Otherwise simply assign all the received data
             else:
                 # FIXME: use start and count
-                self.nc_variables[variable_name][:] = self.variables_data[variable_name]
+                nc_variable[:] = self.variables_data[name]
 
         # If the variable is time-dependent, assign it to the current time index of the
         # file. So far there does not seem to be time-dependent text variables
         else:
-            self.nc_variables[variable_name][self.time_index] = self.variables_data[variable_name]
+            nc_variable[self.time_index] = self.variables_data[name]
 
     def close(self):
         """Close the underlying NetCDF dataset."""
