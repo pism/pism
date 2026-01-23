@@ -56,6 +56,7 @@ bed[X>Lx+140e3] = -800
 
 # Initial ice thickness
 thickness = np.zeros_like(bed) + 100
+thickness[X<=Lx] = 0
 
 # Mask to calve off all ice where x>Lx
 liafr = np.zeros_like(bed)
