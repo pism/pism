@@ -52,6 +52,7 @@ class ServerActions(Enum):
 source_comp_name = "pism"
 target_comp_name = "pism_output"
 
+
 class YacWrapper:
     """Class holding all YAC variables and definitions."""
 
@@ -385,11 +386,8 @@ def get_file(name):
 # Poll loop for listening for action requests from the client
 while True:
     # Wait for an action
-    # TODO: We can encode the action in the message tag and use MPI_ANY_TAG,
-    # the buffer size could then be the value for the metadata buffer size.
-    # With this we could avoid one Send/Recv operation
-
     message = receive_action(yac_wrapper)
+
     action_id = message['action']
     metadata = message['info']
 
