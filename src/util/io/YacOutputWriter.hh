@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <mpi.h>
+#include <string>
 
 #include "OutputWriter.hh"
 #include "pism/util/io/OutputWriter.hh"
@@ -44,11 +45,10 @@ enum ServerActions : int {
     DEFINE_YAC_FIELD = 4,
     FINISH_YAC_INITIALIZATION = 5,
     DEFINE_VARIABLE = 6,
-    DEFINE_GRIDDED_VARIABLE = 7,
-    SEND_VARIABLE = 8,
-    SEND_GRIDDED_VARIABLE = 9,
-    UPDATE_TIME_LENGTH = 10,
-    FINISH = 11
+    SEND_VARIABLE = 7,
+    SEND_GRIDDED_VARIABLE = 8,
+    UPDATE_TIME_LENGTH = 9,
+    FINISH = 10
 };
 
 /*!
@@ -108,7 +108,10 @@ private:
   // --- MPI Communication
 
   //! Tags for MPI messages sending non-gridded variable data
-  std::map<std::string, unsigned int> m_variable_tags;
+
+  enum TagTreatment : int {CREATE_NEW_TAG, GET_EXISTING_TAG};
+  int tag(const std::string &variable_name, TagTreatment flag = GET_EXISTING_TAG);
+  std::map<std::string, int> m_variable_tags;
 
   std::vector<MPI_Request> m_mpi_requests;
 

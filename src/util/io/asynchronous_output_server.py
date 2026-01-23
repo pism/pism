@@ -41,11 +41,10 @@ class ServerActions(Enum):
     DEFINE_YAC_FIELD = 4
     FINISH_YAC_INITIALIZATION = 5
     DEFINE_VARIABLE = 6
-    DEFINE_GRIDDED_VARIABLE = 7
-    SEND_VARIABLE = 8
-    SEND_GRIDDED_VARIABLE = 9
-    UPDATE_TIME_LENGTH = 10
-    FINISH = 11
+    SEND_VARIABLE = 7
+    SEND_GRIDDED_VARIABLE = 8
+    UPDATE_TIME_LENGTH = 9
+    FINISH = 10
 
 
 # YAC general component, grid and configuration variables
@@ -218,26 +217,22 @@ class OutputFile:
         self.dimensions[name] = length
         self.nc_dataset.createDimension(name, length if length > 0 else None)
 
-    def define_variable(self, variable_metadata):
+    def define_variable(self, metadata):
         """Define a new variable in the NetCDF dataset."""
-        field_name = variable_metadata["variable_name"]
-        self.variables_metadata[field_name] = variable_metadata
+        name = metadata["variable_name"]
+        self.variables_metadata[name] = metadata
+        attributes = metadata["attributes"]
 
-        fill_value = variable_metadata["_FillValue"] if '_FillValue' in variable_metadata else None
-        self.nc_variables[field_name] = self.nc_dataset.createVariable(field_name,
-                                                                       variable_metadata["dtype"],
-                                                                       variable_metadata["dimensions"],
-                                                                       fill_value=fill_value)
+        fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
+        self.nc_variables[name] = self.nc_dataset.createVariable(name,
+                                                                 metadata["dtype"],
+                                                                 metadata["dimensions"],
+                                                                 fill_value=fill_value)
 
-        # There are some attributes which were either already set in the variable creation
-        # or that are used only for the execution of the server. These all should be ignored
-        # when setting NetCDF variable attributes.
-        ignored_attributes = ['_FillValue', 'dimensions', 'tag', 'dtype',
-                              'collection_size', 'file_name', 'timestep', 'variable_name']
-        for attr in variable_metadata:
-            value = variable_metadata[attr]
+        ignored_attributes = ['_FillValue']
+        for attr, value in attributes.items():
             if attr not in ignored_attributes and value != "":
-                self.nc_variables[field_name].setncattr(attr, value)
+                self.nc_variables[name].setncattr(attr, value)
 
     def receive_gridded_variable(self, field_name, yac_wrapper):
         """Receive a spatial field and write to the corresponding NetCDF variable."""
@@ -247,7 +242,8 @@ class OutputFile:
         # Variable for holding the raw data provided by the YAC get, which is directly issued here
         data = yac_wrapper.fields[field_name].get()[0]
 
-        # For each vertical level, reorders the received data according to the horizontal global vertex indices
+        # For each vertical level, reorders the received data according to the horizontal
+        # global vertex indices
         for level in range(collection_size):
             data[level] = data[level, np.argsort(yac_wrapper.global_vertex_indices)]
 
@@ -278,7 +274,8 @@ class OutputFile:
             self.nc_variables[field_name][self.time_index, :, :, :] = tmp
 
     def receive_variable(self, variable_name, yac_wrapper):
-        """Receive a non-spatial variable and write to the corresponding NetCDF variable."""
+        """Receive a non-gridded variable data and write it to the corresponding NetCDF
+        variable."""
         variable_dims = self.variables_metadata[variable_name]["dimensions"]
         variable_metadata = self.variables_metadata[variable_name]
         dtype = variable_metadata["dtype"]
@@ -434,10 +431,6 @@ while True:
 
         case ServerActions.DEFINE_VARIABLE.value:
             logger.debug(f"DEFINE_VARIABLE {metadata['variable_name']} in {file_name}")
-            get_file(file_name).define_variable(metadata)
-
-        case ServerActions.DEFINE_GRIDDED_VARIABLE.value:
-            logger.debug(f"DEFINE_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
             get_file(file_name).define_variable(metadata)
 
         case ServerActions.SEND_GRIDDED_VARIABLE.value:

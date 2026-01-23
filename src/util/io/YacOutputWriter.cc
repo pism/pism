@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -143,6 +143,22 @@ void YacOutputWriter::create_intercomm() {
   int tag = 0;
   MPI_Intercomm_create(comm(), local_leader_rank[0], global_comm, remote_leader, tag,
                        &m_intercomm);
+}
+
+int YacOutputWriter::tag(const std::string &variable_name, TagTreatment flag) {
+  auto i = m_variable_tags.find(variable_name);
+  if (i != m_variable_tags.end()) {
+    return i->second;
+  }
+
+  if (flag == CREATE_NEW_TAG) {
+    int new_tag = (int)m_variable_tags.size();
+    m_variable_tags[variable_name] = new_tag;
+    return new_tag;
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Bug: no tag for variable '%s'",
+                                variable_name.c_str());
 }
 
 // Initializes the YAC grid and sends the geometrical information to 
@@ -388,42 +404,16 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
     return;
   }
 
-  bool gridded = (variable_info_is_available(variable_name) and
-                  variable_info(variable_name).grid_info() != nullptr);
-
-  if (gridded) {
-    nlohmann::json info;
-
-    const auto &variable = variable_info(variable_name);
-
-    int collection_size = std::max((int)variable.levels().size(), 1);
-
-    details::to_json(attributes, info);
-    info["dimensions"]      = dims;
-    info["dtype"]           = details::to_python_type(type);
-    info["file_name"]       = file_name;
-    info["variable_name"]   = variable_name;
-    info["timestep"]        = "PT1M";
-    info["collection_size"] = collection_size;
-    info["grid_name"]       = details::grid_name(variable);
-
-    send_action(DEFINE_GRIDDED_VARIABLE, info);
-  } else {
-    // If the variable is not gridded, pack all its metadata and tell the server to
-    // define it for this file
-
-    nlohmann::json info;
-    details::to_json(attributes, info);
-
-    info["variable_name"] = variable_name;
+  {
+    nlohmann::json info, nc_attributes;
+    details::to_json(attributes, nc_attributes);
+    info["attributes"]    = nc_attributes;
     info["dimensions"]    = dims;
     info["dtype"]         = details::to_python_type(type);
     info["file_name"]     = file_name;
+    info["variable_name"] = variable_name;
+    info["tag"]           = tag(variable_name, CREATE_NEW_TAG);
 
-    if (not dims.empty()) {
-      info["tag"]                    = m_variable_tags.size();
-      m_variable_tags[variable_name] = m_variable_tags.size();
-    }
     send_action(DEFINE_VARIABLE, info);
   }
 
@@ -556,7 +546,7 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     m_array_data.push_back(buffer);
     memcpy(buffer, data, data_size * sizeof(double));
     m_mpi_requests.emplace_back();
-    MPI_Isend((void *)(buffer), data_size, MPI_DOUBLE, 0, (int)m_variable_tags[variable_name],
+    MPI_Isend((void *)(buffer), data_size, MPI_DOUBLE, 0, tag(variable_name),
               m_intercomm, &m_mpi_requests.back());
   }
 }
@@ -584,7 +574,7 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
     m_text_buffers.push_back(input);
     m_mpi_requests.emplace_back();
     MPI_Isend((void *)(m_text_buffers.back().data()), (int)input.size(), MPI_CHAR, 0,
-              (int)m_variable_tags[variable_name], m_intercomm, &m_mpi_requests.back());
+              tag(variable_name), m_intercomm, &m_mpi_requests.back());
   }
 }
 
