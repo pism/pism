@@ -451,12 +451,14 @@ void YacOutputWriter::append_impl(const std::string &file_name) {
   throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
 }
 
-void YacOutputWriter::sync_impl(const std::string &file_name) {
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
+void YacOutputWriter::sync_impl(const std::string &/*file_name*/) {
+  // no-op
 }
 
 void YacOutputWriter::close_impl(const std::string &file_name) {
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
+  nlohmann::json info;
+  info["file_name"] = file_name;
+  send_action(CLOSE_FILE, info);
 }
 
 void YacOutputWriter::define_dimension_impl(const std::string &file_name,
@@ -509,8 +511,7 @@ unsigned int YacOutputWriter::time_dimension_length_impl(const std::string &file
 }
 
 double YacOutputWriter::last_time_value_impl(const std::string &file_name) {
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
-  return 0.0;
+  return m_last_time[file_name];
 }
 
 void YacOutputWriter::write_array_impl(const std::string &file_name,
@@ -523,8 +524,9 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
   nlohmann::json info;
   info["file_name"]     = file_name;
   info["variable_name"] = variable_name;
-  info["start"] = start;
-  info["count"] = count;
+  info["start"]         = start;
+  info["count"]         = count;
+  info["tag"]           = tag(variable_name);
   send_action(SEND_VARIABLE, info);
 
   // Non-gridded variables are sent by the leader process
@@ -550,23 +552,29 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
                                       const std::vector<unsigned int> &count,
                                       const std::string &input) {
 
-  // Gathers the variable name into the json object and sends it
-  // to the server for identification of which variable to receive
+  // info["text"] = true indicates that this is a text variable and data should be
+  // received using the MPI_CHAR type instead of MPI_DOUBLE
   nlohmann::json info;
   info["file_name"]     = file_name;
   info["variable_name"] = variable_name;
-  info["start"] = start;
-  info["count"] = count;
+  info["start"]         = start;
+  info["count"]         = count;
+  info["tag"]           = tag(variable_name);
+  info["text"]          = true;
   send_action(SEND_VARIABLE, info);
 
   // Text variables are sent by the leader process
   if (m_leader) {
+    int data_size = 1;
+    for (const auto &c : count) {
+      data_size *= (int)c;
+    }
     // Text fields are buffered so that the asynchronous send can finish after the
     // arguments lifetime. Since it is buffered inside of a vector, the de-allocation
     // happens automatically at the destructor
     m_text_buffers.push_back(input);
     m_mpi_requests.emplace_back();
-    MPI_Isend((void *)(m_text_buffers.back().data()), (int)input.size(), MPI_CHAR, 0,
+    MPI_Isend((void *)(m_text_buffers.back().data()), data_size, MPI_CHAR, 0,
               tag(variable_name), m_intercomm, &m_mpi_requests.back());
   }
 }

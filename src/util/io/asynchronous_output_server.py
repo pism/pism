@@ -36,17 +36,18 @@ class ServerActions(Enum):
 
     CREATE_FILE = 0
     OPEN_FILE = 1
-    DEFINE_DIMENSION = 2
-    SET_FILE_ATTRIBUTES = 3
-    APPEND_HISTORY = 4
-    DEFINE_YAC_GRID = 5
-    DEFINE_YAC_FIELD = 6
-    FINISH_YAC_INITIALIZATION = 7
-    DEFINE_VARIABLE = 8
-    SEND_VARIABLE = 9
-    SEND_GRIDDED_VARIABLE = 10
-    APPEND_TIME = 11
-    FINISH = 12
+    CLOSE_FILE = 2
+    DEFINE_DIMENSION = 3
+    SET_FILE_ATTRIBUTES = 4
+    APPEND_HISTORY = 5
+    DEFINE_YAC_GRID = 6
+    DEFINE_YAC_FIELD = 7
+    FINISH_YAC_INITIALIZATION = 8
+    DEFINE_VARIABLE = 9
+    SEND_VARIABLE = 10
+    SEND_GRIDDED_VARIABLE = 11
+    APPEND_TIME = 12
+    FINISH = 13
 
 
 # YAC general component, grid and configuration variables
@@ -186,17 +187,9 @@ class OutputFile:
 
     # The constructor does empty initialization of most members and
     # creates the dataset for the NetCDF file
-    def __init__(self, file_name):
-        self.nc_dataset = netCDF4.Dataset(file_name, 'w')
-        # as self.nc_dataset.variables[name])
-        self.variables_metadata = {}
-        # FIXME: self.dimensions is not needed because it is used to compute size, which
-        # should be dont using "count"
-        self.dimensions = {}
-        # FIXME: why do we need to store these (variables_data)?
-        self.variables_data = {}
-        # FIXME: time_index is not needed. We always write gridded field to the last time
-        # record.
+    def __init__(self, file_name, mode="w"):
+        self.nc_dataset = netCDF4.Dataset(file_name, mode)
+        # FIXME: time_index is not needed. Use start and count arrays instead
         self.time_index = 0
 
     def set_attributes(self, file_attributes):
@@ -209,17 +202,15 @@ class OutputFile:
         self.time_index = len(self.nc_dataset.dimensions["time"])
         self.nc_dataset.variables["time"][self.time_index] = time_seconds
 
-    def define_dimension(self, dimension):
+    def define_dimension(self, metadata):
         """Create a dimension in the NetCDF dataset."""
-        name = dimension["dimension_name"]
-        length = dimension["dimension_length"]
-        self.dimensions[name] = length
+        name = metadata["dimension_name"]
+        length = metadata["dimension_length"]
         self.nc_dataset.createDimension(name, length if length > 0 else None)
 
     def define_variable(self, metadata):
         """Define a new variable in the NetCDF dataset."""
         name = metadata["variable_name"]
-        self.variables_metadata[name] = metadata
         attributes = metadata["attributes"]
 
         fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
@@ -274,68 +265,37 @@ class OutputFile:
 
             nc_variable[self.time_index, :, :, :] = tmp
 
-    def receive_variable(self, name, yac_wrapper):
-        """Receive a non-gridded variable data and write it to the corresponding NetCDF
-        variable."""
-        variable_dims = self.variables_metadata[name]["dimensions"]
-        variable_metadata = self.variables_metadata[name]
-        dtype = variable_metadata["dtype"]
-        status = MPI.Status()
-        nc_variable = self.nc_dataset.variables[name]
+    def receive_variable(self, metadata, yac_wrapper):
+        """Receive and write a non-gridded variable data."""
+        name = metadata["variable_name"]
+        start = metadata["start"]
+        count = metadata["count"]
+        tag = int(metadata["tag"])
 
+        dtype = "f8"
+        mpi_dtype = MPI.DOUBLE
+        if "text" in metadata:
+            dtype = "S1"
+            mpi_dtype = MPI.CHAR
+
+        data_size = 1
+        for c in count:
+            data_size *= c
+
+        tmp = np.empty(data_size, dtype=dtype)
+        yac_wrapper.intercomm.Recv([tmp, mpi_dtype],
+                                   source=yac_wrapper.remote_leader, tag=tag)
+
+        # Convert start and count arrays into a list of slices (one per dimension).
+        ndim = len(count)
+        hyperslab = [slice(start[i], start[i] + count[i]) for i in range(ndim)]
+
+        # Unfortunately we have to use __setitem__ instead of [] indexing notation because
+        # the "*hyperslab" syntax (Unpacking Argument Lists) does not work in square
+        # brackets (invalid syntax).
         #
-        # FIXME: use "start" and "count" arrays sent in variable_metadata
-        #
-
-        # If the variables has any dimensions defined
-        if len(variable_dims) > 0:
-            # Find the size for the receive operation
-            # FIXME: this size calculation is wrong: use the "count" array instead
-            size = self.dimensions[variable_dims[0]] if self.dimensions[variable_dims[0]] > 0 else 1
-            tmp = np.empty(size, dtype="f8")
-            tag = int(variable_metadata["tag"])
-
-            # FIXME: casting to the "actual variable type" should not be needed: type
-            # conversion is performed by NetCDF.
-            #
-            # If the variable is not a string, receive it as double and cast it to the
-            # actual variable type
-            if (dtype != "S1"):
-                yac_wrapper.intercomm.Recv([tmp, MPI.DOUBLE],
-                                           source=yac_wrapper.remote_leader, tag=tag)
-                self.variables_data[name] = tmp.astype(dtype)
-
-            # If the variable is a string then receive the char array and use the status
-            # var. The status is required to know how many chars were received for the
-            # NetCDF var assignment later
-            #
-            # FIXME: this use of MPI_Status is unnecessary: we have the length of the
-            # string from the "count" array.
-            else:
-                self.variables_data[name] = np.empty(size, dtype=dtype)
-                yac_wrapper.intercomm.Recv([self.variables_data[name], MPI.CHAR],
-                                           source=yac_wrapper.remote_leader,
-                                           tag=tag, status=status)
-
-        # Handles the assignment of the data to the NetCDF variable
-        # If it is NOT time-dependent
-        if "time" not in variable_dims:
-            # If it is a text variable copy only the amount of received
-            # characters to avoid garbage at the end of the string
-            if dtype == "S1":
-                char_count = status.Get_count(MPI.CHAR)
-                # FIXME: slicing in this assignment is wrong: use start and count instead
-                nc_variable[:char_count] = self.variables_data[name][:char_count]
-
-            # Otherwise simply assign all the received data
-            else:
-                # FIXME: use start and count
-                nc_variable[:] = self.variables_data[name]
-
-        # If the variable is time-dependent, assign it to the current time index of the
-        # file. So far there does not seem to be time-dependent text variables
-        else:
-            nc_variable[self.time_index] = self.variables_data[name]
+        # Ugh. Oh well.
+        self.nc_dataset.variables[name].__setitem__(*hyperslab, tmp)
 
     def close(self):
         """Close the underlying NetCDF dataset."""
@@ -438,7 +398,7 @@ while True:
 
         case ServerActions.SEND_VARIABLE.value:
             logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
-            get_file(file_name).receive_variable(metadata["variable_name"], yac_wrapper)
+            get_file(file_name).receive_variable(metadata, yac_wrapper)
 
         case ServerActions.APPEND_TIME.value:
             logger.debug(f"APPEND_TIME in {file_name}")
