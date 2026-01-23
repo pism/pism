@@ -39,16 +39,17 @@ enum Backend : int;
 // These have to match the actions which are defined on the server
 enum ServerActions : int {
     CREATE_FILE = 0,
-    DEFINE_DIMENSION = 1,
-    SET_FILE_ATTRIBUTES = 2,
-    DEFINE_YAC_GRID = 3,
-    DEFINE_YAC_FIELD = 4,
-    FINISH_YAC_INITIALIZATION = 5,
-    DEFINE_VARIABLE = 6,
-    SEND_VARIABLE = 7,
-    SEND_GRIDDED_VARIABLE = 8,
-    APPEND_TIME = 9,
-    FINISH = 10
+    OPEN_FILE = 1,
+    DEFINE_DIMENSION = 2,
+    SET_FILE_ATTRIBUTES = 3,
+    DEFINE_YAC_GRID = 4,
+    DEFINE_YAC_FIELD = 5,
+    FINISH_YAC_INITIALIZATION = 6,
+    DEFINE_VARIABLE = 7,
+    SEND_VARIABLE = 8,
+    SEND_GRIDDED_VARIABLE = 9,
+    APPEND_TIME = 10,
+    FINISH = 11
 };
 
 /*!
