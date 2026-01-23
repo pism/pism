@@ -193,10 +193,6 @@ class OutputFile:
         # FIXME: self.dimensions is not needed because it is used to compute size, which
         # should be dont using "count"
         self.dimensions = {}
-        # FIXME: unused
-        self.comm_reqs = []
-        # FIXME: unused
-        self.text_req_indices = {}
         # FIXME: why do we need to store these (variables_data)?
         self.variables_data = {}
         # FIXME: time_index is not needed. We always write gridded field to the last time
