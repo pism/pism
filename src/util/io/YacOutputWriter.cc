@@ -304,11 +304,6 @@ void YacOutputWriter::end_yac_definitions() {
   }
 }
 
-// This subroutine sends an action to the server, so it knows what to do next.
-// An action is composed of an integer action id and an optional metadata field.
-// Actions like FINISH need no metadata, while actions like CREATE_FILE need additional 
-// parameters in the metadata. 
-// TODO: the metadata should be a json string for all actions
 void YacOutputWriter::send_action(int action_id,
                                   const nlohmann::json &metadata) {
   // Only the leader process needs to send actions to the server

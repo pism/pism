@@ -28,6 +28,7 @@ from enum import Enum
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("pism_output")
 
+
 class ServerActions(Enum):
     """Actions that the server can handle.
 
@@ -173,7 +174,7 @@ class YacWrapper:
                                                    self.grid.corner_points, collection_size,
                                                    timestep, yac.TimeUnit.ISO_FORMAT)
 
-        # the grid name in pism_output has to be different
+        # the grid name in "pism_output" has to be different from the one in "pism"
         target_grid_name = grid_name + "_output"
 
         self.yac.def_couple(source_comp_name, grid_name, field_name,
@@ -189,7 +190,6 @@ class OutputFile:
     # creates the dataset for the NetCDF file
     def __init__(self, file_name, mode="w"):
         self.nc_dataset = netCDF4.Dataset(file_name, mode)
-        # FIXME: time_index is not needed. Use start and count arrays instead
         self.time_index = 0
 
     def set_attributes(self, file_attributes):
