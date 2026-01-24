@@ -38,6 +38,7 @@ mpirun -np $NN pism -config_override config.nc \
        -output.file state_$out \
        -stress_balance.model $sb \
        -surface.given.file $climate_file \
+       -time.start 0 \
        -time.run_length $run_length
 
 infile=state_$out
@@ -62,6 +63,7 @@ mpirun -np $NN pism -config_override config.nc \
        -output.extra.vars $spatial_vars \
        -output.file state_$out \
        -surface.given.file $climate_file \
+       -time.start 0 \
        -time.run_length $run_length
 
 infile=state_$out
@@ -86,6 +88,7 @@ mpirun -np $NN pism -config_override config.nc \
        -output.extra.vars $spatial_vars \
        -output.file state_$out \
        -surface.given.file $climate_file \
+       -time.start 0 \
        -time.run_length $run_length
 
 export infile=state_$out
