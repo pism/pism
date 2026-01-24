@@ -592,8 +592,10 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
   // identification of which variable to receive.
   {
     nlohmann::json info;
-    info["file_name"]     = file_name;
-    info["variable_name"] = variable_name;
+    info["file_name"]      = file_name;
+    info["variable_name"]  = variable_name;
+    info["ndims"]          = variable.n_spatial_dimensions();
+    info["time_dependent"] = variable.get_time_dependent();
     send_action(SEND_GRIDDED_VARIABLE, info);
   }
 

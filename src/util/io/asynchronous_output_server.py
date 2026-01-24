@@ -224,11 +224,16 @@ class OutputFile:
             if attr not in ignored_attributes and value != "":
                 nc_variable.setncattr(attr, value)
 
-    def receive_gridded_variable(self, name, yac_wrapper):
+    def receive_gridded_variable(self, metadata, yac_wrapper):
         """Receive a spatial field and write to the corresponding NetCDF variable."""
-        # Number of vertical levels for that field in YAC
+
+        name = metadata["variable_name"]
+        ndims = metadata["ndims"]
+        time_dependent = metadata["time_dependent"]
+
         nc_variable = self.nc_dataset.variables[name]
 
+        # Number of vertical levels for that field in YAC
         collection_size = yac_wrapper.fields[name].collection_size
 
         # Variable for holding the raw data provided by the YAC get, which is directly issued here
@@ -243,17 +248,14 @@ class OutputFile:
         values = np.ndarray(shape=(collection_size, yac_wrapper.y_size, yac_wrapper.x_size),
                             buffer=data, dtype="f8")
 
-        # Handles the data assignment to the NetCDF variable
-        # If the variable is a 2D field NOT time-dependent
-        if len(nc_variable.shape) == 2:
-            nc_variable[:, :] = values[0]
-
-        # If the variable is a time-dependent 2D field
-        elif len(nc_variable.shape) == 3:
-            nc_variable[self.time_index, :, :] = values[0]
-
-        # If the variable is a time-dependent 3D field
+        if ndims == 2:
+            # 2D variable
+            if time_dependent:
+                nc_variable[self.time_index, :, :] = values[0]
+            else:
+                nc_variable[:, :] = values[0]
         else:
+            # 3D variable
             assert collection_size > 1
 
             # Temporary array for reordering the data for the NetCDF variable
@@ -263,7 +265,10 @@ class OutputFile:
             for c in range(collection_size):
                 tmp[:, :, c] = values[c]
 
-            nc_variable[self.time_index, :, :, :] = tmp
+            if time_dependent:
+                nc_variable[self.time_index, :, :, :] = tmp
+            else:
+                nc_variable[:, :, :] = tmp
 
     def receive_variable(self, metadata, yac_wrapper):
         """Receive and write a non-gridded variable data."""
@@ -314,10 +319,10 @@ def receive_action(yac_wrapper):
     string = np.empty(length, dtype='S1')
     comm.Recv([string, MPI.CHAR], source=yac_wrapper.remote_leader, tag=0)
 
+    # Decode the data and construct a dictionary from the json string
     string = string.tobytes().decode("utf-8")
     try:
         return json.loads(string)
-    # Decode the data and construct a dictionary from the json string
     except BaseException:
         logger.critical(f"failed to parse action string '{string}'")
         raise
@@ -394,7 +399,7 @@ while True:
 
         case ServerActions.SEND_GRIDDED_VARIABLE.value:
             logger.debug(f"SEND_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
-            get_file(file_name).receive_gridded_variable(metadata["variable_name"], yac_wrapper)
+            get_file(file_name).receive_gridded_variable(metadata, yac_wrapper)
 
         case ServerActions.SEND_VARIABLE.value:
             logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
