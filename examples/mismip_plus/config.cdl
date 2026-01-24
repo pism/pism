@@ -11,7 +11,7 @@ netcdf pism_overrides {
     pism_overrides:constants.ice.density = 918.0;
     pism_overrides:constants.sea_water.density = 1028.0;
     pism_overrides:energy.model = "none";
-    pism_overrides:flow_law.isothermal_Glen.ice_softness = 4.0e-25;
+    pism_overrides:flow_law.isothermal_Glen.ice_softness = 4.56e-25;
     pism_overrides:geometry.front_retreat.prescribed.file = "mismip+.nc";
     pism_overrides:geometry.front_retreat.use_cfl = "yes";
     pism_overrides:geometry.part_grid.enabled = "yes";
@@ -20,7 +20,7 @@ netcdf pism_overrides {
     pism_overrides:grid.Lz = 1000;
     pism_overrides:grid.Mbz = 1;
     pism_overrides:grid.Mz = 101;
-    pism_overrides:grid.registration = "corner";
+    pism_overrides:grid.registration = "center";
     pism_overrides:grid.periodicity = "xy";
     pism_overrides:hydrology.null_diffuse_till_water = "yes";
     pism_overrides:ocean.constant.melt_rate = 0.0;
