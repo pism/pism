@@ -74,8 +74,11 @@ private:
   //! last time value in an output file
   std::map<std::string, double> m_last_time;
   
-  // FIXME: we need to make sure that lists of variables and dimensions below are accurate
-  // for files that are opened for appending
+  // Note (and possibly FIXME): these lists of variables and dimensions below are
+  // inaccurate for files that are opened for appending. This means that when appending to
+  // a file PISM will attempt to define variables *once*. The output server code is
+  // responsible for checking if a dimension (variable) exists and ignoring a request to
+  // define it.
 
   //! List of all variables defined in a given file (used to avoid defining a variable
   //! more than once)
