@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021, 2022, 2023, 2024, 2025 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2023, 2024, 2025, 2026 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -23,14 +23,13 @@ static char help[] =
   "  class thereof. Uses the van der Veen flow-line shelf geometry. Also may be\n"
   "  used in a PISM software (regression) test.\n\n";
 
+#include <petsc.h>
+
 #include "pism/stressbalance/ssa/tests/SSATestCase.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_options.hh"
-
-#include "pism/stressbalance/ssa/SSAFD.hh"
-#include "pism/stressbalance/ssa/SSAFEM.hh"
 
 namespace pism {
 namespace stressbalance {
