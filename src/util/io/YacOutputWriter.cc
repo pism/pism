@@ -608,6 +608,7 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
     info["variable_name"]  = variable_name;
     info["ndims"]          = variable.n_spatial_dimensions();
     info["time_dependent"] = variable.get_time_dependent();
+    info["grid_name"]      = details::grid_name(variable);
     send_action(SEND_GRIDDED_VARIABLE, info);
   }
 
