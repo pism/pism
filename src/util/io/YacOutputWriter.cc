@@ -417,33 +417,50 @@ void YacOutputWriter::define_variable_impl(const std::string &file_name,
 }
 
 void YacOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
-  m_time_length[file_name] += 1;
-  m_last_time[file_name] = time_seconds;
+  // Note: these values are updated *without* communication with the output server.
+  {
+    m_time_length[file_name] += 1;
+    m_last_time[file_name] = time_seconds;
+  }
 
   {
     nlohmann::json info;
     info["file_name"] = file_name;
-    info["time"] = time_seconds;
+    info["time"]      = time_seconds;
     send_action(APPEND_TIME, info);
   }
 }
 
 void YacOutputWriter::append_history_impl(const std::string &file_name, const std::string &text) {
-  // FIXME: create the APPEND_HISTORY action and re-implement this
-
-  // Gathers history metadata and sends it to the server
   nlohmann::json info;
-  info["file_name"]             = file_name;
-  info["attributes"]["history"] = text;
-  send_action(SET_FILE_ATTRIBUTES, info);
+  info["file_name"] = file_name;
+  info["history"]   = text;
+  send_action(APPEND_HISTORY, info);
 }
 
 void YacOutputWriter::append_impl(const std::string &file_name) {
-  // FIXME: send the "action" to open the file in "append" mode
+
+  nlohmann::json info;
+  info["file_name"] = file_name;
+  send_action(OPEN_FILE, info);
+
+  // get file information from the output server
   //
-  // The output server will open the file and send back the time dimension length and the
-  // last value of the "time" variable.
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "FIXME: not implemented");
+  // FIXME: The Recv + Bcast pair can be replaced with a single Bcast using m_intercomm.
+  if (m_leader) {
+    MPI_Status status;
+    int time_length = -1;
+    MPI_Recv(&time_length, 1, MPI_INT, 0, 0, m_intercomm, &status);
+    double last_time = -1;
+    MPI_Recv(&last_time, 1, MPI_DOUBLE, 0, 0, m_intercomm, &status);
+
+    m_time_length[file_name] = time_length;
+    m_last_time[file_name] = last_time;
+  }
+
+  // scatter to other ranks in `comm()`:
+  MPI_Bcast(&m_time_length[file_name], 1, MPI_INT, 0, comm());
+  MPI_Bcast(&m_last_time[file_name], 1, MPI_DOUBLE, 0, comm());
 }
 
 void YacOutputWriter::sync_impl(const std::string &/*file_name*/) {

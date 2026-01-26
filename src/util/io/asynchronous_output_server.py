@@ -190,17 +190,32 @@ class OutputFile:
     # creates the dataset for the NetCDF file
     def __init__(self, file_name, mode="w"):
         self.nc_dataset = netCDF4.Dataset(file_name, mode)
-        self.time_index = 0
+
+        if "time" in self.nc_dataset.dimensions:
+            time_length = len(self.nc_dataset.dimensions["time"])
+        else:
+            time_length = 0
+
+        self.time_index = time_length - 1 if time_length > 0 else 0
 
     def set_attributes(self, file_attributes):
         """Set attributes in the NetCDF dataset."""
-        for attr in file_attributes:
-            setattr(self.nc_dataset, attr, file_attributes[attr])
+        for attr, value in file_attributes.items():
+            self.nc_dataset.setncattr(attr, value)
 
     def append_time(self, time_seconds):
         """Create one more time record by adding a value to the time dimension."""
         self.time_index = len(self.nc_dataset.dimensions["time"])
         self.nc_dataset.variables["time"][self.time_index] = time_seconds
+
+    def append_history(self, string):
+        """Append a `string` to the global attribute 'history'."""
+        try:
+            old_history = self.nc_dataset["history"]
+        except KeyError:
+            old_history = ""
+
+        self.nc_dataset["history"] = old_history + string
 
     def define_dimension(self, metadata):
         """Create a dimension in the NetCDF dataset."""
@@ -336,15 +351,8 @@ files = {}
 def get_file(name):
     """Return the file object, opening it if necessary."""
     if name not in files:
-        files[name] = OutputFile(name)
+        files[name] = OutputFile(name, mode="w")
     return files[name]
-
-# FIXME: Add the "append" action which would open the file and send the length of the time
-# dimension and its last value back to PISM. If the file does not exist if would send a
-# message ingicating that opening the file failed.
-
-# FIXME: Add the "append history" action. The current implementation uses
-# SET_FILE_ATTRIBUTES, which over-writes history instead of appending.
 
 
 # Poll loop for listening for action requests from the client
@@ -367,13 +375,35 @@ while True:
             break
 
         case ServerActions.CREATE_FILE.value:
-            # This can be the used as the stub of the "append" action.
             logger.debug(f"CREATE_FILE {file_name}")
             files[file_name] = OutputFile(file_name)
+
+        case ServerActions.OPEN_FILE.value:
+            # This can be the used as the stub of the "append" action.
+            logger.debug(f"OPEN_FILE {file_name}")
+            F = OutputFile(file_name, mode="rw")
+            files[file_name] = F
+
+            time_length = np.empty(1, dtype="i")
+            if "time" in F.dimensions:
+                time_length[0] = len(F.dimensions["time"])
+            else:
+                time_length[0] = 0
+
+            last_time = np.empty(1, dtype="f8")
+            last_time[0] = F.variables["time"][F.time_index]
+
+            # Send time length and last time to PISM:
+            yac_wrapper.intercomm.Send([time_length, 1, MPI.INT], dest=0, tag=0)
+            yac_wrapper.intercomm.Send([last_time, 1, MPI.DOUBLE], dest=0, tag=0)
 
         case ServerActions.SET_FILE_ATTRIBUTES.value:
             logger.debug(f"SET_FILE_ATTRIBUTES {file_name}")
             get_file(file_name).set_attributes(metadata["attributes"])
+
+        case ServerActions.APPEND_HISTORY.value:
+            logger.debug(f"APPEND_HISTORY {file_name}")
+            get_file(file_name).append_history(metadata["history"])
 
         case ServerActions.DEFINE_DIMENSION.value:
             logger.debug(f"DEFINE_DIMENSION {metadata['dimension_name']} in {file_name}")
