@@ -63,13 +63,23 @@ class YacWrapper:
     # direct communication with the client and receiving its information
     def __init__(self):
         self.interpolation_stack = None
-        self.grid = None
-        self.global_vertex_indices = None
-        self.x_size = 0
-        self.y_size = 0
+
+        # YAC grids, references by name
+        self.grids = {}
+
+        # vertex indexes for each grid (referenced by the name of the grid)
+        #
+        # These indexes are used to re-order data received from PISM
+        self.vertex_indexes = {}
+
+        # number of grid points (an array [x_size, y_size]) for a given grid (refenced by name)
+        self.grid_size = {}
+
+        # YAC fields (by name)
         self.fields = {}
 
         self.yac = yac.YAC()
+
         self.component = self.yac.def_comp(target_comp_name)
 
         # Get the local server communicator and group
@@ -100,22 +110,25 @@ class YacWrapper:
             tag=0
         )
 
+    def _output_grid_name(self, pism_grid_name):
+        """Return the name of the grid corresponding to PISM's 'pism_grid_name'."""
+        return pism_grid_name + "_output"
+
     def define_yac_grid(self, metadata):
         """Define the YAC grid for a given variable."""
         client_local_domain_sizes = np.empty(self.remote_size, dtype='i')
         displacements = np.empty(self.remote_size, dtype='i')
 
         # the grid name in pism_output has to be different
-        grid_name = metadata['grid_name'] + "_output"
+        grid_name = metadata['grid_name']
 
         # Receive the global x and y sizes from the leader in the client
         grid_size = np.empty(2, dtype='i')
         self.intercomm.Recv([grid_size, MPI.INT], source=self.remote_leader, tag=0)
-        self.x_size = grid_size[0]
-        self.y_size = grid_size[1]
+        self.grid_size[grid_name] = grid_size
 
         # Total number of grid points
-        grid_points = self.x_size * self.y_size
+        grid_points = grid_size[0] * grid_size[1]
 
         # Gather the sizes of the local domains of all client processes
         self.intercomm.Gather(None, client_local_domain_sizes, root=MPI.ROOT)
@@ -128,10 +141,10 @@ class YacWrapper:
         # Create arrays for geometrical data and global data ordering
         longitudes = np.empty(grid_points, dtype='d')
         latitudes = np.empty(grid_points, dtype='d')
-        self.global_vertex_indices = np.empty(grid_points, dtype='i')
+        self.vertex_indexes[grid_name] = np.empty(grid_points, dtype='i')
 
         # Receive latitudes, longitudes and the global ordering of points
-        self.intercomm.Gatherv(None, (self.global_vertex_indices,
+        self.intercomm.Gatherv(None, (self.vertex_indexes[grid_name],
                                       (client_local_domain_sizes, displacements)),
                                root=MPI.ROOT)
         self.intercomm.Gatherv(None, (latitudes, (client_local_domain_sizes, displacements)),
@@ -140,8 +153,10 @@ class YacWrapper:
                                root=MPI.ROOT)
 
         # Create grid and define point locations for corners (vertices)
-        self.grid = yac.CloudGrid(grid_name, longitudes, latitudes)
-        self.grid.corner_points = self.grid.def_points(longitudes, latitudes)
+        grid = yac.CloudGrid(self._output_grid_name(grid_name), longitudes, latitudes)
+        grid.corner_points = grid.def_points(longitudes, latitudes)
+
+        self.grids[grid_name] = grid
 
         # Create the interpolation stack and add an nearest-neighbor inteporlation
         # For the current purposes of the output server we just want the data to be transferred
@@ -162,20 +177,19 @@ class YacWrapper:
         field_name = metadata["variable_name"]
         timestep = metadata["timestep"]
         collection_size = metadata["collection_size"]
+
         grid_name = metadata["grid_name"]
 
         time_unit = yac.TimeUnit.ISO_FORMAT
         time_reduction = yac.Reduction.TIME_NONE
 
+        corner_points = self.grids[grid_name].corner_points
         self.fields[field_name] = yac.Field.create(field_name, self.component,
-                                                   self.grid.corner_points, collection_size,
+                                                   corner_points, collection_size,
                                                    timestep, yac.TimeUnit.ISO_FORMAT)
 
-        # the grid name in "pism_output" has to be different from the one in "pism"
-        target_grid_name = grid_name + "_output"
-
         self.yac.def_couple(source_comp_name, grid_name, field_name,
-                            target_comp_name, target_grid_name, field_name,
+                            target_comp_name, self._output_grid_name(grid_name), field_name,
                             timestep, time_unit, time_reduction,
                             self.interpolation_stack)
 
@@ -248,16 +262,20 @@ class OutputFile:
         # Number of vertical levels for that field in YAC
         collection_size = yac_wrapper.fields[name].collection_size
 
+        # Grid size
+        grid_name = metadata["grid_name"]
+        x_size, y_size = yac_wrapper.grid_size[grid_name]
+
         # Variable for holding the raw data provided by the YAC get, which is directly issued here
         data = yac_wrapper.fields[name].get()[0]
 
         # For each vertical level, reorders the received data according to the horizontal
         # global vertex indices
         for level in range(collection_size):
-            data[level] = data[level, np.argsort(yac_wrapper.global_vertex_indices)]
+            data[level] = data[level, np.argsort(yac_wrapper.vertex_indexes[grid_name])]
 
         # Creates a 3D array for reshaping the raw data received from YAC
-        values = np.ndarray(shape=(collection_size, yac_wrapper.y_size, yac_wrapper.x_size),
+        values = np.ndarray(shape=(collection_size, y_size, x_size),
                             buffer=data, dtype="f8")
 
         if ndims == 2:
@@ -271,7 +289,7 @@ class OutputFile:
             assert collection_size > 1
 
             # Temporary array for reordering the data for the NetCDF variable
-            tmp = np.ndarray(shape=(yac_wrapper.y_size, yac_wrapper.x_size, collection_size),
+            tmp = np.ndarray(shape=(y_size, x_size, collection_size),
                              dtype=values.dtype)
 
             for c in range(collection_size):
