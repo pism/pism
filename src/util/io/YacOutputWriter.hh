@@ -38,7 +38,6 @@ enum Backend : int;
 
 // These have to match the actions which are defined on the server
 enum ServerActions : int {
-    CREATE_FILE = 0,
     OPEN_FILE = 1,
     CLOSE_FILE = 2,
     DEFINE_DIMENSION = 3,

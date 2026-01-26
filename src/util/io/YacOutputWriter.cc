@@ -490,8 +490,8 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
   {
     nlohmann::json info;
     info["file_name"]        = file_name;
-    info["dimension_name"]   = name;
-    info["dimension_length"] = length;
+    info["name"]   = name;
+    info["length"] = length;
     send_action(DEFINE_DIMENSION, info);
   }
 

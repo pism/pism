@@ -35,7 +35,6 @@ class ServerActions(Enum):
     These have to match the actions which are defined on the client
     """
 
-    CREATE_FILE = 0
     OPEN_FILE = 1
     CLOSE_FILE = 2
     DEFINE_DIMENSION = 3
@@ -101,10 +100,8 @@ class YacWrapper:
             tag=0
         )
 
-    # Starts the coupler initialization
-    # For YAC specifically the main task happening in
-    # this subroutine is the grid definition
-    def start_initialization(self, metadata):
+    def define_yac_grid(self, metadata):
+        """Define the YAC grid for a given variable."""
         client_local_domain_sizes = np.empty(self.remote_size, dtype='i')
         displacements = np.empty(self.remote_size, dtype='i')
 
@@ -212,15 +209,15 @@ class OutputFile:
         """Append a `string` to the global attribute 'history'."""
         try:
             old_history = self.nc_dataset["history"]
-        except KeyError:
+        except IndexError:
             old_history = ""
 
-        self.nc_dataset["history"] = old_history + string
+        self.nc_dataset.setncattr("history", old_history + string)
 
     def define_dimension(self, metadata):
         """Create a dimension in the NetCDF dataset."""
-        name = metadata["dimension_name"]
-        length = metadata["dimension_length"]
+        name = metadata["name"]
+        length = metadata["length"]
         self.nc_dataset.createDimension(name, length if length > 0 else None)
 
     def define_variable(self, metadata):
@@ -286,7 +283,7 @@ class OutputFile:
                 nc_variable[:, :, :] = tmp
 
     def receive_variable(self, metadata, yac_wrapper):
-        """Receive and write a non-gridded variable data."""
+        """Receive and write non-gridded variable data."""
         name = metadata["variable_name"]
         start = metadata["start"]
         count = metadata["count"]
@@ -374,10 +371,6 @@ while True:
             logger.debug("DONE")
             break
 
-        case ServerActions.CREATE_FILE.value:
-            logger.debug(f"CREATE_FILE {file_name}")
-            files[file_name] = OutputFile(file_name)
-
         case ServerActions.OPEN_FILE.value:
             # This can be the used as the stub of the "append" action.
             logger.debug(f"OPEN_FILE {file_name}")
@@ -397,6 +390,10 @@ while True:
             yac_wrapper.intercomm.Send([time_length, 1, MPI.INT], dest=0, tag=0)
             yac_wrapper.intercomm.Send([last_time, 1, MPI.DOUBLE], dest=0, tag=0)
 
+        case ServerActions.CLOSE_FILE.value:
+            files[file_name].close()
+            del files[file_name]
+
         case ServerActions.SET_FILE_ATTRIBUTES.value:
             logger.debug(f"SET_FILE_ATTRIBUTES {file_name}")
             get_file(file_name).set_attributes(metadata["attributes"])
@@ -406,12 +403,12 @@ while True:
             get_file(file_name).append_history(metadata["history"])
 
         case ServerActions.DEFINE_DIMENSION.value:
-            logger.debug(f"DEFINE_DIMENSION {metadata['dimension_name']} in {file_name}")
+            logger.debug(f"DEFINE_DIMENSION {metadata['name']} in {file_name}")
             get_file(file_name).define_dimension(metadata)
 
         case ServerActions.DEFINE_YAC_GRID.value:
             logger.debug(f"DEFINE_YAC_GRID {metadata['grid_name']}")
-            yac_wrapper.start_initialization(metadata)
+            yac_wrapper.define_yac_grid(metadata)
 
         case ServerActions.DEFINE_YAC_FIELD.value:
             logger.debug(f"DEFINE_YAC_FIELD {metadata['variable_name']}")
