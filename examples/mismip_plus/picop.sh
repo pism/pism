@@ -19,7 +19,7 @@ boot_file=mismip+.nc
 climate_file=climate.nc
 ocean_file=ocean.nc
 
-spatial_vars="beta,bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag"
+spatial_vars="beta,bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,velsurf,velbase"
 picop_spatial_vars="picop_basal_melt_rate,picop_grounding_line_slope,picop_grounding_line_elevation"
 regrid_vars="litho_temp,enthalpy,tillwat,bmelt,ice_area_specific_volume,thk"
 

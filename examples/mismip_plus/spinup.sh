@@ -16,12 +16,12 @@ boot_file=mismip+.nc
 climate_file=climate.nc
 ocean_file=ocean.nc
 
-spatial_vars="beta,bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag"
+spatial_vars="beta,bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,velsurf,velbase"
 pico_spatial_vars="pico_box_mask,pico_shelf_mask,pico_contshelf_mask,pico_ice_rise_mask,pico_T_star,pico_overturning,pico_temperature,pico_salinity,pico_basal_melt_rate"
 regrid_vars="litho_temp,enthalpy,tillwat,bmelt,ice_area_specific_volume,thk"
-
-run_length=5000yr
 sb="ssa+sia"
+
+run_length=25000yr
 resolution="8km"
 out=g${resolution}_${sb}_${run_length}.nc
 mpirun -np $NN pism -config_override config.nc \
@@ -43,8 +43,7 @@ mpirun -np $NN pism -config_override config.nc \
 
 infile=state_$out
 
-run_length=1000yr
-sb="ssa+sia"
+run_length=25000yr
 resolution="4km"
 out=g${resolution}_${sb}_${run_length}.nc
 mpirun -np $NN pism -config_override config.nc \
@@ -68,8 +67,7 @@ mpirun -np $NN pism -config_override config.nc \
 
 infile=state_$out
 
-run_length=100yr
-sb="ssa+sia"
+run_length=12500yr
 resolution="2km"
 out=g${resolution}_${sb}_${run_length}.nc
 mpirun -np $NN pism -config_override config.nc \
