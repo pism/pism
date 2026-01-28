@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2023, 2024, 2026 PISM Authors
+/* Copyright (C) 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,23 +17,29 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_initialization.hh"
+#include <string>
+#include <vector>
 
 namespace pism {
-namespace petsc {
 
-Initializer::Initializer(int argc, char **argv, const char *help) {
-  pism::initialize(argc, argv, help);
-}
+/*!
+ * Initialize PISM's dependencies (version for use in Python).
+ */
+void initialize(const char *help);
 
-Initializer::~Initializer() {
-  try {
-    pism::finalize();
-  } catch (...) {
-    // there's nothing we can do
-  }
-}
+/*!
+ * Initialize PISM's dependencies (version for use in C++).
+ */
+void initialize(int argc, char **argv, const char *help);
 
-} // end of namespace petsc
-} // end of namespace pism
+/*!
+ * Insert command line options into PETSc's default options database.
+ */
+void initialize_options(const std::vector<std::string> &args);
+
+/*!
+ * Finalize PISM's dependencies.
+ */
+void finalize();
+
+} // namespace pism

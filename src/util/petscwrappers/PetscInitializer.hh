@@ -29,8 +29,6 @@ class Initializer {
 public:
   Initializer(int argc, char **argv, const char *help);
   ~Initializer();
-private:
-  bool m_finalize_mpi;
 };
 
 } // end of namespace petsc

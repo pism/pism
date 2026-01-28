@@ -83,6 +83,7 @@ add_library (libpism
   fracturedensity/FractureDensity.cc
   util/ColumnSystem.cc
   util/pism_signal.c
+  util/pism_initialization.cc
   $<TARGET_OBJECTS:frontretreat>
   $<TARGET_OBJECTS:hydrology>
   $<TARGET_OBJECTS:flowlaws>
