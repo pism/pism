@@ -232,12 +232,16 @@ class OutputFile:
         """Create a dimension in the NetCDF dataset."""
         name = metadata["name"]
         length = metadata["length"]
-        self.nc_dataset.createDimension(name, length if length > 0 else None)
+        if name not in self.nc_dataset.dimensions:
+            self.nc_dataset.createDimension(name, length if length > 0 else None)
 
     def define_variable(self, metadata):
         """Define a new variable in the NetCDF dataset."""
         name = metadata["variable_name"]
         attributes = metadata["attributes"]
+
+        if name in self.nc_dataset.variables:
+            return
 
         fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
         nc_variable = self.nc_dataset.createVariable(name,
@@ -350,10 +354,11 @@ def receive_action(yac_wrapper):
     comm.Recv([string, MPI.CHAR], source=yac_wrapper.remote_leader, tag=0)
 
     # Decode the data and construct a dictionary from the json string
-    string = string.tobytes().decode("utf-8")
+    string = string.tobytes().decode("ascii")
+
     try:
         return json.loads(string)
-    except BaseException:
+    except BaseException:  # pragma: no cover
         logger.critical(f"failed to parse action string '{string}'")
         raise
 
@@ -370,90 +375,97 @@ def get_file(name):
     return files[name]
 
 
-# Poll loop for listening for action requests from the client
-while True:
-    # Wait for an action
-    message = receive_action(yac_wrapper)
+def main():
+    """Receive and process "action" messages from PISM."""
+    while True:
+        # Wait for an action
+        message = receive_action(yac_wrapper)
 
-    action_id = message['action']
-    metadata = message['info']
+        action_id = message['action']
+        metadata = message['info']
 
-    try:
-        file_name = metadata['file_name']
-    except BaseException:
-        file_name = None
+        try:
+            file_name = metadata['file_name']
+        except BaseException:
+            file_name = None
 
-    # Handle each action based on the action id
-    match action_id:
-        case ServerActions.FINISH.value:
-            logger.debug("DONE")
-            break
+        # Handle each action based on the action id
+        match action_id:
+            case ServerActions.FINISH.value:
+                logger.debug("DONE")
+                break
 
-        case ServerActions.OPEN_FILE.value:
-            # This can be the used as the stub of the "append" action.
-            logger.debug(f"OPEN_FILE {file_name}")
-            F = OutputFile(file_name, mode="rw")
-            files[file_name] = F
+            case ServerActions.OPEN_FILE.value:
+                # This can be the used as the stub of the "append" action.
+                logger.debug(f"OPEN_FILE {file_name}")
+                F = OutputFile(file_name, mode="a")
+                ds = F.nc_dataset
+                files[file_name] = F
 
-            time_length = np.empty(1, dtype="i")
-            if "time" in F.dimensions:
-                time_length[0] = len(F.dimensions["time"])
-            else:
-                time_length[0] = 0
+                time_length = np.empty(1, dtype="i")
+                if "time" in ds.dimensions:
+                    time_length[0] = len(ds.dimensions["time"])
+                else:
+                    time_length[0] = 0
 
-            last_time = np.empty(1, dtype="f8")
-            last_time[0] = F.variables["time"][F.time_index]
+                last_time = np.empty(1, dtype="f8")
+                last_time[0] = ds.variables["time"][F.time_index]
 
-            # Send time length and last time to PISM:
-            yac_wrapper.intercomm.Send([time_length, 1, MPI.INT], dest=0, tag=0)
-            yac_wrapper.intercomm.Send([last_time, 1, MPI.DOUBLE], dest=0, tag=0)
+                # Send time length and last time to PISM:
+                yac_wrapper.intercomm.Send([time_length, 1, MPI.INT], dest=0, tag=0)
+                yac_wrapper.intercomm.Send([last_time, 1, MPI.DOUBLE], dest=0, tag=0)
 
-        case ServerActions.CLOSE_FILE.value:
-            files[file_name].close()
-            del files[file_name]
+            case ServerActions.CLOSE_FILE.value:
+                logger.debug(f"CLOSE_FILE {file_name}")
+                files[file_name].close()
+                del files[file_name]
 
-        case ServerActions.SET_FILE_ATTRIBUTES.value:
-            logger.debug(f"SET_FILE_ATTRIBUTES {file_name}")
-            get_file(file_name).set_attributes(metadata["attributes"])
+            case ServerActions.SET_FILE_ATTRIBUTES.value:
+                logger.debug(f"SET_FILE_ATTRIBUTES {file_name}")
+                get_file(file_name).set_attributes(metadata["attributes"])
 
-        case ServerActions.APPEND_HISTORY.value:
-            logger.debug(f"APPEND_HISTORY {file_name}")
-            get_file(file_name).append_history(metadata["history"])
+            case ServerActions.APPEND_HISTORY.value:
+                logger.debug(f"APPEND_HISTORY {file_name}")
+                get_file(file_name).append_history(metadata["history"])
 
-        case ServerActions.DEFINE_DIMENSION.value:
-            logger.debug(f"DEFINE_DIMENSION {metadata['name']} in {file_name}")
-            get_file(file_name).define_dimension(metadata)
+            case ServerActions.DEFINE_DIMENSION.value:
+                logger.debug(f"DEFINE_DIMENSION {metadata['name']} in {file_name}")
+                get_file(file_name).define_dimension(metadata)
 
-        case ServerActions.DEFINE_YAC_GRID.value:
-            logger.debug(f"DEFINE_YAC_GRID {metadata['grid_name']}")
-            yac_wrapper.define_yac_grid(metadata)
+            case ServerActions.DEFINE_YAC_GRID.value:
+                logger.debug(f"DEFINE_YAC_GRID {metadata['grid_name']}")
+                yac_wrapper.define_yac_grid(metadata)
 
-        case ServerActions.DEFINE_YAC_FIELD.value:
-            logger.debug(f"DEFINE_YAC_FIELD {metadata['variable_name']}")
+            case ServerActions.DEFINE_YAC_FIELD.value:
+                logger.debug(f"DEFINE_YAC_FIELD {metadata['variable_name']}")
 
-            if metadata["variable_name"] not in yac_wrapper.fields:
-                yac_wrapper.define_field(metadata)
+                if metadata["variable_name"] not in yac_wrapper.fields:
+                    yac_wrapper.define_field(metadata)
 
-        case ServerActions.FINISH_YAC_INITIALIZATION.value:
-            logger.debug("FINISH_YAC_INITIALIZATION")
-            yac_wrapper.finish_initialization()
+            case ServerActions.FINISH_YAC_INITIALIZATION.value:
+                logger.debug("FINISH_YAC_INITIALIZATION")
+                yac_wrapper.finish_initialization()
 
-        case ServerActions.DEFINE_VARIABLE.value:
-            logger.debug(f"DEFINE_VARIABLE {metadata['variable_name']} in {file_name}")
-            get_file(file_name).define_variable(metadata)
+            case ServerActions.DEFINE_VARIABLE.value:
+                logger.debug(f"DEFINE_VARIABLE {metadata['variable_name']} in {file_name}")
+                get_file(file_name).define_variable(metadata)
 
-        case ServerActions.SEND_GRIDDED_VARIABLE.value:
-            logger.debug(f"SEND_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
-            get_file(file_name).receive_gridded_variable(metadata, yac_wrapper)
+            case ServerActions.SEND_GRIDDED_VARIABLE.value:
+                logger.debug(f"SEND_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
+                get_file(file_name).receive_gridded_variable(metadata, yac_wrapper)
 
-        case ServerActions.SEND_VARIABLE.value:
-            logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
-            get_file(file_name).receive_variable(metadata, yac_wrapper)
+            case ServerActions.SEND_VARIABLE.value:
+                logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
+                get_file(file_name).receive_variable(metadata, yac_wrapper)
 
-        case ServerActions.APPEND_TIME.value:
-            logger.debug(f"APPEND_TIME in {file_name}")
-            get_file(file_name).append_time(metadata["time"])
+            case ServerActions.APPEND_TIME.value:
+                logger.debug(f"APPEND_TIME in {file_name}")
+                get_file(file_name).append_time(metadata["time"])
 
-# Close all the files
-for file in files.values():
-    file.close()
+    # Close all the files
+    for file in files.values():
+        file.close()
+
+
+if __name__ == "__main__":
+    main()

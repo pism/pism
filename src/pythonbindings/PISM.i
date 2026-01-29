@@ -95,7 +95,6 @@
 %template(StringMap) std::map<std::string, std::string>;
 %template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
 %template(SizeDoubleMap) std::map<size_t, double>;
-%template(VariableSet) std::set<pism::VariableMetadata>;
 
 // Tell SWIG that the following variables are truly constant
 %immutable pism::revision;

@@ -102,8 +102,8 @@ std::string grid_name(const VariableMetadata &variable) {
 // to send all the information to the server we need to define an intercommunicator,
 // which then allows direct MPI communication between the client and the server.
 void YacOutputWriter::create_intercomm() {
-  // At this point YAC has already been initialized in the PetscInitializer.cc
-  // and on the server side. Both client and server components have already been defined.
+  // At this point YAC has been initialized in the pism::initialize() and on the server
+  // side. Both client and server components have been defined.
 
   // We get the local component communicator and a global communicator which 
   // contains all client and server processes
@@ -254,7 +254,7 @@ void YacOutputWriter::define_yac_field(const VariableMetadata &variable) {
 
   const auto &variable_name = variable.get_name();
   
-  // If the field has already been defined, return
+  // If the field has been defined already, return
   if (m_field_ids.find(variable_name) != m_field_ids.end()) {
     return;
   }
@@ -315,7 +315,8 @@ void YacOutputWriter::send_action(int action_id,
   message["action"] = action_id;
   message["info"]   = metadata;
 
-  auto message_string = message.dump();
+  m_text_buffers.push_back(message.dump());
+  const auto &message_string = m_text_buffers.back();
 
   // Send the metadata string to the output server:
   m_mpi_requests.emplace_back();
@@ -476,7 +477,7 @@ void YacOutputWriter::close_impl(const std::string &file_name) {
 void YacOutputWriter::define_dimension_impl(const std::string &file_name,
                                             const std::string &name, unsigned int length) {
 
-  // If this dimension has already been defined for this file, return
+  // If this dimension has been defined already for this file, return
   if (m_defined_dimension[file_name][name]) {
     return;
   }
