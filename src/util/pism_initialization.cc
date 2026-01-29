@@ -34,16 +34,18 @@ extern "C" {
 
 namespace pism {
 
-//! true if PISM initialized YAC, false otherwise
-static bool s_pism_yac_initialized = false;
-
 //! true if PISM should finalize MPI, false otherwise
 static bool s_pism_finalize_mpi = false;
+
+#if (Pism_USE_YAC == 1)
+//! true if PISM initialized YAC, false otherwise
+static bool s_pism_yac_initialized = false;
 
 static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const char *source,
                                    int line) {
   throw pism::RuntimeError::formatted(pism::ErrorLocation(source, line), "YAC error: %s", msg);
 }
+#endif
 
 void initialize(int argc, char **argv, const char *help) {
 
