@@ -128,5 +128,8 @@ Research (PIK), and several additional developers listed here.
    * - Enrico Degregori (Deutsches Klimarechenzentrum GmbH)
      - PICO optimization
 
+   * - Wilton Loch (Deutsches Klimarechenzentrum GmbH)
+     - asynchronous output, PICO optimization
+
    * - Simon Schoell (Potsdam Institute for Climate Impact Research (PIK))
      - calving bug fix
