@@ -22,6 +22,7 @@
 #include <cmath>
 #include <cstring>
 #include <mpi.h>
+#include <vector>
 
 #include "pism/util/Config.hh"
 #include "pism/util/GridInfo.hh"
@@ -43,13 +44,13 @@ namespace details {
 /*!
  * Store variable attributes from `attributes` in a JSON object `json`.
  */
-static void to_json(const VariableAttributes &attributes, nlohmann::json &json) {
+static void to_json(const VariableAttributes &attributes, nlohmann::json &output) {
   for (const auto &attribute : attributes.strings) {
-    json[attribute.first] = attribute.second;
+    output[attribute.first] = attribute.second;
   }
 
   for (const auto &attribute : attributes.numbers) {
-    json[attribute.first] = attribute.second;
+    output[attribute.first] = attribute.second;
   }
 }
 
@@ -85,27 +86,78 @@ static std::vector<int> patch_global_indices(unsigned int x_global_size, unsigne
 }
 
 /*!
- * Return the string identifying the grid used by a variable by using the names of the
- * first two dimensions. (The third dimension, if present, will correspond to a vertical
- * or some other coordinate.)
+ * Return the string identifying the grid used by a variable.
+ *
+ * Uses names of the first two dimensions. (The third dimension, if present, will
+ * correspond to a vertical or some other coordinate.)
  */
-std::string grid_name(const VariableMetadata &variable) {
+static std::string grid_name(const VariableMetadata &variable) {
   const auto &dims = variable.dimensions();
   return dims[0].get_name() + "-" + dims[1].get_name();
 }
 
+/*!
+ * Free buffers used to cache numeric data sent using MPI_Isend().
+ */
+static void free_array_buffers(std::vector<double *> &buffers) {
+  for (auto *ptr : buffers) {
+    delete ptr;
+  }
+  buffers.clear();
+}
+
+/*!
+ * Compute coordinates of grid points owner by the current MPI process.
+ */
+void compute_point_coordinates(const grid::DistributedGridInfo &grid,
+                               const std::string & proj_string, std::vector<double> &longitudes,
+                               std::vector<double> &latitudes) {
+  int patch_size = (int)(grid.xm * grid.ym);
+
+  longitudes.resize(patch_size);
+  latitudes.resize(patch_size);
+
+  if (proj_string.empty()) {
+    // Generate "fake" longitudes and latitudes for the local patch of the grid. Here
+    // longitudes and latitudes range from 0 to 1 (inclusive) for the "global" grid (a local
+    // patch covers a part of this).
+    //
+    // This is sufficient for moving data from PISM to the output server and does not
+    // require projection info.
+    const auto &x = grid.x;
+    const auto &y = grid.y;
+
+    double x_min  = x.front();
+    double y_min  = y.front();
+    double x_span = x.back() - x_min;
+    double y_span = y.back() - y_min;
+    int it        = 0;
+    for (auto p : GridPoints(grid)) {
+      const int i = p.i(), j = p.j();
+      longitudes[it] = (x[i] - x_min) / x_span;
+      latitudes[it]  = (y[j] - y_min) / y_span;
+      it++;
+    }
+  } else {
+    // FIXME: make it possible to use projection info to use real lon,lat coordinates of
+    // grid points. This will be necessary for "on the fly" post-processing in the output
+    // server.
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "");
+  }
+}
+
 } // namespace details
 
-// Even if we are using YAC, certain forms of interaction with the server cannot 
-// be made using only YAC functionalities. Sending actions, non-gridded data 
-// and metadata (after definitions) are examples of such. In order to be able 
+// Even if we are using YAC, certain forms of interaction with the server cannot
+// be made using only YAC functionalities. Sending actions, non-gridded data
+// and metadata (after definitions) are examples of such. In order to be able
 // to send all the information to the server we need to define an intercommunicator,
 // which then allows direct MPI communication between the client and the server.
 void YacOutputWriter::create_intercomm() {
   // At this point YAC has been initialized in the pism::initialize() and on the server
   // side. Both client and server components have been defined.
 
-  // We get the local component communicator and a global communicator which 
+  // We get the local component communicator and a global communicator which
   // contains all client and server processes
   //
   // FIXME: global_comm should be de-allocated using MPI_Comm_free(). The same is
@@ -129,13 +181,13 @@ void YacOutputWriter::create_intercomm() {
   // For the creation of the intercommunicator we need to set leaders on both groups.
   // We define process 0 of each component to be the leader of its local group.
   // We then find the corresponding rank of each leader in the global group and
-  // exchange this information between the processes. 
-  // The intercomm creation is then done using this information. 
+  // exchange this information between the processes.
+  // The intercomm creation is then done using this information.
   const int local_leader_rank[]  = {0};
   int local_leader_global_rank[] = {-1};
-  MPI_Group_translate_ranks(local_group, 1, local_leader_rank, 
+  MPI_Group_translate_ranks(local_group, 1, local_leader_rank,
                             global_group, local_leader_global_rank);
-  MPI_Allgather(local_leader_global_rank, 1, MPI_INT, 
+  MPI_Allgather(local_leader_global_rank, 1, MPI_INT,
                 component_leaders_ranks.data(), 1, MPI_INT, global_comm);
   int remote_leader = component_leaders_ranks.back();
 
@@ -161,7 +213,7 @@ int YacOutputWriter::tag(const std::string &variable_name, TagTreatment flag) {
                                 variable_name.c_str());
 }
 
-// Initializes the YAC grid and sends the geometrical information to 
+// Initializes the YAC grid and sends the geometrical information to
 // the server so that it can also initialize its own grid
 void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
 
@@ -189,40 +241,13 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
     MPI_Isend((void *) &grid_size, 2, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
   }
 
-  // Will hold the amount of points for the local grid patch of this process
-  int local_patch_size = (int)(grid.xm * grid.ym);
+  std::vector<double> latitudes;
+  std::vector<double> longitudes;
+  details::compute_point_coordinates(grid, "", longitudes, latitudes);
 
+  int local_patch_size = (int)latitudes.size();
   // Gathers on the server the size of the local patch from each process
   MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, m_intercomm);
-
-  // Generate "fake" longitudes and latitudes for the local patch of the grid. Here
-  // longitudes and latitudes range from 0 to 1 (inclusive) for the "global" grid (a local
-  // patch covers a part of this).
-  //
-  // This is sufficient for moving data from PISM to the output server and does not
-  // require projection info.
-  //
-  // FIXME: make it possible to use projection info to use real lon,lat coordinates of
-  // grid points. This will be necessary for "on the fly" post-processing in the output
-  // server.
-  std::vector<double> latitudes(local_patch_size);
-  std::vector<double> longitudes(local_patch_size);
-  {
-    const auto &x = grid.x;
-    const auto &y = grid.y;
-
-    double x_min  = x.front();
-    double y_min  = y.front();
-    double x_span = x.back() - x_min;
-    double y_span = y.back() - y_min;
-    int it        = 0;
-    for (auto p : GridPoints(grid)) {
-      const int i = p.i(), j = p.j();
-      longitudes[it] = (x[i] - x_min) / x_span;
-      latitudes[it]  = (y[j] - y_min) / y_span;
-      it++;
-    }
-  }
 
   // Translate local point indices to global point indices
   auto patch_global_indices =
@@ -339,20 +364,18 @@ YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config)
 YacOutputWriter::~YacOutputWriter() {
   send_action(FINISH, {});
 
-    for (auto &i : m_array_data) {
-      delete i;
-    }
+  details::free_array_buffers(m_buffers);
 
-    // FIXME: support multiple grids
-    int max_collection_size = m_max_collection_size["y-x"];
-    for (int c = 0; c < max_collection_size; c++) {
-      delete m_yac_raw_send_array[c][0];
-      delete m_yac_raw_send_array[c];
-    }
+  // FIXME: support multiple grids
+  int max_collection_size = m_max_collection_size["y-x"];
+  for (int c = 0; c < max_collection_size; c++) {
+    delete m_yac_raw_send_array[c][0];
+    delete m_yac_raw_send_array[c];
+  }
 
-    delete m_yac_raw_send_array;
+  delete m_yac_raw_send_array;
 
-    yac_cfinalize();
+  yac_cfinalize();
 }
 
 /*!
@@ -464,8 +487,18 @@ void YacOutputWriter::append_impl(const std::string &file_name) {
   MPI_Bcast(&m_last_time[file_name], 1, MPI_DOUBLE, 0, comm());
 }
 
-void YacOutputWriter::sync_impl(const std::string &/*file_name*/) {
-  // no-op
+void YacOutputWriter::sync_impl(const std::string & /*file_name*/) {
+  send_action(SYNC, {});
+
+  int error_code =
+      MPI_Waitall((int)m_mpi_requests.size(), m_mpi_requests.data(), MPI_STATUSES_IGNORE);
+  if (error_code != MPI_SUCCESS) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Fatal error in MPI_Waitall()");
+  }
+
+  m_mpi_requests.clear();
+  m_text_buffers.clear();
+  details::free_array_buffers(m_buffers);
 }
 
 void YacOutputWriter::close_impl(const std::string &file_name) {
@@ -549,9 +582,10 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
       data_size *= (int)c;
     }
     // Buffers the argument array so that the asynchronous operation can finish after its
-    // lifetime. These arrays are deleted in the destructor
+    // lifetime. These arrays are deleted using details::free_array_buffers() in the
+    // destructor and sync_impl().
     double *buffer = new double[data_size];
-    m_array_data.push_back(buffer);
+    m_buffers.push_back(buffer);
     memcpy(buffer, data, data_size * sizeof(double));
     m_mpi_requests.emplace_back();
     MPI_Isend((void *)(buffer), data_size, MPI_DOUBLE, 0, tag(variable_name),

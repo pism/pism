@@ -50,7 +50,8 @@ enum ServerActions : int {
     SEND_VARIABLE = 10,
     SEND_GRIDDED_VARIABLE = 11,
     APPEND_TIME = 12,
-    FINISH = 13
+    FINISH = 13,
+    SYNC = 14
 };
 
 /*!
@@ -106,7 +107,8 @@ private:
   //! buffers used to send text (write_text_impl())
   std::vector<std::string> m_text_buffers;
 
-  std::vector<double *> m_array_data;
+  //! buffers used to send arrays of double
+  std::vector<double *> m_buffers;
 
   double *** m_yac_raw_send_array = nullptr;
 
