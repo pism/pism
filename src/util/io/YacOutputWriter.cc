@@ -160,9 +160,6 @@ void YacOutputWriter::create_intercomm() {
 
   // We get the local component communicator and a global communicator which
   // contains all client and server processes
-  //
-  // FIXME: global_comm should be de-allocated using MPI_Comm_free(). The same is
-  // true about local_group and global_group (using MPI_Group_free()).
   MPI_Comm global_comm = MPI_COMM_NULL;
   {
     const int nbr_comps               = 2;
@@ -192,10 +189,13 @@ void YacOutputWriter::create_intercomm() {
                 component_leaders_ranks.data(), 1, MPI_INT, global_comm);
   int remote_leader = component_leaders_ranks.back();
 
-  // FIXME: we need to call MPI_Comm_free() in the destructor.
   int tag = 0;
   MPI_Intercomm_create(comm(), local_leader_rank[0], global_comm, remote_leader, tag,
                        &m_intercomm);
+
+  MPI_Group_free(&local_group);
+  MPI_Group_free(&global_group);
+  MPI_Comm_free(&global_comm);
 }
 
 int YacOutputWriter::tag(const std::string &variable_name, TagTreatment flag) {
@@ -375,6 +375,8 @@ YacOutputWriter::~YacOutputWriter() {
   }
 
   delete m_yac_raw_send_array;
+
+  MPI_Comm_free(&m_intercomm);
 
   yac_cfinalize();
 }
