@@ -9,6 +9,6 @@ run="python3"
 # that asynchronous_output_server.py uses the code assembling parts of the grid received
 # from different ranks (on the PISM side).
 mpirun -n 3 python3 ./async_io_test.py :\
-       -n 1 ${run} ${pism_dir}/src/util/io/asynchronous_output_server.py -d
+       -n 1 ${run} ${pism_dir}/util/pism_async_writer -d
 
 # coverage html

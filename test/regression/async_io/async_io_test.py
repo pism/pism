@@ -104,6 +104,8 @@ def test_writer(grid, writer, output_filename):
 
     PISM.write_config(ctx.config, "pism_config", output)
 
+    output.sync()
+
     output.close()
 
     return first_time
