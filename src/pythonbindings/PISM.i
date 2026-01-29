@@ -69,7 +69,6 @@
 #include "util/connected_components/label_components.hh"
 
 #include "util/io/SynchronousOutputWriter.hh"
-#include "util/io/YacOutputWriter.hh"
 #include "util/io/io_helpers.hh"
 
 #include "util/pism_initialization.hh"
@@ -247,12 +246,18 @@ pism_class(pism::Logger, "pism/util/Logger.hh");
 
 %shared_ptr(pism::OutputWriter)
 %shared_ptr(pism::SynchronousOutputWriter)
-%shared_ptr(pism::YacOutputWriter)
 %shared_ptr(pism::OutputFile)
 %include "util/io/OutputWriter.hh"
 %include "util/io/SynchronousOutputWriter.hh"
-%include "util/io/YacOutputWriter.hh"
 %include "util/io/io_helpers.hh"
+
+#if (Pism_USE_YAC == 1)
+%{
+#include "util/io/YacOutputWriter.hh"
+%}
+%shared_ptr(pism::YacOutputWriter)
+%include "util/io/YacOutputWriter.hh"
+#endif
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::ColdEnthalpyConverter);
