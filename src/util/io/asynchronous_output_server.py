@@ -25,7 +25,6 @@ import json
 from mpi4py import MPI
 from enum import Enum
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("pism_output")
 
 
@@ -48,15 +47,15 @@ class ServerActions(Enum):
     SEND_GRIDDED_VARIABLE = 11
     APPEND_TIME = 12
     FINISH = 13
-
-
-# YAC general component, grid and configuration variables
-source_comp_name = "pism"
-target_comp_name = "pism_output"
+    SYNC = 14
 
 
 class YacWrapper:
     """Class holding all YAC variables and definitions."""
+
+    # YAC general component, grid and configuration variables
+    source_comp_name = "pism"
+    target_comp_name = "pism_output"
 
     # In the constructor the YAC initialization happens, followed
     # by the creation of the intercommunicator, which is necessary for
@@ -80,14 +79,14 @@ class YacWrapper:
 
         self.yac = yac.YAC()
 
-        self.component = self.yac.def_comp(target_comp_name)
+        self.component = self.yac.def_comp(self.target_comp_name)
 
         # Get the local server communicator and group
         local_comm = self.component.comp_comm
         local_group = local_comm.Get_group()
 
         # Get the global communicator and group (contatining all processes from client and server)
-        global_comm = self.yac.get_comps_comm([source_comp_name, target_comp_name])
+        global_comm = self.yac.get_comps_comm([self.source_comp_name, self.target_comp_name])
         global_group = global_comm.Get_group()
 
         # Get the rank of the local leader in the global communicator
@@ -188,10 +187,76 @@ class YacWrapper:
                                                    corner_points, collection_size,
                                                    timestep, yac.TimeUnit.ISO_FORMAT)
 
-        self.yac.def_couple(source_comp_name, grid_name, field_name,
-                            target_comp_name, self._output_grid_name(grid_name), field_name,
+        self.yac.def_couple(self.source_comp_name, grid_name, field_name,
+                            self.target_comp_name, self._output_grid_name(grid_name), field_name,
                             timestep, time_unit, time_reduction,
                             self.interpolation_stack)
+
+    def receive_action(self):
+        """Receive the JSON string encoding an action and its metadata."""
+        comm = self.intercomm
+
+        status = MPI.Status()
+        comm.Probe(source=self.remote_leader, tag=0, status=status)
+
+        length = status.Get_count(MPI.CHAR)
+
+        string = np.empty(length, dtype='S1')
+        comm.Recv([string, MPI.CHAR], source=self.remote_leader, tag=0)
+
+        # Decode the data and construct a dictionary from the json string
+        string = string.tobytes().decode("ascii")
+
+        try:
+            return json.loads(string)
+        except BaseException:  # pragma: no cover
+            logger.critical(f"failed to parse action string '{string}'")
+            raise
+
+    def receive_variable(self, metadata):
+        """Receive and write non-gridded variable data."""
+        count = metadata["count"]
+        tag = int(metadata["tag"])
+
+        dtype = "f8"
+        mpi_dtype = MPI.DOUBLE
+        if "text" in metadata:
+            dtype = "S1"
+            mpi_dtype = MPI.CHAR
+
+        data_size = 1
+        for c in count:
+            data_size *= c
+
+        result = np.empty(data_size, dtype=dtype)
+        self.intercomm.Recv([result, mpi_dtype], source=self.remote_leader, tag=tag)
+
+        return result
+
+    def receive_gridded_variable(self, metadata):
+        """Receive a spatial field and write to the corresponding NetCDF variable."""
+        name = metadata["variable_name"]
+
+        # Number of vertical levels for that field in YAC
+        collection_size = self.fields[name].collection_size
+
+        # Grid size
+        grid_name = metadata["grid_name"]
+        x_size, y_size = self.grid_size[grid_name]
+
+        # Variable for holding the raw data provided by the YAC get, which is directly issued here
+        data = self.fields[name].get()[0]
+
+        # For each vertical level, reorders the received data according to the horizontal
+        # global vertex indices
+        for level in range(collection_size):
+            data[level] = data[level, np.argsort(self.vertex_indexes[grid_name])]
+
+        # Creates a 3D array for reshaping the raw data received from YAC
+        result = np.ndarray(shape=(collection_size, y_size, x_size),
+                            buffer=data, dtype="f8")
+
+        return result
 
 
 class OutputFile:
@@ -254,76 +319,43 @@ class OutputFile:
             if attr not in ignored_attributes and value != "":
                 nc_variable.setncattr(attr, value)
 
-    def receive_gridded_variable(self, metadata, yac_wrapper):
-        """Receive a spatial field and write to the corresponding NetCDF variable."""
-
-        name = metadata["variable_name"]
+    def write_gridded_variable(self, array, metadata):
+        """Write a gridded variable to a NetCDF variable."""
         ndims = metadata["ndims"]
         time_dependent = metadata["time_dependent"]
+        name = metadata["variable_name"]
 
         nc_variable = self.nc_dataset.variables[name]
 
-        # Number of vertical levels for that field in YAC
-        collection_size = yac_wrapper.fields[name].collection_size
-
-        # Grid size
-        grid_name = metadata["grid_name"]
-        x_size, y_size = yac_wrapper.grid_size[grid_name]
-
-        # Variable for holding the raw data provided by the YAC get, which is directly issued here
-        data = yac_wrapper.fields[name].get()[0]
-
-        # For each vertical level, reorders the received data according to the horizontal
-        # global vertex indices
-        for level in range(collection_size):
-            data[level] = data[level, np.argsort(yac_wrapper.vertex_indexes[grid_name])]
-
-        # Creates a 3D array for reshaping the raw data received from YAC
-        values = np.ndarray(shape=(collection_size, y_size, x_size),
-                            buffer=data, dtype="f8")
+        collection_size, y_size, x_size = array.shape
 
         if ndims == 2:
             # 2D variable
             if time_dependent:
-                nc_variable[self.time_index, :, :] = values[0]
+                nc_variable[self.time_index, :, :] = array[0]
             else:
-                nc_variable[:, :] = values[0]
+                nc_variable[:, :] = array[0]
         else:
             # 3D variable
             assert collection_size > 1
 
             # Temporary array for reordering the data for the NetCDF variable
             tmp = np.ndarray(shape=(y_size, x_size, collection_size),
-                             dtype=values.dtype)
+                             dtype=array.dtype)
 
             for c in range(collection_size):
-                tmp[:, :, c] = values[c]
+                tmp[:, :, c] = array[c]
 
             if time_dependent:
                 nc_variable[self.time_index, :, :, :] = tmp
             else:
                 nc_variable[:, :, :] = tmp
 
-    def receive_variable(self, metadata, yac_wrapper):
-        """Receive and write non-gridded variable data."""
+    def write_variable(self, array, metadata):
+        """Write an array to a NetCDF variable."""
         name = metadata["variable_name"]
         start = metadata["start"]
         count = metadata["count"]
-        tag = int(metadata["tag"])
-
-        dtype = "f8"
-        mpi_dtype = MPI.DOUBLE
-        if "text" in metadata:
-            dtype = "S1"
-            mpi_dtype = MPI.CHAR
-
-        data_size = 1
-        for c in count:
-            data_size *= c
-
-        tmp = np.empty(data_size, dtype=dtype)
-        yac_wrapper.intercomm.Recv([tmp, mpi_dtype],
-                                   source=yac_wrapper.remote_leader, tag=tag)
 
         # Convert start and count arrays into a list of slices (one per dimension).
         ndim = len(count)
@@ -334,52 +366,27 @@ class OutputFile:
         # brackets (invalid syntax).
         #
         # Ugh. Oh well.
-        self.nc_dataset.variables[name].__setitem__(*hyperslab, tmp)
+        self.nc_dataset.variables[name].__setitem__(*hyperslab, array)
 
     def close(self):
         """Close the underlying NetCDF dataset."""
         self.nc_dataset.close()
 
 
-def receive_action(yac_wrapper):
-    """Receive the JSON string encoding an action and its metadata."""
-    comm = yac_wrapper.intercomm
-
-    status = MPI.Status()
-    comm.Probe(source=yac_wrapper.remote_leader, tag=0, status=status)
-
-    length = status.Get_count(MPI.CHAR)
-
-    string = np.empty(length, dtype='S1')
-    comm.Recv([string, MPI.CHAR], source=yac_wrapper.remote_leader, tag=0)
-
-    # Decode the data and construct a dictionary from the json string
-    string = string.tobytes().decode("ascii")
-
-    try:
-        return json.loads(string)
-    except BaseException:  # pragma: no cover
-        logger.critical(f"failed to parse action string '{string}'")
-        raise
-
-
-np.set_printoptions(threshold=np.inf)
-yac_wrapper = YacWrapper()
-files = {}
-
-
-def get_file(name):
-    """Return the file object, opening it if necessary."""
-    if name not in files:
-        files[name] = OutputFile(name, mode="w")
-    return files[name]
-
-
 def main():
     """Receive and process "action" messages from PISM."""
+    yac_wrapper = YacWrapper()
+    files = {}
+
+    def get_file(name):
+        """Return the file object, creating it if necessary."""
+        if name not in files:
+            files[name] = OutputFile(name, mode="w")
+        return files[name]
+
     while True:
         # Wait for an action
-        message = receive_action(yac_wrapper)
+        message = yac_wrapper.receive_action()
 
         action_id = message['action']
         metadata = message['info']
@@ -452,20 +459,42 @@ def main():
 
             case ServerActions.SEND_GRIDDED_VARIABLE.value:
                 logger.debug(f"SEND_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
-                get_file(file_name).receive_gridded_variable(metadata, yac_wrapper)
+                array = yac_wrapper.receive_gridded_variable(metadata)
+                get_file(file_name).write_gridded_variable(array, metadata)
 
             case ServerActions.SEND_VARIABLE.value:
                 logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
-                get_file(file_name).receive_variable(metadata, yac_wrapper)
+                array = yac_wrapper.receive_variable(metadata)
+                get_file(file_name).write_variable(array, metadata)
 
             case ServerActions.APPEND_TIME.value:
                 logger.debug(f"APPEND_TIME in {file_name}")
                 get_file(file_name).append_time(metadata["time"])
 
+            case ServerActions.SYNC.value:
+                logger.debug("SYNC")
+
     # Close all the files
-    for file in files.values():
-        file.close()
+    for F in files.values():
+        F.close()
 
 
 if __name__ == "__main__":
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser(description="Asynchronous output writer for PISM")
+    parser.add_argument(
+        "-d",
+        "--debug",
+        dest="debug",
+        action="store_true",
+        help="set logging level to 'DEBUG'",
+    )
+
+    options = parser.parse_args()
+
+    if options.debug:
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger("pism_output")
+
     main()
