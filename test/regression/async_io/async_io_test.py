@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
 
+"""Test PISM's asynchronous output code.
+
+This script creates two output files: one using old synchronous code and the other using
+asynchronous code, then compares results.
+
+"""
+
 import PISM
 import numpy as np
+import netCDF4
 
 ctx = PISM.Context()
 config = ctx.config
 
+
 def create_grid():
-    # these values are not important, but they should all be different
+    """Create a PISM grid that will be used to allocate 2D and 3D arrays."""
+    # these values are not important, but the grid we use should not be square
     config.set_number("grid.Mx", 200)
     config.set_number("grid.My", 100)
     config.set_number("grid.Mz", 41)
@@ -16,7 +26,9 @@ def create_grid():
 
     return PISM.Grid.FromOptions(ctx.ctx)
 
+
 def global_attributes():
+    """Create global attributes."""
     strings = PISM.StringMap()
     strings["Conventions"] = "CF-1.12"
     numbers = PISM.DoubleVectorMap()
@@ -24,8 +36,9 @@ def global_attributes():
 
     return strings, numbers
 
-def create_array2d(grid):
 
+def create_array2d(grid):
+    """Create a 2D array for testing."""
     array2d = PISM.Scalar(grid, "thk")
     array2d.metadata().units("meter")
 
@@ -38,7 +51,9 @@ def create_array2d(grid):
 
     return array2d
 
+
 def create_array3d(grid):
+    """Create a 3D array for testing."""
     z = [0, 1, 2, 3, 4, 5]
     array3d = PISM.Array3D(grid, "enthalpy", PISM.WITHOUT_GHOSTS, z)
     array3d.metadata().units("J kg^-1")
@@ -54,12 +69,8 @@ def create_array3d(grid):
     return array3d
 
 
-def test_writer(grid, writer, output_filename):
-    """Test an output writer.
-
-    Note: this can be called once per writer since the YAC-based writer can be initialized
-    only once.
-    """
+def create_arrays(grid):
+    """Create 2D and 3D arrays used for testing."""
     array2d = create_array2d(grid)
     array3d = create_array3d(grid)
 
@@ -78,8 +89,16 @@ def test_writer(grid, writer, output_filename):
     array3d_no_time.metadata().units("kelvin")
     array3d_no_time.metadata().set_time_dependent(False)
 
-    variables = [v.metadata() for v in [array2d, array2d_no_time, array2d_int,
-                                        array3d, array3d_no_time]]
+    return [array2d, array2d_int, array3d, array3d_no_time]
+
+
+def test_writer(grid, writer, arrays, output_filename):
+    """Test an output writer.
+
+    Note: this can be called once per writer since the YAC-based writer can be initialized
+    only once.
+    """
+    variables = [v.metadata() for v in arrays]
     variables.append(PISM.config_metadata(ctx.config))
 
     writer.initialize(PISM.VariableSet(variables))
@@ -95,12 +114,8 @@ def test_writer(grid, writer, output_filename):
     PISM.define_variables(output, variables, grid.get_mapping_info(), False)
 
     output.append_time(first_time)
-    array2d.write(output)
-    array2d_no_time.write(output)
-    array2d_int.write(output)
-
-    array3d.write(output)
-    array3d_no_time.write(output)
+    for a in arrays:
+        a.write(output)
 
     PISM.write_config(ctx.config, "pism_config", output)
 
@@ -111,7 +126,7 @@ def test_writer(grid, writer, output_filename):
     return first_time
 
 
-def test_appending(grid, writer, filename, old_time, old_time_length):
+def test_appending(grid, writer, arrays, filename, old_time, old_time_length):
     """Test appending to an existing file."""
     output = PISM.OutputFile(writer, filename)
     output.append()
@@ -126,34 +141,109 @@ def test_appending(grid, writer, filename, old_time, old_time_length):
     assert output.last_time_value() == time
 
     # test the ability to ingnore definition of an existing variable
-    array2d = create_array2d(grid)
-    output.define_variable(array2d.metadata())
+    array = arrays[0]
+    output.define_variable(array.metadata())
 
     # test writing to a new time record while appending
-    array2d.write(output)
+    array.write(output)
 
     output.close()
 
     return time
 
 
+def compare(file_name_1, file_name_2):
+    """Compare contents of two NetCDF files."""
+    with netCDF4.Dataset(file_name_1) as f1:
+        with netCDF4.Dataset(file_name_2) as f2:
+
+            # compare global attributes:
+            assert f1.ncattrs() == f2.ncattrs()
+            for attr in f1.ncattrs():
+                print(f"comparing global attribute {attr}")
+                a1 = f1.getncattr(attr)
+                a2 = f2.getncattr(attr)
+                np.testing.assert_array_equal(a1, a2)
+
+            # compare dimensions:
+            assert f1.dimensions.keys() == f2.dimensions.keys()
+            for dimension in f1.dimensions.keys():
+                print(f"comparing dimension {dimension}")
+                assert len(f1.dimensions[dimension]) == len(f2.dimensions[dimension])
+
+            # compare variables
+            assert f1.variables.keys() == f2.variables.keys()
+            for variable in f1.variables.keys():
+                print(f"comparing variable {variable}")
+                v1 = f1.variables[variable]
+                v2 = f1.variables[variable]
+
+                # compare variable attributes:
+                assert v1.ncattrs() == v2.ncattrs()
+                for attr in v1.ncattrs():
+                    print(f"comparing attribute {variable}:{attr}")
+                    a1 = v1.getncattr(attr)
+                    a2 = v2.getncattr(attr)
+                    np.testing.assert_array_equal(a1, a2)
+
+                # compare variable values
+                print(f"comparing values stored in variable {variable}")
+                np.testing.assert_array_equal(v1[:], v2[:])
+
+
 if __name__ == "__main__":
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser(description="Test for the asynchronous output writer")
+    parser.add_argument(
+        "-k",
+        "--keep_files",
+        dest="keep",
+        action="store_true",
+        help="keep output files",
+    )
+
+    options = parser.parse_args()
+
+    files = []
+
+    def cleanup():
+        """Remove files created by this test."""
+        if ctx.rank != 0:
+            return
+
+        import os
+        for f in files:
+            print(f"Removing {f}")
+            os.remove(f)
+
+    if not options.keep:
+        import atexit
+        atexit.register(cleanup)
 
     grid = create_grid()
+
+    arrays = create_arrays(grid)
 
     async_writer = PISM.YacOutputWriter(ctx.com, ctx.config)
     sync_writer = PISM.SynchronousOutputWriter(ctx.com, ctx.config)
 
-    test_writer(grid, async_writer, "output_async.nc")
-    test_writer(grid, sync_writer, "output_sync.nc")
-
+    test_writer(grid, async_writer, arrays, "output_async.nc")
+    test_writer(grid, sync_writer, arrays, "output_sync.nc")
+    files += ["output_async.nc", "output_sync.nc"]
     # test appending using the async writer
     #
     # Note: here we create a file using the sync writer so that the async writer has to
     # get time dimension info from the file (cannot re-use it).
-    time1 = test_writer(grid, sync_writer, "file1.nc")
-    test_appending(grid, async_writer, "file1.nc", time1, 1)
+    time1 = test_writer(grid, sync_writer, arrays, "file1.nc")
+    test_appending(grid, async_writer, arrays, "file1.nc", time1, 1)
+    files.append("file1.nc")
 
     # test appending using the sync writer
-    time1 = test_writer(grid, sync_writer, "file2.nc")
-    test_appending(grid, sync_writer, "file2.nc", time1, 1)
+    time1 = test_writer(grid, sync_writer, arrays, "file2.nc")
+    test_appending(grid, sync_writer, arrays, "file2.nc", time1, 1)
+    files.append("file2.nc")
+
+    # compare output files created using asynchronous and "regular" output code:
+    if ctx.rank == 0:
+        compare("output_sync.nc", "output_async.nc")
