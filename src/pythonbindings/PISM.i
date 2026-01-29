@@ -70,6 +70,8 @@
 
 #include "util/io/SynchronousOutputWriter.hh"
 #include "util/io/YacOutputWriter.hh"
+#include "util/io/io_helpers.hh"
+
 #include "util/pism_initialization.hh"
 %}
 
@@ -251,6 +253,7 @@ pism_class(pism::Logger, "pism/util/Logger.hh");
 %include "util/io/OutputWriter.hh"
 %include "util/io/SynchronousOutputWriter.hh"
 %include "util/io/YacOutputWriter.hh"
+%include "util/io/io_helpers.hh"
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::ColdEnthalpyConverter);

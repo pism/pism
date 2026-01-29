@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -330,7 +331,7 @@ void IceModel::write_extras() {
                    m_time->date(m_time->current()).c_str());
 
     {
-      write_config(*m_config, "pism_config", *m_extra_file);
+      io::write_config(*m_config, "pism_config", *m_extra_file);
 
       // use the mid-point of the current reporting interval
       double time = 0.5 * (m_last_extra + current_time);

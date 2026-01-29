@@ -5,12 +5,10 @@
 
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
 
 #include "pism/icebin/IBIceModel.hh"
 #include "pism/icebin/IBSurfaceModel.hh"
-#include "pism/coupler/ocean/Factory.hh"
 #include "pism/energy/EnergyModel.hh"
 
 namespace pism {
@@ -327,7 +325,7 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
   define_time(file);
   define_variables(file, m_output_file_contents);
 
-  write_config(*m_config, "pism_config", file);
+  io::write_config(*m_config, "pism_config", file);
   file.append_time(m_time->current());
   write_state(file);
   write_diagnostics(file, m_output_vars);

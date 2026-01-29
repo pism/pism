@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include "pism/icemodel/IceModel.hh"
 
-#include "pism/util/pism_options.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
 #include <memory>
 
@@ -164,7 +164,7 @@ void IceModel::flush_timeseries() {
     return;
   }
 
-  write_config(*m_config, "pism_config", *m_ts_file);
+  io::write_config(*m_config, "pism_config", *m_ts_file);
 
   // flush all the time-series buffers:
   for (const auto &d : m_ts_diagnostics) {

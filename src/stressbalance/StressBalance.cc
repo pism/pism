@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -75,7 +75,7 @@ void Inputs::dump(const char *filename) const {
 
   OutputFile output(writer, filename);
 
-  write_config(*config, "pism_config", output);
+  io::write_config(*config, "pism_config", output);
 
   auto time = ctx->time();
   output.define_variable(time->metadata());

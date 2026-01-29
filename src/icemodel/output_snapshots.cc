@@ -22,6 +22,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -160,7 +161,7 @@ void IceModel::write_snapshot() {
                    m_time->date(m_time->current()).c_str(), m_time->date(saving_after).c_str());
 
     {
-      write_config(*m_config, "pism_config", *m_snapshot_file);
+      io::write_config(*m_config, "pism_config", *m_snapshot_file);
       m_snapshot_file->append_time(m_time->current());
       write_state(*m_snapshot_file);
       write_diagnostics(*m_snapshot_file, m_snapshot_vars);

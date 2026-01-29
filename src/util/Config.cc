@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -913,27 +913,6 @@ std::string Config::json() const {
 }
 
 int Config::max_length = 32768;
-
-void write_config(const Config &config, const std::string &variable_name, const OutputFile &file) {
-
-  std::string data = config.json();
-
-  if ((int)data.size() + 1 > Config::max_length) {
-    throw RuntimeError::formatted(
-        PISM_ERROR_LOCATION,
-        "unable to save configuration parameters to a file: JSON string length exceeds %d",
-        Config::max_length);
-  }
-
-  std::vector<unsigned int> start = { 0 };
-  std::vector<unsigned int> count = { (unsigned int)data.size() + 1 };
-
-  if (not config.get_string("output.experiment_id").empty()) {
-    start.insert(start.cbegin(), 0);
-    count.insert(count.cbegin(), 1);
-  }
-  file.write_text(variable_name, start, count, data);
-}
 
 VariableMetadata config_metadata(const Config &config) {
   VariableMetadata result("pism_config", { { "cfg", Config::max_length } }, config.unit_system());

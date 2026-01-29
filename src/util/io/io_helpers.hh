@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,6 +32,7 @@ namespace units {
 class System;
 }
 
+class Config;
 class VariableMetadata;
 class Grid;
 class File;
@@ -94,6 +95,8 @@ void define_variables(const OutputFile &file,
                       bool use_internal_units);
 
 // writing utilities
+
+void write_config(const Config &config, const std::string &variable_name, const OutputFile &file);
 
 void move_if_exists(MPI_Comm com, const std::string &file_to_move, int rank_to_use = 0);
 

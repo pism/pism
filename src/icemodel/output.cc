@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -168,7 +168,7 @@ void IceModel::write_final_output() {
     }
 
     {
-      write_config(*m_config, "pism_config", file);
+      io::write_config(*m_config, "pism_config", file);
       file.append_time(m_time->current());
       write_state(file);
       write_diagnostics(file, m_output_vars);
@@ -267,7 +267,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
   }
 
   {
-    write_config(*m_config, "pism_config", file);
+    io::write_config(*m_config, "pism_config", file);
     file.append_time(m_time->current());
     write_state(file);
     write_diagnostics(file, variable_names);
