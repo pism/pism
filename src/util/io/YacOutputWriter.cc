@@ -142,7 +142,8 @@ void compute_point_coordinates(const grid::DistributedGridInfo &grid,
     // FIXME: make it possible to use projection info to use real lon,lat coordinates of
     // grid points. This will be necessary for "on the fly" post-processing in the output
     // server.
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "output writer: non-trivial projections are not implemented yet");
   }
 }
 
