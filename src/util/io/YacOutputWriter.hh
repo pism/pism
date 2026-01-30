@@ -90,7 +90,7 @@ private:
 
   // --- YAC Grid information
 
-  //! YAC grid ID and point ID corresponding to a grid name
+  //! YAC point set ID corresponding to a grid name
   std::map<std::string, int> m_point_set_id;
 
   //! YAC field ID corresponding to a particular variable (by name)

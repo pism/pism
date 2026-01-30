@@ -526,9 +526,9 @@ void YacOutputWriter::define_dimension_impl(const std::string &file_name,
   // Gathers the dimension metadata and sends it to the server
   {
     nlohmann::json info;
-    info["file_name"]        = file_name;
-    info["name"]   = name;
-    info["length"] = length;
+    info["file_name"] = file_name;
+    info["name"]      = name;
+    info["length"]    = length;
     send_action(DEFINE_DIMENSION, info);
   }
 
