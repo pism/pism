@@ -5,7 +5,7 @@ netcdf pism_overrides {
     pism_overrides:basal_resistance.pseudo_plastic.u_threshold = "1m/s";
     pism_overrides:basal_resistance.pseudo_plastic.enabled = "yes";
     pism_overrides:basal_yield_stress.model = "constant";
-    pism_overrides:basal_yield_stress.constant.value =  1e5;
+    pism_overrides:basal_yield_stress.constant.value =  5e4;
     pism_overrides:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden = 0.025;
     pism_overrides:basal_yield_stress.slippery_grounding_lines = "yes";
     pism_overrides:constants.ice.density = 910.0;
@@ -20,7 +20,7 @@ netcdf pism_overrides {
     pism_overrides:grid.Lz = 4000;
     pism_overrides:grid.Mbz = 1;
     pism_overrides:grid.Mz = 201;
-    pism_overrides:grid.registration = "center";
+    pism_overrides:grid.registration = "corner";
     pism_overrides:grid.periodicity = "xy";
     pism_overrides:hydrology.null_diffuse_till_water = "yes";
     pism_overrides:ocean.constant.melt_rate = 0.0;

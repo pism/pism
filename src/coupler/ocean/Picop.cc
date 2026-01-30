@@ -630,51 +630,9 @@ void Picop::compute_grounding_line_slope(const Inputs &inputs,
       }
     }
     
-    double slope =  atan(sqrt(h_x*h_x + h_y*h_y));
-    if (slope >= M_PI) {
-      slope = M_PI - 0.001;
-    }
+    double slope = atan(sqrt(h_x*h_x + h_y*h_y));
     result(i, j) = slope;
     }
-  }
-  
-  const double rtol = 0.001;
-  const int max_iter = 500;
-  
-  auto &result_old = result;
-  auto &result_new = m_work;
-
-  const auto &adv_vel   = inputs.stress_balance->advective_velocity();
-
-  scope.add({ &result_old, &result_new, &adv_vel });
-
-  double residual = 0.0;
-  for (int iter = 0; iter < max_iter; ++iter) {
-
-    transport_step(result_old, cell_type, m_flow_direction, result_new);
-
-    residual = 0.0;
-    for (auto p : m_grid->points()) {
-      int i = p.i(), j = p.j();
-      double denom = std::max(std::abs(result_old(i, j)), 1e-8);  // avoid divide-by-zero
-      double rel_change = std::abs(result_new(i, j) - result_old(i, j)) / denom;
-      residual = std::max(residual, rel_change);
-    }
-
-    residual = GlobalMax(m_grid->com, residual);
-
-    // copy into `result`, updating ghosts for the next iteration
-    result.copy_from(result_new);
-
-    if (residual < rtol) {
-      m_log->message(2, "grounding line slope converged iteration %03d, max rel. change = %f\n", iter, residual);
-      break;
-    }
-  }
-
-  // Warn if maximum iterations reached without convergence
-  if (residual >= rtol) {
-    m_log->message(2, "grounding line slope maximum number of iterations reached %03d, max rel. change = %f\n", max_iter, residual);
   }
 }
 // Write diagnostic variables to extra files if requested

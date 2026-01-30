@@ -131,7 +131,7 @@ accum = xr.DataArray(0.3).pint.quantify("m yr^-1")
 cmb = (accum * rho_i)
 ice_surface_temp = xr.DataArray(-3).pint.quantify("degC")
 so = xr.DataArray(34.3).pint.quantify("g/kg")
-to = xr.DataArray(3.5).pint.quantify("degC")
+to = xr.DataArray(0.5).pint.quantify("degC")
 
 basins = np.zeros_like(bed)
 basins[X<Lx+140e3] = 1
