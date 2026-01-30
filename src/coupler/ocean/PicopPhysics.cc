@@ -57,18 +57,11 @@ double PicopPhysics::effective_heat_exchange_coefficient(const double t_a, const
   return YT * (gamma1 + gamma2 * (((t_a-t_f_gl) * E0 * sin(alpha)) / (lambda3 * (CdTS0 + E0 * sin(alpha)))));
 }
 
-//! equation 6 in the PICOP paper.
-//!
-//! g(α) = (sinα / (C_d + E₀sinα))^½ ×
-//!        (E₀sinα / (C_d^½Γ_TS + E₀sinα))^½ ×
-//!        (E₀sinα / (C_d^½Γ_TS₀ + E₀sinα))
-//!
-//! Note: G2 uses Γ_TS (dynamic), G3 uses Γ_TS₀ (constant parameter CdTS0)
 double PicopPhysics::geometric_scaling(const double Gamma_TS, const double alpha) const {
   const double CdTS = sqrt(Cd) * Gamma_TS;
   const double E0_sin_alpha = E0 * sin(alpha);
   const double G1 = sqrt(sin(alpha) / (Cd + E0_sin_alpha));
-  const double G2 = sqrt(E0_sin_alpha / (CdTS + E0_sin_alpha));
+  const double G2 = sqrt(CdTS / (CdTS + E0_sin_alpha));
   const double G3 = E0_sin_alpha / (CdTS + E0_sin_alpha);
   return G1 * G2 * G3;
 }

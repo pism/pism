@@ -20,10 +20,11 @@ climate_file=climate.nc
 ocean_file=ocean.nc
 
 spatial_vars="beta,bmelt,mask,topg,usurf,thk,velsurf_mag,velbase_mag,climatic_mass_balance,taub_mag,velsurf,velbase"
-picop_spatial_vars="picop_basal_melt_rate,picop_grounding_line_slope,picop_grounding_line_elevation"
+picop_spatial_vars="picop_basal_melt_rate,picop_local_slope,picop_grounding_line_elevation"
 regrid_vars="litho_temp,enthalpy,tillwat,bmelt,ice_area_specific_volume,thk"
 
 ncgen -o config.nc config.cdl
+ncatted -a ocean.pico.heat_exchange_coefficent,pism_overrides,o,f,1.69e-3 config.nc
 
 run_length=1s
 sb="ssa+sia"

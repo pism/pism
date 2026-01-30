@@ -30,7 +30,7 @@ netcdf pism_overrides {
     pism_overrides:ocean.pico.maximum_ice_rise_area = 10000.0; 
     pism_overrides:ocean.pico.number_of_boxes = 5;
     pism_overrides:ocean.pico.overturning_coefficent = 0.23e6;
-    pism_overrides:ocean.picop.turbulent_heat_exchange_coefficient = 1.6872e-3;
+    pism_overrides:ocean.picop.turbulent_heat_exchange_coefficient = 8.5e-5;
     pism_overrides:stress_balance.calving_front_stress_bc = "yes";
     pism_overrides:stress_balance.sia.bed_smoother.range =  0.0;
     pism_overrides:stress_balance.sia.max_diffusivity = 100000.0;

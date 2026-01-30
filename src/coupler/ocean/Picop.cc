@@ -62,7 +62,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_basal_melt_rate(m_grid, "picop_basal_melt_rate"),
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
     m_shelf_base_elevation(grid, "picop_shelf_base_elevation"),
-    m_grounding_line_slope(grid, "picop_grounding_line_slope"),
+    m_local_slope(grid, "picop_local_slope"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
@@ -86,9 +86,9 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_shelf_base_elevation.metadata()["_FillValue"] = { 0.0 };
   m_shelf_base_elevation.set(0.0);
   
-  m_grounding_line_slope.metadata(0).long_name("shelf base slope").units("rad").output_units("degree");
-  m_grounding_line_slope.metadata()["_FillValue"] = { 0.0 };
-  m_grounding_line_slope.set(0.0);
+  m_local_slope.metadata(0).long_name("shelf base slope").units("rad").output_units("degree");
+  m_local_slope.metadata()["_FillValue"] = { 0.0 };
+  m_local_slope.set(0.0);
       
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 }
@@ -200,9 +200,9 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   profiling().end("ocean.compute_grounding_line_elevation");
   
 
-  profiling().begin("ocean.compute_grounding_line_slope");
-  compute_grounding_line_slope(inputs, m_grounding_line_slope);
-  profiling().end("ocean.compute_grounding_line_slope");
+  profiling().begin("ocean.compute_local_slope");
+  compute_local_slope(inputs, m_local_slope);
+  profiling().end("ocean.compute_local_slope");
   
   compute_melt_rate(inputs, picop_physics, m_theta_ocean, m_salinity_ocean,
                     m_basal_melt_rate);
@@ -246,7 +246,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
   
   array::AccessScope scope{&T_a, &S_a, &cell_type,
                            &ice_surface_elevation, &ice_thickness,
-                           &m_grounding_line_slope, &m_grounding_line_elevation,
+                           &m_local_slope, &m_grounding_line_elevation,
                            &result};
 
   for (auto p : m_grid->points()) {
@@ -255,7 +255,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
     if (cell_type.floating_ice(i, j)) {
       const double z_b = ice_surface_elevation(i, j) - ice_thickness(i, j);
       const double z_gl = m_grounding_line_elevation(i, j);
-      const double alpha = m_grounding_line_slope(i, j);
+      const double alpha = m_local_slope(i, j);
             
       const double s_a = S_a(i, j);
       double t_a = T_a(i, j);
@@ -540,7 +540,7 @@ void Picop::compute_shelf_base_elevation(const Inputs &inputs,
 }
 
 
-void Picop::compute_grounding_line_slope(const Inputs &inputs,
+void Picop::compute_local_slope(const Inputs &inputs,
                                          array::Scalar1 &result) {
 
   const auto &cell_type = inputs.geometry->cell_type;
@@ -641,7 +641,7 @@ DiagnosticList Picop::diagnostics_impl() const {
   DiagnosticList result = {
     { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
     { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
-    { "picop_grounding_line_slope", Diagnostic::wrap(m_grounding_line_slope) },
+    { "picop_local_slope", Diagnostic::wrap(m_local_slope) },
     { "picop_temperature", Diagnostic::wrap(m_theta_ocean) },
     { "picop_salinity", Diagnostic::wrap(m_salinity_ocean) },
     { "picop_shelf_base_elevation", Diagnostic::wrap(m_shelf_base_elevation) },

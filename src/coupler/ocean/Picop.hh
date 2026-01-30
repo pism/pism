@@ -56,7 +56,7 @@ private:
   array::Scalar1 m_basal_melt_rate;
   array::Scalar1 m_grounding_line_elevation;
   array::Scalar1 m_shelf_base_elevation;
-  array::Scalar1 m_grounding_line_slope;
+  array::Scalar1 m_local_slope;
   
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
@@ -79,7 +79,7 @@ private:
   void compute_shelf_base_elevation(const Inputs &inputs,
                                         array::Scalar1 &result);
   
-  void compute_grounding_line_slope(const Inputs &inputs,
+  void compute_local_slope(const Inputs &inputs,
                                         array::Scalar1 &result);
 
 };
