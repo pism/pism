@@ -1775,6 +1775,81 @@ netcdf pism_config {
     pism_config:ocean.pico.periodic = "no";
     pism_config:ocean.pico.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:ocean.pico.periodic_type = "flag";
+    
+    pism_config:ocean.picop.dimensionless_scaling_factor = 0.56;
+    pism_config:ocean.picop.dimensionless_scaling_factor_doc = "Sets the dimensionless scaling factor.";
+    pism_config:ocean.picop.dimensionless_scaling_factor_option = "dimensionless_scaling_factor";
+    pism_config:ocean.picop.dimensionless_scaling_factor_type = "number";
+    pism_config:ocean.picop.dimensionless_scaling_factor_units = "1";
+
+    pism_config:ocean.picop.drag_coefficient = 2.5e-3;
+    pism_config:ocean.picop.drag_coefficient_doc = "Sets the drag coefficient.";
+    pism_config:ocean.picop.drag_coefficient_option = "drag_coefficient";
+    pism_config:ocean.picop.drag_coefficient_type = "number";
+    pism_config:ocean.picop.drag_coefficient_units = "1";
+
+    pism_config:ocean.picop.entrainment_coefficient = 3.6e-2;
+    pism_config:ocean.picop.entrainment_coefficient_doc = "Sets the entrainment coefficient.";
+    pism_config:ocean.picop.entrainment_coefficient_option = "entrainment_coefficient";
+    pism_config:ocean.picop.entrainment_coefficient_type = "number";
+    pism_config:ocean.picop.entrainment_coefficient_units = "1";
+    
+    pism_config:ocean.picop.file = "";
+    pism_config:ocean.picop.file_doc = "Specifies the NetCDF file containing potential temperature (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).";
+    pism_config:ocean.picop.file_option = "ocean_pico_file";
+    pism_config:ocean.picop.file_type = "string";
+
+    pism_config:ocean.picop.freezing_point_depth_coefficient = 7.61e-4;
+    pism_config:ocean.picop.freezing_point_depth_coefficient_doc = "Sets the freezing point depth coefficient.";
+    pism_config:ocean.picop.freezing_point_depth_coefficient_option = "freezing_point_depth_coefficient";
+    pism_config:ocean.picop.freezing_point_depth_coefficient_type = "number";
+    pism_config:ocean.picop.freezing_point_depth_coefficient_units = "kelvin m^-1";
+
+    pism_config:ocean.picop.freezing_point_offset = 8.32e-2;
+    pism_config:ocean.picop.freezing_point_offset_doc = "Sets the freezing point offset.";
+    pism_config:ocean.picop.freezing_point_offset_option = "freezing_point_offset";
+    pism_config:ocean.picop.freezing_point_offset_type = "number";
+    pism_config:ocean.picop.freezing_point_offset_units = "celsius";
+
+    pism_config:ocean.picop.freezing_point_salinity_coefficient = -5.73e-2;
+    pism_config:ocean.picop.freezing_point_salinity_coefficient_doc = "Sets the freezing point salinity coefficient.";
+    pism_config:ocean.picop.freezing_point_salinity_coefficient_option = "freezing_point_salinity_coefficient";
+    pism_config:ocean.picop.freezing_point_salinity_coefficient_type = "number";
+    pism_config:ocean.picop.freezing_point_salinity_coefficient_units = "kelvin";
+    
+    pism_config:ocean.picop.heat_exchange_parameter = 6.0e-4;
+    pism_config:ocean.picop.heat_exchange_parameter_doc = "Sets the heat exchange parameter.";
+    pism_config:ocean.picop.heat_exchange_parameter_option = "heat_exchange_parameter";
+    pism_config:ocean.picop.heat_exchange_parameter_type = "number";
+    pism_config:ocean.picop.heat_exchange_parameter_units = "1";
+
+    pism_config:ocean.picop.heat_exchange_parameter_1 = 0.545;
+    pism_config:ocean.picop.heat_exchange_parameter_1_doc = "Sets the heat exchange parameter 1.";
+    pism_config:ocean.picop.heat_exchange_parameter_1_option = "heat_exchange_parameter_1";
+    pism_config:ocean.picop.heat_exchange_parameter_1_type = "number";
+    pism_config:ocean.picop.heat_exchange_parameter_1_units = "1";
+
+    pism_config:ocean.picop.heat_exchange_parameter_2 = 3.5e-5;
+    pism_config:ocean.picop.heat_exchange_parameter_2_doc = "Sets the heat exchange parameter 2.";
+    pism_config:ocean.picop.heat_exchange_parameter_2_option = "heat_exchange_parameter_2";
+    pism_config:ocean.picop.heat_exchange_parameter_2_type = "number";
+    pism_config:ocean.picop.heat_exchange_parameter_2_units = "m^-1";
+
+    pism_config:ocean.picop.melt_rate_parameter = 10;
+    pism_config:ocean.picop.melt_rate_parameter_doc = "Sets the melt rate parameter.";
+    pism_config:ocean.picop.melt_rate_parameter_option = "melt_rate_parameter";
+    pism_config:ocean.picop.melt_rate_parameter_type = "number";
+    pism_config:ocean.picop.melt_rate_parameter_units = "m yr^-1 kelvin^-2";
+
+    pism_config:ocean.picop.periodic = "no";
+    pism_config:ocean.picop.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.picop.periodic_type = "flag";
+
+    pism_config:ocean.picop.turbulent_heat_exchange_coefficient = 1.1e-3;
+    pism_config:ocean.picop.turbulent_heat_exchange_coefficient_doc = "Sets the turbulent heat exchange coefficient.";
+    pism_config:ocean.picop.turbulent_heat_exchange_coefficient_option = "turbulent_heat_exchange_coefficient";
+    pism_config:ocean.picop.turbulent_heat_exchange_coefficient_type = "number";
+    pism_config:ocean.picop.turbulent_heat_exchange_coefficient_units = "1";
 
     pism_config:ocean.pik_melt_factor = 5e-3;
     pism_config:ocean.pik_melt_factor_doc = "dimensionless tuning parameter in the ``-ocean pik`` ocean heat flux parameterization; see :cite:`Martinetal2011`";

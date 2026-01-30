@@ -17,8 +17,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _POPICO_H_
-#define _POPICO_H_
+#ifndef PISM_PICO_H
+#define PISM_PICO_H
 
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 
@@ -41,7 +41,9 @@ class Pico : public CompleteOceanModel {
 public:
   Pico(std::shared_ptr<const Grid> g);
   virtual ~Pico() = default;
-
+  const array::Scalar &get_salinity() const { return m_Soc; }
+  const array::Scalar &get_temperature() const { return m_Toc; }
+  
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Inputs &inputs, double t, double dt);
@@ -131,4 +133,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _POPICO_H_ */
+#endif /* PISM_PICO_H */
