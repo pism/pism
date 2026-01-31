@@ -15,11 +15,11 @@ ctx = PISM.Context()
 config = ctx.config
 
 
-def create_grid():
+def create_grid(Mx=200, My=100):
     """Create a PISM grid that will be used to allocate 2D and 3D arrays."""
     # these values are not important, but the grid we use should not be square
-    config.set_number("grid.Mx", 200)
-    config.set_number("grid.My", 100)
+    config.set_number("grid.Mx", Mx)
+    config.set_number("grid.My", My)
     config.set_number("grid.Mz", 41)
     config.set_number("grid.Lx", 2e3)
     config.set_number("grid.Ly", 1e3)
@@ -92,7 +92,7 @@ def create_arrays(grid):
     return [array2d, array2d_int, array3d, array3d_no_time]
 
 
-def test_writer(grid, writer, arrays, output_filename):
+def test_writer(writer, arrays, mapping_info, output_filename):
     """Test an output writer.
 
     Note: this can be called once per writer since the YAC-based writer can be initialized
@@ -111,7 +111,7 @@ def test_writer(grid, writer, arrays, output_filename):
     first_time = 10.0
     output.define_variable(ctx.time.metadata())
 
-    PISM.define_variables(output, variables, grid.get_mapping_info(), False)
+    PISM.define_variables(output, variables, mapping_info, False)
 
     output.append_time(first_time)
     for a in arrays:
@@ -126,7 +126,7 @@ def test_writer(grid, writer, arrays, output_filename):
     return first_time
 
 
-def test_appending(grid, writer, arrays, filename, old_time, old_time_length):
+def test_appending(writer, arrays, filename, old_time, old_time_length):
     """Test appending to an existing file."""
     output = PISM.OutputFile(writer, filename)
     output.append()
@@ -221,27 +221,40 @@ if __name__ == "__main__":
         import atexit
         atexit.register(cleanup)
 
-    grid = create_grid()
+    grid1 = create_grid()
+    grid2 = create_grid(Mx=400, My=200)
 
-    arrays = create_arrays(grid)
+    array2d_grid2 = create_array2d(grid2)
+    array2d_grid2.metadata().set_name("thk_large")
+    array2d_grid2.metadata().dimension("x").set_name("x2")
+    array2d_grid2.metadata().dimension("y").set_name("y2")
+
+    array3d_grid2 = create_array3d(grid2)
+    array3d_grid2.metadata().set_name("enthalpy_large")
+    array3d_grid2.metadata().dimension("x").set_name("x2")
+    array3d_grid2.metadata().dimension("y").set_name("y2")
+
+    arrays = create_arrays(grid1)
+    arrays.append(array2d_grid2)
+    arrays.append(array3d_grid2)
 
     async_writer = PISM.YacOutputWriter(ctx.com, ctx.config)
     sync_writer = PISM.SynchronousOutputWriter(ctx.com, ctx.config)
 
-    test_writer(grid, async_writer, arrays, "output_async.nc")
-    test_writer(grid, sync_writer, arrays, "output_sync.nc")
+    test_writer(async_writer, arrays, grid1.get_mapping_info(), "output_async.nc")
+    test_writer(sync_writer, arrays, grid1.get_mapping_info(), "output_sync.nc")
     files += ["output_async.nc", "output_sync.nc"]
     # test appending using the async writer
     #
     # Note: here we create a file using the sync writer so that the async writer has to
     # get time dimension info from the file (cannot re-use it).
-    time1 = test_writer(grid, sync_writer, arrays, "file1.nc")
-    test_appending(grid, async_writer, arrays, "file1.nc", time1, 1)
+    time1 = test_writer(sync_writer, arrays, grid1.get_mapping_info(), "file1.nc")
+    test_appending(async_writer, arrays, "file1.nc", time1, 1)
     files.append("file1.nc")
 
     # test appending using the sync writer
-    time1 = test_writer(grid, sync_writer, arrays, "file2.nc")
-    test_appending(grid, sync_writer, arrays, "file2.nc", time1, 1)
+    time1 = test_writer(sync_writer, arrays, grid1.get_mapping_info(), "file2.nc")
+    test_appending(sync_writer, arrays, "file2.nc", time1, 1)
     files.append("file2.nc")
 
     # compare output files created using asynchronous and "regular" output code:

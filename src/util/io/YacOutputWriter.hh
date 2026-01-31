@@ -96,12 +96,6 @@ private:
   //! YAC field ID corresponding to a particular variable (by name)
   std::map<std::string, int> m_field_ids;
 
-  //! Maximum collection size corresponding to a grid name
-  std::map<std::string, int> m_max_collection_size;
-
-  //! Size of the local grid patch corresponding to a grid name
-  std::map<std::string, int> m_patch_size;
-
   // --- Buffers ---
 
   //! buffers used to send text (write_text_impl())
@@ -110,7 +104,8 @@ private:
   //! buffers used to send arrays of double
   std::vector<double *> m_buffers;
 
-  double *** m_yac_raw_send_array = nullptr;
+  int m_field_buffer_size = 0;
+  double *m_field_buffer = nullptr;
 
   // --- MPI Communication
 

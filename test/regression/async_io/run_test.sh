@@ -8,7 +8,7 @@ run="python3"
 # Note: async_io_test.py should use "-n X" for some X > 1. This is needed to make sure
 # that asynchronous_output_server.py uses the code assembling parts of the grid received
 # from different ranks (on the PISM side).
-mpirun -n 3 python3 ./async_io_test.py :\
+mpirun -n 3 python3 ./async_io_test.py ${arg:-} :\
        -n 1 ${run} ${pism_dir}/util/pism_async_writer -d
 
 # coverage html

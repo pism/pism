@@ -262,7 +262,7 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
   MPI_Gatherv(longitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0,
               m_intercomm);
 
-  // Defines the YAC grid and points using the local points 
+  // Defines the YAC grid and points using the local points
   int cyclic_dims[] = {0, 0};
   int nbr_vertices[] = {(int)grid.xm, (int)grid.ym};
   int grid_id = -1;
@@ -279,7 +279,7 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
 void YacOutputWriter::define_yac_field(const VariableMetadata &variable) {
 
   const auto &variable_name = variable.get_name();
-  
+
   // If the field has been defined already, return
   if (m_field_ids.find(variable_name) != m_field_ids.end()) {
     return;
@@ -317,17 +317,7 @@ void YacOutputWriter::end_yac_definitions() {
   send_action(FINISH_YAC_INITIALIZATION, {});
   yac_cenddef();
 
-  int max_collection_size = m_max_collection_size["y-x"];
-  int patch_size          = m_patch_size["y-x"];
-
-  // These arrays are deleted in the destructor
-  if (m_yac_raw_send_array == nullptr) {
-    m_yac_raw_send_array = new double **[max_collection_size];
-    for (int c = 0; c < max_collection_size; c++) {
-      m_yac_raw_send_array[c]    = new double *[1];
-      m_yac_raw_send_array[c][0] = new double[patch_size];
-    }
-  }
+  m_field_buffer = new double[m_field_buffer_size];
 }
 
 void YacOutputWriter::send_action(int action_id,
@@ -367,14 +357,7 @@ YacOutputWriter::~YacOutputWriter() {
 
   details::free_array_buffers(m_buffers);
 
-  // FIXME: support multiple grids
-  int max_collection_size = m_max_collection_size["y-x"];
-  for (int c = 0; c < max_collection_size; c++) {
-    delete m_yac_raw_send_array[c][0];
-    delete m_yac_raw_send_array[c];
-  }
-
-  delete m_yac_raw_send_array;
+  delete m_field_buffer;
 
   MPI_Comm_free(&m_intercomm);
 
@@ -395,16 +378,9 @@ void YacOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_va
 
     const auto &grid = *variable.grid_info();
 
-    m_patch_size[grid_name] = (int)(grid.xm * grid.ym);
-
     int collection_size = std::max((int)variable.levels().size(), 1);
-    if (m_max_collection_size.find(grid_name) != m_max_collection_size.end()) {
-      // max collection size was already set
-      int old_max = m_max_collection_size[grid_name];
-      m_max_collection_size[grid_name] = std::max(old_max, collection_size);
-    } else {
-      m_max_collection_size[grid_name] = collection_size;
-    }
+    int array_size      = (int)(grid.xm * grid.ym * collection_size);
+    m_field_buffer_size = std::max(array_size, m_field_buffer_size);
 
     // define the grid (if necessary)
     define_yac_grid(variable);
@@ -650,16 +626,28 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
     send_action(SEND_GRIDDED_VARIABLE, info);
   }
 
-  // Copies the data from the argument array to the yac_raw_send_array
-  // YAC will automatically buffer the data it is passed to
-  // Since the output interface is only called when the output is done,
-  // all calls to yac_cput should result in an actual data exchange
+  int x_size          = (int)grid->xm;
+  int y_size          = (int)grid->ym;
   int collection_size = std::max((int)variable.levels().size(), 1);
+
+  // Assemble the "send_field" argument for yac_cput():
+  //
+  // This method comes from examples/toy_dummy/dummy_ocean_c.c in YAC's source code tree.
+  std::vector<double**> collection_data(collection_size, nullptr);
+  std::vector<double*> point_set_data(collection_size, nullptr);
+  for (int j = 0; j < collection_size; ++j) {
+    point_set_data[j]  = m_field_buffer + (int)(j * (x_size * y_size));
+    collection_data[j] = &(point_set_data[j]);
+  }
+
+  // Copy data from the argument array to the send_field.
+  //
+  // Note: YAC will automatically buffer data that is passed to yac_cput().
   {
-    int x_size  = (int)grid->xm;
-    int y_size  = (int)grid->ym;
+    // PISM indexing helpers:
     int delta_x_p = collection_size;
     int delta_y_p = collection_size * x_size;
+    // YAC indexing helpers:
     int delta_x_y = 1;
     int delta_y_y = x_size;
     for (int c = 0; c < collection_size; c++) {
@@ -668,16 +656,20 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
           int pism_index = y * delta_y_p + x * delta_x_p + c;
           int yac_index  = y * delta_y_y + x * delta_x_y;
 
-          m_yac_raw_send_array[c][0][yac_index] = data[pism_index];
+          collection_data[c][0][yac_index] = data[pism_index];
         }
       }
     }
   }
-  int info, error;
+  // Since the output interface is only called when the output is done, all calls to
+  // yac_cput() should result in an actual data exchange.
+  //
   // TODO: we can add a check to verify that the time is still below the simulation end
   // Since the snapshot output calls are normally equal or smaller than the number of time
   // steps this should work fine nonetheless
-  yac_cput(m_field_ids[variable_name], collection_size, m_yac_raw_send_array, &info, &error);
+  int info, error;
+  yac_cput(m_field_ids[variable_name], collection_size, collection_data.data(), &info, &error);
 }
+
 
 } // namespace pism
