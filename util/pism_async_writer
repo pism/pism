@@ -362,12 +362,7 @@ class OutputFile:
         ndim = len(count)
         hyperslab = [slice(start[i], start[i] + count[i]) for i in range(ndim)]
 
-        # Unfortunately we have to use __setitem__ instead of [] indexing notation because
-        # the "*hyperslab" syntax (Unpacking Argument Lists) does not work in square
-        # brackets (invalid syntax).
-        #
-        # Ugh. Oh well.
-        self.nc_dataset.variables[name].__setitem__(*hyperslab, array)
+        self.nc_dataset.variables[name][hyperslab] = array
 
     def close(self):
         """Close the underlying NetCDF dataset."""
