@@ -322,35 +322,27 @@ class OutputFile:
 
     def write_gridded_variable(self, array, metadata):
         """Write a gridded variable to a NetCDF variable."""
-        ndims = metadata["ndims"]
+        ndims = metadata["ndims"]  # ndims is either 2 or 3
         time_dependent = metadata["time_dependent"]
         name = metadata["variable_name"]
 
-        nc_variable = self.nc_dataset.variables[name]
+        hyperslab = ndims * [slice(None)]
 
-        collection_size, y_size, x_size = array.shape
+        if time_dependent:
+            hyperslab.insert(0, self.time_index)
 
         if ndims == 2:
-            # 2D variable
-            if time_dependent:
-                nc_variable[self.time_index, :, :] = array[0]
-            else:
-                nc_variable[:, :] = array[0]
-        else:
-            # 3D variable
-            assert collection_size > 1
-
-            # Temporary array for reordering the data for the NetCDF variable
+            tmp = array[0]
+        elif ndims == 3:
+            collection_size, y_size, x_size = array.shape
+            # Reorder data for the NetCDF variable:
             tmp = np.ndarray(shape=(y_size, x_size, collection_size),
                              dtype=array.dtype)
 
             for c in range(collection_size):
                 tmp[:, :, c] = array[c]
 
-            if time_dependent:
-                nc_variable[self.time_index, :, :, :] = tmp
-            else:
-                nc_variable[:, :, :] = tmp
+        self.nc_dataset.variables[name][hyperslab] = tmp
 
     def write_variable(self, array, metadata):
         """Write an array to a NetCDF variable."""
