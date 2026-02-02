@@ -3302,6 +3302,9 @@ void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) 
     if (m_snapshot_writer != m_output_writer) {
       m_snapshot_writer->initialize(all_variables);
     }
+
+    // note: no need to call m_extra_writer->initialize() because it is equal to
+    // m_snapshot_writer.
   }
 }
 
