@@ -305,14 +305,22 @@ class OutputFile:
         """Define a new variable in the NetCDF dataset."""
         name = metadata["variable_name"]
         attributes = metadata["attributes"]
+        dimensions = metadata["dimensions"]
 
         if name in self.nc_dataset.variables:
             return
 
+        if len(dimensions) > 1:
+            compression = "zlib"
+        else:
+            compression = None
+
         fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
         nc_variable = self.nc_dataset.createVariable(name,
                                                      metadata["dtype"],
-                                                     metadata["dimensions"],
+                                                     dimensions,
+                                                     compression=compression,
+                                                     complevel=1,  # fastest
                                                      fill_value=fill_value)
 
         ignored_attributes = ['_FillValue']
