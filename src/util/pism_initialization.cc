@@ -67,7 +67,7 @@ void initialize(int argc, char **argv, const char *help) {
   {
     int yaxt_initialized = pism_yaxt_initialized();
     if (yaxt_initialized != 1) {
-      pism_yaxt_initialize(PETSC_COMM_WORLD);
+      pism_yaxt_initialize(MPI_COMM_WORLD);
     }
   }
 
