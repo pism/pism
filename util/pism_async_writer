@@ -86,6 +86,9 @@ class YacWrapper:
         local_comm = self.component.comp_comm
         local_group = local_comm.Get_group()
 
+        if local_comm.Get_size() != 1:
+            raise RuntimeError("pism_async_writer should be executed on 1 MPI process (mpiexec -n 1 pism_async_writer)")
+
         # Get the global communicator and group (contatining all processes from client and server)
         global_comm = self.yac.get_comps_comm([self.source_comp_name, self.target_comp_name])
         global_group = global_comm.Get_group()
@@ -503,4 +506,7 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.DEBUG)
         logger = logging.getLogger("pism_output")
 
-    main(options.compression)
+    try:
+        main(options.compression)
+    except Exception as e:
+        logger.critical(f"ERROR: {e}")
