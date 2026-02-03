@@ -265,7 +265,8 @@ class OutputFile:
 
     # The constructor does empty initialization of most members and
     # creates the dataset for the NetCDF file
-    def __init__(self, file_name, mode="w"):
+    def __init__(self, file_name, mode="w", compression_level=1):
+        self.compression_level = compression_level
         self.nc_dataset = netCDF4.Dataset(file_name, mode)
 
         if "time" in self.nc_dataset.dimensions:
@@ -310,7 +311,7 @@ class OutputFile:
         if name in self.nc_dataset.variables:
             return
 
-        if len(dimensions) > 1:
+        if len(dimensions) > 1 and self.compression_level > 0:
             compression = "zlib"
         else:
             compression = None
@@ -320,7 +321,7 @@ class OutputFile:
                                                      metadata["dtype"],
                                                      dimensions,
                                                      compression=compression,
-                                                     complevel=1,  # fastest
+                                                     complevel=self.compression_level,
                                                      fill_value=fill_value)
 
         ignored_attributes = ['_FillValue']
@@ -369,7 +370,7 @@ class OutputFile:
         self.nc_dataset.close()
 
 
-def main():
+def main(compression_level):
     """Receive and process "action" messages from PISM."""
     yac_wrapper = YacWrapper()
     files = {}
@@ -377,7 +378,7 @@ def main():
     def get_file(name):
         """Return the file object, creating it if necessary."""
         if name not in files:
-            files[name] = OutputFile(name, mode="w")
+            files[name] = OutputFile(name, mode="w", compression_level=compression_level)
         return files[name]
 
     while True:
@@ -487,10 +488,19 @@ if __name__ == "__main__":
         help="set logging level to 'DEBUG'",
     )
 
+    parser.add_argument(
+        "-c",
+        "--compression",
+        dest="compression",
+        type=int,
+        default=1,
+        help="set logging level to 'DEBUG'",
+    )
+
     options = parser.parse_args()
 
     if options.debug:
         logging.basicConfig(level=logging.DEBUG)
         logger = logging.getLogger("pism_output")
 
-    main()
+    main(options.compression)
