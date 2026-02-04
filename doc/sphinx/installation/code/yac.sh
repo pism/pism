@@ -49,6 +49,7 @@ test -f ./configure || ./autogen.sh
             --disable-tools \
             --disable-deprecated \
             --disable-fortran-bindings \
+            --enable-python-bindings \
             --with-pic
 
 make all && make install
