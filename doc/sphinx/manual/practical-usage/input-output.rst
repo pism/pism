@@ -190,7 +190,7 @@ significantly reduce computation time since asynchronous writing allows the mode
 proceed while data are written to output files.
 
 Please make sure that Python packages ``yac`` (YAC_'s Python bindings), ``netCDF4``
-(`netcdf4-python`_), mpi4py_ and NumPy_ are installed. Then run:
+(`netcdf4-python`_), mpi4py_ and NumPy_ are installed. Then run
 
 .. code-block:: bash
 
@@ -198,8 +198,8 @@ Please make sure that Python packages ``yac`` (YAC_'s Python bindings), ``netCDF
           -n 1 python3 pism_async_writer
 
 to use ``N`` MPI processes for PISM and 1 MPI process for writing output files
-(``pism_async_writer`` does not support parallel I/O yet; the command ``mpiexec -n N
-python3 pism_async_writer`` will stop with an error message).
+(``pism_async_writer`` does not support parallel I/O yet; the command ``mpiexec -n M
+python3 pism_async_writer`` with `M > 1` will stop with an error message).
 
 Run ``pism_async_writer --help`` to see the list of its command-line options. Notably, one
 can set the compression level used to save 2D and 3D variables using the option ``-c N``,
