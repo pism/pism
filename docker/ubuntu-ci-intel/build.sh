@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source /opt/intel/oneapi/setvars.sh
+source $HOME/local/pism/bin/activate
+
 set -x
 set -e
 set -u
@@ -14,7 +17,7 @@ source_dir=${source_dir:-/var/tmp/pism}
 build_dir=${build_dir:-/tmp/pism-build}
 
 # Installation prefix for all prerequisites built from source
-lib_prefix=/opt
+lib_prefix=$HOME/local
 # Installation prefix
 install_dir=/opt/pism
 
