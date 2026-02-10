@@ -277,7 +277,7 @@ jobs:
 
   build-and-test-with-intel-oneapi:
     docker:
-      - image: ckhrulev/pism-ubuntu-intel:0.2.0
+      - image: ckhrulev/pism-ubuntu-intel:0.3.0
 
     environment:
       source_dir: /home/worker/project
