@@ -8,7 +8,7 @@ set -x
 # directory.
 
 CC=${CC:-mpiicx}
-CXX=${CXX:-mpiicx}
+CXX=${CXX:-mpiicpx}
 COPTFLAGS=${COPTFLAGS:--O3 -march=native -mtune=native -fp-model=precise}
 
 build_dir=${build_dir:-/var/tmp/build/petsc}
@@ -16,7 +16,7 @@ prefix=${prefix:-/opt/petsc}
 
 mkdir -p ${build_dir}
 cd ${build_dir}
-version=${version:-3.22.2}
+version=${version:-3.24.4}
 
 wget -nc \
      https://web.cels.anl.gov/projects/petsc/download/release-snapshots/petsc-${version}.tar.gz
@@ -30,6 +30,7 @@ PETSC_ARCH="linux-opt"
 
 python3 ./configure \
         COPTFLAGS="${COPTFLAGS}" \
+        CXXOPTFLAGS="${COPTFLAGS}" \
         --prefix=${prefix} \
         --with-cc="${CC}" \
         --with-cxx="${CXX}" \

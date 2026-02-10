@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source /opt/intel/oneapi/setvars.sh
+source $HOME/local/pism/bin/activate
+
 set -x
 set -e
 set -u
@@ -16,4 +19,4 @@ export PYTHONPATH=${build_dir}/site-packages:$PYTHONPATH
 # Run tests in parallel
 export CTEST_PARALLEL_LEVEL=${N}
 
-make --no-print-directory -C ${build_dir} test
+ctest --test-dir ${build_dir} --output-on-failure
