@@ -40,6 +40,9 @@ yac_dir=${lib_prefix}/yac
 
 git config --global --add safe.directory ${source_dir}
 
+# Activate the environment containing mpi4py that will be needed for testing:
+source $HOME/local/pism/bin/activate
+
 ${CMAKE_PREFIX}/bin/cmake -S ${source_dir} \
                -B ${build_dir} \
                -DCMAKE_BUILD_TYPE=Debug \
