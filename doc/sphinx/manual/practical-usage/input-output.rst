@@ -175,3 +175,33 @@ building PISM.
 
       Now all files in ``output_directory`` and all its sub-directories can use all
       available targets.
+
+.. _sec-pism-async-io:
+
+Writing output files asynchronously
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If PISM is build with YAC_ (see :ref:`sec-install-yac`) one can also write
+:ref:`spatially-variable diagnostics <sec-saving-diagnostics>` and :ref:`snapshots of the
+model state <sec-snapshots>` *asynchronously* using the Python-based executable
+``pism_async_writer``. Depending on a number of factors (such as the number of MPI
+processes used, grid size, frequency with which output files are updated) this may
+significantly reduce computation time since asynchronous writing allows the model to
+proceed while data are written to output files.
+
+Please make sure that Python packages ``yac`` (YAC_'s Python bindings), ``netCDF4``
+(`netcdf4-python`_), mpi4py_ and NumPy_ are installed. Then run
+
+.. code-block:: bash
+
+   mpirun -n N pism [PISM options] :\
+          -n 1 python3 pism_async_writer
+
+to use ``N`` MPI processes for PISM and 1 MPI process for writing output files
+(``pism_async_writer`` does not support parallel I/O yet; the command ``mpiexec -n M
+python3 pism_async_writer`` with `M > 1` will stop with an error message).
+
+Run ``pism_async_writer --help`` to see the list of its command-line options. Notably, one
+can set the compression level used to save 2D and 3D variables using the option ``-c N``,
+where ``N`` can vary from `0` (no compression) to `9` (maximum, slowest). The default
+compression level is `1`.

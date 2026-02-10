@@ -1,6 +1,13 @@
 .. default-role:: literal
 
 
+Changes since v2.2.8
+====================
+
+- Implement asynchronous output to "snapshot" files and "extra" files (`-save_file ...`
+  and `-extra_file ...`). Requires PISM built with YAC and Python packages `netCDF4`,
+  `yac` (Python bindings for YAC), `mpi4py` and NumPy.
+
 Changes since v2.2.0
 ====================
 

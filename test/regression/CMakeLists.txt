@@ -120,6 +120,10 @@ pism_test (Verification:SSAFEM_plug_flow ssa/ssafem_test_plug.sh)
 
 if(Pism_BUILD_PYTHON_BINDINGS)
 
+  if (Pism_USE_YAC)
+    pism_python_test (Python:output:async async_io/run_test.sh)
+  endif()
+
 	pism_python_test (Python:Verification:test_I_SSAFD ssa/ssa_testi_fd.sh)
 
 	pism_python_test (Python:Verification:test_I_SSAFEM ssa/ssa_testi_fem.sh)

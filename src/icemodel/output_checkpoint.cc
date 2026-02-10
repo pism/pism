@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2019, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2017, 2019, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -86,7 +87,7 @@ bool IceModel::write_checkpoint() {
     }
 
     {
-      write_config(*m_config, "pism_config", file);
+      io::write_config(*m_config, "pism_config", file);
       file.append_time(m_time->current());
       write_state(file);
       write_diagnostics(file, m_checkpoint_vars);

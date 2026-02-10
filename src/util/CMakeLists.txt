@@ -1,45 +1,52 @@
 add_library (util OBJECT
+  ColumnInterpolation.cc
+  ColumnSystem.cc
+  Component.cc
+  Config.cc
+  Context.cc
+  Diagnostic.cc
+  EnthalpyConverter.cc
+  Grid.cc
+  InputInterpolation.cc
+  Interpolation1D.cc
+  Logger.cc
+  Mask.cc
+  MaxTimestep.cc
+  NetCDFConfig.cc
+  Profiling.cc
+  ScalarForcing.cc
+  TerminationReason.cc
+  Time.cc
+  Units.cc
+  VariableMetadata.cc
+  Vars.cc
+  array/Array.cc
+  array/Array3D.cc
+  array/CellType.cc
+  array/Forcing.cc
+  array/Scalar.cc
+  array/Staggered.cc
+  array/Vector.cc
+  connected_components/label_components_parallel.cc
+  connected_components/label_components_serial.cc
+  error_handling.cc
   fem/DirichletData.cc
   fem/Element.cc
   fem/ElementIterator.cc
   fem/FEM.cc
   fem/Quadrature.cc
-  ColumnInterpolation.cc
-  Context.cc
-  EnthalpyConverter.cc
-  Grid.cc
-  Logger.cc
-  Mask.cc
-  MaxTimestep.cc
-  Component.cc
-  NetCDFConfig.cc
-  Config.cc
-  Diagnostic.cc
-  Time.cc
-  Units.cc
-  Vars.cc
-  Profiling.cc
-  TerminationReason.cc
-  VariableMetadata.cc
-  error_handling.cc
-  array/CellType.cc
-  array/Array.cc
-  array/Forcing.cc
-  array/Vector.cc
-  array/Array3D.cc
-  array/Scalar.cc
-  array/Staggered.cc
-  io/LocalInterpCtx.cc
+  fftw_utilities.cc
   io/File.cc
-  io/NC_Serial.cc
-  io/NC4_Serial.cc
+  io/LocalInterpCtx.cc
   io/NC4File.cc
+  io/NC4_Serial.cc
   io/NCFile.cc
-  io/input_helpers.cc
-  io/output_helpers.cc
+  io/NC_Serial.cc
+  io/OutputFile.cc
   io/OutputWriter.cc
   io/SynchronousOutputWriter.cc
-  io/OutputFile.cc
+  io/input_helpers.cc
+  io/output_helpers.cc
   node_types.cc
   options.cc
   petscwrappers/DM.cc
@@ -52,15 +59,11 @@ add_library (util OBJECT
   petscwrappers/Vec.cc
   petscwrappers/VecScatter.cc
   petscwrappers/Viewer.cc
+  pism_initialization.cc
   pism_options.cc
+  pism_signal.c
   pism_utilities.cc
   projection.cc
-  fftw_utilities.cc
-  connected_components/label_components_parallel.cc
-  connected_components/label_components_serial.cc
-  ScalarForcing.cc
-  Interpolation1D.cc
-  InputInterpolation.cc
 )
 
 if(Pism_USE_YAC)
@@ -68,6 +71,15 @@ if(Pism_USE_YAC)
     PROPERTIES
     INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")
   target_sources(util PRIVATE InputInterpolationYAC.cc)
+
+  set_source_files_properties(pism_initialization.cc
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")
+
+  set_source_files_properties(io/YacOutputWriter.cc
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")
+  target_sources(util PRIVATE io/YacOutputWriter.cc)
 
   set_source_files_properties(yaxt_wrapper.c
     PROPERTIES

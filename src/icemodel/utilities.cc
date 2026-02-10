@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019, 2021, 2023, 2024, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021, 2023, 2024, 2025, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_signal.h"
 #include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -77,7 +78,7 @@ int IceModel::process_signals() {
     }
 
     {
-      write_config(*m_config, "pism_config", file);
+      io::write_config(*m_config, "pism_config", file);
       file.append_time(m_time->current());
       write_state(file);
       write_diagnostics(file, m_output_vars);

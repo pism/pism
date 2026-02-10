@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -162,7 +163,7 @@ void IceModel::init_extras() {
 
   m_extra_file = nullptr;
   if (not split) {
-    m_extra_file = std::make_shared<OutputFile>(m_output_writer, m_extra_filename);
+    m_extra_file = std::make_shared<OutputFile>(m_extra_writer, m_extra_filename);
 
     if (append) {
       // assume that the file is ready to write to, i.e. time and time_bounds are already
@@ -314,7 +315,7 @@ void IceModel::write_extras() {
         filename = pism::printf("%s_%s.nc", m_extra_filename.c_str(), date_without_spaces.c_str());
       }
 
-      m_extra_file.reset(new OutputFile(m_output_writer, filename));
+      m_extra_file.reset(new OutputFile(m_extra_writer, filename));
 
       if (m_config->get_flag("output.extra.append")) {
         m_extra_file->append();
@@ -330,7 +331,7 @@ void IceModel::write_extras() {
                    m_time->date(m_time->current()).c_str());
 
     {
-      write_config(*m_config, "pism_config", *m_extra_file);
+      io::write_config(*m_config, "pism_config", *m_extra_file);
 
       // use the mid-point of the current reporting interval
       double time = 0.5 * (m_last_extra + current_time);
@@ -357,8 +358,12 @@ void IceModel::write_extras() {
       write_run_stats(*m_extra_file);
     }
 
+    // FIXME: evaluate if we need to "sync" extra files. We should probably do this every
+    // Nth (e.g. 10th) time we write to an extra file. This would accomplish most of what
+    // "sync()" is for, but at a lower cost.
+    //
     // make sure all changes are written
-    m_extra_file->sync();
+    // m_extra_file->sync();
   }
   profiling.end("io.extra_file");
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2025 Constantine Khroulev
+// Copyright (C) 2010--2026 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -3298,6 +3298,13 @@ void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) 
     all_variables = pism::combine(all_variables, m_checkpoint_file_contents);
 
     m_output_writer->initialize(all_variables);
+
+    if (m_snapshot_writer != m_output_writer) {
+      m_snapshot_writer->initialize(all_variables);
+    }
+
+    // note: no need to call m_extra_writer->initialize() because it is equal to
+    // m_snapshot_writer.
   }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2025 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2026 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -67,21 +67,12 @@
 #include "util/fem/Quadrature.hh"
 
 #include "util/connected_components/label_components.hh"
+
+#include "util/io/SynchronousOutputWriter.hh"
+#include "util/io/io_helpers.hh"
+
+#include "util/pism_initialization.hh"
 %}
-
-// Tell SWIG that the following variables are truly constant
-%immutable pism::revision;
-%immutable pism::config_file;
-%immutable pism::petsc_configure_flags;
-%immutable pism::petsc4py_version;
-%immutable pism::swig_version;
-%immutable pism::cmake_version;
-%include "pism/pism_config.hh"
-
-// Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
-%include "petsc4py/petsc4py.i"
-
-%include "pism_exception.i"
 
 // Automatic conversions between std::string and python string arguments and return values
 %include std_string.i
@@ -90,17 +81,7 @@
 %include std_vector.i
 %include std_set.i
 %include std_map.i
-
-%include <std_shared_ptr.i>
-
-// Add a PISM class
-%define pism_class(name, header)
-%{
-  #include header
-%}
-%shared_ptr(name)
-%include header
-%enddef
+%include std_shared_ptr.i
 
 %template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
@@ -113,7 +94,36 @@
 %template(StringMap) std::map<std::string, std::string>;
 %template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
 %template(SizeDoubleMap) std::map<size_t, double>;
-%template(VariableSet) std::set<pism::VariableMetadata>;
+
+// Tell SWIG that the following variables are truly constant
+%immutable pism::revision;
+%immutable pism::config_file;
+%immutable pism::petsc_configure_flags;
+%immutable pism::petsc4py_version;
+%immutable pism::swig_version;
+%immutable pism::cmake_version;
+%include "pism/pism_config.hh"
+
+%rename(pism_initialize) pism::initialize;
+%rename(pism_finalize) pism::finalize;
+%rename(pism_initialize_options) pism::initialize_options;
+%include "util/pism_initialization.hh"
+/* Initialize YAXT, YAC, PETSc, etc *without* command-line arguments (for now). */
+%init %{pism::initialize("PISM's Python bindings");Py_AtExit(pism::finalize);%}
+
+// Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
+%include "petsc4py/petsc4py.i"
+
+%include "pism_exception.i"
+
+// Add a PISM class
+%define pism_class(name, header)
+%{
+  #include header
+%}
+%shared_ptr(name)
+%include header
+%enddef
 
 // Why did I include this?
 %include "cstring.i"
@@ -239,6 +249,15 @@ pism_class(pism::Logger, "pism/util/Logger.hh");
 %shared_ptr(pism::OutputFile)
 %include "util/io/OutputWriter.hh"
 %include "util/io/SynchronousOutputWriter.hh"
+%include "util/io/io_helpers.hh"
+
+#if (Pism_USE_YAC == 1)
+%{
+#include "util/io/YacOutputWriter.hh"
+%}
+%shared_ptr(pism::YacOutputWriter)
+%include "util/io/YacOutputWriter.hh"
+#endif
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::ColdEnthalpyConverter);

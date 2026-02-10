@@ -68,6 +68,7 @@
 .. _LaTeX: https://www.latex-project.org/
 .. _latexmk: https://personal.psu.edu/jcc8//software/latexmk-jcc/
 .. _MPI: https://www.mcs.anl.gov/research/projects/mpi/
+.. _mpi4py: https://mpi4py.readthedocs.io/en/stable/
 .. _MacPorts: https://www.macports.org/
 .. _measures-ross: https://nsidc.org/data/nsidc-0484/versions/2
 .. _NSIDC: https://nsidc.org/home

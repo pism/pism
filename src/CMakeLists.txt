@@ -81,8 +81,6 @@ add_library (libpism
   icemodel/viewers.cc
   stressbalance/timestepping.cc
   fracturedensity/FractureDensity.cc
-  util/ColumnSystem.cc
-  util/pism_signal.c
   $<TARGET_OBJECTS:frontretreat>
   $<TARGET_OBJECTS:hydrology>
   $<TARGET_OBJECTS:flowlaws>

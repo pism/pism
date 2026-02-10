@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -194,8 +194,6 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
                              const Config &config);
 
 VariableMetadata config_metadata(const Config &config);
-
-void write_config(const Config &config, const std::string &variable_name, const OutputFile &file);
 
 } // end of namespace pism
 

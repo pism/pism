@@ -1,6 +1,10 @@
 #!/bin/bash
 
+set +x
+# Activate the environment containing mpi4py that will be needed for testing:
+source $HOME/local/pism/bin/activate
 set -x
+
 set -e
 set -u
 

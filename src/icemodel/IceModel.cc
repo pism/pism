@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -51,6 +51,10 @@
 #include "pism/coupler/ocean/PyOceanModel.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/IO_Flags.hh"
+
+#if (Pism_USE_YAC == 1)
+#include "pism/util/io/YacOutputWriter.hh"
+#endif
 
 namespace pism {
 
@@ -128,6 +132,20 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   }
 
   m_output_writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  m_snapshot_writer = m_output_writer;
+
+#if (Pism_USE_YAC == 1)
+  try {
+    m_snapshot_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config);
+  } catch (RuntimeError &e) {
+    e.add_context("allocating the YAC-based asynchronous output writer");
+    m_log->message(
+        2,
+        "Failed to allocate YAC-based asynchronous output writer -- using synchronous I/O instead.\n");
+    m_snapshot_writer = m_output_writer;
+  }
+#endif
+  m_extra_writer = m_snapshot_writer;
 }
 
 double IceModel::dt() const {

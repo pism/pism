@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -147,7 +148,7 @@ void IceModel::write_snapshot() {
       filename = m_snapshots_filename;
     }
 
-    m_snapshot_file = std::make_shared<OutputFile>(m_output_writer, filename);
+    m_snapshot_file = std::make_shared<OutputFile>(m_snapshot_writer, filename);
 
     {
       define_time(*m_snapshot_file);
@@ -160,7 +161,7 @@ void IceModel::write_snapshot() {
                    m_time->date(m_time->current()).c_str(), m_time->date(saving_after).c_str());
 
     {
-      write_config(*m_config, "pism_config", *m_snapshot_file);
+      io::write_config(*m_config, "pism_config", *m_snapshot_file);
       m_snapshot_file->append_time(m_time->current());
       write_state(*m_snapshot_file);
       write_diagnostics(*m_snapshot_file, m_snapshot_vars);

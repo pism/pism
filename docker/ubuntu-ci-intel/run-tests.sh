@@ -1,9 +1,10 @@
 #!/bin/bash
 
+set +x
 source /opt/intel/oneapi/setvars.sh
 source $HOME/local/pism/bin/activate
-
 set -x
+
 set -e
 set -u
 

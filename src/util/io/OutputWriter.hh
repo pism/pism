@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -268,6 +268,8 @@ protected:
    */
   const VariableMetadata &variable_info(const std::string &variable_name) const;
 
+  bool variable_info_is_available(const std::string &variable_name) const;
+
   /*!
    * Return `true` if variable `variable_name` was already written to the file
    * `file_name`. Used to avoid writing coordinate variables and time-independent 2D and
@@ -361,7 +363,7 @@ protected:
                                const std::string &input) = 0;
 
   /*!
-   * Implementation of write_spatial_variable()
+   * Implementation of write_distributed_array()
    */
   virtual void write_distributed_array_impl(const std::string &file_name,
                                             const std::string &variable_name,
