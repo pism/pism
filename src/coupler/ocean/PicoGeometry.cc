@@ -864,12 +864,12 @@ void eikonal_equation(array::Scalar1 &mask) {
 
   assert(mask.stencil_width() > 0);
 
-  std::queue<std::pair<unsigned int, unsigned int>> unmarked_cells;
-  auto grid = mask.grid();
-  double continue_loop = 1;
-  unsigned int local_x_size = grid->info().xm;
+  std::queue<std::pair<unsigned int, unsigned int> > unmarked_cells;
+  auto grid                  = mask.grid();
+  double continue_loop       = 1;
+  unsigned int local_x_size  = grid->info().xm;
   unsigned int local_x_start = grid->info().xs;
-  unsigned int local_y_size = grid->info().ym;
+  unsigned int local_y_size  = grid->info().ym;
   unsigned int local_y_start = grid->info().ys;
   unsigned int global_x_size = grid->Mx();
   unsigned int global_y_size = grid->My();
@@ -878,26 +878,24 @@ void eikonal_equation(array::Scalar1 &mask) {
   // Loops over the grid points and creates a queue with all the cells which have not
   // yet been marked with a distance to the grounding line
   for (auto p : grid->points()) {
-       const int i = p.i(), j = p.j();
+    const int i = p.i(), j = p.j();
 
     if (mask.as_int(i, j) == 0) {
 
       auto R = mask.star(i, j);
 
-      if (R.c == 0 and
-          (R.n == 1 or R.s == 1 or
-           R.e == 1 or R.w == 1)) {
+      if (R.c == 0 and (R.n == 1 or R.s == 1 or R.e == 1 or R.w == 1)) {
         // i.e. this is an shelf cell with no distance assigned yet and with a neighbor
         // that has a distance assigned
         mask(i, j) = 2;
-	if (R.n == 0)
-	    unmarked_cells.push(std::make_pair(i, j + 1));
-	if (R.s == 0)
-	    unmarked_cells.push(std::make_pair(i, j - 1));
-	if (R.e == 0)
-	    unmarked_cells.push(std::make_pair(i + 1, j));
-	if (R.w == 0)
-	    unmarked_cells.push(std::make_pair(i - 1, j));
+        if (R.n == 0)
+          unmarked_cells.push(std::make_pair(i, j + 1));
+        if (R.s == 0)
+          unmarked_cells.push(std::make_pair(i, j - 1));
+        if (R.e == 0)
+          unmarked_cells.push(std::make_pair(i + 1, j));
+        if (R.w == 0)
+          unmarked_cells.push(std::make_pair(i - 1, j));
       }
     }
   } // loop over grid points
@@ -910,47 +908,55 @@ void eikonal_equation(array::Scalar1 &mask) {
     // have a value of zero. The second is the update of cell distances after the update_ghosts call, when
     // there might be cells in the local domain which are closer to grouding lines in a neighboring domain.
     // In both cases the current cell is marked based on the smallest label of the neighboring cells.
-    while(unmarked_cells.size() > 0) {
+    while (unmarked_cells.size() > 0) {
 
       std::pair<unsigned int, unsigned int> cell = unmarked_cells.front();
       unmarked_cells.pop();
 
-      north_cell = -1;
-      south_cell = -1;
-      east_cell = -1;
-      west_cell = -1;
+      north_cell  = -1;
+      south_cell  = -1;
+      east_cell   = -1;
+      west_cell   = -1;
       center_cell = mask.as_int(cell.first, cell.second);
 
       // Checks if the current cell is inside of the local domain
       if (cell.second >= local_y_start and cell.second < local_y_start + local_y_size and
           cell.first >= local_x_start and cell.first < local_x_start + local_x_size) {
 
-	// Checks if there are neighboring cells in each direction, and if yes takes their values.
-        if (cell.second + 1 < global_y_size) north_cell = mask.as_int(cell.first, cell.second + 1);
-        if (cell.second > 0) south_cell = mask.as_int(cell.first, cell.second - 1);
-        if (cell.first + 1 < global_x_size) east_cell = mask.as_int(cell.first + 1, cell.second);
-        if (cell.first > 0) west_cell = mask.as_int(cell.first - 1, cell.second);
+        // Checks if there are neighboring cells in each direction, and if yes takes their values.
+        if (cell.second + 1 < global_y_size)
+          north_cell = mask.as_int(cell.first, cell.second + 1);
+        if (cell.second > 0)
+          south_cell = mask.as_int(cell.first, cell.second - 1);
+        if (cell.first + 1 < global_x_size)
+          east_cell = mask.as_int(cell.first + 1, cell.second);
+        if (cell.first > 0)
+          west_cell = mask.as_int(cell.first - 1, cell.second);
 
-	// Update the current cell value only if some of the neighbors are already labelled
+        // Update the current cell value only if some of the neighbors are already labelled
         if (north_cell > 0 or south_cell > 0 or east_cell > 0 or west_cell > 0) {
 
-	  // Gets the minimum label in the neighboring cells
+          // Gets the minimum label in the neighboring cells
           int min_label = 10000;
-          if (north_cell > 0) min_label = std::min(min_label, north_cell);
-          if (south_cell > 0) min_label = std::min(min_label, south_cell);
-          if (east_cell > 0) min_label = std::min(min_label, east_cell);
-          if (west_cell > 0) min_label = std::min(min_label, west_cell);
+          if (north_cell > 0)
+            min_label = std::min(min_label, north_cell);
+          if (south_cell > 0)
+            min_label = std::min(min_label, south_cell);
+          if (east_cell > 0)
+            min_label = std::min(min_label, east_cell);
+          if (west_cell > 0)
+            min_label = std::min(min_label, west_cell);
 
-	  // If the cell is not zero, the minimum label might be its own
+          // If the cell is not zero, the minimum label might be its own
           if (center_cell != 0)
             min_label = std::min(min_label, center_cell);
 
-	  // Update the cell if its value is zero or the minimum label around is smaller than original
-          if(center_cell == 0 or center_cell > min_label + 1) {
+          // Update the cell if its value is zero or the minimum label around is smaller than original
+          if (center_cell == 0 or center_cell > min_label + 1) {
             mask(cell.first, cell.second) = min_label + 1;
-            continue_loop = 1;
+            continue_loop                 = 1;
 
-	    // Add cells to be updated
+            // Add cells to be updated
             if (north_cell == 0 or north_cell > min_label + 2)
               unmarked_cells.push(std::make_pair(cell.first, cell.second + 1));
             if (south_cell == 0 or south_cell > min_label + 2)
@@ -968,31 +974,33 @@ void eikonal_equation(array::Scalar1 &mask) {
 
     // Loops over the first row of the domain and add cells to the queue if they need updating
     for (auto i = local_x_start; i < local_x_start + local_x_size; i++) {
-      if(local_y_start == 0) break;
+      if (local_y_start == 0)
+        break;
 
-      int j = local_y_start;
+      int j       = local_y_start;
       center_cell = mask.as_int(i, j);
 
       if (center_cell >= 0) {
         south_cell = mask.as_int(i, j - 1);
         if (south_cell > 0) {
-      	  if (center_cell == 0 or center_cell > south_cell + 1)
-                  unmarked_cells.push(std::make_pair(i, j));
+          if (center_cell == 0 or center_cell > south_cell + 1)
+            unmarked_cells.push(std::make_pair(i, j));
         }
       }
     }
 
     // Loops over the last row of the domain and add cells to the queue if they need updating
     for (auto i = local_x_start; i < local_x_start + local_x_size; i++) {
-      if(local_y_start + local_y_size == global_y_size) break;
+      if (local_y_start + local_y_size == global_y_size)
+        break;
 
-      int j = local_y_start + local_y_size - 1;
+      int j       = local_y_start + local_y_size - 1;
       center_cell = mask.as_int(i, j);
 
       if (center_cell >= 0) {
         north_cell = mask.as_int(i, j + 1);
         if (north_cell > 0) {
-      	  if (center_cell == 0 or center_cell > north_cell + 1)
+          if (center_cell == 0 or center_cell > north_cell + 1)
             unmarked_cells.push(std::make_pair(i, j));
         }
       }
@@ -1000,15 +1008,16 @@ void eikonal_equation(array::Scalar1 &mask) {
 
     // Loops over the first column of the domain and add cells to the queue if they need updating
     for (auto j = local_y_start; j < local_y_start + local_y_size; j++) {
-      if(local_x_start == 0) break;
+      if (local_x_start == 0)
+        break;
 
-      int i = local_x_start;
+      int i       = local_x_start;
       center_cell = mask.as_int(i, j);
 
       if (center_cell >= 0) {
         west_cell = mask.as_int(i - 1, j);
         if (west_cell > 0) {
-      	  if (center_cell == 0 or center_cell > west_cell + 1)
+          if (center_cell == 0 or center_cell > west_cell + 1)
             unmarked_cells.push(std::make_pair(i, j));
         }
       }
@@ -1016,15 +1025,16 @@ void eikonal_equation(array::Scalar1 &mask) {
 
     // Loops over the last column of the domain and add cells to the queue if they need updating
     for (auto j = local_y_start; j < local_y_start + local_y_size; j++) {
-      if(local_x_start + local_x_size == global_x_size) break;
+      if (local_x_start + local_x_size == global_x_size)
+        break;
 
-      int i = local_x_start + local_x_size - 1;
+      int i       = local_x_start + local_x_size - 1;
       center_cell = mask.as_int(i, j);
 
       if (center_cell >= 0) {
         east_cell = mask.as_int(i + 1, j);
         if (east_cell > 0) {
-      	  if (center_cell == 0 or center_cell > east_cell + 1)
+          if (center_cell == 0 or center_cell > east_cell + 1)
             unmarked_cells.push(std::make_pair(i, j));
         }
       }
@@ -1032,7 +1042,8 @@ void eikonal_equation(array::Scalar1 &mask) {
 
     // If some cell was updated in the global domain or there are still cells
     // to be updated, continue the loop
-    if(unmarked_cells.size() > 0) continue_loop = 1;
+    if (unmarked_cells.size() > 0)
+      continue_loop = 1;
     continue_loop = GlobalMax(grid->com, continue_loop);
   }
 }
