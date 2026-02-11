@@ -958,7 +958,11 @@ void eikonal_equation(array::Scalar1 &mask) {
         if (north_cell > 0 or south_cell > 0 or east_cell > 0 or west_cell > 0) {
 
           // Gets the minimum label in the neighboring cells
-          int min_label = 10000;
+          //
+          // Note: the maximum "distance" in units of grid cells on a given grid is along
+          // the diagonal, which is less than sqrt(2) * max(x_size, y_size). Here we
+          // replace sqrt(2) with 2 to get an easier-to-compute upper bound.
+          int min_label = 2 * (int)std::max(global_x_size, global_y_size);
           if (north_cell > 0) {
             min_label = std::min(min_label, north_cell);
           }
