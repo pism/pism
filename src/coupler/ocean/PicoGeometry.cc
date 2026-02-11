@@ -864,13 +864,13 @@ void eikonal_equation(array::Scalar1 &mask) {
 
   assert(mask.stencil_width() > 0);
 
-  std::queue<std::pair<unsigned int, unsigned int> > unmarked_cells;
+  std::queue<std::pair<int, int> > unmarked_cells;
   auto grid                  = mask.grid();
   double continue_loop       = 1;
-  unsigned int local_x_size  = grid->info().xm;
-  unsigned int local_x_start = grid->info().xs;
-  unsigned int local_y_size  = grid->info().ym;
-  unsigned int local_y_start = grid->info().ys;
+  int local_x_size  = (int)grid->info().xm;
+  int local_x_start = (int)grid->info().xs;
+  int local_y_size  = (int)grid->info().ym;
+  int local_y_start = (int)grid->info().ys;
   unsigned int global_x_size = grid->Mx();
   unsigned int global_y_size = grid->My();
   int north_cell, south_cell, east_cell, west_cell, center_cell;
