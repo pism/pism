@@ -867,6 +867,21 @@ struct Cell {
  * generic ice shelf locations with zeros, set neighbors of the grounding line to 1, and
  * the rest of the grid with -1 or some other negative number.
  *
+ * Implementation details:
+ *
+ * The algorithm starts with mask defined above, then loops over the whole process-local
+ * domain one time. This loop is used to construct a queue containing cells which still
+ * need to be labeled, consisting initially only of cells neighboring the wave front.
+ *
+ * A second loop over the queue then updates each cell based on the minimum non-zero label
+ * of its neighbors and for each updated cell adds its non-updated neighbors to the queue.
+ *
+ * After the queue is empty the ghosts are updated and a check is made on the domain
+ * borders to check if a) still unlabeled cells now have labeled neighbors, or b) if the
+ * label of some neighbor has changed to a smaller value.
+ *
+ * If this is the case, the queue is once more filled with these new cells and the process
+ * repeats.
  */
 void eikonal_equation(array::Scalar1 &mask) {
 
