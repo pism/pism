@@ -903,8 +903,8 @@ void eikonal_equation(array::Scalar1 &mask) {
     }
   } // end of the loop over grid points
 
-  unsigned int global_x_size = grid->Mx();
-  unsigned int global_y_size = grid->My();
+  int global_x_size = (int)grid->Mx();
+  int global_y_size = (int)grid->My();
 
   int x_size  = grid->xm();
   int x_start = grid->xs();
