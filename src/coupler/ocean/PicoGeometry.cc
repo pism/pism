@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,7 @@
  */
 
 #include <algorithm> // max_element
+#include <queue>
 #include "pism/coupler/ocean/PicoGeometry.hh"
 #include "pism/util/connected_components/label_components.hh"
 #include "pism/util/array/CellType.hh"
@@ -845,6 +846,14 @@ void PicoGeometry::compute_distances_cf(const array::Scalar1 &ocean_mask,
   profiling().end("ocean.eikonal_equation");
 }
 
+namespace details {
+// Stores indexes of a grid point. Could be replaced with std::pair<int, int>, but
+// `cell.i` and `cell.j` are easier to read than `cell.first` and `cell.second`.
+struct Cell {
+  int i, j;
+};
+} // namespace details
+
 /*!
  * Find an approximate solution of the Eikonal equation on a given domain.
  *
@@ -858,47 +867,237 @@ void PicoGeometry::compute_distances_cf(const array::Scalar1 &ocean_mask,
  * generic ice shelf locations with zeros, set neighbors of the grounding line to 1, and
  * the rest of the grid with -1 or some other negative number.
  *
- * Note that this implementation updates ghosts *every* iteration. We could speed this
- * up by checking if a point at a boundary of the processor sub-domain was updated and
- * update ghosts in those cases only.
+ * Implementation details:
  *
- * FIXME: replace this with a better algorithm.
+ * The algorithm starts with mask defined above, then loops over the whole process-local
+ * domain one time. This loop is used to construct a queue containing cells which still
+ * need to be labeled, consisting initially only of cells neighboring the wave front.
+ *
+ * A second loop over the queue then updates each cell based on the minimum non-zero label
+ * of its neighbors and for each updated cell adds its non-updated neighbors to the queue.
+ *
+ * After the queue is empty the ghosts are updated and a check is made on the domain
+ * borders to check if a) still unlabeled cells now have labeled neighbors, or b) if the
+ * label of some neighbor has changed to a smaller value.
+ *
+ * If this is the case, the queue is once more filled with these new cells and the process
+ * repeats.
  */
 void eikonal_equation(array::Scalar1 &mask) {
 
-  assert(mask.stencil_width() > 0);
-
   auto grid = mask.grid();
 
-  double current_label = 1;
-  double continue_loop = 1;
-  while (continue_loop != 0) {
+  std::queue<details::Cell> unmarked_cells;
 
-    continue_loop = 0;
+  // Loops over the grid points and creates a queue with all the cells which have not
+  // yet been marked with a distance to the grounding line
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
 
-    for (auto p : grid->points()) {
-      const int i = p.i(), j = p.j();
+    if (mask.as_int(i, j) == 0) {
 
-      if (mask.as_int(i, j) == 0) {
+      auto R = mask.star(i, j);
 
-        auto R = mask.star(i, j);
-
-        if (R.c == 0 and
-            (R.n == current_label or R.s == current_label or
-             R.e == current_label or R.w == current_label)) {
-          // i.e. this is an shelf cell with no distance assigned yet and with a neighbor
-          // that has a distance assigned
-          mask(i, j) = current_label + 1;
-          continue_loop = 1;
+      if (R.c == 0 and (R.n == 1 or R.s == 1 or R.e == 1 or R.w == 1)) {
+        // i.e. this is an shelf cell with no distance assigned yet and with a neighbor
+        // that has a distance assigned
+        mask(i, j) = 2;
+        if (R.n == 0) {
+          unmarked_cells.push({i, j + 1});
+        }
+        if (R.s == 0) {
+          unmarked_cells.push({i, j - 1});
+        }
+        if (R.e == 0) {
+          unmarked_cells.push({i + 1, j});
+        }
+        if (R.w == 0) {
+          unmarked_cells.push({i - 1, j});
         }
       }
-    } // loop over grid points
+    }
+  } // end of the loop over grid points
 
-    current_label++;
+  int global_x_size = (int)grid->Mx();
+  int global_y_size = (int)grid->My();
+
+  int x_size  = grid->xm();
+  int x_start = grid->xs();
+  int y_size  = grid->ym();
+  int y_start = grid->ys();
+
+  int continue_loop = 1;
+  while (continue_loop != 0) {
+    continue_loop = 0;
+
+    // This is the main loop for updating the distances, it comprises two ways of
+    // operating.
+    //
+    // The first is the initial assignment of distances to unmarked cells, in this case
+    // the unmarked cells have a value of zero.
+    //
+    // The second is the update of cell distances after the update_ghosts call, when there
+    // might be cells in the local domain which are closer to grouding lines in a
+    // neighboring domain.
+    //
+    // In both cases the current cell is marked based on the smallest label of the
+    // neighboring cells.
+    while (not unmarked_cells.empty()) {
+
+      auto cell = unmarked_cells.front();
+      unmarked_cells.pop();
+
+      // Checks if the current cell is inside of the local domain
+      if ((cell.j >= y_start and cell.j < y_start + y_size) and
+          (cell.i >= x_start and cell.i < x_start + x_size)) {
+
+        // Checks if there are neighboring cells in each direction, and if yes takes their values.
+        int north_cell = -1;
+        if (cell.j + 1 < global_y_size) {
+          north_cell = mask.as_int(cell.i, cell.j + 1);
+        }
+        int south_cell = -1;
+        if (cell.j > 0) {
+          south_cell = mask.as_int(cell.i, cell.j - 1);
+        }
+        int east_cell = -1;
+        if (cell.i + 1 < global_x_size) {
+          east_cell = mask.as_int(cell.i + 1, cell.j);
+        }
+        int west_cell = -1;
+        if (cell.i > 0) {
+          west_cell = mask.as_int(cell.i - 1, cell.j);
+        }
+
+        // Update the current cell value only if some of the neighbors are already labeled
+        if (north_cell > 0 or south_cell > 0 or east_cell > 0 or west_cell > 0) {
+
+          // Gets the minimum label in the neighboring cells
+          //
+          // Note: the maximum "distance" in units of grid cells on a given grid is along
+          // the diagonal, which is less than sqrt(2) * max(x_size, y_size). Here we
+          // replace sqrt(2) with 2 to get an easier-to-compute upper bound.
+          int min_label = 2 * (int)std::max(global_x_size, global_y_size);
+          if (north_cell > 0) {
+            min_label = std::min(min_label, north_cell);
+          }
+          if (south_cell > 0) {
+            min_label = std::min(min_label, south_cell);
+          }
+          if (east_cell > 0) {
+            min_label = std::min(min_label, east_cell);
+          }
+          if (west_cell > 0) {
+            min_label = std::min(min_label, west_cell);
+          }
+
+          // If the cell is not zero, the minimum label might be its own
+          int center_cell = mask.as_int(cell.i, cell.j);
+          if (center_cell != 0) {
+            min_label = std::min(min_label, center_cell);
+          }
+
+          // Update the cell if its value is zero or the minimum label around is smaller
+          // than original
+          if (center_cell == 0 or center_cell > min_label + 1) {
+            mask(cell.i, cell.j) = min_label + 1;
+            continue_loop        = 1;
+
+            // Add cells to be updated
+            if (north_cell == 0 or north_cell > min_label + 2) {
+              unmarked_cells.push({cell.i, cell.j + 1});
+            }
+            if (south_cell == 0 or south_cell > min_label + 2) {
+              unmarked_cells.push({cell.i, cell.j - 1});
+            }
+            if (east_cell == 0 or east_cell > min_label + 2) {
+              unmarked_cells.push({cell.i + 1, cell.j});
+            }
+            if (west_cell == 0 or west_cell > min_label + 2) {
+              unmarked_cells.push({cell.i - 1, cell.j});
+            }
+          }
+        }
+      } // end of "if inside the local domain"
+    } // end of "while (not unmarked_cells.empty())"
+
     mask.update_ghosts();
 
+    // Condition used to check if the cell `(i, j)` should be added to the queue
+    // `unmarked_cells`.
+    auto add_ij = [&mask](int i, int j, int i_n, int j_n) {
+      int current = mask.as_int(i, j);
+      if (current >= 0) {
+        int neighbor = mask.as_int(i_n, j_n);
+        if ((neighbor > 0) and (current == 0 or current > neighbor + 1)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Loop over the first row of the domain, check the south (j-1) neighbor and add cells
+    // to the queue if they need updating
+    {
+      int j = y_start;
+      if (j != 0) {
+        // the south neighbor of (i, j) is valid
+        for (auto i = x_start; i < x_start + x_size; i++) {
+          if (add_ij(i, j, i, j - 1)) {
+            unmarked_cells.push({ i, j });
+          }
+        }
+      }
+    }
+
+    // Loop over the last row of the domain, check the north (j+1) neighbor and add cells
+    // to the queue if they need updating
+    {
+      int j = y_start + y_size - 1;
+      if (j != global_y_size - 1) {
+        // the north neighbor of (i, j) is valid
+        for (auto i = x_start; i < x_start + x_size; i++) {
+          if (add_ij(i, j, i, j + 1)) {
+            unmarked_cells.push({ i, j });
+          }
+        }
+      }
+    }
+
+    // Loops over the first column of the domain and add cells to the queue if they need
+    // updating
+    {
+      int i = x_start;
+      if (i != 0) {
+        // the west neighbor of (i, j) is valid
+        for (auto j = y_start; j < y_start + y_size; j++) {
+          if (add_ij(i, j, i - 1, j)) {
+            unmarked_cells.push({ i, j });
+          }
+        }
+      }
+    }
+
+    // Loop over the last column of the domain and add cells to the queue if they need updating
+    {
+      int i = x_start + x_size - 1;
+      if (i != global_x_size - 1) {
+        // the east neighbor of (i, j) is valid
+        for (auto j = y_start; j < y_start + y_size; j++) {
+          if (add_ij(i, j, i + 1, j)) {
+            unmarked_cells.push({ i, j });
+          }
+        }
+      }
+    }
+
+    // If some cell was updated in the global domain or there are still cells
+    // to be updated, continue the loop
+    if (not unmarked_cells.empty()) {
+      continue_loop = 1;
+    }
     continue_loop = GlobalMax(grid->com, continue_loop);
-  }
+  } // end of "while (continue_loop != 0)"
 }
 
 /*!

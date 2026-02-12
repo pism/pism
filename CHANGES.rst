@@ -7,6 +7,7 @@ Changes since v2.2.8
 - Implement asynchronous output to "snapshot" files and "extra" files (`-save_file ...`
   and `-extra_file ...`). Requires PISM built with YAC and Python packages `netCDF4`,
   `yac` (Python bindings for YAC), `mpi4py` and NumPy.
+- Implemented a new more efficient algorithm for the solution of the Eikonal equation.
 
 Changes since v2.2.0
 ====================
