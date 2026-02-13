@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021, 2023, 2024, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021, 2023, 2024, 2025, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -1072,8 +1072,8 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
                                       bounds_name.c_str(), file.name().c_str());
       }
 
-      v_min  = bounds.front();
-      v_max  = bounds.back();
+      v_min  = pism::vector_min(bounds);
+      v_max  = pism::vector_max(bounds);
       length = static_cast<unsigned int>(bounds.size()) / 2;
       // bounds set domain size regardless of grid registration
       half_width = (v_max - v_min) / 2.0;
@@ -1086,13 +1086,15 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
                                       dimension_name.c_str(), file.name().c_str());
       }
 
-      v_min  = dimension.front();
-      v_max  = dimension.back();
+      v_min  = pism::vector_min(dimension);
+      v_max  = pism::vector_max(dimension);
       length = static_cast<unsigned int>(dimension.size());
       // same as in InputGridInfo, domain half-width depends on grid registration
       half_width = (v_max - v_min) / 2.0;
       if (registration == CELL_CENTER) {
-        half_width += 0.5 * (dimension[1] - dimension[0]);
+        // use std::abs to get the right spacing even if `dimension` is decreasing
+        auto spacing = std::abs(dimension[1] - dimension[0]);
+        half_width += 0.5 * spacing;
       }
     }
 
