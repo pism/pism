@@ -87,6 +87,7 @@ RUN <<EOF
     automake \
     cmake \
     coreutils \
+    cython3 \
     git \
     libfftw3-dev \
     libfyaml-dev \
@@ -98,7 +99,14 @@ RUN <<EOF
     make \
     pkg-config \
     python3 \
+    python3-dev \
+    python3-netcdf4 \
+    python3-numpy \
+    python3-pip \
+    python3-setuptools \
+    python3-venv \
     ssh \
+    swig \
     ""
 
     rm -rf /var/lib/apt/lists/*
