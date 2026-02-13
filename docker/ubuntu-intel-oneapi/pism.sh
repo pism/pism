@@ -33,7 +33,7 @@ cmake \
     -DCMAKE_CXX_FLAGS="${opt_flags} -diag-disable=cpu-dispatch,10006,2102" \
     -DCMAKE_C_FLAGS="${opt_flags} -diag-disable=cpu-dispatch,10006" \
     -DCMAKE_INSTALL_PREFIX=${prefix} \
-    -DPism_USE_YAC_INTERPOLATION=YES \
+    -DPism_USE_YAC=YES \
     -DPism_USE_PARALLEL_NETCDF4=YES \
     -DPism_USE_PROJ=YES  
 
