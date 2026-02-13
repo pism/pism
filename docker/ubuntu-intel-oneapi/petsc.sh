@@ -8,7 +8,7 @@ set -x
 
 prefix=${prefix:-/opt/petsc}
 build_dir=${build_dir:-/var/tmp/build/petsc}
-petsc_version=${petsc_version:-3.24.1}
+petsc_version=${petsc_version:-3.24.4}
 optimization_flags="-O3 -axCORE-AVX512,CORE-AVX2,SSE4.2 -fp-model=precise"
 
 rm -rf ${build_dir}
@@ -26,6 +26,7 @@ git clone --depth=1 -b v${petsc_version} https://gitlab.com/petsc/petsc.git .
   --CXXOPTFLAGS="${optimization_flags}" \
   --FOPTFLAGS="${optimization_flags}" \
   --with-debugging=0 \
+  --with-petsc4py \
   --with-valgrind=0 \
   --with-x=0 \
   --with-ssl=0 \
