@@ -1,1 +1,3 @@
+# -*- mode: fundamental -*-
 examples/*
+!examples/inverse/

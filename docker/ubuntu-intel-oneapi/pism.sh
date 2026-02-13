@@ -11,6 +11,8 @@ opt_flags="-O3 -axCORE-AVX512,CORE-AVX2,SSE4.2 -fp-model=precise"
 
 # Prerequisites:
 export PETSC_DIR=${PETSC_DIR:-/opt/petsc}
+export PYTHONPATH=${PETSC_DIR}/lib:${PYTHONPATH:-}
+
 yaxt_prefix=${yaxt_prefix:-/opt/yaxt}
 yac_prefix=${yac_prefix:-/opt/yac}
 hdf5_prefix=${hdf5_prefix:-/opt/hdf5}
