@@ -48,12 +48,18 @@ RUN <<EOF
     echo "Install PISM's runtime dependencies (ones from packages)"
     apt-get update
 
+    # Note: libpython3.12 is needed by PISM's Python bindings
     apt-get install -y --no-install-recommends \
     libfftw3-double3 \
+    libfyaml0 \
     libgsl27 \
     libproj25 \
+    libpython3.12 \
     libudunits2-0 \
-    libfyaml0 \
+    python3 \
+    python3-netcdf4 \
+    python3-numpy \
+    python3-venv \
     ""
 
     rm -rf /var/lib/apt/lists/*
@@ -177,6 +183,17 @@ RUN <<EOF
     rm -rf /opt/petsc/share/petsc
 EOF
 
+# Create a venv for Python stuff that we cannot install using apt-get:
+RUN python3 -m venv --system-site-packages /opt/pism
+
+# Install a more recent mpi4py version
+RUN <<EOF
+    echo "Install mpi4py"
+    set -eux
+    . /opt/pism/bin/activate
+    python3 -m pip install "mpi4py>=4.0.0"
+EOF
+
 COPY docker/ubuntu-intel-oneapi/pism.sh /tmp/
 # Copy the Docker context to /var/tmp/pism-src
 COPY . /var/tmp/pism-src
@@ -204,7 +221,23 @@ COPY --from=pism-devel /opt/pism /opt/pism/
 COPY --from=pism-devel /opt/yac /opt/yac/
 COPY --from=pism-devel /opt/yaxt /opt/yaxt/
 
-ENV PATH="/opt/hdf5/bin:/opt/netcdf/bin:/opt/petsc/bin:/opt/pism/bin:$PATH"
+# Add HDF5, NetCDF, PETSc to PATH:
+ENV PATH="/opt/hdf5/bin:/opt/netcdf/bin:/opt/petsc/bin:$PATH"
+
+# "Activate" the virtual environment in /opt/pism.
+#
+# See https://docs.python.org/3/library/venv.html#how-venvs-work for details.
+ENV VIRTUAL_ENV=/opt/pism
+# Note that this puts the "pism" executable in the path as well
+ENV PATH=/opt/pism/bin:$PATH
+
+ENV PYTHONPATH=""
+# Add YAC to PYTHONPATH
+ENV PYTHONPATH=/opt/yac/local/lib/python3.12/dist-packages/:$PYTHONPATH
+# Add PETSc to PYTHONPATH
+ENV PYTHONPATH=/opt/petsc/lib/:$PYTHONPATH
+# Add PISM to PYTHONPATH
+ENV PYTHONPATH=/opt/pism/lib/python3.12/site-packages/:$PYTHONPATH
 
 RUN ln -s /opt/intel/oneapi/setvars.sh /etc/profile.d/02-intel-oneapi-setvars.sh
 
