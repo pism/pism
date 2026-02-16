@@ -207,10 +207,17 @@ class YacWrapper:
 
         string = np.empty(length, dtype='S1')
         comm.Recv([string, MPI.CHAR], source=self.remote_leader, tag=0)
+        string = string.tobytes()
 
-        # Decode the data and construct a dictionary from the json string
-        string = string.tobytes().decode("ascii")
+        # Decode the byte string
+        try:
+            string = string.decode("ascii")
+        except Exception:
+            string = string.decode("ascii", errors='replace')
+            logger.critical(f"failed to decode '{string}'")
+            raise
 
+        # Construct a dictionary from the JSON string:
         try:
             return json.loads(string)
         except BaseException:  # pragma: no cover
