@@ -117,6 +117,9 @@ private:
 
   std::vector<MPI_Request> m_mpi_requests;
 
+  //! Call MPI_Waitall() to ensure that all buffers can be freed.
+  void waitall();
+
   // --- Server-related subroutines ---
   void create_intercomm();
 

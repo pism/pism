@@ -355,6 +355,12 @@ YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config)
 YacOutputWriter::~YacOutputWriter() {
   send_action(FINISH, {});
 
+  try {
+    waitall();
+  } catch (RuntimeError &e) {
+    // ignore failures: we should not let exceptions escape a destructor
+  }
+
   details::free_array_buffers(m_buffers);
 
   delete m_field_buffer;
@@ -466,18 +472,24 @@ void YacOutputWriter::append_impl(const std::string &file_name) {
   MPI_Bcast(&m_last_time[file_name], 1, MPI_DOUBLE, 0, comm());
 }
 
-void YacOutputWriter::sync_impl(const std::string & /*file_name*/) {
-  send_action(SYNC, {});
-
+void YacOutputWriter::waitall() {
   int error_code =
       MPI_Waitall((int)m_mpi_requests.size(), m_mpi_requests.data(), MPI_STATUSES_IGNORE);
   if (error_code != MPI_SUCCESS) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Fatal error in MPI_Waitall()");
   }
+}
+
+void YacOutputWriter::sync_impl(const std::string & /*file_name*/) {
+  send_action(SYNC, {});
+
+  waitall();
 
   m_mpi_requests.clear();
   m_text_buffers.clear();
   details::free_array_buffers(m_buffers);
+
+  // FIXME: consider adding MPI_Barrier(m_intercomm)
 }
 
 void YacOutputWriter::close_impl(const std::string &file_name) {
