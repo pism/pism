@@ -247,21 +247,21 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
 
   auto filename = filename_add_suffix(m_output_filename, suffix, "");
 
-  auto variable_names = output_variables("small");
-  for (const auto &v : additional_variables) {
-    variable_names.insert(v);
-  }
-
   std::shared_ptr<OutputWriter> writer =
       std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
-  writer->initialize({}, true);
+
+  auto variables = pism::combine(m_output_file_contents, diagnostic_variables(additional_variables));
+
+  std::set<std::string> variable_names;
+  for (const auto &v : variables) {
+    variable_names.insert(v.get_name());
+  }
+
+  writer->initialize(variables);
 
   OutputFile file(writer, filename);
 
   {
-    auto variables = pism::combine(common_metadata(), state_variables());
-    variables = pism::combine(variables, diagnostic_variables(variable_names));
-
     define_time(file);
     define_variables(file, variables);
   }
