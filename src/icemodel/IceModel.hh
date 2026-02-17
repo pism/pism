@@ -220,7 +220,7 @@ protected:
    * diagnostic quantities.
    */
   std::set<VariableMetadata>
-  diagnostic_state_variables(const std::set<std::string> &variable_names) const;
+  state_variables_diagnostics(const std::set<std::string> &variable_names) const;
 
   /*!
    * Return the set of "common" variables (i.e. ones written to most files): step counter,
@@ -257,6 +257,12 @@ protected:
   void define_variables(const OutputFile &file, const std::set<VariableMetadata> &variables) const;
 
   virtual void write_state(const OutputFile &file) const;
+
+  /*!
+   * Write state variables of diagnostic quantities in `variable_names` to `file`.
+   */
+  void write_state_diagnostics(const OutputFile &file,
+                               const std::set<std::string> &variable_names) const;
 
   virtual void write_run_stats(const OutputFile &file) const;
 

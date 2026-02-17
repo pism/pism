@@ -81,6 +81,7 @@ int IceModel::process_signals() {
       io::write_config(*m_config, "pism_config", file);
       file.append_time(m_time->current());
       write_state(file);
+      write_state_diagnostics(file, m_output_vars);
       write_diagnostics(file, m_output_vars);
       write_run_stats(file);
     }

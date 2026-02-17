@@ -40,9 +40,9 @@ void IceModel::init_checkpoints() {
   {
     m_checkpoint_file_contents = pism::combine(common_metadata(), state_variables());
     m_checkpoint_file_contents =
-        pism::combine(m_checkpoint_file_contents, diagnostic_state_variables(m_checkpoint_vars));
+        pism::combine(m_checkpoint_file_contents, state_variables_diagnostics(m_checkpoint_vars));
     m_checkpoint_file_contents =
-        pism::combine(m_checkpoint_file_contents, diagnostic_state_variables(m_extra_vars));
+        pism::combine(m_checkpoint_file_contents, state_variables_diagnostics(m_extra_vars));
     m_checkpoint_file_contents =
         pism::combine(m_checkpoint_file_contents, diagnostic_variables(m_checkpoint_vars));
   }
@@ -90,6 +90,7 @@ bool IceModel::write_checkpoint() {
       io::write_config(*m_config, "pism_config", file);
       file.append_time(m_time->current());
       write_state(file);
+      write_state_diagnostics(file, m_checkpoint_vars);
       write_diagnostics(file, m_checkpoint_vars);
       write_run_stats(file);
     }

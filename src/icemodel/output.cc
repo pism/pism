@@ -141,9 +141,9 @@ void IceModel::init_final_output() {
 
   m_output_file_contents = pism::combine(common_metadata(), state_variables());
   m_output_file_contents =
-      pism::combine(m_output_file_contents, diagnostic_state_variables(m_output_vars));
+      pism::combine(m_output_file_contents, state_variables_diagnostics(m_output_vars));
   m_output_file_contents =
-      pism::combine(m_output_file_contents, diagnostic_state_variables(m_extra_vars));
+      pism::combine(m_output_file_contents, state_variables_diagnostics(m_extra_vars));
   m_output_file_contents =
       pism::combine(m_output_file_contents, diagnostic_variables(m_output_vars));
 }
@@ -171,6 +171,7 @@ void IceModel::write_final_output() {
       io::write_config(*m_config, "pism_config", file);
       file.append_time(m_time->current());
       write_state(file);
+      write_state_diagnostics(file, m_output_vars);
       write_diagnostics(file, m_output_vars);
       write_run_stats(file);
     }
@@ -209,6 +210,10 @@ void IceModel::define_variables(const OutputFile &file,
                        m_config->get_flag("output.use_MKS"));
 }
 
+/*!
+ * Return the set of state variables from IceModel and all its sub-models. Does not
+ * include state variables from requested diagnostics.
+ */
 std::set<VariableMetadata> IceModel::state_variables() const {
   std::set<VariableMetadata> result{};
   {
@@ -228,6 +233,10 @@ std::set<VariableMetadata> IceModel::state_variables() const {
   return result;
 }
 
+/*!
+ * Write state variables of IceModel and all its sub-models. Does not include state
+ * variables corresponding to requested diagnostic variables.
+ */
 void IceModel::write_state(const OutputFile &file) const {
   for (auto *v : m_model_state) {
     v->write(file);
@@ -235,10 +244,6 @@ void IceModel::write_state(const OutputFile &file) const {
 
   for (const auto& m : m_submodels) {
     m.second->write_state(file);
-  }
-
-  for (const auto& d : m_diagnostics) {
-    d.second->write_state(file);
   }
 }
 
@@ -270,6 +275,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
     io::write_config(*m_config, "pism_config", file);
     file.append_time(m_time->current());
     write_state(file);
+    write_state_diagnostics(file, variable_names);
     write_diagnostics(file, variable_names);
     write_run_stats(file);
   }

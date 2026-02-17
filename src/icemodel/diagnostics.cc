@@ -3881,7 +3881,7 @@ IceModel::diagnostic_variables(const std::set<std::string> &variable_names) cons
 }
 
 std::set<VariableMetadata>
-IceModel::diagnostic_state_variables(const std::set<std::string> &variable_names) const {
+IceModel::state_variables_diagnostics(const std::set<std::string> &variable_names) const {
   std::set<VariableMetadata> result{};
   {
     for (const auto &var : variable_names) {
@@ -3896,4 +3896,17 @@ IceModel::diagnostic_state_variables(const std::set<std::string> &variable_names
   return result;
 }
 
-    } // end of namespace pism
+void IceModel::write_state_diagnostics(const OutputFile &file,
+                                       const std::set<std::string> &variable_names) const {
+
+  for (const auto &var : variable_names) {
+    auto diag = m_diagnostics.find(var);
+
+    if (diag != m_diagnostics.end()) {
+      const auto &D = diag->second;
+      D->write_state(file);
+    }
+  }
+}
+
+} // end of namespace pism
