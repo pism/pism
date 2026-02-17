@@ -335,32 +335,38 @@ void OutputWriter::write_dimensions(const std::string &file_name,
 }
 
 void OutputWriter::write_distributed_array(const std::string &file_name,
-                                          const std::string &variable_name,
-                                          const double *input) {
-  const auto &variable = variable_info(variable_name);
+                                           const std::string &variable_name, const double *input) {
+  try {
+    const auto &variable = variable_info(variable_name);
 
-  if (variable.grid_info() == nullptr) {
-    throw RuntimeError::formatted(
-        PISM_ERROR_LOCATION,
-        "write_distributed_array() called for a variable (%s) that has no grid info",
-        variable_name.c_str());
+    if (variable.grid_info() == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "write_distributed_array() called for a variable (%s) that has no grid info",
+          variable_name.c_str());
+    }
+
+    bool time_dependent = variable.get_time_dependent();
+
+    // Avoid writing time-independent variables more than once (saves time when writing to
+    // extra_files) and also avoid writing time-dependent variables more than once per time
+    // record
+    if (already_written(file_name, variable_name, time_dependent)) {
+      return;
+    }
+
+    write_dimensions(file_name, variable);
+
+    write_distributed_array_impl(file_name, variable_name, input);
+
+    already_written(file_name, variable_name, time_dependent) = true;
+  } catch (RuntimeError &e) {
+    e.add_context("writing gridded variable '%s' to '%s'", variable_name.c_str(),
+                  file_name.c_str());
+    throw;
   }
-
-  bool time_dependent = variable.get_time_dependent();
-
-  // Avoid writing time-independent variables more than once (saves time when writing to
-  // extra_files) and also avoid writing time-dependent variables more than once per time
-  // record
-  if (already_written(file_name, variable_name, time_dependent)) {
-    return;
-  }
-
-  write_dimensions(file_name, variable);
-
-  write_distributed_array_impl(file_name, variable_name, input);
-
-  already_written(file_name, variable_name, time_dependent) = true;
 }
+
 
 void OutputWriter::write_timeseries(const std::string &file_name,
                                              const std::string &variable_name,
