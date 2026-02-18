@@ -15,10 +15,10 @@ If you can let it run overnight, do
    :language: bash
    :lines: 3-
 
-This run should take less than 4 hours. However, supposing you have a larger parallel
-computer, you can change "``mpiexec -n 8``" to "``mpiexec -n N``" where ``N`` is a
-substantially larger number, up to 100 or so with an expectation of reasonable scaling on
-this grid :cite:`BBssasliding`, :cite:`DickensMorey2013`.
+This run should take less than 4 hours. However, supposing you have a computer with ``N``
+CPUs where ``N`` is a number substantially larger than `8`, you can change "``mpiexec -n
+8``" to "``mpiexec -n N``" with an expectation of reasonable scaling on this grid for
+``N`` up to 100 or so :cite:`BBssasliding`, :cite:`DickensMorey2013`.
 
 .. figure:: figures/g10km-10ka-hy-usurf-csurf-cbase.png
    :name: fig-second-output-finer

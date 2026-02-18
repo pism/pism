@@ -43,12 +43,18 @@ like this:
 
 Let's briefly deconstruct this run.
 
-At the front is "``mpiexec -n 8 pism``". This means that the PISM executable ``pism`` is
-run in parallel using eight processes (usually one per CPU core) under the `Message Passing
-Interface <MPI_>`_. Though we are assuming you have a workstation or laptop with at least
-8 cores, this example will work with 1 to about 50 processors, with reasonably good
+At the front is "``mpiexec -n 8 pism``". The command line option ``-n 8`` means that the
+PISM executable ``pism`` is run in parallel using eight processes (usually one per CPU
+core) under the `Message Passing Interface <MPI_>`_. Though we are assuming you have a
+workstation or laptop with at least 8 cores, this example will work with 1 (using
+``mpiexec -n 1``) to about 50 (using ``mpiexec -n 50``) processors, with reasonably good
 scaling in speed. Scaling can be good with more processors if we run at higher spatial
 resolution :cite:`BBssasliding`, :cite:`DickensMorey2013`.
+
+.. note::
+
+   Running ``mpiexec -n X pism ...`` on a system with less than ``X`` CPUs is not
+   recommended and may fail.
 
 Next, the proposed run uses option ``-bootstrap`` to start the run by "bootstrapping."
 This term describes the creation, by heuristics and highly-simplified models, of the
