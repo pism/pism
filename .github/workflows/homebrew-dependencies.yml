@@ -24,5 +24,5 @@ jobs:
           -DPism_USE_PARALLEL_NETCDF4=YES \
           -DPism_USE_YAC=YES \
           -DPism_USE_PROJ=YES
-      - run: make -j -C build all
+      - run: make -j4 -C build all
       - run: make -C build test
