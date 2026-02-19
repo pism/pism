@@ -1893,35 +1893,35 @@ netcdf pism_config {
     pism_config:output.experiment_id_max_length_option = "exp_id_max_length";
     pism_config:output.experiment_id_max_length_units = "count";
 
-    pism_config:output.extra.append = "no";
-    pism_config:output.extra.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.extra.split` is set.";
-    pism_config:output.extra.append_option = "extra_append";
-    pism_config:output.extra.append_type = "flag";
+    pism_config:output.spatial.append = "no";
+    pism_config:output.spatial.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.spatial.split` is set.";
+    pism_config:output.spatial.append_option = "spatial_append";
+    pism_config:output.spatial.append_type = "flag";
 
-    pism_config:output.extra.file = "";
-    pism_config:output.extra.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file`.";
-    pism_config:output.extra.file_option = "extra_file";
-    pism_config:output.extra.file_type = "string";
+    pism_config:output.spatial.file = "";
+    pism_config:output.spatial.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file`.";
+    pism_config:output.spatial.file_option = "spatial_file";
+    pism_config:output.spatial.file_type = "string";
 
-    pism_config:output.extra.split = "no";
-    pism_config:output.extra.split_doc = "Save spatially-variable diagnostics to separate files (one per time record).";
-    pism_config:output.extra.split_option = "extra_split";
-    pism_config:output.extra.split_type = "flag";
+    pism_config:output.spatial.split = "no";
+    pism_config:output.spatial.split_doc = "Save spatially-variable diagnostics to separate files (one per time record).";
+    pism_config:output.spatial.split_option = "spatial_split";
+    pism_config:output.spatial.split_type = "flag";
 
-    pism_config:output.extra.stop_missing = "yes";
-    pism_config:output.extra.stop_missing_doc = "Stop if requested variable is not available instead of warning.";
-    pism_config:output.extra.stop_missing_option = "extra_stop_missing";
-    pism_config:output.extra.stop_missing_type = "flag";
+    pism_config:output.spatial.stop_missing = "yes";
+    pism_config:output.spatial.stop_missing_doc = "Stop if requested variable is not available instead of warning.";
+    pism_config:output.spatial.stop_missing_option = "spatial_stop_missing";
+    pism_config:output.spatial.stop_missing_type = "flag";
 
-    pism_config:output.extra.times = "";
-    pism_config:output.extra.times_doc = "List or a range of times defining reporting intervals for spatially-variable diagnostics.";
-    pism_config:output.extra.times_option = "extra_times";
-    pism_config:output.extra.times_type = "string";
+    pism_config:output.spatial.times = "";
+    pism_config:output.spatial.times_doc = "List or a range of times defining reporting intervals for spatially-variable diagnostics.";
+    pism_config:output.spatial.times_option = "spatial_times";
+    pism_config:output.spatial.times_type = "string";
 
-    pism_config:output.extra.vars = "";
-    pism_config:output.extra.vars_doc = "Comma-separated list of spatially-variable diagnostics.";
-    pism_config:output.extra.vars_option = "extra_vars";
-    pism_config:output.extra.vars_type = "string";
+    pism_config:output.spatial.vars = "";
+    pism_config:output.spatial.vars_doc = "Comma-separated list of spatially-variable diagnostics.";
+    pism_config:output.spatial.vars_option = "spatial_vars";
+    pism_config:output.spatial.vars_type = "string";
 
     pism_config:output.file = "unnamed.nc";
     pism_config:output.file_doc = "The file to save final model results to.";
@@ -2899,10 +2899,10 @@ netcdf pism_config {
     pism_config:time_stepping.assume_bed_elevation_changed_doc = "If set, assume that bed elevation changes every time step. If not set, PISM tries to avoid unnecessary computations if the bed deformation model did not update bed elevation (to reduce the computational cost a little bit).";
     pism_config:time_stepping.assume_bed_elevation_changed_type = "flag";
 
-    pism_config:time_stepping.hit_extra_times = "yes";
-    pism_config:time_stepping.hit_extra_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.extra.times`.";
-    pism_config:time_stepping.hit_extra_times_option = "extra_force_output_times";
-    pism_config:time_stepping.hit_extra_times_type = "flag";
+    pism_config:time_stepping.hit_spatial_times = "yes";
+    pism_config:time_stepping.hit_spatial_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.spatial.times`.";
+    pism_config:time_stepping.hit_spatial_times_option = "spatial_force_output_times";
+    pism_config:time_stepping.hit_spatial_times_type = "flag";
 
     pism_config:time_stepping.hit_multiples = 0.0;
     pism_config:time_stepping.hit_multiples_doc = "Hit every X years, where X is specified using this parameter. Use 0 to disable.";

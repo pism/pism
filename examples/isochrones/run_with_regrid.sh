@@ -11,8 +11,8 @@ N=${N:-8}
 M=${M:-51}
 
 common_options="
-        -output.extra.times 50
-        -output.extra.vars isochrone_depth,thk
+        -output.spatial.times 50
+        -output.spatial.vars isochrone_depth,thk
         -output.sizes.medium isochrone_depth,uvel
         -stress_balance.sia.flow_law isothermal_glen
         -stress_balance.sia.surface_gradient_method eta
@@ -28,7 +28,7 @@ mpiexec -n ${N} pism -eisII A \
         -grid.Mx ${M} \
         -grid.My ${M} \
         -isochrones.bootstrapping.n_layers 0 \
-        -output.extra.file ex_regrid_part1.nc \
+        -output.spatial.file ex_regrid_part1.nc \
         -output.file o_regrid_part1.nc \
         -time.end 10.5e3 \
         ${common_options}
@@ -40,7 +40,7 @@ mpiexec -n ${N} pism \
         -My $(( M * 2 - 1 )) \
         -regrid_file o_regrid_part1.nc \
         -regrid_vars isochronal_layer_thickness \
-        -output.extra.file ex_regrid_part2.nc \
+        -output.spatial.file ex_regrid_part2.nc \
         -output.file o_regrid_part2.nc \
         -time.end 20e3 \
         ${common_options}

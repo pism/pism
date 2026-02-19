@@ -3815,7 +3815,7 @@ void IceModel::deallocate_unused_diagnostics() {
     available.insert(d.first);
   }
 
-  auto extra_stop = m_config->get_flag("output.extra.stop_missing");
+  auto extra_stop = m_config->get_flag("output.spatial.stop_missing");
   warn_about_missing(*m_log, m_extra_vars, "diagnostic", available, extra_stop);
 
   // get the list of requested diagnostics

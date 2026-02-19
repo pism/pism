@@ -14,9 +14,9 @@ pism \
   -grid.Lz 400 \
   -grid.Mz 41 \
   -i input.nc \
-  -output.extra.file ex.nc \
-  -output.extra.times 1000 \
-  -output.extra.vars ${variables} \
+  -output.spatial.file ex.nc \
+  -output.spatial.times 1000 \
+  -output.spatial.vars ${variables} \
   -output.file bedrock_step.nc \
   -output.timeseries.filename ts.nc \
   -output.timeseries.times 1 \

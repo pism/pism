@@ -1,7 +1,7 @@
 This directory contains scripts showing how to model and visualize isochrones.
 
 To enable isochrone tracking, set `isochrones.deposition_times`. This parameter uses the
-same format as `output.extra.times` (a comma-separated list or a MATLAB-style range of
+same format as `output.spatial.times` (a comma-separated list or a MATLAB-style range of
 times).
 
 The implementation is very similar to the scheme described in

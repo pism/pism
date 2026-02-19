@@ -106,17 +106,17 @@ void IceModel::init_extras() {
   m_last_extra = 0;               // will be set in write_extras()
   m_next_extra = 0;
 
-  m_extra_filename   = m_config->get_string("output.extra.file");
-  std::string times  = m_config->get_string("output.extra.times");
-  bool        split  = m_config->get_flag("output.extra.split");
-  bool        append = m_config->get_flag("output.extra.append");
+  m_extra_filename   = m_config->get_string("output.spatial.file");
+  std::string times  = m_config->get_string("output.spatial.times");
+  bool        split  = m_config->get_flag("output.spatial.split");
+  bool        append = m_config->get_flag("output.spatial.append");
 
   bool extra_file_set = not m_extra_filename.empty();
   bool times_set = not times.empty();
 
   if (extra_file_set ^ times_set) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "you need to set both output.extra.file and output.extra.times"
+                       "you need to set both output.spatial.file and output.spatial.times"
                        " to save spatial time-series.");
   }
 
@@ -128,28 +128,28 @@ void IceModel::init_extras() {
   try {
     m_extra_times = m_time->parse_times(times);
   } catch (RuntimeError &e) {
-    e.add_context("parsing the output.extra.times argument %s", times.c_str());
+    e.add_context("parsing the output.spatial.times argument %s", times.c_str());
     throw;
   }
 
   if (m_extra_times.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "output.extra.times cannot be empty");
+    throw RuntimeError(PISM_ERROR_LOCATION, "output.spatial.times cannot be empty");
   }
 
   if (append and split) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "both output.extra.split and output.extra.append are set.");
+                       "both output.spatial.split and output.spatial.append are set.");
   }
 
   // initialize m_extra_vars and m_extra_file_contents
   {
-    auto vars = m_config->get_string("output.extra.vars");
+    auto vars = m_config->get_string("output.spatial.vars");
     if (not vars.empty()) {
       m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
       m_log->message(2, "variables requested: %s\n", vars.c_str());
     } else {
       m_log->message(2,
-                     "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
+                     "PISM WARNING: output.spatial.vars was not set. Writing the model state...\n");
       m_extra_vars = {};
     }
 
@@ -301,7 +301,7 @@ void IceModel::write_extras() {
     return;
   }
 
-  bool extra_split = m_config->get_flag("output.extra.split");
+  bool extra_split = m_config->get_flag("output.spatial.split");
 
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
@@ -317,7 +317,7 @@ void IceModel::write_extras() {
 
       m_extra_file.reset(new OutputFile(m_extra_writer, filename));
 
-      if (m_config->get_flag("output.extra.append")) {
+      if (m_config->get_flag("output.spatial.append")) {
         m_extra_file->append();
       } else {
         // prepare the output file
