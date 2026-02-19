@@ -142,9 +142,9 @@ def generate_scalar_ts(outfile, step, start=None, end=None, odir=None):
 
     params_dict = OrderedDict()
     if odir is None:
-        params_dict['ts_file'] = 'ts_' + outfile
+        params_dict['scalar_file'] = 'ts_' + outfile
     else:
-        params_dict['ts_file'] = os.path.join(odir, 'ts_' + outfile)
+        params_dict['scalar_file'] = os.path.join(odir, 'ts_' + outfile)
 
     if step is None:
         step = 'yearly'
@@ -153,7 +153,7 @@ def generate_scalar_ts(outfile, step, start=None, end=None, odir=None):
         times = '{start}:{step}:{end}'.format(start=start, step=step, end=end)
     else:
         times = step
-    params_dict['ts_times'] = times
+    params_dict['scalar_times'] = times
 
     return params_dict
 

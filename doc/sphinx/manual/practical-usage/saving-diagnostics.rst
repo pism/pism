@@ -33,19 +33,19 @@ controlling this feature. The section :ref:`sec-spatial_vars` list all the varia
    available. To print a warning and continue instead of stopping, set
    :config:`output.spatial.stop_missing` to "false".
 
-Note that options :opt:`-spatial_times`, :opt:`-save_times`, :opt:`-scalar_times` take *dates*
-if a non-trivial calendar is selected. Here are some examples.
+Note that options :opt:`-spatial_times`, :opt:`-save_times`, :opt:`-scalar_times` take
+*dates* if a non-trivial calendar is selected. Here are some examples.
 
 .. code-block:: bash
 
    pism ... -spatial_times 10       # every 10 years
    pism ... -spatial_times 2days    # every 2 days
    pism ... -calendar gregorian \
-             -spatial_times 1-1-1:daily:11-1-1 # daily for 10 years
+            -spatial_times 1-1-1:daily:11-1-1 # daily for 10 years
    pism ... -calendar gregorian \
-             -spatial_times daily -ys 1-1-1 -ye 11-1-1
+            -spatial_times daily -ys 1-1-1 -ye 11-1-1
    pism ... -calendar gregorian \
-             -spatial_times 2hours -ys 1-1-1 -ye 1-2-1
+            -spatial_times 2hours -ys 1-1-1 -ye 1-2-1
 
 The step in the range specification can have the form ``Nunit``, for example ``5days``.
 Units based on "months" and "years" are not supported if a non-trivial calendar is
@@ -90,7 +90,7 @@ interval. This implies, for example, that ``0:1:10`` will produce 10 records at 
 If the file ``foo.nc``, specified by ``-spatial_file foo.nc``, already exists then by
 default the existing file will be moved to ``foo.nc~`` and the new time series will go
 into ``foo.nc``. To append the time series onto the end of the existing file, use option
-:opt:`-extra_append`.
+:opt:`-spatial_append`.
 
 The list of available diagnostic quantities depends on the model setup. For example, a run
 with only one vertical grid level in the bedrock thermal layer will not be able to save
