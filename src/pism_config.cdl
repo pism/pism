@@ -1953,6 +1953,31 @@ netcdf pism_config {
     pism_config:output.runtime.volume_scale_factor_log10_type = "integer";
     pism_config:output.runtime.volume_scale_factor_log10_units = "none";
 
+    pism_config:output.scalar.append = "false";
+    pism_config:output.scalar.append_doc = "If true, append to the scalar time series output file.";
+    pism_config:output.scalar.append_option = "scalar_append";
+    pism_config:output.scalar.append_type = "flag";
+
+    pism_config:output.scalar.buffer_size = 10000;
+    pism_config:output.scalar.buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
+    pism_config:output.scalar.buffer_size_type = "integer";
+    pism_config:output.scalar.buffer_size_units = "count";
+
+    pism_config:output.scalar.file = "";
+    pism_config:output.scalar.file_doc = "Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.";
+    pism_config:output.scalar.file_option = "scalar_file";
+    pism_config:output.scalar.file_type = "string";
+
+    pism_config:output.scalar.times = "";
+    pism_config:output.scalar.times_doc = "List or range of times defining reporting time intervals.";
+    pism_config:output.scalar.times_option = "scalar_times";
+    pism_config:output.scalar.times_type = "string";
+
+    pism_config:output.scalar.variables = "";
+    pism_config:output.scalar.variables_doc = "Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.";
+    pism_config:output.scalar.variables_option = "scalar_vars";
+    pism_config:output.scalar.variables_type = "string";
+
     pism_config:output.size = "medium";
     pism_config:output.size_choices = "none,small,medium,big_2d,big";
     pism_config:output.size_doc = "The \"size\" of an output file. See parameters :config:`output.sizes.medium`, :config:`output.sizes.big_2d`, :config:`output.sizes.big`";
@@ -2021,31 +2046,6 @@ netcdf pism_config {
     pism_config:output.spatial.vars_doc = "Comma-separated list of spatially-variable diagnostics.";
     pism_config:output.spatial.vars_option = "spatial_vars";
     pism_config:output.spatial.vars_type = "string";
-
-    pism_config:output.timeseries.append = "false";
-    pism_config:output.timeseries.append_doc = "If true, append to the scalar time series output file.";
-    pism_config:output.timeseries.append_option = "scalar_append";
-    pism_config:output.timeseries.append_type = "flag";
-
-    pism_config:output.timeseries.buffer_size = 10000;
-    pism_config:output.timeseries.buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
-    pism_config:output.timeseries.buffer_size_type = "integer";
-    pism_config:output.timeseries.buffer_size_units = "count";
-
-    pism_config:output.timeseries.filename = "";
-    pism_config:output.timeseries.filename_doc = "Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.";
-    pism_config:output.timeseries.filename_option = "scalar_file";
-    pism_config:output.timeseries.filename_type = "string";
-
-    pism_config:output.timeseries.times = "";
-    pism_config:output.timeseries.times_doc = "List or range of times defining reporting time intervals.";
-    pism_config:output.timeseries.times_option = "scalar_times";
-    pism_config:output.timeseries.times_type = "string";
-
-    pism_config:output.timeseries.variables = "";
-    pism_config:output.timeseries.variables_doc = "Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.";
-    pism_config:output.timeseries.variables_option = "scalar_vars";
-    pism_config:output.timeseries.variables_type = "string";
 
     pism_config:output.use_MKS = "false";
     pism_config:output.use_MKS_doc = "Use MKS units in output files.";
@@ -2911,7 +2911,7 @@ netcdf pism_config {
     pism_config:time_stepping.hit_save_times_type = "flag";
 
     pism_config:time_stepping.hit_scalar_times = "no";
-    pism_config:time_stepping.hit_scalar_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.timeseries.times`.";
+    pism_config:time_stepping.hit_scalar_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.scalar.times`.";
     pism_config:time_stepping.hit_scalar_times_type = "flag";
 
     pism_config:time_stepping.hit_spatial_times = "yes";

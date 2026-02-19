@@ -45,7 +45,7 @@ Parameters
 ==========
 
 .. pism-parameters::
-   :prefix: output.timeseries.
+   :prefix: output.scalar.
 
 .. _sec-ts-comments:
 

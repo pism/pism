@@ -45,9 +45,9 @@ static std::set<std::string> process_ts_shortcuts(const Config &config,
 //! Initializes the code writing scalar time-series.
 void IceModel::init_timeseries() {
 
-  auto ts_filename = m_config->get_string("output.timeseries.filename");
+  auto ts_filename = m_config->get_string("output.scalar.file");
 
-  auto times = m_config->get_string("output.timeseries.times");
+  auto times = m_config->get_string("output.scalar.times");
   bool times_set = not times.empty();
 
   if (times_set xor not ts_filename.empty()) {
@@ -73,7 +73,7 @@ void IceModel::init_timeseries() {
     m_log->message(2, "  saving scalar time-series to '%s'\n", ts_filename.c_str());
     m_log->message(2, "  times requested: %s\n", times.c_str());
 
-    m_ts_vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
+    m_ts_vars = set_split(m_config->get_string("output.scalar.variables"), ',');
     if (not m_ts_vars.empty()) {
       m_ts_vars = process_ts_shortcuts(*m_config, m_ts_vars);
       m_log->message(2, "variables requested: %s\n", set_join(m_ts_vars, ",").c_str());
@@ -108,7 +108,7 @@ void IceModel::init_timeseries() {
   // prepare the output file
   {
     m_ts_file = std::make_shared<OutputFile>(m_output_writer, ts_filename);
-    bool append = m_config->get_flag("output.timeseries.append");
+    bool append = m_config->get_flag("output.scalar.append");
     // default behavior is to move the file aside if it exists already; option allows appending
     if (append) {
       m_ts_file->append();

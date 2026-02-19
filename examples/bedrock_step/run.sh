@@ -18,8 +18,8 @@ pism \
   -output.spatial.times 1000 \
   -output.spatial.vars ${variables} \
   -output.file bedrock_step.nc \
-  -output.timeseries.filename ts.nc \
-  -output.timeseries.times 1 \
+  -output.scalar.filename ts.nc \
+  -output.scalar.times 1 \
   -stress_balance.ice_free_thickness_standard 0.01 \
   -stress_balance.model sia \
   -stress_balance.sia.Glen_exponent 3 \

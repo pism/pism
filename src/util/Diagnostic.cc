@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -146,7 +146,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   m_current_time = 0;
   m_start        = 0;
 
-  m_buffer_size = static_cast<size_t>(m_config->get_number("output.timeseries.buffer_size"));
+  m_buffer_size = static_cast<size_t>(m_config->get_number("output.scalar.buffer_size"));
 
   m_variable["ancillary_variables"] = name + "_aux";
   m_variable.set_time_dependent(true);

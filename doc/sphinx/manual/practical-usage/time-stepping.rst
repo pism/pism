@@ -36,7 +36,7 @@ step length.
 #. Reporting.
 
    #. If  :config:`time_stepping.hit_scalar_times` is set, PISM will adjust time step lengths
-      to "hit" times requested with :config:`output.timeseries.times`.
+      to "hit" times requested with :config:`output.scalar.times`.
    #. If :config:`time_stepping.hit_spatial_times` is set (the default), PISM will adjust
       time step lengths to "hit" times requested with :config:`output.spatial.times`.
    #. If :config:`time_stepping.hit_save_times` is set, PISM will adjust time step lengths
