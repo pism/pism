@@ -128,7 +128,7 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -bootstrap -i $INNAME $GRID
      -regrid_file $INNAME $COUPLER_FORCING $FULLPHYS \
      -surface.force_to_thickness.file $PISM_DATANAME \
      -ts_file $TSNAME -ts_times $TSSTEP \
-     -extra_file $EXNAME -extra_times $EXSTEP -extra_vars $EXVARS \
+     -spatial_file $EXNAME -spatial_times $EXSTEP -spatial_vars $EXVARS \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
@@ -152,7 +152,7 @@ echo
 echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
      -ts_file $TSNAME -ts_times $TSSTEP \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXSTEP \
+     -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXSTEP \
      -ys $STARTYEAR -y $RUNLENGTH -o_size medium -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo

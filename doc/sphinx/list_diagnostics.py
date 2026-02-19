@@ -84,5 +84,5 @@ if __name__ == "__main__":
 
     print(header)
 
-    print_diagnostics("Spatially-variable fields", "sec-extra_vars", spatial)
+    print_diagnostics("Spatially-variable fields", "sec-spatial_vars", spatial)
     print_diagnostics("Scalar time-series",  "sec-ts_vars", scalar)

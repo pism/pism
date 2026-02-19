@@ -3,7 +3,7 @@
 .. DO NOT EDIT. This file was generated using list_diagnostics.py.
 
 
-.. _sec-extra_vars:
+.. _sec-spatial_vars:
 
 Spatially-variable fields
 -------------------------

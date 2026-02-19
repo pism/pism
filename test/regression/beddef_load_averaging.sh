@@ -104,8 +104,8 @@ common_options="
 "
 
 extra="
--extra_times 720days
--extra_vars topg
+-spatial_times 720days
+-spatial_vars topg
 "
 
 # 1. Bootstrap from the file with H=10m and run for N years with SMB=[10, -10, -10, 10]
@@ -136,7 +136,7 @@ run_length=$(( N * 360 ))
 ${pism} \
    ${common_options} \
    -atmosphere.delta_P.file dP_PMMP.nc \
-   ${extra} -extra_file ex_PMMP.nc \
+   ${extra} -spatial_file ex_PMMP.nc \
    -i H-10.nc \
    -time.run_length ${run_length}days \
    -o_size none \
@@ -160,7 +160,7 @@ ${pism} \
 ${pism} \
    ${common_options} \
    -atmosphere.delta_P.file dP_MMPP.nc \
-   ${extra} -extra_file ex_MMPP.nc \
+   ${extra} -spatial_file ex_MMPP.nc \
    -i H-12.5.nc \
    -regrid_file H-10-full.nc \
    -regrid_vars viscous_bed_displacement,elastic_bed_displacement \
@@ -173,7 +173,7 @@ ${pism} \
 ${pism} \
    ${common_options} \
    -atmosphere.delta_P.file dP_0.nc \
-   ${extra} -extra_file ex_0.nc \
+   ${extra} -spatial_file ex_0.nc \
    -i H-10.nc \
    -time.run_length ${run_length}days \
    -o_size none \

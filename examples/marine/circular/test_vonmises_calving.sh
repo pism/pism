@@ -22,7 +22,7 @@ diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,tendency_of_ice
 
 viewers="-view $diagnostics"
 
-extra="-extra_times 10 -extra_vars $diagnostics -extra_file ${output_basename}_ex.nc"
+extra="-spatial_times 10 -spatial_vars $diagnostics -spatial_file ${output_basename}_ex.nc"
 
 ts="-ts_times 10 -ts_file ${output_basename}_ts.nc"
 

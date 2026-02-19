@@ -25,7 +25,7 @@ diagnostics="thk,mask,velbase_mag,ice_area_specific_volume,velbase,mass_fluxes,f
 
 viewers="-view $diagnostics"
 
-extra="-extra_times 10 -extra_vars $diagnostics -extra_file ${output_basename}_ex.nc"
+extra="-spatial_times 10 -spatial_vars $diagnostics -spatial_file ${output_basename}_ex.nc"
 
 misc_options="-cfbc -part_grid -o_order zyx -energy none"
 

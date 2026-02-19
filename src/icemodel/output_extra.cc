@@ -26,18 +26,18 @@
 
 namespace pism {
 
-//! Computes the maximum time-step we can take and still hit all `-extra_times`.
+//! Computes the maximum time-step we can take and still hit all `-spatial_times`.
 MaxTimestep IceModel::extras_max_timestep(double t) {
 
   if (m_extra_filename.empty() or
       (not m_config->get_flag("time_stepping.hit_extra_times"))) {
-    return MaxTimestep("reporting (-extra_times)");
+    return MaxTimestep("reporting (-spatial_times)");
   }
 
   double eps = m_config->get_number("time_stepping.resolution");
 
   return reporting_max_timestep(m_extra_times, t, eps,
-                                "reporting (-extra_times)");
+                                "reporting (-spatial_times)");
 }
 
 static std::set<std::string> process_extra_shortcuts(const Config &config,
@@ -88,7 +88,7 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
 
     if (not config.get_flag(flag_name)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set %s to save ISMIP6 diagnostics "
-                                    "(-extra_vars ismip6).", flag_name);
+                                    "(-spatial_vars ismip6).", flag_name);
     }
 
     result.erase("ismip6");

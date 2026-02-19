@@ -67,7 +67,7 @@ RUN_LENGTH=${RUN_LENGTH:-2000}
 
 EXTRANAME=${RESDIR}extra_${stage}.nc
 exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,ice_area_specific_volume,cell_grounded_fraction"
-expackage="-extra_times 0:10:$RUN_LENGTH -extra_vars $exvars"
+expackage="-spatial_times 0:10:$RUN_LENGTH -spatial_vars $exvars"
 
 # Note: switching to a finer grid may produce very high SIA diffusivities
 echo
@@ -89,7 +89,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC
   -y $RUN_LENGTH
   -ts_file $TSNAME
   -ts_times 1
-  -extra_file $EXTRANAME
+  -spatial_file $EXTRANAME
    $expackage
   -o $RESNAME
   -o_size big"

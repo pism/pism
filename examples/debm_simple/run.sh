@@ -15,9 +15,9 @@ common_options="
   -atmosphere.searise_greenland.file ${climate_file} \
   -bootstrap \
   -energy none \
-  -extra_file ${output_file} \
-  -extra_times 7days \
-  -extra_vars ${extra_vars} \
+  -spatial_file ${output_file} \
+  -spatial_times 7days \
+  -spatial_vars ${extra_vars} \
   -geometry.update.enabled false \
   -i ${input_file} \
   -o_size none \

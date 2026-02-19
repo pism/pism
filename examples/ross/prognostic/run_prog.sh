@@ -43,7 +43,7 @@ cmd_prog="mpiexec -n $N_PROC ${PISMPREFIX}pism -regional -i $STARTNAME \
   -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $RUN_LENGTH -o $NAME -o_size big \
   -thickness_calving_threshold $CTHICK $STRONGKSP ${KSP_RTOL} \
   -ts_file ts-${NAME} -ts_times 0:monthly:${RUN_LENGTH} \
-  -extra_file ex-${NAME} -extra_times 0:${exdt}:${RUN_LENGTH} -extra_vars ${exvars} \
+  -spatial_file ex-${NAME} -spatial_times 0:${exdt}:${RUN_LENGTH} -spatial_vars ${exvars} \
   -options_left"
 echo "running command:"
 echo

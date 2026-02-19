@@ -46,8 +46,8 @@ output="-o $NAME -o_order zyx -o_size big"
 ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
 #-pik:-part_grid -cfbc -kill_icebergs
 
-extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} \
-       -extra_vars thk,mask,velsurf_mag,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
+extra="-spatial_file ex-${NAME} -spatial_times 0:${exdt}:${YEARS} \
+       -spatial_vars thk,mask,velsurf_mag,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
 
 timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
 

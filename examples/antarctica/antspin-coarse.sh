@@ -115,7 +115,7 @@ RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 NOMASS_RUN_LENGTH=${NOMASS_RUN_LENGTH:-200000}
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
-expackage="-extra_times 1000 -extra_vars bmelt,tillwat,velsurf_mag,temppabase,diffusivity,hardav"
+expackage="-spatial_times 1000 -spatial_vars bmelt,tillwat,velsurf_mag,temppabase,diffusivity,hardav"
 echo
 log "SIA only run with fixed geometry for ${NOMASS_RUN_LENGTH} years"
 cmd="$PISM_MPIDO $NN $PISM_EXEC
@@ -126,7 +126,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC
   -no_mass
   -ys 0
   -y ${NOMASS_RUN_LENGTH}
-  -extra_file $EXTRANAME
+  -spatial_file $EXTRANAME
    $expackage
   -o $RESNAME"
 $DO $cmd
@@ -143,7 +143,7 @@ TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 CONSTANT_CLIMATE_RUN_LENGTH=${CONSTANT_CLIMATE_RUN_LENGTH:-100000}
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
 exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,cell_grounded_fraction,ice_area_specific_volume,amount_fluxes,basal_mass_flux_grounded,basal_mass_flux_floating"
-expackage="-extra_times 1000 -extra_vars $exvars"
+expackage="-spatial_times 1000 -spatial_vars $exvars"
 
 echo
 log "SSA+SIA run \"into steady state\" with constant climate forcing for ${CONSTANT_CLIMATE_RUN_LENGTH} years"
@@ -162,7 +162,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC
   -y ${CONSTANT_CLIMATE_RUN_LENGTH}
   -ts_file $TSNAME
   -ts_times yearly
-  -extra_file $EXTRANAME
+  -spatial_file $EXTRANAME
    $expackage
   -o $RESNAME
   -o_size big"

@@ -101,7 +101,7 @@ climate="-surface given -surface_given_file $data"
 
 physics="-no_mass -energy none"
 
-diagnostics="-extra_file extras_$oname -extra_times $etimes -extra_vars $evarlist"
+diagnostics="-spatial_file extras_$oname -spatial_times $etimes -spatial_vars $evarlist"
 
 set -x
 

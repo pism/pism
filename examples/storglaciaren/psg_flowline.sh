@@ -140,7 +140,7 @@ echo
 echo "$SCRIPTNAME  -no_mass (no surface change) sia run to achieve approximate enthalpy equilibrium, for ${NOMASSRUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM $EB -i $INNAME $COUPLER \
   -no_mass -y ${NOMASSRUNLENGTH} \
-  -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES -o $OUTNAME"
+  -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXTIMES -o $OUTNAME"
 $PISM_DO $cmd
 
 
@@ -185,7 +185,7 @@ echo
 echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
      -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo

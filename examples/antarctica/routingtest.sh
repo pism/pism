@@ -30,7 +30,7 @@ dorun () {
   cmd="$PISMGO -skip -skip_max 10 -i pism_Antarctica_5km.nc -bootstrap $GRID $VERTGRID $OPTIONS -front_retreat_file pism_Antarctica_5km.nc -y 100 -o pre${LABEL}.nc"
   $DOIT $cmd
 
-  EXTRA="-extra_file ex_routing${LABEL}.nc -extra_times 200:100:$ENDTIME -extra_vars bwat,bwp,bwatvel,subglacial_water_input_rate"
+  EXTRA="-spatial_file ex_routing${LABEL}.nc -spatial_times 200:100:$ENDTIME -spatial_vars bwat,bwp,bwatvel,subglacial_water_input_rate"
 
   #hydrology only run for $ENDTIME years
   cmd="$PISMGO -i pre${LABEL}.nc -bootstrap -Lz 5000 $OPTIONS -front_retreat_file pism_Antarctica_5km.nc $HYDRO -no_mass -energy none -stress_balance ssa -max_dt 10.0 -ys 0 -ye $ENDTIME $EXTRA -o routing${LABEL}.nc"

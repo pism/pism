@@ -5,7 +5,7 @@ set -x
 set -e
 
 # appending to an extra file
-extra="-extra_file ex.nc -extra_times 100 -extra_vars thk"
+extra="-spatial_file ex.nc -spatial_times 100 -spatial_vars thk"
 
 pism -eisII A -y 1 -Mx 3 -My 3 -Mz 3 -Lz 5000 -o input-1.nc
 

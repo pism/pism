@@ -3802,7 +3802,7 @@ static void warn_about_missing(const Logger &log,
 /*!
  * De-allocate diagnostics that were not requested.
  *
- * Checks viewers, -extra_vars, -checkpoint, -save_vars, and regular output.
+ * Checks viewers, -spatial_vars, -checkpoint, -save_vars, and regular output.
  *
  * FIXME: I need to make sure that these reporting mechanisms are active. It is possible that
  * variables are on a list, but that list is not actually used.

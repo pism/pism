@@ -20,8 +20,8 @@ pism_options="
 -stress_balance sia
 -verbose 2
 -max_dt 5days
--extra_times 15days
--extra_vars thk,rank,mass_fluxes,temp
+-spatial_times 15days
+-spatial_vars thk,rank,mass_fluxes,temp
 "
 # Note: "rank" should be written *once* (it is time-independent) and "mass_fluxes" are not
 # written to snapshot files, so this tests the ability to write disjoint sets of variables
