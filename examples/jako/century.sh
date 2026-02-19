@@ -85,7 +85,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -i jakofine_short.nc \
   -no_model_strip 10 $PHYS \
   -spatial_file ex_jakofine.nc -spatial_times 0:yearly:$LENGTH \
   -spatial_vars mask,thk,velbase_mag,tillwat,tauc,dhdt,hardav,velsurf_mag,temppabase,diffusivity,bmelt,tempicethk_basal \
-  -ts_file ts_jakofine.nc -ts_times 0:monthly:$LENGTH \
+  -scalar_file ts_jakofine.nc -scalar_times 0:monthly:$LENGTH \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars vel_bc \
   $CLIMATE -ys 0 -ye $LENGTH -skip -skip_max $SKIP -o jakofine.nc"
 $PISM_DO $cmd

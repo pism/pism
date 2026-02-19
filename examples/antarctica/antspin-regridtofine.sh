@@ -87,8 +87,8 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC
   -stress_balance.sia.max_diffusivity 1e5
   -ys 0
   -y $RUN_LENGTH
-  -ts_file $TSNAME
-  -ts_times 1
+  -scalar_file $TSNAME
+  -scalar_times 1
   -spatial_file $EXTRANAME
    $expackage
   -o $RESNAME

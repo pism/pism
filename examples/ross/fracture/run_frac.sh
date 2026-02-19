@@ -47,7 +47,7 @@ ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa
 extra="-spatial_file ex-${NAME} -spatial_times 0:${exdt}:${YEARS} \
        -spatial_vars thk,mask,velsurf_mag,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
 
-timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
+timeseries="-scalar_file ts-${NAME} -scalar_times 0:1:${YEARS}"
 
 criterion=""
 

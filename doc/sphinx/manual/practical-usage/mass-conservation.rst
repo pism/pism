@@ -89,7 +89,7 @@ computational domain. The "integrated" mass accounting error can be computed usi
    Click :download:`here <conservation/scalar_accounting_error.txt>` to download this
    `ncap2` script.
 
-All names on the right-hand side above correspond to valid PISM diagnostic quantities.  They were generated using run-time option `-ts_file` etc.; see :ref:`sec-saving-time-series`.
+All names on the right-hand side above correspond to valid PISM diagnostic quantities.  They were generated using run-time option `-scalar_file` etc.; see :ref:`sec-saving-time-series`.
 
 .. rubric:: Comments
 

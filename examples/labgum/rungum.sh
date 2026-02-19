@@ -28,7 +28,7 @@ physics="-config_override gumparams.nc -energy none -sia_flow_law isothermal_gle
 endtime=746s                    # Sayag personal communication
 
 ts_dt=0.1s
-timediag="-ts_file ts_$oname -ts_times $ts_dt"
+timediag="-scalar_file ts_$oname -scalar_times $ts_dt"
 
 ex_dt=10s
 exvars="diffusivity,flux_mag,velbar_mag,velsurf_mag,mask,thk,wvelsurf"

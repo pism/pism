@@ -26,7 +26,7 @@
 namespace pism {
 
 /*!
- * Process -ts_vars shortcuts.
+ * Process -scalar_vars shortcuts.
  */
 static std::set<std::string> process_ts_shortcuts(const Config &config,
                                                   const std::set<std::string> &input) {
@@ -52,7 +52,7 @@ void IceModel::init_timeseries() {
 
   if (times_set xor not ts_filename.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "you need to specity both -ts_file and -ts_times"
+                       "you need to specity both -scalar_file and -scalar_times"
                        " to save scalar diagnostic time-series.");
   }
 
@@ -66,7 +66,7 @@ void IceModel::init_timeseries() {
     try {
       *m_ts_times = m_time->parse_times(times);
     } catch (RuntimeError &e) {
-      e.add_context("parsing the -ts_times argument %s", times.c_str());
+      e.add_context("parsing the -scalar_times argument %s", times.c_str());
       throw;
     }
 
@@ -143,18 +143,18 @@ void IceModel::init_timeseries() {
 
 }
 
-//! Computes the maximum time-step we can take and still hit all `-ts_times`.
+//! Computes the maximum time-step we can take and still hit all `-scalar_times`.
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
   if ((not m_config->get_flag("time_stepping.hit_ts_times")) or
       m_ts_diagnostics.empty()) {
-    return MaxTimestep("reporting (-ts_times)");
+    return MaxTimestep("reporting (-scalar_times)");
   }
 
   double eps = m_config->get_number("time_stepping.resolution");
 
   return reporting_max_timestep(*m_ts_times, my_t, eps,
-                                "reporting (-ts_times)");
+                                "reporting (-scalar_times)");
 }
 
 //! Flush scalar time-series.

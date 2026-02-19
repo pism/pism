@@ -160,8 +160,8 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC
    $FULLPHYS
   -ys 0
   -y ${CONSTANT_CLIMATE_RUN_LENGTH}
-  -ts_file $TSNAME
-  -ts_times yearly
+  -scalar_file $TSNAME
+  -scalar_times yearly
   -spatial_file $EXTRANAME
    $expackage
   -o $RESNAME

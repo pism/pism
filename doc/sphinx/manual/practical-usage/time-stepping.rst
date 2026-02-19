@@ -213,7 +213,7 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
      - maximum allowed `\dt` set with :config:`time_stepping.maximum_time_step`
 
    * - ``-ts_... reporting``
-     - the ``-ts_times`` option and the configuration parameter
+     - the ``-scalar_times`` option and the configuration parameter
        :config:`time_stepping.hit_ts_times`; see section :ref:`sec-saving-time-series`
 
    * - ``-extra_... reporting``

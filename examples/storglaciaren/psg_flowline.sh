@@ -161,7 +161,7 @@ echo
 echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM -bootstrap $GRID -i $INNAME -regrid_file $INNAME $EB -skip -skip_max $SKIP $COUPLER_FORCING $FULLPHYS\
      -force_to_thickness_file $INNAME -force_to_thickness_alpha $FTALPHA \
-     -ts_file $TSNAME -ts_times $TSTIMES \
+     -scalar_file $TSNAME -scalar_times $TSTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
@@ -184,7 +184,7 @@ EXTIMES=$STARTYEAR:$STEP:$ENDTIME
 echo
 echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
-     -ts_file $TSNAME -ts_times $TSTIMES \
+     -scalar_file $TSNAME -scalar_times $TSTIMES \
      -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
