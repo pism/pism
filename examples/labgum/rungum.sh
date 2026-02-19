@@ -27,14 +27,14 @@ physics="-config_override gumparams.nc -energy none -sia_flow_law isothermal_gle
 
 endtime=746s                    # Sayag personal communication
 
-ts_dt=0.1s
-timediag="-scalar_file ts_$oname -scalar_times $ts_dt"
+scalar_dt=0.1s
+timediag="-scalar_file scalar_$oname -scalar_times $scalar_dt"
 
 ex_dt=10s
 exvars="diffusivity,flux_mag,velbar_mag,velsurf_mag,mask,thk,wvelsurf"
 exdiag="-spatial_file ex_$oname -spatial_vars $exvars -spatial_times $ex_dt"
 
-dt="-time_stepping.resolution 1e-6 -max_dt $ts_dt"
+dt="-time_stepping.resolution 1e-6 -max_dt $scalar_dt"
 
 mpiexec -n $NN $pismexec -i $initfile -bootstrap $grid $climate $physics \
     $timediag $exdiag -ys 0.0 -y $endtime $dt -o $oname

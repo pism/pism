@@ -460,7 +460,7 @@ protected:
   //! Requested spatially-variable diagnostics.
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
   //! Requested scalar diagnostics.
-  std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
+  std::map<std::string,TSDiagnostic::Ptr> m_scalar_diagnostics;
 
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
@@ -478,13 +478,13 @@ protected:
   MaxTimestep snapshots_max_timestep(double my_t);
 
   //! file to write scalar time-series to
-  std::shared_ptr<OutputFile> m_ts_file;
+  std::shared_ptr<OutputFile> m_scalar_file;
   //! requested times for scalar time-series
-  std::shared_ptr<std::vector<double>> m_ts_times;
-  std::set<std::string> m_ts_vars;
+  std::shared_ptr<std::vector<double>> m_scalar_times;
+  std::set<std::string> m_scalar_vars;
   void init_timeseries();
   void flush_timeseries();
-  MaxTimestep ts_max_timestep(double my_t);
+  MaxTimestep scalar_max_timestep(double t);
 
   // spatially-varying time-series
   std::string m_extra_filename;

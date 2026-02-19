@@ -164,12 +164,12 @@ class Experiment:
     def output_options(self, step):
         output_file = self.output_filename(self.experiment, step)
         extra_file = "ex_" + output_file
-        ts_file = "ts_" + output_file
+        scalar_file = "scalar_" + output_file
 
         options = ["-spatial_file %s" % extra_file,
                    "-spatial_times 0:50:3e4",
                    "-spatial_vars $extra_vars",
-                   "-scalar_file %s" % ts_file,
+                   "-scalar_file %s" % scalar_file,
                    "-scalar_times 0:50:3e4",
                    "-output.sizes.medium sftgif",
                    "-o %s" % output_file,

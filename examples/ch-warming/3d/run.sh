@@ -5,7 +5,7 @@ python create_inputs.py
 run() {
 suffix=$1
 warming=$2
-extra_vars=$3
+spatial_vars=$3
 
 # bootstrap ice temperature (and so its enthalpy) using the mean-annual surface
 # temperature
@@ -32,7 +32,7 @@ pism -bootstrap -i input.nc -regrid_file in.nc -regrid_vars enthalpy \
      -surface given,delta_T \
      -surface_delta_T_file input.nc -surface_delta_T_period 1 \
      -spatial_file ex_${suffix}.nc \
-     -spatial_vars ${extra_vars} \
+     -spatial_vars ${spatial_vars} \
      -spatial_times 10days \
      -y 10 \
      -calendar 360_day \

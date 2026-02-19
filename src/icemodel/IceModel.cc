@@ -76,7 +76,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
       m_step_counter(0),
       m_thickness_change(grid),
-      m_ts_times(new std::vector<double>()) {
+      m_scalar_times(new std::vector<double>()) {
 
   m_velocity_bc_mask.set_interpolation_type(NEAREST);
   m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
@@ -769,7 +769,7 @@ IceModelTerminationReason IceModel::run() {
   // This is needed to compute rates of change of the ice mass, volume, etc.
   {
     const double time = m_time->current();
-    for (const auto &d : m_ts_diagnostics) {
+    for (const auto &d : m_scalar_diagnostics) {
       d.second->update(time, time);
     }
   }

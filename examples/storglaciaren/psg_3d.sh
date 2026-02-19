@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2011, 2012, 2014, 2018, 2024, 2025 Andy Aschwanden and Ed Bueler
+# Copyright (C) 2011, 2012, 2014, 2018, 2024, 2025, 2026 Andy Aschwanden and Ed Bueler
 
 set -e # exit on error
 
@@ -116,7 +116,7 @@ ENDTIME=$(($STARTYEAR + $RUNLENGTH))
 INNAME=$OUTNAME
 OUTNAME=ssa_ftt_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
-TSNAME=ts_${OUTNAME}
+TSNAME=scalar_${OUTNAME}
 EXNAME=ex_${OUTNAME}
 TSSTEP=yearly
 EXSTEP=yearly
@@ -145,7 +145,7 @@ ENDTIME=$(($STARTYEAR + $RUNLENGTH))
 INNAME=$OUTNAMEFULL
 OUTNAME=ssa_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
-TSNAME=ts_${OUTNAMEFULL}
+TSNAME=scalar_${OUTNAMEFULL}
 EXNAME=ex_${OUTNAMEFULL}
 
 echo

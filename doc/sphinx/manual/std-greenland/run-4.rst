@@ -101,10 +101,10 @@ starts with the ice geometry from the end of the constant-climate run.
 .. figure:: figures/ivol-const-paleo.png
    :name: fig-ivolconstpaleo
 
-   Time series of modeled ice sheet volume ``ice_volume_glacierized`` from constant-climate
-   (blue; ``ts_g20km_10ka_hy.nc``) and paleo-climate (green; ``ts_g20km_25ka_paleo.nc``)
-   spinup runs. Note that the paleo-climate run started with the ice geometry at the end
-   of the constant-climate run.
+   Time series of modeled ice sheet volume ``ice_volume_glacierized`` from
+   constant-climate (blue; ``scalar_g20km_10ka_hy.nc``) and paleo-climate (green;
+   ``scalar_g20km_25ka_paleo.nc``) spinup runs. Note that the paleo-climate run started
+   with the ice geometry at the end of the constant-climate run.
 
 Another time-series comparison, of the variable ``ice_volume_glacierized_temperate``, the
 total volume of temperate (at `0^\circ C`) ice, appears in
@@ -113,7 +113,7 @@ total volume of temperate (at `0^\circ C`) ice, appears in
 come into rough equilibrium in the holocene. The bootstrapping artifact, seen at the start
 of the constant-climate run, which disappears in less than 1000 years, is avoided in the
 paleo-climate run by starting with the constant-climate end-state. The reader is
-encouraged to examine the diagnostic files ``ts_g20km_25ka_paleo.nc`` and
+encouraged to examine the diagnostic files ``scalar_g20km_25ka_paleo.nc`` and
 ``ex_g20km_25ka_paleo.nc`` to find more evidence of the (modeled) climate impact on the
 ice dynamics.
 
@@ -121,7 +121,7 @@ ice dynamics.
    :name: fig-ivoltempconstpaleo
 
    Time series of temperate ice volume ``ice_volume_glacierized_temperate`` from
-   constant-climate (blue; ``ts_g20km_10ka_hy.nc``) and paleo-climate (green;
-   ``ts_g20km_25ka_paleo.nc``) spinup runs. The cold of the last ice age affects the
+   constant-climate (blue; ``scalar_g20km_10ka_hy.nc``) and paleo-climate (green;
+   ``scalar_g20km_25ka_paleo.nc``) spinup runs. The cold of the last ice age affects the
    fraction of temperate ice. Note different volume scale compared to that in
    :numref:`fig-ivolconstpaleo`; only about 1\% of ice is temperate (by volume).

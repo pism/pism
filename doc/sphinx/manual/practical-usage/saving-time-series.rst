@@ -32,7 +32,7 @@ option :opt:`-list_diagnostics scalar` to see the list of all available time-ser
 If the file ``foo.nc``, specified by ``-scalar_file foo.nc``, already exists then by default
 the existing file will be moved to ``foo.nc~`` and the new time series will go into
 ``foo.nc``. To append the time series onto the end of the existing file, use option
-``-ts_append``.
+``-scalar_append``.
 
 PISM buffers time-series data and writes it at the end of the run, once 10000 values are
 stored, or when an ``-spatial_file`` is saved, whichever comes first. Sending an ``USR1``

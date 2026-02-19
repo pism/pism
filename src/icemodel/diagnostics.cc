@@ -3259,7 +3259,7 @@ protected:
 
 void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) {
   m_diagnostics = allocate_spatial_diagnostics();
-  m_ts_diagnostics = allocate_scalar_diagnostics();
+  m_scalar_diagnostics = allocate_scalar_diagnostics();
 
   list_diagnostics(report_type);
 
@@ -3632,7 +3632,7 @@ void IceModel::list_diagnostics(DiagnosticReport type) const {
     m_log->message(1, ",\n");        // separator
 
     m_log->message(1, "\"scalar\" :\n");
-    print_diagnostics_json(*m_log, ts_diag_metadata(m_ts_diagnostics));
+    print_diagnostics_json(*m_log, ts_diag_metadata(m_scalar_diagnostics));
 
     m_log->message(1, "}\n");
 
@@ -3650,7 +3650,7 @@ void IceModel::list_diagnostics(DiagnosticReport type) const {
     // scalar time-series
     m_log->message(1, "======== Available time-series ========\n");
 
-    print_diagnostics(*m_log, ts_diag_metadata(m_ts_diagnostics));
+    print_diagnostics(*m_log, ts_diag_metadata(m_scalar_diagnostics));
   }
 }
 
@@ -3845,7 +3845,7 @@ void IceModel::update_diagnostics(double t, double dt) {
     d.second->update(dt);
   }
 
-  for (const auto &d : m_ts_diagnostics) {
+  for (const auto &d : m_scalar_diagnostics) {
     d.second->update(t - dt, t);
   }
 }

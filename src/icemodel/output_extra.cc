@@ -304,7 +304,7 @@ void IceModel::write_extras() {
   bool extra_split = m_config->get_flag("output.spatial.split");
 
   const Profiling &profiling = m_ctx->profiling();
-  profiling.begin("io.extra_file");
+  profiling.begin("io.spatial_file");
   {
     if (m_extra_file == nullptr) {
 
@@ -365,7 +365,7 @@ void IceModel::write_extras() {
     // make sure all changes are written
     // m_extra_file->sync();
   }
-  profiling.end("io.extra_file");
+  profiling.end("io.spatial_file");
 
   flush_timeseries();
 

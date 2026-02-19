@@ -1,15 +1,15 @@
-all: result extra extra_split extra_append snapshots snapshots_split timeseries timeseries_append checkpointing compression grid_mapping beddef_lc signals
+all: result spatial spatial_split spatial_append snapshots snapshots_split timeseries timeseries_append checkpointing compression grid_mapping beddef_lc signals
 
 result: test_result.sh
 	bash $^
 
-extra: test_extra.sh
+spatial: test_spatial.sh
 	bash $^
 
-extra_split: test_extra.sh
+spatial_split: test_spatial.sh
 	filename=ex split=yes bash $^
 
-extra_append: test_extra_append.sh
+spatial_append: test_spatial_append.sh
 	bash $^
 
 snapshots: test_snapshots.sh

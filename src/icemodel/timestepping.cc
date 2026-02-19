@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022, 2023, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022, 2023, 2025, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -158,7 +158,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   // reporting
   {
-    restrictions.push_back(ts_max_timestep(current_time));
+    restrictions.push_back(scalar_max_timestep(current_time));
     restrictions.push_back(extras_max_timestep(current_time));
     restrictions.push_back(snapshots_max_timestep(current_time));
   }
