@@ -264,10 +264,10 @@ protected:
   void write_state_diagnostics(const OutputFile &file,
                                const std::set<std::string> &variable_names) const;
 
-  virtual void write_run_stats(const OutputFile &file) const;
+  void write_run_stats(const OutputFile &file) const;
 
-  virtual void write_diagnostics(const OutputFile &file,
-                                 const std::set<std::string> &variable_names) const;
+  void write_diagnostics(const OutputFile &file,
+                         const std::set<std::string> &variable_names) const;
 
   std::string save_state_on_error(const std::string &suffix,
                                   const std::set<std::string> &additional_variables);
@@ -457,10 +457,10 @@ protected:
    * The set of variables that the "state" of IceModel consists of.
    */
   std::set<array::Array*> m_model_state;
-  //! Requested spatially-variable diagnostics.
-  std::map<std::string,Diagnostic::Ptr> m_diagnostics;
-  //! Requested scalar diagnostics.
-  std::map<std::string,TSDiagnostic::Ptr> m_scalar_diagnostics;
+  //! Available spatially-variable diagnostics
+  std::map<std::string,Diagnostic::Ptr> m_available_spatial_diagnostics;
+  //! Available scalar diagnostics
+  std::map<std::string,TSDiagnostic::Ptr> m_available_scalar_diagnostics;
 
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
@@ -482,24 +482,24 @@ protected:
   //! requested times for scalar time-series
   std::shared_ptr<std::vector<double>> m_scalar_times;
   std::set<std::string> m_scalar_vars;
-  void init_timeseries();
-  void flush_timeseries();
-  MaxTimestep scalar_max_timestep(double t);
+  void init_scalar_diagnostics();
+  void scalar_diagnostics_flush_buffers();
+  MaxTimestep scalar_diagnostics_max_timestep(double t);
 
   // spatially-varying time-series
-  std::string m_extra_filename;
-  std::vector<double> m_extra_times;
-  unsigned int m_next_extra;
-  double m_last_extra;
-  std::set<std::string> m_extra_vars;
+  std::string m_spatial_filename;
+  std::vector<double> m_spatial_times;
+  unsigned int m_next_spatial_index;
+  double m_last_spatial_time;
+  std::set<std::string> m_spatial_vars;
 
   //! set of variables that will be written to extra files
-  std::set<VariableMetadata> m_extra_file_contents;
+  std::set<VariableMetadata> m_spatial_file_contents;
 
-  std::shared_ptr<OutputFile> m_extra_file;
-  void init_extras();
-  void write_extras();
-  MaxTimestep extras_max_timestep(double my_t);
+  std::shared_ptr<OutputFile> m_spatial_file;
+  void init_spatial_diagnostics();
+  void write_spatial_diagnostics();
+  MaxTimestep spatial_diagnostics_max_timestep(double t);
 
   // automatic checkpoints
   std::string m_checkpoint_filename;

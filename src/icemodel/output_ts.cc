@@ -43,7 +43,7 @@ static std::set<std::string> process_ts_shortcuts(const Config &config,
 }
 
 //! Initializes the code writing scalar time-series.
-void IceModel::init_timeseries() {
+void IceModel::init_scalar_diagnostics() {
 
   auto ts_filename = m_config->get_string("output.scalar.file");
 
@@ -57,7 +57,7 @@ void IceModel::init_timeseries() {
   }
 
   if (ts_filename.empty()) {
-    m_scalar_diagnostics.clear();
+    m_available_scalar_diagnostics.clear();
     return;
   }
 
@@ -88,14 +88,14 @@ void IceModel::init_timeseries() {
     } else {
       TSDiagnosticList diagnostics;
       for (const auto &v : m_scalar_vars) {
-        if (m_scalar_diagnostics.find(v) != m_scalar_diagnostics.end()) {
-          diagnostics[v] = m_scalar_diagnostics[v];
+        if (m_available_scalar_diagnostics.find(v) != m_available_scalar_diagnostics.end()) {
+          diagnostics[v] = m_available_scalar_diagnostics[v];
         } else {
           missing.push_back(v);
         }
       }
       // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
-      m_scalar_diagnostics = diagnostics;
+      m_available_scalar_diagnostics = diagnostics;
     }
 
     if (not missing.empty()) {
@@ -126,7 +126,7 @@ void IceModel::init_timeseries() {
     } else {
       std::set<VariableMetadata> variables = { config_metadata(*m_config),
                                                m_output_global_attributes };
-      for (const auto &d : m_scalar_diagnostics) {
+      for (const auto &d : m_available_scalar_diagnostics) {
         variables.insert(d.second->metadata());
       }
 
@@ -137,17 +137,17 @@ void IceModel::init_timeseries() {
   }
 
   // initialize scalar diagnostics using m_ts_file allocated above:
-  for (const auto &d : m_scalar_diagnostics) {
+  for (const auto &d : m_available_scalar_diagnostics) {
     d.second->init(m_scalar_file, m_scalar_times);
   }
 
 }
 
 //! Computes the maximum time-step we can take and still hit all `-scalar_times`.
-MaxTimestep IceModel::scalar_max_timestep(double my_t) {
+MaxTimestep IceModel::scalar_diagnostics_max_timestep(double my_t) {
 
   if ((not m_config->get_flag("time_stepping.hit_scalar_times")) or
-      m_scalar_diagnostics.empty()) {
+      m_available_scalar_diagnostics.empty()) {
     return MaxTimestep("reporting (-scalar_times)");
   }
 
@@ -158,7 +158,7 @@ MaxTimestep IceModel::scalar_max_timestep(double my_t) {
 }
 
 //! Flush scalar time-series.
-void IceModel::flush_timeseries() {
+void IceModel::scalar_diagnostics_flush_buffers() {
 
   if (m_scalar_file == nullptr) {
     return;
@@ -167,7 +167,7 @@ void IceModel::flush_timeseries() {
   io::write_config(*m_config, "pism_config", *m_scalar_file);
 
   // flush all the time-series buffers:
-  for (const auto &d : m_scalar_diagnostics) {
+  for (const auto &d : m_available_scalar_diagnostics) {
     d.second->flush();
   }
 

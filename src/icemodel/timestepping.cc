@@ -158,8 +158,8 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   // reporting
   {
-    restrictions.push_back(scalar_max_timestep(current_time));
-    restrictions.push_back(extras_max_timestep(current_time));
+    restrictions.push_back(scalar_diagnostics_max_timestep(current_time));
+    restrictions.push_back(spatial_diagnostics_max_timestep(current_time));
     restrictions.push_back(snapshots_max_timestep(current_time));
   }
 

@@ -67,7 +67,7 @@ void IceModel::init_snapshots() {
   m_snapshot_file_contents =
       pism::combine(m_snapshot_file_contents, state_variables_diagnostics(m_snapshot_vars));
   m_snapshot_file_contents =
-      pism::combine(m_snapshot_file_contents, state_variables_diagnostics(m_extra_vars));
+      pism::combine(m_snapshot_file_contents, state_variables_diagnostics(m_spatial_vars));
   m_snapshot_file_contents =
       pism::combine(m_snapshot_file_contents, diagnostic_variables(m_snapshot_vars));
 
@@ -133,7 +133,7 @@ void IceModel::write_snapshot() {
   }
 
   // flush time-series buffers
-  flush_timeseries();
+  scalar_diagnostics_flush_buffers();
 
   const Profiling &profiling = m_ctx->profiling();
 

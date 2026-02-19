@@ -42,7 +42,7 @@ void IceModel::init_checkpoints() {
     m_checkpoint_file_contents =
         pism::combine(m_checkpoint_file_contents, state_variables_diagnostics(m_checkpoint_vars));
     m_checkpoint_file_contents =
-        pism::combine(m_checkpoint_file_contents, state_variables_diagnostics(m_extra_vars));
+        pism::combine(m_checkpoint_file_contents, state_variables_diagnostics(m_spatial_vars));
     m_checkpoint_file_contents =
         pism::combine(m_checkpoint_file_contents, diagnostic_variables(m_checkpoint_vars));
   }
@@ -99,7 +99,7 @@ bool IceModel::write_checkpoint() {
   double checkpoint_end_time = get_time(m_grid->com);
 
   // Also flush time-series:
-  flush_timeseries();
+  scalar_diagnostics_flush_buffers();
 
   m_log->message(2,
                  "  [%s] Done saving a checkpoint in %f seconds (%f minutes).\n",

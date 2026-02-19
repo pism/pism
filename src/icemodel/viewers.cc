@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2025, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -65,9 +65,9 @@ void IceModel::update_viewers() {
       this->view_field(m_grid->variables().get(v));
     } else {
       // if not found, try to compute:
-      auto diag = m_diagnostics.find(v);
+      auto diag = m_available_spatial_diagnostics.find(v);
 
-      if (diag != m_diagnostics.end()) {
+      if (diag != m_available_spatial_diagnostics.end()) {
         this->view_field(diag->second->compute().get());
       }
     }

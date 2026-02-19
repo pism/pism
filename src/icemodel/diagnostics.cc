@@ -3258,16 +3258,16 @@ protected:
 } // end of namespace diagnostics
 
 void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) {
-  m_diagnostics = allocate_spatial_diagnostics();
-  m_scalar_diagnostics = allocate_scalar_diagnostics();
+  m_available_spatial_diagnostics = allocate_spatial_diagnostics();
+  m_available_scalar_diagnostics = allocate_scalar_diagnostics();
 
   list_diagnostics(report_type);
 
   // initialize diagnostics first: we need to know which spatial and scalar variables will
   // be saved to determine which *state* variables for these diagnostics need to be saved
   // to output files that can be used for re-starting.
-  init_timeseries();
-  init_extras();
+  init_scalar_diagnostics();
+  init_spatial_diagnostics();
   // initialize outputs that can be used for re-starting:
   init_snapshots();
   init_checkpoints();
@@ -3277,14 +3277,14 @@ void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) 
 
   // reset: this gives diagnostics a chance to capture the current state of the model at the
   // beginning of the run
-  for (auto &d : m_diagnostics) {
+  for (auto &d : m_available_spatial_diagnostics) {
     d.second->reset();
   }
 
   // read in the state (accumulators) if we are re-starting a run
   if (options.type == INIT_RESTART) {
     File file(m_grid->com, options.filename, io::PISM_GUESS, io::PISM_READONLY);
-    for (const auto &d : m_diagnostics) {
+    for (const auto &d : m_available_spatial_diagnostics) {
       d.second->init(file, options.record);
     }
   }
@@ -3294,7 +3294,7 @@ void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) 
     std::set<VariableMetadata> all_variables;
     all_variables = pism::combine(all_variables, m_output_file_contents);
     all_variables = pism::combine(all_variables, m_snapshot_file_contents);
-    all_variables = pism::combine(all_variables, m_extra_file_contents);
+    all_variables = pism::combine(all_variables, m_spatial_file_contents);
     all_variables = pism::combine(all_variables, m_checkpoint_file_contents);
 
     m_output_writer->initialize(all_variables);
@@ -3627,12 +3627,12 @@ void IceModel::list_diagnostics(DiagnosticReport type) const {
     m_log->message(1, "{\n");
 
     m_log->message(1, "\"spatial\" :\n");
-    print_diagnostics_json(*m_log, diag_metadata(m_diagnostics));
+    print_diagnostics_json(*m_log, diag_metadata(m_available_spatial_diagnostics));
 
     m_log->message(1, ",\n");        // separator
 
     m_log->message(1, "\"scalar\" :\n");
-    print_diagnostics_json(*m_log, ts_diag_metadata(m_scalar_diagnostics));
+    print_diagnostics_json(*m_log, ts_diag_metadata(m_available_scalar_diagnostics));
 
     m_log->message(1, "}\n");
 
@@ -3643,14 +3643,14 @@ void IceModel::list_diagnostics(DiagnosticReport type) const {
     m_log->message(1, "\n");
     m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
 
-    print_diagnostics(*m_log, diag_metadata(m_diagnostics));
+    print_diagnostics(*m_log, diag_metadata(m_available_spatial_diagnostics));
   }
 
   if (type == DIAG_ALL or type == DIAG_SCALAR) {
     // scalar time-series
     m_log->message(1, "======== Available time-series ========\n");
 
-    print_diagnostics(*m_log, ts_diag_metadata(m_scalar_diagnostics));
+    print_diagnostics(*m_log, ts_diag_metadata(m_available_scalar_diagnostics));
   }
 }
 
@@ -3811,24 +3811,24 @@ void IceModel::deallocate_unused_diagnostics() {
 
   // get the list of available diagnostics
   std::set<std::string> available;
-  for (const auto &d : m_diagnostics) {
+  for (const auto &d : m_available_spatial_diagnostics) {
     available.insert(d.first);
   }
 
   auto extra_stop = m_config->get_flag("output.spatial.stop_missing");
-  warn_about_missing(*m_log, m_extra_vars, "diagnostic", available, extra_stop);
+  warn_about_missing(*m_log, m_spatial_vars, "diagnostic", available, extra_stop);
 
   // get the list of requested diagnostics
   auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
   requested = combine(requested, m_output_vars);
   requested = combine(requested, m_snapshot_vars);
-  requested = combine(requested, m_extra_vars);
+  requested = combine(requested, m_spatial_vars);
   requested = combine(requested, m_checkpoint_vars);
 
   // de-allocate diagnostics that were not requested
   for (const auto &v : available) {
     if (requested.find(v) == requested.end()) {
-      m_diagnostics.erase(v);
+      m_available_spatial_diagnostics.erase(v);
     }
   }
 }
@@ -3841,11 +3841,11 @@ void IceModel::deallocate_unused_diagnostics() {
  * Call this after deallocate_unused_diagnostics() to avoid unnecessary work.
  */
 void IceModel::update_diagnostics(double t, double dt) {
-  for (const auto &d : m_diagnostics) {
+  for (const auto &d : m_available_spatial_diagnostics) {
     d.second->update(dt);
   }
 
-  for (const auto &d : m_scalar_diagnostics) {
+  for (const auto &d : m_available_scalar_diagnostics) {
     d.second->update(t - dt, t);
   }
 }
@@ -3854,9 +3854,9 @@ void IceModel::update_diagnostics(double t, double dt) {
 void IceModel::write_diagnostics(const OutputFile &file,
                                  const std::set<std::string> &variable_names) const {
   for (const auto &variable : variable_names) {
-    auto diag = m_diagnostics.find(variable);
+    auto diag = m_available_spatial_diagnostics.find(variable);
 
-    if (diag != m_diagnostics.end()) {
+    if (diag != m_available_spatial_diagnostics.end()) {
       diag->second->compute()->write(file);
     }
   }
@@ -3867,9 +3867,9 @@ IceModel::diagnostic_variables(const std::set<std::string> &variable_names) cons
   std::set<VariableMetadata> result{};
   {
     for (const auto &var : variable_names) {
-      auto diag = m_diagnostics.find(var);
+      auto diag = m_available_spatial_diagnostics.find(var);
 
-      if (diag != m_diagnostics.end()) {
+      if (diag != m_available_spatial_diagnostics.end()) {
         const auto &D = diag->second;
         for (unsigned int k = 0; k < D->n_variables(); ++k) {
           result.insert(D->metadata(k));
@@ -3885,9 +3885,9 @@ IceModel::state_variables_diagnostics(const std::set<std::string> &variable_name
   std::set<VariableMetadata> result{};
   {
     for (const auto &var : variable_names) {
-      auto diag = m_diagnostics.find(var);
+      auto diag = m_available_spatial_diagnostics.find(var);
 
-      if (diag != m_diagnostics.end()) {
+      if (diag != m_available_spatial_diagnostics.end()) {
         const auto &D = diag->second;
         result = pism::combine(result, D->state());
       }
@@ -3900,9 +3900,9 @@ void IceModel::write_state_diagnostics(const OutputFile &file,
                                        const std::set<std::string> &variable_names) const {
 
   for (const auto &var : variable_names) {
-    auto diag = m_diagnostics.find(var);
+    auto diag = m_available_spatial_diagnostics.find(var);
 
-    if (diag != m_diagnostics.end()) {
+    if (diag != m_available_spatial_diagnostics.end()) {
       const auto &D = diag->second;
       D->write_state(file);
     }

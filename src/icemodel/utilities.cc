@@ -87,7 +87,7 @@ int IceModel::process_signals() {
     }
 
     // flush all the time-series buffers:
-    flush_timeseries();
+    scalar_diagnostics_flush_buffers();
   }
 
   if (pism_signal == SIGUSR2) {
@@ -96,7 +96,7 @@ int IceModel::process_signals() {
     pism_signal = 0;
 
     // flush all the time-series buffers:
-    flush_timeseries();
+    scalar_diagnostics_flush_buffers();
   }
 
   return 0;
