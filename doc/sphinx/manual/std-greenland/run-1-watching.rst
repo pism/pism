@@ -6,18 +6,18 @@ Watching the first run
 ----------------------
 
 As soon as the run starts it creates time-dependent NetCDF files ``scalar_g20km_10ka.nc`` and
-``ex_g20km_10ka.nc``. The latter file, which has spatially-dependent fields at each time,
+``spatial_g20km_10ka.nc``. The latter file, which has spatially-dependent fields at each time,
 is created after the first 100 model years, a few wall clock seconds in this case. The
-command ``-spatial_file ex_g20km_10ka.nc -spatial_times -10000:100:0`` adds a
+command ``-spatial_file spatial_g20km_10ka.nc -spatial_times -10000:100:0`` adds a
 spatially-dependent "frame" at model times -9900, -9800, ..., 0.
 
 To look at the spatial-fields output graphically, do:
 
 .. code-block:: none
 
-   ncview ex_g20km_10ka.nc
+   ncview spatial_g20km_10ka.nc
 
-We see that ``ex_g20km_10ka.nc`` contains growing "movies" of the fields chosen by the
+We see that ``spatial_g20km_10ka.nc`` contains growing "movies" of the fields chosen by the
 ``-spatial_vars`` option. A frame of the ice thickness field ``thk`` is shown in
 :numref:`fig-growing` (left).
 
@@ -42,7 +42,7 @@ state (see :cite:`EISMINT00`, for exampe).
    Two views produced by ``ncview`` during a PISM model run.
 
    :Left: :var:`thk`, the ice sheet thickness, a space-dependent field, from file
-          ``ex_g20km_10ka.nc``.
+          ``spatial_g20km_10ka.nc``.
    :Right: :var:`ice_volume_glacierized`, the total ice sheet volume time-series, from file
            ``scalar_g20km_10ka.nc``.
 

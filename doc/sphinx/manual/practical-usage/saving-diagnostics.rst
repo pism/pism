@@ -17,14 +17,15 @@ example,
 .. code-block:: none
 
    pism -i foo.nc -y 10000 -o output.nc \
-         -spatial_file extras.nc \
+         -spatial_file spatial_diagnostics.nc \
          -spatial_times 0:10:1e4 \
          -spatial_vars velsurf_mag,velbase_mag
 
 will run for `10000` years, saving the magnitude of horizontal velocities at the ice
 surface and at the base of ice every 10 years. Times are specified using a comma-separated
-list or a MATLAB-style range. See :ref:`sec-extra-parameters` below for all the parameters
-controlling this feature. The section :ref:`sec-spatial_vars` list all the variable choices.
+list or a MATLAB-style range. See :ref:`sec-output-spatial-parameters` below for all the
+parameters controlling this feature. The section :ref:`sec-spatial_vars` list all the
+variable choices.
 
 .. note::
 
@@ -57,7 +58,7 @@ instead of a number; for example
 
 .. code-block:: none
 
-   pism -i foo.nc -y 100 -o output.nc -spatial_file extras.nc \
+   pism -i foo.nc -y 100 -o output.nc -spatial_file spatial_diagnostics.nc \
          -spatial_times 0:monthly:100 -spatial_vars dHdt
 
 will save the rate of change of the ice thickness every month for 100 years. With the
@@ -104,7 +105,7 @@ step to, and save at, *exactly* the times requested. By contrast, as noted in su
 time-steps and instead uses linear interpolation to save at the requested times in between
 PISM's actual time-steps.
 
-.. _sec-extra-parameters:
+.. _sec-output-spatial-parameters:
 
 Parameters
 ==========

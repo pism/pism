@@ -114,7 +114,7 @@ come into rough equilibrium in the holocene. The bootstrapping artifact, seen at
 of the constant-climate run, which disappears in less than 1000 years, is avoided in the
 paleo-climate run by starting with the constant-climate end-state. The reader is
 encouraged to examine the diagnostic files ``scalar_g20km_25ka_paleo.nc`` and
-``ex_g20km_25ka_paleo.nc`` to find more evidence of the (modeled) climate impact on the
+``spatial_g20km_25ka_paleo.nc`` to find more evidence of the (modeled) climate impact on the
 ice dynamics.
 
 .. figure:: figures/ivoltemp-const-paleo.png

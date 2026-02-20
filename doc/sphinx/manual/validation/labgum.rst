@@ -66,7 +66,7 @@ and then do a run for 746 model seconds :cite:`SayagWorster2013` on the 10 mm gr
    ./rungum.sh 4 52 &> out.lab52 &
 
 This run generates text file ``out.lab52``, diagnostic files ``scalar_lab52.nc`` and
-``ex_lab52.nc``, and final output ``lab52.nc``. This run took about 5 minutes on
+``spatial_lab52.nc``, and final output ``lab52.nc``. This run took about 5 minutes on
 a 2013 laptop, thus roughly real time! When it is done, you can compare the modeled radius
 to the experimental data:
 
