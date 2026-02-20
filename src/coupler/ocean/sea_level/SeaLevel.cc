@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2021, 2023, 2025 PISM Authors
+/* Copyright (C) 2018, 2019, 2021, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -118,21 +118,21 @@ protected:
 
 } // end of namespace diagnostics
 
-DiagnosticList SeaLevel::diagnostics_impl() const {
+DiagnosticList SeaLevel::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     {"sea_level", Diagnostic::Ptr(new diagnostics::SL(this))},
   };
 
   if (m_input_model) {
-    return combine(result, m_input_model->diagnostics());
+    return combine(result, m_input_model->spatial_diagnostics());
   } else {
     return result;
   }
 }
 
-TSDiagnosticList SeaLevel::ts_diagnostics_impl() const {
+TSDiagnosticList SeaLevel::scalar_diagnostics_impl() const {
   if (m_input_model) {
-    return m_input_model->ts_diagnostics();
+    return m_input_model->scalar_diagnostics();
   } else {
     return {};
   }

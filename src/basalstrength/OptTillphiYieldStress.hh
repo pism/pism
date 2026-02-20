@@ -30,7 +30,7 @@ public:
   virtual ~OptTillphiYieldStress() = default;
 
 private:
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 
   void update_tillphi(const array::Scalar &ice_surface_elevation,
                       const array::Scalar &bed_topography,

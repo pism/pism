@@ -67,8 +67,8 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
-  virtual TSDiagnosticList ts_diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
+  virtual TSDiagnosticList scalar_diagnostics_impl() const;
 
   virtual const array::Scalar& shelf_base_temperature_impl() const;
   virtual const array::Scalar& shelf_base_mass_flux_impl() const;

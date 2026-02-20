@@ -69,7 +69,7 @@ protected:
 
   virtual void write_state_impl(const OutputFile &output) const;
 
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 
   array::Scalar2 m_basal_yield_stress;
 

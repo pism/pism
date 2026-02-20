@@ -44,7 +44,7 @@ public:
   const array::Scalar& threshold() const;
 
 protected:
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
   std::shared_ptr<array::Forcing> m_calving_threshold;
   array::CellType1 m_old_mask;
 };

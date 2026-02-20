@@ -44,7 +44,7 @@ public:
   void compute_residual(const Inputs &inputs, const array::Vector2 &velocity, array::Vector &result);
 
 protected:
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 
   void initialize_iterations(const Inputs &inputs);
 

@@ -147,7 +147,7 @@ protected:
                                const array::Scalar &P);
 
   virtual void update_impl(double t, double dt, const Inputs& inputs) = 0;
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual std::map<std::string, Diagnostic::Ptr> spatial_diagnostics_impl() const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;

@@ -45,18 +45,18 @@ static std::set<std::string> process_ts_shortcuts(const Config &config,
 //! Initializes the code writing scalar time-series.
 void IceModel::init_scalar_diagnostics() {
 
-  auto ts_filename = m_config->get_string("output.scalar.file");
+  auto filename = m_config->get_string("output.scalar.file");
 
   auto times = m_config->get_string("output.scalar.times");
   bool times_set = not times.empty();
 
-  if (times_set xor not ts_filename.empty()) {
+  if (times_set xor not filename.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "you need to specity both -scalar_file and -scalar_times"
                        " to save scalar diagnostic time-series.");
   }
 
-  if (ts_filename.empty()) {
+  if (filename.empty()) {
     m_available_scalar_diagnostics.clear();
     return;
   }
@@ -70,7 +70,7 @@ void IceModel::init_scalar_diagnostics() {
       throw;
     }
 
-    m_log->message(2, "  saving scalar time-series to '%s'\n", ts_filename.c_str());
+    m_log->message(2, "  saving scalar time-series to '%s'\n", filename.c_str());
     m_log->message(2, "  times requested: %s\n", times.c_str());
 
     m_scalar_vars = set_split(m_config->get_string("output.scalar.variables"), ',');
@@ -94,7 +94,8 @@ void IceModel::init_scalar_diagnostics() {
           missing.push_back(v);
         }
       }
-      // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
+      // replace m_available_scalar_diagnostics with requested diagnostics, de-allocating
+      // the rest
       m_available_scalar_diagnostics = diagnostics;
     }
 
@@ -107,7 +108,7 @@ void IceModel::init_scalar_diagnostics() {
 
   // prepare the output file
   {
-    m_scalar_file = std::make_shared<OutputFile>(m_output_writer, ts_filename);
+    m_scalar_file = std::make_shared<OutputFile>(m_output_writer, filename);
     bool append = m_config->get_flag("output.scalar.append");
     // default behavior is to move the file aside if it exists already; option allows appending
     if (append) {

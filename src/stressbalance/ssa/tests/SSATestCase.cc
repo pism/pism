@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2025 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2026 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -318,7 +318,7 @@ void SSATestCase::write(const std::string &filename) {
   // write all easily available diagnostics:
   {
     std::vector<std::shared_ptr<array::Array>> vecs;
-    for (auto &pair : m_ssa->diagnostics()) {
+    for (auto &pair : m_ssa->spatial_diagnostics()) {
       try {
         vecs.push_back(pair.second->compute());
       } catch (RuntimeError &e) {

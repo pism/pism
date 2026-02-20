@@ -29,7 +29,7 @@ mpiexec -n ${N} pism \
         -grid.Lz 3500 \
         -isochrones.deposition_times 0:500:20e3 \
         -isochrones.bootstrapping.n_layers 5 \
-        -output.spatial.file ex_bootstrap.nc \
+        -output.spatial.file spatial_bootstrap.nc \
         -output.file o_bootstrap.nc \
         -output.spatial.times 50 \
         -output.spatial.vars isochrone_depth,thk \

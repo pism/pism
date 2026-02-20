@@ -64,7 +64,7 @@ def probe_interface(model):
     model.diagnostics()
 
     # FIXME: this causes a memory leak
-    # model.ts_diagnostics()
+    # model.scalar_diagnostics()
 
     model.grid()
 

@@ -19,7 +19,7 @@ For example, to set up and run the MISMIP3d "Stnd" experiment with SIA+SSA compu
 
 This 2 process run (`-n 2`) takes about three minutes on a 2013 laptop.
 
-This `Stnd` run uses `My=3` as would a MISMIP flowline experiment, and it uses `Mx=801` because of the 2 km resolution.  Three files will be output, `Stnd.nc`, `ts_Stnd.nc`, and `ex_Stnd.nc`.
+This `Stnd` run uses `My=3` as would a MISMIP flowline experiment, and it uses `Mx=801` because of the 2 km resolution.  Three files will be output, `Stnd.nc`, `scalar_Stnd.nc`, and `ex_Stnd.nc`.
 
 Now do the first experiment, which uses information from `ex_Stnd.nc` and builds a `Mx=801` by `My=51` grid, again with 2 km resolution:
 

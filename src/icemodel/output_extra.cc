@@ -111,16 +111,16 @@ void IceModel::init_spatial_diagnostics() {
   bool        split  = m_config->get_flag("output.spatial.split");
   bool        append = m_config->get_flag("output.spatial.append");
 
-  bool extra_file_set = not m_spatial_filename.empty();
+  bool file_set = not m_spatial_filename.empty();
   bool times_set = not times.empty();
 
-  if (extra_file_set ^ times_set) {
+  if (file_set ^ times_set) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "you need to set both output.spatial.file and output.spatial.times"
                        " to save spatial time-series.");
   }
 
-  if (not extra_file_set and not times_set) {
+  if (not file_set and not times_set) {
     m_spatial_filename.clear();
     return;
   }
@@ -226,7 +226,7 @@ void IceModel::init_spatial_diagnostics() {
       throw RuntimeError(
           PISM_ERROR_LOCATION,
           "more than 5000 times requested."
-          "Please use -extra_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
+          "Please use -spatial_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
           "Alternatively\n"
           "- split this simulation into several runs and then concatenate results\n"
           "- select a different output.format value\n"
@@ -301,7 +301,7 @@ void IceModel::write_spatial_diagnostics() {
     return;
   }
 
-  bool extra_split = m_config->get_flag("output.spatial.split");
+  bool split = m_config->get_flag("output.spatial.split");
 
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.spatial_file");
@@ -309,7 +309,7 @@ void IceModel::write_spatial_diagnostics() {
     if (m_spatial_file == nullptr) {
 
       std::string filename = m_spatial_filename;
-      if (extra_split) {
+      if (split) {
         // each time-series record is written to a separate file
         auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
         filename = pism::printf("%s_%s.nc", m_spatial_filename.c_str(), date_without_spaces.c_str());
@@ -369,7 +369,7 @@ void IceModel::write_spatial_diagnostics() {
 
   scalar_diagnostics_flush_buffers();
 
-  if (extra_split) {
+  if (split) {
     // each record is saved to a new file, so we can close this one
     m_spatial_file->close();
     m_spatial_file = nullptr;

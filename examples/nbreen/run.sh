@@ -58,8 +58,8 @@ DT="$5"
 
 etimes="0:$DT:$YY"
 
-# these extra_ diagnostics apply to "dist" and "event":
-evarlist="thk,velbase_mag,bmelt,bwat,bwp,bwatvel,bwprel,effbwp,wallmelt,tillwat"
+# these spatial diagnostics apply to "dist" and "event":
+spatial_vars="thk,velbase_mag,bmelt,bwat,bwp,bwatvel,bwprel,effbwp,wallmelt,tillwat"
 
 if [ "$4" = "dist" ]; then
 
@@ -78,7 +78,7 @@ elif [ "$4" = "routing" ]; then
   # routing run: very fast
   oname=nbreen_y${YY}_${dx}m_routing.nc
   hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_tillwat_max 0.0"
-  evarlist="thk,bmelt,bwat,bwp,bwatvel,wallmelt,tillwat"  # revised
+  spatial_vars="thk,bmelt,bwat,bwp,bwatvel,wallmelt,tillwat"  # revised
 
 elif [ "$4" = "disttill" ]; then
 
@@ -101,7 +101,7 @@ climate="-surface given -surface_given_file $data"
 
 physics="-no_mass -energy none"
 
-diagnostics="-spatial_file extras_$oname -spatial_times $etimes -spatial_vars $evarlist"
+diagnostics="-spatial_file extras_$oname -spatial_times $etimes -spatial_vars $spatial_vars"
 
 set -x
 

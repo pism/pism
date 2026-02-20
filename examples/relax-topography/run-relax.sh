@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2013, 2014, 2015, 2024 Andy Aschwanden
+# Copyright (C) 2013, 2014, 2015, 2024, 2026 Andy Aschwanden
 #
 # *****************************************************************************
 # Relax Greenland Topography
@@ -185,10 +185,10 @@ STARTTIME=0
 ENDTIME=100
 
 OUTNAME=g${GS}km_removeice.nc
-TSNAME=ts_$OUTNAME
+TSNAME=scalar_$OUTNAME
 TSSTEP=yearly
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
-EXNAME=ex_$OUTNAME
+EXNAME=spatial_$OUTNAME
 EXSTEP=100
 EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
 EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"
@@ -211,10 +211,10 @@ ENDTIME=$(($STARTTIME + $RUNLENGTH))
 
 INNAME=$OUTNAME
 OUTNAME=g${GS}km_relax.nc
-TSNAME=ts_$OUTNAME
+TSNAME=scalar_$OUTNAME
 TSSTEP=yearly
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
-EXNAME=ex_$OUTNAME
+EXNAME=spatial_$OUTNAME
 EXSTEP=100
 EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
 EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"

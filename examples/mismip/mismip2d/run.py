@@ -62,7 +62,7 @@ else
   echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN"
 fi
 
-extra_vars=thk,topg,velbar_mag,flux_mag,mask,dHdt,usurf,hardav,velbase_mag,nuH,tauc,taud,taub,flux_divergence,cell_grounded_fraction
+spatial_vars=thk,topg,velbar_mag,flux_mag,mask,dHdt,usurf,hardav,velbase_mag,nuH,tauc,taud,taub,flux_divergence,cell_grounded_fraction
 '''
 
 
@@ -163,12 +163,12 @@ class Experiment:
 
     def output_options(self, step):
         output_file = self.output_filename(self.experiment, step)
-        extra_file = "ex_" + output_file
+        spatial_file = "ex_" + output_file
         scalar_file = "scalar_" + output_file
 
-        options = ["-spatial_file %s" % extra_file,
+        options = ["-spatial_file %s" % spatial_file,
                    "-spatial_times 0:50:3e4",
-                   "-spatial_vars $extra_vars",
+                   "-spatial_vars $spatial_vars",
                    "-scalar_file %s" % scalar_file,
                    "-scalar_times 0:50:3e4",
                    "-output.sizes.medium sftgif",

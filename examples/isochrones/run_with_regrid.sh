@@ -28,7 +28,7 @@ mpiexec -n ${N} pism -eisII A \
         -grid.Mx ${M} \
         -grid.My ${M} \
         -isochrones.bootstrapping.n_layers 0 \
-        -output.spatial.file ex_regrid_part1.nc \
+        -output.spatial.file spatial_regrid_part1.nc \
         -output.file o_regrid_part1.nc \
         -time.end 10.5e3 \
         ${common_options}
@@ -40,7 +40,7 @@ mpiexec -n ${N} pism \
         -My $(( M * 2 - 1 )) \
         -regrid_file o_regrid_part1.nc \
         -regrid_vars isochronal_layer_thickness \
-        -output.spatial.file ex_regrid_part2.nc \
+        -output.spatial.file spatial_regrid_part2.nc \
         -output.file o_regrid_part2.nc \
         -time.end 20e3 \
         ${common_options}

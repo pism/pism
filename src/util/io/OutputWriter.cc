@@ -349,8 +349,8 @@ void OutputWriter::write_distributed_array(const std::string &file_name,
     bool time_dependent = variable.get_time_dependent();
 
     // Avoid writing time-independent variables more than once (saves time when writing to
-    // extra_files) and also avoid writing time-dependent variables more than once per time
-    // record
+    // spatial_files) and also avoid writing time-dependent variables more than once per
+    // time record
     if (already_written(file_name, variable_name, time_dependent)) {
       return;
     }

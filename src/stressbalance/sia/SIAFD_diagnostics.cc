@@ -24,7 +24,7 @@
 namespace pism {
 namespace stressbalance {
 
-DiagnosticList SIAFD::diagnostics_impl() const {
+DiagnosticList SIAFD::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     {"diffusivity",           Diagnostic::Ptr(new SIAFD_diffusivity(this))},
     {"diffusivity_staggered", Diagnostic::Ptr(new SIAFD_diffusivity_staggered(this))},

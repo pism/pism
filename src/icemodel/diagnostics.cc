@@ -3438,7 +3438,7 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
 
   // get diagnostics from submodels
   for (const auto& m : m_submodels) {
-    result = pism::combine(result, m.second->diagnostics());
+    result = pism::combine(result, m.second->spatial_diagnostics());
   }
 
   return result;
@@ -3512,7 +3512,7 @@ std::map<std::string, TSDiagnostic::Ptr> IceModel::allocate_scalar_diagnostics()
 
   // get diagnostics from submodels
   for (const auto& m : m_submodels) {
-    result = pism::combine(result, m.second->ts_diagnostics());
+    result = pism::combine(result, m.second->scalar_diagnostics());
   }
 
   return result;
@@ -3593,11 +3593,11 @@ static void print_diagnostics_json(const Logger &log, const Metadata &list) {
 /*!
  * Return metadata of 2D and 3D diagnostics.
  */
-static Metadata diag_metadata(const std::map<std::string,Diagnostic::Ptr> &diags) {
+static Metadata spatial_diag_metadata(const std::map<std::string,Diagnostic::Ptr> &diags) {
   Metadata result;
 
   for (const auto& f : diags) {
-    Diagnostic::Ptr diag = f.second;
+    auto diag = f.second;
 
     for (unsigned int k = 0; k < diag->n_variables(); ++k) {
       result[f.first].push_back(diag->metadata(k));
@@ -3610,10 +3610,10 @@ static Metadata diag_metadata(const std::map<std::string,Diagnostic::Ptr> &diags
 /*!
  * Return metadata of scalar diagnostics.
  */
-static Metadata ts_diag_metadata(const std::map<std::string,TSDiagnostic::Ptr> &ts_diags) {
+static Metadata scalar_diag_metadata(const std::map<std::string,TSDiagnostic::Ptr> &diags) {
   Metadata result;
 
-  for (const auto& d : ts_diags) {
+  for (const auto& d : diags) {
     // always one variable per diagnostic
     result[d.first] = {d.second->metadata()};
   }
@@ -3627,12 +3627,12 @@ void IceModel::list_diagnostics(DiagnosticReport type) const {
     m_log->message(1, "{\n");
 
     m_log->message(1, "\"spatial\" :\n");
-    print_diagnostics_json(*m_log, diag_metadata(m_available_spatial_diagnostics));
+    print_diagnostics_json(*m_log, spatial_diag_metadata(m_available_spatial_diagnostics));
 
     m_log->message(1, ",\n");        // separator
 
     m_log->message(1, "\"scalar\" :\n");
-    print_diagnostics_json(*m_log, ts_diag_metadata(m_available_scalar_diagnostics));
+    print_diagnostics_json(*m_log, scalar_diag_metadata(m_available_scalar_diagnostics));
 
     m_log->message(1, "}\n");
 
@@ -3643,14 +3643,14 @@ void IceModel::list_diagnostics(DiagnosticReport type) const {
     m_log->message(1, "\n");
     m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
 
-    print_diagnostics(*m_log, diag_metadata(m_available_spatial_diagnostics));
+    print_diagnostics(*m_log, spatial_diag_metadata(m_available_spatial_diagnostics));
   }
 
   if (type == DIAG_ALL or type == DIAG_SCALAR) {
     // scalar time-series
     m_log->message(1, "======== Available time-series ========\n");
 
-    print_diagnostics(*m_log, ts_diag_metadata(m_available_scalar_diagnostics));
+    print_diagnostics(*m_log, scalar_diag_metadata(m_available_scalar_diagnostics));
   }
 }
 
@@ -3815,8 +3815,8 @@ void IceModel::deallocate_unused_diagnostics() {
     available.insert(d.first);
   }
 
-  auto extra_stop = m_config->get_flag("output.spatial.stop_missing");
-  warn_about_missing(*m_log, m_spatial_vars, "diagnostic", available, extra_stop);
+  auto stop = m_config->get_flag("output.spatial.stop_missing");
+  warn_about_missing(*m_log, m_spatial_vars, "diagnostic", available, stop);
 
   // get the list of requested diagnostics
   auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');

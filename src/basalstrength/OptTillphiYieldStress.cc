@@ -299,13 +299,13 @@ void OptTillphiYieldStress::write_state_impl(const OutputFile &output) const {
   output.write_timeseries(m_time_name, { 0 }, { 1 }, { m_t_last });
 }
 
-DiagnosticList OptTillphiYieldStress::diagnostics_impl() const {
+DiagnosticList OptTillphiYieldStress::spatial_diagnostics_impl() const {
 
   return combine({{"tillphi", Diagnostic::wrap(m_till_phi)},
                   {"usurf_difference", Diagnostic::wrap(m_usurf_difference)},
                   {"usurf_target", Diagnostic::wrap(m_usurf_target)},
                   {"diff_mask", Diagnostic::wrap(m_mask)}},
-    MohrCoulombYieldStress::diagnostics_impl());
+    MohrCoulombYieldStress::spatial_diagnostics_impl());
 }
 
 } // end of namespace pism

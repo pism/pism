@@ -329,7 +329,7 @@ protected:
   }
 };
 
-DiagnosticList EnergyModel::diagnostics_impl() const {
+DiagnosticList EnergyModel::spatial_diagnostics_impl() const {
   DiagnosticList result;
   result = {
     {"enthalpy",                 Diagnostic::wrap(m_ice_enthalpy)},
@@ -338,7 +338,7 @@ DiagnosticList EnergyModel::diagnostics_impl() const {
   return result;
 }
 
-TSDiagnosticList EnergyModel::ts_diagnostics_impl() const {
+TSDiagnosticList EnergyModel::scalar_diagnostics_impl() const {
   return {
     {"liquified_ice_flux", TSDiagnostic::Ptr(new LiquifiedIceFlux(this))}
   };

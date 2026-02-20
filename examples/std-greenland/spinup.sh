@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020, 2021, 2024, 2025 The PISM Authors
+# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020, 2021, 2024, 2025, 2026 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -38,10 +38,10 @@ usage:
     BOOTFILE  optional name of input file; default = $PISM_DATANAME
 
 consider setting optional environment variables (see script for meaning):
-    EXSTEP       spacing in years between -spatial_files outputs; defaults to 100
-    EXVARS       desired -spatial_vars; defaults to 'diffusivity,temppabase,
-                   tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf'
-                   plus ',hardav,velbase_mag,tauc' if DYNAMICS=hybrid
+    SPATIAL_STEP spacing in years between -spatial_files outputs; defaults to 100
+    SPATIAL_VARS desired -spatial_vars; defaults to 'diffusivity,temppabase,
+                 tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf'
+                 plus ',hardav,velbase_mag,tauc' if DYNAMICS=hybrid
     NODIAGS      if set, DON'T use -scalar_file or -spatial_file
     USEPIK       if set, add -pik -subgl
     PARAM_PPQ    sets (hybrid-only) option -pseudo_plastic_q \$PARAM_PPQ
@@ -73,7 +73,7 @@ example usage 2:
     $ PISM_DO=echo ./spinup.sh 128 paleo 100.0 5 hybrid out.nc boot.nc &> foo.sh
 
   Creates a script foo.sh for spinup with 128 processors, simulated paleo-climate,
-  5 km grid, sliding with SIA+SSA hybrid, output to {out.nc,ts_out.nc,ex_out.nc},
+  5 km grid, sliding with SIA+SSA hybrid, output to {out.nc,scalar_out.nc,spatial_out.nc},
   and bootstrapping from boot.nc.
 EOF
   exit
@@ -253,23 +253,23 @@ else
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 
-# set EXSTEP to default if not set
-if [ -n "${EXSTEP:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME          EXSTEP = $EXSTEP  (already set)"
+# set SPATIAL_STEP to default if not set
+if [ -n "${SPATIAL_STEP:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME          SPATIAL_STEP = $SPATIAL_STEP  (already set)"
 else
-  EXSTEP="100"
-  echo "$SCRIPTNAME          EXSTEP = $EXSTEP"
+  SPATIAL_STEP="100"
+  echo "$SCRIPTNAME          SPATIAL_STEP = $SPATIAL_STEP"
 fi
 
-# set EXVARS list to defaults if not set
-if [ -n "${EXVARS:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME          EXVARS = $EXVARS  (already set)"
+# set SPATIAL_VARS list to defaults if not set
+if [ -n "${SPATIAL_VARS:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME          SPATIAL_VARS = $SPATIAL_VARS  (already set)"
 else
-  EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf"
+  SPATIAL_VARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf"
   if [ "$5" = "hybrid" ]; then
-    EXVARS="${EXVARS},hardav,velbase_mag,tauc"
+    SPATIAL_VARS="${SPATIAL_VARS},hardav,velbase_mag,tauc"
   fi
-  echo "$SCRIPTNAME          EXVARS = $EXVARS"
+  echo "$SCRIPTNAME          SPATIAL_VARS = $SPATIAL_VARS"
 fi
 
 # if REGRIDFILE set then form regridcommand
@@ -296,12 +296,12 @@ echo "$SCRIPTNAME        dynamics = '$PHYS'"
 
 # set up diagnostics
 if [ -z "${NODIAGS}" ] ; then  # check if env var is NOT set
-  TSNAME=ts_$OUTNAME
-  TSTIMES=-$DURATION:yearly:0
-  EXNAME=ex_$OUTNAME
-  EXTIMES=-$DURATION:$EXSTEP:0
-  # pism_check_stationarity can be applied to $EXNAME
-  DIAGNOSTICS="-scalar_file $TSNAME -scalar_times $TSTIMES -spatial_file $EXNAME -spatial_times $EXTIMES -spatial_vars $EXVARS"
+  SCALAR_NAME=scalar_$OUTNAME
+  SCALAR_TIMES=-$DURATION:yearly:0
+  SPATIAL_NAME=spatial_$OUTNAME
+  SPATIAL_TIMES=-$DURATION:$SPATIAL_STEP:0
+  # pism_check_stationarity can be applied to $SPATIAL_NAME
+  DIAGNOSTICS="-scalar_file $SCALAR_NAME -scalar_times $SCALAR_TIMES -spatial_file $SPATIAL_NAME -spatial_times $SPATIAL_TIMES -spatial_vars $SPATIAL_VARS"
 else
   DIAGNOSTICS=""
 fi

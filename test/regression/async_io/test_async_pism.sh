@@ -30,14 +30,14 @@ pism_options="
 # run with asynchronous output:
 time mpirun -n 7 pism ${pism_options} \
        -output.snapshot.file snapshots_async.nc \
-       -output.spatial.file extra_async.nc \
+       -output.spatial.file spatial_async.nc \
        -profile pism_async.py :\
        -n 1 python3 ${pism_dir}/util/pism_async_writer
 
 # equivalent run using synchronous output:
 time mpirun -n 7 pism ${pism_options} \
        -output.snapshot.file snapshots_sync.nc \
-       -output.spatial.file extra_sync.nc \
+       -output.spatial.file spatial_sync.nc \
        -output.format netcdf4_parallel \
        -output.compression_level 1 \
        -profile pism_sync.py
@@ -46,4 +46,4 @@ time mpirun -n 7 pism ${pism_options} \
 excluded_vars=model_years_per_processor_hour,pism_config,wall_clock_time,mapping
 pism_nccmp -x -v ${excluded_vars} snapshots_sync.nc snapshots_async.nc
 
-pism_nccmp -x -v ${excluded_vars} extra_sync.nc extra_async.nc
+pism_nccmp -x -v ${excluded_vars} spatial_sync.nc spatial_async.nc

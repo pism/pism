@@ -975,7 +975,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                  (dt / step_counter) / 3600.0);
 }
 
-std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
+std::map<std::string, Diagnostic::Ptr> Routing::spatial_diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
@@ -986,10 +986,10 @@ std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
     {"wallmelt",            Diagnostic::Ptr(new WallMelt(this))},
     {"hydraulic_potential", Diagnostic::Ptr(new HydraulicPotential(this))},
   };
-  return combine(result, Hydrology::diagnostics_impl());
+  return combine(result, Hydrology::spatial_diagnostics_impl());
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Routing::ts_diagnostics_impl() const {
+std::map<std::string, TSDiagnostic::Ptr> Routing::scalar_diagnostics_impl() const {
   std::map<std::string, TSDiagnostic::Ptr> result = {
     // FIXME: add mass-conservation diagnostics
   };

@@ -296,7 +296,7 @@ void cryo_hydrologic_warming_flux(double k,
   loop.check();
 }
 
-DiagnosticList CHSystem::diagnostics_impl() const {
+DiagnosticList CHSystem::spatial_diagnostics_impl() const {
   return {{"ch_enthalpy", Diagnostic::wrap(m_ice_enthalpy)}};
 }
 

@@ -25,14 +25,14 @@ mpiexec -n ${N} pism -eisII A \
         -grid.My ${M} \
         -grid.Mz 21 \
         -isochrones.bootstrapping.n_layers 0 \
-        -output.spatial.file ex_part1.nc \
+        -output.spatial.file spatial_part1.nc \
         -output.file o_part1.nc \
         -time.end 10250 \
         ${common_options}
 
 mpiexec -n ${N} pism \
         -i o_part1.nc \
-        -output.spatial.file ex_part2.nc \
+        -output.spatial.file spatial_part2.nc \
         -output.file o_final.nc \
         -time.end 20e3 \
         ${common_options}

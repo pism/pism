@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2012-2015, 2024 Moritz Huetten and Torsten Albrecht (and Ed Bueler)
+# Copyright (C) 2012-2015, 2024, 2026 Moritz Huetten and Torsten Albrecht (and Ed Bueler)
 
 import argparse
 
@@ -115,7 +115,7 @@ elif args.m == 2:
 print('STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"')
 
 print('')
-print('opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfront $subgl $modelopt -energy none -gradient eta -options_left -scalar_file ts_%s.nc -scalar_times 0:1:$duration -spatial_file ex_%s.nc $extrastuff -ys 0 -ye $duration -o_order zyx -o_size big -o %s.nc $STRONGKSP"' % (args.e, args.e, args.e))
+print('opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfront $subgl $modelopt -energy none -gradient eta -options_left -scalar_file scalar_%s.nc -scalar_times 0:1:$duration -spatial_file ex_%s.nc $extrastuff -ys 0 -ye $duration -o_order zyx -o_size big -o %s.nc $STRONGKSP"' % (args.e, args.e, args.e))
 
 print('')
 if args.e == 'Stnd':

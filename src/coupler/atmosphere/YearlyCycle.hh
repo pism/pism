@@ -53,7 +53,7 @@ protected:
 
   virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
 
-  virtual DiagnosticList diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
 protected:
   void init_internal(const std::string &input_filename, bool regrid,
                      unsigned int start);
