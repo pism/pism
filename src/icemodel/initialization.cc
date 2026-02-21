@@ -288,7 +288,15 @@ void IceModel::model_state_setup(InputOptions input_options) {
   }
 
   // forget stored interpolation weights to free up some RAM
-  m_grid->forget_interpolations();
+  //
+  // FIXME: doing this makes PISM crash if it tries to a) regrid a variable from a file
+  // during initialization, then b) regrid a variable from the *same* file during the run
+  // (e.g. time-dependent forcing)
+  //
+  // Keeping all interpolation weights in memory requires more RAM if we interpolate from
+  // some grids only during initialization.
+  //
+  // m_grid->forget_interpolations();
 }
 
 //! Initialize 2D model state fields managed by IceModel from a file (for re-starting).
