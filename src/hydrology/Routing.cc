@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2023, 2025 PISM Authors
+// Copyright (C) 2012-2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
+#include <limits>
 
 #include "Hydrology.hh"
 #include "pism/hydrology/Routing.hh"
@@ -690,9 +691,12 @@ void Routing::advective_fluxes(const array::Staggered &V,
  * See equation (51) in Bueler and van Pelt.
  */
 double Routing::max_timestep_W_diff(double KW_max) const {
-  double D_max = m_rg * KW_max;
-  double result = 1.0 / (m_dx * m_dx) + 1.0 / (m_dy * m_dy);
-  return 0.25 / (D_max * result);
+  if (KW_max > 0.0) {
+    double D_max  = m_rg * KW_max;
+    double result = 1.0 / (m_dx * m_dx) + 1.0 / (m_dy * m_dy);
+    return 0.25 / (D_max * result);
+  }
+  return std::numeric_limits<double>::infinity();
 }
 
 /*!
