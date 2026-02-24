@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023, 2025 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023, 2025, 2026 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "pism/rheology/FlowLaw.hh"
 
 #include <petsc.h>
+#include <limits>
 
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/array/Scalar.hh"
@@ -132,7 +133,13 @@ void FlowLaw::hardness_n_impl(const double *enthalpy, const double *pressure,
 }
 
 double FlowLaw::hardness_impl(double E, double p) const {
-  return pow(softness(E, p), m_hardness_power);
+  double A = softness(E, p);
+#if (Pism_DEBUG == 1)
+  if (A == 0.0) {
+    return std::numeric_limits<double>::max();
+  }
+#endif
+  return pow(A, m_hardness_power);
 }
 
 //! \brief Computes the regularized effective viscosity and its derivative with respect to the
