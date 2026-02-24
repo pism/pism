@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -253,15 +253,18 @@ static void check_for_missing_values(const File &file, const std::string &variab
   auto attribute = file.read_double_attribute(variable_name, "_FillValue");
   if (attribute.size() == 1) {
     double fill_value = attribute[0];
+    bool fill_value_is_finite = std::isfinite(fill_value);
 
     for (size_t k = 0; k < buffer_length; ++k) {
-      if (fabs(buffer[k] - fill_value) < tolerance) {
+      if (fill_value_is_finite and fabs(buffer[k] - fill_value) < tolerance) {
         throw RuntimeError::formatted(
             PISM_ERROR_LOCATION,
             "Variable '%s' in '%s' contains values matching the _FillValue attribute",
             variable_name.c_str(), file.name().c_str());
       }
       if (not std::isfinite(buffer[k])) {
+        // note: this will take care of the case of a variable containing values that
+        // match _FillValue that is NaN or infinity
         throw RuntimeError::formatted(
             PISM_ERROR_LOCATION,
             "Variable '%s' in '%s' contains values that are not finite (NaN or infinity)",
