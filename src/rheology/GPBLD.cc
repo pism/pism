@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2023, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -50,13 +50,14 @@ double GPBLD::softness_impl(double enthalpy, double pressure) const {
   if (enthalpy < E_s) {       // cold ice
     double T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
     return softness_paterson_budd(T_pa);
-  } else { // temperate ice
-    double omega = m_EC->water_fraction(enthalpy, pressure);
-    // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
-    omega = std::min(omega, m_water_frac_observed_limit);
-    // next line implements eqn (23) in \ref AschwandenBlatter2009
-    return softness_paterson_budd(m_T_0) * (1.0 + m_water_frac_coeff * omega);
   }
+
+  // temperate ice
+  double omega = m_EC->water_fraction(enthalpy, pressure);
+  // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
+  omega = std::min(omega, m_water_frac_observed_limit);
+  // next line implements eqn (23) in \ref AschwandenBlatter2009
+  return softness_paterson_budd(m_T_0) * (1.0 + m_water_frac_coeff * omega);
 }
 
 void GPBLD::flow_n_impl(const double *stress, const double *enthalpy,
