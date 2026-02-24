@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2020, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2020, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,7 @@
 #include "pism/util/array/Vector.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
+#include <limits>
 #include <vector>
 
 namespace pism {
@@ -96,7 +97,9 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
           u_max = std::max(u_max, u_abs);
           v_max = std::max(v_max, v_abs);
           const double denom = fabs(u_abs * one_over_dx) + fabs(v_abs * one_over_dy);
-          if (denom > 0.0) {
+          // note: use std::numeric_limits<double>::min() to avoid FP overflow when
+          // computing the inverse in 1.0 / denom
+          if (denom > std::numeric_limits<double>::min()) {
             dt_max = std::min(dt_max, 1.0 / denom);
           }
         }
@@ -177,7 +180,7 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
       v_max = std::max(v_max, v_abs);
 
       const double denom = u_abs / dx + v_abs / dy;
-      if (denom > 0.0) {
+      if (denom > std::numeric_limits<double>::min()) {
         dt_max = std::min(dt_max, 1.0 / denom);
       }
     }
