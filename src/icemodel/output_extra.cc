@@ -40,8 +40,8 @@ MaxTimestep IceModel::spatial_diagnostics_max_timestep(double t) {
                                 "reporting (-spatial_times)");
 }
 
-static std::set<std::string> process_extra_shortcuts(const Config &config,
-                                                     const std::set<std::string> &input) {
+static std::set<std::string> process_variable_list_shortcuts(const Config &config,
+                                                             const std::set<std::string> &input) {
   std::set<std::string> result = input;
 
   // process shortcuts
@@ -145,7 +145,7 @@ void IceModel::init_spatial_diagnostics() {
   {
     auto vars = m_config->get_string("output.spatial.vars");
     if (not vars.empty()) {
-      m_spatial_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
+      m_spatial_vars = process_variable_list_shortcuts(*m_config, set_split(vars, ','));
       m_log->message(2, "variables requested: %s\n", vars.c_str());
     } else {
       m_log->message(2,
@@ -243,7 +243,7 @@ void IceModel::write_spatial_diagnostics() {
                                  // is only used if save_now == true, and in
                                  // this case saving_after is guaranteed to be
                                  // initialized. See the code below.
-  unsigned int current_extra;
+  unsigned int current_index;
   // determine if the user set the -save_at and -save_to options
   if (m_spatial_filename.empty()) {
     return;
@@ -259,21 +259,21 @@ void IceModel::write_spatial_diagnostics() {
     // the condition above is "true" if we passed a requested time or got to
     // within time_resolution seconds from it
 
-    current_extra = m_next_spatial_index;
+    current_index = m_next_spatial_index;
 
-    // update next_extra
+    // update m_next_spatial_index
     while (m_next_spatial_index < m_spatial_times.size() and
            (m_spatial_times[m_next_spatial_index] <= current_time or
             fabs(current_time - m_spatial_times[m_next_spatial_index]) < time_resolution)) {
       m_next_spatial_index++;
     }
 
-    saving_after = m_spatial_times[current_extra];
+    saving_after = m_spatial_times[current_index];
   } else {
     return;
   }
 
-  if (current_extra == 0) {
+  if (current_index == 0) {
     // The first time defines the left end-point of the first reporting interval; we don't write a
     // report at this time.
 

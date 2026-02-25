@@ -90,16 +90,17 @@ The command
          -surface pdd -ys 0 -ye 2.5 \
          -spatial_file foo.nc -spatial_times 0.1 \
          -spatial_vars climatic_mass_balance,air_temp_snapshot,surface_melt_rate,surface_runoff_rate,surface_accumulation_rate \
-         -scalar_file ts.nc -scalar_times 0.1 \
+         -scalar_file scalar_diagnostics.nc -scalar_times 0.1 \
          -o bar.nc
 
 will produce ``foo.nc`` containing a "movie" very similar to the one created by the
 previous run, but including the full influence of ice dynamics.
 
-In addition to ``foo.nc``, the latter command will produce ``ts.nc`` containing scalar
-time-series. The variable ``tendency_of_ice_mass_due_to_surface_mass_flux`` (the *total
-over ice domain of top surface ice mass flux*) can be used to detect if climate forcing is
-applied at the right time.
+In addition to ``foo.nc``, the latter command will produce ``scalar_diagnostics.nc``
+containing scalar time-series. The variable
+``tendency_of_ice_mass_due_to_surface_mass_flux`` (the *total over ice domain of top
+surface ice mass flux*) can be used to detect if climate forcing is applied at the right
+time.
 
 Visualizing the climate inputs in the Greenland case
 ++++++++++++++++++++++++++++++++++++++++++++++++++++

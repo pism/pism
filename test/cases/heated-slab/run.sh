@@ -16,7 +16,7 @@ pism \
   -atmosphere.uniform.temperature 243.15 \
   -bootstrap \
   -bootstrapping.defaults.geothermal_flux 0.042 \
-  -spatial_file ex.nc \
+  -spatial_file spatial.nc \
   -spatial_times 1000 \
   -spatial_vars bmelt,tillwat,temppabase,tempbase,tempsurf \
   -hydrology.tillwat_max 1000 \

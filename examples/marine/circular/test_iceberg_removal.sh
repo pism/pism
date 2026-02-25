@@ -18,7 +18,7 @@ pismopts="-i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_dirichlet_bc 
 
 doit="mpiexec -n $N pism $pismopts"
 
-extra="-spatial_times 0.05 -spatial_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,mass_fluxes -spatial_file iceberg_ex.nc"
+spatial_output="-spatial_times 0.05 -spatial_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,mass_fluxes -spatial_file iceberg_ex.nc"
 
 # run with CFBC and part_grid
-$doit -y $length -ssa_method fd -cfbc -part_grid -o iceberg_o.nc $extra
+$doit -y $length -ssa_method fd -cfbc -part_grid -o iceberg_o.nc $spatial_output

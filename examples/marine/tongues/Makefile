@@ -3,16 +3,16 @@ grid=-Mx ${M} -My ${M} -Mz 3 -Lz 200
 ssa=-stress_balance ssa+sia -ssa_dirichlet_bc -cfbc
 mass=-part_grid
 misc=-energy none -o output.nc
-spatial=-spatial_times 5 -spatial_file ex.nc -spatial_vars velbar_mag,thk,mask,taud,velbar
+spatial=-spatial_times 5 -spatial_file spatial.nc -spatial_vars velbar_mag,thk,mask,taud,velbar
 length=-y 1500
-ts=-scalar_file ts.nc -scalar_times 1
+scalar=-scalar_file scalar.nc -scalar_times 1
 
-options=${grid} ${ssa} ${mass} ${misc} ${length} ${ts}
+options=${grid} ${ssa} ${mass} ${misc} ${length} ${scalar}
 
 default: tongues.nc
 	mpiexec -n 4 pism -i tongues.nc -bootstrap ${options} ${spatial}
 
-spatial_calving=-spatial_times 5 -spatial_file ex.nc -spatial_vars taud,velbar_mag,thk,mask,mass_fluxes,velbar
+spatial_calving=-spatial_times 5 -spatial_file spatial.nc -spatial_vars taud,velbar_mag,thk,mask,mass_fluxes,velbar
 eigen_calving: tongues.nc
 	mpiexec -n 4 pism -i tongues.nc -bootstrap -calving eigen_calving -eigen_calving_K 2e18 \
                            ${options} ${spatial_calving},eigen_calving_rate

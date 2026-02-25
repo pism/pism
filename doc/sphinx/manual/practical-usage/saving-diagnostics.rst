@@ -78,7 +78,7 @@ This is especially useful when using a climate forcing file to set run duration:
 
    pism -i foo.nc -surface given -surface_given_file climate.nc \
          -calendar gregorian -time_file climate.nc \
-         -spatial_times monthly -spatial_file ex.nc -spatial_vars thk
+         -spatial_times monthly -spatial_file diagnostics.nc -spatial_vars thk
 
 will save ice thickness at the end of every month while running PISM for the duration of
 climate forcing data in ``climate.nc``.

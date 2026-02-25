@@ -31,12 +31,12 @@ a run with `N` MPI processes, a `Mx`x`Mx` grid, option `-ssa_e E`, and duration
 To view a "movie" of the resulting thicknesses and surface velocities
 do
 
-    $ ncview ex-prog_Mx211_yr100.nc
+    $ ncview spatial-prog_Mx211_yr100.nc
 
 To see a time-series of ice volume or ice area, among other other quantities,
 do
 
-    $ ncview ts-prog_Mx211_yr100.nc
+    $ ncview scalar-prog_Mx211_yr100.nc
 
 To generate figures comparing the final-time modeled velocity to present-day
 observed velocity do

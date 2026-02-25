@@ -163,7 +163,7 @@ class Experiment:
 
     def output_options(self, step):
         output_file = self.output_filename(self.experiment, step)
-        spatial_file = "ex_" + output_file
+        spatial_file = "spatial_" + output_file
         scalar_file = "scalar_" + output_file
 
         options = ["-spatial_file %s" % spatial_file,

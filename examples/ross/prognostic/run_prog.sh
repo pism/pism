@@ -42,8 +42,8 @@ cmd_prog="mpiexec -n $N_PROC ${PISMPREFIX}pism -regional -i $STARTNAME \
   -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -front_retreat_cfl \
   -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $RUN_LENGTH -o $NAME -o_size big \
   -thickness_calving_threshold $CTHICK $STRONGKSP ${KSP_RTOL} \
-  -scalar_file ts-${NAME} -scalar_times 0:monthly:${RUN_LENGTH} \
-  -spatial_file ex-${NAME} -spatial_times 0:${exdt}:${RUN_LENGTH} -spatial_vars ${exvars} \
+  -scalar_file scalar-${NAME} -scalar_times 0:monthly:${RUN_LENGTH} \
+  -spatial_file spatial-${NAME} -spatial_times 0:${exdt}:${RUN_LENGTH} -spatial_vars ${exvars} \
   -options_left"
 echo "running command:"
 echo

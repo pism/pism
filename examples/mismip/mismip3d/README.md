@@ -19,9 +19,9 @@ For example, to set up and run the MISMIP3d "Stnd" experiment with SIA+SSA compu
 
 This 2 process run (`-n 2`) takes about three minutes on a 2013 laptop.
 
-This `Stnd` run uses `My=3` as would a MISMIP flowline experiment, and it uses `Mx=801` because of the 2 km resolution.  Three files will be output, `Stnd.nc`, `scalar_Stnd.nc`, and `ex_Stnd.nc`.
+This `Stnd` run uses `My=3` as would a MISMIP flowline experiment, and it uses `Mx=801` because of the 2 km resolution.  Three files will be output, `Stnd.nc`, `scalar_Stnd.nc`, and `spatial_Stnd.nc`.
 
-Now do the first experiment, which uses information from `ex_Stnd.nc` and builds a `Mx=801` by `My=51` grid, again with 2 km resolution:
+Now do the first experiment, which uses information from `spatial_Stnd.nc` and builds a `Mx=801` by `My=51` grid, again with 2 km resolution:
 
     $ ./createscript.py -n 2 -r 3 -d 100 -s -e P75S > runP75S.sh
     $ bash runP75S.sh > out.P75S &
@@ -86,5 +86,4 @@ Note that PISM does not at this time implement the stopping criteria described i
 Post-processing
 ---------------
 
-Converting PISM output files to ASCII files following MISMIP specifications is left as an exercise.  See the additional variables saved in the extra file for each run.
-
+Converting PISM output files to ASCII files following MISMIP specifications is left as an exercise.  See the additional variables saved in the `-spatial_file` for each run.

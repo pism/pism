@@ -14,7 +14,7 @@ mpiexec -n ${N} pism -eisII A \
         -grid.Mz 21 \
         -isochrones.deposition_times 1000 \
         -isochrones.bootstrapping.n_layers 0 \
-        -output.spatial.file ex.nc \
+        -output.spatial.file spatial.nc \
         -output.spatial.times 50 \
         -output.spatial.vars isochrone_depth,thk \
         -output.file output.nc \

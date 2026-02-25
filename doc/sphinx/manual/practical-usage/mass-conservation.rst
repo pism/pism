@@ -41,7 +41,7 @@ Use a shortcut
 
 .. code-block:: none
 
-   pism -spatial_file ex.nc -spatial_times N -spatial_vars mass_fluxes,...
+   pism -spatial_file diagnostics.nc -spatial_times N -spatial_vars mass_fluxes,...
 
 to save all fluxes needed to "balance the books" in terms of ice mass.
 
@@ -58,7 +58,7 @@ To save these, use the shortcut
 
 .. code-block:: none
 
-   pism -spatial_file ex.nc -spatial_times N -spatial_vars amount_fluxes,...
+   pism -spatial_file diagnostics.nc -spatial_times N -spatial_vars amount_fluxes,...
 
 .. rubric:: Comments
 
@@ -130,7 +130,7 @@ Use a shortcut
 
 .. code-block:: none
 
-   pism -spatial_file ex.nc -spatial_times N -spatial_vars hydrology_fluxes,...
+   pism -spatial_file diagnostics.nc -spatial_times N -spatial_vars hydrology_fluxes,...
 
 to save all diagnostics mentioned above.
 

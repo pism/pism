@@ -14,11 +14,11 @@ pism \
   -grid.Lz 400 \
   -grid.Mz 41 \
   -i input.nc \
-  -output.spatial.file ex.nc \
+  -output.spatial.file spatial.nc \
   -output.spatial.times 1000 \
   -output.spatial.vars ${variables} \
   -output.file bedrock_step.nc \
-  -output.scalar.filename ts.nc \
+  -output.scalar.filename scalar.nc \
   -output.scalar.times 1 \
   -stress_balance.ice_free_thickness_standard 0.01 \
   -stress_balance.model sia \

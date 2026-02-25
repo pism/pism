@@ -44,7 +44,7 @@ def generate_domain(domain):
 
 def default_spatial_ts_vars():
     '''
-    Returns a list of commonly-used extra vars
+    Returns a list of commonly-used spatially-variable diagnostics
     '''
 
     exvars = ['beta',
@@ -71,7 +71,7 @@ def default_spatial_ts_vars():
 
 def ch_spatial_ts_vars():
     '''
-    Returns a list of commonly-used extra vars
+    Returns a list of commonly-used spatially-variable diagnostics
     '''
 
     exvars = ['beta',
@@ -115,9 +115,9 @@ def generate_spatial_ts(outfile, exvars, step, start=None, end=None, split=None,
         outfile, ext = os.path.splitext(outfile)
         params_dict['spatial_split'] = ''
     if odir is None:
-        params_dict['spatial_file'] = 'ex_' + outfile
+        params_dict['spatial_file'] = 'spatial_' + outfile
     else:
-        params_dict['spatial_file'] = os.path.join(odir, 'ex_' + outfile)
+        params_dict['spatial_file'] = os.path.join(odir, 'spatial_' + outfile)
     params_dict['spatial_vars'] = exvars
 
     if step is None:

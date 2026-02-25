@@ -110,13 +110,13 @@ To save all the time series supported by PISM, omit the ``-scalar_vars`` option:
 
 .. code-block:: bash
 
-   pism -scalar_times TIMES -scalar_file ts.nc
+   pism -scalar_times TIMES -scalar_file scalar-diagnostics.nc
 
 To save all variables requested by ISMIP6, use ``-scalar_vars ismip6``:
 
 .. code-block:: bash
 
-   pism -scalar_times TIMES -scalar_file ts.nc -scalar_vars ismip6
+   pism -scalar_times TIMES -scalar_file scalar-diagnostics.nc -scalar_vars ismip6
 
 .. list-table:: ISMIP6 variables
    :name: tab-ismip6-variables

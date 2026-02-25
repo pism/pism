@@ -56,7 +56,7 @@ YY="$3"
 
 DT="$5"
 
-etimes="0:$DT:$YY"
+spatial_times="0:$DT:$YY"
 
 # these spatial diagnostics apply to "dist" and "event":
 spatial_vars="thk,velbase_mag,bmelt,bwat,bwp,bwatvel,bwprel,effbwp,wallmelt,tillwat"
@@ -101,7 +101,7 @@ climate="-surface given -surface_given_file $data"
 
 physics="-no_mass -energy none"
 
-diagnostics="-spatial_file extras_$oname -spatial_times $etimes -spatial_vars $spatial_vars"
+diagnostics="-spatial_file spatial_$oname -spatial_times $spatial_times -spatial_vars $spatial_vars"
 
 set -x
 

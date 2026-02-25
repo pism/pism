@@ -22,13 +22,13 @@ diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,tendency_of_ice
 
 viewers="-view $diagnostics"
 
-extra="-spatial_times 10 -spatial_vars $diagnostics -spatial_file ${output_basename}_ex.nc"
+spatial_output="-spatial_times 10 -spatial_vars $diagnostics -spatial_file ${output_basename}_spatial.nc"
 
-ts="-scalar_times 10 -scalar_file ${output_basename}_ts.nc"
+scalar_output="-scalar_times 10 -scalar_file ${output_basename}_scalar.nc"
 
 misc_options="-cfbc -part_grid -o_order zyx -energy none"
 
-pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $extra $ts $misc_options"
+pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $spatial_output $scalar_output $misc_options"
 
 doit="mpiexec -n $N pism $pismopts"
 

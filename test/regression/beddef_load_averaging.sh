@@ -103,7 +103,7 @@ common_options="
 -ys 1-1-1
 "
 
-extra="
+spatial_output="
 -spatial_times 720days
 -spatial_vars topg
 "
@@ -136,7 +136,7 @@ run_length=$(( N * 360 ))
 ${pism} \
    ${common_options} \
    -atmosphere.delta_P.file dP_PMMP.nc \
-   ${extra} -spatial_file spatial_PMMP.nc \
+   ${spatial_output} -spatial_file spatial_PMMP.nc \
    -i H-10.nc \
    -time.run_length ${run_length}days \
    -o_size none \
@@ -160,7 +160,7 @@ ${pism} \
 ${pism} \
    ${common_options} \
    -atmosphere.delta_P.file dP_MMPP.nc \
-   ${extra} -spatial_file spatial_MMPP.nc \
+   ${spatial_output} -spatial_file spatial_MMPP.nc \
    -i H-12.5.nc \
    -regrid_file H-10-full.nc \
    -regrid_vars viscous_bed_displacement,elastic_bed_displacement \
@@ -173,7 +173,7 @@ ${pism} \
 ${pism} \
    ${common_options} \
    -atmosphere.delta_P.file dP_0.nc \
-   ${extra} -spatial_file spatial_0.nc \
+   ${spatial_output} -spatial_file spatial_0.nc \
    -i H-10.nc \
    -time.run_length ${run_length}days \
    -o_size none \

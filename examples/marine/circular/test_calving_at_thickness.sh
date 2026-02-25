@@ -25,11 +25,11 @@ diagnostics="thk,mask,velbase_mag,ice_area_specific_volume,velbase,mass_fluxes,f
 
 viewers="-view $diagnostics"
 
-extra="-spatial_times 10 -spatial_vars $diagnostics -spatial_file ${output_basename}_ex.nc"
+spatial_output="-spatial_times 10 -spatial_vars $diagnostics -spatial_file ${output_basename}_ex.nc"
 
 misc_options="-cfbc -part_grid -o_order zyx -energy none"
 
-pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $extra $misc_options"
+pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $spatial_output $misc_options"
 
 doit="mpiexec -n $N pism"
 

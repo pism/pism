@@ -7,7 +7,7 @@ MPIEXEC=$2
 PISM_SOURCE_DIR=$3
 
 # List of files to remove when done:
-files="out0.nc out1.nc out2.nc out3.nc ex1.nc ex2.nc ex.nc ex-restart.nc"
+files="out0.nc out1.nc out2.nc out3.nc spatial1.nc spatial2.nc spatial.nc spatial-restart.nc"
 
 rm -f $files
 
@@ -40,25 +40,25 @@ options="-bed_def lc -spatial_times 50 -spatial_vars dbdt,topg,thk -stress_balan
 #
 # Note that this first run stops after 1.5 bed deformation update intervals, so it runs
 # the bed deformation model once at year 100 and saves that in the output file.
-${mpi} ${pism} ${options} -i out0.nc -o out1.nc -spatial_file ex1.nc -ys 0 -ye 150 -bootstrap ${grid}
+${mpi} ${pism} ${options} -i out0.nc -o out1.nc -spatial_file spatial1.nc -ys 0 -ye 150 -bootstrap ${grid}
 # This run reads the last bed deformation update time from its input file and updates the
 # bed at years 200 and 300.
-${mpi} ${pism} ${options} -i out1.nc -o out2.nc -spatial_file ex2.nc -ye 300
+${mpi} ${pism} ${options} -i out1.nc -o out2.nc -spatial_file spatial2.nc -ye 300
 
 # Run without interruptions
 #
 # This run updates bed elevation at years 100, 200, and 300.
-${mpi} ${pism} ${options} -bootstrap ${grid} -i out0.nc -o out3.nc -spatial_file ex.nc -ys 0 -ye 300
+${mpi} ${pism} ${options} -bootstrap ${grid} -i out0.nc -o out3.nc -spatial_file spatial.nc -ys 0 -ye 300
 
 set +x
 
 # Combine output files from the stopped and re-started run:
-ncrcat -O ex1.nc ex2.nc ex-restart.nc
+ncrcat -O spatial1.nc spatial2.nc spatial-restart.nc
 
 set +e
 
 # Compare results:
-$PISM_PATH/pism_nccmp -v dbdt,topg ex.nc ex-restart.nc
+$PISM_PATH/pism_nccmp -v dbdt,topg spatial.nc spatial-restart.nc
 if [ $? != 0 ];
 then
     exit 1
