@@ -268,6 +268,8 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
   assert(m_face4.n_pts() <= m_Nq);
   assert(m_face100.n_pts() <= m_Nq);
 
+  m_alpha                  = 1 - m_config->get_number("constants.ice.density") / m_config->get_number("constants.sea_water.density");
+
   auto pism_da = grid->get_dm(1, 0);
 
   int ierr = setup(*pism_da, grid->periodicity(), Mz, coarsening_factor, "bp_");

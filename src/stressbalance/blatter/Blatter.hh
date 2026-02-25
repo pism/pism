@@ -82,6 +82,8 @@ protected:
   // Scaling of quadrature weights (note: this does not seem to matter).
   double m_scaling;
 
+  double m_alpha;
+
   // Ice density times g
   double m_rho_ice_g;
 
@@ -176,6 +178,7 @@ protected:
   virtual void residual_source_term(const fem::Q1Element3 &element,
                                     const double *surface,
                                     const double *bed,
+                                    const double *floatation,
                                     Vector2d *residual);
 
   virtual void residual_basal(const fem::Q1Element3 &element,
