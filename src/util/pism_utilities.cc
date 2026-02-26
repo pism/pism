@@ -63,7 +63,7 @@ std::string string_strip(const std::string &input) {
   tmp.erase(0, tmp.find_first_not_of(" \t"));
 
   // strip trailing spaces
-  tmp.substr(tmp.find_last_not_of(" \t"));
+  tmp.erase(tmp.find_last_not_of(" \t") + 1);
 
   return tmp;
 }

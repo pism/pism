@@ -1575,3 +1575,20 @@ def grounding_line_flux_test():
 
     NORM_INFINITY = 3
     np.testing.assert_almost_equal(gl_flux.norm(NORM_INFINITY), 0.0)
+
+def test_string_strip():
+    def test(desired_string, input_string):
+        stripped = PISM.string_strip(input_string)
+        print(f"desired = '{desired_string}'; string_strip('{input_string}') = '{stripped}'")
+        assert stripped == desired_string
+    test("string", "string")
+    test("string", "  \t\tstring\t\t  ")
+    test("string", "  \t\tstring")
+    test("string", "\t\tstring")
+    test("string", "  string")
+    test("string", "string  \t\t")
+    test("string", "string\t\t")
+    test("string", "string  ")
+    test("string", "string")
+
+test_string_strip()
