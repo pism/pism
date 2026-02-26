@@ -670,6 +670,27 @@ void set_parameter_from_options(Config &config, const std::string &name) {
 }
 
 void set_config_from_options(Config &config) {
+  // Check for deprecated command-line options
+  {
+    std::map<std::string, std::string> options = {
+      {"-extra_append", "-spatial_append"},
+      {"-extra_file", "-spatial_file"},
+      {"-extra_split", "-spatial_split"},
+      {"-extra_stop_missing", "-spatial_stop_missing"},
+      {"-extra_times", "-spatial_times"},
+      {"-extra_force_output_times", "-spatial_force_output_times"},
+      {"-extra_vars", "-spatial_vars"},
+      {"-ts_append", "-scalar_append"},
+      {"-ts_file", "-scalar_file"},
+      {"-ts_times", "-scalar_times"},
+      {"-ts_vars", "-scalar_vars"},
+    };
+
+    for (const auto &o : options) {
+      options::deprecated(o.first, o.second);
+    }
+  }
+
   for (const auto &d : config.all_doubles()) {
     set_parameter_from_options(config, d.first);
   }
@@ -775,6 +796,7 @@ void set_config_from_options(Config &config) {
       config.set_number("surface.elevation_dependent.M_limit_max", meter_per_second(L[1]));
     }
   }
+
 }
 
 //! Create a configuration database using command-line options.
