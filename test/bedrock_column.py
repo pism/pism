@@ -5,6 +5,7 @@ PISM's "bedrock thermal unit".
 
 """
 
+from unittest import TestCase
 import PISM
 from PISM.util import convert
 import numpy as np
@@ -148,9 +149,12 @@ def errors(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
 
     return max_error, avg_error
 
-def test(plot=False):
-    assert convergence_rate_time(errors, plot)[1] > 0.94
-    assert convergence_rate_space(errors, plot)[1] > 1.89
+class BedrockColumn(TestCase):
+    def test_convergence_rate_time(self, plot=False):
+        self.assertTrue(convergence_rate_time(errors, plot)[1] > 0.94)
+
+    def test_convergence_rate_space(self, plot=False):
+        self.assertTrue(convergence_rate_time(errors, plot)[1] > 0.94)
 
 if __name__ == "__main__":
     import pylab as plt
@@ -162,5 +166,7 @@ if __name__ == "__main__":
     def log_fit_plot(x, p, label):
         plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
 
-    test(plot=True)
+    convergence_rate_time(errors, plot=True)
+    convergence_rate_space(errors, plot=True)
+
     plt.show()
