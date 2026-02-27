@@ -1,4 +1,4 @@
-# run this using "python -m nose icemodelvec2t.py -m test_name" to run only one of the
+# run this using "python -m unittest icemodelvec2t.py -k test_name" to run only one of the
 # tests
 import unittest
 import numpy
@@ -32,14 +32,13 @@ class ForcingInput(unittest.TestCase):
 
     def setUp(self):
         "Prepare an input file with an interesting time-dependent field."
-        suffix          = filename("")
-        self.filename   = "input_" + suffix
-        self.empty      = "empty_" + suffix
-        self.one_record = "one_record_" + suffix
-        self.no_time    = "no_time_" + suffix
-        self.no_bounds  = "no_time_bounds_" + suffix
-        self.time_order = "time_order_" + suffix
-        self.interp_linear = "interp_linear_" + suffix
+        self.filename   = filename("input_")
+        self.empty      = filename("empty_")
+        self.one_record = filename("one_record_")
+        self.no_time    = filename("no_time_")
+        self.no_bounds  = filename("no_time_bounds_")
+        self.time_order = filename("time_order_")
+        self.interp_linear = filename("interp_linear_")
 
         M = 3
         self.grid = PISM.Grid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
@@ -162,21 +161,13 @@ class ForcingInput(unittest.TestCase):
 
     def test_missing_file(self):
         "Missing input file"
-        try:
-            forcing = self.forcing(self.empty)
-            assert 0, "initialized with an empty file"
-        except RuntimeError as e:
-            print("\n" + str(e))
-            pass
+        with self.assertRaises(RuntimeError):
+            self.forcing(self.empty)
 
     def test_invalid_interpolation_type(self):
         "Invalid interpolation type"
-        try:
-            forcing = self.forcing(self.filename, interpolation_type=PISM.NEAREST)
-            assert False, "initialized with an invalid interpolation type"
-        except RuntimeError as e:
-            print("\n" + str(e))
-            pass
+        with self.assertRaises(RuntimeError):
+            self.forcing(self.filename, interpolation_type=PISM.NEAREST)
 
     def test_average(self):
         "Time average using average(t, dt)"
@@ -288,12 +279,8 @@ class ForcingInput(unittest.TestCase):
         # Note: Forcing::init() will throw RuntimeError if the buffer is too small
         # to hold all records of a periodic forcing field. This will never happen if this
         forcing = self.forcing(self.filename, buffer_size=2, periodic=False)
-        try:
+        with self.assertRaises(RuntimeError):
             forcing.init(self.filename, periodic=True)
-            assert False, "Failed to stop because the buffer size is too small"
-        except RuntimeError as e:
-            print(e)
-            pass
 
     def test_time_step_too_long(self):
         "update() call with a time step that is too long"
@@ -301,31 +288,20 @@ class ForcingInput(unittest.TestCase):
         N = 2
         forcing = self.forcing(self.filename, buffer_size=N)
 
-        try:
+        with self.assertRaises(RuntimeError):
             dt = seconds(N + 1)
             forcing.update(0, dt)
-            assert False, "Failed to catch a time step that is too long"
-        except RuntimeError as e:
-            print("\n" + str(e))
-            pass
 
     def test_no_time_bounds(self):
         "Forcing without time bounds"
-        try:
-            forcing = self.forcing(self.no_bounds)
-            assert False, "Loaded forcing without time bounds"
-        except RuntimeError as e:
-            print("\n" + str(e))
-            pass
+
+        with self.assertRaises(RuntimeError):
+            self.forcing(self.no_bounds)
 
     def test_decreasing_time(self):
         "Invalid (decreasing) time"
-        try:
-            forcing = self.forcing(self.time_order)
-            assert False, "Loaded forcing with a decreasing time dimension"
-        except RuntimeError as e:
-            print("\n" + str(e))
-            pass
+        with self.assertRaises(RuntimeError):
+            self.forcing(self.time_order)
 
     def test_multiple_steps(self):
         "miltiple update() calls with a small buffer, discarding records"
