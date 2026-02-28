@@ -23,6 +23,23 @@ add_test(NAME "Config:parameters_are_sorted"
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/regression/sorted_parameters.sh ${PROJECT_SOURCE_DIR}/src/pism_config.cdl
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
+if (Pism_BUILD_PYTHON_BINDINGS)
+  macro(pism_unittest_test name executable)
+    string(CONCAT test_name "Python:unittest:" ${name})
+    file(REAL_PATH ${executable} exec)
+    cmake_path(GET exec PARENT_PATH workdir)
+    cmake_path(GET exec FILENAME filename)
+    # message(STATUS "Adding test ${filename} in ${workdir}")
+    add_test(NAME ${test_name}
+      COMMAND ${Python3_EXECUTABLE} "-m" "unittest" "-v" ${filename}
+      WORKING_DIRECTORY ${workdir})
+  endmacro()
+
+  pism_unittest_test("misc" miscellaneous.py)
+  pism_unittest_test("array:Forcing" icemodelvec2t.py)
+  pism_unittest_test("Verification:btu" bedrock_column.py)
+endif()
+
 if (Pism_BUILD_PYTHON_BINDINGS AND Pism_USE_NOSE_TESTS)
   message(STATUS "Enabling regression tests that use 'nose'")
 
@@ -33,8 +50,6 @@ if (Pism_BUILD_PYTHON_BINDINGS AND Pism_USE_NOSE_TESTS)
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
   endmacro()
 
-  pism_nose_test("misc" miscellaneous.py)
-  pism_nose_test("array:Forcing" icemodelvec2t.py)
   pism_nose_test("enthalpy:converter" enthalpy/converter.py)
   pism_nose_test("enthalpy:column" enthalpy/column.py)
   pism_nose_test("sia:bed_smoother" bed_smoother.py)
@@ -48,7 +63,6 @@ if (Pism_BUILD_PYTHON_BINDINGS AND Pism_USE_NOSE_TESTS)
   pism_nose_test("Verification:bed_deformation:iso" regression/beddef_iso.py)
   pism_nose_test("Verification:bed_deformation:given" regression/beddef_given.py)
   pism_nose_test("Verification:mass_transport" mass_transport.py)
-  pism_nose_test("Verification:btu" bedrock_column.py)
   pism_nose_test("Verification:blatter" blatter_verification.py)
   pism_nose_test("frontal_melt" regression/frontal_melt_models.py)
   pism_nose_test("hydrology:steady" regression/hydrology_steady_test.py)
