@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-
+from unittest import TestCase
 import PISM
 
 # silence initialization messages
@@ -214,16 +214,19 @@ def check(flowline, dxs, plot):
     assert convergence_rate(flowline, dxs, max_error, 180, plot) > 1.99
     assert convergence_rate(flowline, dxs, max_error, 270, plot) > 1.99
 
-def ltop_test(dxs=[2000, 1000, 500], plot=False):
-    "Orographic precipitation (triangle ridge test case)"
+class LTOP(TestCase):
+    def test_ltop(self, dxs=[2000, 1000, 500], plot=False):
+        "Orographic precipitation (triangle ridge test case)"
 
-    check(flowline=False, dxs=dxs, plot=plot)
+        check(flowline=False, dxs=dxs, plot=plot)
 
-def ltop_flowline_test(dxs=[2000, 1000, 500], plot=False):
-    "Orographic precipitation (triangle ridge test case) (flow-line)"
+    def test_ltop_flowline(self, dxs=[2000, 1000, 500], plot=False):
+        "Orographic precipitation (triangle ridge test case) (flow-line)"
 
-    check(flowline=True, dxs=dxs, plot=plot)
+        check(flowline=True, dxs=dxs, plot=plot)
 
 if __name__ == "__main__":
-    ltop_test(dxs=[2000, 1000, 500, 250, 125], plot=True)
-    ltop_flowline_test(dxs=[4000, 2000, 1000, 500, 250, 125, 62.5], plot=True)
+    ltop = LTOP()
+
+    ltop.test_ltop(dxs=[2000, 1000, 500, 250, 125], plot=True)
+    ltop.test_ltop_flowline(dxs=[4000, 2000, 1000, 500, 250, 125, 62.5], plot=True)
