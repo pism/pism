@@ -15,15 +15,26 @@ else()
 endif()
 mark_as_advanced(Pism_USE_NOSE_TESTS)
 
+# add a "test" that generates the config file to ensure that it is available later
+add_test(NAME "Config:generate"
+  COMMAND "${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --config "$<CONFIG>" --target pism_config
+)
+set_tests_properties("Config:generate" PROPERTIES FIXTURES_SETUP config)
+
 add_test(NAME "Config:metadata_structure"
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config_test.py pism_config.nc
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+set_tests_properties("Config:metadata_structure" PROPERTIES
+  FIXTURES_REQUIRED config)
 
 add_test(NAME "Config:parameters_are_sorted"
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/regression/sorted_parameters.sh ${PROJECT_SOURCE_DIR}/src/pism_config.cdl
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+set_tests_properties("Config:parameters_are_sorted" PROPERTIES
+  FIXTURES_REQUIRED config)
 
 if (Pism_BUILD_PYTHON_BINDINGS)
+
   macro(pism_unittest_test name executable)
     string(CONCAT test_name "Python:unittest:" ${name})
     file(REAL_PATH ${executable} exec)
@@ -33,6 +44,9 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     add_test(NAME ${test_name}
       COMMAND ${Python3_EXECUTABLE} "-m" "unittest" "-v" ${filename}
       WORKING_DIRECTORY ${workdir})
+    set_tests_properties(${test_name} PROPERTIES
+      ENVIRONMENT "PETSC_OPTIONS=-config \"${PROJECT_BINARY_DIR}/pism_config.nc\""
+      FIXTURES_REQUIRED config)
   endmacro()
 
   pism_unittest_test("misc" miscellaneous.py)
