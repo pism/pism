@@ -243,12 +243,11 @@ if (Pism_ENABLE_DOCUMENTATION)
 endif()
 
 # PISM regression testing
-ENABLE_TESTING()
+list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+list(REMOVE_DUPLICATES CMAKE_CTEST_ARGUMENTS)
+enable_testing()
 include(CTest)
 
-if (CMAKE_VERSION VERSION_GREATER 3.16)
-  set (CMAKE_CTEST_ARGUMENTS "--output-on-failure")
-endif()
 add_subdirectory (test)
 add_subdirectory (test/regression)
 
