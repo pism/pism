@@ -151,14 +151,11 @@ class PIK(TestCase):
 
             check_model(model, T=T, P=self.P, ts=[0.5], Ts=Ts, Ps=Ps)
 
-        assert model.max_timestep(0).infinite()
+        self.assertTrue(model.max_timestep(0).infinite())
 
-        try:
+        with self.assertRaises(RuntimeError, msg="failed to catch an invalid parameterization"):
             config.set_string("atmosphere.pik.parameterization", "invalid")
             model = PISM.AtmospherePIK(self.grid)
-            assert False, "failed to catch an invalid parameterization"
-        except RuntimeError:
-            pass
 
     def tearDown(self):
         os.remove(self.filename)
