@@ -11,7 +11,7 @@ This table lists required PISM's build dependencies alphabetically.
    :header: Required Library, Comment
 
    pkg-config_, any recent version
-   CMake_,       version 3.16 or newer
+   CMake_,       version 3.20 or newer
    Make_,        any version
    FFTW_,        version 3.1 or newer
    GSL_,         version 1.15 or newer

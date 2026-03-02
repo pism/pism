@@ -137,11 +137,11 @@ RUN <<EOF
 EOF
 
 # Build the oldest supported CMake version
-COPY cmake-3_16_0.sh /tmp/
+COPY cmake-3_20_0.sh /tmp/
 RUN <<EOF
-    echo "Install CMake 3.16"
+    echo "Install CMake 3.20"
     set -eux;
-    cd /tmp && ./cmake-3_16_0.sh
+    cd /tmp && ./cmake-3_20_0.sh
 EOF
 
 # Build YAXT and YAC

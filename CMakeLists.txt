@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required (VERSION 3.20)
 
 # Get PISM's "short" X.Y.Z version from a file
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION)
@@ -14,6 +14,7 @@ project (Pism
 
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
+
 pism_set_full_version()
 
 include (GNUInstallDirs)

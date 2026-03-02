@@ -13,7 +13,7 @@ jobs:
 
   build:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.14
+      - image: ckhrulev/pism-ubuntu:0.1.15
 
     parameters:
       version:                  # this parameter is needed to make a valid config (it is
@@ -50,7 +50,7 @@ jobs:
 
   build-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.14
+      - image: ckhrulev/pism-ubuntu:0.1.15
 
     parameters:
       cc:
@@ -85,7 +85,7 @@ jobs:
 
   manual-html:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.14
+      - image: ckhrulev/pism-ubuntu:0.1.15
 
     steps:
       - checkout
@@ -133,7 +133,7 @@ jobs:
 
   manual-pdf:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.14
+      - image: ckhrulev/pism-ubuntu:0.1.15
 
     steps:
       - checkout
@@ -180,7 +180,7 @@ jobs:
 
   doxygen:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.14
+      - image: ckhrulev/pism-ubuntu:0.1.15
 
     environment:
       LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf"
@@ -293,7 +293,7 @@ jobs:
 
   clang-static-analyzer:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.14
+      - image: ckhrulev/pism-ubuntu:0.1.15
 
     steps:
       - checkout
@@ -350,7 +350,7 @@ workflows:
           name: old-cmake
           cc: clang-18
           cxx: clang++-18
-          cmake_prefix: /home/builder/local/cmake-3.16.0
+          cmake_prefix: /home/builder/local/cmake-3.20.0
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
 
@@ -370,7 +370,7 @@ workflows:
           name: old-cmake-minimal
           cc: clang-18
           cxx: clang++-18
-          cmake_prefix: /home/builder/local/cmake-3.16.0
+          cmake_prefix: /home/builder/local/cmake-3.20.0
 
       - manual-html
       - manual-pdf
