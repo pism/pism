@@ -8,9 +8,9 @@ Pism_BUILD_PYTHON_BINDINGS:
   $ ccmake ..   # then set Pism_BUILD_PYTHON_BINDINGS
   $ make install
 Now identify where the PISM python libraries were put something like
-  'some install prefix'/lib/python2.6/site-packages/PISM/...
+  'some install prefix'/lib/python3.12/site-packages/PISM/...
 In that case you will need to add this location to your PYTHONPATH, e.g.
-  $ export PYTHONPATH=${PYTHONPATH}:/usr/local/lib/python2.6/site-packages
+  $ export PYTHONPATH=${PYTHONPATH}:/usr/local/lib/python3.12/site-packages
 
 See 'your PISM root directory'/src/pythonbindings/README.txt for additional info
 on installation.
