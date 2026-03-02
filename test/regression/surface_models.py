@@ -312,7 +312,7 @@ class Elevation(TestCase):
         ctx = PISM.Context()
         ctx.config.import_from(self.config)
 
-    def elevation_1_test(self):
+    def test_elevation_1(self):
         "Model 'elevation', test 1"
         model = PISM.SurfaceElevation(self.grid, PISM.AtmosphereUniform(self.grid))
 
@@ -332,7 +332,7 @@ class Elevation(TestCase):
 
         probe_interface(model)
 
-    def elevation_2_test(self):
+    def test_elevation_2(self):
         "Model 'elevation', test 2"
         T_min = -5.0
         T_max = 0.0
@@ -370,7 +370,7 @@ class TemperatureIndex1(TestCase):
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
         self.output_filename = filename("surface_pdd_output_")
 
-    def pdd_test(self):
+    def test_pdd(self):
         "Model 'pdd', test 1"
         config.set_string("surface.pdd.method", "expectation_integral")
 
@@ -460,7 +460,7 @@ class PIK(TestCase):
 
         config.set_string("input.file", self.filename)
 
-    def surface_pik_test(self):
+    def test_surface_pik(self):
         "Model 'pik'"
         model = PISM.SurfacePIK(self.grid, PISM.AtmosphereUniform(self.grid))
 
@@ -485,7 +485,7 @@ class Simple(TestCase):
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
         self.geometry = PISM.Geometry(self.grid)
 
-    def simple_test(self):
+    def test_simple(self):
         "Model 'simple'"
         atmosphere = self.atmosphere
 
@@ -530,7 +530,7 @@ class Anomaly(TestCase):
 
         delta_T.write(self.filename)
 
-    def anomaly_test(self):
+    def test_anomaly(self):
         "Modifier 'anomaly'"
 
         config.set_string("surface.anomaly.file", self.filename)
@@ -647,7 +647,7 @@ class ForceThickness(TestCase):
         config.set_string("surface.force_to_thickness.file", self.filename)
         config.set_number("surface.force_to_thickness.alpha", convert(alpha, "1/s", "1/year"))
 
-    def forcing_test(self):
+    def test_forcing(self):
         "Modifier ForceThickness"
         modifier = PISM.SurfaceForceThickness(self.grid, self.model)
 
@@ -677,7 +677,7 @@ class EISMINTII(TestCase):
         self.geometry = PISM.Geometry(self.grid)
         self.output_filename = filename("surface_eismint_output_")
 
-    def eismintii_test(self):
+    def test_eismintii(self):
         "Model EISMINTII: define and write model state; get diagnostics"
 
         for experiment in "ABCDEFGHIJKL":
@@ -705,7 +705,7 @@ class Initialization(TestCase):
         self.output_filename = filename("surface_init_output_")
         self.model = surface_simple(self.grid)
 
-    def initialization_test(self):
+    def test_initialization(self):
         "Modifier InitializationHelper"
 
         modifier = PISM.SurfaceInitialization(self.grid, self.model)
@@ -725,7 +725,7 @@ class Factory(TestCase):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
-    def factory_test(self):
+    def test_factory(self):
         "Surface model factory"
         atmosphere = PISM.AtmosphereUniform(self.grid)
 
@@ -850,7 +850,7 @@ class ISMIP6(TestCase):
         self.ctx.config.set_string("surface.ismip6.file", self.forcing_file)
         self.ctx.config.set_string("surface.ismip6.reference_file", self.reference_file)
 
-    def ismip6_test(self):
+    def test_ismip6(self):
         "Surface model ISMIP6"
 
         atmosphere = PISM.AtmosphereUniform(self.grid)
@@ -873,5 +873,5 @@ if __name__ == "__main__":
     t = ISMIP6()
 
     t.setUp()
-    t.ismip6_test()
+    t.test_ismip6()
     t.tearDown()
