@@ -3,7 +3,9 @@ from unittest import TestCase
 import numpy as np
 import os
 
+from PISM.testing import filename as tmp_name
 import PISM
+
 ctx = PISM.Context()
 ctx.log.set_threshold(1)
 
@@ -20,7 +22,7 @@ class SteadyHydrology(TestCase):
         My = 101
 
         grid = PISM.Grid.Shallow(ctx.ctx, Lx, Ly, x0, y0, Mx, My,
-                                    PISM.CELL_CENTER, PISM.NOT_PERIODIC)
+                                 PISM.CELL_CENTER, PISM.NOT_PERIODIC)
         self.grid = grid
 
         geometry = PISM.Geometry(grid)
@@ -41,7 +43,7 @@ class SteadyHydrology(TestCase):
         surface_input_rate.metadata(0).long_name("water input rate").units("kg m^-2 s^-1")
         self.surface_input_rate = surface_input_rate
 
-        self.surface_input_file = "hydrology_steady_surface_input.nc"
+        self.surface_input_file = tmp_name("hydrology_steady_surface_input")
         surface_input_rate.dump(self.surface_input_file)
 
         # center of the patch of non-zero input
@@ -72,7 +74,7 @@ class SteadyHydrology(TestCase):
     def tearDown(self):
         os.remove(self.surface_input_file)
 
-    def divergence_theorem_test(self):
+    def test_divergence_theorem(self):
         "Test that the total input equals the total flux through the boundary."
         grid = self.grid
 
@@ -113,7 +115,7 @@ class SteadyHydrology(TestCase):
         # value of hydrology.steady.volume_ratio.
         relative_error = np.fabs(total_input - total_flux) / total_input
 
-        assert relative_error < 1e-5
+        self.assertTrue(relative_error < 1e-5)
         ctx.log.message(1, "relative error: {}\n".format(relative_error))
 
     def write_results(self):
@@ -142,5 +144,5 @@ if __name__ == "__main__":
 
     t = SteadyHydrology()
     t.setUp()
-    t.divergence_theorem_test()
+    t.test_divergence_theorem()
     t.write_results()
