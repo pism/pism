@@ -65,7 +65,6 @@ RUN <<EOF
     python3 \
     python3-dev \
     python3-netcdf4 \
-    python3-nose \
     python3-numpy \
     python3-pip \
     python3-scipy \

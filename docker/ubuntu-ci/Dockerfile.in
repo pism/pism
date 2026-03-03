@@ -19,7 +19,6 @@ RUN set -eux; \
 # - NCO is used by many regression tests
 # - PROJ is used by PISM's code computing lon,lat coordinates
 # - python3-dev is needed to build Python bindings
-# - python3-nose is used to run some regression tests
 # - SWIG is needed to build Python bindings
 # - OpenMPI is needed to build PETSc and PISM
 # - doxygen and graphviz are needed to build the source code browser
@@ -71,7 +70,6 @@ RUN set -eux; \
     pkg-config \
     python3-dev \
     python3-netcdf4 \
-    python3-nose \
     python3-numpy \
     python3-pip \
     python3-scipy \

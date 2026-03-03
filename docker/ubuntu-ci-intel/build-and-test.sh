@@ -16,5 +16,5 @@ docker run --rm -it \
        -v ${pism_dir}:${container_pism_dir} \
        -e N=${N} \
        -e source_dir=${container_pism_dir} \
-       ckhrulev/pism-ubuntu-intel:0.3.0 \
+       ckhrulev/pism-ubuntu-intel:0.3.1 \
        bash -c "${cmd}"
