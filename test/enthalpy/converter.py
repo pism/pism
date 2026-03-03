@@ -1,5 +1,6 @@
 import PISM
 import numpy as np
+import unittest
 
 config = PISM.Context().config
 
@@ -9,195 +10,192 @@ converters = {"Default": PISM.EnthalpyConverter(config),
 
 
 def try_all_converters(test):
-    print("")
     for name, converter in list(converters.items()):
-        print("Testing '%s' converter..." % name)
         test(name, converter)
-        print("done")
+
+class Enthalpy(unittest.TestCase):
+    def test_reversibility(self):
+        "Converting from (E, P) to (T, omega, P)"
+
+        def run(name, EC):
+            # for a fixed pressure...
+            H = 1000.0
+            P = EC.pressure(H)
+
+            # cold ice
+            # enthalpy form
+            omega_prescribed = 0.0
+            E = EC.enthalpy(250.0, omega_prescribed, P)
+            # temperature form
+            T = EC.temperature(E, P)
+            omega = EC.water_fraction(E, P)
+            # we should get the same E back
+            assert E == EC.enthalpy(T, omega, P)
+            assert omega == omega_prescribed
+
+            # temperate ice
+            T_m = EC.melting_temperature(P)
+            # enthalpy form
+            omega_prescribed = 0.1
+            E = EC.enthalpy(T_m, omega_prescribed, P)
+            # temperature form
+            T = EC.temperature(E, P)
+            omega = EC.water_fraction(E, P)
+            # we should get the same E back
+            assert E == EC.enthalpy(T, omega, P)
+            assert np.fabs(omega - omega_prescribed) < 1e-16
+
+        try_all_converters(run)
 
 
-def reversibility_test():
-    "Converting from (E, P) to (T, omega, P)"
+    def test_temperate_temperature(self):
+        "For temperate ice, an increase of E should not change T."
 
-    def run(name, EC):
-        # for a fixed pressure...
-        H = 1000.0
-        P = EC.pressure(H)
+        def run(name, EC):
+            H = 1000.0
+            P = EC.pressure(H)
+            T_m = EC.melting_temperature(P)
+            E = EC.enthalpy(T_m, 0.005, P)
 
-        # cold ice
-        # enthalpy form
-        omega_prescribed = 0.0
-        E = EC.enthalpy(250.0, omega_prescribed, P)
-        # temperature form
-        T = EC.temperature(E, P)
-        omega = EC.water_fraction(E, P)
-        # we should get the same E back
-        assert E == EC.enthalpy(T, omega, P)
-        assert omega == omega_prescribed
+            if not EC.is_temperate(E, P):
+                # skip the test if our converter still treats this ice as
+                # cold
+                return
 
-        # temperate ice
-        T_m = EC.melting_temperature(P)
-        # enthalpy form
-        omega_prescribed = 0.1
-        E = EC.enthalpy(T_m, omega_prescribed, P)
-        # temperature form
-        T = EC.temperature(E, P)
-        omega = EC.water_fraction(E, P)
-        # we should get the same E back
-        assert E == EC.enthalpy(T, omega, P)
-        assert np.fabs(omega - omega_prescribed) < 1e-16
+            for delta_E in [0, 100, 1000]:
+                assert EC.temperature(E + delta_E, P) == T_m
 
-    try_all_converters(run)
+        try_all_converters(run)
 
 
-def temperate_temperature_test():
-    "For temperate ice, an increase of E should not change T."
+    def test_cts_computation(self):
+        "E_cts should be the same no matter how you compute it."
 
-    def run(name, EC):
-        H = 1000.0
-        P = EC.pressure(H)
-        T_m = EC.melting_temperature(P)
-        E = EC.enthalpy(T_m, 0.005, P)
+        def run(name, EC):
+            H = 1000.0
+            P = EC.pressure(H)
+            T_m = EC.melting_temperature(P)
 
-        if not EC.is_temperate(E, P):
-            # skip the test if our converter still treats this ice as
-            # cold
-            return
+            assert EC.enthalpy(T_m, 0.0, P) == EC.enthalpy_cts(P)
 
-        for delta_E in [0, 100, 1000]:
-            assert EC.temperature(E + delta_E, P) == T_m
+            E_cts = EC.enthalpy_cts(P)
+            assert EC.pressure_adjusted_temperature(E_cts, P) == EC.melting_temperature(0)
 
-    try_all_converters(run)
+        try_all_converters(run)
 
 
-def cts_computation_test():
-    "E_cts should be the same no matter how you compute it."
+    def test_water_fraction_at_cts(self):
+        "Water fraction at CTS is zero."
 
-    def run(name, EC):
-        H = 1000.0
-        P = EC.pressure(H)
-        T_m = EC.melting_temperature(P)
+        def run(name, EC):
+            H = 1000.0
+            P = EC.pressure(H)
+            E = EC.enthalpy_cts(P)
 
-        assert EC.enthalpy(T_m, 0.0, P) == EC.enthalpy_cts(P)
+            assert EC.water_fraction(E, P) == 0
 
-        E_cts = EC.enthalpy_cts(P)
-        assert EC.pressure_adjusted_temperature(E_cts, P) == EC.melting_temperature(0)
-
-    try_all_converters(run)
+        try_all_converters(run)
 
 
-def water_fraction_at_cts_test():
-    "Water fraction at CTS is zero."
+    def test_enthalpy_of_water(self):
+        """Test the dependence of the enthalpy of water at T_m(p) on p."""
 
-    def run(name, EC):
-        H = 1000.0
-        P = EC.pressure(H)
-        E = EC.enthalpy_cts(P)
+        config = PISM.Context().config
+        c_w = config.get_number("constants.fresh_water.specific_heat_capacity")
 
-        assert EC.water_fraction(E, P) == 0
+        EC = converters["Default"]
 
-    try_all_converters(run)
+        depth0 = 0.0
+        p0 = EC.pressure(depth0)
+        T0 = EC.melting_temperature(p0)
+        omega0 = 1.0
+        E0 = EC.enthalpy(T0, omega0, p0)
 
+        depth1 = 1000.0
+        p1 = EC.pressure(depth1)
+        T1 = EC.melting_temperature(p1)
+        omega1 = 1.0
+        E1 = EC.enthalpy(T1, omega1, p1)
 
-def enthalpy_of_water_test():
-    """Test the dependence of the enthalpy of water at T_m(p) on p."""
-
-    config = PISM.Context().config
-    c_w = config.get_number("constants.fresh_water.specific_heat_capacity")
-
-    EC = converters["Default"]
-
-    depth0 = 0.0
-    p0 = EC.pressure(depth0)
-    T0 = EC.melting_temperature(p0)
-    omega0 = 1.0
-    E0 = EC.enthalpy(T0, omega0, p0)
-
-    depth1 = 1000.0
-    p1 = EC.pressure(depth1)
-    T1 = EC.melting_temperature(p1)
-    omega1 = 1.0
-    E1 = EC.enthalpy(T1, omega1, p1)
-
-    # if we change the pressure of water from p0 to p1 while keeping
-    # it at T_m(p), its enthalpy should change and this change should
-    # be equal to c_w * (T_m(p1) - T_m(p0))
-    assert np.fabs((E1 - E0) - c_w * (T1 - T0)) < 1e-9
+        # if we change the pressure of water from p0 to p1 while keeping
+        # it at T_m(p), its enthalpy should change and this change should
+        # be equal to c_w * (T_m(p1) - T_m(p0))
+        assert np.fabs((E1 - E0) - c_w * (T1 - T0)) < 1e-9
 
 
-def invalid_inputs_test():
-    "Test that invalid inputs trigger errors."
-    def run(name, EC):
-        depth = 1000
-        pressure = EC.pressure(depth)
-        E_cts = EC.enthalpy_cts(pressure)
-        E_liquid = EC.enthalpy_liquid(pressure)
-        T_melting = EC.melting_temperature(pressure)
+    def test_invalid_inputs(self):
+        "Test that invalid inputs trigger errors."
+        def run(name, EC):
+            depth = 1000
+            pressure = EC.pressure(depth)
+            E_cts = EC.enthalpy_cts(pressure)
+            E_liquid = EC.enthalpy_liquid(pressure)
+            T_melting = EC.melting_temperature(pressure)
 
-        # don't test the converter that thinks this is cold:
-        if not EC.is_temperate(E_cts, pressure):
-            print("skipped...")
-            return
+            # don't test the converter that thinks this is cold:
+            if not EC.is_temperate(E_cts, pressure):
+                print("skipped...")
+                return
 
-        # temperature exceeds pressure melting
-        E = EC.enthalpy_permissive(T_melting + 1.0, 0.0, pressure)
-        # omega exceeds 1
-        E = EC.enthalpy_permissive(T_melting, 1.1, pressure)
-        # non-zero omega even though the ice is cold
-        E = EC.enthalpy_permissive(T_melting - 1.0, 0.1, pressure)
-        # negative omega
-        E = EC.enthalpy_permissive(T_melting, -0.1, pressure)
+            # temperature exceeds pressure melting
+            E = EC.enthalpy_permissive(T_melting + 1.0, 0.0, pressure)
+            # omega exceeds 1
+            E = EC.enthalpy_permissive(T_melting, 1.1, pressure)
+            # non-zero omega even though the ice is cold
+            E = EC.enthalpy_permissive(T_melting - 1.0, 0.1, pressure)
+            # negative omega
+            E = EC.enthalpy_permissive(T_melting, -0.1, pressure)
 
-        if not PISM.Pism_DEBUG:
-            # Skip remaining tests if PISM was built with Pism_DEBUG set to "OFF". (These
-            # checks are disabled in optimized builds, although we do ensure that
-            # EnthalpyConverter produces reasonable outputs even if it's fed garbage.)
-            return
+            if not PISM.Pism_DEBUG:
+                # Skip remaining tests if PISM was built with Pism_DEBUG set to "OFF". (These
+                # checks are disabled in optimized builds, although we do ensure that
+                # EnthalpyConverter produces reasonable outputs even if it's fed garbage.)
+                return
 
-        try:
-            E = EC.temperature(E_liquid + 1.0, pressure)
-            raise AssertionError("failed to catch E > E_liquid in temperature()")
-        except RuntimeError:
-            pass
+            try:
+                E = EC.temperature(E_liquid + 1.0, pressure)
+                raise AssertionError("failed to catch E > E_liquid in temperature()")
+            except RuntimeError:
+                pass
 
-        try:
-            E = EC.water_fraction(E_liquid + 1.0, pressure)
-            raise AssertionError("failed to catch E > E_liquid in water_fraction()")
-        except RuntimeError:
-            pass
+            try:
+                E = EC.water_fraction(E_liquid + 1.0, pressure)
+                raise AssertionError("failed to catch E > E_liquid in water_fraction()")
+            except RuntimeError:
+                pass
 
-        try:
-            E = EC.enthalpy(T_melting + 1.0, 0.0, pressure)
-            raise AssertionError("failed to catch T > T_melting in enthalpy()")
-        except RuntimeError:
-            pass
+            try:
+                E = EC.enthalpy(T_melting + 1.0, 0.0, pressure)
+                raise AssertionError("failed to catch T > T_melting in enthalpy()")
+            except RuntimeError:
+                pass
 
-        try:
-            E = EC.enthalpy(T_melting, -0.1, pressure)
-            raise AssertionError("failed to catch omega < 0 in enthalpy()")
-        except RuntimeError:
-            pass
+            try:
+                E = EC.enthalpy(T_melting, -0.1, pressure)
+                raise AssertionError("failed to catch omega < 0 in enthalpy()")
+            except RuntimeError:
+                pass
 
-        try:
-            E = EC.enthalpy(T_melting, 1.1, pressure)
-            raise AssertionError("failed to catch omega > 1 in enthalpy()")
-        except RuntimeError:
-            pass
+            try:
+                E = EC.enthalpy(T_melting, 1.1, pressure)
+                raise AssertionError("failed to catch omega > 1 in enthalpy()")
+            except RuntimeError:
+                pass
 
-        try:
-            E = EC.enthalpy(-1.0, 0.0, pressure)
-            raise AssertionError("failed to catch T < 0 in enthalpy()")
-        except RuntimeError:
-            pass
+            try:
+                E = EC.enthalpy(-1.0, 0.0, pressure)
+                raise AssertionError("failed to catch T < 0 in enthalpy()")
+            except RuntimeError:
+                pass
 
-        try:
-            E = EC.enthalpy(T_melting - 1.0, 0.1, pressure)
-            raise AssertionError("failed to catch T < T_melting and omega > 0 in enthalpy()")
-        except RuntimeError:
-            pass
+            try:
+                E = EC.enthalpy(T_melting - 1.0, 0.1, pressure)
+                raise AssertionError("failed to catch T < T_melting and omega > 0 in enthalpy()")
+            except RuntimeError:
+                pass
 
 
-    try_all_converters(run)
+        try_all_converters(run)
 
 
 def plot_converter(name, EC):

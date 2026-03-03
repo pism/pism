@@ -2,7 +2,7 @@
 advection of enthalpy in the column. Tests PISM's enthalpy solver.
 
 """
-
+import unittest
 import PISM
 from PISM.util import convert
 import numpy as np
@@ -489,45 +489,45 @@ def advection_convergence_rate_space(title, error_func, plot=False):
 
     return p_max[0], p_avg[0]
 
-
-def diffusion_DN_test(plot=False):
-    time = diffusion_convergence_rate_time("Diffusion: Dirichlet at the base, Neumann at the surface",
-                                           errors_DN, plot)
-    space = diffusion_convergence_rate_space("Diffusion: Dirichlet at the base, Neumann at the surface",
-                                             errors_DN, plot)
-    if do_assert:
-        assert time[1] > 0.93
-        assert space[1] > 2.0
-
-
-def diffusion_ND_test(plot=False):
-    time = diffusion_convergence_rate_time("Diffusion: Neumann at the base, Dirichlet at the surface",
-                                           errors_ND, plot)
-    space = diffusion_convergence_rate_space("Diffusion: Neumann at the base, Dirichlet at the surface",
-                                             errors_ND, plot)
-    if do_assert:
-        assert time[1] > 0.93
-        assert space[1] > 2.0
+class EnthColumn(unittest.TestCase):
+    def test_diffusion_DN(self, plot=False):
+        time = diffusion_convergence_rate_time("Diffusion: Dirichlet at the base, Neumann at the surface",
+                                               errors_DN, plot)
+        space = diffusion_convergence_rate_space("Diffusion: Dirichlet at the base, Neumann at the surface",
+                                                 errors_DN, plot)
+        if do_assert:
+            self.assertTrue(time[1] > 0.93)
+            self.assertTrue(space[1] > 2.0)
 
 
-def advection_up_test(plot=False):
-    time = advection_convergence_rate_time("Advection: Upward flow",
-                                           errors_advection_up, plot)
-    space = advection_convergence_rate_space("Advection: Upward flow",
-                                             errors_advection_up, plot)
-    if do_assert:
-        assert time[1] > 0.87
-        assert space[1] > 0.96
+    def test_diffusion_ND(self, plot=False):
+        time = diffusion_convergence_rate_time("Diffusion: Neumann at the base, Dirichlet at the surface",
+                                               errors_ND, plot)
+        space = diffusion_convergence_rate_space("Diffusion: Neumann at the base, Dirichlet at the surface",
+                                                 errors_ND, plot)
+        if do_assert:
+            self.assertTrue(time[1] > 0.93)
+            self.assertTrue(space[1] > 2.0)
 
 
-def advection_down_test(plot=False):
-    time = advection_convergence_rate_time("Advection: Downward flow",
-                                           errors_advection_down, plot)
-    space = advection_convergence_rate_space("Advection: Downward flow",
-                                             errors_advection_down, plot)
-    if do_assert:
-        assert time[1] > 0.87
-        assert space[1] > 0.96
+    def test_advection_up(self, plot=False):
+        time = advection_convergence_rate_time("Advection: Upward flow",
+                                               errors_advection_up, plot)
+        space = advection_convergence_rate_space("Advection: Upward flow",
+                                                 errors_advection_up, plot)
+        if do_assert:
+            self.assertTrue(time[1] > 0.87)
+            self.assertTrue(space[1] > 0.96)
+
+
+    def test_advection_down(self, plot=False):
+        time = advection_convergence_rate_time("Advection: Downward flow",
+                                               errors_advection_down, plot)
+        space = advection_convergence_rate_space("Advection: Downward flow",
+                                                 errors_advection_down, plot)
+        if do_assert:
+            self.assertTrue(time[1] > 0.87)
+            self.assertTrue(space[1] > 0.96)
 
 if __name__ == "__main__":
     import pylab as plt
@@ -542,8 +542,9 @@ if __name__ == "__main__":
         plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
 
     do_assert = False
-    diffusion_ND_test(plot=True)
-    diffusion_DN_test(plot=True)
-    advection_up_test(plot=True)
-    advection_down_test(plot=True)
+    c = EnthColumn()
+    c.test_diffusion_ND(plot=True)
+    c.test_diffusion_DN(plot=True)
+    c.test_advection_up(plot=True)
+    c.test_advection_down(plot=True)
     plt.show()
