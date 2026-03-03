@@ -9,6 +9,8 @@ Changes since v2.2.8
   `yac` (Python bindings for YAC), `mpi4py` and NumPy.
 - Implemented a new more efficient algorithm for the solution of the Eikonal equation.
 - Require CMake 3.20 or newer.
+- Remove dependency on the Python package `nose` because it is old and unmaintained. Now
+  we use Python's built-in `unittest` to set up Python-based regression tests.
 
 Changes since v2.2.0
 ====================
