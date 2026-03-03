@@ -10,6 +10,7 @@ src/base/bedroughplay. Also used in PISM software (regression) test.
 import PISM
 from math import sin, pi
 import numpy
+from unittest import TestCase
 
 ctx = PISM.Context()
 config = ctx.config
@@ -107,18 +108,19 @@ def run():
     return topg, topg_smoothed, usurf, theta
 
 
-def bed_smoother_test():
-    "Compare the range of topg, topg_smoothed, and theta to stored values"
+class BedSmoother(TestCase):
+    def test(self):
+        "Compare the range of topg, topg_smoothed, and theta to stored values"
 
-    topg, topg_smoothed, usurf, theta = run()
+        topg, topg_smoothed, usurf, theta = run()
 
-    stored_range = {}
-    stored_range["topg"] = [-500.0, 500.0]
-    stored_range["topg_smoothed"] = [-372.9924735817933, 372.9924735817933]
-    stored_range["theta"] = [0.7147300652935706, 0.9884843647808601]
+        stored_range = {}
+        stored_range["topg"] = [-500.0, 500.0]
+        stored_range["topg_smoothed"] = [-372.9924735817933, 372.9924735817933]
+        stored_range["theta"] = [0.7147300652935706, 0.9884843647808601]
 
-    for f in [topg, topg_smoothed, theta]:
-        numpy.testing.assert_almost_equal([PISM.min(f), PISM.max(f)], stored_range[f.get_name()])
+        for f in [topg, topg_smoothed, theta]:
+            numpy.testing.assert_almost_equal([PISM.min(f), PISM.max(f)], stored_range[f.get_name()])
 
 
 if __name__ == "__main__":
