@@ -5,7 +5,7 @@ python create_inputs.py
 run() {
 suffix=$1
 warming=$2
-extra_vars=$3
+spatial_vars=$3
 
 # bootstrap ice temperature (and so its enthalpy) using the mean-annual surface
 # temperature
@@ -31,9 +31,9 @@ pism -bootstrap -i input.nc -regrid_file in.nc -regrid_vars enthalpy \
      -energy.ch_warming.temperate_ice_thermal_conductivity_ratio 1.0 \
      -surface given,delta_T \
      -surface_delta_T_file input.nc -surface_delta_T_period 1 \
-     -extra_file ex_${suffix}.nc \
-     -extra_vars ${extra_vars} \
-     -extra_times 10days \
+     -spatial_file spatial_${suffix}.nc \
+     -spatial_vars ${spatial_vars} \
+     -spatial_times 10days \
      -y 10 \
      -calendar 360_day \
      -o o_${suffix}.nc -verbose 1
@@ -49,8 +49,8 @@ run no_warming False ${variables}
 # run with cryo-hydrologic warming
 run warming True ${variables},ch_heat_flux,ch_temp,ch_liqfrac
 
-ncpdq -a z,time,y,x -O ex_no_warming.nc ex_no_warming.nc
-ncpdq -a z,time,y,x -O ex_warming.nc ex_warming.nc
+ncpdq -a z,time,y,x -O spatial_no_warming.nc spatial_no_warming.nc
+ncpdq -a z,time,y,x -O spatial_warming.nc spatial_warming.nc
 
 # compare temperature fields
-ncdiff -O -v temp ex_warming.nc ex_no_warming.nc temp_difference.nc
+ncdiff -O -v temp spatial_warming.nc spatial_no_warming.nc temp_difference.nc

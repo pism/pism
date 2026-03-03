@@ -26,22 +26,22 @@
 
 namespace pism {
 
-//! Computes the maximum time-step we can take and still hit all `-extra_times`.
-MaxTimestep IceModel::extras_max_timestep(double t) {
+//! Computes the maximum time-step we can take and still hit all `-spatial_times`.
+MaxTimestep IceModel::spatial_diagnostics_max_timestep(double t) {
 
-  if (m_extra_filename.empty() or
-      (not m_config->get_flag("time_stepping.hit_extra_times"))) {
-    return MaxTimestep("reporting (-extra_times)");
+  if (m_spatial_filename.empty() or
+      (not m_config->get_flag("time_stepping.hit_spatial_times"))) {
+    return MaxTimestep("reporting (-spatial_times)");
   }
 
   double eps = m_config->get_number("time_stepping.resolution");
 
-  return reporting_max_timestep(m_extra_times, t, eps,
-                                "reporting (-extra_times)");
+  return reporting_max_timestep(m_spatial_times, t, eps,
+                                "reporting (-spatial_times)");
 }
 
-static std::set<std::string> process_extra_shortcuts(const Config &config,
-                                                     const std::set<std::string> &input) {
+static std::set<std::string> process_variable_list_shortcuts(const Config &config,
+                                                             const std::set<std::string> &input) {
   std::set<std::string> result = input;
 
   // process shortcuts
@@ -88,11 +88,11 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
 
     if (not config.get_flag(flag_name)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set %s to save ISMIP6 diagnostics "
-                                    "(-extra_vars ismip6).", flag_name);
+                                    "(-spatial_vars ismip6).", flag_name);
     }
 
     result.erase("ismip6");
-    for (const auto& v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
+    for (const auto& v : set_split(config.get_string("output.ISMIP6_spatial_variables"), ',')) {
       result.insert(v);
     }
   }
@@ -101,132 +101,132 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
 }
 
 //! Initialize the code saving spatially-variable diagnostic quantities.
-void IceModel::init_extras() {
+void IceModel::init_spatial_diagnostics() {
 
-  m_last_extra = 0;               // will be set in write_extras()
-  m_next_extra = 0;
+  m_last_spatial_time = 0;               // will be set in write_extras()
+  m_next_spatial_index = 0;
 
-  m_extra_filename   = m_config->get_string("output.extra.file");
-  std::string times  = m_config->get_string("output.extra.times");
-  bool        split  = m_config->get_flag("output.extra.split");
-  bool        append = m_config->get_flag("output.extra.append");
+  m_spatial_filename   = m_config->get_string("output.spatial.file");
+  std::string times  = m_config->get_string("output.spatial.times");
+  bool        split  = m_config->get_flag("output.spatial.split");
+  bool        append = m_config->get_flag("output.spatial.append");
 
-  bool extra_file_set = not m_extra_filename.empty();
+  bool file_set = not m_spatial_filename.empty();
   bool times_set = not times.empty();
 
-  if (extra_file_set ^ times_set) {
+  if (file_set ^ times_set) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "you need to set both output.extra.file and output.extra.times"
+                       "you need to set both output.spatial.file and output.spatial.times"
                        " to save spatial time-series.");
   }
 
-  if (not extra_file_set and not times_set) {
-    m_extra_filename.clear();
+  if (not file_set and not times_set) {
+    m_spatial_filename.clear();
     return;
   }
 
   try {
-    m_extra_times = m_time->parse_times(times);
+    m_spatial_times = m_time->parse_times(times);
   } catch (RuntimeError &e) {
-    e.add_context("parsing the output.extra.times argument %s", times.c_str());
+    e.add_context("parsing the output.spatial.times argument %s", times.c_str());
     throw;
   }
 
-  if (m_extra_times.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "output.extra.times cannot be empty");
+  if (m_spatial_times.empty()) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "output.spatial.times cannot be empty");
   }
 
   if (append and split) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "both output.extra.split and output.extra.append are set.");
+                       "both output.spatial.split and output.spatial.append are set.");
   }
 
   // initialize m_extra_vars and m_extra_file_contents
   {
-    auto vars = m_config->get_string("output.extra.vars");
+    auto vars = m_config->get_string("output.spatial.vars");
     if (not vars.empty()) {
-      m_extra_vars = process_extra_shortcuts(*m_config, set_split(vars, ','));
+      m_spatial_vars = process_variable_list_shortcuts(*m_config, set_split(vars, ','));
       m_log->message(2, "variables requested: %s\n", vars.c_str());
     } else {
       m_log->message(2,
-                     "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
-      m_extra_vars = {};
+                     "PISM WARNING: output.spatial.vars was not set. Writing the model state...\n");
+      m_spatial_vars = {};
     }
 
-    if (m_extra_vars.empty()) {
-      m_extra_file_contents = state_variables();
+    if (m_spatial_vars.empty()) {
+      m_spatial_file_contents = state_variables();
     } else {
-      m_extra_file_contents = diagnostic_variables(m_extra_vars);
+      m_spatial_file_contents = diagnostic_variables(m_spatial_vars);
     }
-    m_extra_file_contents = pism::combine(m_extra_file_contents, common_metadata());
+    m_spatial_file_contents = pism::combine(m_spatial_file_contents, common_metadata());
   }
 
-  m_extra_file = nullptr;
+  m_spatial_file = nullptr;
   if (not split) {
-    m_extra_file = std::make_shared<OutputFile>(m_extra_writer, m_extra_filename);
+    m_spatial_file = std::make_shared<OutputFile>(m_extra_writer, m_spatial_filename);
 
     if (append) {
       // assume that the file is ready to write to, i.e. time and time_bounds are already
       // defined
-      m_extra_file->append();
+      m_spatial_file->append();
 
-      if (m_extra_file->time_dimension_length() > 0) {
-        double time_max = m_extra_file->last_time_value();
+      if (m_spatial_file->time_dimension_length() > 0) {
+        double time_max = m_spatial_file->last_time_value();
 
-        while (m_next_extra + 1 < m_extra_times.size() &&
-               m_extra_times[m_next_extra + 1] < time_max) {
-          m_next_extra++;
+        while (m_next_spatial_index + 1 < m_spatial_times.size() &&
+               m_spatial_times[m_next_spatial_index + 1] < time_max) {
+          m_next_spatial_index++;
         }
 
-        if (m_next_extra > 0) {
+        if (m_next_spatial_index > 0) {
           m_log->message(2, "skipping times before the last record in %s (at %s)\n",
-                         m_extra_filename.c_str(), m_time->date(time_max).c_str());
+                         m_spatial_filename.c_str(), m_time->date(time_max).c_str());
         }
 
         // discard requested times before the beginning of the run
-        std::vector<double> tmp(m_extra_times.size() - m_next_extra);
+        std::vector<double> tmp(m_spatial_times.size() - m_next_spatial_index);
         for (unsigned int k = 0; k < tmp.size(); ++k) {
-          tmp[k] = m_extra_times[m_next_extra + k];
+          tmp[k] = m_spatial_times[m_next_spatial_index + k];
         }
 
-        m_extra_times = tmp;
-        m_next_extra  = 0;
+        m_spatial_times = tmp;
+        m_next_spatial_index  = 0;
       }
     } else {
       // prepare the output file
       bool with_time_bounds = true;
-      define_time(*m_extra_file, with_time_bounds);
-      define_variables(*m_extra_file, m_extra_file_contents);
+      define_time(*m_spatial_file, with_time_bounds);
+      define_variables(*m_spatial_file, m_spatial_file_contents);
     }
   }
 
   if (split) {
     m_log->message(2, "saving spatial time-series to '%s+date.nc'; ",
-               m_extra_filename.c_str());
+               m_spatial_filename.c_str());
   } else {
-    if (not ends_with(m_extra_filename, ".nc")) {
+    if (not ends_with(m_spatial_filename, ".nc")) {
       m_log->message(2,
                  "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
-                 m_extra_filename.c_str());
+                 m_spatial_filename.c_str());
     }
     m_log->message(2, "saving spatial time-series to '%s'; ",
-               m_extra_filename.c_str());
+               m_spatial_filename.c_str());
   }
 
   m_log->message(2, "times requested: %s\n", times.c_str());
 
-  if (m_extra_times.size() > 500) {
+  if (m_spatial_times.size() > 500) {
     m_log->message(2,
                "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
   if (pism::netcdf_version() > 0 and pism::netcdf_version() < 473) {
-    if (m_extra_times.size() > 5000 and
+    if (m_spatial_times.size() > 5000 and
         m_config->get_string("output.format") == "netcdf4_parallel") {
       throw RuntimeError(
           PISM_ERROR_LOCATION,
           "more than 5000 times requested."
-          "Please use -extra_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
+          "Please use -spatial_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
           "Alternatively\n"
           "- split this simulation into several runs and then concatenate results\n"
           "- select a different output.format value\n"
@@ -237,15 +237,15 @@ void IceModel::init_extras() {
 }
 
 //! Write spatially-variable diagnostic quantities.
-void IceModel::write_extras() {
+void IceModel::write_spatial_diagnostics() {
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
                                  // value is never used, because saving_after
                                  // is only used if save_now == true, and in
                                  // this case saving_after is guaranteed to be
                                  // initialized. See the code below.
-  unsigned int current_extra;
+  unsigned int current_index;
   // determine if the user set the -save_at and -save_to options
-  if (m_extra_filename.empty()) {
+  if (m_spatial_filename.empty()) {
     return;
   }
 
@@ -253,33 +253,33 @@ void IceModel::write_extras() {
   double current_time = m_time->current();
 
   // do we need to save *now*?
-  if (m_next_extra < m_extra_times.size() and
-      (current_time >= m_extra_times[m_next_extra] or
-       fabs(current_time - m_extra_times[m_next_extra]) < time_resolution)) {
+  if (m_next_spatial_index < m_spatial_times.size() and
+      (current_time >= m_spatial_times[m_next_spatial_index] or
+       fabs(current_time - m_spatial_times[m_next_spatial_index]) < time_resolution)) {
     // the condition above is "true" if we passed a requested time or got to
     // within time_resolution seconds from it
 
-    current_extra = m_next_extra;
+    current_index = m_next_spatial_index;
 
-    // update next_extra
-    while (m_next_extra < m_extra_times.size() and
-           (m_extra_times[m_next_extra] <= current_time or
-            fabs(current_time - m_extra_times[m_next_extra]) < time_resolution)) {
-      m_next_extra++;
+    // update m_next_spatial_index
+    while (m_next_spatial_index < m_spatial_times.size() and
+           (m_spatial_times[m_next_spatial_index] <= current_time or
+            fabs(current_time - m_spatial_times[m_next_spatial_index]) < time_resolution)) {
+      m_next_spatial_index++;
     }
 
-    saving_after = m_extra_times[current_extra];
+    saving_after = m_spatial_times[current_index];
   } else {
     return;
   }
 
-  if (current_extra == 0) {
+  if (current_index == 0) {
     // The first time defines the left end-point of the first reporting interval; we don't write a
     // report at this time.
 
     // Re-initialize last_extra (the correct value is not known at the time init_extras() is
     // called).
-    m_last_extra = current_time;
+    m_last_spatial_time = current_time;
 
     // ISMIP6 runs need to save diagnostics at the beginning of the run
     if (not m_config->get_flag("output.ISMIP6")) {
@@ -301,61 +301,61 @@ void IceModel::write_extras() {
     return;
   }
 
-  bool extra_split = m_config->get_flag("output.extra.split");
+  bool split = m_config->get_flag("output.spatial.split");
 
   const Profiling &profiling = m_ctx->profiling();
-  profiling.begin("io.extra_file");
+  profiling.begin("io.spatial_file");
   {
-    if (m_extra_file == nullptr) {
+    if (m_spatial_file == nullptr) {
 
-      std::string filename = m_extra_filename;
-      if (extra_split) {
+      std::string filename = m_spatial_filename;
+      if (split) {
         // each time-series record is written to a separate file
         auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
-        filename = pism::printf("%s_%s.nc", m_extra_filename.c_str(), date_without_spaces.c_str());
+        filename = pism::printf("%s_%s.nc", m_spatial_filename.c_str(), date_without_spaces.c_str());
       }
 
-      m_extra_file.reset(new OutputFile(m_extra_writer, filename));
+      m_spatial_file.reset(new OutputFile(m_extra_writer, filename));
 
-      if (m_config->get_flag("output.extra.append")) {
-        m_extra_file->append();
+      if (m_config->get_flag("output.spatial.append")) {
+        m_spatial_file->append();
       } else {
         // prepare the output file
         bool with_time_bounds = true;
-        define_time(*m_extra_file, with_time_bounds);
-        define_variables(*m_extra_file, m_extra_file_contents);
+        define_time(*m_spatial_file, with_time_bounds);
+        define_variables(*m_spatial_file, m_spatial_file_contents);
       }
     }
 
-    m_log->message(3, "saving spatial time-series to %s at %s\n", m_extra_file->name().c_str(),
+    m_log->message(3, "saving spatial time-series to %s at %s\n", m_spatial_file->name().c_str(),
                    m_time->date(m_time->current()).c_str());
 
     {
-      io::write_config(*m_config, "pism_config", *m_extra_file);
+      io::write_config(*m_config, "pism_config", *m_spatial_file);
 
       // use the mid-point of the current reporting interval
-      double time = 0.5 * (m_last_extra + current_time);
-      m_extra_file->append_time(time);
+      double time = 0.5 * (m_last_spatial_time + current_time);
+      m_spatial_file->append_time(time);
 
-      if (m_extra_vars.empty()) {
-        write_state(*m_extra_file);
+      if (m_spatial_vars.empty()) {
+        write_state(*m_spatial_file);
       } else {
-        write_diagnostics(*m_extra_file, m_extra_vars);
+        write_diagnostics(*m_spatial_file, m_spatial_vars);
       }
 
       // write time bounds
       {
         // Get the length of the time dimension *after* it is appended to.
-        auto time_length = m_extra_file->time_dimension_length();
+        auto time_length = m_spatial_file->time_dimension_length();
         auto time_start  = time_length > 0 ? (time_length - 1) : 0;
 
         auto bounds_name = m_time->variable_name() + "_bounds";
 
-        m_extra_file->write_array(bounds_name, { time_start, 0 }, { 1, 2 },
-                                  { m_last_extra, current_time });
+        m_spatial_file->write_array(bounds_name, { time_start, 0 }, { 1, 2 },
+                                  { m_last_spatial_time, current_time });
       }
 
-      write_run_stats(*m_extra_file);
+      write_run_stats(*m_spatial_file);
     }
 
     // FIXME: evaluate if we need to "sync" extra files. We should probably do this every
@@ -365,20 +365,20 @@ void IceModel::write_extras() {
     // make sure all changes are written
     // m_extra_file->sync();
   }
-  profiling.end("io.extra_file");
+  profiling.end("io.spatial_file");
 
-  flush_timeseries();
+  scalar_diagnostics_flush_buffers();
 
-  if (extra_split) {
+  if (split) {
     // each record is saved to a new file, so we can close this one
-    m_extra_file->close();
-    m_extra_file = nullptr;
+    m_spatial_file->close();
+    m_spatial_file = nullptr;
   }
 
-  m_last_extra = current_time;
+  m_last_spatial_time = current_time;
 
   // reset accumulators in diagnostics that compute time averaged quantities
-  for (auto &d : m_diagnostics) {
+  for (auto &d : m_available_spatial_diagnostics) {
     d.second->reset();
   }
 }

@@ -56,7 +56,7 @@ Now we run for 746 model seconds (Sayag & Worster, 2013) on a 10 mm grid
     $ ./rungum.sh 4 52 &> out.lab52
 
 This run generates `out.lab52` from `stderr` and `stdout`,
-and it also generates diagnostic NetCDF files `ts_lab52.nc` and `ex_lab52.nc`.
+and it also generates diagnostic NetCDF files `scalar_lab52.nc` and `spatial_lab52.nc`.
 It takes about 5 minutes on a 2013 laptop.
 
 Results are better on finer grids because the input pipe radius is only 8 mm.
@@ -68,7 +68,7 @@ For example, this uses a 5 mm grid, and takes about an hour to run:
 You can compare multiple runs to the experimental data on radius (R. Sayag,
 personal communication):
 
-    $ ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
+    $ ./showradius.py -o foo.png -d constantflux3.txt scalar_lab*.nc
 
 ## higher resolutions
 

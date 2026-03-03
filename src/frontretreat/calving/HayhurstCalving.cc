@@ -153,7 +153,7 @@ const array::Scalar &HayhurstCalving::calving_rate() const {
   return m_calving_rate;
 }
 
-DiagnosticList HayhurstCalving::diagnostics_impl() const {
+DiagnosticList HayhurstCalving::spatial_diagnostics_impl() const {
   return {{"hayhurst_calving_rate", Diagnostic::wrap(m_calving_rate)}};
 }
 

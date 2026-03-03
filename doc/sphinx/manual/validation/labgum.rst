@@ -65,14 +65,14 @@ and then do a run for 746 model seconds :cite:`SayagWorster2013` on the 10 mm gr
 
    ./rungum.sh 4 52 &> out.lab52 &
 
-This run generates text file ``out.lab52``, diagnostic files ``ts_lab52.nc`` and
-``ex_lab52.nc``, and final output ``lab52.nc``. This run took about 5 minutes on
+This run generates text file ``out.lab52``, diagnostic files ``scalar_lab52.nc`` and
+``spatial_lab52.nc``, and final output ``lab52.nc``. This run took about 5 minutes on
 a 2013 laptop, thus roughly real time! When it is done, you can compare the modeled radius
 to the experimental data:
 
 .. code-block:: none
 
-   ./showradius.py -o r52.png -d constantflux3.txt ts_lab52.nc
+   ./showradius.py -o r52.png -d constantflux3.txt scalar_lab52.nc
 
 You can also redo the whole thing on higher resolution grids (here: 5 and 2.5 mm), here
 using 6 MPI processes if the runs are done simultaneously, and when it is done after
@@ -84,15 +84,15 @@ several hours, make a combined figure just like :numref:`fig-labgumresult`:
    ./preprocess.py -Mx 208 -o initlab208.nc
    ./rungum.sh 2 104 &> out.lab104 &
    ./rungum.sh 4 208 &> out.lab208 &
-   ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
+   ./showradius.py -o foo.png -d constantflux3.txt scalar_lab*.nc
 
 .. figure:: figures/labgumradius.png
    :name: fig-labgumresult
 
-   Radius `r_N(t)` for runs with 10 mm (``ts_lab52.nc``), 5 mm (``ts_lab104.nc``), and 2.5
-   mm (``ts_lab208.nc``) grids, compared to observations from Sayag & Worster's
-   :cite:`SayagWorster2013` table-top "ice cap" (gravity current) made from a 1% Xanthan
-   gum suspension, as shown in Figure :numref:`fig-labgumexperiment`.
+   Radius `r_N(t)` for runs with 10 mm (``scalar_lab52.nc``), 5 mm (``scalar_lab104.nc``),
+   and 2.5 mm (``scalar_lab208.nc``) grids, compared to observations from Sayag &
+   Worster's :cite:`SayagWorster2013` table-top "ice cap" (gravity current) made from a 1%
+   Xanthan gum suspension, as shown in Figure :numref:`fig-labgumexperiment`.
 
 We see that on the coarsest grid the modeled volume has "steps" because the margin
 advances discretely. Note we are computing the radius by first computing the fluid-covered

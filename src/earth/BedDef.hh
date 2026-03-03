@@ -59,7 +59,7 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
 
   virtual void update_impl(const array::Scalar &load,
                            double t, double dt) = 0;

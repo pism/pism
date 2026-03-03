@@ -190,7 +190,7 @@ void BedThermalUnit::write_state_impl(const OutputFile &output) const {
   m_bottom_surface_flux.write(output);
 }
 
-DiagnosticList BedThermalUnit::diagnostics_impl() const {
+DiagnosticList BedThermalUnit::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     {"bheatflx",   Diagnostic::wrap(m_bottom_surface_flux)},
     {"heat_flux_from_bedrock", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -195,21 +195,21 @@ protected:
 
 } // end of namespace diagnostics
 
-DiagnosticList OceanModel::diagnostics_impl() const {
+DiagnosticList OceanModel::spatial_diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = { { "shelfbtemp", Diagnostic::Ptr(new PO_shelf_base_temperature(this)) },
                             { "shelfbmassflux",
                               Diagnostic::Ptr(new PO_shelf_base_mass_flux(this)) } };
 
   if (m_input_model) {
-    return combine(m_input_model->diagnostics(), result);
+    return combine(m_input_model->spatial_diagnostics(), result);
   }
   return result;
 }
 
-TSDiagnosticList OceanModel::ts_diagnostics_impl() const {
+TSDiagnosticList OceanModel::scalar_diagnostics_impl() const {
   if (m_input_model) {
-    return m_input_model->ts_diagnostics();
+    return m_input_model->scalar_diagnostics();
   }
   return {};
 }

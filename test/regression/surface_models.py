@@ -39,7 +39,7 @@ def write_state(model, filename):
 
     model.write_state(f)
 
-    diags = model.diagnostics()
+    diags = model.spatial_diagnostics()
     for k in diags.keys():
         d = diags[k]
         for k in range(d.n_variables()):
@@ -61,10 +61,10 @@ def probe_interface(model):
 
     model.max_timestep(0)
 
-    model.diagnostics()
+    model.spatial_diagnostics()
 
     # FIXME: this causes a memory leak
-    # model.ts_diagnostics()
+    # model.scalar_diagnostics()
 
     model.grid()
 

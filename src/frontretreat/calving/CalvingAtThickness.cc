@@ -139,7 +139,7 @@ const array::Scalar& CalvingAtThickness::threshold() const {
   return *m_calving_threshold;
 }
 
-DiagnosticList CalvingAtThickness::diagnostics_impl() const {
+DiagnosticList CalvingAtThickness::spatial_diagnostics_impl() const {
   return {{"thickness_calving_threshold", Diagnostic::wrap(*m_calving_threshold)}};
 }
 

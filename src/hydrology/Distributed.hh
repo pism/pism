@@ -61,7 +61,7 @@ protected:
 
   void update_impl(double t, double dt, const Inputs& inputs);
 
-  std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
+  std::map<std::string, TSDiagnostic::Ptr> scalar_diagnostics_impl() const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;

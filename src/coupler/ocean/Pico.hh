@@ -50,7 +50,7 @@ protected:
   std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
-  std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  std::map<std::string, Diagnostic::Ptr> spatial_diagnostics_impl() const;
 
 private:
   array::Scalar m_Soc, m_Soc_box0;

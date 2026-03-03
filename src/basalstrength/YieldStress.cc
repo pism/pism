@@ -101,7 +101,7 @@ void YieldStress::write_state_impl(const OutputFile &output) const {
   m_basal_yield_stress.write(output);
 }
 
-DiagnosticList YieldStress::diagnostics_impl() const {
+DiagnosticList YieldStress::spatial_diagnostics_impl() const {
   return {{"tauc", Diagnostic::wrap(m_basal_yield_stress)}};
 }
 

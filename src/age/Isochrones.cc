@@ -860,7 +860,7 @@ protected:
 
 } // end of namespace diagnostics
 
-DiagnosticList Isochrones::diagnostics_impl() const {
+DiagnosticList Isochrones::spatial_diagnostics_impl() const {
   return { { details::isochrone_depth_variable_name,
              Diagnostic::Ptr(new diagnostics::IsochroneDepths(this)) },
            { details::layer_thickness_variable_name, Diagnostic::wrap(*m_layer_thickness) } };

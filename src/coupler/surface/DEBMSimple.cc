@@ -780,7 +780,7 @@ unsigned int DEBMSimple::timeseries_length(double dt) const {
   return std::max(1U, static_cast<unsigned int>(ceil(m_n_per_year * dt_years)));
 }
 
-DiagnosticList DEBMSimple::diagnostics_impl() const {
+DiagnosticList DEBMSimple::spatial_diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
@@ -797,7 +797,7 @@ DiagnosticList DEBMSimple::diagnostics_impl() const {
     { "insolation", Diagnostic::Ptr(new DEBMSInsolation(this)) }
   };
 
-  result = pism::combine(result, SurfaceModel::diagnostics_impl());
+  result = pism::combine(result, SurfaceModel::spatial_diagnostics_impl());
 
   return result;
 }

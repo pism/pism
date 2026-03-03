@@ -1625,8 +1625,8 @@ protected:
   }
 };
 
-DiagnosticList SSAFDBase::diagnostics_impl() const {
-  DiagnosticList result = ShallowStressBalance::diagnostics_impl();
+DiagnosticList SSAFDBase::spatial_diagnostics_impl() const {
+  DiagnosticList result = ShallowStressBalance::spatial_diagnostics_impl();
 
   // replace these diagnostics
   result["taud"] = Diagnostic::Ptr(new SSAFD_taud(this));

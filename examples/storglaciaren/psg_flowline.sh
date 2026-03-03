@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2010-2015, 2018, 2024 Andy Aschwanden
+# Copyright (C) 2010-2015, 2018, 2024, 2026 Andy Aschwanden
 
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
@@ -134,13 +134,13 @@ $PISM_DO $cmd
 # run with -no_mass (no surface change) 
 INNAME=$OUTNAME
 OUTNAME=$PREFIX${GS}m_steady.nc
-EXNAME=ex_${OUTNAME}
-EXTIMES=0:25:${NOMASSRUNLENGTH}
+SPATIAL_NAME=spatial_${OUTNAME}
+SPATIAL_TIMES=0:25:${NOMASSRUNLENGTH}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) sia run to achieve approximate enthalpy equilibrium, for ${NOMASSRUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM $EB -i $INNAME $COUPLER \
   -no_mass -y ${NOMASSRUNLENGTH} \
-  -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES -o $OUTNAME"
+  -spatial_file $SPATIAL_NAME -spatial_vars $EXVARS -spatial_times $SPATIAL_TIMES -o $OUTNAME"
 $PISM_DO $cmd
 
 
@@ -151,8 +151,8 @@ ENDTIME=$(($STARTYEAR + $RUNLENGTH))
 INNAME=$OUTNAME
 OUTNAME=ssa_ftt_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
-TSNAME=ts_${OUTNAME}
-TSTIMES=$STARTYEAR:$STEP:$ENDTIME
+SCALAR_NAME=scalar_${OUTNAME}
+SCALAR_TIMES=$STARTYEAR:$STEP:$ENDTIME
 
 # create the force-to-thickness mask
 ncap2 -O -s "ftt_mask = 0*mask+1" $INNAME $INNAME
@@ -161,7 +161,7 @@ echo
 echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM -bootstrap $GRID -i $INNAME -regrid_file $INNAME $EB -skip -skip_max $SKIP $COUPLER_FORCING $FULLPHYS\
      -force_to_thickness_file $INNAME -force_to_thickness_alpha $FTALPHA \
-     -ts_file $TSNAME -ts_times $TSTIMES \
+     -scalar_file $SCALAR_NAME -scalar_times $SCALAR_TIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
@@ -176,16 +176,16 @@ ENDTIME=$(($STARTYEAR + $RUNLENGTH))
 INNAME=$OUTNAMEFULL
 OUTNAME=ssa_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
-TSNAME=ts_${OUTNAMEFULL}
-EXNAME=ex_${OUTNAMEFULL}
-TSTIMES=$STARTYEAR:$STEP:$ENDTIME
-EXTIMES=$STARTYEAR:$STEP:$ENDTIME
+SCALAR_NAME=scalar_${OUTNAMEFULL}
+SPATIAL_NAME=spatial_${OUTNAMEFULL}
+SCALAR_TIMES=$STARTYEAR:$STEP:$ENDTIME
+SPATIAL_TIMES=$STARTYEAR:$STEP:$ENDTIME
 
 echo
 echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
-     -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -scalar_file $SCALAR_NAME -scalar_times $SCALAR_TIMES \
+     -spatial_file $SPATIAL_NAME -spatial_vars $EXVARS -spatial_times $SPATIAL_TIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo

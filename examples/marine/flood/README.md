@@ -12,7 +12,7 @@ To run this example, do
     $ make
 
 First look at variable `thk` in `flood.nc` to see initial geometry.
-See evolving `mask` and `thk` variables in output files `ex_*.nc` to see
+See evolving `mask` and `thk` variables in output files `spatial_*.nc` to see
 the effect of various options including `[none]`, `-cfbc`,
 `-cfbc -kill_icebergs`.
 

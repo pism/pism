@@ -49,9 +49,9 @@ private:
 
   void write_state_impl(const OutputFile &output) const;
 
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 
-  TSDiagnosticList ts_diagnostics_impl() const;
+  TSDiagnosticList scalar_diagnostics_impl() const;
 
   std::shared_ptr<YieldStress> m_input;
 

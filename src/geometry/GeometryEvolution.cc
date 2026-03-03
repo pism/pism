@@ -1096,7 +1096,7 @@ protected:
 
 } // end of namespace diagnostics
 
-DiagnosticList GeometryEvolution::diagnostics_impl() const {
+DiagnosticList GeometryEvolution::spatial_diagnostics_impl() const {
   using namespace diagnostics;
   using Ptr = Diagnostic::Ptr;
 

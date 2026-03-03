@@ -39,7 +39,7 @@ of the output NetCDF file.
 
 Signal `SIGUSR1` makes PISM save state under a filename based on the
 the name of the executable (e.g. `pism`) and the current
-model year.  In addition the time series (`-ts_file`, etc.) is flushed out
+model year.  In addition the time series (`-scalar_file`, etc.) is flushed out
 There is no indication of these actions in the history attribute of the output (`-o`)
 NetCDF file because there is no effect on it, but there is an indication at `stdout`.
 
@@ -87,7 +87,7 @@ int IceModel::process_signals() {
     }
 
     // flush all the time-series buffers:
-    flush_timeseries();
+    scalar_diagnostics_flush_buffers();
   }
 
   if (pism_signal == SIGUSR2) {
@@ -96,7 +96,7 @@ int IceModel::process_signals() {
     pism_signal = 0;
 
     // flush all the time-series buffers:
-    flush_timeseries();
+    scalar_diagnostics_flush_buffers();
   }
 
   return 0;

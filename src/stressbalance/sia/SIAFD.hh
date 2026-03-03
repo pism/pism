@@ -67,7 +67,7 @@ public:
   const array::Staggered1& diffusivity() const;
 
 protected:
-  virtual DiagnosticList diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
 
   virtual void compute_surface_gradient(const Inputs &inputs,
                                         array::Staggered1 &h_x,

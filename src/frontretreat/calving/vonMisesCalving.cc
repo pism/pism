@@ -199,7 +199,7 @@ const array::Scalar& vonMisesCalving::threshold() const {
   return m_calving_threshold;
 }
 
-DiagnosticList vonMisesCalving::diagnostics_impl() const {
+DiagnosticList vonMisesCalving::spatial_diagnostics_impl() const {
   return {{"vonmises_calving_rate", Diagnostic::wrap(m_calving_rate)},
           {"vonmises_calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
 }

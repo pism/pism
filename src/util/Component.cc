@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020, 2022, 2023, 2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2020, 2022, 2023, 2025, 2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -88,19 +88,19 @@ Component::Component(std::shared_ptr<const Grid> g)
   // empty
 }
 
-DiagnosticList Component::diagnostics() const {
-  return this->diagnostics_impl();
+DiagnosticList Component::spatial_diagnostics() const {
+  return this->spatial_diagnostics_impl();
 }
 
-TSDiagnosticList Component::ts_diagnostics() const {
-  return this->ts_diagnostics_impl();
+TSDiagnosticList Component::scalar_diagnostics() const {
+  return this->scalar_diagnostics_impl();
 }
 
-DiagnosticList Component::diagnostics_impl() const {
+DiagnosticList Component::spatial_diagnostics_impl() const {
   return {};
 }
 
-TSDiagnosticList Component::ts_diagnostics_impl() const {
+TSDiagnosticList Component::scalar_diagnostics_impl() const {
   return {};
 }
 

@@ -241,7 +241,7 @@ the SeaRISE 1km data set) differs from that in the whole ice sheet model state.
 We will get first an equilibrium 5 km regional model, and then do a century run of a 2 km
 model based on that. While determining "equilibrium" requires a decision, of course, a
 standard satisfied here is that the ice volume in the region changes by less than 0.1
-percent in the final 100 model years. See ``ice_volume_glacierized`` in ``ts_spunjako_0.nc``
+percent in the final 100 model years. See ``ice_volume_glacierized`` in ``scalar_spunjako_0.nc``
 below.
 
 The 5 km grid [#]_ uses ``-Mx 125 -My 86``. So now we do a basic run using 8 MPI
@@ -255,7 +255,7 @@ processes:
 
 You can read the ``stdout`` log file while it runs: "``less out.spin5km``". The run takes
 about 4.4 processor-hours on a 2016 laptop. It produces three files which can be viewed
-(e.g. with ``ncview``): ``spunjako_0.nc``, ``ts_spunjako_0.nc``, and ``ex_spunjako_0.nc``.
+(e.g. with ``ncview``): ``spunjako_0.nc``, ``scalar_spunjako_0.nc``, and ``spatial_spunjako_0.nc``.
 Some more comments on this run are appropriate:
 
 - Generally the regridding techniques used at the start of this spin-up run are
@@ -327,8 +327,8 @@ It produces a file ``jakofine_short.nc`` almost immediately and then restarts fr
 because we need to regrid fields from the end of the previous 5 km regional run (in
 ``spunjako_0.nc``) and then to "go back" and regrid the SSA boundary conditions from the 5
 km whole ice sheet results ``g5km_bc.nc``. At the end of the run the final file
-``jakofine.nc`` is produced. Also there is a time-series file ``ts_jakofine.nc`` with
-monthly scalar time-series and a spatial time-dependent file ``ex_jakofine.nc``. The
+``jakofine.nc`` is produced. Also there is a time-series file ``scalar_jakofine.nc`` with
+monthly scalar time-series and a spatial time-dependent file ``spatial_jakofine.nc``. The
 surface speed at the end of this run is shown in :numref:`fig-jako-csurf`, with a
 comparison to observations.
 

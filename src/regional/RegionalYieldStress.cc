@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -111,10 +111,10 @@ void RegionalYieldStress::write_state_impl(const OutputFile &output) const {
   m_basal_yield_stress.write(output);
 }
 
-DiagnosticList RegionalYieldStress::diagnostics_impl() const {
+DiagnosticList RegionalYieldStress::spatial_diagnostics_impl() const {
   // Override the tauc diagnostic with the one that includes the regional modification
   return combine({{"tauc", Diagnostic::wrap(m_basal_yield_stress)}},
-                 m_input->diagnostics());
+                 m_input->spatial_diagnostics());
 }
 
 MaxTimestep RegionalYieldStress::max_timestep_impl(double t) const {
@@ -127,8 +127,8 @@ MaxTimestep RegionalYieldStress::max_timestep_impl(double t) const {
   return MaxTimestep(name());
 }
 
-TSDiagnosticList RegionalYieldStress::ts_diagnostics_impl() const {
-  return m_input->ts_diagnostics();
+TSDiagnosticList RegionalYieldStress::scalar_diagnostics_impl() const {
+  return m_input->scalar_diagnostics();
 }
 
 } // end of namespace pism

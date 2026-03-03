@@ -220,8 +220,8 @@ protected:
   }
 };
 
-DiagnosticList SSAFD_SNES::diagnostics_impl() const {
-  DiagnosticList result = SSAFDBase::diagnostics_impl();
+DiagnosticList SSAFD_SNES::spatial_diagnostics_impl() const {
+  DiagnosticList result = SSAFDBase::spatial_diagnostics_impl();
 
   result["ssa_residual"] = Diagnostic::wrap(m_residual);
   result["ssa_residual_mag"] = Diagnostic::Ptr(new SSAFD_residual_mag(this));

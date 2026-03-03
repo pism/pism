@@ -20,7 +20,7 @@ creating PISM-readable data files, and modeling with such.
 
 To do this, set :config:`stress_balance.model` to "none", :config:`energy.model` to "none"
 and :config:`age.enabled` to "false" (see :ref:`sec-turning-off`) and use PISM's reporting
-capabilities (:opt:`-extra_file`, :opt:`-extra_times`, :opt:`-extra_vars`) to monitor.
+capabilities (:opt:`-spatial_file`, :opt:`-spatial_times`, :opt:`-spatial_vars`) to monitor.
 
 Turning "off" ice dynamics saves computational time while allowing one to use the same
 options as in an actual modeling run. Note that we do *not* disable geometry updates, so
@@ -35,9 +35,9 @@ correctly:
 .. code-block:: none
 
    mpiexec -n 2 pism -eisII A -Mx 61 -My 61 -y 1000 -o state.nc
-   pism -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
-        -extra_file movie.nc \
-        -extra_vars climatic_mass_balance,ice_surface_temp \
+   pism -i state.nc -surface given -spatial_times 0.0:0.1:2.5 \
+        -spatial_file movie.nc \
+        -spatial_vars climatic_mass_balance,ice_surface_temp \
         -ys 0 -ye 2.5
 
 Using ``pism -eisII A`` merely generates demonstration climate data, using EISMINT II
@@ -63,9 +63,9 @@ Assuming that ``g20km_10ka.nc`` was created :ref:`as described in the User's Man
          -geometry.update.enabled no \
          -i g20km_10ka.nc -bootstrap \
          -atmosphere searise_greenland -surface pdd \
-         -ys 0 -ye 1 -extra_times 1week \
-         -extra_file foo.nc \
-         -extra_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot
+         -ys 0 -ye 1 -spatial_times 1week \
+         -spatial_file foo.nc \
+         -spatial_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot
     
 produces ``foo.nc``. Viewing in with ``ncview`` shows an annual cycle in the variable
 :var:`air_temp_snapshot` and a noticeable decrease in the surface mass balance during
@@ -88,18 +88,19 @@ The command
     pism -i g20km_10ka.nc -bootstrap -dx 40km -dy 40km -Mz 11 \
          -atmosphere searise_greenland \
          -surface pdd -ys 0 -ye 2.5 \
-         -extra_file foo.nc -extra_times 0.1 \
-         -extra_vars climatic_mass_balance,air_temp_snapshot,surface_melt_rate,surface_runoff_rate,surface_accumulation_rate \
-         -ts_file ts.nc -ts_times 0.1 \
+         -spatial_file foo.nc -spatial_times 0.1 \
+         -spatial_vars climatic_mass_balance,air_temp_snapshot,surface_melt_rate,surface_runoff_rate,surface_accumulation_rate \
+         -scalar_file scalar_diagnostics.nc -scalar_times 0.1 \
          -o bar.nc
 
 will produce ``foo.nc`` containing a "movie" very similar to the one created by the
 previous run, but including the full influence of ice dynamics.
 
-In addition to ``foo.nc``, the latter command will produce ``ts.nc`` containing scalar
-time-series. The variable ``tendency_of_ice_mass_due_to_surface_mass_flux`` (the *total
-over ice domain of top surface ice mass flux*) can be used to detect if climate forcing is
-applied at the right time.
+In addition to ``foo.nc``, the latter command will produce ``scalar_diagnostics.nc``
+containing scalar time-series. The variable
+``tendency_of_ice_mass_due_to_surface_mass_flux`` (the *total over ice domain of top
+surface ice mass flux*) can be used to detect if climate forcing is applied at the right
+time.
 
 Visualizing the climate inputs in the Greenland case
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -113,9 +114,9 @@ section :ref:`sec-surface-pdd`) is "reasonable":
    pism -i g20km_10ka.nc -bootstrap \
         -atmosphere searise_greenland,precip_scaling \
         -surface pdd -atmosphere_precip_scaling_file pism_dT.nc \
-        -extra_times 1week -ys -3 -ye 0 \
-        -extra_file pddmovie.nc \
-        -extra_vars climatic_mass_balance,air_temp_snapshot,effective_precipitation
+        -spatial_times 1week -ys -3 -ye 0 \
+        -spatial_file pddmovie.nc \
+        -spatial_vars climatic_mass_balance,air_temp_snapshot,effective_precipitation
 
 This produces the file ``pddmovie.nc`` with several variables:
 :var:`climatic_mass_balance` (instantaneous net accumulation (ablation) rate),
@@ -154,9 +155,9 @@ We can also test the surface temperature forcing code with the following command
          -surface simple \
          -atmosphere searise_greenland,delta_T \
          -atmosphere_delta_T_file pism_dT.nc \
-         -extra_times 100 -ys -125e3 -ye 0 \
-         -extra_vars ice_surface_temp \
-         -extra_file dT_movie.nc \
+         -spatial_times 100 -ys -125e3 -ye 0 \
+         -spatial_vars ice_surface_temp \
+         -spatial_file dT_movie.nc \
          -stress_balance.model none \
          -energy.model none \
          -age.enabled no \

@@ -16,7 +16,7 @@ Changes from 0.4 (June 2011) to 0.5
    the ocean)
 -  ``-pdd_annualized`` implemented, and recommended for degree-day
    scheme usage
--  Flush time-series when ``-extra_files`` are written
+-  Flush time-series when ``-spatial_files`` are written
 -  Improved documentation (mostly climate forcing code)
 -  Improved climate forcing code and its interface (in particular:
    consistent command-line options)

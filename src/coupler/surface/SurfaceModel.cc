@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2025 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2026 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -800,7 +800,7 @@ public:
 
 } // end of namespace diagnostics
 
-DiagnosticList SurfaceModel::diagnostics_impl() const {
+DiagnosticList SurfaceModel::spatial_diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
@@ -822,17 +822,17 @@ DiagnosticList SurfaceModel::diagnostics_impl() const {
   }
 
   if (m_atmosphere) {
-    result = pism::combine(result, m_atmosphere->diagnostics());
+    result = pism::combine(result, m_atmosphere->spatial_diagnostics());
   }
 
   if (m_input_model) {
-    result = pism::combine(result, m_input_model->diagnostics());
+    result = pism::combine(result, m_input_model->spatial_diagnostics());
   }
 
   return result;
 }
 
-TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
+TSDiagnosticList SurfaceModel::scalar_diagnostics_impl() const {
   using namespace diagnostics;
 
   TSDiagnosticList result = {
@@ -842,11 +842,11 @@ TSDiagnosticList SurfaceModel::ts_diagnostics_impl() const {
   };
 
   if (m_atmosphere) {
-    return pism::combine(result, m_atmosphere->ts_diagnostics());
+    return pism::combine(result, m_atmosphere->scalar_diagnostics());
   }
 
   if (m_input_model) {
-    return pism::combine(result, m_input_model->ts_diagnostics());
+    return pism::combine(result, m_input_model->scalar_diagnostics());
   }
 
   return result;

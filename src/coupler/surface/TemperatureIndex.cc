@@ -496,14 +496,14 @@ void TemperatureIndex::write_state_impl(const OutputFile &output) const {
   m_snow_depth.write(output);
 }
 
-DiagnosticList TemperatureIndex::diagnostics_impl() const {
+DiagnosticList TemperatureIndex::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     {"air_temp_sd", Diagnostic::wrap(*m_air_temp_sd)},
     {"snow_depth",  Diagnostic::wrap(m_snow_depth)},
     {"firn_depth",  Diagnostic::wrap(m_firn_depth)},
   };
 
-  result = pism::combine(result, SurfaceModel::diagnostics_impl());
+  result = pism::combine(result, SurfaceModel::spatial_diagnostics_impl());
 
   return result;
 }

@@ -90,7 +90,7 @@ options:
    ./spinup.sh $NN const 200 5 hybrid g5km_gridseq.nc
 
 Environment variable ``EXSTEP`` specifies the time in years between writing the
-spatially-dependent, and large-file-size-generating, frames for the ``-extra_file ...``
+spatially-dependent, and large-file-size-generating, frames for the ``-spatial_file ...``
 diagnostic output.
 
 .. note::
@@ -158,8 +158,8 @@ an obvious modification of the run in section :ref:`sec-ssarun`.
    :name: fig-ivol-gridseq
 
    Time series of ice volume ``ice_volume_glacierized`` from the three runs in our grid
-   sequencing example: 20 km for 10 ka = ``ts_g20km_10ka_hy.nc``, 10 km for 2 ka =
-   ``ts_g10km_gridseq.nc``, and 5 km for 200 a = ``ts_g5km_gridseq.nc``.
+   sequencing example: 20 km for 10 ka = ``scalar_g20km_10ka_hy.nc``, 10 km for 2 ka =
+   ``scalar_g10km_gridseq.nc``, and 5 km for 200 a = ``scalar_g5km_gridseq.nc``.
 
 :numref:`fig-ivol-gridseq`, which shows time series of ice volume, also shows the cost of
 high resolution, however. The short 200 a run on the 5 km grid took about 3 wall-clock

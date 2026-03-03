@@ -42,7 +42,7 @@ def write_state(model):
         model.write_state(output)
         output.close()
 
-        ds = model.diagnostics()
+        ds = model.spatial_diagnostics()
         output = PISM.util.prepare_output(o_diagnostics)
 
         for d in ds:

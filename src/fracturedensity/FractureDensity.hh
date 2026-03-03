@@ -59,7 +59,7 @@ private:
   virtual std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 
   array::Scalar1 m_density;
   array::Scalar m_density_new;

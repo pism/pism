@@ -20,7 +20,9 @@ Run a grid sequencing like in Chapter 1 of the User's Manual to get
 
     $ ./run-decoupled.sh 5 g2km_gridseq.nc              # 5 year runs
 
-This run produces six files: `routing-decoupled.nc`, `ex_routing-decoupled.nc`, `ts_routing-decoupled.nc`, `distributed-decoupled.nc`, `ex_distributed-decoupled.nc`, `ts_distributed-decoupled.nc`.
+This run produces six files: `routing-decoupled.nc`, `spatial_routing-decoupled.nc`,
+`scalar_routing-decoupled.nc`, `distributed-decoupled.nc`,
+`spatial_distributed-decoupled.nc`, `scalar_distributed-decoupled.nc`.
 
 To generate map-plane figures from the paper do:
 
@@ -33,6 +35,5 @@ and `showPvsW.py`.  It also uses `mogrify` from the [Imagemagick](http://www.ima
 
 To show some additional hydrology time-series do
 
-    $ ./hydro-tsshow.py ts-routing.png ts_routing-decoupled.nc
-    $ ./hydro-tsshow.py ts-distributed.png ts_distributed-decoupled.nc
-
+    $ ./hydro-tsshow.py scalar-routing.png scalar_routing-decoupled.nc
+    $ ./hydro-tsshow.py scalar-distributed.png scalar_distributed-decoupled.nc

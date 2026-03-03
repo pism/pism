@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2013, 2014, 2015, 2024 Andy Aschwanden
+# Copyright (C) 2013, 2014, 2015, 2024, 2026 Andy Aschwanden
 #
 # *****************************************************************************
 # Relax Greenland Topography
@@ -185,10 +185,10 @@ STARTTIME=0
 ENDTIME=100
 
 OUTNAME=g${GS}km_removeice.nc
-TSNAME=ts_$OUTNAME
+TSNAME=scalar_$OUTNAME
 TSSTEP=yearly
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
-EXNAME=ex_$OUTNAME
+EXNAME=spatial_$OUTNAME
 EXSTEP=100
 EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
 EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"
@@ -196,8 +196,8 @@ EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"
 
 cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $BOOTNAME -bootstrap 
      $GRID $COUPLER \
-     -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -scalar_file $TSNAME -scalar_times $TSTIMES \
+     -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXTIMES \
      -ys $STARTTIME -ye $ENDTIME -o_size $OSIZE -o $OUTNAME -o_format $OFORMAT"
 
 $PISM_DO $cmd
@@ -211,10 +211,10 @@ ENDTIME=$(($STARTTIME + $RUNLENGTH))
 
 INNAME=$OUTNAME
 OUTNAME=g${GS}km_relax.nc
-TSNAME=ts_$OUTNAME
+TSNAME=scalar_$OUTNAME
 TSSTEP=yearly
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
-EXNAME=ex_$OUTNAME
+EXNAME=spatial_$OUTNAME
 EXSTEP=100
 EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
 EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"
@@ -222,8 +222,8 @@ EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"
 echo
 cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $INNAME 
      $COUPLER \
-     -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -scalar_file $TSNAME -scalar_times $TSTIMES \
+     -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXTIMES \
      -ys $STARTTIME -ye $ENDTIME -o_size $OSIZE -o $OUTNAME -o_format $OFORMAT"
 
 $PISM_DO $cmd
