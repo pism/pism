@@ -2,6 +2,7 @@
 
 "Test the pointwise isostasy model."
 
+from unittest import TestCase
 import numpy
 import PISM
 
@@ -52,9 +53,10 @@ def bed_def_iso(ice_thickness_change):
 
     return bed_model.bed_elevation().to_numpy()[0,0]
 
-def beddef_iso_test():
-    "Test the pointwise isostasy model"
+class BedDefIso(TestCase):
+    def test_beddef_iso(self):
+        "Test the pointwise isostasy model"
 
-    dH = 1000.0
+        dH = 1000.0
 
-    numpy.testing.assert_almost_equal(bed_def_iso(dH), exact(dH))
+        numpy.testing.assert_almost_equal(bed_def_iso(dH), exact(dH))
