@@ -4,6 +4,7 @@
 
 import PISM
 from PISM.testing import shallow_grid, create_forcing
+from PISM.testing import filename as tmp_name
 import os
 import numpy as np
 
@@ -23,9 +24,9 @@ time.set_end(times[-1])
 class BeddefGiven(TestCase):
     def setUp(self):
 
-        self.geometry_filename = "beddef_given_input.nc"
-        self.filename          = "beddef_given.nc"
-        self.ref_filename      = "beddef_given_reference.nc"
+        self.geometry_filename = tmp_name("beddef_given_input")
+        self.filename          = tmp_name("beddef_given")
+        self.ref_filename      = tmp_name("beddef_given_reference")
 
         self.grid = shallow_grid(Mx=3, My=3)
 
@@ -72,7 +73,7 @@ class BeddefGiven(TestCase):
         except:
             pass
 
-    def bed_def_given_test(self):
+    def test_bed_def_given(self):
         "Test -bed_def given"
 
         model = PISM.GivenTopography(self.grid)

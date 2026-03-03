@@ -70,6 +70,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   pism_unittest_test("Verification:bed_deformation:LC:viscous" regression/beddef_lc_viscous.py)
   pism_unittest_test("Verification:bed_deformation:LC:elastic" regression/beddef_lc_elastic.py)
   pism_unittest_test("Verification:bed_deformation:iso" regression/beddef_iso.py)
+  pism_unittest_test("Verification:bed_deformation:given" regression/beddef_given.py)
 endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS AND Pism_USE_NOSE_TESTS)
@@ -81,8 +82,6 @@ if (Pism_BUILD_PYTHON_BINDINGS AND Pism_USE_NOSE_TESTS)
       COMMAND ${Python3_EXECUTABLE} "-m" "nose" "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/${executable}
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
   endmacro()
-
-  pism_nose_test("Verification:bed_deformation:given" regression/beddef_given.py)
 else()
   message(STATUS "Python module 'nose' was not found; some regression tests will be disabled")
 endif()
