@@ -34,7 +34,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   endmacro()
 
   pism_add_unittest("misc" miscellaneous.py)
-  pism_add_unittest("array:Forcing" icemodelvec2t.py)
+  pism_add_unittest("array:Forcing" array_forcing.py)
   pism_add_unittest("Verification:btu" bedrock_column.py)
   pism_add_unittest("atmosphere" regression/atmosphere_models.py)
   pism_add_unittest("surface" regression/surface_models.py)

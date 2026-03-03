@@ -1,4 +1,4 @@
-# run this using "python -m unittest icemodelvec2t.py -k test_name" to run only one of the
+# run this using "python -m unittest array_forcing.py -k test_name" to run only one of the
 # tests
 import unittest
 import numpy
