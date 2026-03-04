@@ -15,7 +15,7 @@ common_options="
         -stress_balance.sia.flow_law isothermal_glen
         -stress_balance.sia.surface_gradient_method eta
         -isochrones.deposition_times 0:500:20e3
-        -energy.enabled no
+        -energy.model none
 "
 
 mpiexec -n ${N} pism -eisII A \
