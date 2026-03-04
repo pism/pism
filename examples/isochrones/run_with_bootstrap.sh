@@ -13,7 +13,7 @@ M=${M:-100}
 common_options="
         -stress_balance.sia.flow_law isothermal_glen
         -stress_balance.sia.surface_gradient_method eta
-        -energy.enabled no
+        -energy.model none
 "
 
 mpiexec -n ${N} pism -eisII A \
