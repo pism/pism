@@ -206,6 +206,7 @@ static std::vector<AxisType> dimension_types(const File &file, const std::string
  */
 static void transpose(const double *input, const std::vector<AxisType> &input_axes,
                       const std::array<int, 4> &count, double *output) {
+
   // make a copy of `input_axes`:
   auto axes = input_axes;
 
@@ -215,12 +216,19 @@ static void transpose(const double *input, const std::vector<AxisType> &input_ax
     axes.back() = Z_AXIS;
   }
 
+  // validate `axes`:
+  int N = (int)axes.size();
+  for (int k = 0; k < N; ++k) {
+    if (axes[k] < 0 or axes[k] > 3) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid `axes[%d]` = %d", k, axes[k]);
+    }
+  }
+
   // delta[X_AXIS] is the change in the linear index corresponding to incrementing x in
   // the `input` ordering. delta[Y_AXIS], delta[Z_AXIS] and delta[T_AXIS] correspond to
   // changes in y, z, t.
   std::vector<unsigned> delta = {1, 1, 1, 1}; // 4 to store steps for T,Y,X,Z axes
   {
-    int N = (int)axes.size();
     // compute changes in the linear index corresponding to incrementing one of the
     // "spatial" indexes, in the order used in `input`:
     std::vector<unsigned> tmp(N, 1);
