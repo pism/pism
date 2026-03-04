@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023, 2024, 2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023, 2024, 2025, 2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,6 +44,12 @@ Array3D::Array3D(std::shared_ptr<const Grid> grid, const std::string &name, Kind
                  const std::vector<double> &levels, unsigned int stencil_width)
     : Array(grid, name, ghostedp, 1, stencil_width, levels) {
   set_begin_access_use_dof(true);
+
+  if (levels.empty()) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "pism::array::Array3D '%s' has to have at least one \"vertical\" level", name.c_str());
+  }
 }
 
 //! Set all values of scalar quantity to given a single value in a particular column.
