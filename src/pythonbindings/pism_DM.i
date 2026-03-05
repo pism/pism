@@ -2,7 +2,7 @@
 #include "util/petscwrappers/DM.hh"
 %}
 
-/* This is needed to wrap IceGrid::get_dm() */
+/* This is needed to wrap Grid::get_dm() */
 %shared_ptr(pism::petsc::DM)
 %shared_ptr(pism::Wrapper< ::DM >)
 

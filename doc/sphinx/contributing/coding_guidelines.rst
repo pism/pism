@@ -42,14 +42,14 @@ Good:
    #include <cassert>
    #include <cstring>
 
-   #include "IceGrid.hh"
+   #include "Grid.hh"
 
 Bad:
 
 .. code-block:: c++
 
    #include <cstring>
-   #include "IceGrid.hh"
+   #include "Grid.hh"
    #include <cassert>
 
 Whenever appropriate add comments explaining why a particular header was included.
@@ -90,7 +90,7 @@ Names of functions and class methods use the same rules are variable names, with
 additions.
 
 - If a method is used to get a property of an object that cannot be reset (example:
-  `IceGrid::Mx()`), omit `get_` from the name.
+  `Grid::Mx()`), omit `get_` from the name.
 - If a getter method has a corresponding setter method, their names should be
   *predictable*: `Foo::get_bar()` and `Foo::set_bar()`. In this case, *do not* omit `get_`
   from the name of the getter.

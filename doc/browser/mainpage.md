@@ -41,7 +41,7 @@ these classes*. (This is a summary.)
 
 ### Infrastructure (utility) classes
 
-- pism::IceGrid (computational grid)
+- pism::Grid (computational grid)
 - pism::Component and pism::Component_TS (interface shared by most sub-models)
 - pism::array::Scalar, pism::array::Staggered, pism::array::Vector, and pism::array::Array3D (storage)
 - pism::ScalarForcing (scalar time-dependent forcing)
