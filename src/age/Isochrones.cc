@@ -1,4 +1,4 @@
-/* Copyright (C) 2023, 2024 PISM Authors
+/* Copyright (C) 2023, 2024, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -368,7 +368,9 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid,
   // inappropriate.
   m_layer_thickness = details::allocate_layer_thickness(m_grid, { time->current() });
   m_tmp             = m_layer_thickness->duplicate(array::WITH_GHOSTS);
-  m_top_layer_index = details::n_active_layers(m_layer_thickness->levels(), time->start()) - 1;
+
+  auto n_layers = details::n_active_layers(m_layer_thickness->levels(), time->start());
+  m_top_layer_index = n_layers > 0 ? n_layers - 1 : 0;
 }
 
 /*!
@@ -459,7 +461,8 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
       }
     }
 
-    m_top_layer_index = n_active_layers(m_layer_thickness->levels(), time->start()) - 1;
+    auto n_layers     = details::n_active_layers(m_layer_thickness->levels(), time->start());
+    m_top_layer_index = n_layers > 0 ? n_layers - 1 : 0;
     {
       std::vector<std::string> dates;
       for (auto t : m_layer_thickness->levels()) {
@@ -507,7 +510,8 @@ void Isochrones::initialize(const File &input_file, int record, bool use_interpo
     m_tmp = m_layer_thickness->duplicate(array::WITH_GHOSTS);
 
     // set m_top_layer_index
-    m_top_layer_index = n_active_layers(m_layer_thickness->levels(), time->start()) - 1;
+    auto n_layers     = details::n_active_layers(m_layer_thickness->levels(), time->start());
+    m_top_layer_index = n_layers > 0 ? n_layers - 1 : 0;
 
     {
       std::vector<std::string> dates;
