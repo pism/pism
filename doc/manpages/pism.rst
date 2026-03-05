@@ -6,8 +6,8 @@ pism
 Parallel Ice Sheet Model (PISM): prognostic runs
 ------------------------------------------------
 :Author: ckhroulev@alaska.edu
-:Date:   2024-10-28
-:Copyright: Copyright (C) 2024 Constantine Khrulev
+:Date:   2026-03-05
+:Copyright: Copyright (C) 2026 Constantine Khrulev
 :Version: 0.1
 :Manual section: 1
 :Manual group: science
@@ -16,7 +16,9 @@ SYNOPSIS
 ========
 
 |  pism -i *input_file.nc* ...
-|  pism -boot_file *bootstrapping_file.nc* ...
+|  pism -bootstrap -i *bootstrapping_file.nc* ...
+|  pism -eisII X ...
+|  pism -test Y ...
 
 DESCRIPTION
 ===========
