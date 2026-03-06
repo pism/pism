@@ -100,6 +100,8 @@ pism_test (bed_deformation:LC:exact_restartability beddef_lc_restart.sh)
 
 pism_test (PICO:Split-and-merge pico_split/run_test.sh)
 
+pism_test (Isochrones:restart test_isochrone_restart.sh)
+
 if (Pism_USE_PROJ)
   pism_test (epsg_code_processing test_epsg_processing.py)
 endif()
