@@ -1,4 +1,4 @@
-/* Copyright (C) 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,13 +29,13 @@ namespace pism {
 namespace array {
 
 Staggered::Staggered(std::shared_ptr<const Grid> grid, const std::string &name)
-  : Array(grid, name, WITHOUT_GHOSTS, 2, 1, {0.0}) {
+    : Array(grid, name, WITHOUT_GHOSTS, 2, 1, {}) {
   set_begin_access_use_dof(true);
 }
 
 Staggered::Staggered(std::shared_ptr<const Grid> grid, const std::string &name,
                      unsigned int stencil_width)
-  : Array(grid, name, WITH_GHOSTS, 2, stencil_width, {0.0}){
+    : Array(grid, name, WITH_GHOSTS, 2, stencil_width, {}) {
   set_begin_access_use_dof(true);
 }
 

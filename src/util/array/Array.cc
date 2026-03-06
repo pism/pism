@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2025 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2026 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -156,7 +156,7 @@ void Array::inc_state_counter() {
 
 //! Returns the number of spatial dimensions.
 unsigned int Array::ndims() const {
-  return m_impl->zlevels.size() > 1 ? 3 : 2;
+  return levels().empty() ? 2 : 3;
 }
 
 std::vector<int> Array::shape() const {
@@ -240,10 +240,10 @@ void Array::scale(double alpha) {
  */
 void Array::copy_to_vec(std::shared_ptr<petsc::DM> destination_da, petsc::Vec &destination) const {
   // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
-  // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // zlevels.size() == 0. For 3D fields, m_dof == 1 (all 3D fields are
   // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
   // DM object. So we want the bigger of the two numbers here.
-  unsigned int N = std::max((size_t)m_impl->dof, m_impl->zlevels.size());
+  unsigned int N = std::max((size_t)ndof(), levels().size());
 
   this->get_dof(destination_da, destination, 0, N);
 }
@@ -326,10 +326,10 @@ petsc::Vec &Array::vec() const {
 
 std::shared_ptr<petsc::DM> Array::dm() const {
   if (m_impl->da == nullptr) {
-    // dof > 1 for vector, staggered grid 2D fields, etc. In this case zlevels.size() ==
-    // 1. For 3D fields, dof == 1 (all 3D fields are scalar) and zlevels.size()
+    // dof > 1 for vector, staggered grid 2D fields, etc. In this case levels().size() ==
+    // 0. For 3D fields, dof == 1 (all 3D fields are scalar) and levels().size()
     // corresponds to dof of the underlying PETSc DM object.
-    auto da_dof = std::max((unsigned int)m_impl->zlevels.size(), m_impl->dof);
+    auto da_dof = std::max(levels().size(), (size_t)ndof());
 
     // initialize the da member:
     m_impl->da = grid()->get_dm(da_dof, m_impl->da_stencil_width);
@@ -504,9 +504,9 @@ void Array::write_impl(const OutputFile &file) const {
     return std::make_shared<units::Converter>();
   };
 
-  // 3D arrays have more than one level, collections of fields have one level. This local
-  // array size is correct in both cases.
-  size_t local_array_size = grid()->xm() * grid()->ym() * levels().size();
+  // 3D arrays have one or more levels, collections of fields have 0 levels.
+  size_t n_levels = levels().empty() ? 1 : levels().size();
+  size_t local_array_size = grid()->xm() * grid()->ym() * n_levels;
 
   // Scalar 2D and 3D arrays:
   if (ndof() == 1) {
@@ -669,10 +669,10 @@ void Array::check_array_indices(int i, int j, unsigned int k) const {
     ghost_width = m_impl->da_stencil_width;
   }
   // m_impl->dof > 1 for vector, staggered grid 2D fields, etc. In this case
-  // zlevels.size() == 1. For 3D fields, m_impl->dof == 1 (all 3D fields are
-  // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
+  // levels().size() == 0. For 3D fields, ndof() == 1 (all 3D fields are
+  // scalar) and levels().size() corresponds to dof of the underlying PETSc
   // DM object. So we want the bigger of the two numbers here.
-  unsigned int N = std::max((size_t)m_impl->dof, m_impl->zlevels.size());
+  unsigned int N = std::max((size_t)ndof(), levels().size());
 
   bool out_of_range = (i < m_impl->grid->xs() - ghost_width) ||
     (i > m_impl->grid->xs() + m_impl->grid->xm() + ghost_width) ||
@@ -929,14 +929,14 @@ void AccessScope::add(const std::vector<const PetscAccessible*> &vecs) {
 //! Return the total number of elements in the *owned* part of an array.
 size_t Array::size() const {
   // m_impl->dof > 1 for vector, staggered grid 2D fields, etc. In this case
-  // zlevels.size() == 1. For 3D fields, m_impl->dof == 1 (all 3D fields are
-  // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
+  // levels().size() == 0. For 3D fields, m_impl->dof == 1 (all 3D fields are
+  // scalar) and levels().size() corresponds to dof of the underlying PETSc
   // DM object.
 
   size_t
-    Mx = m_impl->grid->Mx(),
-    My = m_impl->grid->My(),
-    Mz = m_impl->zlevels.size(),
+    Mx = grid()->Mx(),
+    My = grid()->My(),
+    Mz = levels().empty() ? 1 : levels().size(),
     dof = m_impl->dof;
 
   return Mx * My * Mz * dof;

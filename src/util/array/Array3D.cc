@@ -78,7 +78,7 @@ void Array3D::set_column(int i, int j, const double *input) {
   check_array_indices(i, j, 0);
 #endif
   double ***arr       = (double ***)m_array;
-  PetscErrorCode ierr = PetscMemcpy(arr[j][i], input, m_impl->zlevels.size() * sizeof(double));
+  PetscErrorCode ierr = PetscMemcpy(arr[j][i], input, levels().size() * sizeof(double));
   PISM_CHK(ierr, "PetscMemcpy");
 }
 
@@ -218,8 +218,8 @@ void Array3D::copy_from(const Array3D &input) {
   assert(levels().size() == input.levels().size());
   assert(ndof() == input.ndof());
 
-  // 3D arrays have more than one level and ndof() of 1, collections of fields have one
-  // level and ndof() > 1
+  // 3D arrays have at least one level and ndof() of 1, collections of fields have zero
+  // levels and ndof() > 1
   auto N = std::max((size_t)ndof(), levels().size());
 
   ParallelSection loop(m_impl->grid->com);

@@ -88,8 +88,8 @@ VariableMetadata::VariableMetadata(std::shared_ptr<units::System> system, const 
   y["units"]          = "m";
   y["spacing_meters"] = { grid.dy() };
 
-  if (levels.size() > 1) {
-    m_dimensions.push_back({"z", system, (int)levels.size(), true});
+  if (not levels.empty()) {
+    m_dimensions.push_back({ "z", system, (int)levels.size(), true });
 
     auto &z = dimension("z");
     z["axis"]      = "Z";

@@ -138,7 +138,7 @@ public:
                    const std::vector<std::tuple<std::string, int> > &dimensions,
                    std::shared_ptr<units::System> system);
   VariableMetadata(std::shared_ptr<units::System> system, const std::string &name, const Grid &grid,
-                   const std::vector<double> &levels = { 0.0 });
+                   const std::vector<double> &levels = {});
 
   virtual ~VariableMetadata() = default;
 

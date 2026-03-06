@@ -33,6 +33,7 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/Config.hh"
 #include <string>
+#include <vector>
 
 #if (Pism_USE_YAC == 1)
 #include "InputInterpolationYAC.hh"
@@ -156,8 +157,9 @@ InputInterpolation::create(const Grid &target_grid,
   }
 #endif
 
-  return std::make_shared<InputInterpolation3D>(target_grid, levels, input_file, variable_name,
-                                                type);
+  std::vector<double> fake_levels = { 0.0 };
+  return std::make_shared<InputInterpolation3D>(target_grid, levels.empty() ? fake_levels : levels,
+                                                input_file, variable_name, type);
 }
 
 
