@@ -681,6 +681,12 @@ netcdf pism_config {
     pism_config:calving.linear_calving.b_type = "number";
     pism_config:calving.linear_calving.b_units = "m year-1";
 
+    pism_config:calving.grounded_calving.use_floatation_thickness = "no";
+    pism_config:calving.grounded_calving.use_floatation_thickness_doc = "If enabled, use floatation thickness instead of modelled ice thickness to calculate cliff height for calving parametrisation of grounded termini (``hayhurst_calving``, ``cliff_calving_shear``, ``cliff_calving_tensile``, ``linear_calving``).";
+    pism_config:calving.grounded_calving.use_floatation_thickness_option = "grounded_calving_use_floatation_thickness";
+    pism_config:calving.grounded_calving.use_floatation_thickness_type = "flag";
+
+
     pism_config:calving.methods = "";
     pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``, ``vonmises_calving``, ``hayhurst_calving``, ``cliff_calving_shear``, ``cliff_calving_tensile``, ``linear_calving``";
     pism_config:calving.methods_option = "calving";

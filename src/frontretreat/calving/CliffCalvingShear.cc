@@ -61,6 +61,13 @@ void CliffCalvingShear::init() {
                  "  Maximum cliff calving rate: %3.3f m/yr.\n",
                  convert(m_sys, m_max_cliff_calving_rate, "m second-1", "m year-1"));
 
+  // Read floatation thickness option
+  m_use_floatation_thickness = m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
+  if (m_use_floatation_thickness) {
+    m_log->message(2,
+                   "  Using floatation thickness for cliff height calculation.\n");
+  }
+
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "-calving cliff_calving_shear using a non-square grid cell is not implemented (yet);\n"
@@ -114,14 +121,33 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
       }
       stencils::Star<int> M = cell_type.star_int(i, j);
 
-      // Get the ice thickness and mask in the partially filled grid cell where we apply calving
-      // it is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells 
-      const double H_threshold = part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
-      const int m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
+      // Calculate cliff height using either floatation thickness calculated from water depth
+      // or threshold thickness calculated from ice thickness and surface elevation of neighbouring icy cells.
+      const double water_depth = sea_level(i, j) - bed_elevation(i, j);
+      double cliff_height;
+      double w;
+      int m;
+      if (m_use_floatation_thickness) {
+        // Calculate floatation thickness: thickness of ice that would float in this water depth
+        const double H_flotation = water_depth * (water_density / ice_density);
+        // Calculate mask of the partially filled grid cell where we apply calving
+        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_flotation);
+        // Calculate cliff height and relative water depth using floatation thickness
+        cliff_height = H_flotation - water_depth;
+        w = water_depth / H_flotation;
+      } else {
+        // Get the ice thickness in the partially filled grid cell where we apply calving.
+        // It is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells.
+        const double H_threshold = part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
+        // Calculate mask of the partially filled grid cell where we apply calving
+        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
+        // Calculate cliff height and relative water depth using threshold thickness
+        cliff_height = H_threshold - water_depth;
+        w = water_depth / H_threshold;
+      }
       
       // Calculate the parameters for the calving law given in [\ref Schlemm2019]
-      const double F = H_threshold - (sea_level(i, j) - bed_elevation(i, j)),
-                  w = (sea_level(i, j) - bed_elevation(i, j)) / H_threshold,       
+      const double F = cliff_height,                   
                   Fs = 115 * pow(w-0.356, 4) + 21,
                   Fc = 75-49*w,
                   s = 0.17 * pow(9.1, w) + 1.76,

@@ -52,6 +52,14 @@ void HayhurstCalving::init() {
                  "  Hayhurst calving threshold: %3.3f MPa.\n",
                  convert(m_sys, m_sigma_threshold, "Pa", "MPa"));
 
+  
+  // Read floatation thickness option
+  m_use_floatation_thickness = m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
+  if (m_use_floatation_thickness) {
+    m_log->message(2,
+                   "  Using floatation thickness for cliff height calculation.\n");
+  }
+
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "-calving hayhurst_calving using a non-square grid cell is not implemented (yet);\n"
@@ -88,7 +96,16 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       // note that ice_thickness > 0 at icy locations
       assert(ice_thickness(i, j) > 0);
 
-      double H = ice_thickness(i, j);
+      // Determine ice thickness using either floatation thickness or modelled ice thickness
+      double H;
+      if (m_use_floatation_thickness) {
+        // Calculate floatation thickness
+        const double H_flotation = water_depth * (water_density / ice_density);
+        H = H_flotation;
+      } else {
+        H = ice_thickness(i, j);
+      }
+
 
       // Note that for ice at floatation water_depth = H * (ice_density / water_density),
       // so omega cannot exceed ice_density / water_density.

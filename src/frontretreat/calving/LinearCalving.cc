@@ -62,6 +62,13 @@ void LinearCalving::init() {
                  "  Constant b: %3.3f m year^-1.\n",
                  convert(m_sys, m_b, "m second-1", "m year-1"));
 
+  // Read floatation thickness option
+  m_use_floatation_thickness = m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
+  if (m_use_floatation_thickness) {
+    m_log->message(2,
+                   "  Using floatation thickness for cliff height calculation.\n");
+  }
+
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "-calving linear_calving using a non-square grid cell is not implemented (yet);\n"
@@ -134,15 +141,30 @@ void LinearCalving::update(const array::CellType1 &cell_type,
       }
       stencils::Star<int> M = cell_type.star_int(i, j);
 
-      // Get the ice thickness and mask in the partially filled grid cell where we apply calving
-      // it is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells 
-      const double H_threshold = part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
-      const int m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
-      //Cliff height
-      const double Hc = H_threshold - (sea_level(i, j) - bed_elevation(i, j));
+      // Calculate cliff height using either floatation thickness calculated from water depth
+      // or threshold thickness calculated from ice thickness and surface elevation of neighbouring icy cells.
+      const double water_depth = sea_level(i, j) - bed_elevation(i, j);
+      double cliff_height;
+      int m;
+      if (m_use_floatation_thickness) {
+        // Calculate floatation thickness: thickness of ice that would float in this water depth
+        const double H_flotation = water_depth * (water_density / ice_density);
+        // Calculate mask of the partially filled grid cell where we apply calving
+        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_flotation);
+        // Calculate cliff height using floatation thickness
+        cliff_height = H_flotation - water_depth;
+      } else {
+        // Get the ice thickness in the partially filled grid cell where we apply calving.
+        // It is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells.
+        const double H_threshold = part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
+        // Calculate mask of the partially filled grid cell where we apply calving
+        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
+        // Calculate cliff height (ice thickness above sea level)
+        cliff_height = H_threshold - water_depth;
+      }
       // Calculate the calving rate [\ref Parsons2025] if cell is grounded
       m_calving_rate(i, j) = (mask::grounded_ice(m)  ?
-                         std::max(0.0, m_a * Hc + m_b):
+                         std::max(0.0, m_a * cliff_height + m_b):
                          0.0);
 
       // Track statistics                   
@@ -150,7 +172,7 @@ void LinearCalving::update(const array::CellType1 &cell_type,
         num_calving_cells++;
         if (m_calving_rate(i, j) > max_calving_rate) {
           max_calving_rate = m_calving_rate(i, j);
-          max_cliff_height = Hc;
+          max_cliff_height = cliff_height;
           max_rate_i = i;
           max_rate_j = j;
         }
@@ -159,7 +181,7 @@ void LinearCalving::update(const array::CellType1 &cell_type,
           num_extreme_calving++;
           m_log->message(3,
                      "! High linear calving rate at (i,j) = (%d,%d): %.2f m/year (H=%.1f m)\n",
-                     i, j, m_calving_rate(i, j) * 31557600.0, Hc);
+                     i, j, m_calving_rate(i, j) * 31557600.0, cliff_height);
         }
       }
                          

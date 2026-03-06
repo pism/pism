@@ -61,6 +61,14 @@ void CliffCalvingTensile::init() {
                  "  Exponent: %3.3f.\n",
                  m_alpha);
 
+  // Read floatation thickness option
+  m_use_floatation_thickness = m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
+  if (m_use_floatation_thickness) {
+    m_log->message(2,
+                   "  Using floatation thickness for cliff height calculation.\n");
+  }
+
+
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "-calving cliff_calving_tensile using a non-square grid cell is not implemented (yet);\n"
@@ -114,16 +122,36 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
       }
       stencils::Star<int> M = cell_type.star_int(i, j);
 
-      // Get the ice thickness and mask in the partially filled grid cell where we apply calving
-      // it is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells 
-      const double H_threshold = part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
-      const int m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
-      //Cliff height
-      const double Hc = H_threshold - (sea_level(i, j) - bed_elevation(i, j));
+
+      // Calculate cliff height using either floatation thickness calculated from water depth
+      // or threshold thickness calculated from ice thickness and surface elevation of neighbouring icy cells
+      const double water_depth = sea_level(i, j) - bed_elevation(i, j);
+      double cliff_height;
+      int m;
+      if (m_use_floatation_thickness) {
+        // Calculate floatation thickness: thickness of ice that would float in this water depth
+        const double H_flotation = water_depth * (water_density / ice_density);
+        // Calculate mask of the partially filled grid cell where we apply calving
+        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_flotation);
+        // Calculate cliff height using floatation thickness
+        cliff_height = H_flotation - water_depth;
+      } else {
+        // Calculate threshold thickness using part_grid_threshold_thickness
+        const double H_threshold = part_grid_threshold_thickness(M, 
+                                                                H,
+                                                                surface_elevation  ,
+                                                                 bed_elevation(i, j));
+        // Calculate mask of the partially filled grid cell where we apply calving
+        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
+        // Calculate cliff height (ice thickness above sea level)
+        cliff_height = H_threshold - water_depth;
+      }
+
+
       // Calculate the calving rate [\ref Crawford2021] if cell is grounded
       // and cliff height is greater than 135 m
-      m_calving_rate(i, j) = (mask::grounded_ice(m) && Hc > 135.0 ?
-                         m_I * pow(Hc, m_alpha):
+      m_calving_rate(i, j) = (mask::grounded_ice(m) && cliff_height > 135.0 ?
+                         m_I * pow(cliff_height, m_alpha):
                          0.0);
 
       // Track statistics                   
@@ -131,7 +159,7 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
         num_calving_cells++;
         if (m_calving_rate(i, j) > max_calving_rate) {
           max_calving_rate = m_calving_rate(i, j);
-          max_cliff_height = Hc;
+          max_cliff_height = cliff_height;
           max_rate_i = i;
           max_rate_j = j;
         }
@@ -140,7 +168,7 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
           num_extreme_calving++;
           m_log->message(3,
                      "! High tensile cliff calving rate at (i,j) = (%d,%d): %.2f m/year (H=%.1f m)\n",
-                     i, j, m_calving_rate(i, j) * 31557600.0, Hc);
+                     i, j, m_calving_rate(i, j) * 31557600.0, cliff_height);
         }
       }
                          

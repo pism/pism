@@ -50,6 +50,8 @@ protected:
 
   double m_C0,                     //!< scaling factor for calving rate
          m_max_cliff_calving_rate; //!< maximum cliff calving rate due to mélange buttressing
+
+  bool m_use_floatation_thickness; //!< if true, use floatation thickness instead of modelled ice thickness
 };
 
 } // end of namespace calving

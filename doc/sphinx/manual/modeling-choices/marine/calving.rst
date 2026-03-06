@@ -198,6 +198,14 @@ where:
    stop calving. To prevent this, the ice thickness `H` is adjusted to include the freeboard height and
    `\omega` is recalculated, ensuring continued calving at the grounding line.
 
+.. note::
+
+   In the calculation of the calving rate, modelled ice thickness can be replaced by floatation thickness using the option 
+   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for runs on coarse grids, where
+   modelled ice cliffs may be too high yielding unrealistic calving rates. Using the floatation thickness gives a minimal 
+   estimate of cliff height and therefore also a minimal estimate of calving rate.
+
+
 .. rubric:: Parameters
 
 Prefix: ``calving.hayhurst_calving.``
@@ -244,6 +252,13 @@ where:
    mélange buttressing, resulting in nearly unbuttressed cliff calving rates. However, this should
    be used with caution as it can lead to unrealistically high calving rates :cite:`Schlemm2021`.
 
+.. note::
+
+   In the calculation of the calving rate, modelled ice thickness can be replaced by floatation thickness using the option 
+   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for runs on coarse grids, where
+   modelled ice cliffs may be too high yielding unrealistic calving rates. Using the floatation thickness gives a minimal 
+   estimate of cliff height and therefore also a minimal estimate of calving rate.
+
 .. rubric:: Parameters
 
 Prefix: ``calving.cliff_calving_shear.``
@@ -288,6 +303,13 @@ Calving only occurs when the cliff height exceeds 135 meters.
    The default values provided are calibrated for cold ice (-20°C) with a frozen bed.
    Different values may be needed for warmer ice or different bed conditions :cite:`Crawford2021`.
 
+.. note::
+
+   In the calculation of the calving rate, modelled ice thickness can be replaced by floatation thickness using the option 
+   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for runs on coarse grids, where
+   modelled ice cliffs may be too high yielding unrealistic calving rates. Using the floatation thickness gives a minimal 
+   estimate of cliff height and therefore also a minimal estimate of calving rate.
+
 .. rubric:: Parameters
 
 Prefix: ``calving.cliff_calving_tensile.``
@@ -328,6 +350,13 @@ meaningful results.
    The parameters `a` and `b` might need to be calibrated
    for specific regions and climatic conditions. The default values are
    based on observational data of tidewater glaciers around the Antarctic Peninsula :cite:`Parsons2025`.
+
+.. note::
+
+   In the calculation of the calving rate, modelled ice thickness can be replaced by floatation thickness using the option 
+   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for runs on coarse grids, where
+   modelled ice cliffs may be too high yielding unrealistic calving rates. Using the floatation thickness gives a minimal 
+   estimate of cliff height and therefore also a minimal estimate of calving rate.
 
 .. rubric:: Parameters
 
