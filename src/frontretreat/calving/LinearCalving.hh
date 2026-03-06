@@ -70,6 +70,8 @@ protected:
 
   double m_a,                    
          m_b;
+
+  bool m_use_floatation_thickness; //!< if true, use floatation thickness instead of modelled ice thickness
 };
 
 } // end of namespace calving
