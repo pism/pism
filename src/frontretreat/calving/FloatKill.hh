@@ -38,7 +38,7 @@ public:
   void update(array::Scalar &cell_type, array::Scalar &ice_thickness);
 
 protected:
-  bool m_margin_only, m_calve_near_grounding_line;
+  bool m_margin_only, m_calve_near_grounding_line, m_calve_cliff_front;
 
   array::CellType1 m_old_mask;
 };

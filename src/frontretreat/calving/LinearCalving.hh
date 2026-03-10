@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef HAYHURSTCALVING_H
-#define HAYHURSTCALVING_H
+#ifndef LINEARCALVING_H
+#define LINEARCALVING_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
@@ -30,31 +30,51 @@ class Geometry;
 
 namespace calving {
 
-class HayhurstCalving : public Component {
+/*!
+ * @brief Linear calving mechanism
+ *
+ * This class implements a linear calving parameterization based on
+ * the cliff height above water level. The calving rate is computed as:
+ *
+ * c = a * H_c + b
+ *
+ * where:
+ * - c is the calving rate
+ * - a is the linear coefficient (year^-1)
+ * - H_c is the cliff height above water level
+ * - b is the constant offset (m/year)
+ *
+ * The calving rate is set to zero if the calculated value is negative.
+ * This mechanism is designed for grounded ice cliffs that form when
+ * ice shelves collapse, exposing grounded ice to the ocean.
+ *
+ * Reference: Parsons et al. (2025)
+ */
+class LinearCalving : public Component {
 public:
-  HayhurstCalving(std::shared_ptr<const Grid> grid);
-  virtual ~HayhurstCalving() = default;
+  LinearCalving(std::shared_ptr<const Grid> grid);
+  virtual ~LinearCalving() = default;
 
   void init();
 
   void update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
               const array::Scalar &sea_level, const array::Scalar &bed_elevation);
 
-  const array::Scalar &calving_rate() const;
+  const array::Scalar & calving_rate() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
   
 protected:
-  array::Scalar1 m_calving_rate;
+  array::Scalar1 m_calving_rate; 
 
-  double m_B_tilde, m_exponent_r, m_sigma_threshold;
+  double m_a,                    
+         m_b;
 
   bool m_use_floatation_thickness; //!< if true, use floatation thickness instead of modelled ice thickness
-
 };
 
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* HAYHURSTCALVING_H */
+#endif /* LINEARCALVING_H */  

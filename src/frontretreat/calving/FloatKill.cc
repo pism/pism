@@ -22,6 +22,7 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/stencils.hh"  // for stencil types
 
 namespace pism {
 namespace calving {
@@ -31,6 +32,7 @@ FloatKill::FloatKill(std::shared_ptr<const Grid> g)
     m_old_mask(m_grid, "old_mask") {
   m_margin_only = m_config->get_flag("calving.float_kill.margin_only");
   m_calve_near_grounding_line = m_config->get_flag("calving.float_kill.calve_near_grounding_line");
+  m_calve_cliff_front = m_config->get_flag("calving.float_kill.calve_cliff_front");
 }
 
 void FloatKill::init() {
@@ -45,6 +47,11 @@ void FloatKill::init() {
   if (not m_calve_near_grounding_line) {
     m_log->message(2,
                    "  [keeping floating cells near the grounding line]\n");
+  }
+
+  if (m_calve_cliff_front) {
+    m_log->message(2,
+                   "  [calving floating cells that have both ocean and grounded neighbors]\n");
   }
 }
 
@@ -76,6 +83,32 @@ void FloatKill::update(array::Scalar &cell_type, array::Scalar &ice_thickness) {
 
       if (dont_calve_near_grounded_ice and m_old_mask.next_to_grounded_ice(i, j)) {
         continue;
+      }
+
+      if (m_calve_cliff_front) {
+        // Only calve if the cell has both ocean and grounded neighbors (including diagonals)
+        auto M = m_old_mask.box(i, j);
+        bool has_ocean = false;
+        bool has_grounded = false;
+        
+        // Check all 8 neighbors (including diagonals)
+        if (mask::ice_free_ocean(M.n) or mask::ice_free_ocean(M.e) or 
+            mask::ice_free_ocean(M.s) or mask::ice_free_ocean(M.w) or
+            mask::ice_free_ocean(M.ne) or mask::ice_free_ocean(M.se) or
+            mask::ice_free_ocean(M.sw) or mask::ice_free_ocean(M.nw)) {
+          has_ocean = true;
+        }
+        
+        if (mask::grounded_ice(M.n) or mask::grounded_ice(M.e) or 
+            mask::grounded_ice(M.s) or mask::grounded_ice(M.w) or
+            mask::grounded_ice(M.ne) or mask::grounded_ice(M.se) or
+            mask::grounded_ice(M.sw) or mask::grounded_ice(M.nw)) {
+          has_grounded = true;
+        }
+        
+        if (not (has_ocean and has_grounded)) {
+          continue;
+        }
       }
 
       ice_thickness(i, j) = 0.0;

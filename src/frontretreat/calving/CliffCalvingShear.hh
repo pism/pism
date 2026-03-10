@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef HAYHURSTCALVING_H
-#define HAYHURSTCALVING_H
+#ifndef CLIFFCALVINGSHEAR_H
+#define CLIFFCALVINGSHEAR_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
@@ -30,31 +30,31 @@ class Geometry;
 
 namespace calving {
 
-class HayhurstCalving : public Component {
+class CliffCalvingShear : public Component {
 public:
-  HayhurstCalving(std::shared_ptr<const Grid> grid);
-  virtual ~HayhurstCalving() = default;
+  CliffCalvingShear(std::shared_ptr<const Grid> grid);
+  virtual ~CliffCalvingShear() = default;
 
   void init();
 
   void update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
               const array::Scalar &sea_level, const array::Scalar &bed_elevation);
 
-  const array::Scalar &calving_rate() const;
+  const array::Scalar & calving_rate() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
   
 protected:
-  array::Scalar1 m_calving_rate;
+  array::Scalar1 m_calving_rate;  //!< calving rate field
 
-  double m_B_tilde, m_exponent_r, m_sigma_threshold;
+  double m_C0,                     //!< scaling factor for calving rate
+         m_max_cliff_calving_rate; //!< maximum cliff calving rate due to mélange buttressing
 
   bool m_use_floatation_thickness; //!< if true, use floatation thickness instead of modelled ice thickness
-
 };
 
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* HAYHURSTCALVING_H */
+#endif /* CLIFFCALVINGSHEAR_H */
