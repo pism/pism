@@ -938,7 +938,7 @@ int Config::max_length = 32768;
 
 VariableMetadata config_metadata(const Config &config) {
   VariableMetadata result("pism_config", { { "cfg", Config::max_length } }, config.unit_system());
-  result.set_output_type(io::PISM_CHAR);
+  result.set_output_type(io::PISM_BYTE);
 
   for (const auto &p : config.all_doubles()) {
     result[p.first] = p.second;
