@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -372,22 +372,21 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
   // make copies of start and count so that we can use them in MPI_Recv() calls below
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
-  const int start_tag = 1, count_tag = 2, data_tag = 3, chunk_size_tag = 4;
+  const int start_tag = 1, count_tag = 2, data_tag = 3;
   int stat = NC_NOERR, com_size = 0, ndims = static_cast<int>(start.size());
-  MPI_Status mpi_stat;
-  unsigned int local_chunk_size = 1, processor_0_chunk_size = 0;
+  int local_chunk_size = 1, processor_0_chunk_size = 0;
 
   // get the size of the communicator
   MPI_Comm_size(m_com, &com_size);
 
   // compute the size of a local chunk
   for (int k = 0; k < ndims; ++k) {
-    local_chunk_size *= count[k];
+    local_chunk_size *= (int)count[k];
   }
 
   // compute the maximum and send it to processor 0; this is the size of the
   // buffer processor 0 will need
-  MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_UNSIGNED, MPI_MAX, 0, m_com);
+  MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_INT, MPI_MAX, 0, m_com);
 
   // now we need to send start and count data to processor 0 and receive data
   if (m_rank == 0) {
@@ -408,14 +407,18 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
       if (r != 0) {
         // Note: start, count, and local_chunk_size on processor zero are used *before*
         // they get overwritten by these calls
-        MPI_Recv(start.data(), ndims, MPI_UNSIGNED, r, start_tag, m_com, &mpi_stat);
-        MPI_Recv(count.data(), ndims, MPI_UNSIGNED, r, count_tag, m_com, &mpi_stat);
-        MPI_Recv(&local_chunk_size, 1, MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
+        MPI_Recv(start.data(), ndims, MPI_UNSIGNED, r, start_tag, m_com, MPI_STATUS_IGNORE);
+        MPI_Recv(count.data(), ndims, MPI_UNSIGNED, r, count_tag, m_com, MPI_STATUS_IGNORE);
+
+        // get the size of the array sent by rank `r`:
+        MPI_Status mpi_stat;
+        MPI_Probe(r, data_tag, m_com, &mpi_stat);
+        MPI_Get_count(&mpi_stat, MPI_DOUBLE, &local_chunk_size);
 
         MPI_Recv(processor_0_buffer.data(), local_chunk_size, MPI_DOUBLE, r, data_tag, m_com,
-                 &mpi_stat);
+                 MPI_STATUS_IGNORE);
       } else {
-        for (unsigned int k = 0; k < local_chunk_size; ++k) {
+        for (int k = 0; k < local_chunk_size; ++k) {
           processor_0_buffer[k] = op[k];
         }
       }
@@ -434,9 +437,8 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
   } else {
     MPI_Send(start.data(), ndims, MPI_UNSIGNED, 0, start_tag, m_com);
     MPI_Send(count.data(), ndims, MPI_UNSIGNED, 0, count_tag, m_com);
-    MPI_Send(&local_chunk_size, 1, MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
-    MPI_Send(const_cast<double *>(op), (int)local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);
+    MPI_Send(const_cast<double *>(op), local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);
   }
 }
 
