@@ -21,11 +21,6 @@ temp_dir=$(mktemp -d --tmpdir pism-test-XXXX)
 trap 'rm -rf "$temp_dir"' EXIT
 cd $temp_dir
 
-# Make sure PISM can find the configuration file
-echo "
--config ${PISM_PATH}/pism_config.nc
-" > .petscrc
-
 set -e
 set -u
 set -x

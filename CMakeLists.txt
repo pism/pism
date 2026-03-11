@@ -65,7 +65,6 @@ set(CMAKE_COLOR_MAKEFILE OFF)
 pism_check_build_dir_location()
 set (Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc" CACHE STRING "" FORCE)
 mark_as_advanced (Pism_CONFIG_FILE)
-file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 # The default options cache
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)

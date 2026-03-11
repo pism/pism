@@ -1,8 +1,3 @@
-# Add the -config to all PISM test runs (necessary because we want to use the
-# config file from *this* build, not the one that might be present in the
-# install location).
-file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
-
 # Copy pism_nccmp into the build directory:
 configure_file (${PROJECT_SOURCE_DIR}/util/pism_nccmp ${PROJECT_BINARY_DIR}/pism_nccmp COPYONLY)
 
@@ -23,14 +18,17 @@ endfunction(set_memcheck_test_properties)
 
 # A macro simplifying test creation:
 macro(pism_test name script)
-  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
+  set(test_name "${name}:${script}")
+
+  add_test(${test_name} ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
+
   if (${Pism_TEST_USING_VALGRIND})
     add_memcheck_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
     set_memcheck_test_properties("${name}:${script}"
       PROPERTIES FAIL_REGULAR_EXPRESSION "ERROR SUMMARY: [^0]")
   endif()
 
-  set_property(TEST "${name}:${script}" PROPERTY
+  set_property(TEST "${test_name}" PROPERTY
     SKIP_REGULAR_EXPRESSION
     "ModuleNotFoundError: No module named"
     "ncpdq: command not found"
@@ -39,10 +37,25 @@ macro(pism_test name script)
     "ncrcat: command not found"
     "cdo: command not found"
   )
+  # Add the -config to all PISM test runs (necessary because we want to use the
+  # config file from *this* build, not the one that might be present in the
+  # install location).
+  set_tests_properties(${test_name} PROPERTIES
+      ENVIRONMENT "PETSC_OPTIONS=-config \"${PROJECT_BINARY_DIR}/pism_config.nc\";PYTHONPATH=$ENV{PYTHONPATH}:${PROJECT_BINARY_DIR}/site-packages"
+    FIXTURES_REQUIRED config)
 endmacro()
 
 macro(pism_python_test name script)
-  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python ${Python3_EXECUTABLE})
+  set(test_name "${name}:${script}")
+
+  add_test("${test_name}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python ${Python3_EXECUTABLE})
+
+  # Add the -config to all PISM test runs (necessary because we want to use the
+  # config file from *this* build, not the one that might be present in the
+  # install location).
+  set_tests_properties(${test_name} PROPERTIES
+    ENVIRONMENT "PETSC_OPTIONS=-config \"${PROJECT_BINARY_DIR}/pism_config.nc\";PYTHONPATH=$ENV{PYTHONPATH}:${PROJECT_BINARY_DIR}/site-packages"
+    FIXTURES_REQUIRED config)
 endmacro()
 
 # Tests themselves:

@@ -29,7 +29,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       COMMAND ${Python3_EXECUTABLE} "-m" "unittest" "-v" ${filename}
       WORKING_DIRECTORY ${workdir})
     set_tests_properties(${test_name} PROPERTIES
-      ENVIRONMENT "PETSC_OPTIONS=-config \"${PROJECT_BINARY_DIR}/pism_config.nc\""
+      ENVIRONMENT "PETSC_OPTIONS=-config \"${PROJECT_BINARY_DIR}/pism_config.nc\";PYTHONPATH=$ENV{PYTHONPATH}:${PROJECT_BINARY_DIR}/site-packages"
       FIXTURES_REQUIRED config)
   endmacro()
 

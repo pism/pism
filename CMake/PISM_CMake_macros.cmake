@@ -83,8 +83,7 @@ macro(pism_set_pedantic_flags)
   set (CMAKE_CXX_FLAGS_DEBUG "-g ${PEDANTIC_CXXFLAGS}")
 endmacro(pism_set_pedantic_flags)
 
-# Make sure that we don't create .petscrc in $HOME, because this would affect
-# all PISM runs by the current user.
+# Make sure that we don't build PISM in $HOME because this would make a mess.
 macro(pism_check_build_dir_location)
   if (DEFINED ENV{HOME})
     # Don't assume that HOME env var is set.
