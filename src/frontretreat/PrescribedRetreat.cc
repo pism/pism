@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2021, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2019, 2021, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,6 +16,8 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+
+#include <cmath>                // std::round
 
 #include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/coupler/util/options.hh"
@@ -60,7 +62,8 @@ void PrescribedRetreat::update(double t, double dt, array::Scalar &ice_thickness
   m_retreat_mask->update(t, dt);
   m_retreat_mask->average(t, dt);
 
-  double eps = 1e-12;
+  // Scaling factor used to round f to 1/1000:
+  double A = 1000.0;
 
   array::AccessScope list{ m_retreat_mask.get(), &ice_thickness, &ice_area_specific_volume };
 
@@ -69,10 +72,13 @@ void PrescribedRetreat::update(double t, double dt, array::Scalar &ice_thickness
 
     double f = (*m_retreat_mask)(i, j);
 
+    // round to the nearest 2^(-10) to avoid interpolation artifacts:
+    f = std::round(A * f) / A;
+
     if (f <= 0.0) {
       ice_area_specific_volume(i, j) = 0.0;
       ice_thickness(i, j)            = 0.0;
-    } else if (f < 1.0 - eps) {
+    } else if (f < 1.0) {
       ice_area_specific_volume(i, j) = ice_thickness(i, j) * f;
       ice_thickness(i, j)            = 0.0;
     } else {
