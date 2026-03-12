@@ -12,6 +12,7 @@ Changes since v2.2.8
 - Remove dependency on the Python package `nose` because it is old and unmaintained. Now
   we use Python's built-in `unittest` to set up Python-based regression tests.
 - Require NetCDF 4.7 or newer instead of 4.4 or newer.
+- Require YAC 3.14.0 or newer.
 
 Changes since v2.2.0
 ====================

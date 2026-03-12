@@ -34,7 +34,7 @@ make all && make install
 
 cd -
 
-yac_version=3.13.1
+yac_version=3.14.0
 git clone -b release-${yac_version} \
     https://gitlab.dkrz.de/dkrz-sw/yac.git
 
