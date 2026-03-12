@@ -142,9 +142,9 @@ macro(pism_find_prerequisites)
   find_package (MPI REQUIRED COMPONENTS C CXX)
 
   # Other required libraries
-  pism_find_library (NETCDF "netcdf>=4.4")
   pism_find_library (GSL "gsl>=1.15")
   pism_find_library (FFTW "fftw3>=3.1")
+  pism_find_library (NETCDF "netcdf>=4.7")
 
   # UDUNITS does not support pkg-config
   find_package (UDUNITS2)
@@ -165,19 +165,6 @@ macro(pism_find_prerequisites)
 
     pism_find_library(YAC "yac-mci>=3.4.0")
     pism_find_library(YAXT "yaxt_c>=0.11.0")
-  endif()
-
-  if (Pism_USE_PARALLEL_NETCDF4)
-    # Try to find netcdf_par.h. We assume that NetCDF was compiled with
-    # parallel I/O if this header is present.
-    find_file(NETCDF_PAR_H netcdf_par.h
-      HINTS ${NETCDF_INCLUDE_DIRS} ${NETCDF_INCLUDEDIR}
-      NO_DEFAULT_PATH)
-
-    if (NOT NETCDF_PAR_H)
-      message(FATAL_ERROR
-        "Selected NetCDF library (include: ${NETCDF_INCLUDEDIR}, lib: ${NETCDF_LIBRARIES}) does not support parallel I/O.")
-    endif()
   endif()
 
 endmacro()

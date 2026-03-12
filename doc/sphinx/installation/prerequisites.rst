@@ -16,7 +16,7 @@ This table lists required PISM's build dependencies alphabetically.
    FFTW_,        version 3.1 or newer
    GSL_,         version 1.15 or newer
    MPI_,         any recent version
-   NetCDF_ [#]_, version 4.4 or newer
+   NetCDF_ [#]_, version 4.7 or newer
    PETSc_ [#]_,  version |petsc-min-version| or newer
    UDUNITS_,     any recent version
 
