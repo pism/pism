@@ -100,7 +100,7 @@ macro(pism_check_build_dir_location)
   endif()
 endmacro()
 
-function(pism_find_library PREFIX SPEC)
+function(pism_find_library PREFIX) # library specs are specified as extra arguments
   # Find a library using pkgconfig
   find_package(PkgConfig REQUIRED)
   # Trick pkg-config into using "Libs.private" instead of "Libs" to get the full list of
@@ -113,10 +113,17 @@ function(pism_find_library PREFIX SPEC)
       set(PKG_CONFIG_ARGN "--static" CACHE INTERNAL "command-line arguments for pkg-config")
     endif()
   endif()
-  pkg_search_module(${PREFIX} REQUIRED IMPORTED_TARGET ${SPEC})
-  if (${${PREFIX}_FOUND})
-    message(STATUS "Found ${PREFIX}: ${${PREFIX}_PREFIX} (found version \"${${PREFIX}_VERSION}\")")
-  endif()
+
+  foreach (X IN ITEMS ${ARGN})
+    pkg_search_module(${PREFIX} IMPORTED_TARGET ${X})
+    if (${${PREFIX}_FOUND})
+      message(STATUS
+        "Found ${PREFIX} (${X}): ${${PREFIX}_PREFIX} (found version \"${${PREFIX}_VERSION}\")")
+      return()
+    endif()
+  endforeach()
+
+  message(FATAL_ERROR "Failed to find any of ${ARGN}")
 endfunction()
 
 macro(pism_find_petsc)
