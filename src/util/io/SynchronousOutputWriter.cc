@@ -1,4 +1,4 @@
-/* Copyright (C) 2025, 2026 PISM Authors
+/* Copyright (C) 2025 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -143,7 +143,7 @@ void SynchronousOutputWriter::write_attributes(
       continue;
     }
 
-    if (output_type == io::PISM_CHAR or output_type == io::PISM_BYTE) {
+    if (output_type == io::PISM_CHAR) {
       // save attributes of a character variable as "double"
       output_type = io::PISM_DOUBLE;
     }
