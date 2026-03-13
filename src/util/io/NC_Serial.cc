@@ -393,10 +393,6 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
     std::vector<double> processor_0_buffer;
     processor_0_buffer.resize(processor_0_chunk_size);
 
-    // MPI calls below require C datatypes (so that we don't have to worry about sizes of
-    // size_t and ptrdiff_t), so we make local copies of start and count to use in the
-    // nc_get_vara_double() call.
-    std::vector<size_t> nc_start(ndims), nc_count(ndims);
     int varid;
 
     stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid);
@@ -423,8 +419,13 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
         }
       }
 
+      // MPI_Send/Recv calls require C datatypes, so we make local copies of start and
+      // count to use in the nc_get_vara_double() call so that we don't have to worry
+      // about sizes of size_t and ptrdiff_t.
+      //
       // This for loop uses start and count passed in as arguments when r == 0. For r > 0
       // they are overwritten by MPI_Recv calls above.
+      std::vector<size_t> nc_start(ndims), nc_count(ndims);
       for (int k = 0; k < ndims; ++k) {
         nc_start[k]  = start[k];
         nc_count[k]  = count[k];
