@@ -268,25 +268,48 @@ static void transpose(const double *input, const std::vector<AxisType> &input_ax
 static void check_for_missing_values(const File &file, const std::string &variable_name,
                                      double tolerance, const double *buffer, size_t buffer_length) {
   auto attribute = file.read_double_attribute(variable_name, "_FillValue");
-  if (attribute.size() == 1) {
-    double fill_value = attribute[0];
-    bool fill_value_is_finite = std::isfinite(fill_value);
+  if (attribute.size() != 1) {
+    return;
+  }
 
+  // Check that all value in the local portion are finite, stop with an error message if
+  // not:
+  {
+    int failed = 0;
+    for (size_t k = 0; k < buffer_length; ++k) {
+      if (not std::isfinite(buffer[k])) {
+        failed = 1;
+        break;
+      }
+    }
+    int failed_global = 0;
+    MPI_Allreduce(&failed, &failed_global, 1, MPI_INT, MPI_MAX, file.com());
+    if (failed_global > 0) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "Variable '%s' in '%s' contains values that are not finite (NaN or infinity)",
+          variable_name.c_str(), file.name().c_str());
+    }
+  }
+
+  // Check that values in the local portion don't match _FillValue:
+  {
+    int failed                = 0;
+    double fill_value         = attribute[0];
+    bool fill_value_is_finite = std::isfinite(fill_value);
     for (size_t k = 0; k < buffer_length; ++k) {
       if (fill_value_is_finite and fabs(buffer[k] - fill_value) < tolerance) {
-        throw RuntimeError::formatted(
-            PISM_ERROR_LOCATION,
-            "Variable '%s' in '%s' contains values matching the _FillValue attribute",
-            variable_name.c_str(), file.name().c_str());
+        failed = 1;
+        break;
       }
-      if (not std::isfinite(buffer[k])) {
-        // note: this will take care of the case of a variable containing values that
-        // match _FillValue that is NaN or infinity
-        throw RuntimeError::formatted(
-            PISM_ERROR_LOCATION,
-            "Variable '%s' in '%s' contains values that are not finite (NaN or infinity)",
-            variable_name.c_str(), file.name().c_str());
-      }
+    }
+    int failed_global = 0;
+    MPI_Allreduce(&failed, &failed_global, 1, MPI_INT, MPI_MAX, file.com());
+    if (failed_global > 0) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "Variable '%s' in '%s' contains values matching the _FillValue attribute",
+          variable_name.c_str(), file.name().c_str());
     }
   }
 }
