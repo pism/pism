@@ -82,10 +82,10 @@ void IceModel::init_scalar_diagnostics() {
 
   // de-allocate unused scalar diagnostics
   {
-    std::vector<std::string> missing;
-    if (m_scalar_file != nullptr and m_scalar_vars.empty()) {
+    if (m_scalar_vars.empty()) {
       // use all diagnostics
     } else {
+    std::vector<std::string> missing;
       TSDiagnosticList diagnostics;
       for (const auto &v : m_scalar_vars) {
         if (m_available_scalar_diagnostics.find(v) != m_available_scalar_diagnostics.end()) {
@@ -97,12 +97,13 @@ void IceModel::init_scalar_diagnostics() {
       // replace m_available_scalar_diagnostics with requested diagnostics, de-allocating
       // the rest
       m_available_scalar_diagnostics = diagnostics;
-    }
 
-    if (not missing.empty()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "requested scalar diagnostics %s are not available",
-                                    join(missing, ",").c_str());
+      // stop with an error message if some requested diagnostics are not available:
+      if (not missing.empty()) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "requested scalar diagnostics %s are not available",
+                                      join(missing, ",").c_str());
+      }
     }
   }
 
