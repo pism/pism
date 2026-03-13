@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2012, 2014, 2020 Moritz Huetten
+# Copyright (C) 2012, 2014, 2020, 2026 Moritz Huetten
 
 import sys
 import getopt
@@ -152,7 +152,7 @@ vars = {'y':   	['m',
         'topg': ['m',
                  'bedrock surface elevation',
                  'bedrock_altitude',
-                 -600.0,
+                 None,
                  topg],
         'ice_surface_temp': ['K',
                              'annual mean air temperature at ice surface',
