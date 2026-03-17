@@ -72,9 +72,9 @@ add_library (libpism
   icemodel/initialization.cc
   icemodel/output.cc
   icemodel/output_checkpoint.cc
-  icemodel/output_extra.cc
+  icemodel/output_spatial.cc
   icemodel/output_snapshots.cc
-  icemodel/output_ts.cc
+  icemodel/output_scalar.cc
   icemodel/printout.cc
   icemodel/timestepping.cc
   icemodel/utilities.cc
