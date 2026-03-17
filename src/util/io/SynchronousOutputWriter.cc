@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -68,10 +68,6 @@ void SynchronousOutputWriter::define_variable_impl(const std::string &file_name,
 }
 
 void SynchronousOutputWriter::append_time_impl(const std::string &file_name, double time_seconds) {
-  // Make sure the previous time record is completely written to the file. This is
-  // necessary to be able to monitor the progress of a simulation by watching the contents
-  // of an output file PISM is writing to (e.g. -spatial_file).
-  sync_impl(file_name);
   write_array(file_name, time_name(), { time_dimension_length(file_name) }, { 1 },
               { time_seconds });
 }
