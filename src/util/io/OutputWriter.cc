@@ -104,6 +104,15 @@ struct OutputWriter::Impl {
     experiment_id_max_length = (int)config.get_number("output.experiment_id_max_length");
     relaxed_mode = false;
 
+    // subtract one to account for the trailing null character:
+    if ((int)experiment_id.size() > experiment_id_max_length - 1) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "the length of '%s' (%d) exceeds '%s' - 1. Please increase '%s'.",
+                                    "output.experiment_id", (int)experiment_id.size(),
+                                    "output.experiment_id_max_length",
+                                    "output.experiment_id_max_length");
+    }
+
     if (not experiment_id.empty()) {
       auto format = config.get_string("output.format");
       if (format == "netcdf3" or format == "pnetcdf") {
