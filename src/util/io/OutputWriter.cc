@@ -31,6 +31,7 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/OutputWriter.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -231,7 +232,11 @@ std::vector<std::string> OutputWriter::define_dimensions(const std::string &file
       dimensions.insert(dimensions.begin(), time_name());
     }
 
-    if (not m_impl->experiment_id.empty()) {
+    // don't add the "experiment ID" dimension to the time dimension and time bounds:
+    bool time_or_bounds =
+        pism::set_member(variable.get_name(), { time_name(), time_name() + "_bounds" });
+
+    if (not time_or_bounds and not m_impl->experiment_id.empty()) {
       dimensions.insert(dimensions.begin(), m_impl->experiment_id_name);
     }
   }
