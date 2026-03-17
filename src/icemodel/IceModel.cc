@@ -145,7 +145,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
     m_snapshot_writer = m_output_writer;
   }
 #endif
-  m_extra_writer = m_snapshot_writer;
+  m_spatial_writer = m_snapshot_writer;
 }
 
 double IceModel::dt() const {

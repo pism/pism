@@ -141,7 +141,7 @@ void IceModel::init_spatial_diagnostics() {
                        "both output.spatial.split and output.spatial.append are set.");
   }
 
-  // initialize m_extra_vars and m_extra_file_contents
+  // initialize m_spatial_vars and m_spatial_file_contents
   {
     auto vars = m_config->get_string("output.spatial.vars");
     if (not vars.empty()) {
@@ -163,7 +163,7 @@ void IceModel::init_spatial_diagnostics() {
 
   m_spatial_file = nullptr;
   if (not split) {
-    m_spatial_file = std::make_shared<OutputFile>(m_extra_writer, m_spatial_filename);
+    m_spatial_file = std::make_shared<OutputFile>(m_spatial_writer, m_spatial_filename);
 
     if (append) {
       // assume that the file is ready to write to, i.e. time and time_bounds are already
@@ -315,7 +315,7 @@ void IceModel::write_spatial_diagnostics() {
         filename = pism::printf("%s_%s.nc", m_spatial_filename.c_str(), date_without_spaces.c_str());
       }
 
-      m_spatial_file.reset(new OutputFile(m_extra_writer, filename));
+      m_spatial_file.reset(new OutputFile(m_spatial_writer, filename));
 
       if (m_config->get_flag("output.spatial.append")) {
         m_spatial_file->append();

@@ -287,7 +287,7 @@ protected:
 
   std::shared_ptr<OutputWriter> m_output_writer;
   std::shared_ptr<OutputWriter> m_snapshot_writer;
-  std::shared_ptr<OutputWriter> m_extra_writer;
+  std::shared_ptr<OutputWriter> m_spatial_writer;
 
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
