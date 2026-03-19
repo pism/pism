@@ -8,6 +8,7 @@ Changes since v2.2.8
   and `-extra_file ...`). Requires PISM built with YAC and Python packages `netCDF4`,
   `yac` (Python bindings for YAC), `mpi4py` and NumPy.
 - Implemented a new more efficient algorithm for the solution of the Eikonal equation.
+- Optimization: avoid writing 2D and 3D NetCDF variables more than once.
 - Remove dependency on the Python package `nose` because it is old and unmaintained. Now
   we use Python's built-in `unittest` to set up Python-based regression tests.
 - Spatially-variable diagnostic `diffusivity`: at a grid point (`i,j`) report
@@ -15,10 +16,29 @@ Changes since v2.2.8
   and just to the north of the grid point (`i,j`). Previous versions averaged the SIA
   diffusivity from all adjacent icy locations, which makes it impossible to see the value
   of the maximum SIA diffusivity used to choose the time step length.
+- Add configuration parameter `output.experiment_id`: if set to a string, PISM adds an
+  extra dimension (length 1) to output files. This makes it possible to open several
+  output files (e.g. different ensemble members) at once using `xarray`'s
+  `xarray.open_mfdataset()`.
+- Save the JSON string encoding PISM's configuration parameters to the `pism_config`
+  variable in output files. This makes it easier to look up configuration parameter values
+  in output files opened using `xarray.open_mfdataset()`.
+- Write run info (`wall_clock_time`, `step_counter`, `model_years_per_processor_hour`) to
+  time-dependent variables instead of using attributes of the `run_stats` variable.
+- Fix a bug in the steady state hydrology model: we need to save the time of the last
+  update of the estimate of the water flux Q to a time-dependent variable.
+- Add the ability to read in inputs (e.g. climate forcing) on `longitude,latitude` grids,
+  including rotated pole (`rlon,rlat`) grids.
+- Automatically build and upload Docker containers for each new PISM release to the GitHub
+  Container Registry (uses Intel's oneAPI compilers and Intel MPI; see
+  `ghcr.io/pism/pism`).
+- Fix `issue 568`_ (crash when reading isochrone deposition times)
+- Fix `issue 569`_ (improper handling of calving front B.C. at domain boundaries)
 - Require CMake 3.20 or newer.
 - Require PETSc 3.15 or newer.
 - Require NetCDF 4.7 or newer instead of 4.4 or newer.
 - Require YAC 3.14.0 or newer.
+
 
 Changes since v2.2.0
 ====================
@@ -1080,6 +1100,8 @@ Miscellaneous
 .. _issue 407: https://github.com/pism/pism/issues/407
 .. _issue 525: https://github.com/pism/pism/issues/525
 .. _issue 529: https://github.com/pism/pism/issues/529
+.. _issue 568: https://github.com/pism/pism/issues/568
+.. _issue 569: https://github.com/pism/pism/issues/569
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 .. _pull request 547: https://github.com/pism/pism/pull/547
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html
