@@ -8,16 +8,17 @@ Changes since v2.2.8
   and `-extra_file ...`). Requires PISM built with YAC and Python packages `netCDF4`,
   `yac` (Python bindings for YAC), `mpi4py` and NumPy.
 - Implemented a new more efficient algorithm for the solution of the Eikonal equation.
-- Require CMake 3.20 or newer.
 - Remove dependency on the Python package `nose` because it is old and unmaintained. Now
   we use Python's built-in `unittest` to set up Python-based regression tests.
-- Require NetCDF 4.7 or newer instead of 4.4 or newer.
-- Require YAC 3.14.0 or newer.
 - Spatially-variable diagnostic `diffusivity`: at a grid point (`i,j`) report
   `max(D(i,j,0), D(i, j, 1))`, i.e. maximum over staggered grid locations just to the east
   and just to the north of the grid point (`i,j`). Previous versions averaged the SIA
   diffusivity from all adjacent icy locations, which makes it impossible to see the value
   of the maximum SIA diffusivity used to choose the time step length.
+- Require CMake 3.20 or newer.
+- Require PETSc 3.15 or newer.
+- Require NetCDF 4.7 or newer instead of 4.4 or newer.
+- Require YAC 3.14.0 or newer.
 
 Changes since v2.2.0
 ====================
