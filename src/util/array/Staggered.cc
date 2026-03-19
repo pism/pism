@@ -101,7 +101,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 
     if (cell_type.grounded_ice(i, j) or
         (include_floating_ice and cell_type.icy(i, j))) {
-      auto M = cell_type.star(i, j);
+      auto M = cell_type.star_int(i, j);
       auto F = input.star(i, j);
 
       int n = 0, e = 0, s = 0, w = 0;
