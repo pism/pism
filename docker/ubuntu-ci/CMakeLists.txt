@@ -7,7 +7,7 @@ endforeach()
 configure_file(cmake-3_20_0.sh . COPYONLY)
 configure_file(old-petsc.sh . COPYONLY)
 
-set(PISM_DOCKER_UBUNTU_VERSION 0.1.16)
+set(PISM_DOCKER_UBUNTU_VERSION 0.1.17)
 
 add_custom_target(docker-ubuntu
   COMMAND docker build -t ${DOCKER_USERNAME}/pism-ubuntu:${PISM_DOCKER_UBUNTU_VERSION} .

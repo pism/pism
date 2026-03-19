@@ -8,7 +8,7 @@ set -x
 # ~/local/build/petsc-${version} as the build directory.
 
 # The default below corresponds to the oldest version supported by PISM.
-version=${version:-3.11.0}
+version=${version:-3.15.0}
 build_dir=~/local/build/petsc-${version}
 
 rm -rf ${build_dir}

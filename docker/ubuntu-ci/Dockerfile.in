@@ -163,13 +163,13 @@ RUN <<EOF
 EOF
 
 # Build the oldest supported PETSc version. The goal is to check if PISM's C++ code
-# compiles with PETSc 3.11. We do not support PISM's Python bindings with old PETSc
+# compiles with PETSc 3.15. We do not support PISM's Python bindings with old PETSc
 # versions, so we build PETSc without petsc4py here.
 COPY old-petsc.sh /tmp/
 RUN <<EOF
-    echo "Install PETSc 3.11"
+    echo "Install PETSc 3.15"
     set -eux
-    cd /tmp && version=3.11.0 ./old-petsc.sh
+    cd /tmp && version=3.15.0 ./old-petsc.sh
     rm -rf ~/local/build
 EOF
 

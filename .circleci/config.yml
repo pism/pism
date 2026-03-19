@@ -333,7 +333,7 @@ workflows:
           cc: clang-18
           cxx: clang++-18
           cmake_prefix: /usr
-          petsc_dir: /home/builder/local/petsc-3.7.0
+          petsc_dir: /home/builder/local/petsc-3.15.0
           python: "No"
 
       - build:
