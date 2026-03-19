@@ -14,5 +14,5 @@ docker run --rm -it \
        -v ${pism_dir}:${container_pism_dir} \
        -e N=${N:-8} \
        -e source_dir=${container_pism_dir} \
-       ckhrulev/pism-ubuntu:0.1.16 \
+       ckhrulev/pism-ubuntu:0.1.17 \
        bash -c "${cmd}"
