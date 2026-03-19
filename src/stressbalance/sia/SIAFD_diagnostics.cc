@@ -109,17 +109,20 @@ SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
 }
 
 std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
-  auto result = allocate<array::Scalar>("diffusivity");
+  auto result_ptr = allocate<array::Scalar>("diffusivity");
 
-  array::CellType1 cell_type(m_grid, "cell_type");
-  {
-    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
-    cell_type.copy_from(mask);
+  const auto &D = model->diffusivity();
+  auto &result = *result_ptr;
+
+  array::AccessScope list{ &D, &result };
+
+  for (auto p : result.grid()->points()) {
+    const int i = p.i(), j = p.j();
+
+    result(i, j) = std::max(D(i, j, 0), D(i, j, 1));
   }
-  bool include_floating_ice = true;
-  staggered_to_regular(cell_type, model->diffusivity(), include_floating_ice, *result);
 
-  return result;
+  return result_ptr;
 }
 
 SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)

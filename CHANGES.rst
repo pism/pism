@@ -13,6 +13,11 @@ Changes since v2.2.8
   we use Python's built-in `unittest` to set up Python-based regression tests.
 - Require NetCDF 4.7 or newer instead of 4.4 or newer.
 - Require YAC 3.14.0 or newer.
+- Spatially-variable diagnostic `diffusivity`: at a grid point (`i,j`) report
+  `max(D(i,j,0), D(i, j, 1))`, i.e. maximum over staggered grid locations just to the east
+  and just to the north of the grid point (`i,j`). Previous versions averaged the SIA
+  diffusivity from all adjacent icy locations, which makes it impossible to see the value
+  of the maximum SIA diffusivity used to choose the time step length.
 
 Changes since v2.2.0
 ====================
