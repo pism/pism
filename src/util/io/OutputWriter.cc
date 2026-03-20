@@ -103,6 +103,7 @@ struct OutputWriter::Impl {
     experiment_id_name   = config.get_string("output.experiment_id_dimension");
     experiment_id_max_length = (int)config.get_number("output.experiment_id_max_length");
     relaxed_mode = false;
+    is_async = false;
 
     // subtract one to account for the trailing null character:
     if ((int)experiment_id.size() > experiment_id_max_length - 1) {
@@ -137,6 +138,9 @@ struct OutputWriter::Impl {
   // if true, call add_variable() in define_variable(), allowing a user to define array
   // variables that were not declared using the call to initialize()
   bool relaxed_mode;
+
+  // set to true if this writer is asynchronous, false otherwise
+  bool is_async;
 };
 
 bool &OutputWriter::already_written(const std::string &file_name,
@@ -172,6 +176,14 @@ void OutputWriter::initialize(const std::set<VariableMetadata> &array_variables,
 
 MPI_Comm OutputWriter::comm() const {
   return m_impl->comm;
+}
+
+bool OutputWriter::is_async() const {
+  return m_impl->is_async;
+}
+
+void OutputWriter::set_is_async(bool flag) {
+  m_impl->is_async = flag;
 }
 
 const std::string &OutputWriter::time_name() const {

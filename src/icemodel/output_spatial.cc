@@ -362,7 +362,7 @@ void IceModel::write_spatial_diagnostics() {
     // Nth (e.g. 10th) time we write to an extra file. This would accomplish most of what
     // "sync()" is for, but at a lower cost.
     //
-    if (m_spatial_writer == m_output_writer) { // this is true if m_spatial_writer is synchronous
+    if (not m_spatial_writer->is_async()) {
       // make sure all changes are written
       m_spatial_file->sync();
     }

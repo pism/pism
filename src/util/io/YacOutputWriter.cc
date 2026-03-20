@@ -343,6 +343,7 @@ void YacOutputWriter::send_action(int action_id,
 YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config)
     : OutputWriter(comm, config) {
 
+  set_is_async(true);
   {
     int rank = -1;
     MPI_Comm_rank(comm, &rank);

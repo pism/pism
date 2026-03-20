@@ -231,6 +231,11 @@ public:
    */
   MPI_Comm comm() const;
 
+  /*!
+   * Return true if this writer is asynchronous, false otherwise.
+   */
+  bool is_async() const;
+
 protected:
   /*!
    * Define a dimension.
@@ -385,6 +390,12 @@ protected:
   virtual void close_impl(const std::string &file_name) = 0;
 
   const std::string &experiment_id() const;
+
+  /*!
+   * Allows derived classes to set m_impl->is_async.
+   */
+  void set_is_async(bool flag);
+
 private:
   void write_experiment_id(const std::string &file_name);
 
