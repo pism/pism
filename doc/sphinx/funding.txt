@@ -5,4 +5,4 @@
    Edit doc/funding.py and doc/funding.csv instead.
 
 
-Development of PISM is supported by NASA grants 20-CRYO2020-0052 and 80NSSC22K0274 and NSF grant OAC-2118285.
+Development of PISM is supported by NSF grants OAC-2118285, RISE-2324718 and EAR-2420483.
