@@ -93,17 +93,16 @@ void IceModel::init_snapshots() {
                        " are outside of the modeled time interval");
   }
 
-  if (m_split_snapshots) {
-    m_log->message(2, "saving snapshots to '%s+year.nc'; ", m_snapshots_filename.c_str());
-  } else {
-    m_log->message(2, "saving snapshots to '%s'; ", m_snapshots_filename.c_str());
-
-    if (not ends_with(m_snapshots_filename, ".nc")) {
-      m_log->message(2, "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
-    }
+  if (not m_split_snapshots and not ends_with(m_snapshots_filename, ".nc")) {
+    m_log->message(2, "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
   }
 
-  m_log->message(2, "times requested: %s\n", save_times.c_str());
+  m_log->message(2, "saving model state snapshots to '%s%s'%s\n",
+                 m_snapshots_filename.c_str(),
+                 m_split_snapshots ? "+date.nc" : "",
+                 m_snapshot_writer->is_async() ? " using asynchronous output" : "");
+
+  m_log->message(2, "  times requested: %s\n", save_times.c_str());
 }
 
 //! Writes a snapshot of the model state (if necessary)

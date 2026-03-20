@@ -141,17 +141,37 @@ void IceModel::init_spatial_diagnostics() {
                        "both output.spatial.split and output.spatial.append are set.");
   }
 
+  {
+    if (split) {
+      m_log->message(2, "saving spatial time-series to '%s+date.nc'; ", m_spatial_filename.c_str());
+    } else {
+      if (not ends_with(m_spatial_filename, ".nc")) {
+        m_log->message(
+            2, "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
+            m_spatial_filename.c_str());
+      }
+      m_log->message(2, "saving spatial time-series to '%s'%s\n", m_spatial_filename.c_str(),
+                     m_spatial_writer->is_async() ? " using asynchronous output" : "");
+    }
+
+    m_log->message(2, "  times requested: %s\n", times.c_str());
+
+    if (m_spatial_times.size() > 500) {
+      m_log->message(
+          2, "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
+    }
+  }
+
   // initialize m_spatial_vars and m_spatial_file_contents
   {
     auto vars = m_config->get_string("output.spatial.vars");
     if (not vars.empty()) {
       m_spatial_vars = process_variable_list_shortcuts(*m_config, set_split(vars, ','));
-      m_log->message(2, "variables requested: %s\n", vars.c_str());
     } else {
-      m_log->message(2,
-                     "PISM WARNING: output.spatial.vars was not set. Writing the model state...\n");
       m_spatial_vars = {};
     }
+    m_log->message(2, "  variables requested: %s\n",
+                   vars.empty() ? "model state variables" : vars.c_str());
 
     if (m_spatial_vars.empty()) {
       m_spatial_file_contents = state_variables();
@@ -198,26 +218,6 @@ void IceModel::init_spatial_diagnostics() {
       define_time(*m_spatial_file, with_time_bounds);
       define_variables(*m_spatial_file, m_spatial_file_contents);
     }
-  }
-
-  if (split) {
-    m_log->message(2, "saving spatial time-series to '%s+date.nc'; ",
-               m_spatial_filename.c_str());
-  } else {
-    if (not ends_with(m_spatial_filename, ".nc")) {
-      m_log->message(2,
-                 "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
-                 m_spatial_filename.c_str());
-    }
-    m_log->message(2, "saving spatial time-series to '%s'; ",
-               m_spatial_filename.c_str());
-  }
-
-  m_log->message(2, "times requested: %s\n", times.c_str());
-
-  if (m_spatial_times.size() > 500) {
-    m_log->message(2,
-               "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
   if (pism::netcdf_version() > 0 and pism::netcdf_version() < 473) {
