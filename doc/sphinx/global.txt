@@ -47,7 +47,7 @@
 
 .. external links
 
-.. _Bash: http://www.gnu.org/software/bash/
+.. _Bash: https://www.gnu.org/software/bash/
 .. _CalCalcs: https://cirrus.ucsd.edu/~pierce/calcalcs/calendars.html
 .. _CalCalcs-home: https://cirrus.ucsd.edu/~pierce/calcalcs/index.html
 .. _CDO: https://code.mpimet.mpg.de/projects/cdo
@@ -56,10 +56,10 @@
 .. _Make: https://www.gnu.org/software/make/
 .. _CMake-cross-compiling: https://cmake.org/rdrctcm.php?old_link=CMake_Cross_Compiling
 .. _Enthought: https://www.enthought.com/
-.. _FFTW: http://www.fftw.org/
+.. _FFTW: https://www.fftw.org/
 .. _Fink: https://www.finkproject.org/
 .. _GDAL: https://gdal.org/en/stable/index.html
-.. _GSL: http://www.gnu.org/software/gsl/
+.. _GSL: https://www.gnu.org/software/gsl/
 .. _Git: https://git-scm.com/
 .. _Git documentation: https://git-scm.com/doc
 .. _Homebrew: https://brew.sh/
@@ -141,13 +141,13 @@
 
 .. CF conventions
 
-.. _CF Conventions: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html
-.. _CF-cell-boundaries: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#cell-boundaries
-.. _CF-Calendars: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#calendar
-.. _cf-section-56: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#grid-mappings-and-projections
-.. _cf-appendix-f: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#appendix-grid-mappings
+.. _CF Conventions: https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html
+.. _CF-cell-boundaries: https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#cell-boundaries
+.. _CF-Calendars: https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#calendar
+.. _cf-section-56: https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#grid-mappings-and-projections
+.. _cf-appendix-f: https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#appendix-grid-mappings
 
-.. _CF-standard-names: http://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html
+.. _CF-standard-names: https://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html
 
 .. _cf-names-for-glaciology: https://web.archive.org/web/20221006124555/http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
 .. _cf-names-proposed: https://cfeditor.ceda.ac.uk/proposals/1
