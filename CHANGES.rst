@@ -8,6 +8,11 @@ Changes since v2.2.8
   and `-extra_file ...`). Requires PISM built with YAC and Python packages `netCDF4`,
   `yac` (Python bindings for YAC), `mpi4py` and NumPy.
 - Implemented a new more efficient algorithm for the solution of the Eikonal equation.
+- Add the ability to read in inputs (e.g. climate forcing) on `longitude,latitude` grids,
+  including rotated pole (`rlon,rlat`) grids.
+- Automatically build and upload Docker containers for each new PISM release to the GitHub
+  Container Registry (uses Intel's oneAPI compilers and Intel MPI; see
+  `ghcr.io/pism/pism`).
 - Optimization: avoid writing 2D and 3D NetCDF variables more than once.
 - Remove dependency on the Python package `nose` because it is old and unmaintained. Now
   we use Python's built-in `unittest` to set up Python-based regression tests.
@@ -27,11 +32,6 @@ Changes since v2.2.8
   time-dependent variables instead of using attributes of the `run_stats` variable.
 - Fix a bug in the steady state hydrology model: we need to save the time of the last
   update of the estimate of the water flux Q to a time-dependent variable.
-- Add the ability to read in inputs (e.g. climate forcing) on `longitude,latitude` grids,
-  including rotated pole (`rlon,rlat`) grids.
-- Automatically build and upload Docker containers for each new PISM release to the GitHub
-  Container Registry (uses Intel's oneAPI compilers and Intel MPI; see
-  `ghcr.io/pism/pism`).
 - Fix `issue 568`_ (crash when reading isochrone deposition times)
 - Fix `issue 569`_ (improper handling of calving front B.C. at domain boundaries)
 - Require CMake 3.20 or newer.
