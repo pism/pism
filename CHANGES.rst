@@ -1,5 +1,10 @@
 .. default-role:: literal
 
+Changes since v2.2.1
+====================
+
+- Fix `issue 568`_ (crash when reading isochrone deposition times)
+- Fix `issue 569`_ (improper handling of calving front B.C. at domain boundaries)
 
 Changes since v2.2.0
 ====================
@@ -1144,6 +1149,8 @@ Miscellaneous
 .. _issue 512: https://github.com/pism/pism/issues/512
 .. _issue 525: https://github.com/pism/pism/issues/525
 .. _issue 529: https://github.com/pism/pism/issues/529
+.. _issue 568: https://github.com/pism/pism/issues/568
+.. _issue 569: https://github.com/pism/pism/issues/569
 
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 .. _pull request 547: https://github.com/pism/pism/pull/547
