@@ -131,21 +131,21 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
     m_surface_input_for_hydrology->metadata()["valid_min"] = { 0.0 };
   }
 
-  m_output_writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  m_output_writer   = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
   m_snapshot_writer = m_output_writer;
+  m_spatial_writer  = m_output_writer;
 
 #if (Pism_USE_YAC == 1)
   try {
-    m_snapshot_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config);
+    auto yac_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config);
+
+    m_snapshot_writer = yac_writer;
+    m_spatial_writer  = yac_writer;
   } catch (RuntimeError &e) {
-    e.add_context("allocating the YAC-based asynchronous output writer");
-    m_log->message(
-        2,
-        "Failed to allocate YAC-based asynchronous output writer -- using synchronous I/O instead.\n");
     m_snapshot_writer = m_output_writer;
+    m_spatial_writer  = m_output_writer;
   }
 #endif
-  m_spatial_writer = m_snapshot_writer;
 }
 
 double IceModel::dt() const {
