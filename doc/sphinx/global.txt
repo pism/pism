@@ -64,7 +64,7 @@
 .. _Git documentation: https://git-scm.com/doc
 .. _Homebrew: https://brew.sh/
 .. _LaTeX: https://www.latex-project.org/
-.. _latexmk: https://personal.psu.edu/jcc8//software/latexmk-jcc/
+.. _latexmk: https://www.cantab.net/users/johncollins/latexmk/
 .. _MPI: https://www.mcs.anl.gov/research/projects/mpi/
 .. _MacPorts: https://www.macports.org/
 .. _measures-ross: https://nsidc.org/data/nsidc-0484/versions/2
