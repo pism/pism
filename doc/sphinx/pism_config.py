@@ -16,9 +16,9 @@ def make_id(parameter):
     return "config-" + parameter
 
 class config(nodes.literal):
-    def __init__(self, parameter, **kwargs):
-        nodes.literal.__init__(self, parameter, **kwargs)
-        self.attributes["parameter"] = parameter
+    def __init__(self, name, **kwargs):
+        nodes.literal.__init__(self, name, **kwargs)
+        self.attributes["parameter"] = name
 
 # this node makes it possible to add soft hyphens to wrap long parameter names
 class softhyphen(nodes.Element):
