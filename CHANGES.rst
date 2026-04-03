@@ -1,10 +1,26 @@
 .. default-role:: literal
 
-Changes since v2.2.1
+Changes since v2.2.3
+====================
+
+- Fix a bug in `-energy none`: previous versions failed to preserve enthalpy set during
+  initialization. Note: this bug did not affect runs using the `isothermal_glen` flow law.
+- Fix one of regression tests for PICO (failed if PISM is built without PROJ).
+
+Changes since v2.2.2
 ====================
 
 - Fix `issue 568`_ (crash when reading isochrone deposition times)
 - Fix `issue 569`_ (improper handling of calving front B.C. at domain boundaries)
+
+Changes since v2.2.1
+====================
+
+- Fix the build system (the code looking for YAC was broken)
+- Improve the script that is used to build YAC
+- Add a note about oversubscribing (requesting more MPI processes than the
+  number of CPU cores) to the manual
+- Minor edits in the manual
 
 Changes since v2.2.0
 ====================
