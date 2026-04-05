@@ -88,13 +88,20 @@ if __name__ == "__main__":
     ssarun.ssa.linearize_at(zeta)
 
     vel_ssa_observed = None
-    vel_ssa_observed = PISM.model.create2dVelocityVec(grid, '_ssa_observed', stencil_width=2)
-    if PISM.util.fileHasVariable(inv_data_filename, "u_ssa_observed"):
+    vel_ssa_observed = PISM.model.create2dVelocityVec(grid, '_observed', stencil_width=2)
+    if PISM.util.fileHasVariable(inv_data_filename, "u_observed"):
         vel_ssa_observed.regrid(inv_data_filename, True)
+    elif PISM.util.fileHasVariable(inv_data_filename, "u_ssa_observed"):
+        vel_ssa_observed.metadata(0).set_name("u_ssa_observed")
+        vel_ssa_observed.metadata(1).set_name("v_ssa_observed")
+        vel_ssa_observed.regrid(inv_data_filename, True)
+        vel_ssa_observed.metadata(0).set_name("u_observed")
+        vel_ssa_observed.metadata(1).set_name("v_observed")
     else:
         if not PISM.util.fileHasVariable(inv_data_filename, "u_surface_observed"):
             PISM.verbPrintf(
-                1, context.com, "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
+                1, context.com, "No observed velocities found in %s.\n"
+                "Expected u/v_observed, u/v_ssa_observed, or u/v_surface_observed.\n" % inv_data_filename)
             exit(1)
         vel_surface_observed = PISM.model.create2dVelocityVec(grid, '_surface_observed', stencil_width=2)
         vel_surface_observed.regrid(inv_data_filename, True)

@@ -112,17 +112,62 @@ void IP_BlatterTaucForwardProblem::set_design(array::Scalar &new_zeta) {
 }
 
 //! Sets \f$\zeta\f$ and solves the Blatter system.
+/*!
+  Builds a full Inputs struct from the grid variables, calls set_design to
+  update tauc, then runs the Blatter solver via update() which handles
+  geometry initialization, ice hardness, node types, and the SNES solve.
+*/
 std::shared_ptr<TerminationReason> IP_BlatterTaucForwardProblem::linearize_at(
     array::Scalar &zeta) {
 
   this->set_design(zeta);
 
-  SolutionInfo info = this->solve();
+  // Build Inputs from Grid::variables(), same pattern as Blatter::update expects
+  const auto &variables = m_grid->variables();
 
-  this->copy_solution();
+  Geometry geometry(m_grid);
+  geometry.ice_thickness.copy_from(*variables.get_2d_scalar("land_ice_thickness"));
+  geometry.bed_elevation.copy_from(*variables.get_2d_scalar("bedrock_altitude"));
+  geometry.sea_level_elevation.set(0.0);
+
+  if (m_config->get_flag("geometry.part_grid.enabled") &&
+      variables.is_available("ice_area_specific_volume")) {
+    geometry.ice_area_specific_volume.copy_from(
+        *variables.get_2d_scalar("ice_area_specific_volume"));
+  } else {
+    geometry.ice_area_specific_volume.set(0.0);
+  }
+
+  geometry.ensure_consistency(
+      m_config->get_number("stress_balance.ice_free_thickness_standard"));
+
+  stressbalance::Inputs inputs;
+  inputs.geometry           = &geometry;
+  inputs.basal_yield_stress = &m_tauc_copy;  // use our converted tauc
+  inputs.enthalpy           = variables.get_3d_scalar("enthalpy");
+  inputs.basal_melt_rate    = NULL;
+  inputs.age                = NULL;
+  inputs.water_column_pressure = NULL;
+
+  if (variables.is_available("vel_bc_mask")) {
+    inputs.bc_mask = variables.get_2d_scalar("vel_bc_mask");
+  }
+  if (variables.is_available("vel_bc")) {
+    inputs.bc_values = variables.get_2d_vector("vel_bc");
+  }
+
+  // This calls init_2d_parameters, init_ice_hardness, compute_node_type,
+  // and the SNES solve with parameter continuation.
+  this->update(inputs, true);
+
   this->extract_surface_velocity();
 
-  if (info.snes_reason > 0) {
+  // Check convergence from the SNES
+  SNESConvergedReason snes_reason;
+  PetscErrorCode ierr = SNESGetConvergedReason(m_snes, &snes_reason);
+  PISM_CHK(ierr, "SNESGetConvergedReason");
+
+  if (snes_reason > 0) {
     return std::shared_ptr<TerminationReason>(
       new GenericTerminationReason(1, "Blatter solve converged"));
   } else {
