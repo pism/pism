@@ -259,18 +259,32 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_3d(
 
   PetscErrorCode ierr;
 
-  // Zero the result
+  // Zero the global result
   ierr = VecSet(result_3d, 0.0);
   PISM_CHK(ierr, "VecSet");
 
-  // Get the 3D solution array
+  // Get a local (ghosted) vector for assembly, then scatter back to global
+  Vec result_local;
+  ierr = DMGetLocalVector(m_da, &result_local);
+  PISM_CHK(ierr, "DMGetLocalVector");
+  ierr = VecSet(result_local, 0.0);
+  PISM_CHK(ierr, "VecSet");
+
+  // Get the 3D solution as a local (ghosted) array for reading
+  Vec x_local;
+  ierr = DMGetLocalVector(m_da, &x_local);
+  PISM_CHK(ierr, "DMGetLocalVector");
+  ierr = DMGlobalToLocalBegin(m_da, m_x, INSERT_VALUES, x_local);
+  PISM_CHK(ierr, "DMGlobalToLocalBegin");
+  ierr = DMGlobalToLocalEnd(m_da, m_x, INSERT_VALUES, x_local);
+  PISM_CHK(ierr, "DMGlobalToLocalEnd");
+
   Vector2d ***x = nullptr;
-  ierr = DMDAVecGetArrayRead(m_da, m_x, &x);
+  ierr = DMDAVecGetArrayRead(m_da, x_local, &x);
   PISM_CHK(ierr, "DMDAVecGetArrayRead");
 
-  // Get the 3D result array
   Vector2d ***R = nullptr;
-  ierr = DMDAVecGetArray(m_da, result_3d, &R);
+  ierr = DMDAVecGetArray(m_da, result_local, &R);
   PISM_CHK(ierr, "DMDAVecGetArray");
 
   DMDALocalInfo petsc_info;
@@ -402,11 +416,22 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_3d(
     } // i
   } // j
 
-  ierr = DMDAVecRestoreArrayRead(m_da, m_x, &x);
+  ierr = DMDAVecRestoreArrayRead(m_da, x_local, &x);
   PISM_CHK(ierr, "DMDAVecRestoreArrayRead");
 
-  ierr = DMDAVecRestoreArray(m_da, result_3d, &R);
+  ierr = DMDAVecRestoreArray(m_da, result_local, &R);
   PISM_CHK(ierr, "DMDAVecRestoreArray");
+
+  // Scatter local -> global (ADD_VALUES to accumulate from ghost overlaps)
+  ierr = DMLocalToGlobalBegin(m_da, result_local, ADD_VALUES, result_3d);
+  PISM_CHK(ierr, "DMLocalToGlobalBegin");
+  ierr = DMLocalToGlobalEnd(m_da, result_local, ADD_VALUES, result_3d);
+  PISM_CHK(ierr, "DMLocalToGlobalEnd");
+
+  ierr = DMRestoreLocalVector(m_da, &x_local);
+  PISM_CHK(ierr, "DMRestoreLocalVector");
+  ierr = DMRestoreLocalVector(m_da, &result_local);
+  PISM_CHK(ierr, "DMRestoreLocalVector");
 }
 
 /*!
@@ -422,14 +447,28 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_transpose_3d(
 
   dzeta.set(0.0);
 
-  // Get the 3D solution
+  // Get local (ghosted) copies for reading
+  Vec x_local, lambda_local;
+  ierr = DMGetLocalVector(m_da, &x_local);
+  PISM_CHK(ierr, "DMGetLocalVector");
+  ierr = DMGlobalToLocalBegin(m_da, m_x, INSERT_VALUES, x_local);
+  PISM_CHK(ierr, "DMGlobalToLocalBegin");
+  ierr = DMGlobalToLocalEnd(m_da, m_x, INSERT_VALUES, x_local);
+  PISM_CHK(ierr, "DMGlobalToLocalEnd");
+
+  ierr = DMGetLocalVector(m_da, &lambda_local);
+  PISM_CHK(ierr, "DMGetLocalVector");
+  ierr = DMGlobalToLocalBegin(m_da, lambda_3d, INSERT_VALUES, lambda_local);
+  PISM_CHK(ierr, "DMGlobalToLocalBegin");
+  ierr = DMGlobalToLocalEnd(m_da, lambda_3d, INSERT_VALUES, lambda_local);
+  PISM_CHK(ierr, "DMGlobalToLocalEnd");
+
   Vector2d ***x = nullptr;
-  ierr = DMDAVecGetArrayRead(m_da, m_x, &x);
+  ierr = DMDAVecGetArrayRead(m_da, x_local, &x);
   PISM_CHK(ierr, "DMDAVecGetArrayRead");
 
-  // Get the 3D adjoint variable
   Vector2d ***lambda = nullptr;
-  ierr = DMDAVecGetArrayRead(m_da, lambda_3d, &lambda);
+  ierr = DMDAVecGetArrayRead(m_da, lambda_local, &lambda);
   PISM_CHK(ierr, "DMDAVecGetArrayRead");
 
   DMDALocalInfo petsc_info;
@@ -551,11 +590,16 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_transpose_3d(
     } // i
   } // j
 
-  ierr = DMDAVecRestoreArrayRead(m_da, m_x, &x);
+  ierr = DMDAVecRestoreArrayRead(m_da, x_local, &x);
   PISM_CHK(ierr, "DMDAVecRestoreArrayRead");
 
-  ierr = DMDAVecRestoreArrayRead(m_da, lambda_3d, &lambda);
+  ierr = DMDAVecRestoreArrayRead(m_da, lambda_local, &lambda);
   PISM_CHK(ierr, "DMDAVecRestoreArrayRead");
+
+  ierr = DMRestoreLocalVector(m_da, &x_local);
+  PISM_CHK(ierr, "DMRestoreLocalVector");
+  ierr = DMRestoreLocalVector(m_da, &lambda_local);
+  PISM_CHK(ierr, "DMRestoreLocalVector");
 
   // Multiply by g'(zeta) at each node
   {
