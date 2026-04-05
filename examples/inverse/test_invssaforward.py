@@ -98,21 +98,21 @@ def test_lin(ssarun):
         with PISM.vec.Access(comm=d):
             d[i, j] = 1
 
-        ssarun.ssa.linearize_at(zeta1)
+        ssarun.solver.linearize_at(zeta1)
         u1 = PISM.Vector1(grid, "")
-        u1.copy_from(ssarun.ssa.solution())
+        u1.copy_from(ssarun.solver.solution())
 
         Td = PISM.Vector1(grid, "")
-        ssarun.ssa.apply_linearization(d, Td)
+        ssarun.solver.apply_linearization(d, Td)
 
         eps = 1e-8
         zeta2 = PISM.Scalar1(grid, "")
         zeta2.copy_from(d)
         zeta2.scale(eps)
         zeta2.add(1, zeta1)
-        ssarun.ssa.linearize_at(zeta2)
+        ssarun.solver.linearize_at(zeta2)
         u2 = PISM.Vector1(grid, "")
-        u2.copy_from(ssarun.ssa.solution())
+        u2.copy_from(ssarun.solver.solution())
 
         Td_fd = PISM.Vector1(grid, "")
         Td_fd.copy_from(u2)
@@ -182,9 +182,9 @@ def test_j_design(ssarun):
     drhs_fd_viewer = PETSc.Viewer().createDraw(title="drhs_fd", size=S)
     d_drhs_viewer = PETSc.Viewer().createDraw(title="d_drhs", size=S)
 
-    ssarun.ssa.linearize_at(zeta1)
+    ssarun.solver.linearize_at(zeta1)
     u1 = PISM.Vector1(grid, "")
-    u1.copy_from(ssarun.ssa.solution())
+    u1.copy_from(ssarun.solver.solution())
 
     for (i, j) in grid.points():
         d = PISM.Scalar1(grid, "")
@@ -192,20 +192,20 @@ def test_j_design(ssarun):
         with PISM.vec.Access(comm=d):
             d[i, j] = 1
 
-        ssarun.ssa.linearize_at(zeta1)
+        ssarun.solver.linearize_at(zeta1)
 
         rhs1 = PISM.Vector(grid, "")
-        ssarun.ssa.assemble_residual(u1, rhs1)
+        ssarun.solver.assemble_residual(u1, rhs1)
 
         eps = 1e-8
         zeta2 = PISM.Scalar1(grid, "zeta_prior")
         zeta2.copy_from(d)
         zeta2.scale(eps)
         zeta2.add(1, zeta1)
-        ssarun.ssa.set_design(zeta2)
+        ssarun.solver.set_design(zeta2)
 
         rhs2 = PISM.Vector(grid, "")
-        ssarun.ssa.assemble_residual(u1, rhs2)
+        ssarun.solver.assemble_residual(u1, rhs2)
 
         drhs_fd = PISM.Vector(grid, "")
         drhs_fd.copy_from(rhs2)
@@ -213,7 +213,7 @@ def test_j_design(ssarun):
         drhs_fd.scale(1. / eps)
 
         drhs = PISM.Vector(grid, "")
-        ssarun.ssa.apply_jacobian_design(u1, d, drhs)
+        ssarun.solver.apply_jacobian_design(u1, d, drhs)
 
         d_drhs = PISM.Vector(grid, "")
 
@@ -256,9 +256,9 @@ def test_j_design_transpose(ssarun):
     JStarR_indirect_viewer = PETSc.Viewer().createDraw(title="JStarR (ind)", size=S)
     d_JStarR_viewer = PETSc.Viewer().createDraw(title="d_JStarR_fd", size=S)
 
-    ssarun.ssa.linearize_at(zeta1)
+    ssarun.solver.linearize_at(zeta1)
     u = PISM.Vector1(grid, "")
-    u.copy_from(ssarun.ssa.solution())
+    u.copy_from(ssarun.solver.solution())
 
     Jd = PISM.Vector(grid, "")
 
@@ -278,7 +278,7 @@ def test_j_design_transpose(ssarun):
                 else:
                     r[i, j].v = 1
 
-            ssarun.ssa.apply_jacobian_design_transpose(u, r, JStarR)
+            ssarun.solver.apply_jacobian_design_transpose(u, r, JStarR)
 
             r_global = PISM.Vector(grid, "")
             r_global.copy_from(r)
@@ -290,7 +290,7 @@ def test_j_design_transpose(ssarun):
                     with PISM.vec.Access(comm=d):
                         d[k, l] = 1
 
-                    ssarun.ssa.apply_jacobian_design(u, d, Jd)
+                    ssarun.solver.apply_jacobian_design(u, d, Jd)
 
                     JStarR_indirect[k, l] = Jd.get_vec().dot(r_global.get_vec())
 
@@ -318,9 +318,9 @@ def test_linearization_transpose(ssarun):
     TStarR_indirect_viewer = PETSc.Viewer().createDraw(title="TStarR (ind)", size=S)
     d_TStarR_viewer = PETSc.Viewer().createDraw(title="d_TStarR_fd", size=S)
 
-    ssarun.ssa.linearize_at(zeta1)
+    ssarun.solver.linearize_at(zeta1)
     u = PISM.Vector1(grid, "")
-    u.copy_from(ssarun.ssa.solution())
+    u.copy_from(ssarun.solver.solution())
 
     Td = PISM.Vector(grid, "")
 
@@ -340,7 +340,7 @@ def test_linearization_transpose(ssarun):
                 else:
                     r[i, j].v = 1
 
-            ssarun.ssa.apply_linearization_transpose(r, TStarR)
+            ssarun.solver.apply_linearization_transpose(r, TStarR)
 
             r_global = PISM.Vector(grid, "")
             r_global.copy_from(r)
@@ -352,7 +352,7 @@ def test_linearization_transpose(ssarun):
                     with PISM.vec.Access(comm=d):
                         d[k, l] = 1
 
-                    ssarun.ssa.apply_linearization(d, Td)
+                    ssarun.solver.apply_linearization(d, Td)
 
                     TStarR_indirect[k, l] = Td.get_vec().dot(r_global.get_vec())
 
@@ -443,7 +443,7 @@ if __name__ == "__main__":
     zeta1 = PISM.Scalar2(grid, "")
     ssarun.designVariableParameterization().convertFromDesignVariable(design_prior, zeta1)
 
-    ssarun.ssa.linearize_at(zeta1)
+    ssarun.solver.linearize_at(zeta1)
 
     test_type = PISM.OptionKeyword("-inv_test", "",
                                    "j_design,j_design_transpose,lin,lin_transpose",

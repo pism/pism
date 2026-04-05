@@ -85,7 +85,7 @@ if __name__ == "__main__":
     # Convert tauc_prior -> zeta_prior
     zeta = PISM.Scalar2(grid, "")
     ssarun.tauc_param.convertFromDesignVariable(tauc_prior, zeta)
-    ssarun.ssa.linearize_at(zeta)
+    ssarun.solver.linearize_at(zeta)
 
     vel_ssa_observed = None
     vel_ssa_observed = PISM.model.create2dVelocityVec(grid, '_observed', stencil_width=2)
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(ssarun)
     eta = config.get_number("inverse.tikhonov.penalty_weight")
 
-    solver_gn = PISM.InvSSATikhonovGN(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
+    solver_gn = PISM.InvSSATikhonovGN(ssarun.solver, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
 
     seed = PISM.OptionInteger("-inv_seed", "random generator seed")
     if seed.is_set():
