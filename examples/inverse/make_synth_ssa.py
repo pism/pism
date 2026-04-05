@@ -98,7 +98,7 @@ if __name__ == '__main__':
     design_prior_scale = PISM.OptionReal(sys, "-design_prior_scale",
                                          "initial guess for design variable to be this factor of the true value",
                                          "1",
-                                         design_prior_scale)
+                                         design_prior_scale).value()
 
     design_prior_const = PISM.OptionReal(sys, "-design_prior_const",
                                          "initial guess for design variable to be this constant",
@@ -189,7 +189,7 @@ if __name__ == '__main__':
             vecs.hardav_prior.set(design_prior_const)
         else:
             vecs.hardav_prior.copy_from(vecs.hardav)
-            vecs.hardav_prior.scale(hardav_prior_scale)
+            vecs.hardav_prior.scale(design_prior_scale)
 
         hardav_true = vecs.hardav
         hardav_true.metadata(0).set_name('hardav_true')

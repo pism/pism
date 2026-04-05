@@ -12,6 +12,7 @@
 %{
 #include "inverse/IP_SSATaucForwardProblem.hh"
 #include "inverse/IP_SSAHardavForwardProblem.hh"
+#include "inverse/IP_BlatterTaucForwardProblem.hh"
 #include "inverse/IPDesignVariableParameterization.hh"
 #include "inverse/functional/IPFunctional.hh"
 #include "inverse/functional/IP_L2NormFunctional.hh"
@@ -27,6 +28,7 @@
 #include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
+#include "inverse/IP_BlatterTaucTaoTikhonovProblem.hh"
 
 #include "util/TerminationReason.hh"
 %}
@@ -103,3 +105,22 @@
 %include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 
 %template(_IP_SSAHardavTaoTikhonovSolver) pism::taoutil::TaoBasicSolver<pism::inverse::IP_SSAHardavTaoTikhonovProblem>;
+
+
+//################### IP_BlatterTauc... #############################
+
+%shared_ptr(pism::inverse::IP_BlatterTaucForwardProblem)
+%include "inverse/IP_BlatterTaucForwardProblem.hh"
+
+// Instantiate the base class for IP_BlatterTaucTaoTikhonovProblem
+%template(_IP_BlatterTaucTaoTikhonovProblemBaseClass) pism::inverse::IPTaoTikhonovProblem<pism::inverse::IP_BlatterTaucForwardProblem>;
+
+%shared_ptr(pism::inverse::IPTaoTikhonovProblemListener<pism::inverse::IP_BlatterTaucForwardProblem>)
+
+%feature("director") pism::inverse::IPTaoTikhonovProblemListener<pism::inverse::IP_BlatterTaucForwardProblem>;
+
+%template(IP_BlatterTaucTaoTikhonovProblemListener) pism::inverse::IPTaoTikhonovProblemListener<pism::inverse::IP_BlatterTaucForwardProblem>;
+
+%include "inverse/IP_BlatterTaucTaoTikhonovProblem.hh"
+
+%template(IP_BlatterTaucTaoTikhonovSolver) pism::taoutil::TaoBasicSolver<pism::inverse::IP_BlatterTaucTaoTikhonovProblem>;
