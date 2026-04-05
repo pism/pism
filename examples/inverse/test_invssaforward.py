@@ -44,19 +44,12 @@ import PISM
 
 
 def view(vec, viewer):
-    if (isinstance(vec, PISM.IceModelVec2S)):
-        v_global = PISM.IceModelVec2S()
+    if (isinstance(vec, PISM.Scalar)):
+        v_global = PISM.Scalar(vec.grid(), "")
     else:
-        v_global = PISM.IceModelVec2V()
-    v_global.create(vec.grid(), "", PISM.WITHOUT_GHOSTS)
+        v_global = PISM.Vector(vec.grid(), "")
     v_global.copy_from(vec)
     v_global.get_vec().view(viewer)
-
-# def view2(vec,viewer):
-#   v_global = PISM.IceModelVec2V()
-#   v_global.create(vec.grid(),"",PISM.WITHOUT_GHOSTS)
-#   v_global.copy_from(vec)
-#   v_global.get_vec().view(viewer)
 
 
 def adjustTauc(mask, tauc):
@@ -100,40 +93,33 @@ def test_lin(ssarun):
     d_Td_viewer = PETSc.Viewer().createDraw(title="d_Td", size=S)
 
     for (i, j) in grid.points():
-        d = PISM.IceModelVec2S()
-        d.create(grid, "", PISM.WITH_GHOSTS)
+        d = PISM.Scalar1(grid, "")
         d.set(0)
         with PISM.vec.Access(comm=d):
             d[i, j] = 1
 
         ssarun.ssa.linearize_at(zeta1)
-        u1 = PISM.IceModelVec2V()
-        u1.create(grid, "", PISM.WITH_GHOSTS)
+        u1 = PISM.Vector1(grid, "")
         u1.copy_from(ssarun.ssa.solution())
 
-        Td = PISM.IceModelVec2V()
-        Td.create(grid, "", PISM.WITH_GHOSTS)
+        Td = PISM.Vector1(grid, "")
         ssarun.ssa.apply_linearization(d, Td)
 
         eps = 1e-8
-        zeta2 = PISM.IceModelVec2S()
-        zeta2.create(grid, "", PISM.WITH_GHOSTS)
+        zeta2 = PISM.Scalar1(grid, "")
         zeta2.copy_from(d)
         zeta2.scale(eps)
         zeta2.add(1, zeta1)
         ssarun.ssa.linearize_at(zeta2)
-        u2 = PISM.IceModelVec2V()
-        u2.create(grid, "", PISM.WITH_GHOSTS)
+        u2 = PISM.Vector1(grid, "")
         u2.copy_from(ssarun.ssa.solution())
 
-        Td_fd = PISM.IceModelVec2V()
-        Td_fd.create(grid, "", PISM.WITH_GHOSTS)
+        Td_fd = PISM.Vector1(grid, "")
         Td_fd.copy_from(u2)
         Td_fd.add(-1, u1)
         Td_fd.scale(1. / eps)
 
-        d_Td = PISM.IceModelVec2V()
-        d_Td.create(grid, "", PISM.WITH_GHOSTS)
+        d_Td = PISM.Vector1(grid, "")
         d_Td.copy_from(Td_fd)
         d_Td.add(-1, Td)
 
@@ -165,30 +151,20 @@ def test_lin(ssarun):
 
         PISM.verbPrintf(1, grid.com, "\n")
 
-        d_global = PISM.IceModelVec2S()
-        d_global.create(grid, "", PISM.WITHOUT_GHOSTS)
+        d_global = PISM.Scalar(grid, "")
         d_global.copy_from(d)
         d_global.get_vec().view(d_viewer)
 
-        Td_global = PISM.IceModelVec2V()
-        Td_global.create(grid, "", PISM.WITHOUT_GHOSTS)
+        Td_global = PISM.Vector(grid, "")
         Td_global.copy_from(Td)
-        # if n_Td_linf > 0:
-        #   Td_global.scale(1./n_Td_linf)
         Td_global.get_vec().view(Td_viewer)
 
-        Td_fd_global = PISM.IceModelVec2V()
-        Td_fd_global.create(grid, "", PISM.WITHOUT_GHOSTS)
+        Td_fd_global = PISM.Vector(grid, "")
         Td_fd_global.copy_from(Td_fd)
-        # if n_Td_fd_linf > 0:
-        #   Td_fd_global.scale(1./n_Td_linf)
         Td_fd_global.get_vec().view(Td_fd_viewer)
 
-        d_Td_global = PISM.IceModelVec2V()
-        d_Td_global.create(grid, "", PISM.WITHOUT_GHOSTS)
+        d_Td_global = PISM.Vector(grid, "")
         d_Td_global.copy_from(d_Td)
-        # if n_Td_linf > 0:
-        #   d_Td_global.scale(1./n_Td_linf)
         d_Td_global.get_vec().view(d_Td_viewer)
 
         PISM.logging.pause()
@@ -207,47 +183,39 @@ def test_j_design(ssarun):
     d_drhs_viewer = PETSc.Viewer().createDraw(title="d_drhs", size=S)
 
     ssarun.ssa.linearize_at(zeta1)
-    u1 = PISM.IceModelVec2V()
-    u1.create(grid, "", PISM.WITH_GHOSTS)
+    u1 = PISM.Vector1(grid, "")
     u1.copy_from(ssarun.ssa.solution())
 
     for (i, j) in grid.points():
-        d = PISM.IceModelVec2S()
-        d.create(grid, "", PISM.WITH_GHOSTS)
+        d = PISM.Scalar1(grid, "")
         d.set(0)
         with PISM.vec.Access(comm=d):
             d[i, j] = 1
 
         ssarun.ssa.linearize_at(zeta1)
 
-        rhs1 = PISM.IceModelVec2V()
-        rhs1.create(grid, "", PISM.WITHOUT_GHOSTS)
+        rhs1 = PISM.Vector(grid, "")
         ssarun.ssa.assemble_residual(u1, rhs1)
 
         eps = 1e-8
-        zeta2 = PISM.IceModelVec2S()
-        zeta2.create(grid, "zeta_prior", PISM.WITH_GHOSTS)
+        zeta2 = PISM.Scalar1(grid, "zeta_prior")
         zeta2.copy_from(d)
         zeta2.scale(eps)
         zeta2.add(1, zeta1)
         ssarun.ssa.set_design(zeta2)
 
-        rhs2 = PISM.IceModelVec2V()
-        rhs2.create(grid, "", PISM.WITHOUT_GHOSTS)
+        rhs2 = PISM.Vector(grid, "")
         ssarun.ssa.assemble_residual(u1, rhs2)
 
-        drhs_fd = PISM.IceModelVec2V()
-        drhs_fd.create(grid, "", PISM.WITHOUT_GHOSTS)
+        drhs_fd = PISM.Vector(grid, "")
         drhs_fd.copy_from(rhs2)
         drhs_fd.add(-1, rhs1)
         drhs_fd.scale(1. / eps)
 
-        drhs = PISM.IceModelVec2V()
-        drhs.create(grid, "", PISM.WITHOUT_GHOSTS)
+        drhs = PISM.Vector(grid, "")
         ssarun.ssa.apply_jacobian_design(u1, d, drhs)
 
-        d_drhs = PISM.IceModelVec2V()
-        d_drhs.create(grid, "", PISM.WITHOUT_GHOSTS)
+        d_drhs = PISM.Vector(grid, "")
 
         d_drhs.copy_from(drhs)
         d_drhs.add(-1, drhs_fd)
@@ -289,25 +257,20 @@ def test_j_design_transpose(ssarun):
     d_JStarR_viewer = PETSc.Viewer().createDraw(title="d_JStarR_fd", size=S)
 
     ssarun.ssa.linearize_at(zeta1)
-    u = PISM.IceModelVec2V()
-    u.create(grid, "", PISM.WITH_GHOSTS)
+    u = PISM.Vector1(grid, "")
     u.copy_from(ssarun.ssa.solution())
 
-    Jd = PISM.IceModelVec2V()
-    Jd.create(grid, "", PISM.WITHOUT_GHOSTS)
+    Jd = PISM.Vector(grid, "")
 
-    JStarR = PISM.IceModelVec2S()
-    JStarR.create(grid, "", PISM.WITHOUT_GHOSTS)
+    JStarR = PISM.Scalar(grid, "")
 
-    JStarR_indirect = PISM.IceModelVec2S()
-    JStarR_indirect.create(grid, "", PISM.WITHOUT_GHOSTS)
+    JStarR_indirect = PISM.Scalar(grid, "")
 
     for (i, j) in grid.points():
 
         for k in range(2):
 
-            r = PISM.IceModelVec2V()
-            r.create(grid, "", PISM.WITH_GHOSTS)
+            r = PISM.Vector1(grid, "")
             r.set(0)
             with PISM.vec.Access(comm=r):
                 if k == 0:
@@ -317,14 +280,12 @@ def test_j_design_transpose(ssarun):
 
             ssarun.ssa.apply_jacobian_design_transpose(u, r, JStarR)
 
-            r_global = PISM.IceModelVec2V()
-            r_global.create(grid, "", PISM.WITHOUT_GHOSTS)
+            r_global = PISM.Vector(grid, "")
             r_global.copy_from(r)
 
             for (k, l) in grid.points():
                 with PISM.vec.Access(nocomm=JStarR_indirect):
-                    d = PISM.IceModelVec2S()
-                    d.create(grid, "", PISM.WITH_GHOSTS)
+                    d = PISM.Scalar1(grid, "")
                     d.set(0)
                     with PISM.vec.Access(comm=d):
                         d[k, l] = 1
@@ -333,8 +294,7 @@ def test_j_design_transpose(ssarun):
 
                     JStarR_indirect[k, l] = Jd.get_vec().dot(r_global.get_vec())
 
-            d_JStarR = PISM.IceModelVec2S()
-            d_JStarR.create(grid, "", PISM.WITHOUT_GHOSTS)
+            d_JStarR = PISM.Scalar(grid, "")
 
             d_JStarR.copy_from(JStarR)
             d_JStarR.add(-1, JStarR_indirect)
@@ -359,25 +319,20 @@ def test_linearization_transpose(ssarun):
     d_TStarR_viewer = PETSc.Viewer().createDraw(title="d_TStarR_fd", size=S)
 
     ssarun.ssa.linearize_at(zeta1)
-    u = PISM.IceModelVec2V()
-    u.create(grid, "", PISM.WITH_GHOSTS)
+    u = PISM.Vector1(grid, "")
     u.copy_from(ssarun.ssa.solution())
 
-    Td = PISM.IceModelVec2V()
-    Td.create(grid, "", PISM.WITHOUT_GHOSTS)
+    Td = PISM.Vector(grid, "")
 
-    TStarR = PISM.IceModelVec2S()
-    TStarR.create(grid, "", PISM.WITHOUT_GHOSTS)
+    TStarR = PISM.Scalar(grid, "")
 
-    TStarR_indirect = PISM.IceModelVec2S()
-    TStarR_indirect.create(grid, "", PISM.WITHOUT_GHOSTS)
+    TStarR_indirect = PISM.Scalar(grid, "")
 
     for (i, j) in grid.points():
 
         for k in range(2):
 
-            r = PISM.IceModelVec2V()
-            r.create(grid, "", PISM.WITH_GHOSTS)
+            r = PISM.Vector1(grid, "")
             r.set(0)
             with PISM.vec.Access(comm=r):
                 if k == 0:
@@ -387,14 +342,12 @@ def test_linearization_transpose(ssarun):
 
             ssarun.ssa.apply_linearization_transpose(r, TStarR)
 
-            r_global = PISM.IceModelVec2V()
-            r_global.create(grid, "", PISM.WITHOUT_GHOSTS)
+            r_global = PISM.Vector(grid, "")
             r_global.copy_from(r)
 
             for (k, l) in grid.points():
                 with PISM.vec.Access(nocomm=TStarR_indirect):
-                    d = PISM.IceModelVec2S()
-                    d.create(grid, "", PISM.WITH_GHOSTS)
+                    d = PISM.Scalar1(grid, "")
                     d.set(0)
                     with PISM.vec.Access(comm=d):
                         d[k, l] = 1
@@ -403,8 +356,7 @@ def test_linearization_transpose(ssarun):
 
                     TStarR_indirect[k, l] = Td.get_vec().dot(r_global.get_vec())
 
-            d_TStarR = PISM.IceModelVec2S()
-            d_TStarR.create(grid, "", PISM.WITHOUT_GHOSTS)
+            d_TStarR = PISM.Scalar(grid, "")
 
             d_TStarR.copy_from(TStarR)
             d_TStarR.add(-1, TStarR_indirect)
@@ -446,11 +398,10 @@ if __name__ == "__main__":
     # a) tauc/hardav from the input file (default)
     # b) tauc/hardav_prior from the inv_datafile if -inv_use_design_prior is set
     design_prior = createDesignVec(grid, design_var, '%s_prior' % design_var)
-    long_name = design_prior.string_attr("long_name")
-    units = design_prior.string_attr("units")
-    design_prior.set_attrs("",
-                           "best prior estimate for %s (used for inversion)" % long_name,
-                           units, units, "", 0)
+    long_name = design_prior.metadata().get_string("long_name")
+    units = design_prior.metadata().get_string("units")
+    design_prior.metadata().set_string("long_name",
+                                       "best prior estimate for %s (used for inversion)" % long_name)
     if PISM.util.fileHasVariable(inv_data_filename, "%s_prior" % design_var) and use_design_prior:
         PISM.logging.logMessage("  Reading '%s_prior' from inverse data file %s.\n" % (design_var, inv_data_filename))
         design_prior.regrid(inv_data_filename, critical=True)
@@ -475,22 +426,21 @@ if __name__ == "__main__":
                     "  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
                 zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
                 zeta_fixed_mask.set(1)
-                mask = vecs.ice_mask
+                mask = vecs.mask
                 with PISM.vec.Access(comm=zeta_fixed_mask, nocomm=mask):
                     for (i, j) in grid.points():
                         if mask.grounded_ice(i, j):
                             zeta_fixed_mask[i, j] = 0
                 vecs.add(zeta_fixed_mask)
 
-                adjustTauc(vecs.ice_mask, design_prior)
+                adjustTauc(vecs.mask, design_prior)
             elif design_var == 'hardav':
                 pass
             else:
                 raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
 
     # Convert design_prior -> zeta_prior
-    zeta1 = PISM.IceModelVec2S()
-    zeta1.create(grid, "", PISM.WITH_GHOSTS, WIDE_STENCIL)
+    zeta1 = PISM.Scalar2(grid, "")
     ssarun.designVariableParameterization().convertFromDesignVariable(design_prior, zeta1)
 
     ssarun.ssa.linearize_at(zeta1)

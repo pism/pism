@@ -61,7 +61,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     LANGUAGE python
     SOURCES PISM.i pism_python.cc)
 
-  TARGET_LINK_LIBRARIES(cpp ${Python3_LIBRARIES} ${PISM_PYTHON_BINDING_LIBRARIES})
+  TARGET_LINK_LIBRARIES(cpp ${PISM_PYTHON_BINDING_LIBRARIES})
 
   # Disable compiler warnings:
   SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
