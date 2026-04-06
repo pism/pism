@@ -1,8 +1,8 @@
-name: Build PISM using Intel oneAPI C/C++ compilers and push to GHCR
+name: Build a "test" container (dev branch)
 
 on:
   push:
-    branches: [ "dev", "main" ]
+    branches: "dev"
 
 env:
   REGISTRY: ghcr.io
@@ -17,13 +17,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        uses: actions/checkout@v5
 
       - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+        uses: docker/setup-buildx-action@v4
 
       - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -31,22 +31,22 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
+        uses: docker/metadata-action@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=false
           tags: |
             type=semver,pattern={{version}},enable={{is_default_branch}}
             type=ref,event=branch,prefix=
-            type=ref,event=tag,prefix=
             type=sha,format=short,prefix=
             type=sha,format=long,prefix=
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=test,enable=${{ github.ref == format('refs/heads/{0}', 'dev') }}
+            type=raw,value=test
 
       - name: Build and push Docker image
         id: build-and-push
-        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/ubuntu-intel-oneapi/Dockerfile

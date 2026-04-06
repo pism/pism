@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <algorithm>
 #include <cstddef>              // size_t
 #include <memory>
 #include <cmath>
@@ -684,5 +685,15 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
   yac_cput(m_field_ids[variable_name], collection_size, collection_data.data(), &info, &error);
 }
 
+bool yac_component_defined(const std::string &name) {
+  int nbr_comps = yac_cget_nbr_comps();
+
+  std::vector<const char*> comp_names(nbr_comps, nullptr);
+
+  yac_cget_comp_names(nbr_comps, comp_names.data());
+
+  return std::any_of(comp_names.begin(), comp_names.end(),
+                     [&name](const char *n) { return name == n; });
+}
 
 } // namespace pism

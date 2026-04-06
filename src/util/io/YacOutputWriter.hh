@@ -55,6 +55,14 @@ enum ServerActions : int {
 };
 
 /*!
+ * Return true if the YAC component `name` is defined, false otherwise.
+ *
+ * Used to check if the "pism_output" component is defined, which means we can allocate
+ * YacOutputWriter.
+ */
+bool yac_component_defined(const std::string &name);
+
+/*!
  * Synchronous implementation of OutputWriter.
  */
 class YacOutputWriter : public OutputWriter {

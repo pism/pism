@@ -136,14 +136,11 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_spatial_writer  = m_output_writer;
 
 #if (Pism_USE_YAC == 1)
-  try {
+  if (pism::yac_component_defined("pism_output")) {
     auto yac_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config);
 
     m_snapshot_writer = yac_writer;
     m_spatial_writer  = yac_writer;
-  } catch (RuntimeError &e) {
-    m_snapshot_writer = m_output_writer;
-    m_spatial_writer  = m_output_writer;
   }
 #endif
 }
