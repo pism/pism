@@ -164,13 +164,8 @@ std::shared_ptr<TerminationReason> IP_BlatterTaucForwardProblem::linearize_at(
 
   // This calls init_2d_parameters, init_ice_hardness, compute_node_type,
   // and the SNES solve with parameter continuation.
-  m_log->message(2, "IP_BlatterTaucForwardProblem: calling update()...\n");
   this->update(inputs, true);
-  m_log->message(2, "IP_BlatterTaucForwardProblem: update() done.\n");
-
-  m_log->message(2, "IP_BlatterTaucForwardProblem: extracting surface velocity...\n");
   this->extract_surface_velocity();
-  m_log->message(2, "IP_BlatterTaucForwardProblem: surface velocity extracted.\n");
 
   // Check convergence from the SNES
   SNESConvergedReason snes_reason;
@@ -733,10 +728,9 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
 
   PetscErrorCode ierr;
 
-  m_log->message(2, "IP_Blatter: apply_linearization_transpose: start\n");
+  m_log->message(2, "Blatter inverse: solving adjoint system...\n");
 
   if (m_rebuild_J_state) {
-    m_log->message(2, "IP_Blatter: assembling Jacobian via SNESComputeJacobian...\n");
     Mat J, Jpre;
     ierr = SNESGetJacobian(m_snes, &J, &Jpre, NULL, NULL);
     PISM_CHK(ierr, "SNESGetJacobian");
@@ -746,8 +740,6 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
 
     m_rebuild_J_state = false;
   }
-
-  m_log->message(2, "IP_Blatter: Jacobian ready. Injecting surface velocity into 3D...\n");
 
   // Step 1: Inject du (2D surface) into 3D at surface nodes: rhs_3d = P^T * du
   Vec rhs_3d;
@@ -773,8 +765,6 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
     PISM_CHK(ierr, "DMDAVecRestoreArray");
   }
 
-  m_log->message(2, "IP_Blatter: Injection done. Setting up adjoint KSP solve...\n");
-
   // Step 2: Solve J_state * lambda ≈ P^T * du
   //
   // NOTE: We use KSPSolve (not KSPSolveTranspose) with the SNES's
@@ -796,8 +786,6 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
   ierr = SNESGetJacobian(m_snes, &J, NULL, NULL, NULL);
   PISM_CHK(ierr, "SNESGetJacobian");
 
-  m_log->message(2, "IP_Blatter: Solving adjoint system...\n");
-
   ierr = KSPSetOperators(ksp, J, J);
   PISM_CHK(ierr, "KSPSetOperators");
 
@@ -816,11 +804,7 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
                                   KSPConvergedReasons[reason]);
   }
 
-  m_log->message(2,
-                 "IP_Blatter: adjoint solve converged (reason %s)\n",
-                 KSPConvergedReasons[reason]);
-
-  m_log->message(2, "IP_Blatter: KSP done. Computing J_design^T * lambda...\n");
+  m_log->message(2, "Blatter inverse: adjoint solve done.\n");
 
   // Step 3: Compute dzeta = -J_design^T * lambda
   this->apply_jacobian_design_transpose_3d(lambda_3d, dzeta);

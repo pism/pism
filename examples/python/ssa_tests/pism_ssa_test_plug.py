@@ -50,7 +50,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
 
         self.modeldata.setPhysics(enthalpyconverter)
 
-    def _initSSACoefficients(self):
+    def _initCoefficients(self):
         self._allocStdSSACoefficients()
         self._allocateBCs()
 
@@ -82,9 +82,9 @@ class test_plug(PISM.ssa.SSAExactTestCase):
                     vel_bc(i, j).u = u
                     vel_bc(i, j).v = v
 
-    def _initSSA(self):
+    def _initSolver(self):
         # Ensure we never use the strength extension.
-        self.ssa.strength_extension.set_min_thickness(H0 / 2)
+        self.solver.strength_extension.set_min_thickness(H0 / 2)
 
         # // The finite difference code uses the following flag to treat the non-periodic grid correctly.
         # self.config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", True);
