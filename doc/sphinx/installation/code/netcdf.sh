@@ -4,12 +4,11 @@ set -u
 set -e
 set -x
 
-# Install parallel NetCDF using parallel HDF5 in ~/local/hdf5 and
+# Install parallel NetCDF using parallel HDF5 and PnetCDF in ${lib_dir} and
 # ~/local/build/netcdf as a build directory.
 
+# directory containing HDF5 and PnetCDF
 lib_dir=${lib_dir:-$HOME/local}
-hdf5=${lib_dir}/hdf5
-pnetcdf=${lib_dir}/pnetcdf
 
 version=4.9.3
 prefix=${prefix:-$HOME/local/netcdf}
@@ -24,8 +23,8 @@ tar zxf v${version}.tar.gz
 
 cd netcdf-c-${version}
 
-export CPPFLAGS="-I${hdf5}/include -I${pnetcdf}/include"
-export LDFLAGS="-L${hdf5}/lib -L${pnetcdf}/lib"
+export CPPFLAGS="-I${lib_dir}/include"
+export LDFLAGS="-L${lib_dir}/lib"
 export CC=${CC:-mpicc}
 
 ./configure \

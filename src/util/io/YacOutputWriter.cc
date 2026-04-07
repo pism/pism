@@ -239,8 +239,7 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
   // Sends the global domain sizes to the server
   if (m_leader) {
     int grid_size[2] = {(int)grid.Mx, (int)grid.My};
-    m_mpi_requests.emplace_back();
-    MPI_Isend((void *) &grid_size, 2, MPI_INT, 0, 0, m_intercomm, &m_mpi_requests.back());
+    MPI_Send((void *) &grid_size, 2, MPI_INT, 0, 0, m_intercomm);
   }
 
   std::vector<double> latitudes;

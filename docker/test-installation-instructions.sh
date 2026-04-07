@@ -26,7 +26,7 @@ make -j -C /tmp/pism-build all
 "
 
 docker run --rm -it \
-       -v ${pism_dir}:${container_pism_dir} \
+       -v ${pism_dir}:${container_pism_dir}:ro \
        -e source_dir=${container_pism_dir} \
        -e packages="${packages}" \
        ubuntu:rolling \

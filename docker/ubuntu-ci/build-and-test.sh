@@ -41,7 +41,8 @@ then
 fi
 
 docker run --rm -it \
-       -v ${pism_dir}:${container_pism_dir} \
+       --shm-size=2g \
+       -v ${pism_dir}:${container_pism_dir}:ro \
        -e CC=${CC} \
        -e CXX=${CXX} \
        -e N=${N} \

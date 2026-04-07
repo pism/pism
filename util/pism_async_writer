@@ -132,7 +132,9 @@ class YacWrapper:
         self.grid_size[grid_name] = grid_size
 
         # Total number of grid points
-        grid_points = grid_size[0] * grid_size[1]
+        x_size, y_size = grid_size
+        assert x_size > 0 and y_size > 0, (x_size, y_size)
+        grid_points = x_size * y_size
 
         # Gather the sizes of the local domains of all client processes
         self.intercomm.Gather(None, client_local_domain_sizes, root=MPI.ROOT)

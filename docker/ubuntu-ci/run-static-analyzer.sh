@@ -11,7 +11,7 @@ container_pism_dir=/home/worker/project
 cmd="cd ${container_pism_dir}/docker/ubuntu-ci/ && ./static-analyzer.sh"
 
 docker run --rm -it \
-       -v ${pism_dir}:${container_pism_dir} \
+       -v ${pism_dir}:${container_pism_dir}:ro \
        -e N=${N:-8} \
        -e source_dir=${container_pism_dir} \
        ckhrulev/pism-ubuntu:0.1.17 \
