@@ -64,7 +64,7 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
     def __call__(self, inverse_solver, count, data):
 
         if not self.l2_weight_init:
-            vecs = inverse_solver.sbrun.modeldata.vecs
+            vecs = inverse_solver.run.modeldata.vecs
             if vecs.has('vel_misfit_weight'):
                 self.l2_weight = self.toproczero(vecs.vel_misfit_weight)
             self.l2_weight_init = True
@@ -180,7 +180,7 @@ class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
         # On the first go-around, extract the l2_weight vector onto
         # processor zero.
         if self.l2_weight_init == False:
-            vecs = inverse_solver.sbrun.modeldata.vecs
+            vecs = inverse_solver.run.modeldata.vecs
             self.l2_weight = self.toproczero(vecs.vel_misfit_weight)
             self.l2_init = True
 

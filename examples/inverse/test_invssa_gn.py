@@ -57,11 +57,11 @@ if __name__ == "__main__":
     use_tauc_prior = PISM.OptionBool("-inv_use_tauc_prior",
                                      "Use tauc_prior from inverse data file as initial guess.")
 
-    ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, 'tauc')
-    ssarun.setup()
+    run = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, 'tauc')
+    run.setup()
 
-    vecs = ssarun.modeldata.vecs
-    grid = ssarun.grid
+    vecs = run.modeldata.vecs
+    grid = run.grid
 
     # Determine the prior guess for tauc. This can be one of
     # a) tauc from the input file (default)
@@ -84,8 +84,8 @@ if __name__ == "__main__":
 
     # Convert tauc_prior -> zeta_prior
     zeta = PISM.Scalar2(grid, "zeta")
-    ssarun.designVariableParameterization().convertFromDesignVariable(tauc_prior, zeta)
-    ssarun.solver.linearize_at(zeta)
+    run.designVariableParameterization().convertFromDesignVariable(tauc_prior, zeta)
+    run.solver.linearize_at(zeta)
 
     vel_ssa_observed = None
     vel_ssa_observed = PISM.model.create2dVelocityVec(grid, '_observed', stencil_width=2)
@@ -120,10 +120,10 @@ if __name__ == "__main__":
         vel_ssa_observed.copy_from(vel_surface_observed)
         vel_ssa_observed.add(-1, vel_sia_observed)
 
-    (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(ssarun)
+    (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(run)
     eta = config.get_number("inverse.tikhonov.penalty_weight")
 
-    solver_gn = PISM.IP_SSATaucTikhonovGNSolver(ssarun.solver, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
+    solver_gn = PISM.IP_SSATaucTikhonovGNSolver(run.solver, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
 
     seed = PISM.OptionInteger("-inv_seed", "random generator seed", 0)
     if seed.is_set():
