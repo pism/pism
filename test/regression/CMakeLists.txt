@@ -170,7 +170,7 @@ if(Pism_BUILD_PYTHON_BINDINGS)
         # Copy over commonly used files
         foreach (FILE
             ${PROJECT_SOURCE_DIR}/examples/inverse/make_synth_ssa.py
-            ${PROJECT_SOURCE_DIR}/examples/inverse/pismi.py
+            ${PROJECT_SOURCE_DIR}/examples/inverse/pismi_ssa.py
             ${PROJECT_SOURCE_DIR}/examples/inverse/verify_ssa_inv.py
             inverse/build_tiny.py)
           get_filename_component(OUTPUT ${FILE} NAME)

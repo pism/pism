@@ -261,7 +261,7 @@ def run():
     WIDE_STENCIL = 2
 
     usage = \
-        """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model]
+        """  pismi_ssa.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model]
                 [-inv_design design_var] [-inv_method meth]
     where:
     -i            IN.nc       is input file in NetCDF format: contains PISM-written model state
@@ -606,6 +606,6 @@ try:                            # pragma: no cover
     report = PISM.OptionBool("-report_coverage", "save coverage information and a report")
     if report:
         cov.save()
-        cov.html_report(include=["pismi.py"], directory="pismi_coverage")
+        cov.html_report(include=["pismi_ssa.py"], directory="pismi_coverage")
 except:                         # pragma: no cover
     pass

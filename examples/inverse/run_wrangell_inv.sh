@@ -8,7 +8,7 @@
 #
 # This script:
 #   1. Generates synthetic SSA observations from the hybrid_fem state
-#   2. Runs the SSA inversion using pismi.py
+#   2. Runs the SSA inversion using pismi_ssa.py
 #   3. Runs the Blatter inversion using pismi_blatter.py
 
 set -ex
@@ -46,7 +46,7 @@ mpirun -np ${NP} python ${SCRIPTDIR}/make_synth_ssa.py \
 
 echo ""
 echo "=== Running SSA inversion ==="
-mpirun -np ${NP} python ${SCRIPTDIR}/pismi.py \
+mpirun -np ${NP} python ${SCRIPTDIR}/pismi_ssa.py \
   -i ${HYBRID_STATE} \
   -inv_data ${OBS} \
   -o inv_ssa_result.nc \
@@ -106,7 +106,7 @@ mpirun -np ${NP} python ${SCRIPTDIR}/pismi_blatter.py \
   -bp_snes_max_it 20 \
   -bp_snes_ksp_ew 1 \
   -bp_snes_ksp_ew_version 3 \
-  -bp_snes_linesearch_type bt
+  -bp_snes_linesearch_type bt \
 
 echo ""
 echo "=== Done ==="

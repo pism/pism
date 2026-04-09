@@ -5,7 +5,7 @@
 
 set -e
 
-NP=${NP:-8}
+NP=${NP:-6}
 
 STATE=bootfile_g50m_RGI2000-v7.0-C-01-04374.nc
 GRID=grid_g50m_RGI2000-v7.0-C-01-04374.nc

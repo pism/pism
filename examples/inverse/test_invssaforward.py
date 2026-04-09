@@ -20,7 +20,7 @@
 
 # Compares the computations of the key methods of a forward problem
 # with alternative computations (finite differences for derivatives, etc.)
-# Takes all the arguments of pismi.py, plus -inv_test with the name of
+# Takes all the arguments of pismi_ssa.py, plus -inv_test with the name of
 # one of the tests in the file.  The solver is set with its initial value
 # of tauc equal to what it would be for pismi, and then the tests occur.
 #

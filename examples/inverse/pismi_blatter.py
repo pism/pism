@@ -294,11 +294,11 @@ def run():
 
     reason = solver.solveInverse(zeta_prior, vel_observed, zeta)
     if reason.failed():
-        PISM.logging.logError("Inverse solve FAILURE:\n%s\n"
+        PISM.logging.logError("Inverse solve ended: %s\n"
+                              "Writing partial results.\n"
                               % reason.nested_description(1))
-        quit()
-
-    logMessage("Inverse solve success (%s)!\n" % reason.description())
+    else:
+        logMessage("Inverse solve success (%s)!\n" % reason.description())
 
     (zeta, u) = solver.inverseSolution()
 

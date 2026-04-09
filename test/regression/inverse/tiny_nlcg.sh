@@ -30,7 +30,7 @@ $PYTHONEXEC make_synth_ssa.py -i ${tiny} -o ${inv_data} \
 
 # Run the inversion code
 output=`mktemp -u tiny-nlcg-XXXX.nc` || exit 1
-$PYTHONEXEC pismi.py \
+$PYTHONEXEC pismi_ssa.py \
               -i ${tiny} -pseudo_plastic -pseudo_plastic_q 0.25 -inv_data ${inv_data} \
               -o ${output} -regional -ssa_dirichlet_bc -inv_use_tauc_prior \
               -inv_design_param trunc -inv_design_cL2 1 -inv_design_cH1 0 \

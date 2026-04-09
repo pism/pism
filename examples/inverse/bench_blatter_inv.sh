@@ -24,8 +24,8 @@ COMMON="\
   -basal_yield_stress.model mohr_coulomb \
   -basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden 0.025 \
   -basal_yield_stress.mohr_coulomb.till_phi_default 30 \
-  -stress_balance.blatter.Mz 17 \
-  -stress_balance.blatter.coarsening_factor 4 \
+  -stress_balance.blatter.Mz 10 \
+  -stress_balance.blatter.coarsening_factor 3 \
   -stress_balance.blatter.enhancement_factor 2.0 \
   -stress_balance.blatter.flow_law gpbld \
   -stress_balance.blatter.use_eta_transform yes \
@@ -64,7 +64,7 @@ echo "--- OLD solver options (rtol=0.001, richardson+sor) ---"
 t0=$(date +%s)
 mpirun -np ${NP} python ${SCRIPTDIR}/pismi_blatter.py \
   ${COMMON} ${OLD_OPTS} \
-  -o /tmp/bench_old.nc
+  -o bench_old.nc
 t1=$(date +%s)
 OLD_TIME=$((t1 - t0))
 echo "OLD wall time: ${OLD_TIME}s"
@@ -74,7 +74,7 @@ echo "--- NEW solver options (rtol=0.01, chebyshev+sor, gmres) ---"
 t0=$(date +%s)
 mpirun -np ${NP} python ${SCRIPTDIR}/pismi_blatter.py \
   ${COMMON} ${NEW_OPTS} \
-  -o /tmp/bench_new.nc
+  -o bench_new.nc
 t1=$(date +%s)
 NEW_TIME=$((t1 - t0))
 echo "NEW wall time: ${NEW_TIME}s"
