@@ -88,21 +88,25 @@ mpirun -np ${NP} python ${SCRIPTDIR}/pismi_blatter.py \
   -inv_method tikhonov_lmvm \
   -inv_target_misfit 50 \
   ${COMMON_PHYSICS} \
-  -stress_balance.blatter.Mz 17 \
-  -stress_balance.blatter.coarsening_factor 4 \
+  -stress_balance.blatter.Mz 10 \
+  -stress_balance.blatter.coarsening_factor 3 \
   -stress_balance.blatter.enhancement_factor 2.0 \
   -stress_balance.blatter.flow_law gpbld \
   -stress_balance.blatter.use_eta_transform yes \
-  -bp_ksp_rtol 0.001 \
+  -bp_ksp_type gmres \
+  -bp_ksp_rtol 0.01 \
+  -bp_pc_type mg \
+  -bp_pc_mg_levels 3 \
   -bp_mg_coarse_ksp_type preonly \
   -bp_mg_coarse_pc_type lu \
-  -bp_mg_levels_ksp_type richardson \
+  -bp_mg_levels_ksp_type chebyshev \
   -bp_mg_levels_pc_type sor \
-  -bp_pc_mg_levels 3 \
-  -bp_pc_type mg \
+  -bp_mg_levels_ksp_max_it 3 \
+  -bp_snes_rtol 0.01 \
+  -bp_snes_max_it 20 \
   -bp_snes_ksp_ew 1 \
   -bp_snes_ksp_ew_version 3 \
-  -bp_snes_rtol 0.001
+  -bp_snes_linesearch_type bt
 
 echo ""
 echo "=== Done ==="

@@ -18,8 +18,8 @@ blatter_options="""
   -bp_snes_ksp_ew_version 3  \
   -bp_snes_monitor_ratio   \
   -bp_snes_rtol 0.001  \
-  -stress_balance.blatter.Mz 17  \
-  -stress_balance.blatter.coarsening_factor 4  \
+  -stress_balance.blatter.Mz 10  \
+  -stress_balance.blatter.coarsening_factor 3  \
   -stress_balance.blatter.enhancement_factor 2.0  \
   -stress_balance.blatter.flow_law gpbld  \
   -stress_balance.blatter.use_eta_transform yes  \
