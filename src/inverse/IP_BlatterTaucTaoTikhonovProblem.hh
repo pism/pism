@@ -34,7 +34,7 @@ namespace inverse {
 
   Compatible with TAO minimization algorithms (tao_cg, tao_lmvm, tao_blmvm).
   If tao_blmvm is selected, tauc will be constrained by the config variables
-  inverse.ssa.tauc_min and inverse.ssa.tauc_max.
+  inverse.stress_balance.tauc_min and inverse.stress_balance.tauc_max.
 */
 class IP_BlatterTaucTaoTikhonovProblem
     : public IPTaoTikhonovProblem<IP_BlatterTaucForwardProblem> {

@@ -93,7 +93,7 @@ for sb in blatter hybrid_fd hybrid_fem; do
   -surface.force_to_thickness.file bootfile_g50m_RGI2000-v7.0-C-01-04374.nc  \
   -surface.models debm_simple  \
   -time.calendar standard  \
-  -time.end 1979-01-01  \
+  -time.end 1980-01-01  \
   -time.reference_date 1978-01-01  \
   -time.start 1978-01-01  \
   -time_stepping.skip.enabled yes  \

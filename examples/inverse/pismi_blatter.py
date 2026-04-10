@@ -115,7 +115,7 @@ def run():
                                   "Restart a stopped computation.")
     use_design_prior = config.get_flag("inverse.use_design_prior")
     using_zeta_fixed_mask = config.get_flag("inverse.use_zeta_fixed_mask")
-    inv_method = config.get_string("inverse.ssa.method")
+    inv_method = config.get_string("inverse.stress_balance.method")
 
     # Blatter-specific options
     blatter_Mz = 11

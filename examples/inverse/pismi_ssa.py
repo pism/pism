@@ -336,7 +336,7 @@ def run():
 
     using_zeta_fixed_mask = config.get_flag("inverse.use_zeta_fixed_mask")
 
-    inv_method = config.get_string("inverse.ssa.method")
+    inv_method = config.get_string("inverse.stress_balance.method")
 
     if output_filename is None:
         output_filename = "pismi_" + os.path.basename(input_filename)
