@@ -1525,6 +1525,12 @@ netcdf pism_config {
     pism_config:inverse.max_iterations_type = "integer";
     pism_config:inverse.max_iterations_units = "count";
 
+    pism_config:inverse.state_func = "meansquare";
+    pism_config:inverse.state_func_choices = "meansquare,log_ratio,log_relative";
+    pism_config:inverse.state_func_doc = "functional used for inversion design variables";
+    pism_config:inverse.state_func_option = "inv_state_func";
+    pism_config:inverse.state_func_type = "keyword";
+
     pism_config:inverse.stress_balance.hardav_max = 1e10;
     pism_config:inverse.stress_balance.hardav_max_doc = "Maximum allowed value of hardav for inversions with bound constraints";
     pism_config:inverse.stress_balance.hardav_max_type = "number";
@@ -1542,7 +1548,7 @@ netcdf pism_config {
 
     pism_config:inverse.stress_balance.method = "tikhonov_lmvm";
     pism_config:inverse.stress_balance.method_choices = "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn";
-    pism_config:inverse.stress_balance.method_doc = "algorithm to use for SSA inversions";
+    pism_config:inverse.stress_balance.method_doc = "algorithm to use for stress balance inversions";
     pism_config:inverse.stress_balance.method_option = "inv_method";
     pism_config:inverse.stress_balance.method_type = "keyword";
 
@@ -1571,12 +1577,6 @@ netcdf pism_config {
     pism_config:inverse.stress_balance.velocity_scale_doc = "typical size of ice velocities expected during inversion";
     pism_config:inverse.stress_balance.velocity_scale_type = "number";
     pism_config:inverse.stress_balance.velocity_scale_units = "meter / year";
-
-    pism_config:inverse.state_func = "meansquare";
-    pism_config:inverse.state_func_choices = "meansquare,log_ratio,log_relative";
-    pism_config:inverse.state_func_doc = "functional used for inversion design variables";
-    pism_config:inverse.state_func_option = "inv_state_func";
-    pism_config:inverse.state_func_type = "keyword";
 
     pism_config:inverse.tikhonov.adaptive = "false";
     pism_config:inverse.tikhonov.adaptive_doc = "Adaptive Tikhonov threshold";
