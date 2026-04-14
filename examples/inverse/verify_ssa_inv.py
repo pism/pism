@@ -74,9 +74,9 @@ except:
     fail('Unable to open inversion file "%s"\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
 
 # Grab the misfit history from the file.
-misfit = data.variables.get('inv_ssa_misfit')
+misfit = data.variables.get('inv_misfit')
 if misfit is None:
-    fail('Inversion file %s missing misfit history variable "inv_ssa_misfit".\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
+    fail('Inversion file %s missing misfit history variable "inv_misfit".\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
 
 desired_misfit = args.desired_misfit
 

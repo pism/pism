@@ -48,9 +48,9 @@ max_iter=100
 for penalty in 0.1 1 10; do
     for h1 in 0 0.1 1 10; do
         for l2 in 0 0.1 1 10; do
-            for scale in 1e3 5e3 1e4; do
+            for scale in 1e2 5e2 1e3 5e3; do
 
-                outfile=inv_blatter_it${max_iter}_p${penalty}_h1${h1}_l2${l2}_ls${scale}.nc
+                outfile=inv_blatter_it_${max_iter}_p_${penalty}_h1_${h1}_l2_${l2}_ls_${scale}.nc
 
                 # Skip if output already exists
                 if [ -f "${outfile}" ]; then
@@ -65,7 +65,7 @@ for penalty in 0.1 1 10; do
                     -inv_data ${OBS} \
                     -o ${outfile} \
                     -inv_blatter tauc \
-                    -inv_method tikhonov_lmvm \
+                    -inv_method tikhonov_cg \
                     -inverse.stress_balance.length_scale ${scale} \
                     -inverse.design.cH1 ${h1} \
                     -inverse.design.cL2 ${l2} \
