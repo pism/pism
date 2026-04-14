@@ -1369,6 +1369,11 @@ double radius(const Grid &grid, int i, int j) {
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
+/*!
+ * Splits `size` into two factors `Nx` and `Ny` such that
+ *
+ * Mx/Nx ~= My/Ny and Nx > Ny if Mx > My.
+ */
 std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
                                unsigned int My) {
 
