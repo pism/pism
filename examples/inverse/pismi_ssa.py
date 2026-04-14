@@ -326,6 +326,8 @@ def run():
     do_pause = PISM.OptionBool("-inv_pause", "pause each iteration")
 
     do_restart = PISM.OptionBool("-inv_restart", "Restart a stopped computation.")
+    remove_sia = PISM.OptionBool("-remove_sia",
+                                  "Subtract the SIA component (velsurf - vel_ssa) from observed velocities")
     use_design_prior = config.get_flag("inverse.use_design_prior")
 
     prep_module = PISM.OptionString("-inv_prep_module",
@@ -465,6 +467,34 @@ def run():
         vel_ssa_observed.add(-1, vel_sia_observed)
         vecs.add(vel_ssa_observed, writing=True)
 
+    # Optionally subtract the SIA component from the observed velocities.
+    # This is useful when the observations are total surface velocities but
+    # the SSA inversion should match only the sliding component.
+    if remove_sia:
+        has_velsurf = (PISM.util.fileHasVariable(input_filename, "uvelsurf") and
+                       PISM.util.fileHasVariable(input_filename, "vvelsurf"))
+        has_vel_ssa = (PISM.util.fileHasVariable(input_filename, "u_ssa") and
+                       PISM.util.fileHasVariable(input_filename, "v_ssa"))
+        if has_velsurf and has_vel_ssa:
+            vel_surf = PISM.model.create2dVelocityVec(grid, '_surf_tmp', stencil_width=2)
+            vel_surf.metadata(0).set_name("uvelsurf")
+            vel_surf.metadata(1).set_name("vvelsurf")
+            vel_surf.regrid(input_filename, True)
+
+            vel_ssa_model = PISM.model.create2dVelocityVec(grid, '_ssa_tmp', stencil_width=2)
+            vel_ssa_model.metadata(0).set_name("u_ssa")
+            vel_ssa_model.metadata(1).set_name("v_ssa")
+            vel_ssa_model.regrid(input_filename, True)
+
+            # SIA = velsurf - vel_ssa; then observed -= SIA
+            vel_surf.add(-1, vel_ssa_model)  # vel_surf now holds the SIA component
+            vel_ssa_observed.add(-1, vel_surf)
+            logMessage("  Subtracted SIA component (velsurf - vel_ssa) from observed velocities.\n")
+        else:
+            PISM.verbPrintf(1, com,
+                            "WARNING: -remove_sia set but input file missing "
+                            "uvelsurf/vvelsurf or u_ssa/v_ssa. Skipping.\n")
+
     # If the inverse data file has a variable tauc/hardav_true, this is probably
     # a synthetic inversion.  We'll load it now so that it will get written
     # out, if needed, at the end of the computation in the output file.
@@ -542,12 +572,19 @@ def run():
     # Try solving
     reason = solver.solveInverse(zeta_prior, vel_ssa_observed, zeta)
     if reason.failed():
-        PISM.logging.logError("Inverse solve FAILURE:\n%s\n" % reason.nested_description(1))
-        quit()
-
-    PISM.logging.logMessage("Inverse solve success (%s)!\n" % reason.description())
+        PISM.logging.logError("Inverse solve ended: %s\n"
+                              "Writing partial results.\n"
+                              % reason.nested_description(1))
+    else:
+        PISM.logging.logMessage("Inverse solve success (%s)!\n" % reason.description())
 
     (zeta, u) = solver.inverseSolution()
+
+    # If the state solution is empty (e.g. after DIVERGED_MAXITS),
+    # do a final forward solve with the current zeta to get velocities.
+    if u is not None and u.norm(PISM.PETSc.NormType.NORM_INFINITY)[0] == 0.0:
+        PISM.logging.logMessage("  State solution is zero; running final forward solve.\n")
+        solver.solveForward(zeta, u)
 
     # It may be that a 'tauc'/'hardav' was read in earlier.  We replace it with
     # our newly generated one.
@@ -564,9 +601,11 @@ def run():
 
     u.metadata(0).set_name("u_ssa_inv")
     u.metadata(0).set_string("long_name", "x-component of SSA velocity computed by inversion")
+    u.metadata(0).units("m s^-1").output_units("m year^-1")
 
     u.metadata(1).set_name("v_ssa_inv")
     u.metadata(1).set_string("long_name", "y-component of SSA velocity computed by inversion")
+    u.metadata(1).units("m s^-1").output_units("m year^-1")
 
     vecs.add(u, writing=True)
 

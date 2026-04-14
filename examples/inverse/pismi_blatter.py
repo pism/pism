@@ -302,6 +302,12 @@ def run():
 
     (zeta, u) = solver.inverseSolution()
 
+    # If the state solution is empty (e.g. after DIVERGED_MAXITS),
+    # do a final forward solve with the current zeta to get velocities.
+    if u is not None and u.norm(PISM.PETSc.NormType.NORM_INFINITY)[0] == 0.0:
+        logMessage("  State solution is zero; running final forward solve.\n")
+        solver.solveForward(zeta, u)
+
     # ── Convert zeta back to design variable ──────────────────────────
 
     if vecs.has(design_var):
