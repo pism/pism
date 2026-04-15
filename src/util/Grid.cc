@@ -148,11 +148,11 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
 
     m_impl->compute_horizontal_coordinates();
 
-    {
-      int stencil_width = (int)context->config()->get_number("grid.max_stencil_width");
+    m_impl->max_stencil_width = (int)context->config()->get_number("grid.max_stencil_width");
 
+    {
       try {
-        auto tmp = this->get_dm(1, stencil_width);
+        auto tmp = this->get_dm(1, max_stencil_width());
       } catch (RuntimeError &e) {
         e.add_context("distributing a %d x %d grid across %d processors.", Mx(), My(), size());
         throw;
@@ -686,6 +686,11 @@ double Grid::y0() const {
  */
 int Grid::max_patch_size() const {
   return m_impl->max_patch_size;
+}
+
+
+int Grid::max_stencil_width() const {
+  return m_impl->max_stencil_width;
 }
 
 

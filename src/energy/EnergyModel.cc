@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -109,7 +109,7 @@ EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
                          std::shared_ptr<const stressbalance::StressBalance> stress_balance)
     : Component(grid),
       m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(),
-                     m_config->get_number("grid.max_stencil_width")),
+                     m_grid->max_stencil_width()),
       m_work(m_grid, "work_vector", array::WITHOUT_GHOSTS, m_grid->z()),
       m_basal_melt_rate(m_grid, "basal_melt_rate_grounded"),
       m_stress_balance(stress_balance) {

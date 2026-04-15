@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2023, 2025 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2023, 2025, 2026 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,6 @@ namespace stressbalance {
 
 SIAFD::SIAFD(std::shared_ptr<const Grid> g)
     : SSB_Modifier(std::move(g)),
-      m_stencil_width(m_config->get_number("grid.max_stencil_width")),
       m_work_2d_0(m_grid, "work_vector_2d_0"),
       m_work_2d_1(m_grid, "work_vector_2d_1"),
       m_h_x(m_grid, "h_x"),

@@ -74,10 +74,8 @@ Array::Array(std::shared_ptr<const Grid> grid, const std::string &name, Kind gho
   m_impl->dof     = dof;
   m_impl->zlevels = zlevels;
 
-  const auto &config = grid->ctx()->config();
-
-  auto max_stencil_width = static_cast<size_t>(config->get_number("grid.max_stencil_width"));
-  if ((dof != 1) or (stencil_width > max_stencil_width)) {
+  auto max_stencil_width = grid->max_stencil_width();
+  if (dof != 1) {
     // use the requested stencil width *if* we have to
     m_impl->da_stencil_width = stencil_width;
   } else {

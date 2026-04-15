@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -317,6 +317,8 @@ public:
   std::vector<double> interpolation_weights(double x, double y) const;
 
   unsigned int kBelowHeight(double height) const;
+
+  int max_stencil_width() const;
 
   int max_patch_size() const;
 
