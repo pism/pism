@@ -76,7 +76,7 @@ BLATTER_PHYSICS="\
 SSA_PHYSICS="\
   -stress_balance.ssa.method fem"
 
-max_iter=100
+max_iter=1000
 scriptdir="run_scripts"
 mkdir -p ${scriptdir}
 
