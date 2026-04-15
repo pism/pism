@@ -42,67 +42,80 @@ hybrid_options="""
   -stress_balance.ssa.flow_law gpbld  \
 """
 
-for sb in blatter hybrid ; do
+ssa_options="""
+  -stress_balance.model ssa  \
+  -stress_balance.ssa.method fd \
+  -stress_balance.ssa.flow_law gpbld  \
+"""
+
+for sb in ssa hybrid blatter ; do
     if [ "$sb" = "hybrid" ]; then
         sb_options="$hybrid_options"
+        rename=" -v u_ssa,u_observed -v v_ssa,v_observed "
+    elif [ "$sb" = "ssa" ]; then
+        sb_options="$ssa_options"
+        rename=" -v u_ssa,u_observed -v v_ssa,v_observed "
     else
         sb_options="$blatter_options"
+        rename=" -v uvelsurf,u_observed -v vvelsurf,v_observed "
     fi
     postfix=${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}.nc
     ofile=state_$postfix
     sfile=spatial_$postfix
     ofile_0=state_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}_0.nc
-    mpirun -np  8 pism \
-      $sb_options \
-  -atmosphere.given.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc  \
-  -atmosphere.models given  \
-  -basal_resistance.pseudo_plastic.enabled yes  \
-  -basal_resistance.pseudo_plastic.q 0.75  \
-  -basal_resistance.pseudo_plastic.u_threshold 100m/yr  \
-  -basal_yield_stress.model mohr_coulomb  \
-  -basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden 0.025  \
-  -basal_yield_stress.mohr_coulomb.till_phi_default 30  \
-  -calving.methods float_kill \
-  -energy.model enthalpy  \
-  -geometry.front_retreat.use_cfl yes  \
-  -geometry.part_grid.enabled yes  \
-  -geometry.remove_icebergs yes  \
-  -grid.Lbz 0  \
-  -grid.Lz 2000  \
-  -grid.Mbz 1  \
-  -grid.Mz 101  \
-  -grid.dx ${res}m  \
-  -grid.dy ${res}m  \
-  -grid.file grid_g50m_RGI2000-v7.0-C-01-04374.nc  \
-  -stress_balance.sia.bed_smoother.range  $res \
-  -grid.registration center  \
-  -hydrology.model null \
-  -hydrology.null_diffuse_till_water \
-  -input.bootstrap yes  \
-  -input.file bootfile_g50m_RGI2000-v7.0-C-01-04374.nc  \
-  -input.forcing.buffer_size 390  \
-  -input.forcing.time_extrapolation yes  \
-  -output.file $ofile \
-  -output.spatial.file $sfile \
-  -output.spatial.vars velsurf_mag,velbase_mag,usurf,thk \
-  -output.spatial.times yearly \
-  -output.size medium  \
-  -output.sizes.medium sftgif,velsurf_mag,mask,usurf,velbase_mag,velsurf  \
-  -surface.debm_simple.c1 30  \
-  -surface.debm_simple.c2 -120  \
-  -surface.debm_simple.interpret_precip_as_snow no  \
-  -surface.force_to_thickness.file bootfile_g50m_RGI2000-v7.0-C-01-04374.nc  \
-  -surface.models debm_simple  \
-  -time.calendar standard  \
-  -time.end $end  \
-  -time.reference_date $start  \
-  -time.start $start  \
-  -time_stepping.skip.enabled yes  \
-  -time_stepping.skip.max 100
-
+  #   mpirun -np  8 pism \
+  #     $sb_options \
+  # -atmosphere.given.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc  \
+  # -atmosphere.models given  \
+  # -basal_resistance.pseudo_plastic.enabled yes  \
+  # -basal_resistance.pseudo_plastic.q 0.75  \
+  # -basal_resistance.pseudo_plastic.u_threshold 100m/yr  \
+  # -basal_yield_stress.model mohr_coulomb  \
+  # -basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden 0.025  \
+  # -basal_yield_stress.mohr_coulomb.till_phi_default 30  \
+  # -calving.methods float_kill \
+  # -energy.model enthalpy  \
+  # -geometry.front_retreat.use_cfl yes  \
+  # -geometry.part_grid.enabled yes  \
+  # -geometry.remove_icebergs yes  \
+  # -grid.Lbz 0  \
+  # -grid.Lz 2000  \
+  # -grid.Mbz 1  \
+  # -grid.Mz 101  \
+  # -grid.dx ${res}m  \
+  # -grid.dy ${res}m  \
+  # -grid.file grid_g50m_RGI2000-v7.0-C-01-04374.nc  \
+  # -stress_balance.sia.bed_smoother.range  $res \
+  # -grid.registration center  \
+  # -hydrology.model null \
+  # -hydrology.null_diffuse_till_water \
+  # -input.bootstrap yes  \
+  # -input.file bootfile_g50m_RGI2000-v7.0-C-01-04374.nc  \
+  # -input.forcing.buffer_size 390  \
+  # -input.forcing.time_extrapolation yes  \
+  # -output.file $ofile \
+  # -output.spatial.file $sfile \
+  # -output.spatial.vars velsurf_mag,velbase_mag,usurf,thk \
+  # -output.spatial.times yearly \
+  # -output.size medium  \
+  # -output.sizes.medium sftgif,velsurf_mag,mask,usurf,velbase_mag,velsurf  \
+  # -surface.debm_simple.c1 30  \
+  # -surface.debm_simple.c2 -120  \
+  # -surface.debm_simple.interpret_precip_as_snow no  \
+  # -surface.force_to_thickness.file bootfile_g50m_RGI2000-v7.0-C-01-04374.nc  \
+  # -surface.models debm_simple  \
+  # -time.calendar standard  \
+  # -time.end $end  \
+  # -time.reference_date $start  \
+  # -time.start $start  \
+  # -time_stepping.skip.enabled yes  \
+  # -time_stepping.skip.max 100
     cdo setmisstoc,0 $ofile $ofile_0
-    ncatted -a _FillValue,uvelsurf,d,, -a _FillValue,vvelsurf,d,, \
-            -a _FillValue,u_ssa,d,, -a _FillValue,v_ssa,d,, $ofile_0
+    ncrename ${rename} $ofile_0
+    attributes=" -a _FillValue,u_observed,d,, -a _FillValue,v_observed,d,, "
+
+    ncatted ${attributes} \
+            $ofile_0
     ncks -A -v pism_config $ofile $ofile_0
     
 done
