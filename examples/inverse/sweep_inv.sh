@@ -100,8 +100,8 @@ for sb in ssa hybrid blatter; do
     for penalty in 0.1 1 10; do
         for h1 in 0 0.1 1 10; do
             for l2 in 0 0.1 1 10; do
-                for hscale in 1e2 5e2 1e3 5e3; do
-                    for vscale in 10 50 100 500; do
+                for hscale in 5e2 1e3 5e3; do
+                    for vscale in 100; do
 
                         STATE=state_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}_0.nc
                         OBS=synth_obs_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}.nc
