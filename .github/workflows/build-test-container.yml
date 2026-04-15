@@ -3,6 +3,11 @@ name: Build a "test" container (dev branch)
 on:
   push:
     branches: "dev"
+    paths:
+      - '**'                    # everything
+      - '!docker/**'            # except for things in docker/
+      - 'docker/pism/*'         # but include stuff in docker/pism (but not
+                                # sub-directories since '*' does not match '/')
 
 env:
   REGISTRY: ghcr.io
@@ -49,7 +54,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: docker/ubuntu-intel-oneapi/Dockerfile
+          file: docker/pism/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

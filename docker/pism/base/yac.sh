@@ -13,7 +13,7 @@ build_dir=${build_dir:-/var/tmp/build/yac}
 mkdir -p ${build_dir}
 cd ${build_dir}
 
-yac_version=${yac_version:-3.13.2}
+yac_version=${yac_version:-3.15.0}
 git clone -b release-${yac_version} \
     https://gitlab.dkrz.de/dkrz-sw/yac.git
 

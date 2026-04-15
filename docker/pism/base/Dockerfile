@@ -65,7 +65,7 @@ RUN <<EOF
     rm -rf /var/lib/apt/lists/*
 EOF
 
-FROM pism-runtime AS intel-devel
+FROM pism-runtime AS pism-base
 
 RUN <<EOF
     echo "Install required Intel oneAPI packages (development)"
@@ -81,8 +81,6 @@ RUN <<EOF
 
     rm -rf /var/lib/apt/lists/*
 EOF
-
-FROM intel-devel AS pism-devel
 
 RUN <<EOF
     echo "Install PISM's build tools and build dependencies"
@@ -122,7 +120,7 @@ EOF
 # https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2025-1/use-the-setvars-and-oneapi-vars-scripts-with-linux.html
 #
 # for the right way to initialize Intel oneAPI.
-COPY docker/ubuntu-intel-oneapi/hdf5.sh /tmp/
+COPY hdf5.sh /tmp/
 RUN <<EOF
     echo "Install HDF5"
 
@@ -136,7 +134,7 @@ RUN <<EOF
     rm -rf /opt/hdf5/share/hdf5_examples
 EOF
 
-COPY docker/ubuntu-intel-oneapi/netcdf.sh /tmp/
+COPY netcdf.sh /tmp/
 RUN <<EOF
     echo "Install NetCDF"
 
@@ -149,7 +147,7 @@ RUN <<EOF
     rm -rf ${build_dir}
 EOF
 
-COPY docker/ubuntu-intel-oneapi/yaxt.sh /tmp/
+COPY yaxt.sh /tmp/
 RUN <<EOF
     echo "Install YAXT"
 
@@ -159,7 +157,7 @@ RUN <<EOF
     rm -rf /var/tmp/build/yaxt
 EOF
 
-COPY docker/ubuntu-intel-oneapi/yac.sh /tmp/
+COPY yac.sh /tmp/
 RUN <<EOF
     echo "Install YAC"
 
@@ -169,7 +167,7 @@ RUN <<EOF
     rm -rf /var/tmp/build/yac
 EOF
 
-COPY docker/ubuntu-intel-oneapi/petsc.sh /tmp/
+COPY petsc.sh /tmp/
 RUN <<EOF
     echo "Install PETSc"
 
@@ -193,61 +191,3 @@ RUN <<EOF
     . /opt/pism/bin/activate
     python3 -m pip install "mpi4py>=4.0.0"
 EOF
-
-COPY docker/ubuntu-intel-oneapi/pism.sh /tmp/
-# Copy the Docker context to /var/tmp/pism-src
-COPY . /var/tmp/pism-src
-RUN <<EOF
-    echo "Install PISM"
-
-    set -eux
-    export src_dir=/var/tmp/pism-src
-    export build_dir=/var/tmp/build/pism
-    export prefix=/opt/pism
-
-    bash /tmp/pism.sh
-
-    rm -rf ${build_dir}
-    rm -rf ${prefix}/include ${prefix}/share/doc/pism
-EOF
-
-FROM pism-runtime AS pism-container
-
-# copy PISM's runtime dependencies that were built from sources:
-COPY --from=pism-devel /opt/hdf5 /opt/hdf5/
-COPY --from=pism-devel /opt/netcdf /opt/netcdf/
-COPY --from=pism-devel /opt/petsc /opt/petsc/
-COPY --from=pism-devel /opt/pism /opt/pism/
-COPY --from=pism-devel /opt/yac /opt/yac/
-COPY --from=pism-devel /opt/yaxt /opt/yaxt/
-
-# Add HDF5, NetCDF, PETSc to PATH:
-ENV PATH="/opt/hdf5/bin:/opt/netcdf/bin:/opt/petsc/bin:$PATH"
-
-# "Activate" the virtual environment in /opt/pism.
-#
-# See https://docs.python.org/3/library/venv.html#how-venvs-work for details.
-ENV VIRTUAL_ENV=/opt/pism
-# Note that this puts the "pism" executable in the path as well
-ENV PATH=/opt/pism/bin:$PATH
-
-ENV PYTHONPATH=""
-# Add YAC to PYTHONPATH
-ENV PYTHONPATH=/opt/yac/local/lib/python3.12/dist-packages/:$PYTHONPATH
-# Add PETSc to PYTHONPATH
-ENV PYTHONPATH=/opt/petsc/lib/:$PYTHONPATH
-# Add PISM to PYTHONPATH
-ENV PYTHONPATH=/opt/pism/lib/python3.12/site-packages/:$PYTHONPATH
-
-RUN ln -s /opt/intel/oneapi/setvars.sh /etc/profile.d/02-intel-oneapi-setvars.sh
-
-# Add a non-privileged user
-RUN useradd --create-home --system --shell=/bin/false worker && usermod --lock worker
-USER worker
-
-# Important parts of ". /opt/intel/oneapi/setvars.sh"
-ENV ONEAPI_ROOT=/opt/intel/oneapi
-ENV LD_LIBRARY_PATH=${ONEAPI_ROOT}/tbb/${IMPI_VERSION}/env/../lib/intel64/gcc4.8:${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/opt/mpi/libfabric/lib:${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/lib:${ONEAPI_ROOT}/mkl/${ONEAPI_VERSION}/lib:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/opt/compiler/lib:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/lib:${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/opt/mpi/libfabric/lib:${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/lib:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/opt/compiler/lib:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/lib
-ENV I_MPI_ROOT=${ONEAPI_ROOT}/mpi/${IMPI_VERSION}
-ENV FI_PROVIDER_PATH=${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric
-ENV PATH=${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/bin:${ONEAPI_ROOT}/mkl/${ONEAPI_VERSION}/bin/:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/bin:${PATH}

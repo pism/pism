@@ -1481,7 +1481,7 @@ netcdf pism_config {
     pism_config:inverse.design.cH1_units = "1";
 
     pism_config:inverse.design.cL2 = 1;
-    pism_config:inverse.design.cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";
+    pism_config:inverse.design.cL2_doc = "weight of derivative-free part of an L2 norm for inversion design variables";
     pism_config:inverse.design.cL2_option = "inv_design_cL2";
     pism_config:inverse.design.cL2_type = "number";
     pism_config:inverse.design.cL2_units = "1";

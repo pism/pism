@@ -8,7 +8,7 @@ set -x
 
 prefix=${prefix:-/opt/petsc}
 build_dir=${build_dir:-/var/tmp/build/petsc}
-petsc_version=${petsc_version:-3.24.4}
+petsc_version=${petsc_version:-3.25.0}
 optimization_flags="-O3 -axCORE-AVX512,CORE-AVX2,SSE4.2 -fp-model=precise"
 
 rm -rf ${build_dir}
