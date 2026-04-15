@@ -152,12 +152,8 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
     m_impl->max_stencil_width = (int)p.max_stencil_width;
 
     {
-      try {
-        auto tmp = this->get_dm(1, max_stencil_width());
-      } catch (RuntimeError &e) {
-        e.add_context("distributing a %d x %d grid across %d processors.", Mx(), My(), size());
-        throw;
-      }
+      // Try allocating a DM using the maximum stencil width to make sure it can be done:
+      auto tmp = this->get_dm(1, max_stencil_width());
 
       // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
       // be needed for I/O operations)
@@ -177,7 +173,7 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
     GlobalMax(com, &patch_size, &m_impl->max_patch_size, 1);
 
   } catch (RuntimeError &e) {
-    e.add_context("allocating Grid");
+    e.add_context("distributing a %d x %d grid across %d processors.", p.Mx, p.My, context->size());
     throw;
   }
 }
@@ -713,14 +709,14 @@ namespace grid {
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
-std::vector<double> compute_vertical_levels(double new_Lz, size_t new_Mz,
+std::vector<double> compute_vertical_levels(double Lz, size_t Mz,
                                             grid::VerticalSpacing spacing, double lambda) {
 
-  if (new_Mz < 2) {
+  if (Mz < 2) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Mz must be at least 2");
   }
 
-  if (new_Lz <= 0) {
+  if (Lz <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Lz must be positive");
   }
 
@@ -728,27 +724,27 @@ std::vector<double> compute_vertical_levels(double new_Lz, size_t new_Mz,
     throw RuntimeError(PISM_ERROR_LOCATION, "lambda must be positive");
   }
 
-  std::vector<double> result(new_Mz);
+  std::vector<double> result(Mz);
 
   // Fill the levels in the ice:
   switch (spacing) {
   case grid::EQUAL: {
-    double dz = new_Lz / ((double)new_Mz - 1);
+    double dz = Lz / ((double)Mz - 1);
 
     // Equal spacing
-    for (unsigned int k = 0; k < new_Mz - 1; k++) {
+    for (unsigned int k = 0; k < Mz - 1; k++) {
       result[k] = dz * ((double)k);
     }
-    result[new_Mz - 1] = new_Lz; // make sure it is exactly equal
+    result[Mz - 1] = Lz; // make sure it is exactly equal
     break;
   }
   case grid::QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    for (unsigned int k = 0; k < new_Mz - 1; k++) {
-      const double zeta = ((double)k) / ((double)new_Mz - 1);
-      result[k]         = new_Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
+    for (unsigned int k = 0; k < Mz - 1; k++) {
+      const double zeta = ((double)k) / ((double)Mz - 1);
+      result[k]         = Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
     }
-    result[new_Mz - 1] = new_Lz; // make sure it is exactly equal
+    result[Mz - 1] = Lz; // make sure it is exactly equal
     break;
   }
   default:
@@ -1185,24 +1181,10 @@ void Parameters::ownership_ranges_from_options(const Config &config, unsigned in
   // sub-domain widths in X and Y directions
   std::vector<unsigned> px, py;
   {
-
     // validate inputs
-    if ((Mx / Nx) < 2) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Can't split %d grid points into %d parts (X-direction).", Mx,
-                                    (int)Nx);
-    }
-
-    if ((My / Ny) < 2) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Can't split %d grid points into %d parts (Y-direction).", My,
-                                    (int)Ny);
-    }
-
     if (Nx * Ny != size) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Nx * Ny has to be equal to %d.", size);
     }
-
 
     auto grid_procs_x = parse_integer_list(config.get_string("grid.procs_x"));
     auto grid_procs_y = parse_integer_list(config.get_string("grid.procs_y"));
@@ -1363,15 +1345,17 @@ void Parameters::validate() const {
   {
     auto s = max_stencil_width;
     if (std::any_of(procs_x.cbegin(), procs_x.cend(), [s](unsigned int x) { return x < s; })) {
-      throw RuntimeError(
+      throw RuntimeError::formatted(
           PISM_ERROR_LOCATION,
-          "elements of procs_x cannot be smaller than %d (maximum supported stencil width)");
+          "sub-domain widths in the X direction cannot be smaller than %d (max stencil width)",
+          max_stencil_width);
     }
 
     if (std::any_of(procs_y.cbegin(), procs_y.cend(), [s](unsigned int x) { return x < s; })) {
-      throw RuntimeError(
+      throw RuntimeError::formatted(
           PISM_ERROR_LOCATION,
-          "elements of procs_y cannot be smaller than %d (maximum supported stencil width)");
+          "sub-domain widths in the Y direction cannot be smaller than %d (max stencil width)",
+          max_stencil_width);
     }
   }
 }
@@ -1386,8 +1370,7 @@ double radius(const Grid &grid, int i, int j) {
  *
  * Mx/Nx ~= My/Ny and Nx > Ny if Mx > My.
  */
-std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
-                               unsigned int My) {
+std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx, unsigned int My) {
 
   if (My <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "'My' is invalid.");
@@ -1411,18 +1394,6 @@ std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
   if (Mx > My and Nx < Ny) {
     // Swap Nx and Ny
     std::swap(Nx, Ny);
-  }
-
-  if ((Mx / Nx) < 2) { // note: integer division
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (X-direction).", Mx,
-                                  (int)Nx);
-  }
-
-  if ((My / Ny) < 2) { // note: integer division
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (Y-direction).", My,
-                                  (int)Ny);
   }
 
   return {Nx, Ny};
