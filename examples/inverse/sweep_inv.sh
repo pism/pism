@@ -38,12 +38,11 @@ DEBUG_HEADER='#!/bin/bash
 set -ex
 '
 
+RUN_CMD="mpirun -np ${NP}"
 if [ "$MODE" = "sbatch" ]; then
     HEADER="$SBATCH_HEADER"
-    RUN_CMD="srun"
 else
     HEADER="$DEBUG_HEADER"
-    RUN_CMD="mpirun -np ${NP}"
 fi
 
 COMMON_PHYSICS="\
