@@ -98,9 +98,9 @@ for sb in ssa hybrid blatter; do
     fi
 
     for penalty in 0.1 1 10; do
-        for h1 in 0 0.1 1 10; do
-            for l2 in 0 0.1 1 10; do
-                for hscale in 5e2 1e3 5e3; do
+        for h1 in 0 1 10; do
+            for l2 in 0 1 10; do
+                for hscale in 1e3; do
                     for vscale in 100; do
 
                         STATE=state_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}_0.nc
