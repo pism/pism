@@ -106,10 +106,10 @@ public:
   Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx, double Ly);
 
   //! Initialize grid defaults from a NetCDF variable.
-  Parameters(std::shared_ptr<units::System> unit_system, const File &file,
+  Parameters(const Config &config, std::shared_ptr<units::System> unit_system, const File &file,
              const std::string &variable_name, Registration r);
 
-  static Parameters FromGridDefinition(std::shared_ptr<units::System> unit_system, const File &file,
+  static Parameters FromGridDefinition(const Config &config, std::shared_ptr<units::System> unit_system, const File &file,
                                        const std::string &variable_name, Registration registration);
 
   //! Process -Lx, -Ly, -x0, -y0; set Lx, Ly, x0, y0.
@@ -134,6 +134,8 @@ public:
   unsigned int Mx;
   //! Number of grid points in the Y direction
   unsigned int My;
+  //! maximum supported stencil width
+  unsigned int max_stencil_width;
   //! Grid registration
   Registration registration;
   //! Grid periodicity
@@ -148,7 +150,7 @@ public:
   //! Name of the variable used to initialize the instance (empty if not used)
   std::string variable_name;
 private:
-  Parameters();
+  Parameters() = delete;
 };
 } // namespace grid
 
