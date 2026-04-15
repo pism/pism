@@ -85,7 +85,7 @@ count=0
 for sb in ssa hybrid blatter; do
     if [ "$sb" = "hybrid" ]; then
         pyscript="pismi_ssa.py"
-        inv_flag="-inv_ssa tauc -remove_sia"
+        inv_flag="-inv_ssa tauc"
         sb_physics="${SSA_PHYSICS}"
     elif [ "$sb" = "ssa" ]; then
         pyscript="pismi_ssa.py"
@@ -106,7 +106,7 @@ for sb in ssa hybrid blatter; do
                         STATE=state_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}_0.nc
                         OBS=synth_obs_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}.nc
                         outfile=inv_synth_${sb}_it_${max_iter}_p_${penalty}_h1_${h1}_l2_${l2}_ls_${hscale}_vs_${vscale}.nc
-                        jobname=inv_${sb}_p${penalty}_h${h1}_l${l2}_s${hscale}_v${vscale}
+                        jobname=inv_${sb}_p_${penalty}_h1_${h1}_l2_${l2}_ls_${hscale}_vs_${vscale}
                         runscript=${scriptdir}/${jobname}.sh
 
                         cat > ${runscript} <<EOF

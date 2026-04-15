@@ -51,7 +51,7 @@ for sb in hybrid ssa; do
         inv="make_synth_ssa.py -generate_observed"
     else
         sb_options="$ssa_options"
-        inv="make_synth_ssa.py"
+        inv="make_synth_ssa.py -generate_observed"
     fi
     infile=state_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}_0.nc
     ofile=synth_obs_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}.nc
