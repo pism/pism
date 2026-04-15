@@ -14,13 +14,12 @@ STATE=state_blatter_g500m_RGI2000-v7.0-C-01-04374_id_0_1978-01-01_2023-01-01_0.n
 OBS=obs_RGI2000-v7.0-C-01-04374_0.nc
 
 COMMON_PHYSICS="\
-  -bp_ksp_monitor   \
   -bp_ksp_rtol 0.001  \
   -bp_ksp_view_singularvalues   \
   -bp_mg_coarse_ksp_type preonly  \
   -bp_mg_coarse_pc_type lu  \
-  -bp_mg_levels_ksp_type richardson  \
-  -bp_mg_levels_pc_type sor  \
+  -bp_mg_levels_ksp_type chebyshev \
+  -bp_mg_levels_pc_type jacobi
   -bp_pc_mg_levels 3  \
   -bp_pc_type mg  \
   -bp_snes_ksp_ew 1  \
@@ -45,6 +44,42 @@ COMMON_PHYSICS="\
 
 max_iter=100
 
+for penalty in 0.1; do
+    for h1 in 0.1; do
+        for l2 in 0.1 ; do
+            for scale in 1e3; do
+
+                outfile=inv_blatter_it_${max_iter}_p_${penalty}_h1_${h1}_l2_${l2}_ls_${scale}.nc
+
+                # Skip if output already exists
+                if [ -f "${outfile}" ]; then
+                    echo "=== Skipping ${outfile} (exists) ==="
+                    continue
+                fi
+
+                echo ""
+                echo "=== Blatter inv: penalty=${penalty} h1=${h1} l2=${l2} scale=${scale} ==="
+                mpirun -np ${NP} python ${SCRIPTDIR}/pismi_blatter.py \
+                    -i ${STATE} \
+                    -inv_data ${OBS} \
+                    -o ${outfile} \
+                    -inv_blatter tauc \
+                    -inv_method tikhonov_lmvm \
+                    -inverse.stress_balance.length_scale ${scale} \
+                    -inverse.design.cH1 ${h1} \
+                    -inverse.design.cL2 ${l2} \
+                    -inverse.max_iterations ${max_iter} \
+                    -inverse.tikhonov.penalty_weight ${penalty} \
+                    -inverse.use_zeta_fixed_mask yes \
+                    ${COMMON_PHYSICS} \
+
+            done
+        done
+    done
+done
+
+exit
+    
 for penalty in 0.1 1 10; do
     for h1 in 0 0.1 1 10; do
         for l2 in 0 0.1 1 10; do
@@ -65,7 +100,7 @@ for penalty in 0.1 1 10; do
                     -inv_data ${OBS} \
                     -o ${outfile} \
                     -inv_blatter tauc \
-                    -inv_method tikhonov_cg \
+                    -inv_method tikhonov_lmvm \
                     -inverse.stress_balance.length_scale ${scale} \
                     -inverse.design.cH1 ${h1} \
                     -inverse.design.cL2 ${l2} \

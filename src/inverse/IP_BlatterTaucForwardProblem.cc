@@ -767,13 +767,10 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
 
   // Step 2: Solve J_state * lambda ≈ P^T * du
   //
-  // NOTE: We use KSPSolve (not KSPSolveTranspose) with the SNES's
-  // well-conditioned MG preconditioner. This is an approximation: the
-  // true adjoint requires J^T, but the Blatter Jacobian is nearly
-  // symmetric (asymmetry comes only from the Newton linearization of
-  // the nonlinear viscosity). This produces a useful descent direction
-  // for the Tikhonov minimization and avoids the need for a
-  // transpose-compatible preconditioner.
+  // Solve the adjoint system J^T * lambda = P^T * du using the SNES's
+  // KSP with KSPSolveTranspose. Requires a transpose-compatible MG
+  // smoother (e.g., Jacobi or Chebyshev+Jacobi instead of SOR).
+  // Use: -bp_mg_levels_pc_type jacobi
   Vec lambda_3d;
   ierr = VecDuplicate(m_x, &lambda_3d);
   PISM_CHK(ierr, "VecDuplicate");
@@ -789,8 +786,8 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
   ierr = KSPSetOperators(ksp, J, J);
   PISM_CHK(ierr, "KSPSetOperators");
 
-  ierr = KSPSolve(ksp, rhs_3d, lambda_3d);
-  PISM_CHK(ierr, "KSPSolve");
+  ierr = KSPSolveTranspose(ksp, rhs_3d, lambda_3d);
+  PISM_CHK(ierr, "KSPSolveTranspose");
 
   KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(ksp, &reason);
