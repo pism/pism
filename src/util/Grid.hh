@@ -93,7 +93,7 @@ private:
    - `ownership_ranges_from_options()`
 
    are called *or* all data members (`Lx`, `Ly`, `x0`, `y0`, `Mx`, `My`, `z`, `periodicity`,
-   `procs_x`, `procs_y`) are set manually before using an instance of GridParameters.
+   `procs_x`, `procs_y`) are set manually before using an instance of grid::Parameters.
 
    Call `validate()` to check current parameters.
 */

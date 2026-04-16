@@ -1370,13 +1370,13 @@ double radius(const Grid &grid, int i, int j) {
 
 //! \brief Computes the number of processors in the X- and Y-directions.
 std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
-                                       unsigned int My) {
+                               unsigned int My) {
 
   if (My <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "'My' is invalid.");
   }
 
-  unsigned int Nx = (unsigned int)(0.5 + sqrt(((double)Mx) * ((double)size) / ((double)My)));
+  unsigned int Nx = std::lround(sqrt(((double)Mx) * ((double)size) / ((double)My)));
   unsigned int Ny = 0;
 
   if (Nx == 0) {
