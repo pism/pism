@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2019, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2019, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,7 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include <memory>
+#include <string>
 
 namespace pism {
 
@@ -56,6 +57,14 @@ Context::Context(MPI_Comm c, std::shared_ptr<units::System> sys,
                  const std::string &p)
   : m_impl(new Impl(c, sys, config, EC, t, L, p)) {
   // empty
+}
+
+std::shared_ptr<const Context> Context::restrict_to_subcomm(MPI_Comm comm,
+                                                            const std::string &prefix) const {
+  auto logger = std::make_shared<Logger>(comm, log()->get_threshold());
+
+  return std::make_shared<Context>(comm, unit_system(), m_impl->config, enthalpy_converter(),
+                                   m_impl->time, logger, prefix);
 }
 
 Context::~Context() {
