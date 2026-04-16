@@ -381,6 +381,9 @@ def run():
     if using_zeta_fixed_mask:
         if PISM.util.fileHasVariable(inv_data_filename, "zeta_fixed_mask"):
             zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
+            # Use nearest-neighbor interpolation so the mask stays 0/1
+            # at boundaries (bilinear would produce fractional values).
+            zeta_fixed_mask.set_interpolation_type(PISM.NEAREST)
             zeta_fixed_mask.regrid(inv_data_filename)
             vecs.add(zeta_fixed_mask)
         else:
