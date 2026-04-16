@@ -103,7 +103,9 @@ for sb in ssa hybrid blatter ; do
   -surface.debm_simple.c2 -120  \
   -surface.debm_simple.interpret_precip_as_snow no  \
   -surface.force_to_thickness.file bootfile_g50m_RGI2000-v7.0-C-01-04374.nc  \
-  -surface.models debm_simple  \
+  -surface.force_to_thickness.alpha 0.9 \
+  -surface.force_to_thickness.ice_free_alpha_factor 10 \
+  -surface.models debm_simple,forcing  \
   -time.calendar standard  \
   -time.end $end  \
   -time.reference_date $start  \
