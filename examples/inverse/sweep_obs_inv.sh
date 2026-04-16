@@ -99,7 +99,7 @@ for sb in ssa hybrid blatter; do
     fi
 
     for penalty in 0.1 1 10; do
-        for h1 in 0 1 10; do
+        for h1 in 0.1 1 10; do
             for l2 in 0 1 10; do
                 for hscale in 1e3; do
                     for vscale in 100; do
