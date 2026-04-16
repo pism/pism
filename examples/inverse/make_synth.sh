@@ -45,7 +45,7 @@ ssa_options="""
   -stress_balance.ssa.flow_law gpbld  \
 """
 
-for sb in hybrid ssa; do
+for sb in ssa hybrid; do
     if [ "$sb" = "hybrid" ]; then
         sb_options="$hybrid_options"
         inv="make_synth_ssa.py -generate_observed"

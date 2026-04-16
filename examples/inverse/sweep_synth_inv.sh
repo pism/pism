@@ -76,7 +76,7 @@ SSA_PHYSICS="\
   -stress_balance.ssa.method fem"
 
 max_iter=1000
-scriptdir="run_scripts"
+scriptdir="run_synth_scripts"
 mkdir -p ${scriptdir}
 
 count=0
@@ -105,7 +105,7 @@ for sb in ssa hybrid blatter; do
                         STATE=state_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}_0.nc
                         OBS=synth_obs_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}.nc
                         outfile=inv_synth_${sb}_it_${max_iter}_p_${penalty}_h1_${h1}_l2_${l2}_ls_${hscale}_vs_${vscale}.nc
-                        jobname=inv_${sb}_p_${penalty}_h1_${h1}_l2_${l2}_ls_${hscale}_vs_${vscale}
+                        jobname=inv_synth_${sb}_p_${penalty}_h1_${h1}_l2_${l2}_ls_${hscale}_vs_${vscale}
                         runscript=${scriptdir}/${jobname}.sh
 
                         cat > ${runscript} <<EOF
