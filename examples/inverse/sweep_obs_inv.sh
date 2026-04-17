@@ -83,18 +83,17 @@ mkdir -p ${scriptdir}
 
 count=0
 
+
+pyscript="pismi.py"
 for sb in ssa hybrid blatter; do
     if [ "$sb" = "hybrid" ]; then
-        pyscript="pismi_ssa.py"
-        inv_flag="-inv_ssa tauc -remove_sia"
+        inv_flag="-inv_design tauc -remove_sia"
         sb_physics="${SSA_PHYSICS}"
     elif [ "$sb" = "ssa" ]; then
-        pyscript="pismi_ssa.py"
-        inv_flag="-inv_ssa tauc"
+        inv_flag="-inv_design tauc"
         sb_physics="${SSA_PHYSICS}"
     else
-        pyscript="pismi_blatter.py"
-        inv_flag="-inv_blatter tauc"
+        inv_flag="-inv_design tauc"
         sb_physics="${BLATTER_PHYSICS}"
     fi
 
