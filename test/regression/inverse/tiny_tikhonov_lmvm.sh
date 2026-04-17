@@ -17,7 +17,7 @@ $PYTHONEXEC build_tiny.py -Mx 9 -My 9 -o ${tiny}
 inv_data=`mktemp -u inv-data-XXXX.nc` || exit 1
 $PYTHONEXEC make_synth_ssa.py -i ${tiny} -o ${inv_data} \
               -pseudo_plastic -pseudo_plastic_q 0.25 -regional \
-              -ssa_dirichlet_bc -generate_ssa_observed -ssa_method fem \
+              -ssa_dirichlet_bc -generate_observed -ssa_method fem \
               -design_prior_const 70000 -inv_ssa tauc
 
 # Run the inversion code
