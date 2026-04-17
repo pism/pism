@@ -54,6 +54,7 @@ COMMON_PHYSICS="\
   -basal_yield_stress.mohr_coulomb.till_phi_default 30"
 
 BLATTER_PHYSICS="\
+  -stress_balance.model blatter \
   -bp_ksp_rtol 0.001 \
   -bp_mg_coarse_ksp_type preonly \
   -bp_mg_coarse_pc_type lu \
@@ -73,6 +74,7 @@ BLATTER_PHYSICS="\
   -time_stepping.adaptive_ratio 10"
 
 SSA_PHYSICS="\
+  -stress_balance.model ssa \
   -stress_balance.ssa.method fem"
 
 max_iter=1000
@@ -82,11 +84,8 @@ mkdir -p ${scriptdir}
 count=0
 
 pyscript="pismi.py"
-for sb in ssa hybrid blatter; do
-    if [ "$sb" = "hybrid" ]; then
-        inv_flag="-inv_design tauc"
-        sb_physics="${SSA_PHYSICS}"
-    elif [ "$sb" = "ssa" ]; then
+for sb in ssa blatter; do
+    if [ "$sb" = "ssa" ]; then
         inv_flag="-inv_design tauc"
         sb_physics="${SSA_PHYSICS}"
     else
