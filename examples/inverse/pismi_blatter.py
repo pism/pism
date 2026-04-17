@@ -31,7 +31,7 @@ velocities extracted from the 3D Blatter solution.
 
 import PISM
 import PISM.invert.blatter as blinv
-from PISM.invert.ssa import createTikhonovFunctionals, printIteration, \
+from PISM.invert.core import createTikhonovFunctionals, printIteration, \
     printTikhonovProgress, MisfitLogger, ZetaSaver
 from PISM.logging import logMessage
 from PISM.util import convert
