@@ -93,7 +93,7 @@ for sb in ssa blatter; do
         sb_physics="${BLATTER_PHYSICS}"
     fi
 
-    for penalty in 0.1 1 10; do
+    for penalty in 0.01 0.1 1 10; do
         for h1 in 0 1 10; do
             for l2 in 0 1 10; do
                 for hscale in 1e3; do

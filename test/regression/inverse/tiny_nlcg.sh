@@ -34,7 +34,8 @@ $PYTHONEXEC pismi.py \
               -i ${tiny} -pseudo_plastic -pseudo_plastic_q 0.25 -inv_data ${inv_data} \
               -o ${output} -regional -ssa_dirichlet_bc -inv_use_tauc_prior \
               -inv_design_param trunc -inv_design_cL2 1 -inv_design_cH1 0 \
-              -inv_method nlcg -inv_target_misfit 100 -report_coverage
+              -inv_method nlcg -inv_target_misfit 100 -report_coverage \
+              -stress_balance.model ssa+sia
 
 # Check if we succeeded
 $PYTHONEXEC verify_ssa_inv.py ${output} --desired_misfit 100 --iter_max 40 --morozov
