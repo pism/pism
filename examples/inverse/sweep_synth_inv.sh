@@ -77,7 +77,7 @@ SSA_PHYSICS="\
   -stress_balance.model ssa \
   -stress_balance.ssa.method fem"
 
-max_iter=1000
+max_iter=100
 scriptdir="run_synth_scripts"
 mkdir -p ${scriptdir}
 

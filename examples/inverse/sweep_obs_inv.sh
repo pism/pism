@@ -79,7 +79,7 @@ SSA_PHYSICS="\
   -stress_balance.model ssa \
   -stress_balance.ssa.method fem"
 
-max_iter=1000
+max_iter=250
 scriptdir="run_obs_scripts"
 mkdir -p ${scriptdir}
 
@@ -96,11 +96,11 @@ for sb in ssa blatter; do
         sb_physics="${BLATTER_PHYSICS}"
     fi
 
-    for penalty in 0.01 1 10; do
+    for penalty in 0.01 1 10 100 1000; do
         for h1 in 0.01 1 10; do
             for l2 in 0 1 10; do
-                for hscale in 1e3; do
-                    for vscale in 100; do
+                for hscale in 1e3 5e3 1e4 5e4; do
+                    for vscale in 10 100; do
 
                         STATE=state_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}_0.nc
                         outfile=inv_obs_${sb}_it_${max_iter}_p_${penalty}_h1_${h1}_l2_${l2}_ls_${hscale}_vs_${vscale}.nc
@@ -116,13 +116,16 @@ ${RUN_CMD} python ${SCRIPTDIR}/${pyscript} \\
   -inv_data ${OBS} \\
   -o ${outfile} \\
   ${inv_flag} \\
-  -inv_method tikhonov_lmvm \\
   -inverse.stress_balance.velocity_scale ${vscale} \\
   -inverse.stress_balance.length_scale ${hscale} \\
   -inverse.design.cH1 ${h1} \\
   -inverse.design.cL2 ${l2} \\
   -inverse.max_iterations ${max_iter} \\
+  -inverse.design.param exp \\
+  -inverse.stress_balance.method tikhonov_lmvm \\
+  -inverse.tikhonov.atol 1e-10 \\
   -inverse.tikhonov.penalty_weight ${penalty} \\
+  -inverse.tikhonov.rtol 5e-2 \\
   -inverse.use_zeta_fixed_mask yes \\
   ${COMMON_PHYSICS} \\
   ${sb_physics}
