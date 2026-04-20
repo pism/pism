@@ -122,6 +122,7 @@ ${RUN_CMD} python ${SCRIPTDIR}/${pyscript} \\
   -inverse.max_iterations ${max_iter} \\
   -inverse.tikhonov.penalty_weight ${penalty} \\
   -inverse.use_zeta_fixed_mask yes \\
+  -use_grounded_ice_only \\
   ${COMMON_PHYSICS} \\
   ${sb_physics}
 EOF

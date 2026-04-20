@@ -127,6 +127,7 @@ ${RUN_CMD} python ${SCRIPTDIR}/${pyscript} \\
   -inverse.tikhonov.penalty_weight ${penalty} \\
   -inverse.tikhonov.rtol 5e-2 \\
   -inverse.use_zeta_fixed_mask yes \\
+  -use_grounded_ice_only \\
   -tao_frtol 1e-20 \
   -tao_fatol 1e-20 \
   ${COMMON_PHYSICS} \\
