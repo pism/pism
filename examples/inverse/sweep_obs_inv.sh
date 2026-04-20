@@ -99,8 +99,8 @@ for sb in ssa blatter; do
     for penalty in 0.01 1 10 100 1000; do
         for h1 in 0.01 1 10; do
             for l2 in 0 1 10; do
-                for hscale in 1e3 5e3 1e4 5e4; do
-                    for vscale in 10 100; do
+                for hscale in 5e3 5e4; do
+                    for vscale in 100; do
 
                         STATE=state_${sb}_g${res}m_RGI2000-v7.0-C-01-04374_id_0_${start}_${end}_0.nc
                         outfile=inv_obs_${sb}_it_${max_iter}_p_${penalty}_h1_${h1}_l2_${l2}_ls_${hscale}_vs_${vscale}.nc
@@ -127,6 +127,8 @@ ${RUN_CMD} python ${SCRIPTDIR}/${pyscript} \\
   -inverse.tikhonov.penalty_weight ${penalty} \\
   -inverse.tikhonov.rtol 5e-2 \\
   -inverse.use_zeta_fixed_mask yes \\
+  -tao_frtol 1e-20 \
+  -tao_fatol 1e-20 \
   ${COMMON_PHYSICS} \\
   ${sb_physics}
 EOF
