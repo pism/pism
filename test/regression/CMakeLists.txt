@@ -121,6 +121,7 @@ endif()
 
 if (Pism_USE_YAC)
   pism_test (regridding:yac:inverted_y interpolation_inverted_y.sh)
+  pism_test (regridding:yac:small_grid interpolation_small_grid.sh )
 endif()
 
 pism_test (Verification:PISMBedThermalUnit_test_K btu_regression.sh)
