@@ -1200,6 +1200,7 @@ netcdf pism_config {
     pism_config:grid.Lz_option = "Lz";
     pism_config:grid.Lz_type = "number";
     pism_config:grid.Lz_units = "meters";
+    pism_config:grid.Lz_valid_min = 1e-16;
 
     pism_config:grid.Mbz = 1;
     pism_config:grid.Mbz_doc = "Number of thermal bedrock layers; 1 level corresponds to no bedrock.";
