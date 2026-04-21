@@ -1302,16 +1302,6 @@ void Parameters::vertical_grid_from_options(const Config &config) {
 }
 
 void Parameters::validate() const {
-  if (Mx < 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Mx = %d is invalid (has to be 3 or greater)", Mx);
-  }
-
-  if (My < 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "My = %d is invalid (has to be 3 or greater)", My);
-  }
-
   if (Lx <= 0.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Lx = %f is invalid (has to be positive)",
                                   Lx);
