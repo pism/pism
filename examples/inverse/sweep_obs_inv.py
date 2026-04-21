@@ -55,7 +55,6 @@ BLATTER_PHYSICS = [
     "-bp_mg_coarse_ksp_type", "preonly",
     "-bp_mg_coarse_pc_type", "lu",
     "-bp_mg_levels_ksp_type", "chebyshev",
-    "-bp_mg_levels_pc_type", "jacobi",
     "-bp_pc_mg_levels", "3",
     "-bp_pc_type", "mg",
     "-bp_snes_ksp_ew", "1",
@@ -68,6 +67,8 @@ BLATTER_PHYSICS = [
     "-stress_balance.blatter.use_eta_transform", "yes",
     "-stress_balance.calving_front_stress_bc", "yes",
     "-time_stepping.adaptive_ratio", "10",
+    "-inverse.use_incomplete_adjoint", "no",
+    "-inv_adj_pc_type", "jacobi",
 ]
 
 SSA_PHYSICS = [
@@ -118,7 +119,7 @@ for sb, params in solvers.items():
             "-inverse.stress_balance.method", "tikhonov_lmvm",
             "-inverse.tikhonov.atol", "1e-10",
             "-inverse.tikhonov.penalty_weight", str(penalty),
-            "-inverse.tikhonov.rtol", "5e-2",
+            "-inverse.tikhonov.rtol", "1e-10",
             "-inverse.use_zeta_fixed_mask", "yes",
             "-inv_grounded_ice_tauc",
             "-tao_frtol", "1e-20",

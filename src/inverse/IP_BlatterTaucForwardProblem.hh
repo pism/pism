@@ -23,6 +23,7 @@
 #include "pism/inverse/IPDesignVariableParameterization.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/petscwrappers/KSP.hh"
+#include "pism/util/petscwrappers/Mat.hh"
 
 namespace pism {
 namespace inverse {
@@ -131,12 +132,15 @@ protected:
   /// 2D surface velocity extracted from the 3D Blatter solution.
   std::shared_ptr<array::Vector> m_surface_velocity;
 
-  /// KSP for adjoint (transpose) solves, separate from the SNES's KSP
-  /// because the MG+SOR smoother doesn't support transpose. Configured
-  /// via -inv_ksp_type, -inv_pc_type, -inv_ksp_rtol, etc.
+  /// Picard (symmetric) Jacobian matrix used for the adjoint solve.
+  /// Assembled without viscosity derivative terms so KSPSolve can be
+  /// used instead of KSPSolveTranspose, and any preconditioner works.
+  petsc::Mat m_J_picard;
+
+  /// KSP for adjoint solves using the Picard Jacobian.
   petsc::KSP m_ksp;
 
-  /// Flag indicating that the state Jacobian matrix needs rebuilding.
+  /// Flag indicating that the Jacobians need rebuilding.
   bool m_rebuild_J_state;
 };
 

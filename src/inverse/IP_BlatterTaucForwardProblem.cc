@@ -60,35 +60,11 @@ IP_BlatterTaucForwardProblem::IP_BlatterTaucForwardProblem(
     .long_name("yield stress for basal till (plastic or pseudo-plastic model)")
     .units("Pa");
 
-  // Set up a separate KSP for the adjoint (transpose) solves.
-  // We cannot reuse the SNES's KSP because its MG smoother (SOR) does
-  // not support transpose application. This KSP uses the "inv_" prefix
-  // so users can configure it via -inv_ksp_type, -inv_pc_type, etc.
-  PetscErrorCode ierr;
-
-  ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
-  PISM_CHK(ierr, "KSPCreate");
-
-  ierr = KSPSetOptionsPrefix(m_ksp, "inv_");
-  PISM_CHK(ierr, "KSPSetOptionsPrefix");
-
-  // Defaults: GMRES + BJACOBI, rtol=1e-3, max 10000 iterations.
-  // Override with -inv_ksp_type, -inv_ksp_rtol, -inv_pc_type, etc.
-  ierr = KSPSetType(m_ksp, KSPGMRES);
-  PISM_CHK(ierr, "KSPSetType");
-
-  ierr = KSPSetTolerances(m_ksp, 1e-3, PETSC_DEFAULT, PETSC_DEFAULT, 10000);
-  PISM_CHK(ierr, "KSPSetTolerances");
-
-  PC pc;
-  ierr = KSPGetPC(m_ksp, &pc);
-  PISM_CHK(ierr, "KSPGetPC");
-
-  ierr = PCSetType(pc, PCBJACOBI);
-  PISM_CHK(ierr, "PCSetType");
-
-  ierr = KSPSetFromOptions(m_ksp);
-  PISM_CHK(ierr, "KSPSetFromOptions");
+  // Zero-initialize PETSc wrapper members. The Wrapper<T> class does NOT
+  // zero-initialize m_value, so rawptr() always returns non-null (it's
+  // &m_value), and get() returns garbage. We must explicitly null them.
+  *m_J_picard.rawptr() = nullptr;
+  *m_ksp.rawptr() = nullptr;
 }
 
 void IP_BlatterTaucForwardProblem::init() {
@@ -651,8 +627,8 @@ void IP_BlatterTaucForwardProblem::apply_linearization(
 
   // Step 1: Compute rhs = J_design * dzeta (3D)
   Vec rhs;
-  ierr = VecDuplicate(m_x, &rhs);
-  PISM_CHK(ierr, "VecDuplicate");
+  ierr = DMCreateGlobalVector(m_da, &rhs);
+  PISM_CHK(ierr, "DMCreateGlobalVector");
 
   this->apply_jacobian_design_3d(dzeta, rhs);
 
@@ -662,8 +638,8 @@ void IP_BlatterTaucForwardProblem::apply_linearization(
 
   // Step 2: Solve J_state * du_3d = -J_design * dzeta
   Vec du_3d;
-  ierr = VecDuplicate(m_x, &du_3d);
-  PISM_CHK(ierr, "VecDuplicate");
+  ierr = DMCreateGlobalVector(m_da, &du_3d);
+  PISM_CHK(ierr, "DMCreateGlobalVector");
 
   // Reuse the SNES's KSP (configured via -bp_ksp_* flags)
   KSP ksp;
@@ -728,26 +704,17 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
 
   PetscErrorCode ierr;
 
-  m_log->message(2, "Blatter inverse: solving adjoint system...\n");
-
-  if (m_rebuild_J_state) {
-    Mat J, Jpre;
-    ierr = SNESGetJacobian(m_snes, &J, &Jpre, NULL, NULL);
-    PISM_CHK(ierr, "SNESGetJacobian");
-
-    ierr = SNESComputeJacobian(m_snes, m_x, J, Jpre);
-    PISM_CHK(ierr, "SNESComputeJacobian");
-
-    m_rebuild_J_state = false;
-  }
-
-  // Step 1: Inject du (2D surface) into 3D at surface nodes: rhs_3d = P^T * du
-  Vec rhs_3d;
-  ierr = VecDuplicate(m_x, &rhs_3d);
-  PISM_CHK(ierr, "VecDuplicate");
+  // Step 1: Create 3D vectors from the DM (not VecDuplicate) to ensure
+  // proper DM association and parallel layout.
+  Vec rhs_3d, lambda_3d;
+  ierr = DMCreateGlobalVector(m_da, &rhs_3d);
+  PISM_CHK(ierr, "DMCreateGlobalVector");
+  ierr = DMCreateGlobalVector(m_da, &lambda_3d);
+  PISM_CHK(ierr, "DMCreateGlobalVector");
   ierr = VecSet(rhs_3d, 0.0);
   PISM_CHK(ierr, "VecSet");
 
+  // Inject du (2D surface) into 3D at surface nodes: rhs_3d = P^T * du
   {
     Vector2d ***rhs_arr = nullptr;
     ierr = DMDAVecGetArray(m_da, rhs_3d, &rhs_arr);
@@ -765,33 +732,70 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
     PISM_CHK(ierr, "DMDAVecRestoreArray");
   }
 
-  // Step 2: Solve J_state * lambda ≈ P^T * du
+  // Use the SNES Jacobian that was already assembled at the converged
+  // solution during the forward solve. The Blatter Jacobian assembly
+  // (jacobian.cc) mirrors the upper triangle to the lower triangle,
+  // making the assembled matrix symmetric. This is effectively the
+  // Picard (incomplete) Jacobian — the Newton cross-terms (eta_u * F_u)
+  // are only in the upper triangle before mirroring, so the final matrix
+  // is close to the true Picard Jacobian. For adjoint purposes, using
+  // KSPSolve (instead of KSPSolveTranspose) on this symmetric matrix
+  // is equivalent to the incomplete adjoint of Morlighem et al. (2013).
   //
-  // Solve the adjoint system J^T * lambda = P^T * du using the SNES's
-  // KSP with KSPSolveTranspose. Requires a transpose-compatible MG
-  // smoother (e.g., Jacobi or Chebyshev+Jacobi instead of SOR).
-  // Use: -bp_mg_levels_pc_type jacobi
-  Vec lambda_3d;
-  ierr = VecDuplicate(m_x, &lambda_3d);
-  PISM_CHK(ierr, "VecDuplicate");
+  // We create a standalone KSP (not the SNES's MG KSP) with a simple
+  // preconditioner. Configure via -inv_adj_ksp_type, -inv_adj_pc_type.
+  if (m_ksp.get() == nullptr) {
+    ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
+    PISM_CHK(ierr, "KSPCreate");
 
-  KSP ksp;
-  ierr = SNESGetKSP(m_snes, &ksp);
-  PISM_CHK(ierr, "SNESGetKSP");
+    ierr = KSPSetOptionsPrefix(m_ksp, "inv_adj_");
+    PISM_CHK(ierr, "KSPSetOptionsPrefix");
+
+    // Default: GMRES + block Jacobi/ILU, rtol=1e-5
+    ierr = KSPSetType(m_ksp, KSPGMRES);
+    PISM_CHK(ierr, "KSPSetType");
+
+    ierr = KSPSetTolerances(m_ksp, 1e-5, PETSC_DEFAULT, PETSC_DEFAULT, 10000);
+    PISM_CHK(ierr, "KSPSetTolerances");
+
+    // Allow command-line overrides
+    ierr = KSPSetFromOptions(m_ksp);
+    PISM_CHK(ierr, "KSPSetFromOptions");
+  }
 
   Mat J;
   ierr = SNESGetJacobian(m_snes, &J, NULL, NULL, NULL);
   PISM_CHK(ierr, "SNESGetJacobian");
 
-  ierr = KSPSetOperators(ksp, J, J);
+  ierr = KSPSetOperators(m_ksp, J, J);
   PISM_CHK(ierr, "KSPSetOperators");
 
-  ierr = KSPSolveTranspose(ksp, rhs_3d, lambda_3d);
-  PISM_CHK(ierr, "KSPSolveTranspose");
+  bool use_incomplete = m_config->get_flag("inverse.use_incomplete_adjoint");
+
+  if (use_incomplete) {
+    // Incomplete adjoint: KSPSolve on the (symmetric) Jacobian.
+    m_log->message(2, "Blatter inverse: adjoint solve (incomplete, KSPSolve)...\n");
+    ierr = KSPSolve(m_ksp, rhs_3d, lambda_3d);
+    PISM_CHK(ierr, "KSPSolve");
+  } else {
+    // Exact adjoint: KSPSolveTranspose. Requires transpose-compatible
+    // preconditioner (e.g., -inv_adj_pc_type jacobi).
+    m_log->message(2, "Blatter inverse: adjoint solve (exact, KSPSolveTranspose)...\n");
+    ierr = KSPSolveTranspose(m_ksp, rhs_3d, lambda_3d);
+    PISM_CHK(ierr, "KSPSolveTranspose");
+  }
 
   KSPConvergedReason reason;
-  ierr = KSPGetConvergedReason(ksp, &reason);
+  ierr = KSPGetConvergedReason(m_ksp, &reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
+
+  PetscInt ksp_its;
+  ierr = KSPGetIterationNumber(m_ksp, &ksp_its);
+  PISM_CHK(ierr, "KSPGetIterationNumber");
+
+  m_log->message(2, "  Adjoint KSP: %d iterations, reason: %s\n",
+                 (int)ksp_its, KSPConvergedReasons[reason]);
+
   if (reason < 0) {
     ierr = VecDestroy(&rhs_3d); PISM_CHK(ierr, "VecDestroy");
     ierr = VecDestroy(&lambda_3d); PISM_CHK(ierr, "VecDestroy");
