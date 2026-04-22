@@ -67,8 +67,8 @@ BLATTER_PHYSICS = [
     "-stress_balance.blatter.use_eta_transform", "yes",
     "-stress_balance.calving_front_stress_bc", "yes",
     "-time_stepping.adaptive_ratio", "10",
-    "-inverse.use_incomplete_adjoint", "no",
-    "-inv_adj_pc_type", "jacobi",
+    "-inv_adj_ksp_type", "gmres",
+    "-inv_adj_pc_type", "gamg",
 ]
 
 SSA_PHYSICS = [
@@ -87,7 +87,7 @@ solvers = {
     "blatter": {"inv_flag": ["-inv_design", "tauc"], "physics": BLATTER_PHYSICS},
 }
 
-penalties = [0.01, 1, 10, 100, 1000]
+penalties = [100, 1000, 10000, 100000]
 h1_values = [0.01, 1, 10]
 l2_values = [0, 1, 10]
 hscales = ["5e3", "5e4"]
@@ -121,9 +121,12 @@ for sb, params in solvers.items():
             "-inverse.tikhonov.penalty_weight", str(penalty),
             "-inverse.tikhonov.rtol", "1e-10",
             "-inverse.use_zeta_fixed_mask", "yes",
+            "-inverse.adjoint.method", "approximate",
             "-inv_grounded_ice_tauc",
             "-tao_frtol", "1e-20",
             "-tao_fatol", "1e-20",
+            "-tao_gatol", "1e-20",
+            "-tao_grtol", "1e-20",
             *COMMON_PHYSICS,
             *params["physics"],
         ]

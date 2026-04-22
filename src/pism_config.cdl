@@ -1612,10 +1612,11 @@ netcdf pism_config {
     pism_config:inverse.use_design_prior_option = "inv_use_design_prior";
     pism_config:inverse.use_design_prior_type = "flag";
 
-    pism_config:inverse.use_incomplete_adjoint = "yes";
-    pism_config:inverse.use_incomplete_adjoint_doc = "Use the incomplete (Picard) adjoint for Blatter inversions. The Picard Jacobian drops viscosity derivative terms and is symmetric, allowing any preconditioner. Set to no for the exact (Newton) adjoint, which requires a transpose-compatible preconditioner (e.g., -bp_mg_levels_pc_type jacobi).";
-    pism_config:inverse.use_incomplete_adjoint_option = "inv_use_incomplete_adjoint";
-    pism_config:inverse.use_incomplete_adjoint_type = "flag";
+    pism_config:inverse.adjoint.method = "approximate";
+    pism_config:inverse.adjoint.method_choices = "exact,incomplete,approximate";
+    pism_config:inverse.adjoint.method_doc = "Adjoint method for Blatter inversions. 'approximate': KSPSolve on the symmetrized Newton Jacobian (fast, any preconditioner). 'incomplete': KSPSolve on a separately assembled Picard Jacobian (truly symmetric, any preconditioner). 'exact': KSPSolveTranspose on the Newton Jacobian (requires transpose-compatible preconditioner, e.g. -inv_adj_pc_type jacobi).";
+    pism_config:inverse.adjoint.method_option = "inv_adjoint_method";
+    pism_config:inverse.adjoint.method_type = "keyword";
 
     pism_config:inverse.use_zeta_fixed_mask = "yes";
     pism_config:inverse.use_zeta_fixed_mask_doc = "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)";

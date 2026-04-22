@@ -188,7 +188,7 @@ def forward_solve(grid, yield_stress, config):
 # ============================================================================
 
 def run_inversion(grid, geometry, enthalpy, yield_stress_true,
-                  u_obs, test_name, use_incomplete, config):
+                  u_obs, test_name, adjoint_method, config):
     """Run a Tikhonov inversion for tauc using the Blatter solver.
 
     Returns dict with convergence history and recovered tauc.
@@ -197,11 +197,10 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
     Mz = int(config.get_number("stress_balance.blatter.Mz"))
     coarsening = int(config.get_number("stress_balance.blatter.coarsening_factor"))
 
-    label = "incomplete" if use_incomplete else "exact"
-    PISM.verbPrintf(2, com, "\n=== Inversion (%s adjoint) ===\n" % label)
+    PISM.verbPrintf(2, com, "\n=== Inversion (%s adjoint) ===\n" % adjoint_method)
 
     # Set the adjoint mode
-    config.set_flag("inverse.use_incomplete_adjoint", use_incomplete)
+    config.set_string("inverse.adjoint.method", adjoint_method)
 
     # Design variable parameterization
     param_name = config.get_string("inverse.design.param")
@@ -304,7 +303,7 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
     solve_time = time.time() - t0
 
     PISM.verbPrintf(2, com, "  Inversion (%s): %s, %.1f seconds\n" %
-                    (label, reason.description(), solve_time))
+                    (adjoint_method, reason.description(), solve_time))
 
     # Extract result
     zeta_inv = tikhonov.designSolution()
@@ -341,7 +340,7 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
     rms_misfit = np.sqrt(vel_l2 / N) * convert(1.0, "m/s", "m/year")
 
     result = {
-        "adjoint": label,
+        "adjoint": adjoint_method,
         "test": test_name,
         "iterations": len(misfit_history),
         "solve_time_s": solve_time,
@@ -422,15 +421,15 @@ def main():
         u_obs = forward_solve(grid, yield_stress, config)
 
         # Step 2: Inversion with incomplete adjoint (Picard, KSPSolve)
-        result_inc, tauc_inc = run_inversion(
+        result_approx, tauc_approx = run_inversion(
             grid, geometry, enthalpy, yield_stress,
-            u_obs, test_name, use_incomplete=True, config=config)
-        all_results.append(result_inc)
+            u_obs, test_name, adjoint_method="approximate", config=config)
+        all_results.append(result_approx)
 
         # Step 3: Inversion with exact adjoint (Newton, KSPSolveTranspose)
         result_exact, tauc_exact = run_inversion(
             grid, geometry, enthalpy, yield_stress,
-            u_obs, test_name, use_incomplete=False, config=config)
+            u_obs, test_name, adjoint_method="exact", config=config)
         all_results.append(result_exact)
 
         # Write NetCDF output
@@ -439,10 +438,10 @@ def main():
         output = PISM.util.prepare_output(output_file)
 
         yield_stress.metadata().set_name("tauc_true")
-        tauc_inc.metadata().set_name("tauc_incomplete")
+        tauc_approx.metadata().set_name("tauc_approximate")
         tauc_exact.metadata().set_name("tauc_exact")
 
-        for arr in [yield_stress, u_obs, tauc_inc, tauc_exact]:
+        for arr in [yield_stress, u_obs, tauc_approx, tauc_exact]:
             for k in range(arr.ndof()):
                 output.define_variable(arr.metadata(k))
             arr.write(output)
