@@ -110,7 +110,15 @@ std::shared_ptr<TerminationReason> IP_BlatterTaucForwardProblem::linearize_at(
   Geometry geometry(m_grid);
   geometry.ice_thickness.copy_from(*variables.get_2d_scalar("land_ice_thickness"));
   geometry.bed_elevation.copy_from(*variables.get_2d_scalar("bedrock_altitude"));
-  geometry.sea_level_elevation.set(0.0);
+
+  if (variables.is_available("sea_surface_height_above_reference_ellipsoid")) {
+    geometry.sea_level_elevation.copy_from(
+        *variables.get_2d_scalar("sea_surface_height_above_reference_ellipsoid"));
+  } else {
+    // Default: set sea level well below the bed to ensure all ice is grounded.
+    geometry.sea_level_elevation.copy_from(geometry.bed_elevation);
+    geometry.sea_level_elevation.shift(-1000.0);
+  }
 
   if (m_config->get_flag("geometry.part_grid.enabled") &&
       variables.is_available("ice_area_specific_volume")) {
@@ -805,11 +813,11 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
                                   KSPConvergedReasons[reason]);
   }
 
-  m_log->message(2, "Blatter inverse: adjoint solve done.\n");
-
   // Step 3: Compute dzeta = -J_design^T * lambda
   this->apply_jacobian_design_transpose_3d(lambda_3d, dzeta);
   dzeta.scale(-1.0);
+
+  m_log->message(2, "Blatter inverse: adjoint solve done.\n");
 
   if (dzeta.stencil_width() > 0) {
     dzeta.update_ghosts();

@@ -65,38 +65,55 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
     double gamma = (ux * ux + vy * vy + ux * vy +
                     0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
 
-    double eta;
-    m_flow_law->effective_viscosity(B[q], gamma, m_viscosity_eps, &eta, nullptr);
+    double eta, deta;
+    m_flow_law->effective_viscosity(B[q], gamma, m_viscosity_eps, &eta, &deta);
 
+    // add the enhancement factor
     eta *= m_E_viscosity;
+    deta *= m_E_viscosity;
 
-    // Picard linearization: the element matrix is symmetric, so we only compute
-    // the upper triangle. The lower triangle is filled by mirroring in
-    // compute_jacobian. This is the "incomplete" Jacobian of Morlighem et al.
-    // (2013) — the omitted Newton viscosity-derivative terms are small for
-    // typical ice flow. The symmetric matrix is ideal for adjoint-based inversion
-    // (KSPSolve = KSPSolveTranspose, any preconditioner works).
+    // loop over test and trial functions, computing the upper-triangular part of
+    // the element Jacobian
     for (int t = 0; t < Nk; ++t) {
       auto psi = element.chi(q, t);
       for (int s = t; s < Nk; ++s) {
         auto phi = element.chi(q, s);
 
+        // partial derivatives of gamma with respect to u_i and v_i
+        double
+          gamma_u = 2.0 * ux * phi.dx + vy * phi.dx + 0.5 * phi.dy * (uy + vx) + 0.5 * uz * phi.dz,
+          gamma_v = 2.0 * vy * phi.dy + ux * phi.dy + 0.5 * phi.dx * (uy + vx) + 0.5 * vz * phi.dz;
+
+        // partial derivatives of eta with respect to u_i and v_i, using chain rule
+        double
+          eta_u = deta * gamma_u,
+          eta_v = deta * gamma_v;
+
+        // F_u = grad(psi) . (4ux + 2vy, uy + vx, uz) and
+        // F_v = grad(psi) . (uy + vx, 4vy + 2ux, vz)
+        double
+          F_u = (psi.dx * (4.0 * ux + 2.0 * vy) + psi.dy * (uy + vx) + psi.dz * uz),
+          F_v = (psi.dx * (uy + vx) + psi.dy * (4.0 * vy + 2.0 * ux) + psi.dz * vz);
+
+        // partial derivatives of F_u with respect to u_i and v_i
         double
           F_uu = 4.0 * psi.dx * phi.dx + psi.dy * phi.dy + psi.dz * phi.dz,
-          F_uv = 2.0 * psi.dx * phi.dy + psi.dy * phi.dx,
+          F_uv = 2.0 * psi.dx * phi.dy + psi.dy * phi.dx;
+
+        // partial derivatives of F_v with respect to u_i and v_i
+        double
           F_vu = 2.0 * psi.dy * phi.dx + psi.dx * phi.dy,
           F_vv = 4.0 * psi.dy * phi.dy + psi.dx * phi.dx + psi.dz * phi.dz;
 
-        K[t * 2 + 0][s * 2 + 0] += W * eta * F_uu;
-        K[t * 2 + 0][s * 2 + 1] += W * eta * F_uv;
-        K[t * 2 + 1][s * 2 + 0] += W * eta * F_vu;
-        K[t * 2 + 1][s * 2 + 1] += W * eta * F_vv;
+        K[t * 2 + 0][s * 2 + 0] += W * (eta * F_uu + eta_u * F_u);
+        K[t * 2 + 0][s * 2 + 1] += W * (eta * F_uv + eta_v * F_u);
+        K[t * 2 + 1][s * 2 + 0] += W * (eta * F_vu + eta_u * F_v);
+        K[t * 2 + 1][s * 2 + 1] += W * (eta * F_vv + eta_v * F_v);
       }
     }
   } // end of the loop over q
 
 }
-
 
 /*!
  * Compute the Jacobian contribution of the basal boundary condition.
@@ -309,8 +326,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
           jacobian_basal(*face, basal_yield_stress, floatation, velocity, K);
         }
 
-        // fill the lower-triangular part of the element Jacobian using the fact that
-        // the Picard Jacobian is symmetric
+        // fill the lower-triangular part of the element Jacobian using the fact that J is
+        // symmetric
         for (int t = 0; t < Nk; ++t) {
           for (int s = 0; s < t; ++s) {
             K[t * 2 + 0][s * 2 + 0] = K[s * 2 + 0][t * 2 + 0];
@@ -334,49 +351,6 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyEnd");
   }
 }
-
-/*!
- * Assemble the Picard (incomplete) Jacobian for adjoint solves.
- *
- * Performs the global-to-local scatter of the solution vector and calls
- * compute_jacobian directly with m_use_picard=true, bypassing
- * SNESComputeJacobian (which interacts with the MG hierarchy in ways
- * that crash when given a matrix other than the SNES's own Jacobian).
- */
-void Blatter::compute_picard_jacobian(Mat J) {
-  PetscErrorCode ierr;
-
-  DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(m_da, &info);
-  PISM_CHK(ierr, "DMDAGetLocalInfo");
-
-  Vec x_local;
-  ierr = DMGetLocalVector(m_da, &x_local);
-  PISM_CHK(ierr, "DMGetLocalVector");
-
-  ierr = DMGlobalToLocalBegin(m_da, m_x, INSERT_VALUES, x_local);
-  PISM_CHK(ierr, "DMGlobalToLocalBegin");
-  ierr = DMGlobalToLocalEnd(m_da, m_x, INSERT_VALUES, x_local);
-  PISM_CHK(ierr, "DMGlobalToLocalEnd");
-
-  const Vector2d ***X = nullptr;
-  ierr = DMDAVecGetArrayRead(m_da, x_local, &X);
-  PISM_CHK(ierr, "DMDAVecGetArrayRead");
-
-  bool was_picard = m_use_picard;
-  m_use_picard = true;
-
-  compute_jacobian(&info, X, J, J);
-
-  m_use_picard = was_picard;
-
-  ierr = DMDAVecRestoreArrayRead(m_da, x_local, &X);
-  PISM_CHK(ierr, "DMDAVecRestoreArrayRead");
-
-  ierr = DMRestoreLocalVector(m_da, &x_local);
-  PISM_CHK(ierr, "DMRestoreLocalVector");
-}
-
 
 PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
                                           const Vector2d ***x,
