@@ -2,15 +2,26 @@
 """Generate inversion run scripts for real (ITS_LIVE) observations.
 
 Usage:
-    python sweep_obs_inv.py debug    # mpirun scripts
-    python sweep_obs_inv.py sbatch   # SLURM scripts
+    python sweep_obs_inv.py debug                      # mpirun scripts
+    python sweep_obs_inv.py sbatch                     # SLURM scripts
+    python sweep_obs_inv.py debug --restart FILE.nc    # restart from FILE.nc
 """
 
+import argparse
 import os
 import sys
 import itertools
 
-MODE = sys.argv[1] if len(sys.argv) > 1 else "debug"
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("mode", nargs="?", default="debug",
+                    choices=["debug", "sbatch"])
+parser.add_argument("--restart", metavar="FILE",
+                    help="Restart inversion from zeta_inv in FILE "
+                         "(e.g., a previous SSA inversion result)")
+args = parser.parse_args()
+
+MODE = args.mode
+RESTART_FILE = args.restart
 NP = int(os.environ.get("NP", 40 if MODE == "sbatch" else 8))
 SCRIPTDIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -76,7 +87,7 @@ SSA_PHYSICS = [
     "-stress_balance.ssa.method", "fem",
 ]
 
-max_iter = 250
+max_iter = 50
 scriptdir = "run_obs_scripts"
 os.makedirs(scriptdir, exist_ok=True)
 
@@ -87,11 +98,11 @@ solvers = {
     "blatter": {"inv_flag": ["-inv_design", "tauc"], "physics": BLATTER_PHYSICS},
 }
 
-penalties = [100, 1000, 10000, 100000]
+penalties = [10, 100, 1000, 10000]
 h1_values = [0.01, 1, 10]
 l2_values = [0, 1, 10]
 hscales = ["5e3", "5e4"]
-vscales = [100]
+vscales = [50]
 
 count = 0
 
@@ -101,13 +112,31 @@ for sb, params in solvers.items():
 
         state = f"state_{sb}_g{res}m_RGI2000-v7.0-C-01-04374_id_0_{start}_{end}_0.nc"
         outfile = f"inv_obs_{sb}_it_{max_iter}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}.nc"
-        jobname = f"inv_obs_{sb}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}"
+        jobname = f"inv_obs_{sb}_it_{max_iter}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}"
         runscript = os.path.join(scriptdir, f"{jobname}.sh")
+
+        # If restarting, extract zeta_inv from the restart file into a
+        # temporary inv_data file so pismi picks it up as the initial guess.
+        restart_cmds = ""
+        inv_data = OBS
+        if RESTART_FILE is not None:
+            inv_data = f"inv_data_restart_{sb}.nc"
+            restart_cmds = (
+                f"# Extract tauc (last time, squeezed to 2D) from restart file,\n"
+                f"# rename to tauc_prior, and merge into a copy of the obs file.\n"
+                f"# Using tauc (not zeta_inv) avoids NaN issues in ice-free regions.\n"
+                f"ncks -O -d time,-1 -v tauc {RESTART_FILE} _tauc_tmp.nc\n"
+                f"ncwa -O -a time _tauc_tmp.nc _tauc_tmp.nc\n"
+                f"ncrename -v tauc,tauc_prior _tauc_tmp.nc\n"
+                f"cp {OBS} {inv_data}\n"
+                f"ncks -A -C -v tauc_prior _tauc_tmp.nc {inv_data}\n"
+                f"rm -f _tauc_tmp.nc\n"
+            )
 
         cmd_parts = [
             RUN_CMD, "python", os.path.join(SCRIPTDIR, pyscript),
             "-i", state,
-            "-inv_data", OBS,
+            "-inv_data", inv_data,
             "-o", outfile,
             *params["inv_flag"],
             "-inverse.stress_balance.velocity_scale", str(vscale),
@@ -117,10 +146,10 @@ for sb, params in solvers.items():
             "-inverse.max_iterations", str(max_iter),
             "-inverse.design.param", "exp",
             "-inverse.stress_balance.method", "tikhonov_lmvm",
-            "-inverse.tikhonov.atol", "1e-10",
+            "-inverse.tikhonov.atol", "1e-30",
             "-inverse.tikhonov.penalty_weight", str(penalty),
-            "-inverse.tikhonov.rtol", "1e-10",
-            "-inverse.use_zeta_fixed_mask", "yes",
+            "-inverse.tikhonov.rtol", "1e-30",
+            "-inverse.use_zeta_fixed_mask", "no",
             "-inverse.adjoint.method", "approximate",
             "-inv_grounded_ice_tauc",
             "-tao_frtol", "1e-20",
@@ -134,6 +163,8 @@ for sb, params in solvers.items():
         with open(runscript, "w") as f:
             f.write(HEADER)
             f.write(f"#SBATCH --job-name={jobname}\n\n")
+            if restart_cmds:
+                f.write(restart_cmds)
             f.write(" ".join(cmd_parts) + "\n")
 
         os.chmod(runscript, 0o755)
