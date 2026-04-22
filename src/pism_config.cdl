@@ -1474,6 +1474,12 @@ netcdf pism_config {
     pism_config:input.regrid.vars_option = "regrid_vars";
     pism_config:input.regrid.vars_type = "string";
 
+    pism_config:inverse.adjoint.method = "approximate";
+    pism_config:inverse.adjoint.method_choices = "exact,incomplete,approximate";
+    pism_config:inverse.adjoint.method_doc = "Adjoint method for Blatter inversions. 'approximate': KSPSolve on the symmetrized Newton Jacobian (fast, any preconditioner). 'incomplete': KSPSolve on a separately assembled Picard Jacobian (truly symmetric, any preconditioner). 'exact': KSPSolveTranspose on the Newton Jacobian (requires transpose-compatible preconditioner, e.g. -inv_adj_pc_type jacobi).";
+    pism_config:inverse.adjoint.method_option = "inv_adjoint_method";
+    pism_config:inverse.adjoint.method_type = "keyword";
+
     pism_config:inverse.design.cH1     = 0;
     pism_config:inverse.design.cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
     pism_config:inverse.design.cH1_option = "inv_design_cH1";
@@ -1577,12 +1583,6 @@ netcdf pism_config {
     pism_config:inverse.stress_balance.velocity_scale_doc = "typical size of ice velocities expected during inversion";
     pism_config:inverse.stress_balance.velocity_scale_type = "number";
     pism_config:inverse.stress_balance.velocity_scale_units = "meter / year";
-
-    pism_config:inverse.adjoint.method = "approximate";
-    pism_config:inverse.adjoint.method_choices = "exact,incomplete,approximate";
-    pism_config:inverse.adjoint.method_doc = "Adjoint method for Blatter inversions. 'approximate': KSPSolve on the symmetrized Newton Jacobian (fast, any preconditioner). 'incomplete': KSPSolve on a separately assembled Picard Jacobian (truly symmetric, any preconditioner). 'exact': KSPSolveTranspose on the Newton Jacobian (requires transpose-compatible preconditioner, e.g. -inv_adj_pc_type jacobi).";
-    pism_config:inverse.adjoint.method_option = "inv_adjoint_method";
-    pism_config:inverse.adjoint.method_type = "keyword";
 
     pism_config:inverse.tikhonov.adaptive = "false";
     pism_config:inverse.tikhonov.adaptive_doc = "Adaptive Tikhonov threshold";
