@@ -195,18 +195,27 @@ proceeds in three steps:
 
       J_{\text{State}}^T\, \lambda = P^T\, d\uu_s
 
-   Two modes are available, controlled by ``inverse.use_incomplete_adjoint``:
+   Three methods are available, controlled by ``inverse.adjoint.method``
+   (or ``-inv_adjoint_method``):
 
-   - **Exact adjoint** (``no``): uses ``KSPSolveTranspose`` on the Newton
-     Jacobian. Requires a transpose-compatible preconditioner (SOR does not
-     support transpose; use ``-inv_adj_pc_type jacobi``).
+   - **approximate** (default): ``KSPSolve`` on the SNES Jacobian. The
+     forward Newton Jacobian is symmetrized by the upper-triangle mirror
+     in ``compute_jacobian``, so ``KSPSolve`` is a good approximation to
+     ``KSPSolveTranspose``. Fast — reuses the existing matrix, no
+     reassembly. Use GMRES (``-inv_adj_ksp_type gmres``).
 
-   - **Incomplete adjoint** (``yes``, default): uses ``KSPSolve`` on the
-     (symmetric) Picard Jacobian. Any preconditioner works. See
+   - **incomplete**: ``KSPSolve`` on a separately assembled Picard
+     Jacobian (drops viscosity derivative terms via ``compute_picard_jacobian``).
+     The matrix is truly symmetric, so CG works
+     (``-inv_adj_ksp_type cg -inv_adj_pc_type gamg``). See
      :ref:`sec-inv-blatter-picard`.
 
-   Both modes use a standalone KSP (prefix ``inv_adj_``) rather than the
-   SNES's multigrid KSP, avoiding MG hierarchy issues.
+   - **exact**: ``KSPSolveTranspose`` on the Newton Jacobian. Requires a
+     transpose-compatible preconditioner (``-inv_adj_pc_type jacobi``);
+     SOR and GAMG do not support transpose.
+
+   All three methods use a standalone KSP (prefix ``inv_adj_``) rather than
+   the SNES's multigrid KSP, avoiding MG hierarchy issues.
 
 3. **Design Jacobian transpose**: compute
 
@@ -256,23 +265,45 @@ Newton adjoint. The key advantages:
    standard MG+SOR smoother works.
 3. **Lower cost**: no need to compute `d\eta/d\gamma`.
 
-In PISM, the forward SNES always assembles the upper triangle and mirrors it
-to the lower triangle (line "fill the lower-triangular part" in
-``compute_jacobian``). This means the assembled Jacobian is effectively the
-symmetrized Newton Jacobian — close to the Picard Jacobian. For the adjoint
-solve, using ``KSPSolve`` on this symmetric matrix is equivalent to the
-incomplete adjoint.
+PISM provides three adjoint methods via the configuration parameter
+``inverse.adjoint.method`` (command-line: ``-inv_adjoint_method``):
 
-The configuration flag ``inverse.use_incomplete_adjoint`` (default ``yes``)
-selects between:
+.. list-table::
+   :header-rows: 1
+   :widths: 15 15 15 55
 
-- ``yes``: ``KSPSolve`` on the (symmetric) SNES Jacobian
-- ``no``: ``KSPSolveTranspose`` on the same matrix (transpose-compatible
-  preconditioner required via ``-inv_adj_pc_type jacobi``)
+   * - Method
+     - KSP call
+     - Matrix
+     - Notes
+   * - ``approximate``
+     - ``KSPSolve``
+     - SNES Jacobian (Newton, symmetrized by upper-triangle mirror)
+     - Default. Fastest — reuses existing matrix. Use GMRES + GAMG.
+   * - ``incomplete``
+     - ``KSPSolve``
+     - Separate Picard Jacobian (assembled via ``compute_picard_jacobian``)
+     - Truly symmetric. CG + GAMG works. Requires reassembly each iteration.
+   * - ``exact``
+     - ``KSPSolveTranspose``
+     - SNES Jacobian (Newton)
+     - Mathematically exact. Requires transpose-compatible PC (Jacobi).
+
+The **approximate** method exploits the fact that the forward SNES assembles
+only the upper triangle of the element Jacobian and mirrors it to the lower
+triangle (see ``compute_jacobian``). The resulting matrix is symmetric
+regardless of whether the Newton correction terms are present, so
+``KSPSolve`` gives the same result as ``KSPSolveTranspose``.
+
+The **incomplete** method assembles a separate Picard Jacobian by temporarily
+setting ``m_use_picard = true`` and calling ``compute_picard_jacobian``. This
+drops the `\eta_u F_u` terms in ``jacobian_f``, producing an element matrix
+that is symmetric *before* the mirror step. The matrix is truly SPD, so CG
+converges and GAMG works as a preconditioner.
 
 The ISMIP-HOM twin experiment (``examples/inverse/ismiphom_twin.py``)
-confirms that both methods produce identical convergence histories and
-recovered `\tau_c` fields.
+confirms that all three methods produce identical convergence histories and
+recovered `\tau_c` fields, consistent with :cite:`Morlighem2013`.
 
 .. _sec-inv-blatter-tikhonov:
 
@@ -341,12 +372,12 @@ The Blatter forward solve is configured via PETSc command-line options with the
 
 .. note::
 
-   With the default incomplete adjoint (``inverse.use_incomplete_adjoint yes``),
-   the forward SNES can use any MG smoother (including SOR). The adjoint
-   solve uses a separate KSP with its own preconditioner (``inv_adj_`` prefix).
-   Only when using the exact adjoint (``inverse.use_incomplete_adjoint no``)
-   does the adjoint KSP require a transpose-compatible preconditioner
-   (e.g., ``-inv_adj_pc_type jacobi``).
+   The forward SNES can always use any MG smoother (including SOR). The adjoint
+   solve uses a separate KSP (``inv_adj_`` prefix). Recommended adjoint settings:
+
+   - ``approximate`` (default): ``-inv_adj_ksp_type gmres -inv_adj_pc_type gamg``
+   - ``incomplete``: ``-inv_adj_ksp_type cg -inv_adj_pc_type gamg``
+   - ``exact``: ``-inv_adj_ksp_type gmres -inv_adj_pc_type jacobi``
 
 Element assembly
 ^^^^^^^^^^^^^^^^

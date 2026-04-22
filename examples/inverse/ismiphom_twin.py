@@ -199,8 +199,22 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
 
     PISM.verbPrintf(2, com, "\n=== Inversion (%s adjoint) ===\n" % adjoint_method)
 
-    # Set the adjoint mode
+    # Set the adjoint mode and matching KSP options
     config.set_string("inverse.adjoint.method", adjoint_method)
+
+    opts = PISM.PETSc.Options()
+    if adjoint_method == "incomplete":
+        # Truly symmetric Picard Jacobian: CG + GAMG works
+        opts.setValue("-inv_adj_ksp_type", "cg")
+        opts.setValue("-inv_adj_pc_type", "gamg")
+    elif adjoint_method == "approximate":
+        # Symmetrized Newton Jacobian: use GMRES (not strictly SPD)
+        opts.setValue("-inv_adj_ksp_type", "gmres")
+        opts.setValue("-inv_adj_pc_type", "gamg")
+    else:  # exact
+        # KSPSolveTranspose: needs transpose-compatible PC
+        opts.setValue("-inv_adj_ksp_type", "gmres")
+        opts.setValue("-inv_adj_pc_type", "jacobi")
 
     # Design variable parameterization
     param_name = config.get_string("inverse.design.param")
@@ -364,7 +378,7 @@ def main():
 
     PISM.set_abort_on_sigint(True)
 
-    PISM.verbPrintf(1, com, "ISMIP-HOM twin experiment: incomplete vs exact adjoint\n")
+    PISM.verbPrintf(1, com, "ISMIP-HOM twin experiment: approximate vs incomplete vs exact adjoint\n")
 
     set_constants(config)
 
@@ -420,17 +434,16 @@ def main():
         PISM.verbPrintf(1, com, "\n--- Forward solve (generating observations) ---\n")
         u_obs = forward_solve(grid, yield_stress, config)
 
-        # Step 2: Inversion with incomplete adjoint (Picard, KSPSolve)
-        result_approx, tauc_approx = run_inversion(
-            grid, geometry, enthalpy, yield_stress,
-            u_obs, test_name, adjoint_method="approximate", config=config)
-        all_results.append(result_approx)
+        # Step 2: Run inversion with each adjoint method
+        methods = ["approximate", "incomplete", "exact"]
+        tauc_results = {}
 
-        # Step 3: Inversion with exact adjoint (Newton, KSPSolveTranspose)
-        result_exact, tauc_exact = run_inversion(
-            grid, geometry, enthalpy, yield_stress,
-            u_obs, test_name, adjoint_method="exact", config=config)
-        all_results.append(result_exact)
+        for method in methods:
+            result, tauc_inv = run_inversion(
+                grid, geometry, enthalpy, yield_stress,
+                u_obs, test_name, adjoint_method=method, config=config)
+            all_results.append(result)
+            tauc_results[method] = tauc_inv
 
         # Write NetCDF output
         output_file = "ismiphom_twin_%s_L%03d.nc" % (test_name, int(L / 1e3))
@@ -438,10 +451,12 @@ def main():
         output = PISM.util.prepare_output(output_file)
 
         yield_stress.metadata().set_name("tauc_true")
-        tauc_approx.metadata().set_name("tauc_approximate")
-        tauc_exact.metadata().set_name("tauc_exact")
+        write_vars = [yield_stress, u_obs]
+        for method, tauc_inv in tauc_results.items():
+            tauc_inv.metadata().set_name("tauc_%s" % method)
+            write_vars.append(tauc_inv)
 
-        for arr in [yield_stress, u_obs, tauc_approx, tauc_exact]:
+        for arr in write_vars:
             for k in range(arr.ndof()):
                 output.define_variable(arr.metadata(k))
             arr.write(output)
