@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024 PISM Authors
+// Copyright (C) 2012--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,12 @@
 // have a parallel NetCDF library.
 extern "C" {
 #include <netcdf.h>
+#include <netcdf_meta.h>
+
+#if (NC_HAS_PARALLEL4 != 1)
+#error "Selected NetCDF library does not support parallel I/O"
+#endif
+
 #include <netcdf_par.h>
 }
 

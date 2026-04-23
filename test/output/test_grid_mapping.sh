@@ -19,9 +19,9 @@ pism \
   -Mz 3 \
   -atmosphere uniform \
   -bootstrap \
-  -extra_file ex.nc \
-  -extra_times 100 \
-  -extra_vars thk,lon,lat,lon_bnds,lat_bnds \
+  -spatial_file ex.nc \
+  -spatial_times 100 \
+  -spatial_vars thk,lon,lat,lon_bnds,lat_bnds \
   -i ${antarctica} \
   -o_size none \
   -surface simple \

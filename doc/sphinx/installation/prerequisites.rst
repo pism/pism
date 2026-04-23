@@ -11,12 +11,12 @@ This table lists required PISM's build dependencies alphabetically.
    :header: Required Library, Comment
 
    pkg-config_, any recent version
-   CMake_,       version 3.16 or newer
+   CMake_,       version 3.20 or newer
    Make_,        any version
    FFTW_,        version 3.1 or newer
    GSL_,         version 1.15 or newer
    MPI_,         any recent version
-   NetCDF_ [#]_, version 4.4 or newer
+   NetCDF_ [#]_, version 4.7 or newer
    PETSc_ [#]_,  version |petsc-min-version| or newer
    UDUNITS_,     any recent version
 
@@ -42,7 +42,7 @@ recommended, but not strictly required:
 
    PROJ_,  version 6.0 or newer (used to compute longitude-latitude grid coordinates and cell bounds)
    PnetCDF_, Can be used for faster parallel I/O
-   YAC_, version 3.4 or newer (used to interpolate inputs read from NetCDF files; this requires PROJ_ as well)
+   YAC_, version 3.14 or newer (used to interpolate inputs read from NetCDF files; this requires PROJ_ as well)
 
 Python_ is needed for the PETSc installation process; a number of PISM's pre- and
 post-processing scripts also use Python (version 3.x), while Git_ is usually needed to

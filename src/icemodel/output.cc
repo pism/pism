@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -141,9 +141,9 @@ void IceModel::init_final_output() {
 
   m_output_file_contents = pism::combine(common_metadata(), state_variables());
   m_output_file_contents =
-      pism::combine(m_output_file_contents, diagnostic_state_variables(m_output_vars));
+      pism::combine(m_output_file_contents, state_variables_diagnostics(m_output_vars));
   m_output_file_contents =
-      pism::combine(m_output_file_contents, diagnostic_state_variables(m_extra_vars));
+      pism::combine(m_output_file_contents, state_variables_diagnostics(m_spatial_vars));
   m_output_file_contents =
       pism::combine(m_output_file_contents, diagnostic_variables(m_output_vars));
 }
@@ -168,9 +168,10 @@ void IceModel::write_final_output() {
     }
 
     {
-      write_config(*m_config, "pism_config", file);
+      io::write_config(*m_config, "pism_config", file);
       file.append_time(m_time->current());
       write_state(file);
+      write_state_diagnostics(file, m_output_vars);
       write_diagnostics(file, m_output_vars);
       write_run_stats(file);
     }
@@ -209,6 +210,10 @@ void IceModel::define_variables(const OutputFile &file,
                        m_config->get_flag("output.use_MKS"));
 }
 
+/*!
+ * Return the set of state variables from IceModel and all its sub-models. Does not
+ * include state variables from requested diagnostics.
+ */
 std::set<VariableMetadata> IceModel::state_variables() const {
   std::set<VariableMetadata> result{};
   {
@@ -228,6 +233,10 @@ std::set<VariableMetadata> IceModel::state_variables() const {
   return result;
 }
 
+/*!
+ * Write state variables of IceModel and all its sub-models. Does not include state
+ * variables corresponding to requested diagnostic variables.
+ */
 void IceModel::write_state(const OutputFile &file) const {
   for (auto *v : m_model_state) {
     v->write(file);
@@ -236,10 +245,6 @@ void IceModel::write_state(const OutputFile &file) const {
   for (const auto& m : m_submodels) {
     m.second->write_state(file);
   }
-
-  for (const auto& d : m_diagnostics) {
-    d.second->write_state(file);
-  }
 }
 
 std::string IceModel::save_state_on_error(const std::string &suffix,
@@ -247,29 +252,30 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
 
   auto filename = filename_add_suffix(m_output_filename, suffix, "");
 
-  auto variable_names = output_variables("small");
-  for (const auto &v : additional_variables) {
-    variable_names.insert(v);
-  }
-
   std::shared_ptr<OutputWriter> writer =
       std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
-  writer->initialize({}, true);
+
+  auto variables = pism::combine(m_output_file_contents, diagnostic_variables(additional_variables));
+
+  std::set<std::string> variable_names;
+  for (const auto &v : variables) {
+    variable_names.insert(v.get_name());
+  }
+
+  writer->initialize(variables);
 
   OutputFile file(writer, filename);
 
   {
-    auto variables = pism::combine(common_metadata(), state_variables());
-    variables = pism::combine(variables, diagnostic_variables(variable_names));
-
     define_time(file);
     define_variables(file, variables);
   }
 
   {
-    write_config(*m_config, "pism_config", file);
+    io::write_config(*m_config, "pism_config", file);
     file.append_time(m_time->current());
     write_state(file);
+    write_state_diagnostics(file, variable_names);
     write_diagnostics(file, variable_names);
     write_run_stats(file);
   }

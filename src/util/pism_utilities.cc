@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -63,7 +63,7 @@ std::string string_strip(const std::string &input) {
   tmp.erase(0, tmp.find_first_not_of(" \t"));
 
   // strip trailing spaces
-  tmp.substr(tmp.find_last_not_of(" \t"));
+  tmp.erase(tmp.find_last_not_of(" \t") + 1);
 
   return tmp;
 }
@@ -218,6 +218,12 @@ double GlobalMin(MPI_Comm comm, double local) {
 
 double GlobalMax(MPI_Comm comm, double local) {
   double result;
+  GlobalMax(comm, &local, &result, 1);
+  return result;
+}
+
+int GlobalMax(MPI_Comm comm, int local) {
+  int result;
   GlobalMax(comm, &local, &result, 1);
   return result;
 }

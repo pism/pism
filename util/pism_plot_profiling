@@ -48,7 +48,7 @@ small_events["stress_balance"] = ["stress_balance.shallow", "stress_balance.modi
                                   "stress_balance.strain_heat", "stress_balance.vertical_velocity"]
 small_events["stress_balance.modifier"] = ["sia.bed_smoother",
                                            "sia.gradient", "sia.flux", "sia.3d_velocity"]
-small_events["io"] = ["io.backup", "io.extra_file", "io.model_state"]
+small_events["io"] = ["io.backup", "io.spatial_file", "io.model_state"]
 
 better_names = {"stress_balance.shallow": "SSA",
                 "stress_balance.modifier": "SIA",

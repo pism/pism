@@ -34,7 +34,7 @@ public:
 
   void update(const array::CellType &cell_type, const array::Vector1 &ice_velocity);
 protected:
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 
 protected:
   double m_K;

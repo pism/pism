@@ -18,7 +18,6 @@
 ``ncview``, optional; a nice tool for examining NetCDF datasets
 ``python3-dev``, optional; used by PISM's Python bindings
 ``python3-netcdf4``, optional; used in most post-processing scripts
-``python3-nose``, optional; used by PISM's regression tests
 ``python3-numpy``, optional; used in some pre- and post-processing scripts
 ``python3-pyproj``, optional; used in some pre-processing scripts
 ``python3-scipy``, optional; used in some pre- and post-processing scripts

@@ -104,7 +104,7 @@ void BedDef::write_state_impl(const OutputFile &output) const {
   output.write_timeseries(m_time_name, { t_start }, { 1 }, { m_t_last });
 }
 
-DiagnosticList BedDef::diagnostics_impl() const {
+DiagnosticList BedDef::spatial_diagnostics_impl() const {
   DiagnosticList result;
   result = { { "dbdt", Diagnostic::wrap(m_uplift) },
              { "topg", Diagnostic::wrap(m_topg) },

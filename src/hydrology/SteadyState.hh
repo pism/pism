@@ -49,7 +49,7 @@ protected:
 
   void update_impl(double t, double dt, const Inputs& inputs);
 
-  std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  std::map<std::string, Diagnostic::Ptr> spatial_diagnostics_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -390,7 +390,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
                                                                array::Vector &du,
                                                                Vec dzeta) {
-  auto da2 = m_grid->get_dm(1, m_config->get_number("grid.max_stencil_width"));
+  auto da2 = m_grid->get_dm(1, m_grid->max_stencil_width());
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }

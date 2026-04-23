@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -51,7 +51,7 @@ struct Array::Impl {
 
     name = "uninitialized variable";
 
-    zlevels = {0.0};
+    zlevels = {};
 
     state_counter = 0;
     interpolation_type = LINEAR;

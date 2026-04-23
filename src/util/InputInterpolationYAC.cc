@@ -1,4 +1,4 @@
-/* Copyright (C) 2024, 2025 PISM Authors
+/* Copyright (C) 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,21 +19,22 @@
 
 #include <cstddef>
 #include <memory>
+#include <mpi.h>
 #include <vector>
 #include <cmath>
 
-#include "InputInterpolation.hh"
-#include "Interpolation1D.hh"
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/projection.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/array/Scalar.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/InputInterpolation.hh"
 #include "pism/util/InputInterpolationYAC.hh"
-#include "pism/util/pism_utilities.hh" // GlobalMin()
+#include "pism/util/Logger.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/pism_utilities.hh" // GlobalMin(), clip()
+#include "pism/util/projection.hh"
 
 #if (Pism_USE_PROJ == 0)
 #error "This code requires PROJ"
@@ -44,7 +45,7 @@
 #include "pism/util/Proj.hh"
 #include "pism/util/LonLatGrid.hh"
 
-#if (Pism_USE_YAC_INTERPOLATION == 0)
+#if (Pism_USE_YAC == 0)
 #error "This code requires YAC"
 #endif
 
@@ -134,11 +135,6 @@ int InputInterpolationYAC::define_field(int component_id, const std::vector<doub
   return field_id;
 }
 
-static void pism_yac_error_handler(MPI_Comm /* unused */, const char *msg, const char *source,
-                                   int line) {
-  throw pism::RuntimeError::formatted(pism::ErrorLocation(source, line), "YAC error: %s", msg);
-}
-
 /*!
  * Extract the "local" (corresponding to the current sub-domain) grid subset.
  */
@@ -205,7 +201,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                              const pism::File &input_file,
                                              const std::string &variable_name,
                                              InterpolationType type)
-    : m_instance_id(0), m_source_field_id(0), m_target_field_id(0) {
+    : m_instance_id(0), m_source_field_id(0), m_target_field_id(0), m_split_comm(MPI_COMM_NULL) {
   auto ctx = target_grid.ctx();
 
   std::string target_proj_params = target_grid.get_mapping_info()["proj_params"];
@@ -214,17 +210,29 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "internal grid projection is not known");
   }
 
-  yac_set_abort_handler((yac_abort_func)pism_yac_error_handler);
-
   try {
+    // Initialize a YAC instance:
+    {
+      yac_cinit_comm_instance(target_grid.com, &m_instance_id);
+      yac_cdef_calendar(YAC_YEAR_OF_365_DAYS);
+      // Note: zero-padding of months and days *is* required.
+      yac_cdef_datetime_instance(m_instance_id, "-1-01-01", "+1-01-01");
+    }
+
     auto log = ctx->log();
 
+    // Note: `input_file` is created on the communicator corresponding to target_grid, so
+    // all ranks of target_grid.com have to call functions that use `input_file`:
     auto source_grid_name = grid_name(input_file, variable_name, ctx->unit_system(),
                                       type == PIECEWISE_CONSTANT);
+    auto target_grid_name = "internal for " + source_grid_name;
+    double target_grid_spacing = std::min(target_grid.dx(), target_grid.dy());
 
     log->message(
         2, "* Initializing 2D interpolation on the sphere from '%s' to the internal grid...\n",
         source_grid_name.c_str());
+
+    log->message(2, " Internal grid spacing: %3.3f m\n", target_grid_spacing);
 
     grid::InputGridInfo source_grid_info(input_file, variable_name, ctx->unit_system(),
                                          pism::grid::CELL_CENTER);
@@ -233,30 +241,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
     std::string grid_mapping_name = source_grid_mapping["grid_mapping_name"];
 
-    log->message(2, "Input grid:\n");
-    if (not grid_mapping_name.empty()) {
-      log->message(2, " Grid mapping: %s\n", grid_mapping_name.c_str());
-    }
-
     std::string source_proj_params = source_grid_mapping["proj_params"];
-    if (not source_proj_params.empty()) {
-      log->message(2, " PROJ string: '%s'\n", source_proj_params.c_str());
-    }
-    source_grid_info.report(*log, 2, ctx->unit_system());
-
-    grid::Parameters P(*ctx->config(), source_grid_info.x.size(), source_grid_info.y.size(),
-                       source_grid_info.Lx, source_grid_info.Ly);
-
-    P.x0 = source_grid_info.x0;
-    P.y0 = source_grid_info.y0;
-    P.registration = grid::CELL_CENTER;
-    P.variable_name = variable_name;
-    P.vertical_grid_from_options(*ctx->config());
-    P.ownership_ranges_from_options(*ctx->config(), ctx->size());
-
-    auto source_grid = std::make_shared<Grid>(ctx, P);
-
-    source_grid->set_mapping_info(source_grid_mapping);
 
     if (source_proj_params.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -264,34 +249,91 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
                                     source_grid_name.c_str());
     }
 
-    m_buffer = std::make_shared<pism::array::Scalar>(source_grid, variable_name);
+    // Number of source grid rows per MPI process.
+    //
+    // FIXME: come up with a better way of choosing this number.
+    const int rows_per_proc = 100;
 
-    std::string target_grid_name = "internal for " + source_grid_name;
+    // Many data-sets are stored in the (y,x) order, i.e. the number of grid points in the
+    // Y direction is the number of rows. This does not really matter, though -- we just
+    // need a way to split the source grid into reasonably-sized chunks. We could split it
+    // in *both* X and Y directions, but I don't think that would be any better.
+    int nrows = (int)source_grid_info.y.size();
+
+    // Number of MPI processes for the source grid (make sure we use at least one, but no
+    // more than ctx->size()):
+    int Ny = pism::clip(nrows / rows_per_proc, 1, ctx->size());
+
+    bool io_subcomm = ctx->rank() < Ny;
+    MPI_Comm_split(ctx->com(), io_subcomm ? 1 : 0, 0, &m_split_comm);
+
+    // define source and target communicators:
+    int target_comp_id = 0;
+    int source_comp_id = 0;
+    if (io_subcomm) {
+      const int n_comps = 2;
+      const char *comp_names[n_comps] = {"source_component", "target_component"};
+      int comp_ids[n_comps] = {0, 0};
+      yac_cdef_comps_instance(m_instance_id, comp_names, n_comps, comp_ids);
+      source_comp_id = comp_ids[0];
+      target_comp_id = comp_ids[1];
+    } else {
+      yac_cdef_comp_instance(m_instance_id, "target_component", &target_comp_id);
+    }
+
+    // define the target field (performed by all ranks in target_grid.com):
     {
-      // Initialize YAC:
-      {
-        yac_cinit_instance(&m_instance_id);
-        yac_cdef_calendar(YAC_YEAR_OF_365_DAYS);
-        // Note: zero-padding of months and days *is* required.
-        yac_cdef_datetime_instance(m_instance_id, "-1-01-01", "+1-01-01");
+      auto x = grid_subset(target_grid.xs(), target_grid.xm(), target_grid.x());
+      auto y = grid_subset(target_grid.ys(), target_grid.ym(), target_grid.y());
+
+      m_target_field_id = define_field(target_comp_id, x, y, target_proj_params, target_grid_name);
+    }
+
+    // define the source field on the io_subcomm:
+    if (io_subcomm) {
+      // create a restriction of this context to a sub-communicator:
+      auto io_ctx = ctx->restrict_to_subcomm(m_split_comm, "pism_input_reader");
+
+      auto io_log = io_ctx->log();
+
+      io_log->message(2, "Input grid:\n");
+      if (not grid_mapping_name.empty()) {
+        io_log->message(2, " Grid mapping: %s\n", grid_mapping_name.c_str());
       }
 
-      // Define components: this has to be done using *one* call
-      // (cannot call yac_cdef_comp?_instance() more than once)
-      const int n_comps               = 2;
-      const char *comp_names[n_comps] = { "source_component", "target_component" };
-      int comp_ids[n_comps]           = { 0, 0 };
-      yac_cdef_comps_instance(m_instance_id, comp_names, n_comps, comp_ids);
+      io_log->message(2, " PROJ string: '%s'\n", source_proj_params.c_str());
 
-      double source_grid_spacing = 0.0;
-      log->message(2, "Defining the source grid (%s)...\n", source_grid_name.c_str());
+      source_grid_info.report(*io_log, 2, io_ctx->unit_system());
+
+      int Mx = (int)source_grid_info.x.size();
+      int My = (int)source_grid_info.y.size();
+      grid::Parameters P(*io_ctx->config(), Mx, My, source_grid_info.Lx, source_grid_info.Ly);
+
       {
-        auto x = grid_subset(source_grid->xs(), source_grid->xm(), source_grid_info.x);
-        auto y = grid_subset(source_grid->ys(), source_grid->ym(), source_grid_info.y);
+        P.x0                = source_grid_info.x0;
+        P.y0                = source_grid_info.y0;
+        P.registration      = grid::CELL_CENTER;
+        P.variable_name     = variable_name;
+        P.z                 = { 0.0, 1.0 }; // dummy vertical grid (unused)
+        P.max_stencil_width = 0;            // the source grid does not need to support stencils
 
-        m_source_field_id = define_field(
-            comp_ids[0], x, y, source_proj_params, source_grid_name);
+        // All sub-domains of the source grid are Mx grid points wide in the X direction,
+        // i.e. all sub-domains are "strips" of width Mx:
+        P.procs_x = { P.Mx };
 
+        // compute widths of sub-domains in the Y direction
+        P.procs_y = grid::ownership_ranges(P.My, Ny);
+      }
+
+      auto source_grid = std::make_shared<Grid>(io_ctx, P);
+
+      source_grid->set_mapping_info(source_grid_mapping);
+
+      auto x = grid_subset(source_grid->xs(), source_grid->xm(), source_grid_info.x);
+      auto y = grid_subset(source_grid->ys(), source_grid->ym(), source_grid_info.y);
+
+      double source_grid_spacing = 0;
+      {
         double dx = 0.0;
         double dy = 0.0;
         if (source_grid_info.longitude_latitude) {
@@ -301,24 +343,20 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
           dx = std::abs(x[1] - x[0]);
           dy = std::abs(y[1] - y[0]);
         }
-        source_grid_spacing = GlobalMin(ctx->com(), std::min(dx, dy));
-        log->message(2, " Source grid spacing: ~%3.3f m\n", source_grid_spacing);
+        source_grid_spacing = GlobalMin(source_grid->com, std::min(dx, dy));
       }
 
-      double target_grid_spacing = 0.0;
-      log->message(2, "Defining the target grid (%s)...\n", target_grid_name.c_str());
+      m_buffer = std::make_shared<pism::array::Scalar>(source_grid, variable_name);
+
+      io_log->message(2, "Defining the input grid (%s)...\n", source_grid_name.c_str());
+      io_log->message(2, " Using %d MPI process%s\n", Ny, Ny > 1 ? "es" : "");
+      io_log->message(2, " Input grid spacing: ~%3.3f m\n", source_grid_spacing);
       {
-        auto x = grid_subset(target_grid.xs(), target_grid.xm(), target_grid.x());
-        auto y = grid_subset(target_grid.ys(), target_grid.ym(), target_grid.y());
-
-        m_target_field_id = define_field(
-            comp_ids[1], x, y, target_proj_params, target_grid_name);
-
-        target_grid_spacing = GlobalMin(ctx->com(), std::min(target_grid.dx(), target_grid.dy()));
-        log->message(2, " Target grid spacing: %3.3f m\n", target_grid_spacing);
+        m_source_field_id =
+            define_field(source_comp_id, x, y, source_proj_params, source_grid_name);
       }
 
-      // Define the interpolation stack:
+      // Define the interpolation stack and the "couple":
       {
         std::string method;
         int interp_stack_id = 0;
@@ -363,7 +401,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
           }
         }
 
-        log->message(2, "Interpolation method: %s\n", method.c_str());
+        io_log->message(2, "Interpolation method: %s\n", method.c_str());
 
         // Define the coupling between fields:
         const int src_lag = 0;
@@ -383,8 +421,12 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
         // free the interpolation stack config now that we defined the coupling
         yac_cfree_interp_stack_config(interp_stack_id);
-      }
+      } // end of the block defining the interpolation stack and the "couple"
 
+    } // end of "if (io_subcomm) {...}"
+
+    // end definitions:
+    {
       double start = MPI_Wtime();
       yac_cenddef_instance(m_instance_id);
       double end = MPI_Wtime();
@@ -399,27 +441,33 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 }
 
 InputInterpolationYAC::~InputInterpolationYAC() {
+  MPI_Comm_free(&m_split_comm);
   yac_cfinalize_instance(m_instance_id);
 }
 
-double InputInterpolationYAC::interpolate(const pism::array::Scalar &source,
+double InputInterpolationYAC::interpolate(const pism::array::Scalar *source,
                                           pism::petsc::Vec &target) const {
+  double start  = MPI_Wtime();
+  {
+    int collection_size = 1;
+    if (source != nullptr) {
+      petsc::VecArray input_array(source->vec());
+      double *send_field_    = input_array.get();
+      double **send_field[1] = { &send_field_ };
 
-  pism::petsc::VecArray input_array(source.vec());
-  pism::petsc::VecArray output_array(target);
+      int ierror    = 0;
+      int send_info = 0;
 
-  double *send_field_    = input_array.get();
-  double **send_field[1] = { &send_field_ };
+      yac_cput(m_source_field_id, collection_size, send_field, &send_info, &ierror);
+    }
 
-  double *recv_field[1] = { output_array.get() };
+    pism::petsc::VecArray output_array(target);
+    double *recv_field[1] = { output_array.get() };
 
-  int ierror          = 0;
-  int send_info       = 0;
-  int recv_info       = 0;
-  int collection_size = 1;
-  double start        = MPI_Wtime();
-  yac_cexchange(m_source_field_id, m_target_field_id, collection_size, send_field, recv_field,
-                &send_info, &recv_info, &ierror);
+    int recv_info = 0;
+    int ierror    = 0;
+    yac_cget(m_target_field_id, collection_size, recv_field, &recv_info, &ierror);
+  }
   double end = MPI_Wtime();
 
   return end - start;
@@ -442,11 +490,17 @@ double InputInterpolationYAC::regrid_impl(const VariableMetadata &metadata,
                                           const Grid & /* target_grid (unused) */,
                                           petsc::Vec &output) const {
 
-  // set metadata to help the following call find the variable, convert units, etc
-  m_buffer->metadata(0) = metadata;
-  m_buffer->read(file, record_index);
+  if (m_buffer != nullptr) {
+    // set metadata to help the following call find the variable, convert units, etc
+    m_buffer->metadata(0) = metadata;
 
-  double time_spent = interpolate(*m_buffer, output);
+    // open the file using the sub-communicator used for reading, instead of the
+    // communicator corresponding to the target grid (in the `file` argument):
+    pism::File input_file(m_split_comm, file.name(), io::PISM_GUESS, io::PISM_READONLY);
+    m_buffer->read(input_file, record_index);
+  }
+
+  double time_spent = interpolate(m_buffer.get(), output);
 
   return time_spent;
 }

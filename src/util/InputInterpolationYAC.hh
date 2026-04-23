@@ -1,4 +1,4 @@
-/* Copyright (C) 2024, 2025 PISM Authors
+/* Copyright (C) 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,7 +57,7 @@ private:
   double regrid_impl(const VariableMetadata &metadata, const pism::File &file,
                      int record_index, const Grid &target_grid, petsc::Vec &output) const;
 
-  double interpolate(const array::Scalar &source, petsc::Vec &target) const;
+  double interpolate(const array::Scalar *source, petsc::Vec &target) const;
 
   static int define_field(int component_id, const std::vector<double> &x,
                           const std::vector<double> &y, const std::string &proj_string,
@@ -69,6 +69,7 @@ private:
   int m_source_field_id;
   int m_target_field_id;
 
+  MPI_Comm m_split_comm;
   std::shared_ptr<array::Scalar> m_buffer;
 };
 

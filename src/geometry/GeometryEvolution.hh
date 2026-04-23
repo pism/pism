@@ -73,7 +73,7 @@ public:
   // "regional" setup
   virtual void set_no_model_mask(const array::Scalar &mask);
 protected:
-  std::map<std::string,Diagnostic::Ptr> diagnostics_impl() const;
+  std::map<std::string,Diagnostic::Ptr> spatial_diagnostics_impl() const;
 
   virtual void init_impl(const InputOptions &opts);
 

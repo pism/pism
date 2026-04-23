@@ -15,8 +15,11 @@ Used as a regression test for PISM.LingleClark.
 
 import PISM
 from PISM.util import convert
+from PISM.testing import filename as tmp_name
+
 import numpy as np
 import os
+import unittest
 
 ctx = PISM.Context()
 
@@ -50,7 +53,7 @@ def run(dt, restart=False):
     "Run the model for 1 time step, stop, save model state, restart, do 1 more step."
 
     grid = PISM.Grid.Shallow(ctx.ctx, Lx, Ly, 0, 0, N, N,
-                                PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+                             PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     model = PISM.LingleClark(grid)
 
@@ -67,7 +70,10 @@ def run(dt, restart=False):
     bed_uplift.set(0.0)
 
     # initialize the model
-    model.bootstrap(geometry.bed_elevation, bed_uplift, geometry.ice_thickness, geometry.sea_level_elevation)
+    model.bootstrap(geometry.bed_elevation,
+                    bed_uplift,
+                    geometry.ice_thickness,
+                    geometry.sea_level_elevation)
 
     # add the disc load
     add_disc_load(geometry.ice_thickness, disc_radius, disc_thickness)
@@ -77,7 +83,7 @@ def run(dt, restart=False):
 
     if restart:
         # save the model state
-        filename = "lingle_clark_model_state.nc"
+        filename = tmp_name("lingle_clark_model_state")
         try:
             f = PISM.util.prepare_output(filename)
             for v in model.state():
@@ -115,8 +121,8 @@ def compare(model1, model2):
     compare_vec(model1.viscous_displacement(), model2.viscous_displacement())
     compare_vec(model1.relief(), model2.relief())
 
-
-def lingle_clark_restart_test():
-    "Compare straight and re-started runs."
-    compare(run(dt),
-            run(dt, restart=True))
+class LC(unittest.TestCase):
+    def test_lingle_clark_restart(self):
+        "Compare straight and re-started runs."
+        compare(run(dt),
+                run(dt, restart=True))

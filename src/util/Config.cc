@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -161,8 +161,7 @@ Config::Doubles Config::all_doubles() const {
   return this->all_doubles_impl();
 }
 
-bool Config::is_valid_number(const std::string &name) const {
-  auto value = get_number(name, FORGET_THIS_USE);
+bool Config::is_valid_number(const std::string &name, double value) const {
   auto min = valid_min(name);
 
   if (std::get<0>(min)) {
@@ -183,6 +182,10 @@ bool Config::is_valid_number(const std::string &name) const {
   }
 
   return true;
+}
+
+bool Config::is_valid_number(const std::string &name) const {
+  return is_valid_number(name, get_number(name, FORGET_THIS_USE));
 }
 
 double Config::get_number(const std::string &name, UseFlag flag) const {
@@ -584,6 +587,10 @@ void set_number_from_option(Config &config, const std::string &option,
   options::Real opt(config.unit_system(), "-" + option, config.doc(parameter), config.units(parameter),
                     config.get_number(parameter, Config::FORGET_THIS_USE));
   if (opt.is_set()) {
+    if (not config.is_valid_number(parameter, opt.value())) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' value %f (set using -%s) is not valid",
+                                    parameter.c_str(), opt.value(), option.c_str());
+    }
     config.set_number(parameter, opt, CONFIG_USER);
   }
 }
@@ -593,6 +600,11 @@ void set_integer_from_option(Config &config, const std::string &option,
   options::Integer opt("-" + option, config.doc(parameter),
                        (int)config.get_number(parameter, Config::FORGET_THIS_USE));
   if (opt.is_set()) {
+    if (not config.is_valid_number(parameter, opt.value())) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "'%s' value %d (set using -%s) is not valid", parameter.c_str(),
+                                    opt.value(), option.c_str());
+    }
     config.set_number(parameter, opt, CONFIG_USER);
   }
 }
@@ -670,6 +682,27 @@ void set_parameter_from_options(Config &config, const std::string &name) {
 }
 
 void set_config_from_options(Config &config) {
+  // Check for deprecated command-line options
+  {
+    std::map<std::string, std::string> options = {
+      {"-extra_append", "-spatial_append"},
+      {"-extra_file", "-spatial_file"},
+      {"-extra_split", "-spatial_split"},
+      {"-extra_stop_missing", "-spatial_stop_missing"},
+      {"-extra_times", "-spatial_times"},
+      {"-extra_force_output_times", "-spatial_force_output_times"},
+      {"-extra_vars", "-spatial_vars"},
+      {"-ts_append", "-scalar_append"},
+      {"-ts_file", "-scalar_file"},
+      {"-ts_times", "-scalar_times"},
+      {"-ts_vars", "-scalar_vars"},
+    };
+
+    for (const auto &o : options) {
+      options::deprecated(o.first, o.second);
+    }
+  }
+
   for (const auto &d : config.all_doubles()) {
     set_parameter_from_options(config, d.first);
   }
@@ -775,6 +808,7 @@ void set_config_from_options(Config &config) {
       config.set_number("surface.elevation_dependent.M_limit_max", meter_per_second(L[1]));
     }
   }
+
 }
 
 //! Create a configuration database using command-line options.
@@ -913,27 +947,6 @@ std::string Config::json() const {
 }
 
 int Config::max_length = 32768;
-
-void write_config(const Config &config, const std::string &variable_name, const OutputFile &file) {
-
-  std::string data = config.json();
-
-  if ((int)data.size() + 1 > Config::max_length) {
-    throw RuntimeError::formatted(
-        PISM_ERROR_LOCATION,
-        "unable to save configuration parameters to a file: JSON string length exceeds %d",
-        Config::max_length);
-  }
-
-  std::vector<unsigned int> start = { 0 };
-  std::vector<unsigned int> count = { (unsigned int)data.size() + 1 };
-
-  if (not config.get_string("output.experiment_id").empty()) {
-    start.insert(start.cbegin(), 0);
-    count.insert(count.cbegin(), 1);
-  }
-  file.write_text(variable_name, start, count, data);
-}
 
 VariableMetadata config_metadata(const Config &config) {
   VariableMetadata result("pism_config", { { "cfg", Config::max_length } }, config.unit_system());

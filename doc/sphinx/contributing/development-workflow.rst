@@ -62,7 +62,7 @@ Configure PISM with debugging symbols enabled.
 
 .. code-block:: bash
 
-   export PETSC_DIR=~/local/petsc/petsc-3.11.3/
+   export PETSC_DIR=~/local/petsc/petsc-3.24.3/
    export PETSC_ARCH=opt
 
    CC=mpicc CXX=mpicxx cmake \

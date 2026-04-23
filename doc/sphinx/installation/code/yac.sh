@@ -19,7 +19,7 @@ export CFLAGS="-O3 -g -march=native"
 
 prefix=${prefix:-$HOME/local/yac}
 
-yaxt_version=0.11.4
+yaxt_version=0.11.5.1
 git clone -b release-${yaxt_version} \
     https://gitlab.dkrz.de/dkrz-sw/yaxt.git
 
@@ -34,7 +34,7 @@ make all && make install
 
 cd -
 
-yac_version=3.8.0
+yac_version=3.15.0
 git clone -b release-${yac_version} \
     https://gitlab.dkrz.de/dkrz-sw/yac.git
 
@@ -49,6 +49,7 @@ test -f ./configure || ./autogen.sh
             --disable-tools \
             --disable-deprecated \
             --disable-fortran-bindings \
+            --enable-python-bindings \
             --with-pic
 
 make all && make install

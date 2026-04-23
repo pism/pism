@@ -43,7 +43,7 @@ public:
   const array::Scalar &calving_rate() const;
 
 protected:
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
   
 protected:
   array::Scalar1 m_calving_rate;

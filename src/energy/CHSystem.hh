@@ -51,7 +51,7 @@ protected:
   std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 };
 
 void cryo_hydrologic_warming_flux(double k,

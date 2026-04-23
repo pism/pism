@@ -103,7 +103,7 @@ const array::Scalar& ShallowStressBalance::basal_frictional_heating() {
 }
 
 
-DiagnosticList ShallowStressBalance::diagnostics_impl() const {
+DiagnosticList ShallowStressBalance::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     {"beta",     Diagnostic::Ptr(new SSB_beta(this))},
     {"taub",     Diagnostic::Ptr(new SSB_taub(this))},

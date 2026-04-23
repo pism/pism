@@ -73,17 +73,15 @@ add_library (libpism
   icemodel/initialization.cc
   icemodel/output.cc
   icemodel/output_checkpoint.cc
-  icemodel/output_extra.cc
+  icemodel/output_spatial.cc
   icemodel/output_snapshots.cc
-  icemodel/output_ts.cc
+  icemodel/output_scalar.cc
   icemodel/printout.cc
   icemodel/timestepping.cc
   icemodel/utilities.cc
   icemodel/viewers.cc
   stressbalance/timestepping.cc
   fracturedensity/FractureDensity.cc
-  util/ColumnSystem.cc
-  util/pism_signal.c
   $<TARGET_OBJECTS:frontretreat>
   $<TARGET_OBJECTS:hydrology>
   $<TARGET_OBJECTS:flowlaws>
@@ -135,7 +133,7 @@ if (Pism_USE_EVERYTRACE)
   target_link_libraries(libpism ${EVERYTRACE_LIBRARY})
 endif()
 
-if(Pism_USE_YAC_INTERPOLATION)
+if(Pism_USE_YAC)
   target_link_libraries(libpism PkgConfig::YAC)
 endif()
 

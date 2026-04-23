@@ -89,7 +89,7 @@ Output variables
 ^^^^^^^^^^^^^^^^
 
 See :numref:`tab-ismip6-variables` for a list of variables requested by ISMIP6. Note that
-they have names different from the ones listed in :ref:`sec-extra_vars` and use MKS units.
+they have names different from the ones listed in :ref:`sec-spatial_vars` and use MKS units.
 To reduce the amount of post-processing output files require PISM can follow these
 conventions.
 
@@ -100,23 +100,23 @@ To save *all* the diagnostics requested by ISMIP6 use the short-cut
 
 .. code-block:: bash
 
-   pism -extra_vars ismip6 ...
+   pism -spatial_vars ismip6 ...
 
 The list of variables is stored in the configuration parameter
-:config:`output.ISMIP6_extra_variables` and contains variables Greenland projections are
+:config:`output.ISMIP6_spatial_variables` and contains variables Greenland projections are
 required to provide. (Add ``base,ligroundf`` to this list for Antarctic projections.)
 
-To save all the time series supported by PISM, omit the ``-ts_vars`` option:
+To save all the time series supported by PISM, omit the ``-scalar_vars`` option:
 
 .. code-block:: bash
 
-   pism -ts_times TIMES -ts_file ts.nc
+   pism -scalar_times TIMES -scalar_file scalar-diagnostics.nc
 
-To save all variables requested by ISMIP6, use ``-ts_vars ismip6``:
+To save all variables requested by ISMIP6, use ``-scalar_vars ismip6``:
 
 .. code-block:: bash
 
-   pism -ts_times TIMES -ts_file ts.nc -ts_vars ismip6
+   pism -scalar_times TIMES -scalar_file scalar-diagnostics.nc -scalar_vars ismip6
 
 .. list-table:: ISMIP6 variables
    :name: tab-ismip6-variables

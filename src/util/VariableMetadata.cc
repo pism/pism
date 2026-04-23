@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2025 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2026 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -88,8 +88,8 @@ VariableMetadata::VariableMetadata(std::shared_ptr<units::System> system, const 
   y["units"]          = "m";
   y["spacing_meters"] = { grid.dy() };
 
-  if (levels.size() > 1) {
-    m_dimensions.push_back({"z", system, (int)levels.size(), true});
+  if (not levels.empty()) {
+    m_dimensions.push_back({ "z", system, (int)levels.size(), true });
 
     auto &z = dimension("z");
     z["axis"]      = "Z";
@@ -100,7 +100,7 @@ VariableMetadata::VariableMetadata(std::shared_ptr<units::System> system, const 
     {
       auto nlevels = z.length();
 
-      double dz_max = levels[1] - levels[0];
+      double dz_max = nlevels > 1 ? levels[1] - levels[0] : 0.0;
       double dz_min = levels.back() - levels.front();
 
       for (int k = 0; k < nlevels - 1; ++k) {

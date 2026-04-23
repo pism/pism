@@ -19,7 +19,7 @@ YEARS=3000    # integration time
 if [ $# -gt 3 ] ; then  # if user says "run_frac.sh 8 211 0.6 500" then ... and -y 500
   YEARS="$4"
 fi
-exdt=25 # for the extrafile
+spatial_dt=25 # for spatially-variable output
 
 FRACTHRESHOLD=4.5e4   #  stress threshold
 FRACTHRESHOLD=1.3e5   #  meaning 130 kPa
@@ -46,10 +46,10 @@ output="-o $NAME -o_order zyx -o_size big"
 ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
 #-pik:-part_grid -cfbc -kill_icebergs
 
-extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} \
-       -extra_vars thk,mask,velsurf_mag,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
+spatial_output="-spatial_file spatial-${NAME} -spatial_times 0:${spatial_dt}:${YEARS} \
+       -spatial_vars thk,mask,velsurf_mag,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
 
-timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
+timeseries="-scalar_file scalar-${NAME} -scalar_times 0:1:${YEARS}"
 
 criterion=""
 #criterion="-lefm" # -max_shear #
@@ -83,7 +83,7 @@ cmd_diag="mpiexec -n $NN ${PISMPREFIX}pism -regional -i ../Ross_combined.nc -boo
 # add "-verbose 4" to this command for additional internal info
 cmd_frac="mpiexec -n $NN ${PISMPREFIX}pism -regional -i startfile_Mx${M}.nc -surface given \
   ${ssa} -y ${YEARS} ${output} -front_retreat_file startfile_Mx${M}.nc \
-  ${fractures} ${extra} ${timeseries}"
+  ${fractures} ${spatial_output} ${timeseries}"
 
 echo "running command:"
 echo

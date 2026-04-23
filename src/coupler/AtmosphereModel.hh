@@ -79,8 +79,8 @@ protected:
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
-  virtual TSDiagnosticList ts_diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
+  virtual TSDiagnosticList scalar_diagnostics_impl() const;
 protected:
   mutable std::vector<double> m_ts_times;
 

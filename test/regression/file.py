@@ -1,6 +1,7 @@
 import PISM
 import os
 from unittest import TestCase, SkipTest
+from PISM.testing import filename as tmp_name
 
 # Note: with some NetCDF versions many of these tests will fail *if* NetCDF cannot open
 # NetCDF-3 files in parallel (nc_open_par()). Please build NetCDF with PnetCDF if you get
@@ -21,62 +22,52 @@ backend_names = {PISM.PISM_NETCDF3 : "netcdf3",
                  PISM.PISM_NETCDF4_PARALLEL : "netcdf4_parallel",
                  PISM.PISM_PNETCDF : "pnetcdf"}
 
-def fail(backend):
-    assert False, "test failed (backend = {})".format(backend_names[backend])
-
-def test_string_to_backend():
-    "PISM.string_to_backend()"
-
-    for backend, name in backend_names.items():
-        assert PISM.string_to_backend(name) == backend
-
-    try:
-        PISM.string_to_backend("invalid")
-        return False
-    except RuntimeError:
-        pass
-
 class File(TestCase):
+
+    def test_string_to_backend(self):
+        "PISM.string_to_backend()"
+
+        for backend, name in backend_names.items():
+            self.assertEqual(PISM.string_to_backend(name), backend)
+
+        with self.assertRaises(RuntimeError, msg="invalid backend"):
+            PISM.string_to_backend("invalid")
 
     def test_empty_filename(self):
         for backend in backends:
-            try:
+            with self.assertRaises(RuntimeError, msg=backend):
                 f = PISM.File(ctx.com(), "", backend, PISM.PISM_READONLY)
-                fail(backend)
-            except RuntimeError:
-                pass
 
     def test_missing_file(self):
         for backend in backends:
-            try:
+            with self.assertRaises(RuntimeError, msg=backend):
                 f = PISM.File(ctx.com(), "missing_file.nc", backend, PISM.PISM_READONLY)
-                fail(backend)
-            except RuntimeError:
-                pass
 
     def test_backend_guessing(self):
         "File(..., PISM_GUESS, ...)"
 
         f = PISM.File(ctx.com(), self.file_with_time, PISM.PISM_GUESS, PISM.PISM_READONLY)
-        assert f.nrecords() == 1
+        self.assertEqual(f.nrecords(), 1)
 
     def test_create_clobber(self):
         "File(..., PISM_READWRITE_CLOBBER)"
+        filename = tmp_name("test_filename")
         try:
             for backend in backends:
-                f = PISM.File(ctx.com(), "test_filename.nc", backend, PISM.PISM_READWRITE_CLOBBER)
+                f = PISM.File(ctx.com(), filename, backend, PISM.PISM_READWRITE_CLOBBER)
         finally:
-            os.remove("test_filename.nc")
+            os.remove(filename)
 
     def test_create_move(self):
         "File(..., PISM_READWRITE_MOVE)"
+        filename = tmp_name("test_filename")
         try:
             for backend in backends:
-                f = PISM.File(ctx.com(), "test_filename.nc", backend, PISM.PISM_READWRITE_MOVE)
+                f = PISM.File(ctx.com(), filename, backend, PISM.PISM_READWRITE_MOVE)
         finally:
-            os.remove("test_filename.nc")
+            os.remove(filename)
             try:
-                os.remove("test_filename.nc~")
+                os.remove(filename + "~")
             except:
                 pass
 
@@ -84,7 +75,7 @@ class File(TestCase):
         "File.com()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.com() == ctx.com()
+            self.assertEqual(f.com(), ctx.com())
             f.close()
 
     def test_close(self):
@@ -93,12 +84,8 @@ class File(TestCase):
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
             f.close()
 
-            try:
+            with self.assertRaises(RuntimeError, msg="closing twice"):
                 f.close()
-                # closing twice is an error
-                fail(backend)
-            except RuntimeError:
-                pass
 
     def test_redef(self):
         "File.redef()"
@@ -125,7 +112,7 @@ class File(TestCase):
         "File.name()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.name() == self.file_with_time
+            self.assertEqual(f.name(), self.file_with_time)
             f.close()
 
     def test_nrecords(self):
@@ -133,7 +120,7 @@ class File(TestCase):
         for F in self.files:
             for backend in backends:
                 f = PISM.File(ctx.com(), F, backend, PISM.PISM_READONLY)
-                assert f.nrecords() == 1
+                self.assertEqual(f.nrecords(), 1)
                 f.close()
 
     def test_nrecords_variable(self):
@@ -141,26 +128,29 @@ class File(TestCase):
         for F in [self.file_with_time, self.file_without_time]:
             for backend in backends:
                 f = PISM.File(ctx.com(), F, backend, PISM.PISM_READONLY)
-                assert f.nrecords("v", "standard_name", ctx.unit_system()) == 1
+                self.assertEqual(f.nrecords("v", "standard_name", ctx.unit_system()), 1)
                 # found using the standard name
-                assert f.nrecords("w", "standard_name", ctx.unit_system()) == 1
-                assert f.nrecords("missing", "", ctx.unit_system()) == 0
+                self.assertEqual(f.nrecords("w", "standard_name", ctx.unit_system()), 1)
+                self.assertEqual(f.nrecords("missing", "", ctx.unit_system()), 0)
                 f.close()
 
     def test_nvariables(self):
         "File.nvariables()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.nvariables() == 4 # time, x, y, v
+            # time, x, y, v
+            self.assertEqual(f.nvariables(), 4)
             f.close()
 
     def test_nattributes(self):
         "File.nattributes()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.nattributes("time") == 4 # units, axis, calendar, long_name
-            assert f.nattributes("x") == 5 # units, axis, long_name, standard_name, spacing_meters
-            assert f.nattributes("PISM_GLOBAL") == 2
+            # units, axis, calendar, long_name
+            self.assertEqual(f.nattributes("time"), 4)
+            # units, axis, long_name, standard_name, spacing_meters
+            self.assertEqual(f.nattributes("x"), 5)
+            self.assertEqual(f.nattributes("PISM_GLOBAL"), 2)
 
             f.close()
 
@@ -175,44 +165,41 @@ class File(TestCase):
         "File.dimension_length()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.dimension_length("time") == 1
-            assert f.dimension_length("x") == 3
-            assert f.dimension_length("y") == 5
-            assert f.dimension_length("z") == 0
+            self.assertEqual(f.dimension_length("time"), 1)
+            self.assertEqual(f.dimension_length("x"), 3)
+            self.assertEqual(f.dimension_length("y"), 5)
+            self.assertEqual(f.dimension_length("z"), 0)
             f.close()
 
     def test_dimensions(self):
         "File.dimensions()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READWRITE)
-            assert f.dimensions("v") == ("time", "y", "x")
+            self.assertEqual(f.dimensions("v"), ("time", "y", "x"))
 
             variable_name = "scalar_variable_{}".format(backend)
             f.define_variable(variable_name, PISM.PISM_BYTE, [])
-            assert f.dimensions(variable_name) == ()
+            self.assertEqual(f.dimensions(variable_name), ())
             f.close()
 
     def test_dimension_exists(self):
         "File.dimension_exists()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.dimension_exists("x")
-            assert not f.dimension_exists("z")
+            self.assertTrue(f.dimension_exists("x"))
+            self.assertFalse(f.dimension_exists("z"))
             f.close()
 
     def test_dimension_type(self):
         "File.dimension_type()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            f.dimension_type("time", ctx.unit_system()) == PISM.T_AXIS
-            f.dimension_type("x", ctx.unit_system()) == PISM.X_AXIS
-            f.dimension_type("y", ctx.unit_system()) == PISM.Y_AXIS
+            self.assertEqual(f.dimension_type("time", ctx.unit_system()), PISM.T_AXIS)
+            self.assertEqual(f.dimension_type("x", ctx.unit_system()), PISM.X_AXIS)
+            self.assertEqual(f.dimension_type("y", ctx.unit_system()), PISM.Y_AXIS)
 
-            try:
+            with self.assertRaises(RuntimeError, msg="type of non-existent dimension"):
                 f.dimension_type("z", ctx.unit_system())
-                fail(backend)
-            except RuntimeError:
-                pass
 
             f.close()
 
@@ -220,14 +207,15 @@ class File(TestCase):
 
             def check(names, axis_type):
                 for c in names:
-                    assert f.dimension_type(c, ctx.unit_system()) == axis_type
+                    self.assertEqual(f.dimension_type(c, ctx.unit_system()), axis_type)
 
             check(self.x_names + self.strange_x_names, PISM.X_AXIS)
             check(self.y_names + self.strange_y_names, PISM.Y_AXIS)
             check(self.z_names + self.strange_z_names, PISM.Z_AXIS)
             check(self.t_names + self.strange_t_names, PISM.T_AXIS)
 
-            assert f.dimension_type("unknown_axis", ctx.unit_system()) == PISM.UNKNOWN_AXIS
+            self.assertEqual(f.dimension_type("unknown_axis", ctx.unit_system()),
+                             PISM.UNKNOWN_AXIS)
 
             f.close()
 
@@ -235,14 +223,11 @@ class File(TestCase):
         "File.variable_name()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.variable_name(0) == "time"
+            self.assertEqual(f.variable_name(0), "time")
 
             # invalid variable index
-            try:
+            with self.assertRaises(RuntimeError, msg="invalid variable index"):
                 f.variable_name(1000)
-                fail(backend)
-            except RuntimeError:
-                pass
 
             f.close()
 
@@ -252,59 +237,49 @@ class File(TestCase):
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READWRITE)
             f.define_variable("var_{}".format(backend), PISM.PISM_DOUBLE, ["y", "x"])
             # defining an existing variable should fail
-            try:
+
+            with self.assertRaises(RuntimeError, msg="defining twice"):
                 f.define_variable("var_{}".format(backend), PISM.PISM_DOUBLE, ["y", "x"])
-                fail(backend)
-            except RuntimeError:
-                pass
 
             # defining a variable depending on a non-existent dimension should fail gracefully
-            try:
+            with self.assertRaises(RuntimeError, msg="define var with non-existent dim"):
                 f.define_variable("var_{}_1".format(backend), PISM.PISM_DOUBLE, ["y", "x", "z"])
-                fail(backend)
-            except RuntimeError:
-                pass
+
             f.close()
 
     def test_find_variable(self):
         "File.find_variable(short_name)"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.find_variable("time")
-            assert not f.find_variable("z")
+            self.assertTrue(f.find_variable("time"))
+            self.assertFalse(f.find_variable("z"))
             f.close()
 
     def test_find_variable(self):
         "File.find_variable(short_name, standard_name)"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.find_variable("v", "standard_name").exists
-            assert f.find_variable("other_name", "standard_name").name == "v"
-            assert f.find_variable("missing", "other_standard_name").exists == False
-            assert f.find_variable("missing", "other_standard_name").name == ""
+            self.assertTrue(f.find_variable("v", "standard_name").exists)
+            self.assertEqual(f.find_variable("other_name", "standard_name").name, "v")
+            self.assertFalse(f.find_variable("missing", "other_standard_name").exists)
+            self.assertEqual(f.find_variable("missing", "other_standard_name").name, "")
             f.close()
 
             f = PISM.File(ctx.com(), self.file_inconsistent, backend, PISM.PISM_READONLY)
 
-            try:
+            with self.assertRaises(RuntimeError, msg="two variables with same standard_name"):
                 f.find_variable("v", "standard_name")
-                fail(backend)
-            except RuntimeError:
-                pass
 
     def test_read_variable(self):
         "File.read_variable()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            f.read_variable("x", [1], [1]) == [0.0]
+            self.assertEqual(f.read_variable("x", [1], [1]), (0.0,))
 
             # start and count of different lengths
             if PISM.Pism_DEBUG:
-                try:
+                with self.assertRaises(RuntimeError, msg="start and count of different lengths"):
                     f.read_variable("v", [1, 1], [1, 1, 1])
-                    fail(backend)
-                except RuntimeError:
-                    pass
 
             f.close()
 
@@ -317,15 +292,12 @@ class File(TestCase):
             f = PISM.File(ctx.com(), self.file_without_time, backend, PISM.PISM_READWRITE)
             f.write_variable("v", [1, 1], [1, 1], [100.0])
             f.sync()
-            assert f.read_variable("v", [1, 1], [1, 1]) == (100.0,)
+            self.assertEqual(f.read_variable("v", [1, 1], [1, 1]), (100.0,))
 
             # start and count of different lengths
             if PISM.Pism_DEBUG:
-                try:
+                with self.assertRaises(RuntimeError, msg="start and count of different lengths"):
                     f.write_variable("v", [1, 1], [1, 1, 1], [200.0])
-                    fail(backend)
-                except RuntimeError:
-                    pass
 
             f.close()
 
@@ -336,29 +308,29 @@ class File(TestCase):
         "File.remove_attribute()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READWRITE)
-            assert f.attribute_type("time", "units") == PISM.PISM_CHAR
+            self.assertEqual(f.attribute_type("time", "units"), PISM.PISM_CHAR)
             f.remove_attribute("time", "units")
-            assert f.attribute_type("time", "units") == PISM.PISM_NAT
+            self.assertEqual(f.attribute_type("time", "units"), PISM.PISM_NAT)
             f.write_attribute("time", "units", "seconds since 1-1-1")
-            assert f.attribute_type("time", "units") == PISM.PISM_CHAR
+            self.assertEqual(f.attribute_type("time", "units"), PISM.PISM_CHAR)
             f.close()
 
     def test_attribute_name(self):
         "File.attribute_name()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.attribute_name("time", 0) == "axis"
-            assert f.attribute_name("PISM_GLOBAL", 0) == "global_text_attr"
+            self.assertEqual(f.attribute_name("time", 0), "axis")
+            self.assertEqual(f.attribute_name("PISM_GLOBAL", 0), "global_text_attr")
             f.close()
 
     def test_attribute_type(self):
         "File.attribute_type()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            f.attribute_type("x", "units") == PISM.PISM_CHAR
-            f.attribute_type("x", "spacing_meters") == PISM.PISM_DOUBLE
-            f.attribute_type("x", "missing") == PISM.PISM_NAT
-            f.attribute_type("PISM_GLOBAL", "global_text_att") == PISM.PISM_CHAR
+            self.assertEqual(f.attribute_type("x", "units"), PISM.PISM_CHAR)
+            self.assertEqual(f.attribute_type("x", "spacing_meters"), PISM.PISM_DOUBLE)
+            self.assertEqual(f.attribute_type("x", "missing"), PISM.PISM_NAT)
+            self.assertEqual(f.attribute_type("PISM_GLOBAL", "global_text_attr"), PISM.PISM_CHAR)
             f.close()
 
     def test_write_attribute_number(self):
@@ -366,10 +338,11 @@ class File(TestCase):
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READWRITE)
             f.write_attribute("v", "new_attribute", PISM.PISM_DOUBLE, (1.0, 2.0))
-            assert f.read_double_attribute("v", "new_attribute") == (1.0, 2.0)
+            self.assertEqual(f.read_double_attribute("v", "new_attribute"), (1.0, 2.0))
 
             f.write_attribute("PISM_GLOBAL", "new_attribute", PISM.PISM_DOUBLE, (1.0, 2.0))
-            assert f.read_double_attribute("PISM_GLOBAL", "new_attribute") == (1.0, 2.0)
+            self.assertEqual(f.read_double_attribute("PISM_GLOBAL", "new_attribute"),
+                             (1.0, 2.0))
 
             f.close()
 
@@ -378,26 +351,23 @@ class File(TestCase):
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READWRITE)
             f.write_attribute("v", "new_attribute", "test string")
-            assert f.read_text_attribute("v", "new_attribute") == "test string"
+            self.assertEqual(f.read_text_attribute("v", "new_attribute"), "test string")
 
             f.write_attribute("PISM_GLOBAL", "new_global_attr", "test_global")
-            assert f.read_text_attribute("PISM_GLOBAL", "new_global_attr") == "test_global"
+            self.assertEqual(f.read_text_attribute("PISM_GLOBAL", "new_global_attr"), "test_global")
             f.close()
 
     def test_read_double_attribute(self):
         "File.read_double_attribute()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.read_double_attribute("x", "spacing_meters") == (10000.0,)
-            assert f.read_double_attribute("x", "missing") == ()
+            self.assertEqual(f.read_double_attribute("x", "spacing_meters"), (10000.0,))
+            self.assertEqual(f.read_double_attribute("x", "missing"), ())
             # type mismatch: fail with a helpful message
-            try:
+            with self.assertRaises(RuntimeError, msg="type mismatch"):
                 f.read_double_attribute("x", "units")
-                fail(backend)
-            except RuntimeError:
-                pass
 
-            assert f.read_double_attribute("PISM_GLOBAL", "global_double_attr") == (12.0,)
+            self.assertEqual(f.read_double_attribute("PISM_GLOBAL", "global_double_attr"), (12.0,))
 
             f.close()
 
@@ -405,17 +375,14 @@ class File(TestCase):
         "File.read_text_attribute()"
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY)
-            assert f.read_text_attribute("x", "units") == "m"
-            assert f.read_text_attribute("x", "missing") == ""
+            self.assertEqual(f.read_text_attribute("x", "units"), "m")
+            self.assertEqual(f.read_text_attribute("x", "missing"), "")
 
-            assert f.read_text_attribute("PISM_GLOBAL", "global_text_attr") == "test_global"
+            self.assertEqual(f.read_text_attribute("PISM_GLOBAL", "global_text_attr"), "test_global")
 
             # throw an error in case of a type mismatch
-            try:
+            with self.assertRaises(RuntimeError, msg="type mismatch"):
                 f.read_text_attribute("x", "spacing_meters")
-                fail(backend)
-            except RuntimeError:
-                pass
 
             f.close()
 
@@ -429,14 +396,14 @@ class File(TestCase):
                 pass
             f.append_history("one")
             f.append_history("two")
-            assert f.read_text_attribute("PISM_GLOBAL", "history") == "twoone"
+            self.assertEqual(f.read_text_attribute("PISM_GLOBAL", "history"), "twoone")
             f.close()
 
     def setUp(self):
-        self.file_with_time = "test_file_with_time.nc"
-        self.file_without_time = "test_file_without_time.nc"
-        self.file_inconsistent = "test_file_inconsistent.nc"
-        self.file_dim_types = "test_file_dim_types.nc"
+        self.file_with_time = tmp_name("test_file_with_time")
+        self.file_without_time = tmp_name("test_file_without_time")
+        self.file_inconsistent = tmp_name("test_file_inconsistent")
+        self.file_dim_types = tmp_name("test_file_dim_types")
 
         self.files = [self.file_with_time, self.file_without_time, self.file_inconsistent, self.file_dim_types]
 
@@ -517,15 +484,15 @@ class StringAttribute(TestCase):
 
         for backend in backends:
             f = PISM.File(ctx.com(), self.basename + ".nc", backend, PISM.PISM_READONLY)
-            assert self.attribute == f.read_text_attribute("PISM_GLOBAL", "string_attribute")
-            assert self.attribute == f.read_text_attribute("PISM_GLOBAL", "text_attribute")
+            self.assertEqual(self.attribute, f.read_text_attribute("PISM_GLOBAL", "string_attribute"))
+            self.assertEqual(self.attribute, f.read_text_attribute("PISM_GLOBAL", "text_attribute"))
             # multi-valued string attributes are turned into comma-separated lists
-            assert "{0},{0}".format(self.attribute) == f.read_text_attribute("PISM_GLOBAL",
-                                                                             "string_multi_value")
+            self.assertEqual("{0},{0}".format(self.attribute),
+                             f.read_text_attribute("PISM_GLOBAL", "string_multi_value"))
             f.close()
 
     def setUp(self):
-        self.basename = "string_attribute_test"
+        self.basename = "/tmp/pism_test_string_attribute"
         self.attribute = "string attribute"
 
         cdl = """
@@ -538,7 +505,7 @@ netcdf string_attribute_test {{
         with open(self.basename + ".cdl", "w") as f:
             f.write(cdl)
 
-        os.system("ncgen -4 %s.cdl" % self.basename)
+        os.system(f"ncgen -4 -o {self.basename}.nc {self.basename}.cdl")
 
     def tearDown(self):
         os.remove(self.basename + ".nc")

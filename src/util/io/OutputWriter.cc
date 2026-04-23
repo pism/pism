@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,6 +31,7 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/OutputWriter.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -102,6 +103,16 @@ struct OutputWriter::Impl {
     experiment_id_name   = config.get_string("output.experiment_id_dimension");
     experiment_id_max_length = (int)config.get_number("output.experiment_id_max_length");
     relaxed_mode = false;
+    is_async = false;
+
+    // subtract one to account for the trailing null character:
+    if ((int)experiment_id.size() > experiment_id_max_length - 1) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "the length of '%s' (%d) exceeds '%s' - 1. Please increase '%s'.",
+                                    "output.experiment_id", (int)experiment_id.size(),
+                                    "output.experiment_id_max_length",
+                                    "output.experiment_id_max_length");
+    }
 
     if (not experiment_id.empty()) {
       auto format = config.get_string("output.format");
@@ -127,6 +138,9 @@ struct OutputWriter::Impl {
   // if true, call add_variable() in define_variable(), allowing a user to define array
   // variables that were not declared using the call to initialize()
   bool relaxed_mode;
+
+  // set to true if this writer is asynchronous, false otherwise
+  bool is_async;
 };
 
 bool &OutputWriter::already_written(const std::string &file_name,
@@ -164,8 +178,20 @@ MPI_Comm OutputWriter::comm() const {
   return m_impl->comm;
 }
 
+bool OutputWriter::is_async() const {
+  return m_impl->is_async;
+}
+
+void OutputWriter::set_is_async(bool flag) {
+  m_impl->is_async = flag;
+}
+
 const std::string &OutputWriter::time_name() const {
   return m_impl->time_name;
+}
+
+bool OutputWriter::variable_info_is_available(const std::string &variable_name) const {
+  return m_impl->variables.find(variable_name) != m_impl->variables.end();
 }
 
 const VariableMetadata &OutputWriter::variable_info(const std::string &variable_name) const {
@@ -227,7 +253,11 @@ std::vector<std::string> OutputWriter::define_dimensions(const std::string &file
       dimensions.insert(dimensions.begin(), time_name());
     }
 
-    if (not m_impl->experiment_id.empty()) {
+    // don't add the "experiment ID" dimension to the time dimension and time bounds:
+    bool time_or_bounds =
+        pism::set_member(variable.get_name(), { time_name(), time_name() + "_bounds" });
+
+    if (not time_or_bounds and not m_impl->experiment_id.empty()) {
       dimensions.insert(dimensions.begin(), m_impl->experiment_id_name);
     }
   }
@@ -331,25 +361,38 @@ void OutputWriter::write_dimensions(const std::string &file_name,
 }
 
 void OutputWriter::write_distributed_array(const std::string &file_name,
-                                          const std::string &variable_name,
-                                          const double *input) {
-  const auto &variable = variable_info(variable_name);
+                                           const std::string &variable_name, const double *input) {
+  try {
+    const auto &variable = variable_info(variable_name);
 
-  bool time_dependent = variable.get_time_dependent();
+    if (variable.grid_info() == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "write_distributed_array() called for a variable (%s) that has no grid info",
+          variable_name.c_str());
+    }
 
-  // Avoid writing time-independent variables more than once (saves time when writing to
-  // extra_files) and also avoid writing time-dependent variables more than once per time
-  // record
-  if (already_written(file_name, variable_name, time_dependent)) {
-    return;
+    bool time_dependent = variable.get_time_dependent();
+
+    // Avoid writing time-independent variables more than once (saves time when writing to
+    // spatial_files) and also avoid writing time-dependent variables more than once per
+    // time record
+    if (already_written(file_name, variable_name, time_dependent)) {
+      return;
+    }
+
+    write_dimensions(file_name, variable);
+
+    write_distributed_array_impl(file_name, variable_name, input);
+
+    already_written(file_name, variable_name, time_dependent) = true;
+  } catch (RuntimeError &e) {
+    e.add_context("writing gridded variable '%s' to '%s'", variable_name.c_str(),
+                  file_name.c_str());
+    throw;
   }
-
-  write_dimensions(file_name, variable);
-
-  write_distributed_array_impl(file_name, variable_name, input);
-
-  already_written(file_name, variable_name, time_dependent) = true;
 }
+
 
 void OutputWriter::write_timeseries(const std::string &file_name,
                                              const std::string &variable_name,

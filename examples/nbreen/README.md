@@ -39,11 +39,11 @@ This uses 2 processors, a 500 m grid, a 0.1 year duration, the simpler "routing"
 model, and monthly reporting.  It should finish in under one minute.  View the
 time- and space-dependent output file:
 
-    ncview extras_nbreen_y0.1_500m_routing.nc
+    ncview spatial_nbreen_y0.1_500m_routing.nc
 
 Another visualization is with python,
 
-    python showhydrovel.py -t -s extras_nbreen_y0.1_500m_routing.nc
+    python showhydrovel.py -t -s spatial_nbreen_y0.1_500m_routing.nc
 
 This shows a quiver plot of the water velocity, among other things.
 

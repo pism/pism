@@ -5,7 +5,7 @@ Creates graph of three modeled hydrology-related time series from a single file.
 """
 
 # example from grid-sequencing example:
-#   $ ./hydro-tsshow.py foo.png ts_routing-decoupled.nc
+#   $ ./hydro-tsshow.py foo.png scalar_routing-decoupled.nc
 
 from numpy import *
 import pylab as plt

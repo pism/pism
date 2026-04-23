@@ -5,7 +5,7 @@ state viscous plate deflection corresponding to a given disc load.
 
 Used as a verification (and regression) test for LingleClarkSerial::bootstrap().
 """
-
+from unittest import TestCase
 import PISM
 import numpy as np
 from PISM.util import convert
@@ -176,28 +176,28 @@ def compare_time_dependent(N):
 
     return diff_origin, diff_max, diff_average, dx
 
+class BedDefLCViscous(TestCase):
+    def test_time_dependent(self):
+        "Time dependent bed deformation (disc load)"
+        diff = np.array([compare_time_dependent(n)[:3] for n in [34, 67]])
 
-def time_dependent_test():
-    "Time dependent bed deformation (disc load)"
-    diff = np.array([compare_time_dependent(n)[:3] for n in [34, 67]])
+        stored = [[0.04099917, 5.05854,    0.93909436],
+                  [0.05710513, 4.14329508, 0.71246272]]
 
-    stored = [[0.04099917, 5.05854,    0.93909436],
-              [0.05710513, 4.14329508, 0.71246272]]
-
-    return np.testing.assert_almost_equal(diff, stored)
+        return np.testing.assert_almost_equal(diff, stored)
 
 
-def steady_state_test():
-    "Steady state bed deformation (disc load)"
-    Ns = 10 * np.arange(1, 5) + 1
-    diff = np.array([compare_steady_state(n) for n in Ns])
+    def test_steady_state(self):
+        "Steady state bed deformation (disc load)"
+        Ns = 10 * np.arange(1, 5) + 1
+        diff = np.array([compare_steady_state(n) for n in Ns])
 
-    stored = [[ 0.04186454, 15.71693383,  3.80441607],
-              [ 0.04777426, 11.44061586,  1.94958897],
-              [ 0.04542247,  9.72257266,  1.76268841],
-              [ 0.04203377,  7.72113443,  1.38750658]]
+        stored = [[ 0.04186454, 15.71693383,  3.80441607],
+                  [ 0.04777426, 11.44061586,  1.94958897],
+                  [ 0.04542247,  9.72257266,  1.76268841],
+                  [ 0.04203377,  7.72113443,  1.38750658]]
 
-    return np.testing.assert_almost_equal(diff, stored)
+        return np.testing.assert_almost_equal(diff, stored)
 
 
 def verify_steady_state():
@@ -222,7 +222,6 @@ def verify_steady_state():
     plt.xlabel("log10(1/N)")
     plt.ylabel("log10(error)")
     plt.title("Convergence rates for the steady-state problem")
-    plt.show()
 
 
 def verify_time_dependent():
@@ -256,7 +255,6 @@ def verify_time_dependent():
     plt.xlabel("dx, km")
     plt.ylabel("log10(error)")
     plt.title("Convergence rates for the time-dependent problem")
-    plt.show()
 
 if __name__ == "__main__":
     import pylab as plt
@@ -265,3 +263,4 @@ if __name__ == "__main__":
     verify_steady_state()
     log.message(2, "  2. Time-dependent problem...\n")
     verify_time_dependent()
+    plt.show()

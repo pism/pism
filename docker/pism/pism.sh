@@ -11,6 +11,8 @@ opt_flags="-O3 -axCORE-AVX512,CORE-AVX2,SSE4.2 -fp-model=precise"
 
 # Prerequisites:
 export PETSC_DIR=${PETSC_DIR:-/opt/petsc}
+export PYTHONPATH=${PETSC_DIR}/lib:${PYTHONPATH:-}
+
 yaxt_prefix=${yaxt_prefix:-/opt/yaxt}
 yac_prefix=${yac_prefix:-/opt/yac}
 hdf5_prefix=${hdf5_prefix:-/opt/hdf5}
@@ -33,7 +35,8 @@ cmake \
     -DCMAKE_CXX_FLAGS="${opt_flags} -diag-disable=cpu-dispatch,10006,2102" \
     -DCMAKE_C_FLAGS="${opt_flags} -diag-disable=cpu-dispatch,10006" \
     -DCMAKE_INSTALL_PREFIX=${prefix} \
-    -DPism_USE_YAC_INTERPOLATION=YES \
+    -DPism_BUILD_PYTHON_BINDINGS=YES \
+    -DPism_USE_YAC=YES \
     -DPism_USE_PARALLEL_NETCDF4=YES \
     -DPism_USE_PROJ=YES  
 

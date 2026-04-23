@@ -40,7 +40,7 @@ protected:
   const array::Scalar& melt_impl() const;
   const array::Scalar& runoff_impl() const;
 
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 private:
   std::shared_ptr<array::Scalar> m_mass_flux;
   array::Scalar m_smb_adjustment;

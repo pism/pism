@@ -71,78 +71,80 @@ def check_modifier(model, modifier, dT, dSMB, dwater_column_pressure):
                      model.average_water_column_pressure(),
                      dwater_column_pressure)
 
-def constant_test():
-    "Model Constant"
+class OceanConstant(TestCase):
+    def test_constant(self):
+        "Model Constant"
 
-    ice_thickness = 1000.0                  # meters
+        ice_thickness = 1000.0                  # meters
 
-    # compute mass flux
-    melt_rate = config.get_number("ocean.constant.melt_rate", "m second-1")
-    ice_density = config.get_number("constants.ice.density")
-    mass_flux = melt_rate * ice_density
+        # compute mass flux
+        melt_rate = config.get_number("ocean.constant.melt_rate", "m second-1")
+        ice_density = config.get_number("constants.ice.density")
+        mass_flux = melt_rate * ice_density
 
-    # compute pressure melting temperature
-    T0 = config.get_number("constants.fresh_water.melting_point_temperature")
-    beta_CC = config.get_number("constants.ice.beta_Clausius_Clapeyron")
-    g = config.get_number("constants.standard_gravity")
+        # compute pressure melting temperature
+        T0 = config.get_number("constants.fresh_water.melting_point_temperature")
+        beta_CC = config.get_number("constants.ice.beta_Clausius_Clapeyron")
+        g = config.get_number("constants.standard_gravity")
 
-    pressure = ice_density * g * ice_thickness
-    T_melting = T0 - beta_CC * pressure
+        pressure = ice_density * g * ice_thickness
+        T_melting = T0 - beta_CC * pressure
 
-    average_water_column_pressure = water_column_pressure(ice_thickness)
+        average_water_column_pressure = water_column_pressure(ice_thickness)
 
-    grid = shallow_grid()
-    geometry = PISM.Geometry(grid)
-    geometry.ice_thickness.set(ice_thickness)
-    geometry.bed_elevation.set(-2 * ice_thickness)
-    geometry.ensure_consistency(0.0)
-    inputs = PISM.OceanInputs()
-    inputs.geometry = geometry
+        grid = shallow_grid()
+        geometry = PISM.Geometry(grid)
+        geometry.ice_thickness.set(ice_thickness)
+        geometry.bed_elevation.set(-2 * ice_thickness)
+        geometry.ensure_consistency(0.0)
+        inputs = PISM.OceanInputs()
+        inputs.geometry = geometry
 
-    model = PISM.OceanConstant(grid)
+        model = PISM.OceanConstant(grid)
 
-    model.init(geometry)
-    model.update(inputs, 0, 1)
+        model.init(geometry)
+        model.update(inputs, 0, 1)
 
-    check_model(model, T_melting, mass_flux, average_water_column_pressure)
+        check_model(model, T_melting, mass_flux, average_water_column_pressure)
 
-    assert model.max_timestep(0).infinite() == True
+        self.assertTrue(model.max_timestep(0).infinite())
 
-def pik_test():
-    "Model PIK"
-    grid = shallow_grid()
-    geometry = PISM.Geometry(grid)
+class OceanPIK(TestCase):
+    def test_pik(self):
+        "Model PIK"
+        grid = shallow_grid()
+        geometry = PISM.Geometry(grid)
 
-    ice_thickness = 1000.0                  # meters
+        ice_thickness = 1000.0                  # meters
 
-    # compute pressure melting temperature
-    ice_density = config.get_number("constants.ice.density")
-    T0 = config.get_number("constants.fresh_water.melting_point_temperature")
-    beta_CC = config.get_number("constants.ice.beta_Clausius_Clapeyron")
-    g = config.get_number("constants.standard_gravity")
+        # compute pressure melting temperature
+        ice_density = config.get_number("constants.ice.density")
+        T0 = config.get_number("constants.fresh_water.melting_point_temperature")
+        beta_CC = config.get_number("constants.ice.beta_Clausius_Clapeyron")
+        g = config.get_number("constants.standard_gravity")
 
-    pressure = ice_density * g * ice_thickness
-    T_melting = T0 - beta_CC * pressure
+        pressure = ice_density * g * ice_thickness
+        T_melting = T0 - beta_CC * pressure
 
-    average_water_column_pressure = water_column_pressure(ice_thickness)
+        average_water_column_pressure = water_column_pressure(ice_thickness)
 
-    mass_flux = 5.36591610659e-06  # stored mass flux value returned by the model
+        mass_flux = 5.36591610659e-06  # stored mass flux value returned by the model
 
-    # create the model
-    geometry.ice_thickness.set(ice_thickness)
-    geometry.bed_elevation.set(-2 * ice_thickness)
-    geometry.ensure_consistency(0.0)
-    inputs = PISM.OceanInputs()
-    inputs.geometry = geometry
+        # create the model
+        geometry.ice_thickness.set(ice_thickness)
+        geometry.bed_elevation.set(-2 * ice_thickness)
+        geometry.ensure_consistency(0.0)
+        inputs = PISM.OceanInputs()
+        inputs.geometry = geometry
 
-    model = PISM.OceanPIK(grid)
+        model = PISM.OceanPIK(grid)
 
-    model.init(geometry)
-    model.update(inputs, 0, 1)
+        model.init(geometry)
+        model.update(inputs, 0, 1)
 
-    check_model(model, T_melting, mass_flux, average_water_column_pressure)
+        check_model(model, T_melting, mass_flux, average_water_column_pressure)
 
-    assert model.max_timestep(0).infinite() == True
+        self.assertTrue(model.max_timestep(0).infinite())
 
 class GivenTest(TestCase):
     "Test the Given class"
@@ -175,7 +177,7 @@ class GivenTest(TestCase):
         model.init(self.geometry)
         model.update(self.inputs, 0, 1)
 
-        assert model.max_timestep(0).infinite() == True
+        self.assertTrue(model.max_timestep(0).infinite())
 
         check_model(model, self.temperature, self.mass_flux,
                     self.average_water_column_pressure)
@@ -227,7 +229,7 @@ class GivenTHTest(TestCase):
         model.init(self.geometry)
         model.update(self.inputs, 0, 1)
 
-        assert model.max_timestep(0).infinite() == True
+        self.assertTrue(model.max_timestep(0).infinite())
 
         check_model(model, self.temperature, self.mass_flux, self.average_water_column_pressure)
 

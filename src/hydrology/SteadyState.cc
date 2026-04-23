@@ -105,8 +105,8 @@ void SteadyState::update_impl(double t, double dt, const Inputs& inputs) {
   }
 }
 
-std::map<std::string, Diagnostic::Ptr> SteadyState::diagnostics_impl() const {
-  auto hydro_diagnostics = NullTransport::diagnostics_impl();
+std::map<std::string, Diagnostic::Ptr> SteadyState::spatial_diagnostics_impl() const {
+  auto hydro_diagnostics = NullTransport::spatial_diagnostics_impl();
 
   return combine(m_emptying_problem->diagnostics(), hydro_diagnostics);
 }

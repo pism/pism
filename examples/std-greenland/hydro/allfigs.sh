@@ -16,7 +16,7 @@ mv -v Greenland_5km_v1.1-surfvelmag.png Greenland-surfvelmag.png
 ./basemapfigs.py distributed-decoupled bwat
 ./basemapfigs.py distributed-decoupled bwprel
 
-./genscatfig.sh ex_distributed-decoupled.nc $INITROOT.png
+./genscatfig.sh spatial_distributed-decoupled.nc $INITROOT.png
 
 rm -rf listpng.txt
 ls *.png > listpng.txt

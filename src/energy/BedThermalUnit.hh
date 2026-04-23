@@ -139,7 +139,7 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
 
   //! upward heat flux through the bottom surface of the bed thermal layer
   array::Scalar m_bottom_surface_flux;

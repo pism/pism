@@ -20,7 +20,7 @@ parser.add_argument('-b', type=float, default=-1.0,
                     help='upper bound on speed; -b 100 shows all speeds above 100 as 100')
 parser.add_argument('-c', type=float, default=-1.0,
                     help='arrow crop size; -c 0.1 shortens arrows longer than 0.1 * speed.max()')
-# e.g. ./showhydrovel.py -c 0.001 -q extras_nbreen_y0.25_250m_routing.nc -b 20
+# e.g. ./showhydrovel.py -c 0.001 -q spatial_nbreen_y0.25_250m_routing.nc -b 20
 parser.add_argument('-d', type=int, default=-1,
                     help='index of frame (default: last frame which is D=-1)')
 parser.add_argument('-q', action='store_true',

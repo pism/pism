@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2022, 2023, 2025 Constantine Khroulev and Andy Aschwanden
+/* Copyright (C) 2018, 2019, 2020, 2022, 2023, 2025, 2026 Constantine Khroulev and Andy Aschwanden
  *
  * This file is part of PISM.
  *
@@ -221,7 +221,7 @@ protected:
 
 } // end of namespace diagnostics
 
-DiagnosticList FrontalMelt::diagnostics_impl() const {
+DiagnosticList FrontalMelt::spatial_diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
     {"frontal_melt_rate", Diagnostic::Ptr(new FrontalMeltRate(this))},
@@ -229,14 +229,14 @@ DiagnosticList FrontalMelt::diagnostics_impl() const {
   };
 
   if (m_input_model) {
-    return combine(m_input_model->diagnostics(), result);
+    return combine(m_input_model->spatial_diagnostics(), result);
   }
   return result;
 }
 
-TSDiagnosticList FrontalMelt::ts_diagnostics_impl() const {
+TSDiagnosticList FrontalMelt::scalar_diagnostics_impl() const {
   if (m_input_model) {
-    return m_input_model->ts_diagnostics();
+    return m_input_model->scalar_diagnostics();
   }
   return {};
 }

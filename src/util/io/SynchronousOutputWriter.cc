@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,6 +49,7 @@ SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &co
     : OutputWriter(comm, config) {
   m_compression_level = static_cast<int>(config.get_number("output.compression_level"));
   m_backend = string_to_backend(config.get_string("output.format"));
+  set_is_async(false);
 }
 
 void SynchronousOutputWriter::define_variable_impl(const std::string &file_name,

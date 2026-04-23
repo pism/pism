@@ -60,13 +60,13 @@ def generate_input(filename):
 
 def generate_forcing(filename):
     "Generate surface temperature forcing."
-    ts_yr = 0
-    te_yr = 300000
+    start_yr = 0
+    end_yr = 300000
     dt_yr = 10
 
-    Mt = int((te_yr - ts_yr) / dt_yr + 1)
+    Mt = int((end_yr - start_yr) / dt_yr + 1)
     delta_T = np.zeros(Mt)
-    time = np.linspace(ts_yr, te_yr, Mt)
+    time = np.linspace(start_yr, end_yr, Mt)
     time_bounds = np.zeros((Mt, 2))
     time_bounds[:, 0] = np.r_[-dt_yr, time[:-1]]
     time_bounds[:, 1] = time

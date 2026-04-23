@@ -41,11 +41,12 @@ then
 fi
 
 docker run --rm -it \
-       -v ${pism_dir}:${container_pism_dir} \
+       --shm-size=2g \
+       -v ${pism_dir}:${container_pism_dir}:ro \
        -e CC=${CC} \
        -e CXX=${CXX} \
        -e N=${N} \
        -e source_dir=${container_pism_dir} \
        -e target="${target}" \
-       ckhrulev/pism-ubuntu:0.1.13 \
+       ckhrulev/pism-ubuntu:0.1.17 \
        bash -c "${cmd}"

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2013, 2014, 2016, 2017 the PISM Authors
+# Copyright (C) 2013, 2014, 2016, 2017, 2026 the PISM Authors
 
 # This script creates a graph of the modeled margin radius time series
 # by using the ice_area_glacierized variable.  Compare Figure 4(a) in Sayag & Worster (2012).
 # Try something like:
-#    ./showradius.py -o foo.png ts_lab51.nc
+#    ./showradius.py -o foo.png scalar_lab51.nc
 
 import numpy as np
 import pylab as plt

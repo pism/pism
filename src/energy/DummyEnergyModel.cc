@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -54,6 +54,8 @@ void DummyEnergyModel::update_impl(double t, double dt, const Inputs &inputs) {
   (void) t;
   (void) dt;
   (void) inputs;
+  // new enthalpy (stored in m_work) is the same as old enthalpy (in m_ice_enthalpy):
+  m_work.copy_from(m_ice_enthalpy);
 }
 
 MaxTimestep DummyEnergyModel::max_timestep_impl(double t) const {

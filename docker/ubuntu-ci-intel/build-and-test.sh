@@ -13,8 +13,8 @@ container_pism_dir=/var/tmp/pism
 cmd="cd ${container_pism_dir}/docker/ubuntu-ci-intel/ && ./build.sh && ./run-tests.sh"
 
 docker run --rm -it \
-       -v ${pism_dir}:${container_pism_dir} \
+       -v ${pism_dir}:${container_pism_dir}:ro \
        -e N=${N} \
        -e source_dir=${container_pism_dir} \
-       ckhrulev/pism-ubuntu-intel:0.2.0 \
+       ckhrulev/pism-ubuntu-intel:0.3.1 \
        bash -c "${cmd}"

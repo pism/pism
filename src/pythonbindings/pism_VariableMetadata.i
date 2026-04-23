@@ -7,3 +7,4 @@
 %ignore pism::VariableMetadata::operator[];
 
 %include "util/VariableMetadata.hh"
+%template(VariableSet) std::set<pism::VariableMetadata>;

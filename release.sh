@@ -45,6 +45,6 @@ git tag -a v${version} -m "The v${version} release. Please see CHANGES.rst for t
 set +x
 echo "Now check if everything looks good and run:"
 echo ""
-echo "git push -u origin HEAD && git push origin tag v${version}"
+echo "git push origin main v${version}"
 echo ""
 echo "Then create a release on GitHub."

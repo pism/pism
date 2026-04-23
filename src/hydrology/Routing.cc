@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2023, 2025 PISM Authors
+// Copyright (C) 2012-2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
+#include <limits>
 
 #include "Hydrology.hh"
 #include "pism/hydrology/Routing.hh"
@@ -690,9 +691,12 @@ void Routing::advective_fluxes(const array::Staggered &V,
  * See equation (51) in Bueler and van Pelt.
  */
 double Routing::max_timestep_W_diff(double KW_max) const {
-  double D_max = m_rg * KW_max;
-  double result = 1.0 / (m_dx * m_dx) + 1.0 / (m_dy * m_dy);
-  return 0.25 / (D_max * result);
+  if (KW_max > 0.0) {
+    double D_max  = m_rg * KW_max;
+    double result = 1.0 / (m_dx * m_dx) + 1.0 / (m_dy * m_dy);
+    return 0.25 / (D_max * result);
+  }
+  return std::numeric_limits<double>::infinity();
 }
 
 /*!
@@ -971,7 +975,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                  (dt / step_counter) / 3600.0);
 }
 
-std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
+std::map<std::string, Diagnostic::Ptr> Routing::spatial_diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
@@ -982,10 +986,10 @@ std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
     {"wallmelt",            Diagnostic::Ptr(new WallMelt(this))},
     {"hydraulic_potential", Diagnostic::Ptr(new HydraulicPotential(this))},
   };
-  return combine(result, Hydrology::diagnostics_impl());
+  return combine(result, Hydrology::spatial_diagnostics_impl());
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Routing::ts_diagnostics_impl() const {
+std::map<std::string, TSDiagnostic::Ptr> Routing::scalar_diagnostics_impl() const {
   std::map<std::string, TSDiagnostic::Ptr> result = {
     // FIXME: add mass-conservation diagnostics
   };

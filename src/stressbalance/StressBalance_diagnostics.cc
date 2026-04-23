@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025, 2026 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@
 namespace pism {
 namespace stressbalance {
 
-DiagnosticList StressBalance::diagnostics_impl() const {
+DiagnosticList StressBalance::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     {"bfrict",              Diagnostic::Ptr(new PSB_bfrict(this))},
     {"velbar_mag",          Diagnostic::Ptr(new PSB_velbar_mag(this))},
@@ -69,15 +69,15 @@ DiagnosticList StressBalance::diagnostics_impl() const {
   }
 
   // add diagnostics from the shallow stress balance and the "modifier"
-  result = pism::combine(result, m_shallow_stress_balance->diagnostics());
-  result = pism::combine(result, m_modifier->diagnostics());
+  result = pism::combine(result, m_shallow_stress_balance->spatial_diagnostics());
+  result = pism::combine(result, m_modifier->spatial_diagnostics());
 
   return result;
 }
 
-TSDiagnosticList StressBalance::ts_diagnostics_impl() const {
-  return pism::combine(m_shallow_stress_balance->ts_diagnostics(),
-                       m_modifier->ts_diagnostics());
+TSDiagnosticList StressBalance::scalar_diagnostics_impl() const {
+  return pism::combine(m_shallow_stress_balance->scalar_diagnostics(),
+                       m_modifier->scalar_diagnostics());
 }
 
 PSB_velbar::PSB_velbar(const StressBalance *m)

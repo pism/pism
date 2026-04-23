@@ -23,7 +23,7 @@ For example,
 
 is a shortened EISMINT II experiment A run on the standard horizontal grid but a
 refined vertical grid.  A final-state output file `eisIIA61.nc` and diagnostic
-files `ts_eisIIA61.nc` and `ex_eisIIA61.nc` will be produced.
+files `scalar_eisIIA61.nc` and `spatial_eisIIA61.nc` will be produced.
 
 Do this for a dry run
 

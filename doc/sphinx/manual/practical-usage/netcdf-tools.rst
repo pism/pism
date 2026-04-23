@@ -32,17 +32,14 @@ with PISM and post-processing results; see :numref:`tab-NetCDFview`.
    * - CDO_
      - Climate Data Operators; command-line tools, including conservative re-mapping
 
-   * - IDV_
-     - more complete visualization
-
    * - NCO_
      - NetCDF Operators; command-line tools for pre- and post-processing
 
-   * - NCL_
-     - NCAR Command Language
+   * - QGIS_
+     - more complete visualization
 
-   * - PyNGL_
-     - Python version of NCL
+   * - xarray_
+     - N-D labeled arrays and datasets in Python
 
 The PISM authors use ``ncview`` and "``ncdump -h``" for quick visualization and metadata
 examination. NCO has powerful command-line manipulation of NetCDF files, but requires some

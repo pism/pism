@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
 
     std::shared_ptr<EnthalpyConverter> EC(new ColdEnthalpyConverter(*config));
 
-    const int WIDE_STENCIL = config->get_number("grid.max_stencil_width");
+    const int WIDE_STENCIL = grid->max_stencil_width();
 
     array::Array3D
       enthalpy(grid, "enthalpy", array::WITH_GHOSTS, grid->z(), WIDE_STENCIL),

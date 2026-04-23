@@ -173,8 +173,8 @@ private:
 };
 } // end of namespace diagnostics
 
-DiagnosticList YearlyCycle::diagnostics_impl() const {
-  DiagnosticList result = AtmosphereModel::diagnostics_impl();
+DiagnosticList YearlyCycle::spatial_diagnostics_impl() const {
+  DiagnosticList result = AtmosphereModel::spatial_diagnostics_impl();
 
   result["air_temp_mean_summer"] = Diagnostic::Ptr(new diagnostics::MeanSummerTemperature(this));
 

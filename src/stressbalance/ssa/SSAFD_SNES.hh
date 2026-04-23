@@ -39,7 +39,7 @@ public:
 
   const array::Vector &residual() const;
 private:
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 
   //! residual (diagnostic)
   array::Vector m_residual;

@@ -439,9 +439,9 @@ void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &basal_yiel
   result.update_ghosts();
 }
 
-DiagnosticList MohrCoulombYieldStress::diagnostics_impl() const {
+DiagnosticList MohrCoulombYieldStress::spatial_diagnostics_impl() const {
   return combine({{"tillphi", Diagnostic::wrap(m_till_phi)}},
-                 YieldStress::diagnostics_impl());
+                 YieldStress::spatial_diagnostics_impl());
 }
 
 } // end of namespace pism

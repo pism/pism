@@ -55,7 +55,7 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
 
   virtual const array::Scalar& mass_flux_impl() const;
   virtual const array::Scalar& temperature_impl() const;

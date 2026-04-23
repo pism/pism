@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2020, 2021, 2022, 2023, 2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018, 2020, 2021, 2022, 2023, 2025, 2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -121,8 +121,8 @@ public:
   Component(std::shared_ptr<const Grid> grid);
   virtual ~Component() = default;
 
-  DiagnosticList diagnostics() const;
-  TSDiagnosticList ts_diagnostics() const;
+  DiagnosticList spatial_diagnostics() const;
+  TSDiagnosticList scalar_diagnostics() const;
 
   std::shared_ptr<const Grid> grid() const;
 
@@ -143,8 +143,8 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
-  virtual TSDiagnosticList ts_diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
+  virtual TSDiagnosticList scalar_diagnostics_impl() const;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in

@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -231,6 +231,11 @@ public:
    */
   MPI_Comm comm() const;
 
+  /*!
+   * Return true if this writer is asynchronous, false otherwise.
+   */
+  bool is_async() const;
+
 protected:
   /*!
    * Define a dimension.
@@ -267,6 +272,8 @@ protected:
    * Return the metadata for the variable `variable_name`.
    */
   const VariableMetadata &variable_info(const std::string &variable_name) const;
+
+  bool variable_info_is_available(const std::string &variable_name) const;
 
   /*!
    * Return `true` if variable `variable_name` was already written to the file
@@ -361,7 +368,7 @@ protected:
                                const std::string &input) = 0;
 
   /*!
-   * Implementation of write_spatial_variable()
+   * Implementation of write_distributed_array()
    */
   virtual void write_distributed_array_impl(const std::string &file_name,
                                             const std::string &variable_name,
@@ -383,6 +390,12 @@ protected:
   virtual void close_impl(const std::string &file_name) = 0;
 
   const std::string &experiment_id() const;
+
+  /*!
+   * Allows derived classes to set m_impl->is_async.
+   */
+  void set_is_async(bool flag);
+
 private:
   void write_experiment_id(const std::string &file_name);
 

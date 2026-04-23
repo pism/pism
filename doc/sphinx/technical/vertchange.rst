@@ -62,7 +62,7 @@ In PISM the computational domain (region)
    \mathcal{R}=\left\{(x,y,s)\big| -L_x\le x \le L_x, -L_y\le y \le L_y, -Lb_z \le s \le
    L_z\right\}
 
-is divided into a three-dimensional grid. See ``IceGrid``.
+is divided into a three-dimensional grid. See ``Grid``.
 
 The change of variable `z\to s` used here *is not* the :cite:`Jenssen` change of variable
 `\tilde s=(z-b)/H` . That change causes the conservation of energy equation to

@@ -122,8 +122,8 @@ subsection, is one of the most important: grid resolution.
        diffusivity in the ice sheet to be substantially lower during the run. Because the
        maximum diffusivity controls the time-step in the PISM adaptive time-stepping
        scheme :cite:`BBL`, the number of time steps is reduced in the hybrid run. To see
-       this contrast use ``ncview ts_g20km_10ka*nc`` to view variables ``max_diffusivity``
-       and ``dt``.
+       this contrast use ``ncview scalar_g20km_10ka*nc`` to view variables
+       ``max_diffusivity`` and ``dt``.
 
 .. [#] See :cite:`vanPeltetal2013` (inversion of DEMs for basal topography) and
        :cite:`Habermannetal2013` (inversion surface velocities for basal shear stress) for

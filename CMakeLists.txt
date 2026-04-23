@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required (VERSION 3.20)
 
 # Get PISM's "short" X.Y.Z version from a file
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION)
@@ -14,6 +14,7 @@ project (Pism
 
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
+
 pism_set_full_version()
 
 include (GNUInstallDirs)
@@ -64,7 +65,6 @@ set(CMAKE_COLOR_MAKEFILE OFF)
 pism_check_build_dir_location()
 set (Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc" CACHE STRING "" FORCE)
 mark_as_advanced (Pism_CONFIG_FILE)
-file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 # The default options cache
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
@@ -73,7 +73,7 @@ option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
 option (Pism_BUILD_DOCS "Build PISM's documentation with 'make all'." OFF)
 option (Pism_USE_PROJ "Use PROJ to compute longitudes and latitudes." OFF)
-option (Pism_USE_YAC_INTERPOLATION "Use YAC and PROJ for interpolation" OFF)
+option (Pism_USE_YAC "Use YAC (for interpolation and async output)" OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
@@ -208,6 +208,7 @@ add_custom_target (test-python
 # Install helper scripts residing in util/
 install(PROGRAMS
   util/pism_adjust_timeline
+  util/pism_async_writer
   util/pism_check_stationarity
   util/pism_create_timeline
   util/pism_fill_missing_petsc
@@ -241,12 +242,11 @@ if (Pism_ENABLE_DOCUMENTATION)
 endif()
 
 # PISM regression testing
-ENABLE_TESTING()
+list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+list(REMOVE_DUPLICATES CMAKE_CTEST_ARGUMENTS)
+enable_testing()
 include(CTest)
 
-if (CMAKE_VERSION VERSION_GREATER 3.16)
-  set (CMAKE_CTEST_ARGUMENTS "--output-on-failure")
-endif()
 add_subdirectory (test)
 add_subdirectory (test/regression)
 

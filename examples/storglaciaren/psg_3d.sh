@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2011, 2012, 2014, 2018, 2024, 2025 Andy Aschwanden and Ed Bueler
+# Copyright (C) 2011, 2012, 2014, 2018, 2024, 2025, 2026 Andy Aschwanden and Ed Bueler
 
 set -e # exit on error
 
@@ -116,19 +116,19 @@ ENDTIME=$(($STARTYEAR + $RUNLENGTH))
 INNAME=$OUTNAME
 OUTNAME=ssa_ftt_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
-TSNAME=ts_${OUTNAME}
-EXNAME=ex_${OUTNAME}
-TSSTEP=yearly
-EXSTEP=yearly
-EXVARS="usurf,taud_mag,topg,tauc,taud,beta,mask,thk,temppabase,tempicethk_basal,velbase_mag,velsurf_mag,climatic_mass_balance,tillphi"
+SCALAR_NAME=scalar_${OUTNAME}
+SPATIAL_NAME=spatial_${OUTNAME}
+SCALAR_STEP=yearly
+SPATIAL_STEP=yearly
+SPATIAL_VARS="usurf,taud_mag,topg,tauc,taud,beta,mask,thk,temppabase,tempicethk_basal,velbase_mag,velsurf_mag,climatic_mass_balance,tillphi"
 
 echo
 echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -bootstrap -i $INNAME $GRID \
      -regrid_file $INNAME $COUPLER_FORCING $FULLPHYS \
      -surface.force_to_thickness.file $PISM_DATANAME \
-     -ts_file $TSNAME -ts_times $TSSTEP \
-     -extra_file $EXNAME -extra_times $EXSTEP -extra_vars $EXVARS \
+     -scalar_file $SCALAR_NAME -scalar_times $SCALAR_STEP \
+     -spatial_file $SPATIAL_NAME -spatial_times $SPATIAL_STEP -spatial_vars $SPATIAL_VARS \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
@@ -145,14 +145,14 @@ ENDTIME=$(($STARTYEAR + $RUNLENGTH))
 INNAME=$OUTNAMEFULL
 OUTNAME=ssa_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
-TSNAME=ts_${OUTNAMEFULL}
-EXNAME=ex_${OUTNAMEFULL}
+SCALAR_NAME=scalar_${OUTNAMEFULL}
+SPATIAL_NAME=spatial_${OUTNAMEFULL}
 
 echo
 echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
-     -ts_file $TSNAME -ts_times $TSSTEP \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXSTEP \
+     -scalar_file $SCALAR_NAME -scalar_times $SCALAR_STEP \
+     -spatial_file $SPATIAL_NAME -spatial_vars $SPATIAL_VARS -spatial_times $SPATIAL_STEP \
      -ys $STARTYEAR -y $RUNLENGTH -o_size medium -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo

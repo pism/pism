@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,6 +52,10 @@
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/IO_Flags.hh"
 
+#if (Pism_USE_YAC == 1)
+#include "pism/util/io/YacOutputWriter.hh"
+#endif
+
 namespace pism {
 
 IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &context)
@@ -72,7 +76,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
       m_step_counter(0),
       m_thickness_change(grid),
-      m_ts_times(new std::vector<double>()) {
+      m_scalar_times(new std::vector<double>()) {
 
   m_velocity_bc_mask.set_interpolation_type(NEAREST);
   m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
@@ -127,7 +131,18 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
     m_surface_input_for_hydrology->metadata()["valid_min"] = { 0.0 };
   }
 
-  m_output_writer = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  m_output_writer   = std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
+  m_snapshot_writer = m_output_writer;
+  m_spatial_writer  = m_output_writer;
+
+#if (Pism_USE_YAC == 1)
+  if (pism::yac_component_defined("pism_output")) {
+    auto yac_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config);
+
+    m_snapshot_writer = yac_writer;
+    m_spatial_writer  = yac_writer;
+  }
+#endif
 }
 
 double IceModel::dt() const {
@@ -746,13 +761,13 @@ IceModelTerminationReason IceModel::run() {
   enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
   // Update spatially-variable diagnostics at the beginning of the run.
-  write_extras();
+  write_spatial_diagnostics();
 
   // Update scalar time series to remember the state at the beginning of the run.
   // This is needed to compute rates of change of the ice mass, volume, etc.
   {
     const double time = m_time->current();
-    for (const auto &d : m_ts_diagnostics) {
+    for (const auto &d : m_available_scalar_diagnostics) {
       d.second->update(time, time);
     }
   }
@@ -793,7 +808,7 @@ IceModelTerminationReason IceModel::run() {
     // writing these fields here ensures that we do it after the last time-step
     profiling.begin("io");
     write_snapshot();
-    write_extras();
+    write_spatial_diagnostics();
     bool stop_after_chekpoint = write_checkpoint();
     profiling.end("io");
 

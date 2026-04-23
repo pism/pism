@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2022, 2023, 2024 PISM Authors
+/* Copyright (C) 2019, 2020, 2022, 2023, 2024, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -185,7 +185,7 @@ void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
       col[m].c = 0;
     }
 
-    for (auto p = m_grid->points(); p; p.next()) {
+    for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
 
@@ -270,7 +270,7 @@ void Poisson::assemble_rhs(double rhs,
                            array::Scalar &b) {
   array::AccessScope list{&mask, &bc, &b};
 
-  for (auto p = m_grid->points(); p; p.next()) {
+  for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.as_int(i, j) == 1) {

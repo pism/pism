@@ -80,8 +80,8 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
-  virtual DiagnosticList diagnostics_impl() const;
-  virtual TSDiagnosticList ts_diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
+  virtual TSDiagnosticList scalar_diagnostics_impl() const;
 
   void dummy_accumulation(const array::Scalar& smb, array::Scalar& result);
   void dummy_melt(const array::Scalar& smb, array::Scalar& result);

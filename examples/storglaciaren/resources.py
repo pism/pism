@@ -44,7 +44,7 @@ def generate_domain(domain):
 
 def default_spatial_ts_vars():
     '''
-    Returns a list of commonly-used extra vars
+    Returns a list of commonly-used spatially-variable diagnostics
     '''
 
     exvars = ['beta',
@@ -71,7 +71,7 @@ def default_spatial_ts_vars():
 
 def ch_spatial_ts_vars():
     '''
-    Returns a list of commonly-used extra vars
+    Returns a list of commonly-used spatially-variable diagnostics
     '''
 
     exvars = ['beta',
@@ -113,12 +113,12 @@ def generate_spatial_ts(outfile, exvars, step, start=None, end=None, split=None,
     params_dict = OrderedDict()
     if split is True:
         outfile, ext = os.path.splitext(outfile)
-        params_dict['extra_split'] = ''
+        params_dict['spatial_split'] = ''
     if odir is None:
-        params_dict['extra_file'] = 'ex_' + outfile
+        params_dict['spatial_file'] = 'spatial_' + outfile
     else:
-        params_dict['extra_file'] = os.path.join(odir, 'ex_' + outfile)
-    params_dict['extra_vars'] = exvars
+        params_dict['spatial_file'] = os.path.join(odir, 'spatial_' + outfile)
+    params_dict['spatial_vars'] = exvars
 
     if step is None:
         step = 'yearly'
@@ -128,7 +128,7 @@ def generate_spatial_ts(outfile, exvars, step, start=None, end=None, split=None,
     else:
         times = step
 
-    params_dict['extra_times'] = times
+    params_dict['spatial_times'] = times
 
     return params_dict
 
@@ -142,9 +142,9 @@ def generate_scalar_ts(outfile, step, start=None, end=None, odir=None):
 
     params_dict = OrderedDict()
     if odir is None:
-        params_dict['ts_file'] = 'ts_' + outfile
+        params_dict['scalar_file'] = 'scalar_' + outfile
     else:
-        params_dict['ts_file'] = os.path.join(odir, 'ts_' + outfile)
+        params_dict['scalar_file'] = os.path.join(odir, 'scalar_' + outfile)
 
     if step is None:
         step = 'yearly'
@@ -153,7 +153,7 @@ def generate_scalar_ts(outfile, step, start=None, end=None, odir=None):
         times = '{start}:{step}:{end}'.format(start=start, step=step, end=end)
     else:
         times = step
-    params_dict['ts_times'] = times
+    params_dict['scalar_times'] = times
 
     return params_dict
 

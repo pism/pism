@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021, 2022, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019, 2021, 2022, 2025, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -67,7 +67,7 @@ public:
   const array::Staggered1& diffusivity() const;
 
 protected:
-  virtual DiagnosticList diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
 
   virtual void compute_surface_gradient(const Inputs &inputs,
                                         array::Staggered1 &h_x,
@@ -106,8 +106,6 @@ protected:
   virtual void compute_I(const Geometry &geometry);
 
   bool interglacial(double accumulation_time) const;
-
-  const unsigned int m_stencil_width;
 
   //! temporary storage for eta, theta and the smoothed thickness
   array::Scalar2 m_work_2d_0;

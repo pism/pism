@@ -8,16 +8,16 @@ output_file=$1
 input_file=$2
 climate_file=$2
 
-extra_vars=climatic_mass_balance,surface_accumulation_flux,surface_runoff_flux,air_temp_snapshot,snow_depth,surface_albedo,insolation,atmosphere_transmissivity,debms_insolation_driven_melt_flux,debms_temperature_driven_melt_flux,debms_background_melt_flux,thk,mask
+spatial_vars=climatic_mass_balance,surface_accumulation_flux,surface_runoff_flux,air_temp_snapshot,snow_depth,surface_albedo,insolation,atmosphere_transmissivity,debms_insolation_driven_melt_flux,debms_temperature_driven_melt_flux,debms_background_melt_flux,thk,mask
 
 common_options="
   -atmosphere searise_greenland \
   -atmosphere.searise_greenland.file ${climate_file} \
   -bootstrap \
   -energy none \
-  -extra_file ${output_file} \
-  -extra_times 7days \
-  -extra_vars ${extra_vars} \
+  -spatial_file ${output_file} \
+  -spatial_times 7days \
+  -spatial_vars ${spatial_vars} \
   -geometry.update.enabled false \
   -i ${input_file} \
   -o_size none \

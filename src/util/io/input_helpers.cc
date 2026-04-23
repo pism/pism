@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -206,23 +206,40 @@ static std::vector<AxisType> dimension_types(const File &file, const std::string
  */
 static void transpose(const double *input, const std::vector<AxisType> &input_axes,
                       const std::array<int, 4> &count, double *output) {
+
+  // make a copy of `input_axes`:
+  auto axes = input_axes;
+
+  // Override the last axis if it is "unknown". This is needed to be able to read
+  // variables such as isochrone deposition times.
+  if (axes.back() == UNKNOWN_AXIS) {
+    axes.back() = Z_AXIS;
+  }
+
+  // validate `axes`:
+  int N = (int)axes.size();
+  for (int k = 0; k < N; ++k) {
+    if (axes[k] < 0 or axes[k] > 3) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid `axes[%d]` = %d", k, axes[k]);
+    }
+  }
+
   // delta[X_AXIS] is the change in the linear index corresponding to incrementing x in
   // the `input` ordering. delta[Y_AXIS], delta[Z_AXIS] and delta[T_AXIS] correspond to
   // changes in y, z, t.
   std::vector<unsigned> delta = {1, 1, 1, 1}; // 4 to store steps for T,Y,X,Z axes
   {
-    int N = (int)input_axes.size();
     // compute changes in the linear index corresponding to incrementing one of the
     // "spatial" indexes, in the order used in `input`:
     std::vector<unsigned> tmp(N, 1);
     for (int k = 0; k < N; ++k) {
       for (int n = k + 1; n < N; ++n) {
-        tmp[k] *= count[input_axes[n]];
+        tmp[k] *= count[axes[n]];
       }
     }
     // re-arrange so that they are stored in the `T,X,Y,Z` order:
     for (int k = 0; k < N; ++k) {
-      delta[input_axes[k]] = tmp[k];
+      delta[axes[k]] = tmp[k];
     }
   }
 
@@ -251,22 +268,48 @@ static void transpose(const double *input, const std::vector<AxisType> &input_ax
 static void check_for_missing_values(const File &file, const std::string &variable_name,
                                      double tolerance, const double *buffer, size_t buffer_length) {
   auto attribute = file.read_double_attribute(variable_name, "_FillValue");
-  if (attribute.size() == 1) {
-    double fill_value = attribute[0];
+  if (attribute.size() != 1) {
+    return;
+  }
 
+  // Check that all value in the local portion are finite, stop with an error message if
+  // not:
+  {
+    int failed = 0;
     for (size_t k = 0; k < buffer_length; ++k) {
-      if (fabs(buffer[k] - fill_value) < tolerance) {
-        throw RuntimeError::formatted(
-            PISM_ERROR_LOCATION,
-            "Variable '%s' in '%s' contains values matching the _FillValue attribute",
-            variable_name.c_str(), file.name().c_str());
-      }
       if (not std::isfinite(buffer[k])) {
-        throw RuntimeError::formatted(
-            PISM_ERROR_LOCATION,
-            "Variable '%s' in '%s' contains values that are not finite (NaN or infinity)",
-            variable_name.c_str(), file.name().c_str());
+        failed = 1;
+        break;
       }
+    }
+    int failed_global = 0;
+    MPI_Allreduce(&failed, &failed_global, 1, MPI_INT, MPI_MAX, file.com());
+    if (failed_global > 0) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "Variable '%s' in '%s' contains values that are not finite (NaN or infinity)",
+          variable_name.c_str(), file.name().c_str());
+    }
+  }
+
+  // Check that values in the local portion don't match _FillValue:
+  {
+    int failed                = 0;
+    double fill_value         = attribute[0];
+    bool fill_value_is_finite = std::isfinite(fill_value);
+    for (size_t k = 0; k < buffer_length; ++k) {
+      if (fill_value_is_finite and fabs(buffer[k] - fill_value) < tolerance) {
+        failed = 1;
+        break;
+      }
+    }
+    int failed_global = 0;
+    MPI_Allreduce(&failed, &failed_global, 1, MPI_INT, MPI_MAX, file.com());
+    if (failed_global > 0) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "Variable '%s' in '%s' contains values matching the _FillValue attribute",
+          variable_name.c_str(), file.name().c_str());
     }
   }
 }

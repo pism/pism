@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2024 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2024, 2026 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -83,8 +83,8 @@ if __name__ == "__main__":
     adjustTauc(vecs.mask, tauc_prior)
 
     # Convert tauc_prior -> zeta_prior
-    zeta = PISM.Scalar2(grid, "")
-    ssarun.tauc_param.convertFromDesignVariable(tauc_prior, zeta)
+    zeta = PISM.Scalar2(grid, "zeta")
+    ssarun.designVariableParameterization().convertFromDesignVariable(tauc_prior, zeta)
     ssarun.ssa.linearize_at(zeta)
 
     vel_ssa_observed = None
@@ -116,23 +116,23 @@ if __name__ == "__main__":
     (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(ssarun)
     eta = config.get_number("inverse.tikhonov.penalty_weight")
 
-    solver_gn = PISM.InvSSATikhonovGN(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
+    solver_gn = PISM.IP_SSATaucTikhonovGNSolver(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
 
-    seed = PISM.OptionInteger("-inv_seed", "random generator seed")
+    seed = PISM.OptionInteger("-inv_seed", "random generator seed", 0)
     if seed.is_set():
         np.random.seed(seed.value() + PISM.Context().rank)
 
     d1 = PISM.vec.randVectorS(grid, 1)
     d2 = PISM.vec.randVectorS(grid, 1)
 
-    GNd1 = PISM.Scalar(grid, "")
-    GNd2 = PISM.Scalar(grid, "")
+    GNd1 = PISM.Scalar(grid, "GNd1")
+    GNd2 = PISM.Scalar(grid, "GNd2")
 
     solver_gn.apply_GN(d1, GNd1)
     solver_gn.apply_GN(d2, GNd2)
 
-    ip1 = d1.get_vec().dot(GNd2.get_vec())
-    ip2 = d2.get_vec().dot(GNd1.get_vec())
+    ip1 = d1.vec().get().dot(GNd2.vec().get())
+    ip2 = d2.vec().get().dot(GNd1.vec().get())
     PISM.verbPrintf(1, grid.com, "Test of Gauss-Newton symmetry (x^t GN y) vs (y^t GN x)\n")
     PISM.verbPrintf(1, grid.com, "ip1 %.10g ip2 %.10g\n" % (ip1, ip2))
     PISM.verbPrintf(1, grid.com, "relative error %.10g\n" % abs((ip1 - ip2) / ip1))

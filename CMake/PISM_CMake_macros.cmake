@@ -83,8 +83,7 @@ macro(pism_set_pedantic_flags)
   set (CMAKE_CXX_FLAGS_DEBUG "-g ${PEDANTIC_CXXFLAGS}")
 endmacro(pism_set_pedantic_flags)
 
-# Make sure that we don't create .petscrc in $HOME, because this would affect
-# all PISM runs by the current user.
+# Make sure that we don't build PISM in $HOME because this would make a mess.
 macro(pism_check_build_dir_location)
   if (DEFINED ENV{HOME})
     # Don't assume that HOME env var is set.
@@ -101,7 +100,7 @@ macro(pism_check_build_dir_location)
   endif()
 endmacro()
 
-function(pism_find_library PREFIX SPEC)
+function(pism_find_library PREFIX) # library specs are specified as extra arguments
   # Find a library using pkgconfig
   find_package(PkgConfig REQUIRED)
   # Trick pkg-config into using "Libs.private" instead of "Libs" to get the full list of
@@ -114,10 +113,17 @@ function(pism_find_library PREFIX SPEC)
       set(PKG_CONFIG_ARGN "--static" CACHE INTERNAL "command-line arguments for pkg-config")
     endif()
   endif()
-  pkg_search_module(${PREFIX} REQUIRED IMPORTED_TARGET ${SPEC})
-  if (${${PREFIX}_FOUND})
-    message(STATUS "Found ${PREFIX}: ${${PREFIX}_PREFIX} (found version \"${${PREFIX}_VERSION}\")")
-  endif()
+
+  foreach (X IN ITEMS ${ARGN})
+    pkg_search_module(${PREFIX} IMPORTED_TARGET ${X})
+    if (${${PREFIX}_FOUND})
+      message(STATUS
+        "Found ${PREFIX} (${X}): ${${PREFIX}_PREFIX} (found version \"${${PREFIX}_VERSION}\")")
+      return()
+    endif()
+  endforeach()
+
+  message(FATAL_ERROR "Failed to find any of ${ARGN}")
 endfunction()
 
 macro(pism_find_petsc)
@@ -143,9 +149,9 @@ macro(pism_find_prerequisites)
   find_package (MPI REQUIRED COMPONENTS C CXX)
 
   # Other required libraries
-  pism_find_library (NETCDF "netcdf>=4.4")
   pism_find_library (GSL "gsl>=1.15")
   pism_find_library (FFTW "fftw3>=3.1")
+  pism_find_library (NETCDF "netcdf>=4.7")
 
   # UDUNITS does not support pkg-config
   find_package (UDUNITS2)
@@ -159,26 +165,13 @@ macro(pism_find_prerequisites)
     pism_find_library(PROJ "proj>=6.0")
   endif()
 
-  if (Pism_USE_YAC_INTERPOLATION)
+  if (Pism_USE_YAC)
     if (NOT Pism_USE_PROJ)
       message(FATAL_ERROR "Please build PISM with PROJ to use YAC for interpolation")
     endif()
 
     pism_find_library(YAC "yac-mci>=3.4.0")
     pism_find_library(YAXT "yaxt_c>=0.11.0")
-  endif()
-
-  if (Pism_USE_PARALLEL_NETCDF4)
-    # Try to find netcdf_par.h. We assume that NetCDF was compiled with
-    # parallel I/O if this header is present.
-    find_file(NETCDF_PAR_H netcdf_par.h
-      HINTS ${NETCDF_INCLUDE_DIRS} ${NETCDF_INCLUDEDIR}
-      NO_DEFAULT_PATH)
-
-    if (NOT NETCDF_PAR_H)
-      message(FATAL_ERROR
-        "Selected NetCDF library (include: ${NETCDF_INCLUDEDIR}, lib: ${NETCDF_LIBRARIES}) does not support parallel I/O.")
-    endif()
   endif()
 
 endmacro()

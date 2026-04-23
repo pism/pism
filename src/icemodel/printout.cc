@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019, 2021, 2023, 2024, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021, 2023, 2024, 2025, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -83,7 +83,7 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
   }
   loop.check();
 
-  return (unsigned int)GlobalMax(grid->com, CFL_violation_count);
+  return GlobalMax(grid->com, (int)CFL_violation_count);
 }
 
 void IceModel::print_summary(bool tempAndAge, double dt) {

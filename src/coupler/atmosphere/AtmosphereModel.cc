@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -198,7 +198,7 @@ MaxTimestep AtmosphereModel::max_timestep_impl(double my_t) const {
   return MaxTimestep("atmosphere model");
 }
 
-DiagnosticList AtmosphereModel::diagnostics_impl() const {
+DiagnosticList AtmosphereModel::spatial_diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
@@ -208,15 +208,15 @@ DiagnosticList AtmosphereModel::diagnostics_impl() const {
   };
 
   if (m_input_model) {
-    result = combine(result, m_input_model->diagnostics());
+    result = combine(result, m_input_model->spatial_diagnostics());
   }
 
   return result;
 }
 
-TSDiagnosticList AtmosphereModel::ts_diagnostics_impl() const {
+TSDiagnosticList AtmosphereModel::scalar_diagnostics_impl() const {
   if (m_input_model) {
-    return m_input_model->ts_diagnostics();
+    return m_input_model->scalar_diagnostics();
   }
 
   return {};

@@ -134,7 +134,7 @@ void EigenCalving::update(const array::CellType &cell_type,
   } // end of the loop over grid points
 }
 
-DiagnosticList EigenCalving::diagnostics_impl() const {
+DiagnosticList EigenCalving::spatial_diagnostics_impl() const {
   return {{"eigen_calving_rate", Diagnostic::wrap(m_calving_rate)}};
 }
 

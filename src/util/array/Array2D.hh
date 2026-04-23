@@ -36,7 +36,7 @@ public:
   Array2D(std::shared_ptr<const Grid> grid, const std::string &short_name,
           Kind ghostedp, unsigned int stencil_width = 1)
     : Array(grid, short_name, ghostedp,
-            sizeof(T) / sizeof(double), stencil_width, {0.0}) {
+            sizeof(T) / sizeof(double), stencil_width, {}) {
     set_begin_access_use_dof(false);
   }
 

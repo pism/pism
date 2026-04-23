@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -140,6 +140,8 @@ void GlobalSum(MPI_Comm comm, int *local, int *result, int count);
 double GlobalMin(MPI_Comm comm, double local);
 
 double GlobalMax(MPI_Comm comm, double local);
+
+int GlobalMax(MPI_Comm comm, int local);
 
 double GlobalSum(MPI_Comm comm, double local);
 

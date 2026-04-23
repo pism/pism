@@ -1,8 +1,3 @@
-# Add the -config to all PISM test runs (necessary because we want to use the
-# config file from *this* build, not the one that might be present in the
-# install location).
-file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
-
 # Copy pism_nccmp into the build directory:
 configure_file (${PROJECT_SOURCE_DIR}/util/pism_nccmp ${PROJECT_BINARY_DIR}/pism_nccmp COPYONLY)
 
@@ -23,14 +18,17 @@ endfunction(set_memcheck_test_properties)
 
 # A macro simplifying test creation:
 macro(pism_test name script)
-  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
+  set(test_name "${name}:${script}")
+
+  add_test(${test_name} ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
+
   if (${Pism_TEST_USING_VALGRIND})
     add_memcheck_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
     set_memcheck_test_properties("${name}:${script}"
       PROPERTIES FAIL_REGULAR_EXPRESSION "ERROR SUMMARY: [^0]")
   endif()
 
-  set_property(TEST "${name}:${script}" PROPERTY
+  set_property(TEST "${test_name}" PROPERTY
     SKIP_REGULAR_EXPRESSION
     "ModuleNotFoundError: No module named"
     "ncpdq: command not found"
@@ -39,10 +37,25 @@ macro(pism_test name script)
     "ncrcat: command not found"
     "cdo: command not found"
   )
+  # Add the -config to all PISM test runs (necessary because we want to use the
+  # config file from *this* build, not the one that might be present in the
+  # install location).
+  set_tests_properties(${test_name} PROPERTIES
+      ENVIRONMENT "PETSC_OPTIONS=-config \"${PROJECT_BINARY_DIR}/pism_config.nc\";PYTHONPATH=$ENV{PYTHONPATH}:${PROJECT_BINARY_DIR}/site-packages"
+    FIXTURES_REQUIRED config)
 endmacro()
 
 macro(pism_python_test name script)
-  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python ${Python3_EXECUTABLE})
+  set(test_name "${name}:${script}")
+
+  add_test("${test_name}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python ${Python3_EXECUTABLE})
+
+  # Add the -config to all PISM test runs (necessary because we want to use the
+  # config file from *this* build, not the one that might be present in the
+  # install location).
+  set_tests_properties(${test_name} PROPERTIES
+    ENVIRONMENT "PETSC_OPTIONS=-config \"${PROJECT_BINARY_DIR}/pism_config.nc\";PYTHONPATH=$ENV{PYTHONPATH}:${PROJECT_BINARY_DIR}/site-packages"
+    FIXTURES_REQUIRED config)
 endmacro()
 
 # Tests themselves:
@@ -100,12 +113,15 @@ pism_test (bed_deformation:LC:exact_restartability beddef_lc_restart.sh)
 
 pism_test (PICO:Split-and-merge pico_split/run_test.sh)
 
+pism_test (Isochrones:restart test_isochrone_restart.sh)
+
 if (Pism_USE_PROJ)
   pism_test (epsg_code_processing test_epsg_processing.py)
 endif()
 
-if (Pism_USE_YAC_INTERPOLATION)
+if (Pism_USE_YAC)
   pism_test (regridding:yac:inverted_y interpolation_inverted_y.sh)
+  pism_test (regridding:yac:small_grid interpolation_small_grid.sh )
 endif()
 
 pism_test (Verification:PISMBedThermalUnit_test_K btu_regression.sh)
@@ -119,6 +135,10 @@ pism_test (Verification:SSAFEM_linear_flow ssa/ssafem_test_linear.sh)
 pism_test (Verification:SSAFEM_plug_flow ssa/ssafem_test_plug.sh)
 
 if(Pism_BUILD_PYTHON_BINDINGS)
+
+  if (Pism_USE_YAC)
+    pism_python_test (Python:output:async async_io/run_test.sh)
+  endif()
 
 	pism_python_test (Python:Verification:test_I_SSAFD ssa/ssa_testi_fd.sh)
 

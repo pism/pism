@@ -290,7 +290,6 @@ void IceModel::front_retreat_step(double t, double dt) {
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
     m_prescribed_retreat->update(t, dt,
-                                 m_geometry.cell_type,
                                  m_geometry.ice_thickness,
                                  m_geometry.ice_area_specific_volume);
 

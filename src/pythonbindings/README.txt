@@ -6,19 +6,19 @@ We try to detect these pieces automatically, but this may fail and you may need 
 following advanced cmake variables explicitly (with examples in parentheses).
 
 PYTHON_EXECUTABLE (/opt/local/bin/python)
-PYTHON_INCLUDES (/opt/local/Library/Frameworks/Python.framework/Versions/2.6/include/python2.6)
-PYTHON_LIBRARY  (/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/config/libpython2.6.dylib)
-PETSC4PY_INCLUDES (/Users/david/.local/lib/python2.6/site-packages/petsc4py/include)
+PYTHON_INCLUDES (/opt/local/Library/Frameworks/Python.framework/Versions/3.12/include/python3.12)
+PYTHON_LIBRARY  (/opt/local/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/config/libpython3.12.dylib)
+PETSC4PY_INCLUDES (/Users/david/.local/lib/python3.12/site-packages/petsc4py/include)
 
 Try a 'make' and see if it builds.  There will be a flurry of warnings; go ahead and ignore them.
 
 After having done a 'make install', the python libraries will be found in something like
 
-${CMAKE_INSTALL_PREFIX}/lib/python2.6/site-packages/PISM/...etc...
+${CMAKE_INSTALL_PREFIX}/lib/python3.12/site-packages/PISM/...etc...
 
 You will need to add this location to your PYTHONPATH, e.g.
 
-export PYTHONPATH=${PYTHONPATH}:/usr/local/lib/python2.6/site-packages
+export PYTHONPATH=${PYTHONPATH}:/usr/local/lib/python3.12/site-packages
 
 NOTE: The path terminates with site-packages, not PISM.
 

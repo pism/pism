@@ -15,4 +15,4 @@ jobs:
       - run: |
           export PETSC_DIR=/usr/lib/petsc
           cmake -B build -S . -DCMAKE_C_FLAGS="-Werror" -DCMAKE_CXX_FLAGS="-Werror"
-      - run: make -j -C build all
+      - run: make -j4 -C build all

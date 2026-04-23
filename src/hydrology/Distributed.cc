@@ -108,7 +108,7 @@ void Distributed::write_state_impl(const OutputFile &output) const {
   m_P.write(output);
 }
 
-std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() const {
+std::map<std::string, TSDiagnostic::Ptr> Distributed::scalar_diagnostics_impl() const {
   std::map<std::string, TSDiagnostic::Ptr> result = {
     // FIXME: add mass-conservation time-series diagnostics
   };

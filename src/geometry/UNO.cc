@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2020, 2022, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *

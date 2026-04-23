@@ -476,7 +476,7 @@ void FractureDensity::update(double dt,
   D.copy_from(D_new);
 }
 
-DiagnosticList FractureDensity::diagnostics_impl() const {
+DiagnosticList FractureDensity::spatial_diagnostics_impl() const {
   return {{"fracture_density", Diagnostic::wrap(m_density)},
           {"fracture_growth_rate", Diagnostic::wrap(m_growth_rate)},
           {"fracture_healing_rate", Diagnostic::wrap(m_healing_rate)},

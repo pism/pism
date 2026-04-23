@@ -46,7 +46,7 @@ public:
   const array::Scalar& threshold() const;
 
 protected:
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
   
   array::Scalar m_calving_threshold;
 

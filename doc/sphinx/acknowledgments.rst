@@ -38,7 +38,7 @@ PISM includes the source code for three external libraries we rely on:
 
 - ``cubature.c``, Copyright |copy| 2005 Steven G. Johnson, GPL
 
-- `JSON for Modern C++ <nlohmann-json>`_, Copyright |copy| 2013-2025 Niels Lohmann, MIT
+- `JSON for Modern C++ <nlohmann-json_>`_, Copyright |copy| 2013-2025 Niels Lohmann, MIT
 
 .. csv-table:: Past and current grants supporting PISM development.
    :name: tab-funding

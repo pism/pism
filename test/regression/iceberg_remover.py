@@ -1,5 +1,5 @@
 import numpy as np
-
+from unittest import TestCase
 import PISM
 import PISM.testing
 
@@ -55,12 +55,13 @@ def check(version):
     model.update(vel_bc_mask, cell_type, ice_thickness)
     np.testing.assert_equal(cell_type.to_numpy(), desired_result)
 
-def iceberg_remover_fd_test():
-    """Iceberg remover (FD version)"""
+class IcebergRemover(TestCase):
+    def test_iceberg_remover_fd(self):
+        """Iceberg remover (FD version)"""
 
-    check("fd")
+        check("fd")
 
-def iceberg_remover_fem_test():
-    """Iceberg remover (FEM version)"""
+    def test_iceberg_remover_fem(self):
+        """Iceberg remover (FEM version)"""
 
-    check("fem")
+        check("fem")

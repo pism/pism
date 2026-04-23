@@ -4,11 +4,12 @@
 
 .. _sec-install-yac:
 
-Enabling flexible interpolation using YAC and PROJ
---------------------------------------------------
+Flexible interpolation and asynchronous output using YAC and PROJ
+-----------------------------------------------------------------
 
-PISM's projection-aware interpolation code uses PROJ_\ [#f1]_ to compute *longitude, latitude*
-coordinates of cell centers and cell corners and YAC_ for the interpolation itself.
+PISM uses YAC_ to implement projection-aware interpolation of inputs (which also requires
+PROJ_\ [#f1]_ to compute *longitude, latitude* coordinates of cell centers and cell
+corners) and asynchronous writing of diagnostic outputs and model state snapshots.
 
 YAC depends on YAXT_. Please make sure you have Autoconf_, Automake_, and libfyaml_
 installed, then use the following commands to install both YAXT and YAC:
@@ -19,12 +20,12 @@ installed, then use the following commands to install both YAXT and YAC:
    :start-after: manual-begin
    :end-before: manual-end
 
-To build PISM with these libraries, set the CMake variable `Pism_USE_YAC_INTERPOLATION`
+To build PISM with these libraries, set the CMake variable `Pism_USE_YAC`
 and include YAC's installation prefix in `CMAKE_PREFIX_PATH`:
 
 .. code-block:: bash
 
-   cmake -DPism_USE_YAC_INTERPOLATION=YES \
+   cmake -DPism_USE_YAC=YES \
          -DCMAKE_PREFIX_PATH="$HOME/local/yac;..." \
          ...
 

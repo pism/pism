@@ -1,4 +1,4 @@
-/* Copyright (C) 2024, 2025 PISM Authors
+/* Copyright (C) 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,8 +33,9 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/Config.hh"
 #include <string>
+#include <vector>
 
-#if (Pism_USE_YAC_INTERPOLATION == 1)
+#if (Pism_USE_YAC == 1)
 #include "InputInterpolationYAC.hh"
 #endif
 
@@ -112,7 +113,7 @@ InputInterpolation::create(const Grid &target_grid,
                            const std::vector<double> &levels, const File &input_file,
                            const std::string &variable_name, InterpolationType type) {
 
-#if (Pism_USE_YAC_INTERPOLATION == 1)
+#if (Pism_USE_YAC == 1)
   {
     std::string source_projection = mapping_info_from_file(
         input_file, variable_name, target_grid.ctx()->unit_system())["proj_params"];
@@ -156,8 +157,9 @@ InputInterpolation::create(const Grid &target_grid,
   }
 #endif
 
-  return std::make_shared<InputInterpolation3D>(target_grid, levels, input_file, variable_name,
-                                                type);
+  std::vector<double> fake_levels = { 0.0 };
+  return std::make_shared<InputInterpolation3D>(target_grid, levels.empty() ? fake_levels : levels,
+                                                input_file, variable_name, type);
 }
 
 

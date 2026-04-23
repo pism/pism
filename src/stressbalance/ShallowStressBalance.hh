@@ -72,7 +72,7 @@ public:
 protected:
   virtual void init_impl();
 
-  virtual DiagnosticList diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
 
   IceBasalResistancePlasticLaw *m_basal_sliding_law;
   std::shared_ptr<rheology::FlowLaw> m_flow_law;

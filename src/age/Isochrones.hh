@@ -65,7 +65,7 @@ private:
 
   double top_layer_deposition_time() const;
 
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 
   void initialize(const File &input_file, int record, bool use_interpolation);
 

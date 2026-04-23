@@ -19,7 +19,7 @@ except:
 def parse_filename(filename, opts):
     "Get MISMIP info from a file name."
     tokens = filename.split('_')
-    if tokens[0] == "ex":
+    if tokens[0] == "spatial":
         tokens = tokens[1:]
 
     try:

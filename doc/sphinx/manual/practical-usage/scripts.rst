@@ -31,7 +31,7 @@ Browser <pism-browser_>`_. The Python scripts all take option ``--help``.
    * - ``util/pism_flowline``
      - See section :ref:`sec-flowline-modeling`.
    * - ``util/pism_check_stationarity``
-     - Evaluate stationarity of a variable in a PISM ``-ts_file`` output.
+     - Evaluate stationarity of a variable in a PISM ``-scalar_file`` output.
    * - ``util/pism_nc2cdo``
      - Makes a netCDF file ready for Climate Data Operators (CDO).
    * - ``util/pism_nccmp``

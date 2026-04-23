@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2018, 2021, 2023, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2018, 2021, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,7 +40,7 @@ protected:
 
   // ignores pressure and uses non-pressure-adjusted temperature
   double flow_from_temp(double stress, double temp,
-                        double , double) const;
+                        double  /*pressure*/, double /*gs*/) const;
 };
 
 bool FlowLawIsPatersonBuddCold(const FlowLaw &flow_law,

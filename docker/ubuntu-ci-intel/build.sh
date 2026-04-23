@@ -1,6 +1,10 @@
 #!/bin/bash
 
+set +x
+source /opt/intel/oneapi/setvars.sh
+source $HOME/local/pism/bin/activate
 set -x
+
 set -e
 set -u
 
@@ -14,7 +18,7 @@ source_dir=${source_dir:-/var/tmp/pism}
 build_dir=${build_dir:-/tmp/pism-build}
 
 # Installation prefix for all prerequisites built from source
-lib_prefix=/opt
+lib_prefix=$HOME/local
 # Installation prefix
 install_dir=/opt/pism
 
@@ -40,6 +44,6 @@ cmake -S ${source_dir} \
       -DPism_USE_PARALLEL_NETCDF4=YES \
       -DPism_USE_PNETCDF=YES \
       -DPism_USE_PROJ=YES \
-      -DPism_USE_YAC_INTERPOLATION=YES
+      -DPism_USE_YAC=YES
 
 make --no-print-directory -C ${build_dir} -j ${N} all

@@ -7,6 +7,7 @@ set -x
 # Install the latest PETSc with MUMPS in ~/local/petsc-mumps using ~/local/build/petsc-mumps
 # as the build directory.
 
+with_x=${with_x:-0}
 prefix=$HOME/local/petsc-mumps
 build_dir=~/local/build/petsc-mumps
 
@@ -38,7 +39,7 @@ PETSC_ARCH="linux-opt"
   --download-ptscotch \
   --download-f2cblaslapack --download-blis \
   --with-valgrind=0 \
-  --with-x=0
+  --with-x=${with_x}
 
 export PYTHONPATH=${prefix}/lib
 make all

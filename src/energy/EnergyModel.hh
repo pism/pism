@@ -128,8 +128,8 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const = 0;
   virtual void write_state_impl(const OutputFile &output) const = 0;
 
-  virtual DiagnosticList diagnostics_impl() const;
-  virtual TSDiagnosticList ts_diagnostics_impl() const;
+  virtual DiagnosticList spatial_diagnostics_impl() const;
+  virtual TSDiagnosticList scalar_diagnostics_impl() const;
 
   /*! @brief Initialize enthalpy by reading it from a file, or by reading temperature and liquid
       water fraction, or by reading the temperature field alone. */

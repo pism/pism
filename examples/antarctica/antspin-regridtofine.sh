@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2023, 2024  PISM authors
+# Copyright (C) 2009-2015, 2017, 2023, 2024, 2026  PISM authors
 ##################################################################################
 # Complete spinup of Antarctic ice sheet model by regriding to a finer resolution (~15 km).
 ##################################################################################
@@ -62,12 +62,12 @@ RESDIR=
 stage=run_regrid_${GRIDNAME}
 INNAME=$COARSENAME
 RESNAME=${RESDIR}${stage}.nc
-TSNAME=${RESDIR}ts_${stage}.nc
+SCALAR_NAME=${RESDIR}scalar_${stage}.nc
 RUN_LENGTH=${RUN_LENGTH:-2000}
 
-EXTRANAME=${RESDIR}extra_${stage}.nc
-exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,ice_area_specific_volume,cell_grounded_fraction"
-expackage="-extra_times 0:10:$RUN_LENGTH -extra_vars $exvars"
+SPATIAL_NAME=${RESDIR}spatial_${stage}.nc
+spatial_vars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,ice_area_specific_volume,cell_grounded_fraction"
+spatial_package="-spatial_times 0:10:$RUN_LENGTH -spatial_vars $spatial_vars"
 
 # Note: switching to a finer grid may produce very high SIA diffusivities
 echo
@@ -87,10 +87,10 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC
   -stress_balance.sia.max_diffusivity 1e5
   -ys 0
   -y $RUN_LENGTH
-  -ts_file $TSNAME
-  -ts_times 1
-  -extra_file $EXTRANAME
-   $expackage
+  -scalar_file $SCALAR_NAME
+  -scalar_times 1
+  -spatial_file $SPATIAL_NAME
+   $spatial_package
   -o $RESNAME
   -o_size big"
 

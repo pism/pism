@@ -4,7 +4,7 @@
 # where P(W) looks quite different in each bin
 # each bin is managably small for even 2km Greenland run, I think
 # run as:
-#   $ ./genscatfig.sh ex_distributed-decoupled.nc g2km.png
+#   $ ./genscatfig.sh spatial_distributed-decoupled.nc g2km.png
 # to generate figure files like
 #   bin*-g2km.png
 

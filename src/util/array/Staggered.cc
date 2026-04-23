@@ -1,4 +1,4 @@
-/* Copyright (C) 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,13 +29,13 @@ namespace pism {
 namespace array {
 
 Staggered::Staggered(std::shared_ptr<const Grid> grid, const std::string &name)
-  : Array(grid, name, WITHOUT_GHOSTS, 2, 1, {0.0}) {
+    : Array(grid, name, WITHOUT_GHOSTS, 2, 1, {}) {
   set_begin_access_use_dof(true);
 }
 
 Staggered::Staggered(std::shared_ptr<const Grid> grid, const std::string &name,
                      unsigned int stencil_width)
-  : Array(grid, name, WITH_GHOSTS, 2, stencil_width, {0.0}){
+    : Array(grid, name, WITH_GHOSTS, 2, stencil_width, {}) {
   set_begin_access_use_dof(true);
 }
 
@@ -101,7 +101,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 
     if (cell_type.grounded_ice(i, j) or
         (include_floating_ice and cell_type.icy(i, j))) {
-      auto M = cell_type.star(i, j);
+      auto M = cell_type.star_int(i, j);
       auto F = input.star(i, j);
 
       int n = 0, e = 0, s = 0, w = 0;

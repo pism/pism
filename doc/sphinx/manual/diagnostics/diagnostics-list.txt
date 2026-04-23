@@ -3,7 +3,7 @@
 .. DO NOT EDIT. This file was generated using list_diagnostics.py.
 
 
-.. _sec-extra_vars:
+.. _sec-spatial_vars:
 
 Spatially-variable fields
 -------------------------
@@ -1034,7 +1034,7 @@ Spatially-variable fields
    :Description: vertical velocity of ice at ice surface, relative to the geoid
    :Standard name: ``land_ice_surface_upward_velocity``
 
-.. _sec-ts_vars:
+.. _sec-scalar_vars:
 
 Scalar time-series
 ------------------
@@ -1187,17 +1187,17 @@ Scalar time-series
 #. ``surface_accumulation_rate``
 
    :Units: kg year^-1
-   :Description: surface accumulation rate (PDD model)
+   :Description: surface accumulation rate
 
 #. ``surface_melt_rate``
 
    :Units: kg year^-1
-   :Description: surface melt rate (PDD model)
+   :Description: surface melt rate
 
 #. ``surface_runoff_rate``
 
    :Units: kg year^-1
-   :Description: surface runoff rate (PDD model)
+   :Description: surface runoff rate
 
 #. ``tendency_of_ice_mass``
 

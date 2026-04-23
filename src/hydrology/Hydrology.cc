@@ -441,7 +441,7 @@ void Hydrology::update(double t, double dt, const Inputs &inputs) {
   }
 }
 
-DiagnosticList Hydrology::diagnostics_impl() const {
+DiagnosticList Hydrology::spatial_diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
     { "bwat", Diagnostic::wrap(m_W) },

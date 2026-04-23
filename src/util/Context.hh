@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2019, 2020, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,6 +43,9 @@ public:
           std::shared_ptr<EnthalpyConverter> EC, std::shared_ptr<Time> t,
           std::shared_ptr<Logger> log, const std::string &p);
   ~Context();
+
+  std::shared_ptr<const Context> restrict_to_subcomm(MPI_Comm comm,
+                                                     const std::string &prefix) const;
 
   MPI_Comm com() const;
   int size() const;

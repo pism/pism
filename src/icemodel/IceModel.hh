@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -220,7 +220,7 @@ protected:
    * diagnostic quantities.
    */
   std::set<VariableMetadata>
-  diagnostic_state_variables(const std::set<std::string> &variable_names) const;
+  state_variables_diagnostics(const std::set<std::string> &variable_names) const;
 
   /*!
    * Return the set of "common" variables (i.e. ones written to most files): step counter,
@@ -258,10 +258,16 @@ protected:
 
   virtual void write_state(const OutputFile &file) const;
 
-  virtual void write_run_stats(const OutputFile &file) const;
+  /*!
+   * Write state variables of diagnostic quantities in `variable_names` to `file`.
+   */
+  void write_state_diagnostics(const OutputFile &file,
+                               const std::set<std::string> &variable_names) const;
 
-  virtual void write_diagnostics(const OutputFile &file,
-                                 const std::set<std::string> &variable_names) const;
+  void write_run_stats(const OutputFile &file) const;
+
+  void write_diagnostics(const OutputFile &file,
+                         const std::set<std::string> &variable_names) const;
 
   std::string save_state_on_error(const std::string &suffix,
                                   const std::set<std::string> &additional_variables);
@@ -280,6 +286,8 @@ protected:
   std::shared_ptr<Time> m_time;
 
   std::shared_ptr<OutputWriter> m_output_writer;
+  std::shared_ptr<OutputWriter> m_snapshot_writer;
+  std::shared_ptr<OutputWriter> m_spatial_writer;
 
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
@@ -449,10 +457,10 @@ protected:
    * The set of variables that the "state" of IceModel consists of.
    */
   std::set<array::Array*> m_model_state;
-  //! Requested spatially-variable diagnostics.
-  std::map<std::string,Diagnostic::Ptr> m_diagnostics;
-  //! Requested scalar diagnostics.
-  std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
+  //! Available spatially-variable diagnostics
+  std::map<std::string,Diagnostic::Ptr> m_available_spatial_diagnostics;
+  //! Available scalar diagnostics
+  std::map<std::string,TSDiagnostic::Ptr> m_available_scalar_diagnostics;
 
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
@@ -470,28 +478,28 @@ protected:
   MaxTimestep snapshots_max_timestep(double my_t);
 
   //! file to write scalar time-series to
-  std::shared_ptr<OutputFile> m_ts_file;
+  std::shared_ptr<OutputFile> m_scalar_file;
   //! requested times for scalar time-series
-  std::shared_ptr<std::vector<double>> m_ts_times;
-  std::set<std::string> m_ts_vars;
-  void init_timeseries();
-  void flush_timeseries();
-  MaxTimestep ts_max_timestep(double my_t);
+  std::shared_ptr<std::vector<double>> m_scalar_times;
+  std::set<std::string> m_scalar_vars;
+  void init_scalar_diagnostics();
+  void scalar_diagnostics_flush_buffers();
+  MaxTimestep scalar_diagnostics_max_timestep(double t);
 
   // spatially-varying time-series
-  std::string m_extra_filename;
-  std::vector<double> m_extra_times;
-  unsigned int m_next_extra;
-  double m_last_extra;
-  std::set<std::string> m_extra_vars;
+  std::string m_spatial_filename;
+  std::vector<double> m_spatial_times;
+  unsigned int m_next_spatial_index;
+  double m_last_spatial_time;
+  std::set<std::string> m_spatial_vars;
 
   //! set of variables that will be written to extra files
-  std::set<VariableMetadata> m_extra_file_contents;
+  std::set<VariableMetadata> m_spatial_file_contents;
 
-  std::shared_ptr<OutputFile> m_extra_file;
-  void init_extras();
-  void write_extras();
-  MaxTimestep extras_max_timestep(double my_t);
+  std::shared_ptr<OutputFile> m_spatial_file;
+  void init_spatial_diagnostics();
+  void write_spatial_diagnostics();
+  MaxTimestep spatial_diagnostics_max_timestep(double t);
 
   // automatic checkpoints
   std::string m_checkpoint_filename;

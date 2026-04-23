@@ -111,7 +111,7 @@ class LingleClarkElastic(TestCase):
 
         self.H, self.db_pism, self.lrm_pism = self.run_model(self.grid)
 
-    def convolution_test(self):
+    def test_convolution(self):
         "Compare PISM's FFTW-based convolution to scipy.signal.fftconvolve()"
         rho = self.ctx.config.get_number("constants.ice.density")
 
@@ -119,7 +119,7 @@ class LingleClarkElastic(TestCase):
 
         np.testing.assert_allclose(self.db_pism, db_scipy, rtol=1e-12)
 
-    def lrm_test(self):
+    def test_lrm(self):
         "Compare PISM's load response matrix to the one computed using scipy.integrate.dblquad()"
 
         dx = self.grid.dx()

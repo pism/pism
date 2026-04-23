@@ -48,18 +48,24 @@ RUN <<EOF
     echo "Install PISM's runtime dependencies (ones from packages)"
     apt-get update
 
+    # Note: libpython3.12 is needed by PISM's Python bindings
     apt-get install -y --no-install-recommends \
     libfftw3-double3 \
+    libfyaml0 \
     libgsl27 \
     libproj25 \
+    libpython3.12 \
     libudunits2-0 \
-    libfyaml0 \
+    python3 \
+    python3-netcdf4 \
+    python3-numpy \
+    python3-venv \
     ""
 
     rm -rf /var/lib/apt/lists/*
 EOF
 
-FROM pism-runtime AS intel-devel
+FROM pism-runtime AS pism-base
 
 RUN <<EOF
     echo "Install required Intel oneAPI packages (development)"
@@ -76,8 +82,6 @@ RUN <<EOF
     rm -rf /var/lib/apt/lists/*
 EOF
 
-FROM intel-devel AS pism-devel
-
 RUN <<EOF
     echo "Install PISM's build tools and build dependencies"
     apt-get update
@@ -87,6 +91,7 @@ RUN <<EOF
     automake \
     cmake \
     coreutils \
+    cython3 \
     git \
     libfftw3-dev \
     libfyaml-dev \
@@ -98,7 +103,14 @@ RUN <<EOF
     make \
     pkg-config \
     python3 \
+    python3-dev \
+    python3-netcdf4 \
+    python3-numpy \
+    python3-pip \
+    python3-setuptools \
+    python3-venv \
     ssh \
+    swig \
     ""
 
     rm -rf /var/lib/apt/lists/*
@@ -108,7 +120,7 @@ EOF
 # https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2025-1/use-the-setvars-and-oneapi-vars-scripts-with-linux.html
 #
 # for the right way to initialize Intel oneAPI.
-COPY docker/ubuntu-intel-oneapi/hdf5.sh /tmp/
+COPY hdf5.sh /tmp/
 RUN <<EOF
     echo "Install HDF5"
 
@@ -122,7 +134,7 @@ RUN <<EOF
     rm -rf /opt/hdf5/share/hdf5_examples
 EOF
 
-COPY docker/ubuntu-intel-oneapi/netcdf.sh /tmp/
+COPY netcdf.sh /tmp/
 RUN <<EOF
     echo "Install NetCDF"
 
@@ -135,7 +147,7 @@ RUN <<EOF
     rm -rf ${build_dir}
 EOF
 
-COPY docker/ubuntu-intel-oneapi/yaxt.sh /tmp/
+COPY yaxt.sh /tmp/
 RUN <<EOF
     echo "Install YAXT"
 
@@ -145,7 +157,7 @@ RUN <<EOF
     rm -rf /var/tmp/build/yaxt
 EOF
 
-COPY docker/ubuntu-intel-oneapi/yac.sh /tmp/
+COPY yac.sh /tmp/
 RUN <<EOF
     echo "Install YAC"
 
@@ -155,7 +167,7 @@ RUN <<EOF
     rm -rf /var/tmp/build/yac
 EOF
 
-COPY docker/ubuntu-intel-oneapi/petsc.sh /tmp/
+COPY petsc.sh /tmp/
 RUN <<EOF
     echo "Install PETSc"
 
@@ -169,44 +181,13 @@ RUN <<EOF
     rm -rf /opt/petsc/share/petsc
 EOF
 
-COPY docker/ubuntu-intel-oneapi/pism.sh /tmp/
-# Copy the Docker context to /var/tmp/pism-src
-COPY . /var/tmp/pism-src
+# Create a venv for Python stuff that we cannot install using apt-get:
+RUN python3 -m venv --system-site-packages /opt/pism
+
+# Install a more recent mpi4py version
 RUN <<EOF
-    echo "Install PISM"
-
+    echo "Install mpi4py"
     set -eux
-    export src_dir=/var/tmp/pism-src
-    export build_dir=/var/tmp/build/pism
-    export prefix=/opt/pism
-
-    bash /tmp/pism.sh
-
-    rm -rf ${build_dir}
-    rm -rf ${prefix}/include ${prefix}/share/doc/pism
+    . /opt/pism/bin/activate
+    python3 -m pip install "mpi4py>=4.0.0"
 EOF
-
-FROM pism-runtime AS pism-container
-
-# copy PISM's runtime dependencies that were built from sources:
-COPY --from=pism-devel /opt/hdf5 /opt/hdf5/
-COPY --from=pism-devel /opt/netcdf /opt/netcdf/
-COPY --from=pism-devel /opt/petsc /opt/petsc/
-COPY --from=pism-devel /opt/pism /opt/pism/
-COPY --from=pism-devel /opt/yac /opt/yac/
-COPY --from=pism-devel /opt/yaxt /opt/yaxt/
-
-ENV PATH="/opt/hdf5/bin:/opt/netcdf/bin:/opt/petsc/bin:/opt/pism/bin:$PATH"
-
-RUN ln -s /opt/intel/oneapi/setvars.sh /etc/profile.d/02-intel-oneapi-setvars.sh
-
-# Add a non-privileged user
-RUN useradd --create-home --system --shell=/bin/false worker && usermod --lock worker
-USER worker
-
-# Important parts of ". /opt/intel/oneapi/setvars.sh"
-ENV ONEAPI_ROOT=/opt/intel/oneapi
-ENV LD_LIBRARY_PATH=${ONEAPI_ROOT}/tbb/${IMPI_VERSION}/env/../lib/intel64/gcc4.8:${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/opt/mpi/libfabric/lib:${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/lib:${ONEAPI_ROOT}/mkl/${ONEAPI_VERSION}/lib:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/opt/compiler/lib:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/lib:${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/opt/mpi/libfabric/lib:${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/lib:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/opt/compiler/lib:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/lib
-ENV I_MPI_ROOT=${ONEAPI_ROOT}/mpi/${IMPI_VERSION}
-ENV FI_PROVIDER_PATH=${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric
-ENV PATH=${ONEAPI_ROOT}/mpi/${IMPI_VERSION}/bin:${ONEAPI_ROOT}/mkl/${ONEAPI_VERSION}/bin/:${ONEAPI_ROOT}/compiler/${ONEAPI_VERSION}/bin:${PATH}

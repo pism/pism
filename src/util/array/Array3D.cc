@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023, 2024, 2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023, 2024, 2025, 2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,6 +44,12 @@ Array3D::Array3D(std::shared_ptr<const Grid> grid, const std::string &name, Kind
                  const std::vector<double> &levels, unsigned int stencil_width)
     : Array(grid, name, ghostedp, 1, stencil_width, levels) {
   set_begin_access_use_dof(true);
+
+  if (levels.empty()) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "pism::array::Array3D '%s' has to have at least one \"vertical\" level", name.c_str());
+  }
 }
 
 //! Set all values of scalar quantity to given a single value in a particular column.
@@ -72,7 +78,7 @@ void Array3D::set_column(int i, int j, const double *input) {
   check_array_indices(i, j, 0);
 #endif
   double ***arr       = (double ***)m_array;
-  PetscErrorCode ierr = PetscMemcpy(arr[j][i], input, m_impl->zlevels.size() * sizeof(double));
+  PetscErrorCode ierr = PetscMemcpy(arr[j][i], input, levels().size() * sizeof(double));
   PISM_CHK(ierr, "PetscMemcpy");
 }
 
@@ -212,8 +218,8 @@ void Array3D::copy_from(const Array3D &input) {
   assert(levels().size() == input.levels().size());
   assert(ndof() == input.ndof());
 
-  // 3D arrays have more than one level and ndof() of 1, collections of fields have one
-  // level and ndof() > 1
+  // 3D arrays have at least one level and ndof() of 1, collections of fields have zero
+  // levels and ndof() > 1
   auto N = std::max((size_t)ndof(), levels().size());
 
   ParallelSection loop(m_impl->grid->com);

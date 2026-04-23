@@ -39,7 +39,7 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
-  DiagnosticList diagnostics_impl() const;
+  DiagnosticList spatial_diagnostics_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
   void update_impl(const YieldStressInputs &inputs, double t, double dt);

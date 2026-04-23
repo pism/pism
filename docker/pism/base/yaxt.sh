@@ -12,7 +12,7 @@ build_dir=${build_dir:-/var/tmp/build/yaxt}
 mkdir -p ${build_dir}
 cd ${build_dir}
 
-yaxt_version=${yaxt_version:-0.11.4}
+yaxt_version=${yaxt_version:-0.11.5.1}
 git clone -b release-${yaxt_version} \
     https://gitlab.dkrz.de/dkrz-sw/yaxt.git
 

@@ -1,5 +1,6 @@
 import PISM
 import numpy as np
+from unittest import TestCase
 
 """ Test mass transport code using a circularly-symmetric setup in which
 a disc expands uniformly in all directions. Given mass conservation,
@@ -10,7 +11,6 @@ the symmetry of the produced ice thickness and linear convergence
 towards the exact solution."""
 
 log = PISM.Context().log
-
 
 def disc(thickness, x0, y0, H0, R_inner, R_outer):
     """Set ice thickness to H0 within the disc centered at (x0,y0) of
@@ -137,7 +137,7 @@ def run(Mx, My, t_final, part_grid, C=1.0):
         j += 1
     profiling.stage_end("ge")
 
-    profiling.report("profiling_%d_%d.py" % (Mx, My))
+    # profiling.report("profiling_%d_%d.py" % (Mx, My))
 
     return geometry
 
@@ -169,30 +169,29 @@ def average_error(N):
     # return the average error
     return diff.norm(PISM.PETSc.NormType.N1)[0] / (N*N)
 
+class MassTransport(TestCase):
+    def test_part_grid_convergence(self):
+        "Test that the error does go down as O(1/N)"
 
-def part_grid_convergence_test():
-    "Test that the error does go down as O(1/N)"
+        np.testing.assert_almost_equal([average_error(N) for N in [51, 101]],
+                                       [0.0338388,  0.0158498])
 
-    np.testing.assert_almost_equal([average_error(N) for N in [51, 101]],
-                                   [0.0338388,  0.0158498])
+    def test_part_grid_symmetry(self):
+        """Check that the result is circularly symmetric."""
 
+        N = 51
 
-def part_grid_symmetry_test():
-    """Check that the result is circularly symmetric."""
+        log.disable()
+        geometry = run(N, N, 1, True, 1.0)
+        log.enable()
 
-    N = 51
+        # combine stuff stored as thickness and as area specific volume
+        geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
 
-    log.disable()
-    geometry = run(N, N, 1, True, 1.0)
-    log.enable()
+        # convert ice thickness to a NumPy array on rank 0 -- that way we can use flipud() and
+        # fliplr().
+        H = geometry.ice_thickness.to_numpy()
 
-    # combine stuff stored as thickness and as area specific volume
-    geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
-
-    # convert ice thickness to a NumPy array on rank 0 -- that way we can use flipud() and
-    # fliplr().
-    H = geometry.ice_thickness.to_numpy()
-
-    np.testing.assert_almost_equal(H, np.flipud(H))
-    np.testing.assert_almost_equal(H, np.fliplr(H))
-    np.testing.assert_almost_equal(H, np.flipud(np.fliplr(H)))
+        np.testing.assert_almost_equal(H, np.flipud(H))
+        np.testing.assert_almost_equal(H, np.fliplr(H))
+        np.testing.assert_almost_equal(H, np.flipud(np.fliplr(H)))

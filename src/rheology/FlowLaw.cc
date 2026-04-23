@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023, 2025 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023, 2025, 2026 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "pism/rheology/FlowLaw.hh"
 
 #include <petsc.h>
+#include <limits>
 
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/array/Scalar.hh"
@@ -40,12 +41,13 @@ FlowLaw::FlowLaw(double exponent, const Config &config,
     throw RuntimeError(PISM_ERROR_LOCATION, "EC is NULL in FlowLaw::FlowLaw()");
   }
 
-  m_standard_gravity   = config.get_number("constants.standard_gravity");
+  auto rho = config.get_number("constants.ice.density");
+  auto standard_gravity   = config.get_number("constants.standard_gravity");
+
   m_ideal_gas_constant = config.get_number("constants.ideal_gas_constant");
 
-  m_rho                = config.get_number("constants.ice.density");
-  m_beta_CC_grad       = config.get_number("constants.ice.beta_Clausius_Clapeyron") * m_rho * m_standard_gravity;
-  m_melting_point_temp = config.get_number("constants.fresh_water.melting_point_temperature");
+  m_rho_g              = rho * standard_gravity;
+  m_beta_CC_grad       = config.get_number("constants.ice.beta_Clausius_Clapeyron") * m_rho_g;
   m_n                  = exponent;
   m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
   m_hardness_power     = -1.0 / m_n;
@@ -131,7 +133,13 @@ void FlowLaw::hardness_n_impl(const double *enthalpy, const double *pressure,
 }
 
 double FlowLaw::hardness_impl(double E, double p) const {
-  return pow(softness(E, p), m_hardness_power);
+  double A = softness(E, p);
+#if (Pism_DEBUG == 1)
+  if (A == 0.0) {
+    return std::numeric_limits<double>::max();
+  }
+#endif
+  return pow(A, m_hardness_power);
 }
 
 //! \brief Computes the regularized effective viscosity and its derivative with respect to the

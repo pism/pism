@@ -49,7 +49,7 @@ double PatersonBudd::flow_impl(double stress, double E,
 double PatersonBudd::flow_from_temp(double stress, double temp,
                                     double pressure, double /*gs*/) const {
   // pressure-adjusted temperature:
-  const double T_pa = temp + (m_beta_CC_grad / (m_rho * m_standard_gravity)) * pressure;
+  const double T_pa = temp + (m_beta_CC_grad / m_rho_g) * pressure;
   return softness_from_temp(T_pa) * pow(stress, m_n-1);
 }
 

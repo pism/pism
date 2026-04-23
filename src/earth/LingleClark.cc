@@ -333,12 +333,12 @@ void LingleClark::write_state_impl(const OutputFile &output) const {
   m_elastic_displacement.write(output);
 }
 
-DiagnosticList LingleClark::diagnostics_impl() const {
+DiagnosticList LingleClark::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     {"viscous_bed_displacement", Diagnostic::wrap(*m_viscous_displacement)},
     {"elastic_bed_displacement", Diagnostic::wrap(m_elastic_displacement)},
   };
-  return combine(result, BedDef::diagnostics_impl());
+  return combine(result, BedDef::spatial_diagnostics_impl());
 }
 
 } // end of namespace bed

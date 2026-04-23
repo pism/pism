@@ -10,9 +10,9 @@ pism -eisII A \
    -My 30 \
    -Mz 10 \
    -o_size none \
-   -output.timeseries.buffer_size 100 \
-   -output.timeseries.filename ts.nc \
-   -output.timeseries.times 1 \
-   -output.timeseries.variables ice_volume,tendency_of_ice_mass \
+   -output.scalar.buffer_size 100 \
+   -output.scalar.filename ts.nc \
+   -output.scalar.times 1 \
+   -output.scalar.variables ice_volume,tendency_of_ice_mass \
    -y 1000 \
    ""

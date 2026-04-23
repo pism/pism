@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -93,7 +93,7 @@ private:
    - `ownership_ranges_from_options()`
 
    are called *or* all data members (`Lx`, `Ly`, `x0`, `y0`, `Mx`, `My`, `z`, `periodicity`,
-   `procs_x`, `procs_y`) are set manually before using an instance of GridParameters.
+   `procs_x`, `procs_y`) are set manually before using an instance of grid::Parameters.
 
    Call `validate()` to check current parameters.
 */
@@ -106,10 +106,10 @@ public:
   Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx, double Ly);
 
   //! Initialize grid defaults from a NetCDF variable.
-  Parameters(std::shared_ptr<units::System> unit_system, const File &file,
+  Parameters(const Config &config, std::shared_ptr<units::System> unit_system, const File &file,
              const std::string &variable_name, Registration r);
 
-  static Parameters FromGridDefinition(std::shared_ptr<units::System> unit_system, const File &file,
+  static Parameters FromGridDefinition(const Config &config, std::shared_ptr<units::System> unit_system, const File &file,
                                        const std::string &variable_name, Registration registration);
 
   //! Process -Lx, -Ly, -x0, -y0; set Lx, Ly, x0, y0.
@@ -134,6 +134,8 @@ public:
   unsigned int Mx;
   //! Number of grid points in the Y direction
   unsigned int My;
+  //! maximum supported stencil width
+  unsigned int max_stencil_width;
   //! Grid registration
   Registration registration;
   //! Grid periodicity
@@ -148,7 +150,7 @@ public:
   //! Name of the variable used to initialize the instance (empty if not used)
   std::string variable_name;
 private:
-  Parameters();
+  Parameters() = delete;
 };
 } // namespace grid
 
@@ -317,6 +319,8 @@ public:
   std::vector<double> interpolation_weights(double x, double y) const;
 
   unsigned int kBelowHeight(double height) const;
+
+  int max_stencil_width() const;
 
   int max_patch_size() const;
 

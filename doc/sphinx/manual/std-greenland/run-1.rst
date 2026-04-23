@@ -43,12 +43,18 @@ like this:
 
 Let's briefly deconstruct this run.
 
-At the front is "``mpiexec -n 8 pism``". This means that the PISM executable ``pism`` is
-run in parallel using eight processes (usually one per CPU core) under the `Message Passing
-Interface <MPI_>`_. Though we are assuming you have a workstation or laptop with at least
-8 cores, this example will work with 1 to about 50 processors, with reasonably good
+At the front is "``mpiexec -n 8 pism``". The command line option ``-n 8`` means that the
+PISM executable ``pism`` is run in parallel using eight processes (usually one per CPU
+core) under the `Message Passing Interface <MPI_>`_. Though we are assuming you have a
+workstation or laptop with at least 8 cores, this example will work with 1 (using
+``mpiexec -n 1``) to about 50 (using ``mpiexec -n 50``) processors, with reasonably good
 scaling in speed. Scaling can be good with more processors if we run at higher spatial
 resolution :cite:`BBssasliding`, :cite:`DickensMorey2013`.
+
+.. note::
+
+   Running ``mpiexec -n X pism ...`` on a system with less than ``X`` CPUs is not
+   recommended and may fail.
 
 Next, the proposed run uses option ``-bootstrap`` to start the run by "bootstrapping."
 This term describes the creation, by heuristics and highly-simplified models, of the
@@ -72,9 +78,9 @@ enhanced ice softness ("``-sia_e 3.0``"). See section :ref:`sec-rheology` for mo
 enhancement parameter, which we also return to later in section :ref:`sec-paramstudy`.
 
 Then there are longish options describing the fields we want as output, including scalar
-time series ("``-ts_file ts_g20km_10ka.nc -ts_times -10000:yearly:0``"; see section
-:ref:`sec-practical-usage`) and space-dependent fields ("``-extra_file ...``"; again see
-section :ref:`sec-practical-usage`), and finally the named output file ("``-o
+time series ("``-scalar_file scalar_g20km_10ka.nc -scalar_times -10000:yearly:0``"; see
+section :ref:`sec-practical-usage`) and space-dependent fields ("``-spatial_file ...``";
+again see section :ref:`sec-practical-usage`), and finally the named output file ("``-o
 g20km_10ka.nc``").
 
 Note that the modeling choices here are reasonable, but they are not the only way to do

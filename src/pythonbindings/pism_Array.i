@@ -27,8 +27,6 @@ using namespace pism;
 %ignore pism::array::Scalar::array;
 %ignore pism::array::Vector::array;
 
-%template(Range) std::array<double,2>;
-
 %rename(_regrid) pism::array::Array::regrid;
 %extend pism::array::Array
 {

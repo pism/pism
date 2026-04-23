@@ -1,11 +1,68 @@
 .. default-role:: literal
 
-Changes since v2.2.2
+Changes since v2.2.8
 ====================
 
-- Added the PICOP subshelf melt model by Pelle et al (2019).
+- Rename configuration parameters and command-line options related to reporting
+  diagnostics (see `issue 509`_).
 
-  
+  Configuration parameters
+
+  - Everything with the prefix `output.extra.` -> `output.spatial.`
+  - Everything with the prefix `output.timeseries.` -> `output.scalar.`,
+    except `output.timeseries.filename` -> `output.scalar.file`
+  - `time_stepping.hit_extra_times` -> `time_stepping.hit_spatial_times`
+  - `time_stepping.hit_ts_times` -> `time_stepping.hit_scalar_times`
+  - `output.ISMIP6_extra_variables` -> `ISMIP6_spatial_variables`
+  - `output.ISMIP6_ts_variables` -> `output.ISMIP6_scalar_variables`
+
+  Command-line options:
+
+  - `-extra_(append|file|times|vars|stop_missing|split)` ->
+    `-spatial_(append|file|times|vars|stop_missing|split)`
+  - `-ts_(append|file|times|vars)` -> `-scalar_(append|file|times|vars)`
+  - `-extra_force_output_times` -> `-spatial_force_output_times`
+
+  Using an old command-line option will make PISM stop with an error message.
+
+- Implement asynchronous output to "snapshot" files and "spatial diagnostic" files
+  (`-save_file ...` and `-spatial_file ...`). Requires PISM built with YAC and Python
+  packages `netCDF4`, `yac` (Python bindings for YAC), `mpi4py` and NumPy.
+- Implemented a more efficient algorithm for the solution of the Eikonal equation in PICO.
+- Add the ability to read in inputs (e.g. climate forcing) on `longitude,latitude` grids,
+  including rotated pole (`rlon,rlat`) grids.
+- Automatically build and upload Docker containers for each new PISM release to the GitHub
+  Container Registry (uses Intel's oneAPI compilers and Intel MPI; see
+  `ghcr.io/pism/pism`).
+- Remove dependency on the Python package `nose` because it is old and unmaintained. Now
+  we use Python's built-in `unittest` to set up Python-based regression tests.
+- Spatially-variable diagnostic `diffusivity`: at a grid point (`i,j`) report
+  `max(D(i,j,0), D(i, j, 1))`, i.e. maximum over staggered grid locations just to the east
+  and just to the north of the grid point (`i,j`). Previous versions averaged the SIA
+  diffusivity from all adjacent icy locations, which makes it impossible to see the value
+  of the maximum SIA diffusivity used to choose the time step length.
+- Add configuration parameter `output.experiment_id`: if set to a string, PISM adds an
+  extra dimension (length 1) to output files. This makes it possible to open several
+  output files (e.g. different ensemble members) at once using `xarray`'s
+  `xarray.open_mfdataset()`. (Note: this feature needs further testing to ensure that
+  PISM's way of doing this is compatible with other tools. Implementation details are
+  likely to change in the near future.)
+- Save the JSON string encoding PISM's configuration parameters to the `pism_config`
+  variable in output files. This makes it easier to look up configuration parameter values
+  in output files opened using `xarray.open_mfdataset()`.
+- Write run info (`wall_clock_time`, `step_counter`, `model_years_per_processor_hour`) to
+  time-dependent variables instead of using attributes of the `run_stats` variable.
+- Fix a bug in the steady state hydrology model: we need to save the time of the last
+  update of the estimate of the water flux Q to a time-dependent variable.
+- Fix `issue 568`_ (crash when reading isochrone deposition times)
+- Fix `issue 569`_ (improper handling of calving front B.C. at domain boundaries)
+- Require CMake 3.20 or newer.
+- Require PETSc 3.15 or newer.
+- Require NetCDF 4.7 or newer instead of 4.4 or newer.
+- Require YAC 3.14.0 or newer.
+
+
+>>>>>>> dev
 Changes since v2.2.0
 ====================
 
@@ -1066,6 +1123,9 @@ Miscellaneous
 .. _issue 407: https://github.com/pism/pism/issues/407
 .. _issue 525: https://github.com/pism/pism/issues/525
 .. _issue 529: https://github.com/pism/pism/issues/529
+.. _issue 568: https://github.com/pism/pism/issues/568
+.. _issue 569: https://github.com/pism/pism/issues/569
+.. _issue 509: https://github.com/pism/pism/issues/509
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 .. _pull request 547: https://github.com/pism/pism/pull/547
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html

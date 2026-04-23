@@ -21,11 +21,6 @@ temp_dir=$(mktemp -d --tmpdir pism-test-XXXX)
 trap 'rm -rf "$temp_dir"' EXIT
 cd $temp_dir
 
-# Make sure PISM can find the configuration file
-echo "
--config ${PISM_PATH}/pism_config.nc
-" > .petscrc
-
 set -e
 set -u
 set -x
@@ -103,9 +98,9 @@ common_options="
 -ys 1-1-1
 "
 
-extra="
--extra_times 720days
--extra_vars topg
+spatial_output="
+-spatial_times 720days
+-spatial_vars topg
 "
 
 # 1. Bootstrap from the file with H=10m and run for N years with SMB=[10, -10, -10, 10]
@@ -136,7 +131,7 @@ run_length=$(( N * 360 ))
 ${pism} \
    ${common_options} \
    -atmosphere.delta_P.file dP_PMMP.nc \
-   ${extra} -extra_file ex_PMMP.nc \
+   ${spatial_output} -spatial_file spatial_PMMP.nc \
    -i H-10.nc \
    -time.run_length ${run_length}days \
    -o_size none \
@@ -160,7 +155,7 @@ ${pism} \
 ${pism} \
    ${common_options} \
    -atmosphere.delta_P.file dP_MMPP.nc \
-   ${extra} -extra_file ex_MMPP.nc \
+   ${spatial_output} -spatial_file spatial_MMPP.nc \
    -i H-12.5.nc \
    -regrid_file H-10-full.nc \
    -regrid_vars viscous_bed_displacement,elastic_bed_displacement \
@@ -173,11 +168,11 @@ ${pism} \
 ${pism} \
    ${common_options} \
    -atmosphere.delta_P.file dP_0.nc \
-   ${extra} -extra_file ex_0.nc \
+   ${spatial_output} -spatial_file spatial_0.nc \
    -i H-10.nc \
    -time.run_length ${run_length}days \
    -o_size none \
    ""
 
 # Compare results
-$PISM_PATH/pism_nccmp -v topg ex_0.nc ex_PMMP.nc && $PISM_PATH/pism_nccmp -v topg ex_0.nc ex_MMPP.nc
+$PISM_PATH/pism_nccmp -v topg spatial_0.nc spatial_PMMP.nc && $PISM_PATH/pism_nccmp -v topg spatial_0.nc spatial_MMPP.nc

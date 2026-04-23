@@ -13,7 +13,7 @@ M=${M:-100}
 common_options="
         -stress_balance.sia.flow_law isothermal_glen
         -stress_balance.sia.surface_gradient_method eta
-        -energy.enabled no
+        -energy.model none
 "
 
 mpiexec -n ${N} pism -eisII A \
@@ -29,10 +29,10 @@ mpiexec -n ${N} pism \
         -grid.Lz 3500 \
         -isochrones.deposition_times 0:500:20e3 \
         -isochrones.bootstrapping.n_layers 5 \
-        -output.extra.file ex_bootstrap.nc \
+        -output.spatial.file spatial_bootstrap.nc \
         -output.file o_bootstrap.nc \
-        -output.extra.times 50 \
-        -output.extra.vars isochrone_depth,thk \
+        -output.spatial.times 50 \
+        -output.spatial.vars isochrone_depth,thk \
         -time.start 0 \
         -time.end 20e3 \
         ${common_options}

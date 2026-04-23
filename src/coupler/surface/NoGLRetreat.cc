@@ -1,4 +1,4 @@
-/* Copyright (C) 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -167,10 +167,10 @@ protected:
 
 } // end of namespace diagnostics
 
-DiagnosticList NoGLRetreat::diagnostics_impl() const {
+DiagnosticList NoGLRetreat::spatial_diagnostics_impl() const {
   return combine({{"no_gl_retreat_smb_adjustment",
           Diagnostic::Ptr(new diagnostics::SMBAdjustment(this))}},
-    m_input_model->diagnostics());
+    m_input_model->spatial_diagnostics());
 }
 
 } // end of namespace surface

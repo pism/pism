@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,7 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/OutputWriter.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Config.hh"
 
 namespace pism {
 namespace io {
@@ -90,6 +91,28 @@ void define_variables(const OutputFile &file,
     file.define_variable(var);
   } // end of the loop over variables
 }
+
+void write_config(const Config &config, const std::string &variable_name, const OutputFile &file) {
+
+  std::string data = config.json();
+
+  if ((int)data.size() + 1 > Config::max_length) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "unable to save configuration parameters to a file: JSON string length exceeds %d",
+        Config::max_length);
+  }
+
+  std::vector<unsigned int> start = { 0 };
+  std::vector<unsigned int> count = { (unsigned int)data.size() + 1 };
+
+  if (not config.get_string("output.experiment_id").empty()) {
+    start.insert(start.cbegin(), 0);
+    count.insert(count.cbegin(), 1);
+  }
+  file.write_text(variable_name, start, count, data);
+}
+
 
 //! \brief Moves the file aside (file.nc -> file.nc~).
 /*!
