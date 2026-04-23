@@ -636,7 +636,7 @@ void Picop::compute_local_slope(const Inputs &inputs,
   }
 }
 // Write diagnostic variables to extra files if requested
-DiagnosticList Picop::diagnostics_impl() const {
+DiagnosticList Picop::spatial_diagnostics_impl() const {
 
   DiagnosticList result = {
     { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
@@ -647,7 +647,7 @@ DiagnosticList Picop::diagnostics_impl() const {
     { "picop_shelf_base_elevation", Diagnostic::wrap(m_shelf_base_elevation) },
   };
 
-  return combine(result, OceanModel::diagnostics_impl());
+  return combine(result, OceanModel::spatial_diagnostics_impl());
 }
 
 
