@@ -30,7 +30,9 @@ netcdf pism_overrides {
     pism_overrides:ocean.pico.maximum_ice_rise_area = 10000.0; 
     pism_overrides:ocean.pico.number_of_boxes = 5;
     pism_overrides:ocean.pico.overturning_coefficent = 0.23e6;
-    pism_overrides:ocean.picop.turbulent_heat_exchange_coefficient = 8.5e-5;
+    pism_overrides:ocean.picop.turbulent_heat_exchange_coefficient = 1.55e-4;
+    pism_overrides:stress_balance.blatter.flow_law = "isothermal_glen";
+    pism_overrides:stress_balance.blatter.use_eta_transform = "eta";
     pism_overrides:stress_balance.calving_front_stress_bc = "yes";
     pism_overrides:stress_balance.sia.bed_smoother.range =  0.0;
     pism_overrides:stress_balance.sia.max_diffusivity = 100000.0;
@@ -39,7 +41,6 @@ netcdf pism_overrides {
     pism_overrides:stress_balance.ssa.compute_surface_gradient_inward = "yes";
     pism_overrides:surface.given.file = "climate.nc";
     pism_overrides:surface.models = "given";
-    pism_overrides:time_stepping.adaptive_ratio = 250;
     pism_overrides:time_stepping.skip.enabled = "yes";
     pism_overrides:time_stepping.skip.max = 100;
 }

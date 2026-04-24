@@ -24,7 +24,6 @@ picop_spatial_vars="picop_basal_melt_rate,picop_local_slope,picop_grounding_line
 regrid_vars="litho_temp,enthalpy,tillwat,bmelt,ice_area_specific_volume,thk"
 
 ncgen -o config.nc config.cdl
-ncatted -a ocean.pico.heat_exchange_coefficent,pism_overrides,o,f,1.69e-3 config.nc
 
 run_length=1s
 sb="ssa+sia"
@@ -40,9 +39,9 @@ mpirun -np $NN pism -config_override config.nc \
        -ocean.pico.file $ocean_file \
        -o_size medium \
        -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
-       -output.extra.file spatial_$out \
-       -output.extra.times 1s \
-       -output.extra.vars $picop_spatial_vars,$spatial_vars \
+       -output.spatial.file spatial_$out \
+       -output.spatial.times 1s \
+       -output.spatial.vars $picop_spatial_vars,$spatial_vars \
        -output.file state_$out \
        -surface.given.file $climate_file \
        -time.start 0 \

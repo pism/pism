@@ -38,9 +38,9 @@ mpirun -np $NN pism -config_override config.nc \
        -ocean.pico.file $ocean_file \
        -o_size medium \
        -output.sizes.medium uvel,vvel,sftgif,velsurf_mag,mask,usurf,bmelt,velbar \
-       -output.extra.file spatial_$out \
-       -output.extra.times 1s \
-       -output.extra.vars $pico_spatial_vars,$spatial_vars \
+       -output.spatial.file spatial_$out \
+       -output.spatial.times 1s \
+       -output.spatial.vars $pico_spatial_vars,$spatial_vars \
        -output.file state_$out \
        -surface.given.file $climate_file \
        -time.start 0 \

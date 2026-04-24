@@ -254,7 +254,9 @@ void Picop::compute_melt_rate(const Inputs &inputs,
 
     if (cell_type.floating_ice(i, j)) {
       const double z_b = ice_surface_elevation(i, j) - ice_thickness(i, j);
-      const double z_gl = m_grounding_line_elevation(i, j);
+      // Clamp z_gl: grounding line origin cannot be above the local shelf base
+      // (same as ISSM: if(zgl > z_base) zgl = z_base)
+      const double z_gl = std::min(m_grounding_line_elevation(i, j), z_b);
       const double alpha = m_local_slope(i, j);
             
       const double s_a = S_a(i, j);
@@ -268,7 +270,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
       const double l = physics.length_scaling(t_a, t_f_gl, Gamma_TS, alpha);
       const double g_alpha = physics.geometric_scaling(Gamma_TS, alpha);
-      const double X_hat = physics.dimensionless_coordinate(z_b, z_gl, l);
+      const double X_hat = std::min(std::max(physics.dimensionless_coordinate(z_b, z_gl, l), 0.0), 1.0);
       result(i, j)  = physics.melt_function(t_a, t_f_gl, g_alpha) * physics.dimensionless_melt_curve(X_hat);
     }    
   }
