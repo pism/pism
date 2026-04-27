@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <algorithm>
 #include <cassert>
 
 #include <array>
@@ -148,15 +149,11 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
 
     m_impl->compute_horizontal_coordinates();
 
-    {
-      int stencil_width = (int)context->config()->get_number("grid.max_stencil_width");
+    m_impl->max_stencil_width = (int)p.max_stencil_width;
 
-      try {
-        auto tmp = this->get_dm(1, stencil_width);
-      } catch (RuntimeError &e) {
-        e.add_context("distributing a %d x %d grid across %d processors.", Mx(), My(), size());
-        throw;
-      }
+    {
+      // Try allocating a DM using the maximum stencil width to make sure it can be done:
+      auto tmp = this->get_dm(1, max_stencil_width());
 
       // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
       // be needed for I/O operations)
@@ -176,7 +173,7 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
     GlobalMax(com, &patch_size, &m_impl->max_patch_size, 1);
 
   } catch (RuntimeError &e) {
-    e.add_context("allocating Grid");
+    e.add_context("distributing a %d x %d grid across %d processors.", p.Mx, p.My, context->size());
     throw;
   }
 }
@@ -189,7 +186,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    grid::Parameters p(ctx->unit_system(), file, var_name, r);
+    grid::Parameters p(*ctx->config(), ctx->unit_system(), file, var_name, r);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
@@ -689,6 +686,11 @@ int Grid::max_patch_size() const {
 }
 
 
+int Grid::max_stencil_width() const {
+  return m_impl->max_stencil_width;
+}
+
+
 namespace grid {
 
 //! \brief Set the vertical levels in the ice according to values in `Mz` (number of levels), `Lz`
@@ -707,14 +709,14 @@ namespace grid {
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
-std::vector<double> compute_vertical_levels(double new_Lz, size_t new_Mz,
+std::vector<double> compute_vertical_levels(double Lz, size_t Mz,
                                             grid::VerticalSpacing spacing, double lambda) {
 
-  if (new_Mz < 2) {
+  if (Mz < 2) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Mz must be at least 2");
   }
 
-  if (new_Lz <= 0) {
+  if (Lz <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Lz must be positive");
   }
 
@@ -722,27 +724,27 @@ std::vector<double> compute_vertical_levels(double new_Lz, size_t new_Mz,
     throw RuntimeError(PISM_ERROR_LOCATION, "lambda must be positive");
   }
 
-  std::vector<double> result(new_Mz);
+  std::vector<double> result(Mz);
 
   // Fill the levels in the ice:
   switch (spacing) {
   case grid::EQUAL: {
-    double dz = new_Lz / ((double)new_Mz - 1);
+    double dz = Lz / ((double)Mz - 1);
 
     // Equal spacing
-    for (unsigned int k = 0; k < new_Mz - 1; k++) {
+    for (unsigned int k = 0; k < Mz - 1; k++) {
       result[k] = dz * ((double)k);
     }
-    result[new_Mz - 1] = new_Lz; // make sure it is exactly equal
+    result[Mz - 1] = Lz; // make sure it is exactly equal
     break;
   }
   case grid::QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    for (unsigned int k = 0; k < new_Mz - 1; k++) {
-      const double zeta = ((double)k) / ((double)new_Mz - 1);
-      result[k]         = new_Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
+    for (unsigned int k = 0; k < Mz - 1; k++) {
+      const double zeta = ((double)k) / ((double)Mz - 1);
+      result[k]         = Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
     }
-    result[new_Mz - 1] = new_Lz; // make sure it is exactly equal
+    result[Mz - 1] = Lz; // make sure it is exactly equal
     break;
   }
   default:
@@ -1021,10 +1023,10 @@ std::string get_domain_variable(const File &file) {
                                 file.name().c_str());
 }
 
-Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_system,
+Parameters Parameters::FromGridDefinition(const Config &config, std::shared_ptr<units::System> unit_system,
                                           const File &file, const std::string &variable_name,
                                           Registration registration) {
-  Parameters result;
+  Parameters result(config);
 
   result.Mx           = 0;
   result.My           = 0;
@@ -1134,39 +1136,24 @@ Parameters Parameters::FromGridDefinition(std::shared_ptr<units::System> unit_sy
   return result;
 }
 
-Parameters::Parameters() {
-  Lx = 0;
-  Ly = 0;
+Parameters::Parameters(const Config &config) {
   x0 = 0;
   y0 = 0;
-  Mx = 0;
-  My = 0;
-  registration = CELL_CENTER;
-  periodicity = NOT_PERIODIC;
-}
 
-Parameters::Parameters(const Config &config)
-  : Parameters() {
+  periodicity       = string_to_periodicity(config.get_string("grid.periodicity"));
+  registration      = string_to_registration(config.get_string("grid.registration"));
+  max_stencil_width = (unsigned int)config.get_number("grid.max_stencil_width");
 
-  periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
-  registration = string_to_registration(config.get_string("grid.registration"));
-
-  x0 = 0.0;
-  y0 = 0.0;
-
+  // Set Mx, My, Lx, Ly:
   horizontal_size_and_extent_from_options(config);
+  // Set z:
   vertical_grid_from_options(config);
-  // does not set ownership ranges because we don't know if these settings are final
+
+  // does not set ownership ranges
 }
 
 Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx_, double Ly_)
-  : Parameters() {
-
-  periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
-  registration = string_to_registration(config.get_string("grid.registration"));
-
-  x0 = 0.0;
-  y0 = 0.0;
+  : Parameters(config) {
 
   Mx = Mx_;
   My = My_;
@@ -1174,8 +1161,7 @@ Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double 
   Lx = Lx_;
   Ly = Ly_;
 
-  vertical_grid_from_options(config);
-  // does not set ownership ranges because we don't know if these settings are final
+  // does not set ownership ranges
 }
 
 void Parameters::ownership_ranges_from_options(const Config &config, unsigned int size) {
@@ -1195,24 +1181,10 @@ void Parameters::ownership_ranges_from_options(const Config &config, unsigned in
   // sub-domain widths in X and Y directions
   std::vector<unsigned> px, py;
   {
-
     // validate inputs
-    if ((Mx / Nx) < 2) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Can't split %d grid points into %d parts (X-direction).", Mx,
-                                    (int)Nx);
-    }
-
-    if ((My / Ny) < 2) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Can't split %d grid points into %d parts (Y-direction).", My,
-                                    (int)Ny);
-    }
-
     if (Nx * Ny != size) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Nx * Ny has to be equal to %d.", size);
     }
-
 
     auto grid_procs_x = parse_integer_list(config.get_string("grid.procs_x"));
     auto grid_procs_y = parse_integer_list(config.get_string("grid.procs_y"));
@@ -1253,9 +1225,9 @@ void Parameters::ownership_ranges_from_options(const Config &config, unsigned in
   procs_y = py;
 }
 
-Parameters::Parameters(std::shared_ptr<units::System> unit_system, const File &file,
+Parameters::Parameters(const Config &config, std::shared_ptr<units::System> unit_system, const File &file,
                        const std::string &variable, Registration r)
-  : Parameters() {
+  : Parameters(config) {
   InputGridInfo input_grid(file, variable, unit_system, r);
 
   Lx            = input_grid.Lx;
@@ -1285,6 +1257,9 @@ static void maybe_override(const Config &config, const char *name, const char *u
   }
 }
 
+/*!
+ * Sets `Mx`, `My`, `Lx`, `Ly` from configuration parameters in `config`.
+ */
 void Parameters::horizontal_size_and_extent_from_options(const Config &config) {
 
   maybe_override(config, "grid.Lx", "m", Lx);
@@ -1313,6 +1288,10 @@ void Parameters::horizontal_size_and_extent_from_options(const Config &config) {
   }
 }
 
+/*!
+ * Sets or recomputes `z`, getting `Mz` and `Lz` either from existing values of `z` or
+ * from configuration parameters in `config`.
+ */
 void Parameters::vertical_grid_from_options(const Config &config) {
   double Lz = (not z.empty()) ? z.back() : config.get_number("grid.Lz");
   size_t Mz = (not z.empty()) ? z.size() : static_cast<size_t>(config.get_number("grid.Mz"));
@@ -1323,16 +1302,6 @@ void Parameters::vertical_grid_from_options(const Config &config) {
 }
 
 void Parameters::validate() const {
-  if (Mx < 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Mx = %d is invalid (has to be 3 or greater)", Mx);
-  }
-
-  if (My < 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "My = %d is invalid (has to be 3 or greater)", My);
-  }
-
   if (Lx <= 0.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Lx = %f is invalid (has to be positive)",
                                   Lx);
@@ -1362,6 +1331,23 @@ void Parameters::validate() const {
   if (std::accumulate(procs_y.begin(), procs_y.end(), 0.0) != My) {
     throw RuntimeError(PISM_ERROR_LOCATION, "procs_y don't sum up to My");
   }
+
+  {
+    auto s = max_stencil_width;
+    if (std::any_of(procs_x.cbegin(), procs_x.cend(), [s](unsigned int x) { return x < s; })) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "sub-domain widths in the X direction cannot be smaller than %d (max stencil width)",
+          max_stencil_width);
+    }
+
+    if (std::any_of(procs_y.cbegin(), procs_y.cend(), [s](unsigned int x) { return x < s; })) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "sub-domain widths in the Y direction cannot be smaller than %d (max stencil width)",
+          max_stencil_width);
+    }
+  }
 }
 
 double radius(const Grid &grid, int i, int j) {
@@ -1369,8 +1355,12 @@ double radius(const Grid &grid, int i, int j) {
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
-std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
-                               unsigned int My) {
+/*!
+ * Splits `size` into two factors `Nx` and `Ny` such that
+ *
+ * Mx/Nx ~= My/Ny and Nx > Ny if Mx > My.
+ */
+std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx, unsigned int My) {
 
   if (My <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "'My' is invalid.");
@@ -1394,18 +1384,6 @@ std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
   if (Mx > My and Nx < Ny) {
     // Swap Nx and Ny
     std::swap(Nx, Ny);
-  }
-
-  if ((Mx / Nx) < 2) { // note: integer division
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (X-direction).", Mx,
-                                  (int)Nx);
-  }
-
-  if ((My / Ny) < 2) { // note: integer division
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't split %d grid points into %d parts (Y-direction).", My,
-                                  (int)Ny);
   }
 
   return {Nx, Ny};
@@ -1445,7 +1423,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     File grid_file(ctx->com(), file_name, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    auto P = grid::Parameters::FromGridDefinition(unit_system, grid_file, variable_name, r);
+    auto P = grid::Parameters::FromGridDefinition(*config, unit_system, grid_file, variable_name, r);
 
     // process configuration parameters controlling grid size and extent, overriding
     // values read from a file *if* configuration parameters are set to "valid" numbers
@@ -1506,7 +1484,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       // bootstrapping; get domain size defaults from an input file, allow overriding all grid
       // parameters using command-line options
 
-      grid::Parameters input_grid(unit_system, input_file, variable_name, r);
+      grid::Parameters input_grid(*config, unit_system, input_file, variable_name, r);
 
       // process configuration parameters controlling grid size and extent, overriding
       // values read from a file *if* configuration parameters are set to "valid" numbers

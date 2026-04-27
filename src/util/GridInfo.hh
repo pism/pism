@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -85,6 +85,9 @@ public:
 
   //! Number of grid points in the largest patch (max(xm*ym) over all MPI ranks)
   int max_patch_size;
+
+  //! Maximum stencil width supported by this grid
+  int max_stencil_width;
 
   //! Current MPI rank
   int rank;

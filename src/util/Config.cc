@@ -161,8 +161,7 @@ Config::Doubles Config::all_doubles() const {
   return this->all_doubles_impl();
 }
 
-bool Config::is_valid_number(const std::string &name) const {
-  auto value = get_number(name, FORGET_THIS_USE);
+bool Config::is_valid_number(const std::string &name, double value) const {
   auto min = valid_min(name);
 
   if (std::get<0>(min)) {
@@ -183,6 +182,10 @@ bool Config::is_valid_number(const std::string &name) const {
   }
 
   return true;
+}
+
+bool Config::is_valid_number(const std::string &name) const {
+  return is_valid_number(name, get_number(name, FORGET_THIS_USE));
 }
 
 double Config::get_number(const std::string &name, UseFlag flag) const {
@@ -584,6 +587,10 @@ void set_number_from_option(Config &config, const std::string &option,
   options::Real opt(config.unit_system(), "-" + option, config.doc(parameter), config.units(parameter),
                     config.get_number(parameter, Config::FORGET_THIS_USE));
   if (opt.is_set()) {
+    if (not config.is_valid_number(parameter, opt.value())) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' value %f (set using -%s) is not valid",
+                                    parameter.c_str(), opt.value(), option.c_str());
+    }
     config.set_number(parameter, opt, CONFIG_USER);
   }
 }
@@ -593,6 +600,11 @@ void set_integer_from_option(Config &config, const std::string &option,
   options::Integer opt("-" + option, config.doc(parameter),
                        (int)config.get_number(parameter, Config::FORGET_THIS_USE));
   if (opt.is_set()) {
+    if (not config.is_valid_number(parameter, opt.value())) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "'%s' value %d (set using -%s) is not valid", parameter.c_str(),
+                                    opt.value(), option.c_str());
+    }
     config.set_number(parameter, opt, CONFIG_USER);
   }
 }
