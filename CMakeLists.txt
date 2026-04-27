@@ -17,6 +17,26 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 
 pism_set_full_version()
 
+# When driven by scikit-build-core (pip install .), redirect CMake's GNU
+# install dirs into the wheel's component-specific staging directories so
+# bin/ -> <wheel>.data/scripts, lib/share/include -> <wheel>.data/data/...
+# scikit-build-core publishes SKBUILD_*_DIR as CMake cache variables via
+# its CMakeInit.txt; we forward them into the GNUInstallDirs variables.
+if (Pism_USE_SKBUILD_LAYOUT)
+  if (NOT SKBUILD_SCRIPTS_DIR OR NOT SKBUILD_DATA_DIR OR NOT SKBUILD_PLATLIB_DIR)
+    message(FATAL_ERROR
+      "Pism_USE_SKBUILD_LAYOUT=ON requires SKBUILD_SCRIPTS_DIR, "
+      "SKBUILD_DATA_DIR, and SKBUILD_PLATLIB_DIR (normally injected by "
+      "scikit-build-core's CMakeInit.txt).")
+  endif()
+  set(CMAKE_INSTALL_BINDIR      "${SKBUILD_SCRIPTS_DIR}"      CACHE PATH "" FORCE)
+  set(CMAKE_INSTALL_LIBDIR      "${SKBUILD_DATA_DIR}/lib"     CACHE PATH "" FORCE)
+  set(CMAKE_INSTALL_DATAROOTDIR "${SKBUILD_DATA_DIR}/share"   CACHE PATH "" FORCE)
+  set(CMAKE_INSTALL_DATADIR     "${SKBUILD_DATA_DIR}/share"   CACHE PATH "" FORCE)
+  set(CMAKE_INSTALL_INCLUDEDIR  "${SKBUILD_DATA_DIR}/include" CACHE PATH "" FORCE)
+  set(PISM_PYTHON_MODULE_DIR    "${SKBUILD_PLATLIB_DIR}"      CACHE PATH "" FORCE)
+endif()
+
 include (GNUInstallDirs)
 # doc directory: override capitalization ("pism" instead of "Pism" from the "project(...)"
 # call above)
@@ -50,9 +70,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Intel" AND NOT CMAKE_CXX_FLAGS MATCHES "-std=
   set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
 endif()
 
-# Add a flag that makes it easier to use LLDB to debug code compiled with Clang:
+# Add a flag that makes it easier to use LLDB to debug code compiled with Clang.
+# Scope to C++ only: a mixed toolchain (e.g., conda's GCC for C with Clang for
+# C++) would otherwise pass this Clang-only flag to GCC and fail.
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-fstandalone-debug)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fstandalone-debug>)
 endif()
 
 # Put executables in the build directory:
@@ -94,6 +116,16 @@ option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 if (Pism_DEBIAN_SYSTEMWIDE)
   pism_dont_use_rpath()
+elseif (Pism_USE_SKBUILD_LAYOUT)
+  # scikit-build-core build: rely on CMAKE_INSTALL_RPATH and
+  # CMAKE_BUILD_RPATH_USE_ORIGIN passed via pyproject.toml. Avoid baking the
+  # wheel-staging absolute libdir into the install RPATH or the macOS
+  # install_name_dir, which would break the binary once pip moves files out
+  # of the staging area.
+  set (CMAKE_SKIP_BUILD_RPATH FALSE)
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  set (CMAKE_MACOSX_RPATH 1)
 else()
   pism_use_rpath()
 endif()
@@ -163,31 +195,44 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
-  set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
-  if (Pism_DEBIAN_SYSTEMWIDE)
-    set (pism_sysconfig_scheme "deb_system")
-  else()
-    set (pism_sysconfig_scheme "posix_prefix")
-  endif()
-  file (WRITE "${pism_python_path_py}" "
+  # Allow callers (e.g. scikit-build-core) to inject PISM_PYTHON_MODULE_DIR
+  # directly. When unset, fall back to the historical sysconfig probe.
+  if (NOT PISM_PYTHON_MODULE_DIR)
+    set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
+    if (Pism_DEBIAN_SYSTEMWIDE)
+      set (pism_sysconfig_scheme "deb_system")
+    else()
+      set (pism_sysconfig_scheme "posix_prefix")
+    endif()
+    file (WRITE "${pism_python_path_py}" "
 # Get module installation path from Python:
 import sysconfig
 print(sysconfig.get_path('platlib', '${pism_sysconfig_scheme}', vars={'platbase': '${CMAKE_INSTALL_PREFIX}'}))
 ")
-  unset(pism_sysconfig_scheme)
+    unset(pism_sysconfig_scheme)
 
-  execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${pism_python_path_py}
-    OUTPUT_VARIABLE PISM_FULL_PYTHON_MODULE_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  # convert to a path relative to the install prefix
-  file(RELATIVE_PATH PISM_PYTHON_MODULE_DIR
-    ${CMAKE_INSTALL_PREFIX} ${PISM_FULL_PYTHON_MODULE_DIR})
-  unset(pism_python_path_py)
+    execute_process(
+      COMMAND ${Python3_EXECUTABLE} ${pism_python_path_py}
+      OUTPUT_VARIABLE PISM_PROBED_PYTHON_MODULE_DIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    # convert to a path relative to the install prefix
+    file(RELATIVE_PATH PISM_PYTHON_MODULE_DIR
+      ${CMAKE_INSTALL_PREFIX} ${PISM_PROBED_PYTHON_MODULE_DIR})
+    unset(pism_python_path_py)
+    unset(PISM_PROBED_PYTHON_MODULE_DIR)
+  endif()
+
   set(PISM_PYTHON_MODULE_DIR ${PISM_PYTHON_MODULE_DIR}
-    CACHE PATH "Python extension module installation directory." )
+    CACHE PATH "Python extension module installation directory." FORCE)
+
+  if (IS_ABSOLUTE "${PISM_PYTHON_MODULE_DIR}")
+    set(PISM_FULL_PYTHON_MODULE_DIR "${PISM_PYTHON_MODULE_DIR}")
+  else()
+    set(PISM_FULL_PYTHON_MODULE_DIR
+      "${CMAKE_INSTALL_PREFIX}/${PISM_PYTHON_MODULE_DIR}")
+  endif()
   set(PISM_FULL_PYTHON_MODULE_DIR ${PISM_FULL_PYTHON_MODULE_DIR}
-    CACHE PATH "Python extension module installation directory (full path)." )
+    CACHE PATH "Python extension module installation directory (full path)." FORCE)
   mark_as_advanced(PISM_PYTHON_MODULE_DIR PISM_FULL_PYTHON_MODULE_DIR)
 endif ()
 
