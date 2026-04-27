@@ -1,5 +1,10 @@
 .. default-role:: literal
 
+Changes since v2.3.2
+====================
+
+- Added PICOP (PICO + Plume) from Pelle et al (2019). Use `-ocean.models picop`.
+
 Changes since v2.2.8
 ====================
 
