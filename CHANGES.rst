@@ -1,6 +1,7 @@
 .. default-role:: literal
 
 Changes since v2.3.2
+====================
 
 - Add a top-level `pyproject.toml` so PISM can be built and installed via
   `pip install --no-build-isolation .` using scikit-build-core. This installs the
@@ -18,8 +19,25 @@ Changes since v2.3.2
 - Scope the Clang-only `-fstandalone-debug` flag to C++ compilations only, so a
   mixed C/C++ toolchain (e.g., conda's GCC for C with Clang for C++) no longer
   fails to build C sources such as `calcalcs.c`.
-====================
-
+- Caveat: pip's wheel-build path runs cmake --install into the staging area and
+  then throws the staging away. The pism_config.nc and other configure-time files stay
+  in the wheel-tag build dir, so most tests should still run — but tests that
+  reference the install prefix (or hardcoded staging paths from the discarded
+  CMAKE_INSTALL_PREFIX) may misbehave. If you want a clean ctest run that mirrors
+  a developer build rather than a wheel build, do a separate plain-CMake configure
+  into a fresh dir::
+     
+     cmake -S . -B build-dev -DPism_BUILD_PYTHON_BINDINGS=ON
+     cmake --build build-dev -j
+     ctest --test-dir build-dev
+   
+- To add CMake build options, pass --config-settings repeatedly::
+    pip install --no-build-isolation . \
+    -C cmake.define.Pism_DEBUG=ON \
+    -C cmake.define.Pism_USE_PROJ=ON \
+    -C cmake.define.Pism_USE_YAC=ON \
+    -C cmake.build-type=Debug 
+    
 Changes since v2.2.8
 ====================
 
