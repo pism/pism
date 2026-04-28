@@ -87,7 +87,7 @@ SSA_PHYSICS = [
     "-stress_balance.ssa.method", "fem",
 ]
 
-max_iter = 50
+max_iter = 250
 scriptdir = "run_obs_scripts"
 os.makedirs(scriptdir, exist_ok=True)
 
@@ -98,11 +98,12 @@ solvers = {
     "blatter": {"inv_flag": ["-inv_design", "tauc"], "physics": BLATTER_PHYSICS},
 }
 
-penalties = [10, 100, 1000, 10000]
+
+penalties = [1, 10, 100, 1000, 100000]
 h1_values = [0.01, 1, 10]
 l2_values = [0, 1, 10]
-hscales = ["5e3", "5e4"]
-vscales = [50]
+hscales = ["1e4"]
+vscales = [100]
 
 count = 0
 
