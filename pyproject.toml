@@ -1,0 +1,53 @@
+[build-system]
+requires = ["scikit-build-core>=0.10"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "PISM"
+description = "Parallel Ice Sheet Model"
+readme = "README.rst"
+license = { file = "COPYING" }
+requires-python = ">=3.9"
+# petsc4py and mpi4py are listed so a fresh `pip install` errors loudly when
+# they are missing. They are deliberately NOT in [build-system.requires]:
+# building petsc4py from sdist needs PETSC_DIR/PETSC_ARCH, which a PEP 517
+# build sandbox would not have. Use `pip install --no-build-isolation .`
+# so CMake's find_package(PETSc4Py) sees the host environment.
+dependencies = ["petsc4py", "mpi4py", "numpy"]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://www.pism.io"
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = ">=3.20"
+build-dir = "build/{wheel_tag}"
+# The Python source tree lives under the unusually-named `site-packages/`
+# directory. Tell scikit-build-core where the real packages are so editable
+# installs map import paths correctly.
+wheel.packages = ["site-packages/PISM", "site-packages/siple"]
+
+[tool.scikit-build.cmake.define]
+Pism_BUILD_PYTHON_BINDINGS = "ON"
+# Switch CMakeLists.txt into "scikit-build-core layout" mode. Inside
+# CMakeLists.txt this reads the SKBUILD_*_DIR cache variables that
+# scikit-build-core publishes via CMakeInit.txt and points the GNU install
+# dirs and PISM_PYTHON_MODULE_DIR at the right wheel components.
+Pism_USE_SKBUILD_LAYOUT = "ON"
+# RPATH that survives the move out of scikit-build-core's staging dir.
+# CMake auto-translates $ORIGIN to @loader_path on macOS.
+#   bin/pismr             -> ../lib/libpism.so
+#   <platlib>/PISM/cpp.so -> ../../../../lib/libpism.so   (typical platlib depth)
+# Both are passed; the dynamic loader picks the one that resolves.
+CMAKE_INSTALL_RPATH = "$ORIGIN/../lib;$ORIGIN/../../../../lib"
+CMAKE_BUILD_RPATH_USE_ORIGIN = "ON"
+
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "VERSION"
+regex = "^(?P<value>\\S+)"
+
+[tool.scikit-build.editable]
+mode = "redirect"
+rebuild = true

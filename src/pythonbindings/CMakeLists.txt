@@ -61,7 +61,12 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     LANGUAGE python
     SOURCES PISM.i pism_python.cc)
 
-  TARGET_LINK_LIBRARIES(cpp ${PISM_PYTHON_BINDING_LIBRARIES})
+  # Use Python3::Module (not ${Python3_LIBRARIES}) so we don't link libpython
+  # directly. On macOS the interpreter and libpython both contain _PyRuntime;
+  # under two-level namespaces, an extension linked against libpython picks
+  # up libpython's uninitialized copy and import fails with
+  # "initialization of _cpp did not return an extension module".
+  TARGET_LINK_LIBRARIES(cpp Python3::Module ${PISM_PYTHON_BINDING_LIBRARIES})
 
   # Disable compiler warnings:
   SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}

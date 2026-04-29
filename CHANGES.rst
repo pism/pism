@@ -1,5 +1,26 @@
 .. default-role:: literal
 
+===========================
+Changes since v2.3.2
+===========================
+
+- Add a top-level `pyproject.toml` so PISM can be built and installed via
+  `pip install --no-build-isolation .` using scikit-build-core. This installs the
+  `pism` CLI, `libpism`, and the `PISM` and `siple` Python packages into the active
+  Python environment. The standalone `cmake -B build && cmake --install build` flow
+  continues to work unchanged. `petsc4py`, `mpi4py`, NetCDF, FFTW, GSL, and PETSc must
+  be available on the host before invoking pip; build isolation is disabled because
+  `petsc4py` cannot be built from sdist without `PETSC_DIR`/`PETSC_ARCH` set.
+- Fix a macOS import failure in the Python bindings ("initialization of `_cpp` did
+  not return an extension module"). The SWIG extension is now linked against
+  CMake's `Python3::Module` target instead of `${Python3_LIBRARIES}`, so it no longer
+  links `libpython` directly. On macOS, both the interpreter and `libpython` contain
+  `_PyRuntime`; under two-level namespaces, an extension bound to `libpython`
+  resolved to the uninitialized copy and failed at import time.
+- Scope the Clang-only `-fstandalone-debug` flag to C++ compilations only, so a
+  mixed C/C++ toolchain (e.g., conda's GCC for C with Clang for C++) no longer
+  fails to build C sources such as `calcalcs.c`.
+===========================
 Changes from 2.3.0 to 2.3.1
 ===========================
 
