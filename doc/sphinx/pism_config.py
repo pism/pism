@@ -3,7 +3,7 @@ from docutils import nodes
 from docutils.core import publish_doctree
 from sphinx.errors import SphinxError
 import os
-import netCDF4
+import xarray as xr
 import re
 
 # We store this using a global variable because this much data seems
@@ -262,9 +262,10 @@ def init_pism_parameters(app):
         # re-build if it changes)
         env.pism_parameters = {"filename" : filename}
 
-    f = netCDF4.Dataset(filename)
-    variable = f.variables["pism_config"]
-    data = {k : getattr(variable, k) for k in variable.ncattrs()}
+    # decode_cf=False so attributes stay as raw strings/numbers; we just
+    # care about pism_config's attribute dict, not its (empty) data.
+    with xr.open_dataset(filename, decode_times=False, decode_cf=False) as f:
+        data = dict(f["pism_config"].attrs)
 
     suffixes = ["choices", "doc", "option", "type", "units", "valid_min", "valid_max"]
 
