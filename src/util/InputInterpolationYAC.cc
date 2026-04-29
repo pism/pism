@@ -135,18 +135,6 @@ int InputInterpolationYAC::define_field(int component_id, const std::vector<doub
   return field_id;
 }
 
-/*!
- * Extract the "local" (corresponding to the current sub-domain) grid subset.
- */
-static std::vector<double> grid_subset(int xs, int xm, const std::vector<double> &coords) {
-  std::vector<double> result(xm);
-  for (int k = 0; k < xm; ++k) {
-    result[k] = coords[xs + k];
-  }
-
-  return result;
-}
-
 static double dx_estimate(Proj &mapping, double x1, double x2, double y) {
   PJ_COORD p1 = proj_coord(0, 0, 0, 0), p2 = proj_coord(0, 0, 0, 0);
   p1.lp = {proj_torad(x1), proj_torad(y)};
@@ -283,8 +271,8 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
     // define the target field (performed by all ranks in target_grid.com):
     {
-      auto x = grid_subset(target_grid.xs(), target_grid.xm(), target_grid.x());
-      auto y = grid_subset(target_grid.ys(), target_grid.ym(), target_grid.y());
+      auto x = grid::subset(target_grid.xs(), target_grid.xm(), target_grid.x());
+      auto y = grid::subset(target_grid.ys(), target_grid.ym(), target_grid.y());
 
       m_target_field_id = define_field(target_comp_id, x, y, target_proj_params, target_grid_name);
     }
@@ -329,8 +317,8 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
       source_grid->set_mapping_info(source_grid_mapping);
 
-      auto x = grid_subset(source_grid->xs(), source_grid->xm(), source_grid_info.x);
-      auto y = grid_subset(source_grid->ys(), source_grid->ym(), source_grid_info.y);
+      auto x = grid::subset(source_grid->xs(), source_grid->xm(), source_grid_info.x);
+      auto y = grid::subset(source_grid->ys(), source_grid->ym(), source_grid_info.y);
 
       double source_grid_spacing = 0;
       {
