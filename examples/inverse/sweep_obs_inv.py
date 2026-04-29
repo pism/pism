@@ -62,7 +62,7 @@ COMMON_PHYSICS = [
 
 BLATTER_PHYSICS = [
     "-stress_balance.model", "blatter",
-    "-bp_ksp_rtol", "0.001",
+    "-bp_ksp_rtol", "0.01",
     "-bp_mg_coarse_ksp_type", "preonly",
     "-bp_mg_coarse_pc_type", "lu",
     "-bp_mg_levels_ksp_type", "chebyshev",
@@ -70,7 +70,7 @@ BLATTER_PHYSICS = [
     "-bp_pc_type", "mg",
     "-bp_snes_ksp_ew", "1",
     "-bp_snes_ksp_ew_version", "3",
-    "-bp_snes_rtol", "0.001",
+    "-bp_snes_rtol", "0.01",
     "-stress_balance.blatter.Mz", "10",
     "-stress_balance.blatter.coarsening_factor", "3",
     "-stress_balance.blatter.enhancement_factor", "2.0",
@@ -99,10 +99,10 @@ solvers = {
 }
 
 
-penalties = [1, 10, 100, 1000, 100000]
-h1_values = [0.01, 1, 10]
-l2_values = [0, 1, 10]
-hscales = ["1e4"]
+penalties = [1, 10, 100, 1000, 10000, 100000]
+h1_values = [1]
+l2_values = [0]
+hscales = ["1e1", "1e2"]
 vscales = [100]
 
 count = 0
