@@ -37,8 +37,19 @@ Changes since v2.3.2
     -C cmake.define.Pism_USE_PROJ=ON \
     -C cmake.define.Pism_USE_YAC=ON \
     -C cmake.build-type=Debug 
-    
-Changes since v2.2.8
+
+Changes from 2.3.0 to 2.3.1
+===========================
+
+- Fix a bug in `-energy none`: previous versions failed to preserve enthalpy set during
+  initialization. Note: this bug did not affect runs using the `isothermal_glen` flow law.
+- Fix one of regression tests for PICO (failed if PISM is built without PROJ).
+- Improve the code initializing PETSc.
+- Update the YAC version in the build script to 3.15.0.
+- Attempt to fix tagging of Docker images uploaded to the GitHub Container Registry.
+
+Changes since v2.2.3
+>>>>>>> Stashed changes
 ====================
 
 - Rename configuration parameters and command-line options related to reporting
