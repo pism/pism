@@ -5,10 +5,10 @@ import numpy as np
 from pylab import figure, clf, hold
 import matplotlib.pyplot as plt
 try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
+    exit(1)
 
 pism_output = "flowline_result_50km.nc"
 pism_output = "flowline_result_20km.nc"
@@ -20,7 +20,7 @@ pism_output = "flowline_result_20km.nc"
 # load the PISM output
 try:
     print("Loading PISM output from '%s'..." % (pism_output), end=' ')
-    infile = NC(pism_output, 'r')
+    infile = xr.open_dataset(pism_output, decode_times=False, decode_cf=False)
 
 except Exception:
     print("""ERROR!\nSpecify NetCDF file from PISM run with -p.""")
@@ -28,8 +28,8 @@ except Exception:
 
 printfile = pism_output[:-3] + ".pdf"
 
-thk = np.squeeze(infile.variables["thk"][:])
-ubar = np.squeeze(infile.variables["ubar"][:])
+thk = np.squeeze(infile["thk"].values)
+ubar = np.squeeze(infile["ubar"].values)
 
 # "typical constant ice parameter" as defined in the paper and in Van der
 # Veen's "Fundamentals of Glacier Dynamics", 1999
@@ -42,9 +42,9 @@ C = 2.4511e-18
 Hcf = 250  # calving thickness
 
 #grid and time
-x = np.squeeze(infile.variables["x"][:])
+x = np.squeeze(infile["x"].values)
 dx = x[1] - x[0]
-t = np.squeeze(infile.variables["time"][:])
+t = np.squeeze(infile["time"].values)
 t = int(np.round(t / spa))
 
 dist = 50.0

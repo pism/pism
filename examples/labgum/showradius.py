@@ -11,10 +11,10 @@ import numpy as np
 import pylab as plt
 from sys import exit
 try:
-    import netCDF4 as netCDF
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
+    exit(1)
 
 import argparse
 
@@ -31,9 +31,9 @@ args = parser.parse_args()
 plt.figure(figsize=(12, 6))
 
 for j in range(len(args.infiles)):
-    nc = netCDF.Dataset(args.infiles[j], "r")
-    t = nc.variables["time"][:]
-    ice_area_glacierized = nc.variables["ice_area_glacierized"][:]
+    nc = xr.open_dataset(args.infiles[j], decode_times=False, decode_cf=False)
+    t = nc["time"].values
+    ice_area_glacierized = nc["ice_area_glacierized"].values
     nc.close()
     plt.loglog(t[t > 2], np.sqrt(ice_area_glacierized[t > 2] / np.pi) * 100.0, linewidth=2.0,  # after t=2s, and in cm
                label=args.infiles[j])

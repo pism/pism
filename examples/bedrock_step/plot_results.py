@@ -2,7 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import netCDF4 as NC
+import xarray as xr
 from scipy.integrate import quadrature
 
 import bedrock_step as exact
@@ -21,10 +21,10 @@ def V_exact():
 
 def plot(filename, output):
 
-    with NC.Dataset(filename, "r") as f:
-        x = f.variables["x"][:]
+    with xr.open_dataset(filename, decode_times=False, decode_cf=False) as f:
+        x = f["x"].values
         # dimensions: time, y, x
-        s_model = f.variables["usurf"][0, 1, :]
+        s_model = f["usurf"].values[0, 1, :]
 
         subset = np.logical_and(x >= 0, x <= 3e4)
 

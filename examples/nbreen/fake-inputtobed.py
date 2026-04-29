@@ -2,18 +2,18 @@
 
 from PISMNC import PISMDataset as PNC
 import numpy as np
-import netCDF4 as NC
+import xarray as xr
 
 inname = "pismnbreen.nc"
 outname = "fakesummerevent.nc"
 
-innc = NC.Dataset(inname, 'r')
+innc = xr.open_dataset(inname, decode_times=False, decode_cf=False)
 
 nc = PNC(outname, 'w', format='NETCDF3_CLASSIC')
 
 def get(name):
     global innc
-    return np.squeeze(innc.variables[name][:])
+    return np.squeeze(innc[name].values)
 
 x = get('x')
 y = get('y')

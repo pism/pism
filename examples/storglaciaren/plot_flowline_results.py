@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 try:
-    from netCDF4 import Dataset
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
+    exit(1)
 
 import numpy as np
 import pylab as plt
@@ -24,46 +24,36 @@ if len(args) != 1:
     exit(1)
 
 try:
-    nc = Dataset(args[0], 'r')
-except:
+    nc = xr.open_dataset(args[0], decode_times=False, decode_cf=False)
+except Exception:
     print("file %s not found ... ending ..." % args[0])
     exit(2)
 
 
-def permute(variable, output_order=('time', 'z', 'zb', 'y', 'x')):
-    """Permute dimensions of a NetCDF variable to match the output storage order."""
-    input_dimensions = variable.dimensions
-
-    # filter out irrelevant dimensions
-    dimensions = [x for x in output_order if x in input_dimensions]
-
-    # create the mapping
-    mapping = [dimensions.index(x) for x in input_dimensions]
-
-    if mapping:
-        return np.transpose(variable[:], mapping)
-    else:
-        return variable[:]              # so that it does not break processing "mapping"
+def permute(da, output_order=('time', 'z', 'zb', 'y', 'x')):
+    """Permute dimensions of an xarray DataArray to match the output storage order."""
+    dims = [d for d in output_order if d in da.dims]
+    return da.transpose(*dims).values if dims else da.values
 
 
-x = nc.variables["x"][:]
-b = np.squeeze(nc.variables["topg"][:])
-s = np.squeeze(nc.variables["usurf"][:])
-h = np.squeeze(nc.variables["thk"][:])
-z = nc.variables["z"][:]
+x = nc["x"].values
+b = np.squeeze(nc["topg"].values)
+s = np.squeeze(nc["usurf"].values)
+h = np.squeeze(nc["thk"].values)
+z = nc["z"].values
 
 mask = h <= 1
 
-us = np.ma.array(data=np.squeeze(nc.variables["uvelsurf"][:]), mask=mask)
-ub = np.ma.array(data=np.squeeze(nc.variables["uvelbase"][:]), mask=mask)
+us = np.ma.array(data=np.squeeze(nc["uvelsurf"].values), mask=mask)
+ub = np.ma.array(data=np.squeeze(nc["uvelbase"].values), mask=mask)
 # stuff needed for contour plots
 xx = (np.tile(x, [len(z), 1]))
 zz = ((np.tile(z, [len(x), 1])).transpose() + b)
 
 # ignore the first level
-cts = np.squeeze(permute(nc.variables["cts"]))
-liqfrac = np.squeeze(permute(nc.variables["liqfrac"]))
-temppa = np.squeeze(permute(nc.variables["temp_pa"]))
+cts = np.squeeze(permute(nc["cts"]))
+liqfrac = np.squeeze(permute(nc["liqfrac"]))
+temppa = np.squeeze(permute(nc["temp_pa"]))
 mask2 = np.zeros_like(cts)
 mask2[zz > s] = 1
 cts = np.ma.array(data=cts, mask=mask2)
@@ -86,7 +76,7 @@ axUpperLeft.axes.set_xlim(-250, 3500)
 axUpperLeft.axes.set_ylabel("velocity [m a$^{-1}$]")
 plt.setp(axUpperLeft, xticks=[])
 if (plot_acab == True):
-    acab = np.squeeze(nc.variables["climatic_mass_balance"][:])
+    acab = np.squeeze(nc["climatic_mass_balance"].values)
     axUpperRight = axUpperLeft.twinx()
     axUpperRight.plot(x, acab / 910.0, color='#984EA3', lw=1.5)
     axUpperRight.axes.set_ylabel("mass balance [m a$^{-1}$]")
