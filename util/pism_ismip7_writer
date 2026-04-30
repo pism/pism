@@ -32,51 +32,77 @@ logger = logging.getLogger("pism_output")
 
 
 class OutputGrid(object):
-    latitudes = None
-    longitudes = None
     x = None
     y = None
-    dx = None
-    dy = None
+    proj_string = None
 
-    ismip7 = True
+    def __init__(self):
+        raise NotImplementedError("Cannot create an instance of OutputGrid: use a derived class")
 
-    if ismip7:
-        proj_string = "EPSG:3413"
-        x_min = 0#-720e3
+    def dx(self):
+        return self.x[1] - self.x[0]
+
+    def dy(self):
+        return self.y[1] - self.y[0]
+
+    def size(self):
+        return len(self.x), len(self.y)
+
+    def lonlat_center(self):
+        xx, yy = np.meshgrid(self.x, self.y)
+
+        return Proj(self.proj_string)(xx, yy, inverse=True, radians=True)
+
+    def lonlat_corner(self):
+        Mx, My = self.size()
+
+        dx = self.dx()
+        x_corner = np.linspace(self.x[0] - 0.5 * dx, self.x[-1] + 0.5 * dx, Mx + 1)
+
+        dy = self.dy()
+        y_corner = np.linspace(self.y[0] - 0.5 * dy, self.y[-1] + 0.5 * dy, My + 1)
+
+        xx, yy = np.meshgrid(x_corner, y_corner)
+
+        return Proj(self.proj_string)(xx, yy, inverse=True, radians=True)
+
+
+class ISMIP7GreenlandGrid(OutputGrid):
+    def __init__(self, resolution=1000):
+        self.proj_string = "EPSG:3413"
+        x_min = -720e3
         x_max = 960e3
         y_min = -3450e3
         y_max = -570e3
-    else:
-        proj_string = "+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
+        width_x = (x_max - x_min)
+        Nx = int(width_x / resolution) + 1
+
+        width_y = (y_max - y_min)
+        Ny = int(width_y / resolution) + 1
+
+        self.x = np.linspace(x_min, x_max, Nx)
+        self.y = np.linspace(y_min, y_max, Ny)
+
+
+class StdGreenlandGrid(OutputGrid):
+    def __init__(self, resolution=1000):
+        self.proj_string = ("+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 " +
+                            "+ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
         x_min = -800e3
         x_max = 700e3
 
         y_min = -3400e3
         y_max = -600e3
 
-    def __init__(self, resolution=1000):
-        width_x = (self.x_max - self.x_min)
+        width_x = (x_max - x_min)
         Nx = int(width_x / resolution) + 1
 
-        width_y = (self.y_max - self.y_min)
+        width_y = (y_max - y_min)
         Ny = int(width_y / resolution) + 1
 
-        self.x = np.linspace(self.x_min, self.x_max, Nx)
-        self.y = np.linspace(self.y_min, self.y_max, Ny)
-
-        self.dx = self.x[1] - self.x[0]
-        self.dy = self.y[1] - self.y[0]
-
-        xx, yy = np.meshgrid(self.x, self.y)
-
-        p = Proj(self.proj_string)
-
-        self.longitudes, self.latitudes = p(xx, yy, inverse=True, radians=True)
-
-    def size(self):
-        return len(self.x), len(self.y)
+        self.x = np.linspace(x_min, x_max, Nx)
+        self.y = np.linspace(y_min, y_max, Ny)
 
 
 class ServerActions(Enum):
@@ -238,16 +264,16 @@ class YacWrapper:
         # to send us grid info, so we have to play along
         _, _, _, _ = self.receive_grid_info()
 
-        Mx = len(output_grid.x)
-        My = len(output_grid.y)
+        Mx, My = output_grid.size()
 
         vertex_indexes = np.arange(Mx * My)
 
         self.vertex_indexes[grid_name] = vertex_indexes
 
         # use ravel() instead of flatten() to avoid a copy
-        longitudes = output_grid.longitudes.ravel()
-        latitudes = output_grid.latitudes.ravel()
+        lon, lat = output_grid.lonlat_center()
+        longitudes = lon.ravel()
+        latitudes = lat.ravel()
 
         # Create grid and define point locations for corners (vertices)
         grid = yac.CloudGrid(self._output_grid_name(grid_name), longitudes, latitudes)
@@ -543,27 +569,29 @@ def main(compression_level, output_grid=None):
             F.append_history(history[file_name])
 
             # override lengths of x and y dimensions if using a custom output grid
-            dims = dimensions[file_name].copy()
-            if output_grid is not None:
-                dims["x"]["length"] = len(output_grid.x)
-                dims["y"]["length"] = len(output_grid.y)
+            dims = dimensions[file_name]
+            file_vars = variables[file_name]
 
-            file_vars = variables[file_name].copy()
-            file_vars["x"]["attributes"]["spacing_meters"] = output_grid.dx
-            file_vars["y"]["attributes"]["spacing_meters"] = output_grid.dy
+            if output_grid is not None:
+                Mx, My = output_grid.size()
+                dims["x"]["length"] = Mx
+                dims["y"]["length"] = My
+
+                file_vars["x"]["attributes"]["spacing_meters"] = output_grid.dx()
+                file_vars["y"]["attributes"]["spacing_meters"] = output_grid.dy()
 
             # define variables that are not "fields" and are not ignored:
-            for var_name, info in variables[file_name].items():
+            for var_name, info in file_vars.items():
                 if var_name not in fields.union(ignored):
                     define_variable(F, info, dims)
 
             if one_var_per_file(file_name):
                 # define the requested 2D or 3D variable
-                info = variables[file_name][variable_name]
+                info = file_vars[variable_name]
                 define_variable(F, info, dims)
             else:
                 # define all 2D or 3D variables
-                for var_name, info in variables[file_name].items():
+                for var_name, info in file_vars.items():
                     if var_name in fields:
                         define_variable(F, info, dims)
 
@@ -683,14 +711,15 @@ def main(compression_level, output_grid=None):
 
                 # replace "x" and "y" variables with ones from the output grid
                 if output_grid is not None:
+                    Mx, My = output_grid.size()
                     if variable_name == "x":
                         array = output_grid.x
                         metadata["start"] = [0]
-                        metadata["count"] = [len(output_grid.x)]
+                        metadata["count"] = [Mx]
                     if variable_name == "y":
                         array = output_grid.y
                         metadata["start"] = [0]
-                        metadata["count"] = [len(output_grid.y)]
+                        metadata["count"] = [My]
 
                 if one_var_per_file(file_name):
                     if variable_name in ignored_variables:
