@@ -236,10 +236,13 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable,
     send_action(DEFINE_YAC_GRID, info);
   }
 
-  // Sends the global domain sizes to the server
+  // Send grid information:
   if (m_leader) {
-    int grid_size[2] = {(int)grid.Mx, (int)grid.My};
-    MPI_Send((void *) &grid_size, 2, MPI_INT, 0, 0, m_intercomm);
+    // send projection info
+    MPI_Send((void *) proj_string.c_str(), (int)proj_string.size(), MPI_CHAR, 0, 0, m_intercomm);
+    // send x and y coordinates:
+    MPI_Send((void*)grid.x.data(), (int)grid.x.size(), MPI_DOUBLE, 0, 0, m_intercomm);
+    MPI_Send((void*)grid.y.data(), (int)grid.y.size(), MPI_DOUBLE, 0, 0, m_intercomm);
   }
 
   std::vector<double> latitudes;
