@@ -507,7 +507,7 @@ if __name__ == "__main__":
         dest="compression",
         type=int,
         default=1,
-        help="set logging level to 'DEBUG'",
+        help="set compression level for 2D and 3D variables",
     )
 
     options = parser.parse_args()
