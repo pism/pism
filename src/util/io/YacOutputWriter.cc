@@ -109,41 +109,33 @@ static void free_array_buffers(std::vector<double *> &buffers) {
 }
 
 /*!
- * Compute coordinates of grid points owned by the current MPI process.
+  * Generate "fake" longitudes and latitudes for the local patch of the grid. Here
+  * longitudes and latitudes range from 0 to 1 (inclusive) for the "global" grid (a local
+  * patch covers a part of this).
+  *
+  * This is sufficient for moving data from PISM to the output server and does not require
+  * projection info.
  */
-void compute_point_coordinates(const grid::DistributedGridInfo &grid,
-                               const std::string & proj_string, std::vector<double> &longitudes,
-                               std::vector<double> &latitudes) {
-  if (proj_string.empty()) {
-    // Generate "fake" longitudes and latitudes for the local patch of the grid. Here
-    // longitudes and latitudes range from 0 to 1 (inclusive) for the "global" grid (a local
-    // patch covers a part of this).
-    //
-    // This is sufficient for moving data from PISM to the output server and does not
-    // require projection info.
-    int patch_size = (int)(grid.xm * grid.ym);
+void fake_point_coordinates(const grid::DistributedGridInfo &grid, std::vector<double> &longitudes,
+                            std::vector<double> &latitudes) {
+  int patch_size = (int)(grid.xm * grid.ym);
 
-    longitudes.resize(patch_size);
-    latitudes.resize(patch_size);
+  longitudes.resize(patch_size);
+  latitudes.resize(patch_size);
 
-    const auto &x = grid.x;
-    const auto &y = grid.y;
+  const auto &x = grid.x;
+  const auto &y = grid.y;
 
-    double x_min  = x.front();
-    double y_min  = y.front();
-    double x_span = x.back() - x_min;
-    double y_span = y.back() - y_min;
-    int it        = 0;
-    for (auto p : GridPoints(grid)) {
-      const int i = p.i(), j = p.j();
-      longitudes[it] = (x[i] - x_min) / x_span;
-      latitudes[it]  = (y[j] - y_min) / y_span;
-      it++;
-    }
-  } else {
-    LonLatGrid::compute(grid::subset(grid.xs, grid.xm, grid.x),
-                        grid::subset(grid.ys, grid.ym, grid.y),
-                        proj_string, longitudes, latitudes);
+  double x_min  = x.front();
+  double y_min  = y.front();
+  double x_span = x.back() - x_min;
+  double y_span = y.back() - y_min;
+  int it        = 0;
+  for (auto p : GridPoints(grid)) {
+    const int i = p.i(), j = p.j();
+    longitudes[it] = (x[i] - x_min) / x_span;
+    latitudes[it]  = (y[j] - y_min) / y_span;
+    it++;
   }
 }
 
@@ -247,35 +239,46 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable,
 
   std::vector<double> latitudes;
   std::vector<double> longitudes;
-  details::compute_point_coordinates(grid, proj_string, longitudes, latitudes);
+  if (proj_string.empty()) {
+    details::fake_point_coordinates(grid, longitudes, latitudes);
+  } else {
+    LonLatGrid::compute(grid::subset(grid.xs, grid.xm, grid.x),
+                        grid::subset(grid.ys, grid.ym, grid.y), proj_string, longitudes, latitudes);
+  }
 
-  int local_patch_size = (int)latitudes.size();
-  // Gathers on the server the size of the local patch from each process
-  MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, m_intercomm);
+  // Send grid coordinates to the writer:
+  {
+    int local_patch_size = (int)latitudes.size();
+    // Gathers on the server the size of the local patch from each process
+    MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, m_intercomm);
 
-  // Translate local point indices to global point indices
-  auto patch_global_indices =
-    details::patch_global_indices(grid.Mx, grid.xs, grid.xm, grid.ys, grid.ym);
+    // Translate local point indices to global point indices
+    auto patch_global_indices =
+        details::patch_global_indices(grid.Mx, grid.xs, grid.xm, grid.ys, grid.ym);
 
-  // Sends the global indices of local points to the server, followed by local latitudes and longitudes
-  MPI_Gatherv(patch_global_indices.data(), local_patch_size, MPI_INT, NULL, NULL, NULL, MPI_INT, 0,
-              m_intercomm);
-  MPI_Gatherv(latitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0,
-              m_intercomm);
-  MPI_Gatherv(longitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0,
-              m_intercomm);
+    // Sends the global indices of local points to the server, followed by local latitudes and longitudes
+    MPI_Gatherv(patch_global_indices.data(), local_patch_size, MPI_INT, NULL, NULL, NULL, MPI_INT,
+                0, m_intercomm);
+    MPI_Gatherv(latitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0,
+                m_intercomm);
+    MPI_Gatherv(longitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0,
+                m_intercomm);
+  }
 
-  // Defines the YAC grid and points using the local points
-  int cyclic_dims[] = {0, 0};
-  int nbr_vertices[] = {(int)grid.xm, (int)grid.ym};
-  int grid_id = -1;
-  int point_set_id = -1;
-  yac_cdef_grid_curve2d(grid_name.c_str(), nbr_vertices, cyclic_dims, longitudes.data(),
-                        latitudes.data(), &grid_id);
-  yac_cdef_points_unstruct(grid_id, local_patch_size, YAC_LOCATION_CORNER, longitudes.data(),
-                           latitudes.data(), &point_set_id);
+  // Define the YAC grid and point set:
+  {
+    // Defines the YAC grid and points using the local points
+    int cyclic_dims[]  = { 0, 0 };
+    int nbr_vertices[] = { (int)grid.xm, (int)grid.ym };
+    int grid_id        = -1;
+    int point_set_id   = -1;
+    yac_cdef_grid_curve2d(grid_name.c_str(), nbr_vertices, cyclic_dims, longitudes.data(),
+                          latitudes.data(), &grid_id);
+    yac_cdef_points_unstruct(grid_id, (int)latitudes.size(), YAC_LOCATION_CORNER, longitudes.data(),
+                             latitudes.data(), &point_set_id);
 
-  m_point_set_id[grid_name] = point_set_id;
+    m_point_set_id[grid_name] = point_set_id;
+  }
 }
 
 // Subroutine to define a YAC field
