@@ -246,25 +246,6 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable,
                         grid::subset(grid.ys, grid.ym, grid.y), proj_string, longitudes, latitudes);
   }
 
-  // Send grid coordinates to the writer:
-  {
-    int local_patch_size = (int)latitudes.size();
-    // Gathers on the server the size of the local patch from each process
-    MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, m_intercomm);
-
-    // Translate local point indices to global point indices
-    auto patch_global_indices =
-        details::patch_global_indices(grid.Mx, grid.xs, grid.xm, grid.ys, grid.ym);
-
-    // Sends the global indices of local points to the server, followed by local latitudes and longitudes
-    MPI_Gatherv(patch_global_indices.data(), local_patch_size, MPI_INT, NULL, NULL, NULL, MPI_INT,
-                0, m_intercomm);
-    MPI_Gatherv(latitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0,
-                m_intercomm);
-    MPI_Gatherv(longitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0,
-                m_intercomm);
-  }
-
   // Define the YAC grid and point set:
   {
     // Defines the YAC grid and points using the local points

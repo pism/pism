@@ -26,6 +26,7 @@ import json
 from mpi4py import MPI
 from enum import Enum
 import traceback
+from pyproj import Proj
 
 logger = logging.getLogger("pism_output")
 
@@ -148,6 +149,26 @@ class YacWrapper:
 
         return array
 
+    def fake_lon_lat(self, x, y):
+        x_min = x[0]
+        y_min = y[0]
+
+        x_span = x[-1] - x_min
+        y_span = y[-1] - y_min
+
+        Mx = x.size
+        My = y.size
+
+        lon = np.zeros((My, Mx))
+        lat = np.zeros_like(lon)
+
+        for r in range(My):
+            for c in range(Mx):
+                lon[r, c] = (x[c] - x_min) / x_span
+                lat[r, c] = (y[r] - y_min) / y_span
+
+        return lon, lat
+
     def define_yac_grid(self, metadata):
         """Define the YAC grid for a given variable."""
 
@@ -156,53 +177,64 @@ class YacWrapper:
 
         # Receive projection info and grid point coordinates
         proj_string = self.receive_string(self.intercomm)
-        logger.debug(f"projection: '{proj_string}'")
         x = self.receive_array(self.intercomm)
         y = self.receive_array(self.intercomm)
         grid_size = (len(x), len(y))
         logger.debug(f"grid size: {grid_size}")
-
-        self.grid_size[grid_name] = grid_size
 
         # Total number of grid points
         x_size, y_size = grid_size
         assert x_size > 0 and y_size > 0, (x_size, y_size)
         grid_points = x_size * y_size
 
-        # Gather the sizes of the local domains of all client processes
-        client_local_domain_sizes = np.empty(self.remote_size, dtype='i')
-        self.intercomm.Gather(None, client_local_domain_sizes, root=MPI.ROOT)
+        if proj_string == "":
+            logger.debug(f"grid {grid_name} projection: none")
+            lon, lat = self.fake_lon_lat(x, y)
+            # Create grid and define point locations
+            grid = yac.CloudGrid(self._output_grid_name(grid_name),
+                                 lon.ravel(), lat.ravel())
+            grid.points = grid.def_points(lon.ravel(), lat.ravel())
 
-        # Calculate the array displacements for receiving geometrical data from client processes
-        displacements = np.empty(self.remote_size, dtype='i')
-        displacements[0] = 0
-        for i in range(1, self.remote_size):
-            displacements[i] = displacements[i-1] + client_local_domain_sizes[i-1]
+            # Create the interpolation stack and add an nearest-neighbor inteporlation.
+            #
+            # For the current purposes of the output server we just want the data to be
+            # transferred from the client to the server without any interpolation.
+            # Therefore, we use the NNN with a single neighbor, and since the client and
+            # server grids match, the data should arrive the same.
+            interpolation_stack = yac.InterpolationStack()
+            interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1., 0.)
+        else:
+            logger.debug(f"grid {grid_name} projection: '{proj_string}'")
 
-        # Create arrays for geometrical data and global data ordering
-        longitudes = np.empty(grid_points, dtype='d')
-        latitudes = np.empty(grid_points, dtype='d')
-        self.vertex_indexes[grid_name] = np.empty(grid_points, dtype='i')
+            def corners(centers):
+                spacing = centers[1] - centers[0]
 
-        # Receive latitudes, longitudes and the global ordering of points
-        counts_and_displacements = (client_local_domain_sizes, displacements)
-        self.intercomm.Gatherv(None, (self.vertex_indexes[grid_name], counts_and_displacements),
-                               root=MPI.ROOT)
-        self.intercomm.Gatherv(None, (latitudes, counts_and_displacements), root=MPI.ROOT)
-        self.intercomm.Gatherv(None, (longitudes, counts_and_displacements), root=MPI.ROOT)
+                M = centers.size
+                corner = np.zeros(M + 1)
+                corner[:M] = centers - 0.5 * spacing
+                corner[-1] = centers[-1] + 0.5 * spacing
 
-        # Create grid and define point locations for corners (vertices)
-        grid = yac.CloudGrid(self._output_grid_name(grid_name), longitudes, latitudes)
-        grid.corner_points = grid.def_points(longitudes, latitudes)
+                return corner
 
+            def lon_lat(x, y):
+                xx, yy = np.meshgrid(x, y)
+                return Proj(proj_string)(xx, yy, inverse=True, radians=True)
+
+            lon_corner, lat_corner = lon_lat(corners(x), corners(y))
+            grid = yac.Curve2dGrid(self._output_grid_name(grid_name),
+                                   lon_corner, lat_corner)
+
+            lon, lat = lon_lat(x, y)
+            grid.points = grid.def_points(yac.Location.CELL, lon, lat)
+
+            # Create the interpolation stack and add an nearest-neighbor inteporlation.
+            interpolation_stack = yac.InterpolationStack()
+            interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1., 0.)
+
+        self.grid_size[grid_name] = grid_size
+        self.vertex_indexes[grid_name] = np.arange(grid_points)
         self.grids[grid_name] = grid
-
-        # Create the interpolation stack and add an nearest-neighbor inteporlation
-        # For the current purposes of the output server we just want the data to be transferred
-        # from the client to the server without any interpolation. Therefore, we use the NNN with a
-        # single neighbor, and since the client and server grids match, the data should arrive the same.
-        self.interpolation_stack = yac.InterpolationStack()
-        self.interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1., 0.)
+        self.interpolation_stack = interpolation_stack
 
     def finish_initialization(self):
         """Finalize the YAC definitions phase."""
@@ -222,9 +254,9 @@ class YacWrapper:
         time_unit = yac.TimeUnit.ISO_FORMAT
         time_reduction = yac.Reduction.TIME_NONE
 
-        corner_points = self.grids[grid_name].corner_points
+        points = self.grids[grid_name].points
         self.fields[field_name] = yac.Field.create(field_name, self.component,
-                                                   corner_points, collection_size,
+                                                   points, collection_size,
                                                    timestep, yac.TimeUnit.ISO_FORMAT)
 
         self.yac.def_couple(self.source_comp_name, grid_name, field_name,
