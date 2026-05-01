@@ -120,8 +120,6 @@ class YacWrapper:
 
     def define_yac_grid(self, metadata):
         """Define the YAC grid for a given variable."""
-        client_local_domain_sizes = np.empty(self.remote_size, dtype='i')
-        displacements = np.empty(self.remote_size, dtype='i')
 
         # the grid name in pism_output has to be different
         grid_name = metadata['grid_name']
@@ -137,9 +135,11 @@ class YacWrapper:
         grid_points = x_size * y_size
 
         # Gather the sizes of the local domains of all client processes
+        client_local_domain_sizes = np.empty(self.remote_size, dtype='i')
         self.intercomm.Gather(None, client_local_domain_sizes, root=MPI.ROOT)
 
         # Calculate the array displacements for receiving geometrical data from client processes
+        displacements = np.empty(self.remote_size, dtype='i')
         displacements[0] = 0
         for i in range(1, self.remote_size):
             displacements[i] = displacements[i-1] + client_local_domain_sizes[i-1]
@@ -150,13 +150,11 @@ class YacWrapper:
         self.vertex_indexes[grid_name] = np.empty(grid_points, dtype='i')
 
         # Receive latitudes, longitudes and the global ordering of points
-        self.intercomm.Gatherv(None, (self.vertex_indexes[grid_name],
-                                      (client_local_domain_sizes, displacements)),
+        counts_and_displacements = (client_local_domain_sizes, displacements)
+        self.intercomm.Gatherv(None, (self.vertex_indexes[grid_name], counts_and_displacements),
                                root=MPI.ROOT)
-        self.intercomm.Gatherv(None, (latitudes, (client_local_domain_sizes, displacements)),
-                               root=MPI.ROOT)
-        self.intercomm.Gatherv(None, (longitudes, (client_local_domain_sizes, displacements)),
-                               root=MPI.ROOT)
+        self.intercomm.Gatherv(None, (latitudes, counts_and_displacements), root=MPI.ROOT)
+        self.intercomm.Gatherv(None, (longitudes, counts_and_displacements), root=MPI.ROOT)
 
         # Create grid and define point locations for corners (vertices)
         grid = yac.CloudGrid(self._output_grid_name(grid_name), longitudes, latitudes)
