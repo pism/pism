@@ -90,8 +90,16 @@ jobs:
     steps:
       - checkout
       - run:
+          # doc/sphinx/pism_config.py reads pism_config.nc via xarray.
+          # Drop once the ckhrulev/pism-ubuntu image is rebuilt to include it.
+          name: Install xarray
+          command: |
+            source $HOME/local/pism/bin/activate
+            python3 -m pip install --quiet xarray
+      - run:
           name: Build the HTML version of the manual
           command: |
+            source $HOME/local/pism/bin/activate
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_html
@@ -138,8 +146,16 @@ jobs:
     steps:
       - checkout
       - run:
+          # doc/sphinx/pism_config.py reads pism_config.nc via xarray.
+          # Drop once the ckhrulev/pism-ubuntu image is rebuilt to include it.
+          name: Install xarray
+          command: |
+            source $HOME/local/pism/bin/activate
+            python3 -m pip install --quiet xarray
+      - run:
           name: Build the PDF version of the manual
           command: |
+            source $HOME/local/pism/bin/activate
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_pdf
@@ -244,6 +260,12 @@ jobs:
 
     steps:
       - checkout
+      - run:
+          # Install xarray (required by PISM regression tests after the
+          # netCDF4 -> xarray migration). Drop once the
+          # ckhrulev/pism-ubuntu-deb-package image is rebuilt to include it.
+          name: Install xarray
+          command: pip install --break-system-packages --quiet xarray
       - run:
           name: Configure PISM
           command: >-

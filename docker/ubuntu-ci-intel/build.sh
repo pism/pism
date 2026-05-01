@@ -8,6 +8,11 @@ set -x
 set -e
 set -u
 
+# Install xarray into the venv (used by PISM Python scripts and regression
+# tests after the netCDF4 -> xarray migration). Drop this once the
+# ckhrulev/pism-ubuntu-intel Docker image is rebuilt to include python3-xarray.
+python3 -m pip install --quiet xarray
+
 # Compile using this many jobs
 N=${N:-4}
 
