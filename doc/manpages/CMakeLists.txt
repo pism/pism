@@ -6,10 +6,14 @@ if (RST2MAN_EXECUTABLE)
   macro(add_manpages names)
     foreach(name ${names})
       # Note the sed command: this fixes formatting of command-line options: rst2man
-      # cannot handle PISM's long options with one dash.
+      # cannot handle PISM's long options with one dash. We use `-i.bak` (a
+      # non-empty backup extension) because BSD sed on macOS treats `-i` as
+      # requiring an argument, so `sed -i -E` would silently consume `-E` as
+      # the extension and leave extended-regex mode disabled.
       add_custom_command(OUTPUT ${name}.1.gz
         COMMAND ${RST2MAN_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${name}.rst ${name}.1
-        COMMAND sed -i -E -e "s/(-[a-zA-Z]+)\\\\fB /\\1/" ${name}.1
+        COMMAND sed -i.bak -E -e "s/(-[a-zA-Z]+)\\\\fB /\\1/" ${name}.1
+        COMMAND ${CMAKE_COMMAND} -E remove ${name}.1.bak
         COMMAND ${GZIP} -n -9 ${name}.1
         DEPENDS ${name}.rst
         VERBATIM)
