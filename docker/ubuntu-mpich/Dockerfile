@@ -32,6 +32,7 @@ echo "Install packages using apt-get"
     python3-pip
     python3-setuptools
     python3-venv
+    python3-xarray \
     swig
     wget
     "
