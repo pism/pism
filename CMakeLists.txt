@@ -84,8 +84,17 @@ set(CMAKE_INSTALL_MESSAGE "LAZY")
 set(CMAKE_COLOR_MAKEFILE OFF)
 
 # Set Pism_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
+# When packaging via scikit-build-core (Pism_USE_SKBUILD_LAYOUT=ON), the
+# wheel-staging install prefix points at a temp dir that won't exist after
+# pip moves files to their final location. Allow callers to override the
+# config-file path explicitly so packagers (e.g. conda-forge) can bake in
+# the *final* install path instead.
 pism_check_build_dir_location()
-set (Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc" CACHE STRING "" FORCE)
+if (Pism_USE_SKBUILD_LAYOUT AND Pism_CONFIG_FILE)
+  set (Pism_CONFIG_FILE "${Pism_CONFIG_FILE}" CACHE STRING "" FORCE)
+else()
+  set (Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc" CACHE STRING "" FORCE)
+endif()
 mark_as_advanced (Pism_CONFIG_FILE)
 
 # The default options cache
