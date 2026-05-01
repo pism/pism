@@ -1,17 +1,21 @@
 #!/bin/bash
 
 set +x
+# Install xarray into the user-site for the *system* Python BEFORE
+# activating the venv. The Sphinx documentation extension at
+# doc/sphinx/pism_config.py is loaded by the apt-installed
+# /usr/bin/sphinx-build, whose shebang hardcodes /usr/bin/python3 and
+# wouldn't see a venv-only install. The venv was created with
+# --system-site-packages, so it picks up the user-site copy too. Drop
+# this once ckhrulev/pism-ubuntu is rebuilt to include python3-xarray.
+/usr/bin/python3 -m pip install --user --break-system-packages --quiet xarray
+
 # Activate the environment containing mpi4py that will be needed for testing:
 source $HOME/local/pism/bin/activate
 set -x
 
 set -e
 set -u
-
-# Install xarray into the venv (used by PISM Python scripts and regression
-# tests after the netCDF4 -> xarray migration). Drop this once the
-# ckhrulev/pism-ubuntu Docker image is rebuilt to include python3-xarray.
-python3 -m pip install --quiet xarray
 
 # Uses environment variables CC and CXX to select the compiler
 

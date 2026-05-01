@@ -91,15 +91,15 @@ jobs:
       - checkout
       - run:
           # doc/sphinx/pism_config.py reads pism_config.nc via xarray.
+          # The apt-installed /usr/bin/sphinx-build uses /usr/bin/python3,
+          # so install xarray into the system user-site (not just the venv).
           # Drop once the ckhrulev/pism-ubuntu image is rebuilt to include it.
           name: Install xarray
           command: |
-            source $HOME/local/pism/bin/activate
-            python3 -m pip install --quiet xarray
+            /usr/bin/python3 -m pip install --user --break-system-packages --quiet xarray
       - run:
           name: Build the HTML version of the manual
           command: |
-            source $HOME/local/pism/bin/activate
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_html
@@ -147,15 +147,15 @@ jobs:
       - checkout
       - run:
           # doc/sphinx/pism_config.py reads pism_config.nc via xarray.
+          # The apt-installed /usr/bin/sphinx-build uses /usr/bin/python3,
+          # so install xarray into the system user-site (not just the venv).
           # Drop once the ckhrulev/pism-ubuntu image is rebuilt to include it.
           name: Install xarray
           command: |
-            source $HOME/local/pism/bin/activate
-            python3 -m pip install --quiet xarray
+            /usr/bin/python3 -m pip install --user --break-system-packages --quiet xarray
       - run:
           name: Build the PDF version of the manual
           command: |
-            source $HOME/local/pism/bin/activate
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_pdf

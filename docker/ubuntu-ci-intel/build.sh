@@ -2,16 +2,21 @@
 
 set +x
 source /opt/intel/oneapi/setvars.sh
+
+# Install xarray into the user-site for the *system* Python BEFORE
+# activating the venv. The Sphinx documentation extension at
+# doc/sphinx/pism_config.py is loaded by the apt-installed
+# /usr/bin/sphinx-build (system Python), so a venv-only install would
+# not help. The venv was created with --system-site-packages, so it
+# picks up the user-site copy too. Drop this once
+# ckhrulev/pism-ubuntu-intel is rebuilt to include python3-xarray.
+/usr/bin/python3 -m pip install --user --break-system-packages --quiet xarray
+
 source $HOME/local/pism/bin/activate
 set -x
 
 set -e
 set -u
-
-# Install xarray into the venv (used by PISM Python scripts and regression
-# tests after the netCDF4 -> xarray migration). Drop this once the
-# ckhrulev/pism-ubuntu-intel Docker image is rebuilt to include python3-xarray.
-python3 -m pip install --quiet xarray
 
 # Compile using this many jobs
 N=${N:-4}
