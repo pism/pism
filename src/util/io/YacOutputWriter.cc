@@ -25,15 +25,16 @@
 #include <mpi.h>
 #include <vector>
 
+#include "pism/external/nlohmann/json.hpp"
 #include "pism/util/Config.hh"
-#include "pism/util/GridInfo.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/GridInfo.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/YacOutputWriter.hh"
-#include "pism/external/nlohmann/json.hpp"
+#include "pism/util/yac_utilities.hh"
 
 extern "C" {
 #include "yac.h"
@@ -70,23 +71,6 @@ static std::string to_python_type(pism::io::Type input) {
 }
 
 /*!
- * Calculate global indices for local points given the start and size of the local patch
- * and the global x size.
- */
-static std::vector<int> patch_global_indices(unsigned int x_global_size, unsigned int x_start,
-                                             unsigned int x_size, unsigned int y_start,
-                                             unsigned int y_size) {
-  std::vector<int> indices;
-  indices.reserve((size_t)x_size * y_size);
-  for (unsigned int j = y_start; j < y_start + y_size; ++j) {
-    for (unsigned int i = x_start; i < x_start + x_size; ++i) {
-      indices.push_back((int)(j * x_global_size + i));
-    }
-  }
-  return indices;
-}
-
-/*!
  * Return the string identifying the grid used by a variable.
  *
  * Uses names of the first two dimensions. (The third dimension, if present, will
@@ -108,43 +92,33 @@ static void free_array_buffers(std::vector<double *> &buffers) {
 }
 
 /*!
- * Compute coordinates of grid points owned by the current MPI process.
+  * Generate "fake" longitudes and latitudes for the local patch of the grid. Here
+  * longitudes and latitudes range from 0 to 1 (inclusive) for the "global" grid (a local
+  * patch covers a part of this).
+  *
+  * This is sufficient for moving data from PISM to the output server and does not require
+  * projection info.
  */
-void compute_point_coordinates(const grid::DistributedGridInfo &grid,
-                               const std::string & proj_string, std::vector<double> &longitudes,
-                               std::vector<double> &latitudes) {
+void fake_point_coordinates(const grid::DistributedGridInfo &grid, std::vector<double> &longitudes,
+                            std::vector<double> &latitudes) {
   int patch_size = (int)(grid.xm * grid.ym);
 
   longitudes.resize(patch_size);
   latitudes.resize(patch_size);
 
-  if (proj_string.empty()) {
-    // Generate "fake" longitudes and latitudes for the local patch of the grid. Here
-    // longitudes and latitudes range from 0 to 1 (inclusive) for the "global" grid (a local
-    // patch covers a part of this).
-    //
-    // This is sufficient for moving data from PISM to the output server and does not
-    // require projection info.
-    const auto &x = grid.x;
-    const auto &y = grid.y;
+  const auto &x = grid.x;
+  const auto &y = grid.y;
 
-    double x_min  = x.front();
-    double y_min  = y.front();
-    double x_span = x.back() - x_min;
-    double y_span = y.back() - y_min;
-    int it        = 0;
-    for (auto p : GridPoints(grid)) {
-      const int i = p.i(), j = p.j();
-      longitudes[it] = (x[i] - x_min) / x_span;
-      latitudes[it]  = (y[j] - y_min) / y_span;
-      it++;
-    }
-  } else {
-    // FIXME: make it possible to use projection info to use real lon,lat coordinates of
-    // grid points. This will be necessary for "on the fly" post-processing in the output
-    // server.
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "output writer: non-trivial projections are not implemented yet");
+  double x_min  = x.front();
+  double y_min  = y.front();
+  double x_span = x.back() - x_min;
+  double y_span = y.back() - y_min;
+  int it        = 0;
+  for (auto p : GridPoints(grid)) {
+    const int i = p.i(), j = p.j();
+    longitudes[it] = (x[i] - x_min) / x_span;
+    latitudes[it]  = (y[j] - y_min) / y_span;
+    it++;
   }
 }
 
@@ -217,7 +191,8 @@ int YacOutputWriter::tag(const std::string &variable_name, TagTreatment flag) {
 
 // Initializes the YAC grid and sends the geometrical information to
 // the server so that it can also initialize its own grid
-void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
+void YacOutputWriter::define_yac_grid(const VariableMetadata &variable,
+                                      const std::string &proj_string) {
 
   const auto grid_name = details::grid_name(variable);
 
@@ -236,42 +211,39 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable) {
     send_action(DEFINE_YAC_GRID, info);
   }
 
-  // Sends the global domain sizes to the server
+  // Send grid information:
   if (m_leader) {
-    int grid_size[2] = {(int)grid.Mx, (int)grid.My};
-    MPI_Send((void *) &grid_size, 2, MPI_INT, 0, 0, m_intercomm);
+    // send projection info
+    MPI_Send((void *) proj_string.c_str(), (int)proj_string.size(), MPI_CHAR, 0, 0, m_intercomm);
+    // send x and y coordinates:
+    MPI_Send((void*)grid.x.data(), (int)grid.x.size(), MPI_DOUBLE, 0, 0, m_intercomm);
+    MPI_Send((void*)grid.y.data(), (int)grid.y.size(), MPI_DOUBLE, 0, 0, m_intercomm);
   }
 
-  std::vector<double> latitudes;
-  std::vector<double> longitudes;
-  details::compute_point_coordinates(grid, "", longitudes, latitudes);
+  if (proj_string.empty()) {
+    std::vector<double> latitudes;
+    std::vector<double> longitudes;
+    details::fake_point_coordinates(grid, longitudes, latitudes);
+    // Define the YAC grid and point set:
+    {
+      // Defines the YAC grid and points using the local points
+      int cyclic_dims[]  = { 0, 0 };
+      int nbr_vertices[] = { (int)grid.xm, (int)grid.ym };
+      int grid_id        = -1;
+      int point_set_id   = -1;
+      yac_cdef_grid_curve2d(grid_name.c_str(), nbr_vertices, cyclic_dims, longitudes.data(),
+                            latitudes.data(), &grid_id);
+      yac_cdef_points_unstruct(grid_id, (int)latitudes.size(), YAC_LOCATION_CORNER,
+                               longitudes.data(), latitudes.data(), &point_set_id);
 
-  int local_patch_size = (int)latitudes.size();
-  // Gathers on the server the size of the local patch from each process
-  MPI_Gather(&local_patch_size, 1, MPI_INT, NULL, 1, MPI_INT, 0, m_intercomm);
+      m_point_set_id[grid_name] = point_set_id;
+    }
+    return;
+  }
 
-  // Translate local point indices to global point indices
-  auto patch_global_indices =
-    details::patch_global_indices(grid.Mx, grid.xs, grid.xm, grid.ys, grid.ym);
-
-  // Sends the global indices of local points to the server, followed by local latitudes and longitudes
-  MPI_Gatherv(patch_global_indices.data(), local_patch_size, MPI_INT, NULL, NULL, NULL, MPI_INT, 0,
-              m_intercomm);
-  MPI_Gatherv(latitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0,
-              m_intercomm);
-  MPI_Gatherv(longitudes.data(), local_patch_size, MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE, 0,
-              m_intercomm);
-
-  // Defines the YAC grid and points using the local points
-  int cyclic_dims[] = {0, 0};
-  int nbr_vertices[] = {(int)grid.xm, (int)grid.ym};
-  int grid_id = -1;
-  int point_set_id = -1;
-  yac_cdef_grid_curve2d(grid_name.c_str(), nbr_vertices, cyclic_dims, longitudes.data(),
-                        latitudes.data(), &grid_id);
-  yac_cdef_points_unstruct(grid_id, local_patch_size, YAC_LOCATION_CORNER, longitudes.data(),
-                           latitudes.data(), &point_set_id);
-
+  int point_set_id =
+      pism::define_yac_grid(grid::subset(grid.xs, grid.xm, grid.x),
+                            grid::subset(grid.ys, grid.ym, grid.y), grid_name, proj_string);
   m_point_set_id[grid_name] = point_set_id;
 }
 
@@ -340,8 +312,8 @@ void YacOutputWriter::send_action(int action_id,
             m_intercomm, &m_mpi_requests.back());
 }
 
-YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config)
-    : OutputWriter(comm, config) {
+YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const std::string &mapping)
+  : OutputWriter(comm, config), m_grid_mapping(mapping) {
 
   set_is_async(true);
   {
@@ -390,7 +362,7 @@ void YacOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_va
     m_field_buffer_size = std::max(array_size, m_field_buffer_size);
 
     // define the grid (if necessary)
-    define_yac_grid(variable);
+    define_yac_grid(variable, m_grid_mapping);
 
     // define the YAC field
     define_yac_field(variable);

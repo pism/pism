@@ -1401,6 +1401,18 @@ std::vector<unsigned int> ownership_ranges(unsigned int Mx, unsigned int Nx) {
   return result;
 }
 
+/*!
+ * Extract the "local" (corresponding to the current sub-domain) grid subset.
+ */
+std::vector<double> subset(unsigned int xs, unsigned int xm, const std::vector<double> &coords) {
+  std::vector<double> result(xm);
+  for (unsigned int k = 0; k < xm; ++k) {
+    result[k] = coords[xs + k];
+  }
+
+  return result;
+}
+
 } // namespace grid
 
 //! Create a grid using command-line options and (possibly) an input file.

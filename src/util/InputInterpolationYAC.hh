@@ -23,6 +23,8 @@
 #include <memory>
 #include <string>
 
+#include <mpi.h>
+
 #include "pism/util/InputInterpolation.hh"
 
 namespace pism {
@@ -62,8 +64,6 @@ private:
   static int define_field(int component_id, const std::vector<double> &x,
                           const std::vector<double> &y, const std::string &proj_string,
                           const std::string &name);
-  static int define_grid(const std::vector<double> &x, const std::vector<double> &y,
-                         const std::string &grid_name, const std::string &projection);
 
   int m_instance_id;
   int m_source_field_id;
