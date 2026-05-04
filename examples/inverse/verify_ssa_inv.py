@@ -46,11 +46,10 @@ def success():
     exit(0)
 
 
-netCDF = None
 try:
-    import netCDF4 as netCDF
-except:
-    fail('Unable to import netCDF4.')
+    import xarray as xr
+except ImportError:
+    fail('Unable to import xarray.')
     exit(1)
 
 import argparse
@@ -69,14 +68,13 @@ args = parser.parse_args()
 
 inv_filename = args.inv_filename
 try:
-    data = netCDF.Dataset(inv_filename)
-except:
+    data = xr.open_dataset(inv_filename, decode_times=False, decode_cf=False)
+except Exception:
     fail('Unable to open inversion file "%s"\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
 
 # Grab the misfit history from the file.
-misfit = data.variables.get('inv_misfit')
-if misfit is None:
-    fail('Inversion file %s missing misfit history variable "inv_misfit".\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
+if 'inv_ssa_misfit' not in data.variables:
+    fail('Inversion file %s missing misfit history variable "inv_ssa_misfit".\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
 
 desired_misfit = args.desired_misfit
 

@@ -14,12 +14,10 @@ from numpy import *
 import pylab as plt
 import sys
 try:
-    import netCDF4 as netCDF
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
-
-NC = netCDF.Dataset
 
 if len(sys.argv) < 5:
     print("tsshow.py ERROR: at least 4 arguments needed")
@@ -52,12 +50,12 @@ for k in range(n):
     labels.append(sys.argv[2 * k + 4])
 
     try:
-        ncfile = NC(tsfile, "r")
-    except:
+        ncfile = xr.open_dataset(tsfile, decode_times=False, decode_cf=False)
+    except Exception:
         print("ERROR: can't read from file %s ..." % tsfile)
         sys.exit(2)
-    t = ncfile.variables["time"][:] / secpera
-    var = ncfile.variables[field][:]
+    t = ncfile["time"].values / secpera
+    var = ncfile[field].values
     ncfile.close()
     print("read variable '%s' from time-series file '%s' ..." % (field, tsfile))
 

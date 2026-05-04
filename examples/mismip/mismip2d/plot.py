@@ -10,9 +10,9 @@ from optparse import OptionParser
 import os.path
 
 try:
-    from netCDF4 import Dataset as NC
+    import xarray as xr
 except:
-    print("netCDF4 is not installed!")
+    print("xarray is not installed!")
     sys.exit(1)
 
 
@@ -48,8 +48,8 @@ def parse_filename(filename, opts):
             model = opts.model
 
         try:
-            nc = NC(filename)
-            x = nc.variables['x'][:]
+            nc = xr.open_dataset(filename, decode_times=False, decode_cf=False)
+            x = nc['x'].values[:]
             N = (x.size - 1) / 2
             if N == 150:
                 mode = 1
@@ -100,10 +100,10 @@ def process_options():
 
 def read(filename, name):
     "Read a variable and extract the middle row."
-    nc = NC(filename)
+    nc = xr.open_dataset(filename, decode_times=False, decode_cf=False)
 
     try:
-        var = nc.variables[name][:]
+        var = nc[name].values[:]
     except:
         print("ERROR: Variable '%s' not present in '%s'" % (name, filename))
         exit(1)

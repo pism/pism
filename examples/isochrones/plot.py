@@ -8,7 +8,7 @@ Requires `ffmpeg`.
 
 """
 
-import netCDF4 as NC
+import xarray as xr
 import numpy as np
 from matplotlib import pyplot as plt
 import sys
@@ -21,18 +21,18 @@ from matplotlib.animation import FFMpegWriter
 def plot_isochrones(ax, f, index=-1):
 
     H_max = 4000
-    Mx = len(f.variables['x'])
-    My = len(f.variables['y'])
+    Mx = f.sizes['x']
+    My = f.sizes['y']
 
-    deposition_time = f.variables['deposition_time'][:2]
+    deposition_time = f['deposition_time'].values[:2]
     spacing = (deposition_time[1] - deposition_time[0]) / (365 * 86400)
 
-    time = f.variables['time'][index] / (365 * 86400)
-    x = f.variables['x'][Mx // 2:] / 1000.0
+    time = f['time'].values[index] / (365 * 86400)
+    x = f['x'].values[Mx // 2:] / 1000.0
 
-    d = f.variables['isochrone_depth'][index, My // 2, Mx // 2:]
+    d = f['isochrone_depth'].values[index, My // 2, Mx // 2:]
 
-    thk = f.variables['thk'][index, My // 2, Mx // 2:]
+    thk = f['thk'].values[index, My // 2, Mx // 2:]
 
     n_layers = d.shape[1]
 
@@ -61,8 +61,8 @@ def animate(fig, ax, input_files, output_file):
     with writer.saving(fig, output_file, dpi=75):
         for filename in input_files:
             print(f"Processing {filename}...")
-            with NC.Dataset(filename, 'r') as f:
-                N = len(f.variables['time'])
+            with xr.open_dataset(filename, decode_times=False, decode_cf=False) as f:
+                N = f.sizes['time']
                 for k in range(N):
                     print(f"Frame {k}...")
                     ax.clear()
@@ -71,11 +71,11 @@ def animate(fig, ax, input_files, output_file):
 
 def plot_final_frame(fig, ax, input_files, model_file, output_file):
     H_max = 3500
-    with NC.Dataset(input_files[-1], 'r') as f:
+    with xr.open_dataset(input_files[-1], decode_times=False, decode_cf=False) as f:
         plot_isochrones(ax, f, index=-1)
 
-    with NC.Dataset(model_file, 'r') as f:
-        z = f.variables['z'][:]
+    with xr.open_dataset(model_file, decode_times=False, decode_cf=False) as f:
+        z = f['z'].values
         ax.hlines(z, xmin=0, xmax=600,
                   linestyles='solid', colors="gray", label="PISM's vertical grid", linewidths=0.5)
 

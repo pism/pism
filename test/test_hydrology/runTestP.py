@@ -16,6 +16,8 @@ except:
     subprocess.call("ln -sf ../../util/PISMNC.py", shell=True)
     from PISMNC import PISMDataset
 
+import xarray as xr
+
 
 def parse_options():
     stderr.write("reading options ...\n")
@@ -35,9 +37,6 @@ def generate_config():
     """Generates the config file with custom ice softness and hydraulic conductivity."""
 
     stderr.write("generating testPconfig.nc ...\n")
-
-    nc = PISMDataset("testPconfig.nc", 'w')
-    pism_overrides = nc.createVariable("pism_overrides", 'b')
 
     attrs = {
         "flow_law.isothermal_Glen.ice_softness": 3.1689e-24,
@@ -67,12 +66,9 @@ def generate_config():
         "basal_yield_stress.constant.value": 1e6,
         "basal_yield_stress.constant.value_doc": "set default to 'high tauc'",
     }
-    keys = list(attrs.keys())
-    keys.sort()
-    for k in keys:
-        pism_overrides.setncattr(k, attrs[k])
-
-    nc.close()
+    sorted_attrs = {k: attrs[k] for k in sorted(attrs)}
+    ds = xr.Dataset({"pism_overrides": ((), np.int8(0), sorted_attrs)})
+    ds.to_netcdf("testPconfig.nc", mode="w")
 
 
 def report_drift(name, file1, file2, xx, yy, doshow=False):
@@ -80,9 +76,9 @@ def report_drift(name, file1, file2, xx, yy, doshow=False):
     nc1 = PISMDataset(file1)
     nc2 = PISMDataset(file2)
 
-    var1 = nc1.variables[name]
-    var2 = nc2.variables[name]
-    diff = np.abs(np.squeeze(var1[:]) - np.squeeze(var2[:]))
+    var1 = nc1.ds[name]
+    var2 = nc2.ds[name]
+    diff = np.abs(np.squeeze(var1.values) - np.squeeze(var2.values))
 
     rr = np.sqrt(xx ** 2 + yy ** 2)
     diff[rr >= 0.89 * 25000.0] = 0.0

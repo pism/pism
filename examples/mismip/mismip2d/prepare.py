@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 
-try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
-
 import MISMIP
 
 import numpy as np

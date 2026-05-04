@@ -17,6 +17,7 @@
 # time_1991-2000.nc \endverbatim
 
 import os
+import sys
 from argparse import ArgumentParser
 from dateutil import rrule
 from dateutil.parser import parse
@@ -25,11 +26,10 @@ import time
 import numpy as np
 
 try:
-    import netCDF4 as netCDF
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
-NC = netCDF.Dataset
 import cftime
 
 # Set up the option parser
@@ -89,12 +89,6 @@ ref_date = options.ref_date
 args = options.FILE
 infile = args[0]
 
-# Check if file exists. If True, append, otherwise create it.
-if os.path.isfile(infile):
-    nc = NC(infile, "a")
-else:
-    nc = NC(infile, "w", format="NETCDF3_CLASSIC")
-
 time_units = "%s since %s" % (ref_unit, ref_date)
 calendar = options.calendar
 
@@ -129,36 +123,45 @@ elif interval_type == "start":
 else:
     time_interval_since_refdate = bnds_interval_since_refdate[1:]
 
-# create a new dimension for bounds only if it does not yet exist
-time_dim = "time"
-if time_dim not in list(nc.dimensions.keys()):
-    nc.createDimension(time_dim)
-
-# create a new dimension for bounds only if it does not yet exist
-bnds_dim = "nb2"
-if bnds_dim not in list(nc.dimensions.keys()):
-    nc.createDimension(bnds_dim, 2)
-
 # variable names consistent with PISM
 time_var_name = "time"
 bnds_var_name = "time_bnds"
+bnds_dim = "nb2"
 
-# create time variable
-time_var = nc.createVariable(time_var_name, "d", dimensions=(time_dim))
-time_var[:] = time_interval_since_refdate
-time_var.bounds = bnds_var_name
-time_var.units = time_units
-time_var.calendar = calendar
-time_var.standard_name = time_var_name
-time_var.axis = "T"
+time_attrs = {
+    "bounds": bnds_var_name,
+    "units": time_units,
+    "calendar": calendar,
+    "standard_name": time_var_name,
+    "axis": "T",
+}
 
-# create time bounds variable
-time_bnds_var = nc.createVariable(bnds_var_name, "d", dimensions=(time_dim, bnds_dim))
-time_bnds_var[:, 0] = bnds_interval_since_refdate[0:-1]
-time_bnds_var[:, 1] = bnds_interval_since_refdate[1::]
+# Build (or extend) the dataset.
+if os.path.isfile(infile):
+    ds = xr.open_dataset(infile, decode_times=False, decode_cf=False).load()
+    ds.close()
+else:
+    ds = xr.Dataset()
+
+ds = ds.assign_coords(
+    {time_var_name: (time_var_name,
+                     np.asarray(time_interval_since_refdate, dtype="f8"),
+                     time_attrs)}
+)
+
+bnds = np.column_stack([bnds_interval_since_refdate[:-1],
+                        bnds_interval_since_refdate[1:]]).astype("f8")
+ds[bnds_var_name] = xr.DataArray(bnds, dims=(time_var_name, bnds_dim))
 
 # writing global attributes
-script_command = " ".join([time.ctime(), ":", __file__.split("/")[-1], " ".join([str(x) for x in args])])
-nc.history = script_command
-nc.Conventions = "CF 1.5"
-nc.close()
+script_command = " ".join([time.ctime(), ":", os.path.basename(__file__),
+                           " ".join([str(x) for x in args])])
+ds.attrs["history"] = script_command
+ds.attrs["Conventions"] = "CF 1.5"
+
+# Write atomically (tmp + replace) to mirror the previous "open(a)/createVariable/close" flow.
+tmp = infile + ".tmp" if os.path.isfile(infile) else infile
+ds.to_netcdf(tmp, mode="w", unlimited_dims=[time_var_name],
+             format="NETCDF3_CLASSIC")
+if tmp != infile:
+    os.replace(tmp, infile)

@@ -22,6 +22,7 @@ RUN <<EOF
     python3-netcdf4 \
     python3-sphinx \
     python3-sphinxcontrib.bibtex \
+    python3-xarray \
     texlive-latex-extra \
     texlive-latex-recommended \
     ""

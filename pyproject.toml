@@ -30,6 +30,10 @@ wheel.packages = ["site-packages/PISM", "site-packages/siple"]
 
 [tool.scikit-build.cmake.define]
 Pism_BUILD_PYTHON_BINDINGS = "ON"
+Pism_BUILD_DOCS = "ON"
+Pism_USE_PARALLEL_NETCDF4 = "YES"
+Pism_USE_PROJ = "YES"
+Pism_USE_YAC = "YES"
 # Switch CMakeLists.txt into "scikit-build-core layout" mode. Inside
 # CMakeLists.txt this reads the SKBUILD_*_DIR cache variables that
 # scikit-build-core publishes via CMakeInit.txt and points the GNU install
