@@ -36,6 +36,7 @@ dependencies:
   - yac=*=*openmpi*
   - yaxt=*=*openmpi*
   - ncview
+  - wget
   # Python / analysis
   - pip
   - pip:
