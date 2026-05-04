@@ -72,6 +72,13 @@ class OutputGrid(object):
 
 
 class ISMIP7GreenlandGrid(OutputGrid):
+    """Grid defined in 'Appendix 1 – Output grid definition and interpolation' of 'ISMIP6
+    Projections Greenland'
+
+    See https://theghub.org/groups/ismip6/wiki/ISMIP6-Projections-Greenland
+
+    """
+
     def __init__(self, resolution=1000):
         self.proj_string = "EPSG:3413"
         x_min = -720e3
@@ -101,6 +108,9 @@ class ISMIP7GreenlandGrid(OutputGrid):
 
 
 class StdGreenlandGrid(OutputGrid):
+    """Grid used in Bamber et al., 2001 and by PISM's "std-greenland" example
+
+    """
     def __init__(self, resolution=1000):
         self.proj_string = ("+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 " +
                             "+ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
@@ -822,6 +832,15 @@ if __name__ == "__main__":
         help="set compression level for 2D and 3D variables",
     )
 
+    parser.add_argument(
+        "-r",
+        "--resolution",
+        dest="resolution",
+        type=int,
+        default=5,
+        help="output grid resolution, km (for ISMIP7, choose one of 20, 10, 5, 2 or 1)",
+    )
+
     options = parser.parse_args()
 
     if options.debug:
@@ -829,7 +848,7 @@ if __name__ == "__main__":
         logger = logging.getLogger("pism_output")
 
     try:
-        grid = ISMIP7GreenlandGrid(resolution=5000)
+        grid = ISMIP7GreenlandGrid(resolution=options.resolution * 1000.0)
         main(options.compression, output_grid=grid)
     except Exception as e:
         logger.critical(f"ERROR: {e}")
