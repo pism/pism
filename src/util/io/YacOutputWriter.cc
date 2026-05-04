@@ -29,12 +29,12 @@
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/GridInfo.hh"
-#include "pism/util/LonLatGrid.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/YacOutputWriter.hh"
+#include "pism/util/yac_utilities.hh"
 
 extern "C" {
 #include "yac.h"
@@ -68,23 +68,6 @@ static std::string to_python_type(pism::io::Type input) {
 
   auto it = type_map.find(input);
   return (it != type_map.end()) ? it->second : "None"; // "None" for NC_NAT
-}
-
-/*!
- * Calculate global indices for local points given the start and size of the local patch
- * and the global x size.
- */
-static std::vector<int> patch_global_indices(unsigned int x_global_size, unsigned int x_start,
-                                             unsigned int x_size, unsigned int y_start,
-                                             unsigned int y_size) {
-  std::vector<int> indices;
-  indices.reserve((size_t)x_size * y_size);
-  for (unsigned int j = y_start; j < y_start + y_size; ++j) {
-    for (unsigned int i = x_start; i < x_start + x_size; ++i) {
-      indices.push_back((int)(j * x_global_size + i));
-    }
-  }
-  return indices;
 }
 
 /*!
@@ -237,29 +220,31 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable,
     MPI_Send((void*)grid.y.data(), (int)grid.y.size(), MPI_DOUBLE, 0, 0, m_intercomm);
   }
 
-  std::vector<double> latitudes;
-  std::vector<double> longitudes;
   if (proj_string.empty()) {
+    std::vector<double> latitudes;
+    std::vector<double> longitudes;
     details::fake_point_coordinates(grid, longitudes, latitudes);
-  } else {
-    LonLatGrid::compute(grid::subset(grid.xs, grid.xm, grid.x),
-                        grid::subset(grid.ys, grid.ym, grid.y), proj_string, longitudes, latitudes);
+    // Define the YAC grid and point set:
+    {
+      // Defines the YAC grid and points using the local points
+      int cyclic_dims[]  = { 0, 0 };
+      int nbr_vertices[] = { (int)grid.xm, (int)grid.ym };
+      int grid_id        = -1;
+      int point_set_id   = -1;
+      yac_cdef_grid_curve2d(grid_name.c_str(), nbr_vertices, cyclic_dims, longitudes.data(),
+                            latitudes.data(), &grid_id);
+      yac_cdef_points_unstruct(grid_id, (int)latitudes.size(), YAC_LOCATION_CORNER,
+                               longitudes.data(), latitudes.data(), &point_set_id);
+
+      m_point_set_id[grid_name] = point_set_id;
+    }
+    return;
   }
 
-  // Define the YAC grid and point set:
-  {
-    // Defines the YAC grid and points using the local points
-    int cyclic_dims[]  = { 0, 0 };
-    int nbr_vertices[] = { (int)grid.xm, (int)grid.ym };
-    int grid_id        = -1;
-    int point_set_id   = -1;
-    yac_cdef_grid_curve2d(grid_name.c_str(), nbr_vertices, cyclic_dims, longitudes.data(),
-                          latitudes.data(), &grid_id);
-    yac_cdef_points_unstruct(grid_id, (int)latitudes.size(), YAC_LOCATION_CORNER, longitudes.data(),
-                             latitudes.data(), &point_set_id);
-
-    m_point_set_id[grid_name] = point_set_id;
-  }
+  int point_set_id =
+      pism::define_yac_grid(grid::subset(grid.xs, grid.xm, grid.x),
+                            grid::subset(grid.ys, grid.ym, grid.y), grid_name, proj_string);
+  m_point_set_id[grid_name] = point_set_id;
 }
 
 // Subroutine to define a YAC field
