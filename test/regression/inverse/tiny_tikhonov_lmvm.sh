@@ -24,9 +24,9 @@ $PYTHONEXEC make_synth_ssa.py -i ${tiny} -o ${inv_data} \
 output=`mktemp -u tiny-tikhonov-lmvm-XXXX.nc` || exit 1
 $PYTHONEXEC pismi.py \
               -i ${tiny} -pseudo_plastic -pseudo_plastic_q 0.25 -inv_data ${inv_data} \
-              -o ${output} -regional -ssa_dirichlet_bc -inv_use_tauc_prior \
+              -o ${output} -regional -ssa_dirichlet_bc \
               -inv_design_param trunc -inv_design_cL2 1 -inv_design_cH1 0 \
-              -inv_method tikhonov_lmvm -tikhonov_penalty 6e-2 -report_coverage \
+              -inv_method tikhonov_lmvm -tikhonov_penalty 6e-2 \
               -stress_balance.model ssa+sia
 
 # Check if we succeeded

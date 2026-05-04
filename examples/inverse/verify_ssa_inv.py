@@ -72,9 +72,16 @@ try:
 except Exception:
     fail('Unable to open inversion file "%s"\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
 
-# Grab the misfit history from the file.
-if 'inv_ssa_misfit' not in data.variables:
-    fail('Inversion file %s missing misfit history variable "inv_ssa_misfit".\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
+# Grab the misfit history. MisfitLogger records `inv_misfit` (RMS velocity,
+# m/year) when `inverse.state_func == "meansquare"` and `inv_J_misfit`
+# (dimensionless) otherwise. Accept either so this verifier works regardless
+# of the configured state functional.
+for misfit_var in ("inv_misfit", "inv_J_misfit"):
+    if misfit_var in data.variables:
+        misfit = data[misfit_var].values
+        break
+else:
+    fail('Inversion file %s missing misfit history variable (looked for "inv_misfit" and "inv_J_misfit").\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
 
 desired_misfit = args.desired_misfit
 
