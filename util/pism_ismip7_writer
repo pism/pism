@@ -35,6 +35,7 @@ class OutputGrid(object):
     x = None
     y = None
     proj_string = None
+    mapping_attributes = {}
 
     def __init__(self):
         raise NotImplementedError("Cannot create an instance of OutputGrid: use a derived class")
@@ -47,6 +48,9 @@ class OutputGrid(object):
 
     def size(self):
         return len(self.x), len(self.y)
+
+    def mapping(self):
+        return self.mapping_attributes
 
     def lonlat_center(self):
         xx, yy = np.meshgrid(self.x, self.y)
@@ -84,6 +88,17 @@ class ISMIP7GreenlandGrid(OutputGrid):
         self.x = np.linspace(x_min, x_max, Nx)
         self.y = np.linspace(y_min, y_max, Ny)
 
+        self.mapping_attributes = {
+            "false_easting": 0.0,
+            "false_northing": 0.0,
+            "grid_mapping_name": "polar_stereographic",
+            "latitude_of_projection_origin": 90.0,
+            "proj_params": self.proj_string,
+            "scale_factor_at_projection_origin": 1.0,
+            "standard_parallel": 70.0,
+            "straight_vertical_longitude_from_pole": -45.0,
+        }
+
 
 class StdGreenlandGrid(OutputGrid):
     def __init__(self, resolution=1000):
@@ -103,6 +118,17 @@ class StdGreenlandGrid(OutputGrid):
 
         self.x = np.linspace(x_min, x_max, Nx)
         self.y = np.linspace(y_min, y_max, Ny)
+
+        self.mapping_attributes = {
+            "false_easting": 0.0,
+            "false_northing": 0.0,
+            "grid_mapping_name": "polar_stereographic",
+            "latitude_of_projection_origin": 90.0,
+            "proj_params": self.proj_string,
+            "scale_factor_at_projection_origin": 1.0,
+            "standard_parallel": 71.0,
+            "straight_vertical_longitude_from_pole": -39.0,
+        }
 
 
 class ServerActions(Enum):
@@ -194,104 +220,133 @@ class YacWrapper:
         """Return the name of the grid corresponding to PISM's 'pism_grid_name'."""
         return pism_grid_name + "_output"
 
+    def receive_string(self, comm):
+        status = MPI.Status()
+        comm.Probe(source=self.remote_leader, tag=0, status=status)
+
+        length = status.Get_count(MPI.CHAR)
+
+        string = np.empty(length, dtype='S1')
+        comm.Recv([string, MPI.CHAR], source=self.remote_leader, tag=0)
+
+        string = string.tobytes()
+
+        try:
+            # Decode the byte string
+            return string.decode("ascii")
+        except Exception:
+            result = string.decode("ascii", errors='replace')
+            logger.critical(f"failed to decode '{result}'")
+            raise
+
+    def receive_array(self, comm):
+        status = MPI.Status()
+        comm.Probe(source=self.remote_leader, tag=0, status=status)
+
+        length = status.Get_count(MPI.DOUBLE)
+
+        array = np.empty(length, dtype='d')
+        comm.Recv([array, MPI.DOUBLE], source=self.remote_leader, tag=0)
+
+        return array
+
+    def fake_lon_lat(self, x, y):
+        x_min = x[0]
+        y_min = y[0]
+
+        x_span = x[-1] - x_min
+        y_span = y[-1] - y_min
+
+        Mx = x.size
+        My = y.size
+
+        lon = np.zeros((My, Mx))
+        lat = np.zeros_like(lon)
+
+        for r in range(My):
+            for c in range(Mx):
+                lon[r, c] = (x[c] - x_min) / x_span
+                lat[r, c] = (y[r] - y_min) / y_span
+
+        return lon, lat
+
     def receive_grid_info(self):
-        client_local_domain_sizes = np.empty(self.remote_size, dtype='i')
-        displacements = np.empty(self.remote_size, dtype='i')
+        proj_string = self.receive_string(self.intercomm)
+        x = self.receive_array(self.intercomm)
+        y = self.receive_array(self.intercomm)
 
-        # Receive the global x and y sizes from the leader in the client
-        grid_size = np.empty(2, dtype='i')
-        self.intercomm.Recv([grid_size, MPI.INT], source=self.remote_leader, tag=0)
+        return proj_string, x, y
 
-        # Total number of grid points
-        x_size, y_size = grid_size
-        assert x_size > 0 and y_size > 0, (x_size, y_size)
-        grid_points = x_size * y_size
+    def define_matching_grid(self, grid_name, proj_string, x, y):
 
-        # Gather the sizes of the local domains of all client processes
-        self.intercomm.Gather(None, client_local_domain_sizes, root=MPI.ROOT)
+        if proj_string == "":
+            logger.debug(f"grid {grid_name} projection: none")
+            lon, lat = self.fake_lon_lat(x, y)
+        else:
+            xx, yy = np.meshgrid(x, y)
+            lon, lat = Proj(proj_string)(xx, yy, inverse=True, radians=True)
 
-        # Calculate the array displacements for receiving geometrical data from client processes
-        displacements[0] = 0
-        for i in range(1, self.remote_size):
-            displacements[i] = displacements[i-1] + client_local_domain_sizes[i-1]
-
-        # Create arrays for geometrical data and global data ordering
-        longitudes = np.empty(grid_points, dtype='d')
-        latitudes = np.empty(grid_points, dtype='d')
-        vertex_indexes = np.empty(grid_points, dtype='i')
-
-        # Receive latitudes, longitudes and the global ordering of points
-        self.intercomm.Gatherv(None, (vertex_indexes, (client_local_domain_sizes, displacements)),
-                               root=MPI.ROOT)
-        self.intercomm.Gatherv(None, (latitudes, (client_local_domain_sizes, displacements)),
-                               root=MPI.ROOT)
-        self.intercomm.Gatherv(None, (longitudes, (client_local_domain_sizes, displacements)),
-                               root=MPI.ROOT)
-
-        return grid_size, longitudes, latitudes, vertex_indexes
-
-    def define_matching_grid(self, grid_name):
-        grid_size, longitudes, latitudes, vertex_indexes = self.receive_grid_info()
-
-        self.vertex_indexes[grid_name] = vertex_indexes
-
-        # Create grid and define point locations for corners (vertices)
-        grid = yac.CloudGrid(self._output_grid_name(grid_name), longitudes, latitudes)
-        grid.corner_points = grid.def_points(longitudes, latitudes)
-
-        self.grids[grid_name] = grid
-        self.output_grid_size[grid_name] = grid_size
+        # Create grid and define point locations cell centers:
+        grid = yac.CloudGrid(self._output_grid_name(grid_name), lon, lat)
+        grid.points = grid.def_points(yac.Location.CORNER, lon, lat)
 
         interpolation_stack = yac.InterpolationStack()
         interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1., 0.)
 
-        self.interpolation_stack[grid_name] = interpolation_stack
+        return grid, interpolation_stack
 
     def define_yac_grid(self, metadata, output_grid=None):
         """Define the YAC grid for a given variable."""
         # Sets self.grids[grid_name], self.output_grid_size[grid_name],
         # self.vertex_indexes[grid_name], self.interpolation_stack.
         #
-        # Also sets grid.corner_points for self.grids[grid_name]
+        # Also sets grid.points for self.grids[grid_name]
         # the grid name in pism_output has to be different
         grid_name = metadata['grid_name']
 
+        proj_string, x, y = self.receive_grid_info()
+
         if output_grid is None:
-            self.define_matching_grid(grid_name)
+            logger.debug(f"grid size: {(len(x), len(y))}")
+            x_size = len(x)
+            y_size = len(y)
+            assert x_size > 0 and y_size > 0, (x_size, y_size)
+
+            # Total number of grid points
+
+            grid, interpolation_stack = self.define_matching_grid(grid_name, proj_string, x, y)
+
+            self.grids[grid_name] = grid
+            self.output_grid_size[grid_name] = (x_size, y_size)
+            self.interpolation_stack[grid_name] = interpolation_stack
+            self.vertex_indexes[grid_name] = np.arange(x_size * y_size)
             return
 
-        # receive grid info and discard results. we have to do this because PISM expects
-        # to send us grid info, so we have to play along
-        _, _, _, _ = self.receive_grid_info()
+        if proj_string == "":
+            raise RuntimeError(
+                "unknown projection in PISM: " +
+                f"cannot write to projected grid '{output_grid.proj_string}'")
+
+        # define the grid using coordinates of cell corners:
+        lon_corner, lat_corner = output_grid.lonlat_corner()
+        grid = yac.Curve2dGrid(self._output_grid_name(grid_name),
+                               lon_corner, lat_corner)
+        # and points using cell centers:
+        lon, lat = output_grid.lonlat_center()
+        grid.points = grid.def_points(yac.Location.CELL, lon, lat)
+
+        interpolation_stack = yac.InterpolationStack()
+        # Use conservative interpolation from PISM's grid plus nearest neighbor as backup:
+        interpolation_stack.add_conservative(order=1,
+                                             enforced_conserv=True,
+                                             partial_coverage=False,
+                                             normalisation=yac.ConservNormalizationType.DESTAREA)
+        interpolation_stack.add_nnn(reduction_type=yac.NNNReductionType.AVG, n=1)
 
         Mx, My = output_grid.size()
-
-        vertex_indexes = np.arange(Mx * My)
-
-        self.vertex_indexes[grid_name] = vertex_indexes
-
-        # use ravel() instead of flatten() to avoid a copy
-        lon, lat = output_grid.lonlat_center()
-        longitudes = lon.ravel()
-        latitudes = lat.ravel()
-
-        # Create grid and define point locations for corners (vertices)
-        grid = yac.CloudGrid(self._output_grid_name(grid_name), longitudes, latitudes)
-        grid.corner_points = grid.def_points(longitudes, latitudes)
-
         self.grids[grid_name] = grid
         self.output_grid_size[grid_name] = (Mx, My)
-
-        # FIXME: use a better interpolation stack
-        interpolation_stack = yac.InterpolationStack()
-
-        order = 1
-        enforce_conservation = 1
-        partial_coverage = 0
-        interpolation_stack.add_conservative(order, enforce_conservation, partial_coverage,
-                                             yac.ConservNormalizationType.DESTAREA)
-        interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1., 0.)
-
+        self.vertex_indexes[grid_name] = np.arange(Mx * My)
         self.interpolation_stack[grid_name] = interpolation_stack
 
     def finish_initialization(self):
@@ -312,9 +367,9 @@ class YacWrapper:
         time_unit = yac.TimeUnit.ISO_FORMAT
         time_reduction = yac.Reduction.TIME_NONE
 
-        corner_points = self.grids[grid_name].corner_points
+        points = self.grids[grid_name].points
         self.fields[field_name] = yac.Field.create(field_name, self.component,
-                                                   corner_points, collection_size,
+                                                   points, collection_size,
                                                    timestep, yac.TimeUnit.ISO_FORMAT)
 
         self.yac.def_couple(self.source_comp_name, grid_name, field_name,
@@ -324,24 +379,7 @@ class YacWrapper:
 
     def receive_action(self):
         """Receive the JSON string encoding an action and its metadata."""
-        comm = self.intercomm
-
-        status = MPI.Status()
-        comm.Probe(source=self.remote_leader, tag=0, status=status)
-
-        length = status.Get_count(MPI.CHAR)
-
-        string = np.empty(length, dtype='S1')
-        comm.Recv([string, MPI.CHAR], source=self.remote_leader, tag=0)
-        string = string.tobytes()
-
-        # Decode the byte string
-        try:
-            string = string.decode("ascii")
-        except Exception:
-            string = string.decode("ascii", errors='replace')
-            logger.critical(f"failed to decode '{string}'")
-            raise
+        string = self.receive_string(self.intercomm)
 
         # Construct a dictionary from the JSON string:
         try:
@@ -580,6 +618,8 @@ def main(compression_level, output_grid=None):
                 file_vars["x"]["attributes"]["spacing_meters"] = output_grid.dx()
                 file_vars["y"]["attributes"]["spacing_meters"] = output_grid.dy()
 
+                file_vars["mapping"]["attributes"] = output_grid.mapping()
+
             # define variables that are not "fields" and are not ignored:
             for var_name, info in file_vars.items():
                 if var_name not in fields.union(ignored):
@@ -779,7 +819,7 @@ if __name__ == "__main__":
         dest="compression",
         type=int,
         default=1,
-        help="set compression level",
+        help="set compression level for 2D and 3D variables",
     )
 
     options = parser.parse_args()
@@ -789,7 +829,7 @@ if __name__ == "__main__":
         logger = logging.getLogger("pism_output")
 
     try:
-        grid = OutputGrid(resolution=10000)
+        grid = ISMIP7GreenlandGrid(resolution=5000)
         main(options.compression, output_grid=grid)
     except Exception as e:
         logger.critical(f"ERROR: {e}")
