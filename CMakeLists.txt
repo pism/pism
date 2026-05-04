@@ -211,9 +211,10 @@ install(PROGRAMS
   util/pism_async_writer
   util/pism_check_stationarity
   util/pism_create_timeline
-  util/pism_fill_missing_petsc
   util/pism_fill_missing
+  util/pism_fill_missing_petsc
   util/pism_flowline
+  util/pism_ismip7_writer
   util/pism_nc2cdo
   util/pism_nccmp
   util/pism_plot_profiling
