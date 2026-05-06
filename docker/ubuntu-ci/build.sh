@@ -37,11 +37,6 @@ python=${python:-YES}
 # Installation prefix
 install_dir=${install_dir:-$HOME/local/pism}
 
-hdf5_dir=${lib_prefix}/hdf5
-netcdf_dir=${lib_prefix}/netcdf
-pnetcdf_dir=${lib_prefix}/pnetcdf
-yac_dir=${lib_prefix}/yac
-
 git config --global --add safe.directory ${source_dir}
 
 ${CMAKE_PREFIX}/bin/cmake -S ${source_dir} \
@@ -52,7 +47,7 @@ ${CMAKE_PREFIX}/bin/cmake -S ${source_dir} \
                -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
                -DCMAKE_INSTALL_PREFIX=${install_dir} \
                -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" \
-               -DCMAKE_PREFIX_PATH="${hdf5_dir};${netcdf_dir};${pnetcdf_dir};${yac_dir}" \
+               -DCMAKE_PREFIX_PATH="${lib_prefix}" \
                -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" \
                -DPism_BUILD_ICEBIN=YES \
                -DPism_BUILD_PYTHON_BINDINGS=${python} \
