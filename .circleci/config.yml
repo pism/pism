@@ -64,7 +64,7 @@ jobs:
       CC: << parameters.cc >>
       CXX: << parameters.cxx >>
       CMAKE_PREFIX: << parameters.cmake_prefix >>
-      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf;/home/builder/local/pnetcdf;/home/builder/local/parallelio"
+      LOCAL_LIBRARIES: "/home/builder/local/"
 
     steps:
       - checkout
@@ -183,7 +183,7 @@ jobs:
       - image: ckhrulev/pism-ubuntu:0.1.18
 
     environment:
-      LOCAL_LIBRARIES: "/home/builder/local/hdf5;/home/builder/local/netcdf"
+      LOCAL_LIBRARIES: "/home/builder/local/"
       PETSC_DIR: /home/builder/local/petsc
 
     steps:
