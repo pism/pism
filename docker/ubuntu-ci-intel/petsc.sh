@@ -16,7 +16,7 @@ prefix=${prefix:-/opt/petsc}
 
 mkdir -p ${build_dir}
 cd ${build_dir}
-version=${version:-3.24.4}
+version=${version:-3.25.0}
 
 wget -nc \
      https://web.cels.anl.gov/projects/petsc/download/release-snapshots/petsc-${version}.tar.gz
