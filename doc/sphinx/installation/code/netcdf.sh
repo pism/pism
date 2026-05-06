@@ -11,7 +11,7 @@ set -x
 lib_dir=${lib_dir:-$HOME/local}
 
 version=4.9.3
-prefix=${prefix:-$HOME/local/netcdf}
+prefix=${prefix:-$HOME/local/}
 build_dir=${build_dir:-$HOME/local/build/netcdf}
 url=https://github.com/Unidata/netcdf-c/archive/refs/tags/v${version}.tar.gz
 

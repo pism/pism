@@ -194,8 +194,10 @@ EOF
 
 # OMPI_MCA_plm_rsh_agent="" is needed to silence OpenMPI
 ARG HOME=/home/builder
-ARG YAC_DIR=$HOME/local/yac
+ARG YAC_DIR=$HOME/local/
 ENV PETSC_DIR="$HOME/local/petsc"
+# set PATH to activate the venv in ~/local/pism:
+ENV PATH=$HOME/local/pism/bin:$PATH
 ENV PYTHONPATH="$PETSC_DIR/lib:$YAC_DIR/lib/python3.12/site-packages" \
     OMPI_MCA_plm_rsh_agent="" \
     OMPI_MCA_rmaps_base_oversubscribe=yes
