@@ -67,6 +67,7 @@ RUN <<EOF
     python3-netcdf4 \
     python3-numpy \
     python3-pip \
+    python3-pyproj \
     python3-scipy \
     python3-setuptools \
     python3-venv \
@@ -188,5 +189,5 @@ RUN <<EOF
 EOF
 
 ENV PETSC_DIR="$HOME/local/petsc"
-ENV PYTHONPATH="$PETSC_DIR/lib"
+ENV PYTHONPATH="$PETSC_DIR/lib:$YAC_DIR/lib/python3.12/site-packages"
 ENV PATH="$HOME/local/bin:$HOME/local/pism/bin:$PETSC_DIR/bin:$PATH"
