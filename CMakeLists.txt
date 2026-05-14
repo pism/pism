@@ -95,6 +95,13 @@ if (Pism_USE_SKBUILD_LAYOUT AND Pism_CONFIG_FILE)
 else()
   set (Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc" CACHE STRING "" FORCE)
 endif()
+if (Pism_USE_SKBUILD_LAYOUT AND NOT Pism_CONFIG_FILE)
+   if (DEFINED ENV{CONDA_PREFIX})
+      set(Pism_CONFIG_FILE "$ENV{CONDA_PREFIX}/share/pism/pism_config.nc" CACHE STRING "" FORCE)
+   elseif (DEFINED ENV{VIRTUAL_ENV})
+          set(Pism_CONFIG_FILE "$ENV{VIRTUAL_ENV}/share/pism/pism_config.nc" CACHE STRING "" FORCE)
+   endif()
+endif()
 mark_as_advanced (Pism_CONFIG_FILE)
 
 # The default options cache

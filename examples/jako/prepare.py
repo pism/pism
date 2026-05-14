@@ -243,7 +243,8 @@ def fix_xy_attrs(ds):
 
 obs_jib = obs_jib.fillna(0)
 boot_ds = fix_xy_attrs(obs_jib[["bed", "thickness", "surface_grimp"]])
-boot_ds["bed"].attrs.update({"standard_name": "bedrock_altitude"})
+boot_ds["bed"].attrs.update({"standard_name": "bedrock_altitude", "units": "m"})
+boot_ds["surface_grimp"].attrs.update({"standard_name": "surface_altitude", "units": "m"})
 encoding = {v: {"_FillValue": None} for v in (boot_ds.data_vars and boot_ds.coords)}
 boot_ds.to_netcdf("boot_jako.nc", encoding=encoding)
 

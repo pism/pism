@@ -25,7 +25,7 @@ RESTART_FILE = args.restart
 NP = int(os.environ.get("NP", 40 if MODE == "sbatch" else 8))
 SCRIPTDIR = os.path.dirname(os.path.abspath(__file__))
 
-res = "150m"
+res = "900m"
 
 OBS = "obs_jako.nc"
 
@@ -141,7 +141,7 @@ for sb, params in solvers.items():
             "-grid.file", grid_file,
             "-bootstrap", "",
             "-input.regrid.file", state_file,
-            "-input.regrid.vars", "litho_temp,enthalpy,age,tillwat,bmelt,ice_area_specific_volume",
+            "-input.regrid.vars", "litho_temp,enthalpy,age,tillwat,bmelt,ice_area_specific_volume,tauc",
             "-time.calendar", "standard",
             "-grid.dx", res,
             "-grid.dy", res,
