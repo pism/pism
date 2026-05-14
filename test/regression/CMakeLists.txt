@@ -111,7 +111,9 @@ pism_test (vertical_grid_expansion vertical_grid_expansion.sh)
 
 pism_test (bed_deformation:LC:exact_restartability beddef_lc_restart.sh)
 
-pism_test (PICO:Split-and-merge pico_split/run_test.sh)
+pism_test (PICO:Split-and-merge pico_split/run_pico.sh)
+
+pism_test (PICOP:Split-and-merge pico_split/run_picop.sh)
 
 pism_test (Isochrones:restart test_isochrone_restart.sh)
 
