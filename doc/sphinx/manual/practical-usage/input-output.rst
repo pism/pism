@@ -190,7 +190,8 @@ significantly reduce computation time since asynchronous writing allows the mode
 proceed while data are written to output files.
 
 Please make sure that Python packages ``yac`` (YAC_'s Python bindings), ``netCDF4``
-(`netcdf4-python`_), mpi4py_ and NumPy_ are installed. Then run
+(`netcdf4-python`_), mpi4py_, NumPy_ and ``pyproj`` (PROJ_ bindings) are installed. Then
+run
 
 .. code-block:: bash
 

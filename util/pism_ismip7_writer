@@ -31,6 +31,116 @@ from pyproj import Proj
 logger = logging.getLogger("pism_output")
 
 
+class OutputGrid(object):
+    x = None
+    y = None
+    proj_string = None
+    mapping_attributes = {}
+
+    def __init__(self):
+        raise NotImplementedError("Cannot create an instance of OutputGrid: use a derived class")
+
+    def dx(self):
+        return self.x[1] - self.x[0]
+
+    def dy(self):
+        return self.y[1] - self.y[0]
+
+    def size(self):
+        return len(self.x), len(self.y)
+
+    def mapping(self):
+        return self.mapping_attributes
+
+    def lonlat_center(self):
+        xx, yy = np.meshgrid(self.x, self.y)
+
+        return Proj(self.proj_string)(xx, yy, inverse=True, radians=True)
+
+    def lonlat_corner(self):
+        Mx, My = self.size()
+
+        dx = self.dx()
+        x_corner = np.linspace(self.x[0] - 0.5 * dx, self.x[-1] + 0.5 * dx, Mx + 1)
+
+        dy = self.dy()
+        y_corner = np.linspace(self.y[0] - 0.5 * dy, self.y[-1] + 0.5 * dy, My + 1)
+
+        xx, yy = np.meshgrid(x_corner, y_corner)
+
+        return Proj(self.proj_string)(xx, yy, inverse=True, radians=True)
+
+
+class ISMIP7GreenlandGrid(OutputGrid):
+    """Grid defined in 'Appendix 1 – Output grid definition and interpolation' of 'ISMIP6
+    Projections Greenland'
+
+    See https://theghub.org/groups/ismip6/wiki/ISMIP6-Projections-Greenland
+
+    """
+
+    def __init__(self, resolution=1000):
+        self.proj_string = "EPSG:3413"
+        x_min = -720e3
+        x_max = 960e3
+        y_min = -3450e3
+        y_max = -570e3
+
+        width_x = (x_max - x_min)
+        Nx = int(width_x / resolution) + 1
+
+        width_y = (y_max - y_min)
+        Ny = int(width_y / resolution) + 1
+
+        self.x = np.linspace(x_min, x_max, Nx)
+        self.y = np.linspace(y_min, y_max, Ny)
+
+        self.mapping_attributes = {
+            "false_easting": 0.0,
+            "false_northing": 0.0,
+            "grid_mapping_name": "polar_stereographic",
+            "latitude_of_projection_origin": 90.0,
+            "proj_params": self.proj_string,
+            "scale_factor_at_projection_origin": 1.0,
+            "standard_parallel": 70.0,
+            "straight_vertical_longitude_from_pole": -45.0,
+        }
+
+
+class StdGreenlandGrid(OutputGrid):
+    """Grid used in Bamber et al., 2001 and by PISM's "std-greenland" example
+
+    """
+    def __init__(self, resolution=1000):
+        self.proj_string = ("+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 " +
+                            "+ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+        x_min = -800e3
+        x_max = 700e3
+
+        y_min = -3400e3
+        y_max = -600e3
+
+        width_x = (x_max - x_min)
+        Nx = int(width_x / resolution) + 1
+
+        width_y = (y_max - y_min)
+        Ny = int(width_y / resolution) + 1
+
+        self.x = np.linspace(x_min, x_max, Nx)
+        self.y = np.linspace(y_min, y_max, Ny)
+
+        self.mapping_attributes = {
+            "false_easting": 0.0,
+            "false_northing": 0.0,
+            "grid_mapping_name": "polar_stereographic",
+            "latitude_of_projection_origin": 90.0,
+            "proj_params": self.proj_string,
+            "scale_factor_at_projection_origin": 1.0,
+            "standard_parallel": 71.0,
+            "straight_vertical_longitude_from_pole": -39.0,
+        }
+
+
 class ServerActions(Enum):
     """Actions that the server can handle.
 
@@ -177,69 +287,76 @@ class YacWrapper:
 
         return proj_string, x, y
 
-    def define_yac_grid(self, metadata):
-        """Define the YAC grid for a given variable."""
-
-        # the grid name in pism_output has to be different
-        grid_name = metadata['grid_name']
-
-        # Receive projection info and grid point coordinates
-        proj_string, x, y = self.receive_grid_info()
-        grid_size = (len(x), len(y))
-        logger.debug(f"grid size: {grid_size}")
-
-        # Total number of grid points
-        x_size, y_size = grid_size
-        assert x_size > 0 and y_size > 0, (x_size, y_size)
-        grid_points = x_size * y_size
+    def define_matching_grid(self, grid_name, proj_string, x, y):
 
         if proj_string == "":
             logger.debug(f"grid {grid_name} projection: none")
             lon, lat = self.fake_lon_lat(x, y)
-            # Create grid and define point locations
-            grid = yac.CloudGrid(self._output_grid_name(grid_name),
-                                 lon.ravel(), lat.ravel())
-            grid.points = grid.def_points(lon.ravel(), lat.ravel())
-
-            # Create the interpolation stack and add an nearest-neighbor inteporlation.
-            #
-            # For the current purposes of the output server we just want the data to be
-            # transferred from the client to the server without any interpolation.
-            # Therefore, we use the NNN with a single neighbor, and since the client and
-            # server grids match, the data should arrive the same.
-            interpolation_stack = yac.InterpolationStack()
-            interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1., 0.)
         else:
-            logger.debug(f"grid {grid_name} projection: '{proj_string}'")
+            xx, yy = np.meshgrid(x, y)
+            lon, lat = Proj(proj_string)(xx, yy, inverse=True, radians=True)
 
-            def corners(centers):
-                spacing = centers[1] - centers[0]
+        # Create grid and define point locations cell centers:
+        grid = yac.CloudGrid(self._output_grid_name(grid_name), lon, lat)
+        grid.points = grid.def_points(yac.Location.CORNER, lon, lat)
 
-                M = centers.size
-                corner = np.zeros(M + 1)
-                corner[:M] = centers - 0.5 * spacing
-                corner[-1] = centers[-1] + 0.5 * spacing
+        interpolation_stack = yac.InterpolationStack()
+        interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1., 0.)
 
-                return corner
+        return grid, interpolation_stack
 
-            def lon_lat(x, y):
-                xx, yy = np.meshgrid(x, y)
-                return Proj(proj_string)(xx, yy, inverse=True, radians=True)
+    def define_yac_grid(self, metadata, output_grid=None):
+        """Define the YAC grid for a given variable."""
+        # Sets self.grids[grid_name], self.output_grid_size[grid_name],
+        # self.vertex_indexes[grid_name], self.interpolation_stack.
+        #
+        # Also sets grid.points for self.grids[grid_name]
+        # the grid name in pism_output has to be different
+        grid_name = metadata['grid_name']
 
-            lon_corner, lat_corner = lon_lat(corners(x), corners(y))
-            grid = yac.Curve2dGrid(self._output_grid_name(grid_name),
-                                   lon_corner, lat_corner)
+        proj_string, x, y = self.receive_grid_info()
 
-            lon, lat = lon_lat(x, y)
-            grid.points = grid.def_points(yac.Location.CELL, lon, lat)
+        if output_grid is None:
+            logger.debug(f"grid size: {(len(x), len(y))}")
+            x_size = len(x)
+            y_size = len(y)
+            assert x_size > 0 and y_size > 0, (x_size, y_size)
 
-            # Create the interpolation stack and add an nearest-neighbor inteporlation.
-            interpolation_stack = yac.InterpolationStack()
-            interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1., 0.)
+            # Total number of grid points
 
-        self.output_grid_size[grid_name] = grid_size
-        self.vertex_indexes[grid_name] = np.arange(grid_points)
+            grid, interpolation_stack = self.define_matching_grid(grid_name, proj_string, x, y)
+
+            self.grids[grid_name] = grid
+            self.output_grid_size[grid_name] = (x_size, y_size)
+            self.interpolation_stack[grid_name] = interpolation_stack
+            self.vertex_indexes[grid_name] = np.arange(x_size * y_size)
+            return
+
+        if proj_string == "":
+            raise RuntimeError(
+                "unknown projection in PISM: " +
+                f"cannot write to projected grid '{output_grid.proj_string}'")
+
+        # define the grid using coordinates of cell corners:
+        lon_corner, lat_corner = output_grid.lonlat_corner()
+        grid = yac.Curve2dGrid(self._output_grid_name(grid_name),
+                               lon_corner, lat_corner)
+        # and points using cell centers:
+        lon, lat = output_grid.lonlat_center()
+        grid.points = grid.def_points(yac.Location.CELL, lon, lat)
+
+        interpolation_stack = yac.InterpolationStack()
+        # Use conservative interpolation from PISM's grid plus nearest neighbor as backup:
+        interpolation_stack.add_conservative(order=1,
+                                             enforced_conserv=True,
+                                             partial_coverage=False,
+                                             normalisation=yac.ConservNormalizationType.DESTAREA)
+        interpolation_stack.add_nnn(reduction_type=yac.NNNReductionType.AVG, n=1)
+
+        Mx, My = output_grid.size()
         self.grids[grid_name] = grid
+        self.output_grid_size[grid_name] = (Mx, My)
+        self.vertex_indexes[grid_name] = np.arange(Mx * My)
         self.interpolation_stack[grid_name] = interpolation_stack
 
     def finish_initialization(self):
@@ -440,16 +557,95 @@ class OutputFile:
         self.nc_dataset.close()
 
 
-def main(compression_level):
+def one_var_per_file(file_name):
+    "Return True if `file_name` corresponds to 'one variable per file'."
+    return file_name.count("{var}") == 1
+
+
+def new_file_name(file_name, variable_name):
+    "Create a new file name to use when writing `variable_name` to `file_name`."
+    return file_name.format(var=variable_name)
+
+
+def define_variable(File, variable, dims):
+    "Define a variable and all its dimensions (provided in `dims`)."
+    for dim in variable["dimensions"]:
+        File.define_dimension(dims[dim])
+    File.define_variable(variable)
+
+
+def main(compression_level, output_grid=None):
     """Receive and process "action" messages from PISM."""
     yac_wrapper = YacWrapper()
+
+    # set of all open files
     files = {}
 
-    def get_file(name):
-        """Return the file object, creating it if necessary."""
-        if name not in files:
-            files[name] = OutputFile(name, mode="w", compression_level=compression_level)
-        return files[name]
+    # global attributes for all files
+    global_attrs = {}
+    # history for all files
+    history = {}
+    # dimensions for all files
+    dimensions = {}
+    # variables for all files
+    variables = {}
+
+    # total set of "fields" (2D and 3D variables)
+    fields = set()
+
+    # these variables are not written to "one variable per file" outputs
+    ignored_variables = set(["wall_clock_time",
+                             "model_years_per_processor_hour",
+                             "step_counter",
+                             "pism_config"])
+
+    def get_file(file_name, variable_name):
+        if one_var_per_file(file_name):
+            fname = new_file_name(file_name, variable_name)
+            ignored = ignored_variables
+        else:
+            fname = file_name
+            ignored = set()
+
+        if fname not in files:
+            F = OutputFile(fname, mode="w", compression_level=compression_level)
+            files[fname] = F
+
+            logger.debug(f"preparing '{fname}'...")
+
+            F.set_attributes(global_attrs[file_name])
+            F.append_history(history[file_name])
+
+            # override lengths of x and y dimensions if using a custom output grid
+            dims = dimensions[file_name]
+            file_vars = variables[file_name]
+
+            if output_grid is not None:
+                Mx, My = output_grid.size()
+                dims["x"]["length"] = Mx
+                dims["y"]["length"] = My
+
+                file_vars["x"]["attributes"]["spacing_meters"] = output_grid.dx()
+                file_vars["y"]["attributes"]["spacing_meters"] = output_grid.dy()
+
+                file_vars["mapping"]["attributes"] = output_grid.mapping()
+
+            # define variables that are not "fields" and are not ignored:
+            for var_name, info in file_vars.items():
+                if var_name not in fields.union(ignored):
+                    define_variable(F, info, dims)
+
+            if one_var_per_file(file_name):
+                # define the requested 2D or 3D variable
+                info = file_vars[variable_name]
+                define_variable(F, info, dims)
+            else:
+                # define all 2D or 3D variables
+                for var_name, info in file_vars.items():
+                    if var_name in fields:
+                        define_variable(F, info, dims)
+
+        return files[fname]
 
     while True:
         # Wait for an action
@@ -472,18 +668,24 @@ def main(compression_level):
             case ServerActions.OPEN_FILE.value:
                 # This can be the used as the stub of the "append" action.
                 logger.debug(f"OPEN_FILE {file_name}")
-                F = OutputFile(file_name, mode="a")
-                ds = F.nc_dataset
-                files[file_name] = F
 
-                time_length = np.empty(1, dtype="i")
-                if "time" in ds.dimensions:
-                    time_length[0] = len(ds.dimensions["time"])
+                time_length = np.zeros(1, dtype="i")
+                last_time = np.zeros(1, dtype="f8")
+
+                if one_var_per_file(file_name):
+                    logger.debug(
+                        f"OPEN_FILE {file_name}: cannot append to a file split across variables")
                 else:
-                    time_length[0] = 0
+                    F = OutputFile(file_name, mode="a")
+                    ds = F.nc_dataset
+                    files[file_name] = F
 
-                last_time = np.empty(1, dtype="f8")
-                last_time[0] = ds.variables["time"][F.time_index]
+                    if "time" in ds.dimensions:
+                        time_length[0] = len(ds.dimensions["time"])
+                    else:
+                        time_length[0] = 0
+
+                    last_time[0] = ds.variables["time"][F.time_index]
 
                 # Send time length and last time to PISM:
                 yac_wrapper.intercomm.Send([time_length, 1, MPI.INT], dest=0, tag=0)
@@ -491,29 +693,45 @@ def main(compression_level):
 
             case ServerActions.CLOSE_FILE.value:
                 logger.debug(f"CLOSE_FILE {file_name}")
-                files[file_name].close()
-                del files[file_name]
+                if one_var_per_file(file_name):
+                    # close all files associated with this "file_name":
+                    for field in fields:
+                        fname = new_file_name(file_name, field)
+                        if fname in files:
+                            files[fname].close()
+                            del files[fname]
+                else:
+                    files[file_name].close()
+                    del files[file_name]
 
             case ServerActions.SET_FILE_ATTRIBUTES.value:
                 logger.debug(f"SET_FILE_ATTRIBUTES {file_name}")
-                get_file(file_name).set_attributes(metadata["attributes"])
+                global_attrs[file_name] = metadata["attributes"]
 
             case ServerActions.APPEND_HISTORY.value:
                 logger.debug(f"APPEND_HISTORY {file_name}")
-                get_file(file_name).append_history(metadata["history"])
+                history[file_name] = metadata["history"]
 
             case ServerActions.DEFINE_DIMENSION.value:
-                logger.debug(f"DEFINE_DIMENSION {metadata['name']} in {file_name}")
-                get_file(file_name).define_dimension(metadata)
+                name = metadata['name']
+                logger.debug(f"DEFINE_DIMENSION {name} in {file_name}")
+
+                if file_name not in dimensions:
+                    dimensions[file_name] = {}
+
+                dimensions[file_name][name] = metadata
 
             case ServerActions.DEFINE_YAC_GRID.value:
                 logger.debug(f"DEFINE_YAC_GRID {metadata['grid_name']}")
-                yac_wrapper.define_yac_grid(metadata)
+                yac_wrapper.define_yac_grid(metadata, output_grid)
 
             case ServerActions.DEFINE_YAC_FIELD.value:
-                logger.debug(f"DEFINE_YAC_FIELD {metadata['variable_name']}")
+                variable_name = metadata["variable_name"]
+                logger.debug(f"DEFINE_YAC_FIELD {variable_name}")
 
-                if metadata["variable_name"] not in yac_wrapper.fields:
+                fields.add(variable_name)
+
+                if variable_name not in yac_wrapper.fields:
                     yac_wrapper.define_field(metadata)
 
             case ServerActions.FINISH_YAC_INITIALIZATION.value:
@@ -521,22 +739,69 @@ def main(compression_level):
                 yac_wrapper.finish_initialization()
 
             case ServerActions.DEFINE_VARIABLE.value:
-                logger.debug(f"DEFINE_VARIABLE {metadata['variable_name']} in {file_name}")
-                get_file(file_name).define_variable(metadata)
+                variable_name = metadata['variable_name']
+                logger.debug(f"DEFINE_VARIABLE {variable_name} in {file_name}")
+
+                if file_name not in variables:
+                    variables[file_name] = {}
+
+                variables[file_name][variable_name] = metadata
 
             case ServerActions.SEND_GRIDDED_VARIABLE.value:
-                logger.debug(f"SEND_GRIDDED_VARIABLE {metadata['variable_name']} in {file_name}")
+                variable_name = metadata['variable_name']
+                logger.debug(f"SEND_GRIDDED_VARIABLE {variable_name} in {file_name}")
                 array = yac_wrapper.receive_gridded_variable(metadata)
-                get_file(file_name).write_gridded_variable(array, metadata)
+
+                get_file(file_name, variable_name).write_gridded_variable(array, metadata)
 
             case ServerActions.SEND_VARIABLE.value:
-                logger.debug(f"SEND_VARIABLE {metadata['variable_name']} in {file_name}")
+                variable_name = metadata['variable_name']
+                logger.debug(f"SEND_VARIABLE {variable_name} in {file_name}")
                 array = yac_wrapper.receive_variable(metadata)
-                get_file(file_name).write_variable(array, metadata)
+
+                # replace "x" and "y" variables with ones from the output grid
+                if output_grid is not None:
+                    Mx, My = output_grid.size()
+                    if variable_name == "x":
+                        array = output_grid.x
+                        metadata["start"] = [0]
+                        metadata["count"] = [Mx]
+                    if variable_name == "y":
+                        array = output_grid.y
+                        metadata["start"] = [0]
+                        metadata["count"] = [My]
+
+                if one_var_per_file(file_name):
+                    if variable_name in ignored_variables:
+                        continue
+
+                    # write to all the files `file_name` got split into:
+                    fields_in_file = fields.intersection(variables[file_name].keys())
+
+                    for field in fields_in_file:
+                        F = get_file(file_name, field)
+                        logger.debug(f"writing {F.nc_dataset.filepath()}:{variable_name}")
+                        F.write_variable(array, metadata)
+
+                    continue
+
+                get_file(file_name, variable_name).write_variable(array, metadata)
 
             case ServerActions.APPEND_TIME.value:
                 logger.debug(f"APPEND_TIME in {file_name}")
-                get_file(file_name).append_time(metadata["time"])
+
+                if one_var_per_file(file_name):
+                    # write to all the files `file_name` got split into:
+                    fields_in_file = fields.intersection(variables[file_name].keys())
+
+                    for field in fields_in_file:
+                        F = get_file(file_name, field)
+                        logger.debug(f"writing {F.nc_dataset.filepath()}:time")
+                        F.append_time(metadata["time"])
+
+                    continue
+
+                get_file(file_name, "time").append_time(metadata["time"])
 
             case ServerActions.SYNC.value:
                 logger.debug("SYNC")
@@ -567,6 +832,15 @@ if __name__ == "__main__":
         help="set compression level for 2D and 3D variables",
     )
 
+    parser.add_argument(
+        "-r",
+        "--resolution",
+        dest="resolution",
+        type=int,
+        default=5,
+        help="output grid resolution, km (for ISMIP7, choose one of 20, 10, 5, 2 or 1)",
+    )
+
     options = parser.parse_args()
 
     if options.debug:
@@ -574,7 +848,8 @@ if __name__ == "__main__":
         logger = logging.getLogger("pism_output")
 
     try:
-        main(options.compression)
+        grid = ISMIP7GreenlandGrid(resolution=options.resolution * 1000.0)
+        main(options.compression, output_grid=grid)
     except Exception as e:
         logger.critical(f"ERROR: {e}")
         traceback.print_exc()

@@ -67,6 +67,7 @@ RUN <<EOF
     python3-netcdf4 \
     python3-numpy \
     python3-pip \
+    python3-pyproj \
     python3-scipy \
     python3-setuptools \
     python3-venv \
@@ -95,6 +96,14 @@ RUN <<EOF
     python3 -m pip install "mpi4py>=4.0.0"
 EOF
 
+# Install xarray
+RUN <<EOF
+    echo "Install xarray"
+    set -eux
+    . $HOME/local/pism/bin/activate
+    python3 -m pip install xarray
+EOF
+
 # See
 # https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2024-1/use-the-setvars-and-oneapi-vars-scripts-with-linux.html
 #
@@ -109,7 +118,7 @@ RUN <<EOF
     export CC=mpiicx
     export CXX=mpiicpx
     export build_dir=/var/tmp/build/hdf5
-    export prefix=$HOME/local/hdf5
+    export prefix=$HOME/local/
 
     /tmp/hdf5.sh
     rm -rf ${build_dir}
@@ -124,7 +133,7 @@ RUN <<EOF
     set -eux
     export CC=mpiicx
     export build_dir=/var/tmp/build/pnetcdf
-    export prefix=$HOME/local/pnetcdf
+    export prefix=$HOME/local/
 
     /tmp/pnetcdf.sh
     rm -rf ${build_dir}
@@ -139,14 +148,14 @@ RUN <<EOF
     export CC=mpiicx
     export build_dir=/var/tmp/build/netcdf
     export lib_dir=$HOME/local
-    export prefix=$HOME/local/netcdf
+    export prefix=$HOME/local/
 
     /tmp/netcdf.sh
     rm -rf ${build_dir}
 EOF
 
 COPY yac.sh /tmp/
-ARG YAC_DIR=$HOME/local/yac
+ARG YAC_DIR=$HOME/local/
 RUN <<EOF
     echo "Install YAC"
     . /opt/intel/oneapi/setvars.sh
@@ -171,7 +180,7 @@ RUN <<EOF
     set -eux
     export build_dir=/var/tmp/build/petsc
     export prefix=$HOME/local/petsc
-    export version=3.24.4
+    export version=3.25.0
 
     /tmp/petsc.sh
 
@@ -181,5 +190,4 @@ EOF
 
 ENV PETSC_DIR="$HOME/local/petsc"
 ENV PYTHONPATH="$PETSC_DIR/lib:$YAC_DIR/lib/python3.12/site-packages"
-
-ENV PATH="$HOME/local/hdf5/bin:$HOME/local/netcdf/bin:$PETSC_DIR/bin:$PATH"
+ENV PATH="$HOME/local/bin:$HOME/local/pism/bin:$PETSC_DIR/bin:$PATH"

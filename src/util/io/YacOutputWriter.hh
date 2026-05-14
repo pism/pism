@@ -67,7 +67,7 @@ bool yac_component_defined(const std::string &name);
  */
 class YacOutputWriter : public OutputWriter {
 public:
-  YacOutputWriter(MPI_Comm comm, const Config &config);
+  YacOutputWriter(MPI_Comm comm, const Config &config, const std::string &mapping = "");
   ~YacOutputWriter();
 
 private:
@@ -97,6 +97,8 @@ private:
   std::map<std::string, std::map<std::string, bool> > m_defined_dimension;
 
   // --- YAC Grid information
+
+  std::string m_grid_mapping;
 
   //! YAC point set ID corresponding to a grid name
   std::map<std::string, int> m_point_set_id;
@@ -131,7 +133,7 @@ private:
   // --- Server-related subroutines ---
   void create_intercomm();
 
-  void define_yac_grid(const VariableMetadata &variable);
+  void define_yac_grid(const VariableMetadata &variable, const std::string &proj_string);
 
   void define_yac_field(const VariableMetadata &variable);
 

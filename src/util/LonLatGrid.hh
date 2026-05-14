@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 PISM Authors
+/* Copyright (C) 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,6 +44,13 @@ struct LonLatGrid {
    */
   LonLatGrid(const std::vector<double> &x, const std::vector<double> &y,
              const std::string &projection) {
+
+    compute(x, y, projection, lon, lat);
+  }
+
+  static void compute(const std::vector<double> &x, const std::vector<double> &y,
+                      const std::string &projection, std::vector<double> &lon,
+                      std::vector<double> &lat) {
 
     size_t nrow = y.size();
     size_t ncol = x.size();

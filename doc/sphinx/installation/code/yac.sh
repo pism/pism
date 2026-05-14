@@ -17,7 +17,7 @@ export CC=${CC:-mpicc}
 export FC=${FC:-mpifort}
 export CFLAGS="-O3 -g -march=native"
 
-prefix=${prefix:-$HOME/local/yac}
+prefix=${prefix:-$HOME/local/}
 
 yaxt_version=0.11.5.1
 git clone -b release-${yaxt_version} \
