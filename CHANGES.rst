@@ -1,5 +1,19 @@
 .. default-role:: literal
 
+Changes since v2.3.0
+====================
+
+- Fix a bug in the code implementing `energy.model` "none": it failed to preserve enthalpy
+  set during initialization.
+- Update PnetCDF version to 1.14.1 to support GCC 15 and newer.
+- Add an Ubuntu-based container with MPICH (for testing)
+- Split `docker/ubuntu-intel-oneapi` into `docker/pism` and `docker/pism/base` to avoid
+  re-building all prerequisites every time we update the PISM container.
+- Add support for regridding from tiny grids, i.e. grids too small to be distributed
+  across `N` MPI processes (assuming that PISM was started using `mpiexec -n N pism ...`).
+- Add `pism_ismip7_writer`: an asynchronous writer that splits "spatial" output files,
+  writing one variable per file as requested by ISMIP7 and automatically interpolating
+  onto an ISMIP7-Greenland grid.
 
 Changes since v2.2.8
 ====================
