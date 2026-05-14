@@ -1,5 +1,9 @@
 .. default-role:: literal
 
+Changes since v2.3.2
+====================
+
+- Added PICOP (PICO + Plume) from Pelle et al (2019). Use `-ocean.models picop`.
 
 Changes since v2.2.8
 ====================
@@ -63,6 +67,7 @@ Changes since v2.2.8
 - Require YAC 3.14.0 or newer.
 
 
+>>>>>>> dev
 Changes since v2.2.0
 ====================
 

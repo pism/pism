@@ -23,6 +23,7 @@
 #include "pism/coupler/OceanModel.hh"
 
 namespace pism {
+
 namespace ocean {
 
 /*!
@@ -35,8 +36,8 @@ public:
   // "modifier" constructor
   CompleteOceanModel(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> input);
   // "model" constructor
-  CompleteOceanModel(std::shared_ptr<const Grid> g);
-
+  CompleteOceanModel(std::shared_ptr<const Grid> g);  
+  
   virtual ~CompleteOceanModel() = default;
 protected:
   virtual const array::Scalar& shelf_base_temperature_impl() const;

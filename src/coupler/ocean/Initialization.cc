@@ -73,6 +73,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 
     Inputs inputs;
     inputs.geometry = &geometry;
+    inputs.stress_balance = nullptr;
     init_step(this, inputs, time());
   }
 
