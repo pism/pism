@@ -26,6 +26,7 @@ NP = int(os.environ.get("NP", 40 if MODE == "sbatch" else 8))
 SCRIPTDIR = os.path.dirname(os.path.abspath(__file__))
 
 state = "state_blatter_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_1990-01-01_0.nc"
+state = "state_hybrid_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_2020-01-01_0.nc"
 OBS = "obs_RGI2000-v7.0-C-01-04374.nc"
 
 SBATCH_HEADER = """\
@@ -50,13 +51,14 @@ RUN_CMD = f"mpirun -np {NP}"
 
 COMMON_PHYSICS = [
     "-basal_resistance.pseudo_plastic.enabled", "yes",
-    "-basal_resistance.pseudo_plastic.q", "0.5",
+    "-basal_resistance.pseudo_plastic.q", "0.75",
     "-basal_resistance.pseudo_plastic.u_threshold", "100m/yr",
     "-basal_yield_stress.model", "mohr_coulomb",
     "-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden", "0.025",
     "-basal_yield_stress.mohr_coulomb.till_phi_default", "30",
     "-hydrology.model", "null",
     "-hydrology.null_diffuse_till_water", "",
+]
 
 BLATTER_PHYSICS = [
     "-stress_balance.model", "blatter",
@@ -81,12 +83,23 @@ BLATTER_PHYSICS = [
     "-inv_adj_pc_type", "jacobi",
 ]
 
+
+HYBRID_PHYSICS = [
+    "-stress_balance.model", "ssa+sia",
+    "-stress_balance.ssa.method", "fem",
+    "-stress_balance.sia.enhancement_factor", "2.0",
+    "-stress_balance.sia.flow_law", "gpbld",
+    "-stress_balance.sia.max_diffusivity", "100000.0",
+    "-stress_balance.sia.surface_gradient_method", "eta",
+    "-stress_balance.ssa.flow_law", "gpbld",
+]
+
 SSA_PHYSICS = [
     "-stress_balance.model", "ssa",
     "-stress_balance.ssa.method", "fem",
 ]
 
-max_iter = 100
+max_iter = 250
 scriptdir = "run_obs_scripts"
 os.makedirs(scriptdir, exist_ok=True)
 
@@ -94,14 +107,15 @@ pyscript = "pismi.py"
 
 solvers = {
     "ssa": {"inv_flag": ["-inv_design", "tauc"], "physics": SSA_PHYSICS},
+    "hybrid": {"inv_flag": ["-inv_design", "tauc"], "physics": HYBRID_PHYSICS},
     "blatter": {"inv_flag": ["-inv_design", "tauc"], "physics": BLATTER_PHYSICS},
 }
 
 
 penalties = [1, 10, 100, 1000, 10000, 100000]
 h1_values = [1]
-l2_values = [0.1]
-hscales = ["1e1", "1e2"]
+l2_values = [0, 0.1]
+hscales = ["1e1", "1e2", "1e3"]
 vscales = [100]
 
 count = 0
