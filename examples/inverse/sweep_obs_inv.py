@@ -27,6 +27,7 @@ SCRIPTDIR = os.path.dirname(os.path.abspath(__file__))
 
 state = "state_blatter_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_1990-01-01_0.nc"
 state = "state_hybrid_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_2020-01-01_0.nc"
+state = "state_hybrid_null_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_2020-01-01.nc"
 OBS = "obs_RGI2000-v7.0-C-01-04374.nc"
 
 SBATCH_HEADER = """\
@@ -115,7 +116,7 @@ solvers = {
 penalties = [1, 10, 100, 1000, 10000, 100000]
 h1_values = [1]
 l2_values = [0, 0.1]
-hscales = ["1e1", "1e2", "1e3"]
+hscales = ["1e2", "1e3"]
 vscales = [100]
 
 count = 0
