@@ -100,6 +100,15 @@ def create_grid(config, ctx, test_name, L):
     P.y0 = L / 2.0
     P.periodicity = PISM.XY_PERIODIC
     P.z = PISM.DoubleVector(np.linspace(0, 2000, 201))
+    # Set sensible defaults before reading -Mx/-My/-grid.dx from the CLI.
+    # Upstream PISM (commit 9703fd301) dropped the Mx>=3 validation that
+    # used to catch the case where grid.Mx/grid.My defaults (-1) leave
+    # GridParameters' Mx/My uninitialized; failure now surfaces deeper as
+    # "'My' is invalid" inside ownership_ranges_from_options. Giving Mx/My
+    # explicit defaults makes the script run without -Mx on the command
+    # line, while still letting the user override via CLI.
+    P.Mx = 21
+    P.My = 21
     P.horizontal_size_and_extent_from_options(config)
 
     # Ensure My is set (default to Mx if only -Mx was given)

@@ -1481,6 +1481,16 @@ netcdf pism_config {
     pism_config:inverse.adjoint.method_option = "inv_adjoint_method";
     pism_config:inverse.adjoint.method_type = "keyword";
 
+    pism_config:inverse.alternating_cycles = 0;
+    pism_config:inverse.alternating_cycles_doc = "Number of (tauc->hardav) alternation cycles in pismi.py; 0 = single-design-var run. (Parsed but not yet wired; the loop body is implemented alongside Blatter-hardav forward-problem Jacobian math.)";
+    pism_config:inverse.alternating_cycles_type = "integer";
+    pism_config:inverse.alternating_cycles_units = "count";
+
+    pism_config:inverse.alternating_misfit_tol = 0.01;
+    pism_config:inverse.alternating_misfit_tol_doc = "Relative misfit improvement below which alternating co-inversion stops early.";
+    pism_config:inverse.alternating_misfit_tol_type = "number";
+    pism_config:inverse.alternating_misfit_tol_units = "pure number";
+
     pism_config:inverse.design.cH1     = 0;
     pism_config:inverse.design.cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
     pism_config:inverse.design.cH1_option = "inv_design_cH1";
@@ -1531,16 +1541,6 @@ netcdf pism_config {
     pism_config:inverse.max_iterations_option = "inv_max_it";
     pism_config:inverse.max_iterations_type = "integer";
     pism_config:inverse.max_iterations_units = "count";
-
-    pism_config:inverse.alternating_cycles = 0;
-    pism_config:inverse.alternating_cycles_doc = "Number of (tauc->hardav) alternation cycles in pismi.py; 0 = single-design-var run. (Parsed but not yet wired; the loop body is implemented alongside Blatter-hardav forward-problem Jacobian math.)";
-    pism_config:inverse.alternating_cycles_type = "integer";
-    pism_config:inverse.alternating_cycles_units = "count";
-
-    pism_config:inverse.alternating_misfit_tol = 0.01;
-    pism_config:inverse.alternating_misfit_tol_doc = "Relative misfit improvement below which alternating co-inversion stops early.";
-    pism_config:inverse.alternating_misfit_tol_type = "number";
-    pism_config:inverse.alternating_misfit_tol_units = "pure number";
 
     pism_config:inverse.state_func = "meansquare";
     pism_config:inverse.state_func_choices = "meansquare,log_ratio,log_relative";

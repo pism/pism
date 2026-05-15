@@ -42,7 +42,7 @@ parser.add_argument("--rgi-id", default="RGI2000-v7.0-C-01-04374",
 parser.add_argument("--solvers", default="ssa,hybrid,blatter",
                     help="comma-separated list of stress balances to generate "
                          "(default: %(default)s)")
-parser.add_argument("--hydrologies", default="null,routing",
+parser.add_argument("--hydrologies", default="null,routing,diffuse",
                     help="comma-separated list of hydrologies to generate "
                          "(default: %(default)s)")
 args = parser.parse_args()
@@ -134,6 +134,11 @@ SSA_PHYSICS = [
 
 NULL_HYDRO = [
     "-hydrology.model", "null",
+    "-hydrology.null_diffuse_till_water", "no",
+]
+
+DIFFUSE_HYDRO = [
+    "-hydrology.model", "null",
     "-hydrology.null_diffuse_till_water", "yes",
 ]
 
@@ -157,6 +162,7 @@ SOLVERS_TABLE = {
 
 HYDRO_TABLE = {
     "null":    NULL_HYDRO,
+    "diffuse": DIFFUSE_HYDRO,
     "routing": ROUTING_HYDRO,
 }
 
