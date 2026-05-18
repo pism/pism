@@ -134,7 +134,7 @@ void CalvingMIP::update(const array::CellType1 &cell_type,
       m_calving_rate(i, j) = 0.0;
 
 
-      if ((cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) or cell_type.icy(i, j)) {
+      if ((cell_type.ice_free_ocean(i, j) and cell_type.next_to_floating_ice(i, j)) or cell_type.floating_ice(i, j)) {
 
         double vw  = ice_velocity(i-1, j).u,
               vwm = ice_velocity(i-1, j).magnitude(),

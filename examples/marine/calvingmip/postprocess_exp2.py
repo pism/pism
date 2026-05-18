@@ -93,7 +93,7 @@ points_D = [[Mp,Mp],[Mx-2,1]]
 
 transects=[points_A,points_B,points_C,points_D,points_E,points_F,points_G,points_H]
 point_names=['A','B','C','D','E','F','G','H']
-dp=np.float(dkm)/np.float(resolution)
+dp=float(dkm)/float(resolution)
 trans = ph.get_troughs(pism_infile,transects,dp)
 
 
