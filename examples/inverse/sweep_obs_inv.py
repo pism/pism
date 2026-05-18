@@ -18,16 +18,19 @@ parser.add_argument("mode", nargs="?", default="debug",
 parser.add_argument("--restart", metavar="FILE",
                     help="Restart inversion from zeta_inv in FILE "
                          "(e.g., a previous SSA inversion result)")
+parser.add_argument("--output-dir", default=".",
+                    help="directory where inversion output (.nc files) is "
+                         "written. The generated scripts mkdir -p this "
+                         "directory at runtime. (default: %(default)s)")
 args = parser.parse_args()
 
 MODE = args.mode
 RESTART_FILE = args.restart
+OUTPUT_DIR = args.output_dir.rstrip("/")
 NP = int(os.environ.get("NP", 40 if MODE == "sbatch" else 8))
 SCRIPTDIR = os.path.dirname(os.path.abspath(__file__))
 
-state = "state_blatter_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_1990-01-01_0.nc"
-state = "state_hybrid_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_2020-01-01_0.nc"
-state = "state_hybrid_null_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_2020-01-01.nc"
+state = "frank_vs_maffezzoli/state_blatter_maffezzoli_null_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_2000-01-01.nc"
 OBS = "obs_RGI2000-v7.0-C-01-04374.nc"
 
 SBATCH_HEADER = """\
@@ -74,11 +77,10 @@ BLATTER_PHYSICS = [
     "-bp_snes_rtol", "1e-4",
     "-stress_balance.blatter.Mz", "10",
     "-stress_balance.blatter.coarsening_factor", "3",
-    "-stress_balance.blatter.flow_law", "isothermal_glen",
     "-stress_balance.blatter.use_eta_transform", "yes",
     "-stress_balance.calving_front_stress_bc", "yes",
-    "-stress_balance.blatter.enhancement_factor", "2.0"
-    "-stress_balance.blatter.flow_law", "gpbld"
+    "-stress_balance.blatter.enhancement_factor", "2.0",
+    "-stress_balance.blatter.flow_law", "gpbld",
     "-time_stepping.adaptive_ratio", "10",
     "-inv_adj_ksp_type", "gmres",
     "-inv_adj_pc_type", "jacobi",
@@ -113,7 +115,7 @@ solvers = {
 }
 
 
-penalties = [1, 10, 100, 1000, 10000, 100000]
+penalties = [1, 10, 100, 1000]
 h1_values = [1]
 l2_values = [0, 0.1]
 hscales = ["1e2", "1e3"]
@@ -125,7 +127,9 @@ for sb, params in solvers.items():
     for penalty, h1, l2, hscale, vscale in itertools.product(
             penalties, h1_values, l2_values, hscales, vscales):
 
-        outfile = f"inv_obs_{sb}_it_{max_iter}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}.nc"
+        # Output filename includes the optional output dir. When OUTPUT_DIR
+        # is "." this reduces to a plain filename in the cwd.
+        outfile = f"{OUTPUT_DIR}/inv_obs_{sb}_it_{max_iter}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}.nc"
         jobname = f"inv_obs_{sb}_it_{max_iter}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}"
         runscript = os.path.join(scriptdir, f"{jobname}.sh")
 
@@ -171,6 +175,8 @@ for sb, params in solvers.items():
         with open(runscript, "w") as f:
             f.write(HEADER)
             f.write(f"#SBATCH --job-name={jobname}\n\n")
+            f.write(f"# --- Ensure output directory exists ---\n")
+            f.write(f"mkdir -p {OUTPUT_DIR}\n\n")
             if restart_cmds:
                 f.write(restart_cmds)
             f.write(" ".join(cmd_parts) + "\n")
