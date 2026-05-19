@@ -52,10 +52,8 @@ RUN_CMD = f"mpirun -np {NP}"
 COMMON_PHYSICS = [
     "-basal_resistance.pseudo_plastic.enabled", "yes",
     "-basal_resistance.pseudo_plastic.q", "0.75",
-    "-basal_resistance.pseudo_plastic.u_threshold", "100m/yr",
-    "-basal_yield_stress.model", "mohr_coulomb",
-    "-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden", "0.025",
-    "-basal_yield_stress.mohr_coulomb.till_phi_default", "30",
+    "-flow_law.isothermal_Glen.ice_softness", "2.5e-24",
+    "-energy.model", "none",
 ]
 
 BLATTER_PHYSICS = [
@@ -72,7 +70,7 @@ BLATTER_PHYSICS = [
     "-stress_balance.blatter.Mz", "10",
     "-stress_balance.blatter.coarsening_factor", "3",
     "-stress_balance.blatter.enhancement_factor", "2.0",
-    "-stress_balance.blatter.flow_law", "gpbld",
+    "-stress_balance.blatter.flow_law", "isothermal_glen",
     "-stress_balance.blatter.use_eta_transform", "yes",
     "-stress_balance.calving_front_stress_bc", "yes",
     "-time_stepping.adaptive_ratio", "10",
@@ -82,14 +80,13 @@ BLATTER_PHYSICS = [
 
 SSA_PHYSICS = [
     "-stress_balance.model", "ssa",
+    "-stress_balance.ssa.flow_law", "isothermal_glen",
     "-stress_balance.ssa.method", "fem",
 ]
 
-max_iter = 50
+max_iter = 250
 scriptdir = "run_obs_scripts"
 os.makedirs(scriptdir, exist_ok=True)
-
-pyscript = "~/pism-dbg/examples/inverse/pismi.py"
 
 solvers = {
     "ssa": {"inv_flag": ["-inv_design", "tauc"], "physics": SSA_PHYSICS},
@@ -99,8 +96,8 @@ solvers = {
 penalties = [10, 100, 1000, 10000]
 h1_values = [0.01, 1, 10]
 l2_values = [0, 1, 10]
-hscales = ["5e3", "5e4"]
-vscales = [50]
+hscales = ["50e3"]
+vscales = [100]
 
 count = 0
 
@@ -134,14 +131,14 @@ for sb, params in solvers.items():
             )
 
         cmd_parts = [
-            RUN_CMD, "python", pyscript,
+            RUN_CMD, "pismi",
             "-i", boot_file,
             "-inv_data", inv_data,
             "-o", outfile,
             "-grid.file", grid_file,
             "-bootstrap", "",
             "-input.regrid.file", state_file,
-            "-input.regrid.vars", "litho_temp,enthalpy,age,tillwat,bmelt,ice_area_specific_volume,tauc",
+            "-input.regrid.vars", "litho_temp,enthalpy,age,tillwat,bmelt,ice_area_specific_volume,tauc,no_model_mask",
             "-time.calendar", "standard",
             "-grid.dx", res,
             "-grid.dy", res,
@@ -160,10 +157,6 @@ for sb, params in solvers.items():
             "-inverse.use_zeta_fixed_mask", "no",
             "-inverse.adjoint.method", "approximate",
             "-inv_grounded_ice_tauc",
-            "-tao_frtol", "1e-20",
-            "-tao_fatol", "1e-20",
-            "-tao_gatol", "1e-20",
-            "-tao_grtol", "1e-20",
             *COMMON_PHYSICS,
             *params["physics"],
         ]

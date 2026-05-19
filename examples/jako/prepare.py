@@ -204,6 +204,26 @@ if not Path(regrid_file).exists():
 
 regrid = xr.open_dataset(regrid_file)
 regrid = regrid.sel({"x": slice(x_min - 1500, x_max + 1500), "y": slice(y_min - 1500, y_max + 1500)})
+
+x = regrid["x"].values
+y = regrid["y"].values
+
+# True for cells outside the active model domain (i.e., in the 1500m
+# buffer we tacked onto each side via .sel above).
+in_x_band = (x < x_min) | (x > x_max)        # shape (nx,)
+in_y_band = (y < y_min) | (y > y_max)        # shape (ny,)
+
+# 2D mask, (y, x) order to match PISM conventions: 1 in the buffer,
+# 0 in the active interior.
+no_model = np.zeros((len(y), len(x)), dtype=np.int8)
+no_model[in_y_band, :] = 1
+no_model[:, in_x_band] = 1
+
+regrid["no_model_mask"] = (("y", "x"), no_model, {
+    "long_name": "regional no-model boundary mask "
+    "(1 = held fixed at boundary state, 0 = active interior)",
+    "units": "1",
+})
 regrid.to_netcdf("state_jako.nc")
     
 basins = gpd.read_file(outline_local).to_crs(crs)
