@@ -168,15 +168,21 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
         set (Pism_HAS_SIPLE ${IMPORT_SIPLE_ERRCODE} EQUAL 0)
 
-        # Copy over commonly used files
+        # Copy over commonly used files. pismi.py lives under the Python
+        # package now (and has a `pismi` console-script entry point), so
+        # the regression test copies a tiny shim that invokes
+        # PISM.pismi.run() — the test scripts can still run `python pismi.py`.
         foreach (FILE
             ${PROJECT_SOURCE_DIR}/examples/inverse/make_synth_ssa.py
-            ${PROJECT_SOURCE_DIR}/examples/inverse/pismi.py
             ${PROJECT_SOURCE_DIR}/examples/inverse/verify_ssa_inv.py
             inverse/build_tiny.py)
           get_filename_component(OUTPUT ${FILE} NAME)
           configure_file (${FILE} ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT} COPYONLY)
         endforeach()
+
+        # Tiny shim so `python pismi.py ...` works under the test fixture.
+        file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/pismi.py
+              "#!/usr/bin/env python3\nfrom PISM.pismi import main\nif __name__ == '__main__':\n    main()\n")
 
 
         if (Pism_HAS_SIPLE) # siple is installed
