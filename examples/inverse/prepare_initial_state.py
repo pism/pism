@@ -33,7 +33,7 @@ parser.add_argument("mode", nargs="?", default="debug",
                     choices=["debug", "sbatch"])
 parser.add_argument("--start", default="1980-01-01",
                     help="simulation start date (default: %(default)s)")
-parser.add_argument("--end", default="2020-01-01",
+parser.add_argument("--end", default="2000-01-01",
                     help="simulation end date (default: %(default)s)")
 parser.add_argument("--resolution", default="500m",
                     help="grid resolution with units, e.g. 500m (default: %(default)s)")
@@ -129,24 +129,23 @@ BLATTER_PHYSICS = [
     "-stress_balance.blatter.coarsening_factor", "3",
     "-stress_balance.blatter.use_eta_transform", "yes",
     "-stress_balance.calving_front_stress_bc", "yes",
-    "-stress_balance.blatter.flow_law", "gpbld",
+    "-stress_balance.blatter.flow_law", "isothermal_glen",
     "-time_stepping.adaptive_ratio", "500",
 ]
 
 HYBRID_PHYSICS = [
     "-stress_balance.model", "ssa+sia",
     "-stress_balance.ssa.method", "fd",
-    "-stress_balance.sia.enhancement_factor", "2.0",
-    "-stress_balance.sia.flow_law", "gpbld",
+    "-stress_balance.sia.flow_law", "isothermal_glen",
     "-stress_balance.sia.max_diffusivity", "100000.0",
     "-stress_balance.sia.surface_gradient_method", "eta",
-    "-stress_balance.ssa.flow_law", "gpbld",
+    "-stress_balance.ssa.flow_law", "isothermal_glen",
 ]
 
 SSA_PHYSICS = [
     "-stress_balance.model", "ssa",
     "-stress_balance.ssa.method", "fd",
-    "-stress_balance.ssa.flow_law", "gpbld",
+    "-stress_balance.ssa.flow_law", "isothermal_glen",
 ]
 
 NULL_HYDRO = [
@@ -192,7 +191,6 @@ HYDRO_TABLE = {
 def common_physics_for(thk):
     boot = bootfile_for(thk)
     return [
-        "-energy.model", "enthalpy",
         "-atmosphere.given.file", CLIM_FILE,
         "-atmosphere.models", "given",
         "-basal_resistance.pseudo_plastic.enabled", "yes",
@@ -200,9 +198,9 @@ def common_physics_for(thk):
         "-basal_resistance.pseudo_plastic.u_threshold", "100m/yr",
         "-basal_yield_stress.model", "mohr_coulomb",
         "-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden", "0.025",
-        "-basal_yield_stress.mohr_coulomb.till_phi_default", "30",
+        "-basal_yield_stress.mohr_coulomb.till_phi_default", "40",
         "-calving.methods", "float_kill",
-        "-energy.model", "enthalpy",
+        "-energy.model", "none",
         "-geometry.front_retreat.use_cfl", "yes",
         "-geometry.part_grid.enabled", "yes",
         "-geometry.remove_icebergs", "yes",
@@ -234,7 +232,7 @@ def common_physics_for(thk):
 # Output-related flags (kept separate so the spatial-vars list is easy to find
 # and the per-script output filenames can be substituted in).
 OUTPUT_VARS_SPATIAL = "velsurf_mag,velbase_mag,usurf,thk,velsurf,hardav,bwp,bwat"
-OUTPUT_VARS_MEDIUM  = "sftgif,velsurf_mag,mask,usurf,velbase_mag,velsurf,hardav"
+OUTPUT_VARS_MEDIUM  = "sftgif,velsurf_mag,mask,usurf,velbase_mag,velsurf,hardav,velsurf"
 
 
 def output_flags(ofile, sfile):
@@ -242,10 +240,11 @@ def output_flags(ofile, sfile):
         "-output.file", ofile,
         "-output.spatial.file", sfile,
         "-output.spatial.vars", OUTPUT_VARS_SPATIAL,
-        "-output.spatial.times", "monthly",
+        "-output.spatial.times", "yearly",
         "-output.size", "medium",
         "-output.sizes.medium", OUTPUT_VARS_MEDIUM,
         "-output.spatial.stop_missing", "no",
+
     ]
 
 
@@ -276,8 +275,8 @@ for thk in ICE_THICKNESS:
             # Output filenames (paths). When OUTPUT_DIR == "." they reduce to
             # plain filenames in the cwd; otherwise they include the directory.
             ofile   = f"{OUTPUT_DIR}/state_{postfix}.nc"
+            ofile_0   = f"{OUTPUT_DIR}/state_{postfix}_0.nc"
             sfile   = f"{OUTPUT_DIR}/spatial_{postfix}.nc"
-            ofile_0 = f"{OUTPUT_DIR}/state_{sb}_{thk}_g{RES}_{RGI_ID}_id_0_{START}_{END}_0.nc"
             jobname = f"prep_{postfix}"
             runscript = os.path.join(SCRIPTDIR, f"{jobname}.sh")
 
@@ -296,9 +295,9 @@ for thk in ICE_THICKNESS:
             attributes = "-a _FillValue,u_observed,d,, -a _FillValue,v_observed,d,,"
             post = (
                 f"\n# --- Post-process: produce the inversion-friendly file ---\n"
-                f"cdo setmisstoc,0 {ofile} {ofile_0}\n"
-                f"ncrename {rename} {ofile_0}\n"
-                f"ncatted {attributes} {ofile_0}\n"
+                f"cdo -O setmisstoc,0 {ofile} {ofile_0}\n"
+                #f"ncrename {rename} {ofile_0}\n"
+                #f"ncatted {attributes} {ofile_0}\n"
                 f"ncks -A -v pism_config {ofile} {ofile_0}\n"
             )
 

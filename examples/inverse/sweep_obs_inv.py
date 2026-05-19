@@ -22,6 +22,8 @@ parser.add_argument("--output-dir", default=".",
                     help="directory where inversion output (.nc files) is "
                          "written. The generated scripts mkdir -p this "
                          "directory at runtime. (default: %(default)s)")
+parser.add_argument("STATEFILE", nargs=1, help="State file")
+
 args = parser.parse_args()
 
 MODE = args.mode
@@ -29,9 +31,8 @@ RESTART_FILE = args.restart
 OUTPUT_DIR = args.output_dir.rstrip("/")
 NP = int(os.environ.get("NP", 40 if MODE == "sbatch" else 8))
 SCRIPTDIR = os.path.dirname(os.path.abspath(__file__))
-
-state = "frank_vs_maffezzoli/state_blatter_maffezzoli_null_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_2000-01-01.nc"
 OBS = "obs_RGI2000-v7.0-C-01-04374.nc"
+state = args.STATEFILE[0]
 
 SBATCH_HEADER = """\
 #!/bin/sh
@@ -59,9 +60,10 @@ COMMON_PHYSICS = [
     "-basal_resistance.pseudo_plastic.u_threshold", "100m/yr",
     "-basal_yield_stress.model", "mohr_coulomb",
     "-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden", "0.025",
-    "-basal_yield_stress.mohr_coulomb.till_phi_default", "30",
+    "-basal_yield_stress.mohr_coulomb.till_phi_default", "40",
     "-hydrology.model", "null",
     "-hydrology.null_diffuse_till_water", "",
+    "-energy.model", "none",
 ]
 
 BLATTER_PHYSICS = [
@@ -79,8 +81,7 @@ BLATTER_PHYSICS = [
     "-stress_balance.blatter.coarsening_factor", "3",
     "-stress_balance.blatter.use_eta_transform", "yes",
     "-stress_balance.calving_front_stress_bc", "yes",
-    "-stress_balance.blatter.enhancement_factor", "2.0",
-    "-stress_balance.blatter.flow_law", "gpbld",
+    "-stress_balance.blatter.flow_law", "isothermal_glen",
     "-time_stepping.adaptive_ratio", "10",
     "-inv_adj_ksp_type", "gmres",
     "-inv_adj_pc_type", "jacobi",
@@ -90,16 +91,17 @@ BLATTER_PHYSICS = [
 HYBRID_PHYSICS = [
     "-stress_balance.model", "ssa+sia",
     "-stress_balance.ssa.method", "fem",
-    "-stress_balance.sia.enhancement_factor", "2.0",
-    "-stress_balance.sia.flow_law", "gpbld",
+    "-stress_balance.sia.flow_law", "isothermal_glen",
     "-stress_balance.sia.max_diffusivity", "100000.0",
     "-stress_balance.sia.surface_gradient_method", "eta",
-    "-stress_balance.ssa.flow_law", "gpbld",
+    "-stress_balance.ssa.flow_law", "isothermal_glen",
+    "-remove_sia", "",
 ]
 
 SSA_PHYSICS = [
     "-stress_balance.model", "ssa",
     "-stress_balance.ssa.method", "fem",
+    "-stress_balance.ssa.flow_law", "isothermal_glen",
 ]
 
 max_iter = 250
@@ -115,10 +117,10 @@ solvers = {
 }
 
 
-penalties = [1, 10, 100, 1000]
+penalties = [1, 10, 100]
 h1_values = [1]
-l2_values = [0, 0.1]
-hscales = ["1e2", "1e3"]
+l2_values = [0, 0.1, 1.0]
+hscales = ["1e3", "5e3", "1e4", "5e4"]
 vscales = [100]
 
 count = 0
@@ -168,6 +170,7 @@ for sb, params in solvers.items():
             "-inverse.use_zeta_fixed_mask", "yes",
             "-inverse.adjoint.method", "exact",
             "-inv_grounded_ice_tauc",
+            "-inverse.state_func", "meansquare",
             *COMMON_PHYSICS,
             *params["physics"],
         ]
