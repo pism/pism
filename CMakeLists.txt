@@ -86,22 +86,30 @@ set(CMAKE_COLOR_MAKEFILE OFF)
 # Set Pism_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
 # When packaging via scikit-build-core (Pism_USE_SKBUILD_LAYOUT=ON), the
 # wheel-staging install prefix points at a temp dir that won't exist after
-# pip moves files to their final location. Allow callers to override the
-# config-file path explicitly so packagers (e.g. conda-forge) can bake in
-# the *final* install path instead.
+# pip moves files to their final location. Resolution order:
+#
+#   1. Explicit `-DPism_CONFIG_FILE=…` (or `cmake.define.Pism_CONFIG_FILE`
+#      from pyproject.toml) always wins — packagers (e.g. conda-forge)
+#      pass the final install path here.
+#   2. Otherwise, under SKBUILD_LAYOUT, auto-detect CONDA_PREFIX or
+#      VIRTUAL_ENV and bake in that env's share/pism/pism_config.nc.
+#   3. Otherwise fall back to CMAKE_INSTALL_FULL_DATADIR (correct for
+#      plain `cmake --install ...` outside a wheel build).
 pism_check_build_dir_location()
-if (Pism_USE_SKBUILD_LAYOUT AND Pism_CONFIG_FILE)
+if (Pism_CONFIG_FILE)
+  # User-provided value: keep it.
   set (Pism_CONFIG_FILE "${Pism_CONFIG_FILE}" CACHE STRING "" FORCE)
+elseif (Pism_USE_SKBUILD_LAYOUT AND DEFINED ENV{CONDA_PREFIX})
+  set (Pism_CONFIG_FILE "$ENV{CONDA_PREFIX}/share/pism/pism_config.nc"
+       CACHE STRING "" FORCE)
+elseif (Pism_USE_SKBUILD_LAYOUT AND DEFINED ENV{VIRTUAL_ENV})
+  set (Pism_CONFIG_FILE "$ENV{VIRTUAL_ENV}/share/pism/pism_config.nc"
+       CACHE STRING "" FORCE)
 else()
-  set (Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc" CACHE STRING "" FORCE)
+  set (Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc"
+       CACHE STRING "" FORCE)
 endif()
-if (Pism_USE_SKBUILD_LAYOUT AND NOT Pism_CONFIG_FILE)
-   if (DEFINED ENV{CONDA_PREFIX})
-      set(Pism_CONFIG_FILE "$ENV{CONDA_PREFIX}/share/pism/pism_config.nc" CACHE STRING "" FORCE)
-   elseif (DEFINED ENV{VIRTUAL_ENV})
-          set(Pism_CONFIG_FILE "$ENV{VIRTUAL_ENV}/share/pism/pism_config.nc" CACHE STRING "" FORCE)
-   endif()
-endif()
+message (STATUS "Pism_CONFIG_FILE = ${Pism_CONFIG_FILE}")
 mark_as_advanced (Pism_CONFIG_FILE)
 
 # The default options cache
