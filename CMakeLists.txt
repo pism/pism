@@ -17,18 +17,8 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 
 pism_set_full_version()
 
-# When driven by scikit-build-core (pip install .), redirect CMake's GNU
-# install dirs into the wheel's component-specific staging directories so
-# bin/ -> <wheel>.data/scripts, lib/share/include -> <wheel>.data/data/...
-# scikit-build-core publishes SKBUILD_*_DIR as CMake cache variables via
-# its CMakeInit.txt; we forward them into the GNUInstallDirs variables.
-if (Pism_USE_SKBUILD_LAYOUT)
-  if (NOT SKBUILD_SCRIPTS_DIR OR NOT SKBUILD_DATA_DIR OR NOT SKBUILD_PLATLIB_DIR)
-    message(FATAL_ERROR
-      "Pism_USE_SKBUILD_LAYOUT=ON requires SKBUILD_SCRIPTS_DIR, "
-      "SKBUILD_DATA_DIR, and SKBUILD_PLATLIB_DIR (normally injected by "
-      "scikit-build-core's CMakeInit.txt).")
-  endif()
+# Set install directories for scikit-build-core (pip install .):
+if (SKBUILD)
   set(CMAKE_INSTALL_BINDIR      "${SKBUILD_SCRIPTS_DIR}"      CACHE PATH "" FORCE)
   set(CMAKE_INSTALL_LIBDIR      "${SKBUILD_DATA_DIR}/lib"     CACHE PATH "" FORCE)
   set(CMAKE_INSTALL_DATAROOTDIR "${SKBUILD_DATA_DIR}/share"   CACHE PATH "" FORCE)
@@ -86,11 +76,6 @@ set(CMAKE_COLOR_MAKEFILE OFF)
 pism_check_build_dir_location()
 
 # Set Pism_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
-# When packaging via scikit-build-core (Pism_USE_SKBUILD_LAYOUT=ON), the
-# wheel-staging install prefix points at a temp dir that won't exist after
-# pip moves files to their final location. Allow callers to override the
-# config-file path explicitly so packagers (e.g. conda-forge) can bake in
-# the *final* install path instead.
 if (Pism_CONFIG_FILE)
   set (Pism_CONFIG_FILE "${Pism_CONFIG_FILE}" CACHE STRING "" FORCE)
 else()
@@ -134,12 +119,12 @@ option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 if (Pism_DEBIAN_SYSTEMWIDE)
   pism_dont_use_rpath()
-elseif (Pism_USE_SKBUILD_LAYOUT)
-  # scikit-build-core build: rely on CMAKE_INSTALL_RPATH and
-  # CMAKE_BUILD_RPATH_USE_ORIGIN passed via pyproject.toml. Avoid baking the
-  # wheel-staging absolute libdir into the install RPATH or the macOS
-  # install_name_dir, which would break the binary once pip moves files out
-  # of the staging area.
+elseif (SKBUILD)
+  # Use CMAKE_INSTALL_RPATH and CMAKE_BUILD_RPATH_USE_ORIGIN passed via pyproject.toml.
+  #
+  # Avoid baking the wheel-staging absolute libdir into the install RPATH or the macOS
+  # install_name_dir, which would break the binary once pip moves files out of the staging
+  # area.
   set (CMAKE_SKIP_BUILD_RPATH FALSE)
   set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
