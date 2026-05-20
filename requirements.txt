@@ -13,8 +13,6 @@ pint_xarray
 rioxarray
 s3fs
 seaborn
-sphinx
-sphinxcontrib.bibtex
 scipy
 shapely
 tqdm

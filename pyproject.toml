@@ -30,7 +30,7 @@ wheel.packages = ["site-packages/PISM", "site-packages/siple"]
 
 [tool.scikit-build.cmake.define]
 Pism_BUILD_PYTHON_BINDINGS = "ON"
-Pism_BUILD_DOCS = "ON"
+Pism_BUILD_DOCS = "OFF"
 Pism_USE_PARALLEL_NETCDF4 = "YES"
 Pism_USE_PROJ = "YES"
 Pism_USE_YAC = "YES"
