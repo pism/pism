@@ -1,5 +1,31 @@
-find_program(SPHINX_EXECUTABLE sphinx-build)
+# SPHINX_EXECUTABLE resolution order:
+#
+#   1. Explicit `-DSPHINX_EXECUTABLE=…` (or `cmake.define.SPHINX_EXECUTABLE`
+#      from pyproject.toml) always wins — packagers can pin a specific
+#      sphinx-build.
+#   2. Otherwise prefer the active CONDA_PREFIX or VIRTUAL_ENV's
+#      bin/sphinx-build over whatever PATH would find. This matters when
+#      packaging via scikit-build-core on Linux: /usr/bin/sphinx-build
+#      (from python3-sphinx, apt) often shadows the env's, but its Python
+#      doesn't have the project's Sphinx extensions
+#      (e.g., sphinxcontrib-bibtex) → "Could not import extension" at
+#      build time.
+#   3. Fall back to `find_program` (searches PATH).
+if (NOT SPHINX_EXECUTABLE)
+  if (DEFINED ENV{CONDA_PREFIX}
+      AND EXISTS "$ENV{CONDA_PREFIX}/bin/sphinx-build")
+    set (SPHINX_EXECUTABLE "$ENV{CONDA_PREFIX}/bin/sphinx-build"
+         CACHE FILEPATH "" FORCE)
+  elseif (DEFINED ENV{VIRTUAL_ENV}
+          AND EXISTS "$ENV{VIRTUAL_ENV}/bin/sphinx-build")
+    set (SPHINX_EXECUTABLE "$ENV{VIRTUAL_ENV}/bin/sphinx-build"
+         CACHE FILEPATH "" FORCE)
+  else()
+    find_program (SPHINX_EXECUTABLE sphinx-build)
+  endif()
+endif()
 mark_as_advanced(SPHINX_EXECUTABLE)
+message (STATUS "SPHINX_EXECUTABLE = ${SPHINX_EXECUTABLE}")
 
 # HTML documentation requires Sphinx
 if (SPHINX_EXECUTABLE)
