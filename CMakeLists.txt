@@ -53,13 +53,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Looks like CMAKE_CXX_STANDARD does not support Intel C++ compilers
-# yet...
-if (CMAKE_CXX_COMPILER_ID MATCHES "Intel" AND NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
-  message (STATUS "Adding -std=c++11 to C++ compiler flags for Intel compilers.")
-  set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
-endif()
-
 # Add a flag that makes it easier to use LLDB to debug code compiled with Clang.
 # Scope to C++ only: a mixed toolchain (e.g., conda's GCC for C with Clang for
 # C++) would otherwise pass this Clang-only flag to GCC and fail.
