@@ -53,11 +53,14 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Add a flag that makes it easier to use LLDB to debug code compiled with Clang.
-# Scope to C++ only: a mixed toolchain (e.g., conda's GCC for C with Clang for
-# C++) would otherwise pass this Clang-only flag to GCC and fail.
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fstandalone-debug>)
+# Add a flag that makes it easier to use LLDB to debug code compiled with Clang (if
+# supported by C and C++ compilers).
+include(CheckCompilerFlag)
+check_compiler_flag(C -fstandalone-debug PISM_C_FSTANDALONE_DEBUG)
+check_compiler_flag(CXX -fstandalone-debug PISM_CXX_FSTANDALONE_DEBUG)
+if (PISM_C_FSTANDALONE_DEBUG AND PISM_CXX_FSTANDALONE_DEBUG)
+  add_compile_options(-fstandalone-debug)
+  message(STATUS "Adding -fstandalone-debug to compiler flags")
 endif()
 
 # Put executables in the build directory:
