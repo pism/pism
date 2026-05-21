@@ -223,21 +223,9 @@ print(sysconfig.get_path('platlib', '${pism_sysconfig_scheme}', vars={'platbase'
       ${CMAKE_INSTALL_PREFIX} ${PISM_PROBED_PYTHON_MODULE_DIR})
     unset(pism_python_path_py)
     unset(PISM_PROBED_PYTHON_MODULE_DIR)
-  endif()
-
-  set(PISM_PYTHON_MODULE_DIR ${PISM_PYTHON_MODULE_DIR}
-    CACHE PATH "Python extension module installation directory." FORCE)
-
-  if (IS_ABSOLUTE "${PISM_PYTHON_MODULE_DIR}")
-    set(PISM_FULL_PYTHON_MODULE_DIR "${PISM_PYTHON_MODULE_DIR}")
-  else()
-    set(PISM_FULL_PYTHON_MODULE_DIR
-      "${CMAKE_INSTALL_PREFIX}/${PISM_PYTHON_MODULE_DIR}")
-  endif()
-  set(PISM_FULL_PYTHON_MODULE_DIR ${PISM_FULL_PYTHON_MODULE_DIR}
-    CACHE PATH "Python extension module installation directory (full path)." FORCE)
-  mark_as_advanced(PISM_PYTHON_MODULE_DIR PISM_FULL_PYTHON_MODULE_DIR)
-endif ()
+  endif(NOT PISM_PYTHON_MODULE_DIR)
+  mark_as_advanced(PISM_PYTHON_MODULE_DIR)
+endif (Pism_BUILD_PYTHON_BINDINGS)
 
 # re-run tests that failed
 add_custom_target (retest
