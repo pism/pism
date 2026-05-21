@@ -1,0 +1,62 @@
+exclude: "docs|node_modules|migrations|.git|.tox"
+default_stages: [pre-commit]
+fail_fast: true
+
+repos:
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: v1.3.5
+    hooks:
+      - id: clang-format
+        args:
+          - -i
+        # .m here means MATLAB (e.g. examples/ross/groundingline.m), not
+        # Objective-C; the project's .clang-format only declares C/C++,
+        # so clang-format refuses to touch them.
+        exclude: '\.m$'
+        # Equivalent narrower filter, in case the exclude pattern grows
+        # tricky later:
+        #   types_or: [c, c++, c-header, c++-header]
+      - id: clang-tidy
+        args:
+          - --fix-errors
+        exclude: '\.m$'
+
+  # - repo: https://github.com/pre-commit/pre-commit-hooks
+  #   rev: v6.0.0
+  #   hooks:
+  #     - id: trailing-whitespace
+  #     - id: end-of-file-fixer
+  #     - id: check-toml
+  #     - id: check-yaml
+  #       exclude: conda/meta.yaml
+
+  # # Can run individually with `pre-commit run black --all-files`
+  # - repo: https://github.com/psf/black
+  #   rev: 26.3.1
+  #   hooks:
+  #     - id: black
+
+  # # Can run individually with `pre-commit run isort --all-files`
+  # - repo: https://github.com/timothycrosley/isort
+  #   rev: 9.0.0a3
+  #   hooks:
+  #     - id: isort
+  #       args:
+  #         - --profile
+  #         - black
+
+
+  # # Numpydoc
+  # - repo: https://github.com/numpy/numpydoc
+  #   rev: v1.10.0
+  #   hooks:
+  #     - id: numpydoc-validation
+
+  # # Can run individually with `pre-commit run mypy --all-files`
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v2.1.0
+  #   hooks:
+  #     - id: mypy
+  #       args: ["--config-file", "pyproject.toml", "--ignore-missing-imports"]
+  #       additional_dependencies: [types-toml, types-requests]
+
