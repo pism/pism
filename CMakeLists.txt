@@ -198,8 +198,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
-  # Allow callers (e.g. scikit-build-core) to inject PISM_PYTHON_MODULE_DIR
-  # directly. When unset, fall back to the historical sysconfig probe.
   if (NOT PISM_PYTHON_MODULE_DIR)
     set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
     if (Pism_DEBIAN_SYSTEMWIDE)
@@ -207,6 +205,9 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     else()
       set (pism_sysconfig_scheme "posix_prefix")
     endif()
+    # Note: this is almost the same as Python3_SITEARCH provided by CMake's FindPython3,
+    # but relative to the selected install prefix (CMAKE_INSTALL_PREFIX) and including a
+    # special case needed to build the .deb package.
     file (WRITE "${pism_python_path_py}" "
 # Get module installation path from Python:
 import sysconfig
